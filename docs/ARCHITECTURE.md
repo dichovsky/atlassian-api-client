@@ -108,6 +108,7 @@ interface Transport {
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
 
 **Data flow:**
+
 ```
 Client method call
   → Resource module builds RequestOptions
@@ -131,10 +132,10 @@ interface AuthProvider {
 
 **Supported strategies:**
 
-| Strategy | Config | Header |
-|---|---|---|
-| Basic | `{ type: 'basic', email: string, apiToken: string }` | `Authorization: Basic base64(email:token)` |
-| Bearer | `{ type: 'bearer', token: string }` | `Authorization: Bearer <token>` |
+| Strategy | Config                                               | Header                                     |
+| -------- | ---------------------------------------------------- | ------------------------------------------ |
+| Basic    | `{ type: 'basic', email: string, apiToken: string }` | `Authorization: Basic base64(email:token)` |
+| Bearer   | `{ type: 'bearer', token: string }`                  | `Authorization: Bearer <token>`            |
 
 Auth providers never expose raw credentials in `toString()`, `toJSON()`, or error messages.
 
@@ -144,16 +145,17 @@ Configuration is validated at client construction time:
 
 ```typescript
 interface ClientConfig {
-  baseUrl: string;              // Required: Atlassian instance URL
-  auth: AuthConfig;             // Required: auth strategy config
-  timeout?: number;             // Default: 30000ms
-  retries?: number;             // Default: 3
-  retryDelay?: number;          // Default: 1000ms (base delay)
-  transport?: Transport;        // Optional: injectable transport
+  baseUrl: string; // Required: Atlassian instance URL
+  auth: AuthConfig; // Required: auth strategy config
+  timeout?: number; // Default: 30000ms
+  retries?: number; // Default: 3
+  retryDelay?: number; // Default: 1000ms (base delay)
+  transport?: Transport; // Optional: injectable transport
 }
 ```
 
 **Validation rules:**
+
 - `baseUrl` must be a valid URL, no trailing slash
 - `auth` must match a supported strategy
 - Numeric values must be positive
@@ -176,6 +178,7 @@ AtlassianError (base)
 ```
 
 Each error includes:
+
 - `message` — human-readable description
 - `status` — HTTP status code (for HTTP errors)
 - `code` — machine-readable error code string
@@ -192,16 +195,19 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 ```
 
 **Configuration:**
+
 - `retries`: max retry attempts (default: 3)
 - `retryDelay`: base delay in ms (default: 1000)
 - `maxRetryDelay`: ceiling in ms (default: 30000)
 
 **Retryable conditions:**
+
 - HTTP 429 (Too Many Requests) — uses `Retry-After` header if present
 - HTTP 500, 502, 503, 504 (server errors)
 - Network errors (connection reset, DNS failure)
 
 **Non-retryable:**
+
 - HTTP 400, 401, 403, 404, 409 (client errors)
 - Timeout errors (already represents a long wait)
 
@@ -219,28 +225,32 @@ Handles 429 responses:
 Two pagination models:
 
 **Confluence (cursor-based):**
+
 ```typescript
 interface CursorPaginatedResponse<T> {
   results: T[];
   _links: {
-    next?: string;  // URL with cursor parameter
+    next?: string; // URL with cursor parameter
     base?: string;
   };
 }
 ```
+
 - Next page: extract `cursor` from `_links.next` URL
 - Done: `_links.next` is absent or `results` is empty
 
 **Jira (offset-based):**
+
 ```typescript
 interface OffsetPaginatedResponse<T> {
-  values: T[];       // or `issues` for search
+  values: T[]; // or `issues` for search
   startAt: number;
   maxResults: number;
   total?: number;
   isLast?: boolean;
 }
 ```
+
 - Next page: `startAt += maxResults`
 - Done: `isLast === true` OR `startAt >= total` OR empty results
 
@@ -291,6 +301,7 @@ class PagesResource {
 ```
 
 Resources:
+
 - Do not manage their own auth or retry (transport handles this)
 - Build `RequestOptions` and delegate to transport
 - Parse responses into typed objects
@@ -424,23 +435,24 @@ try {
 
 **None.** Zero runtime dependencies.
 
-The package uses only Node.js built-ins:
-- `fetch` (global, Node 18+)
-- `AbortController` (global, Node 18+)
+The package uses only Node.js built-ins available in the supported runtime (Node 24+):
+
+- `fetch` (global, Node 24+)
+- `AbortController` (global, Node 24+)
 - `Buffer` (for Base64 encoding in Basic auth)
 - `URL` / `URLSearchParams` (for URL construction)
 
 ### Dev Dependencies
 
-| Package | Purpose |
-|---|---|
-| `typescript` | TypeScript compiler |
-| `vitest` | Test framework |
-| `@vitest/coverage-v8` | V8-based coverage |
-| `eslint` | Linting |
-| `@typescript-eslint/eslint-plugin` | TypeScript lint rules |
-| `@typescript-eslint/parser` | TypeScript parser for ESLint |
-| `prettier` | Code formatting |
+| Package                            | Purpose                      |
+| ---------------------------------- | ---------------------------- |
+| `typescript`                       | TypeScript compiler          |
+| `vitest`                           | Test framework               |
+| `@vitest/coverage-v8`              | V8-based coverage            |
+| `eslint`                           | Linting                      |
+| `@typescript-eslint/eslint-plugin` | TypeScript lint rules        |
+| `@typescript-eslint/parser`        | TypeScript parser for ESLint |
+| `prettier`                         | Code formatting              |
 
 ---
 
@@ -484,21 +496,22 @@ src/cli/
 ### Auth Resolution
 
 Order of precedence (first wins):
+
 1. CLI flags: `--base-url`, `--email`, `--token`
 2. Environment variables: `ATLASSIAN_BASE_URL`, `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`
 3. Error with helpful message
 
 ### Output Formats
 
-| Format | Flag | Use Case |
-|---|---|---|
-| `json` | `--format json` (default) | Piping to `jq`, scripting |
-| `table` | `--format table` | Human-readable terminal output |
-| `minimal` | `--format minimal` | IDs/keys only, for `xargs` chains |
+| Format    | Flag                      | Use Case                          |
+| --------- | ------------------------- | --------------------------------- |
+| `json`    | `--format json` (default) | Piping to `jq`, scripting         |
+| `table`   | `--format table`          | Human-readable terminal output    |
+| `minimal` | `--format minimal`        | IDs/keys only, for `xargs` chains |
 
 ### Design Decisions
 
-- **Zero CLI dependencies** — uses Node.js built-in `util.parseArgs` (stable since Node 18.3)
+- **Zero CLI dependencies** — uses Node.js built-in `util.parseArgs` (stable in the supported Node runtime)
 - **Reuses library clients** — CLI commands instantiate `ConfluenceClient`/`JiraClient` and call resource methods
 - **Pipe-friendly** — JSON default, errors to stderr, data to stdout
 - **Stateless** — no config files or login sessions; auth per-invocation
@@ -510,18 +523,21 @@ Order of precedence (first wins):
 **Build tool:** `tsc` (TypeScript compiler, no bundler)
 
 **Output:**
+
 - `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`)
 - Source maps included for debugging
 
 **Module format:** ESM (`"type": "module"` in `package.json`)
 
 **Published files:**
+
 - `dist/` — compiled output
 - `README.md`
 - `LICENSE`
 - `CHANGELOG.md`
 
 **Excluded from package:**
+
 - `src/` (source TypeScript)
 - `test/` (tests)
 - `examples/` (dev examples)

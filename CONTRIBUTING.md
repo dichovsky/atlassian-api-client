@@ -14,16 +14,16 @@ npm run validate
 
 ## Scripts
 
-| Script | Purpose |
-|---|---|
-| `npm run build` | Compile TypeScript to dist/ |
-| `npm run typecheck` | Type check all files (src + test + examples) |
-| `npm run lint` | ESLint check |
-| `npm run lint:fix` | Auto-fix lint issues |
-| `npm run test` | Run tests |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with 100% coverage enforcement |
-| `npm run validate` | Full validation (clean + build + typecheck + lint + test:coverage) |
+| Script                  | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `npm run build`         | Compile TypeScript to dist/                                        |
+| `npm run typecheck`     | Type check all files (src + test + examples)                       |
+| `npm run lint`          | ESLint check                                                       |
+| `npm run lint:fix`      | Auto-fix lint issues                                               |
+| `npm run test`          | Run tests                                                          |
+| `npm run test:watch`    | Run tests in watch mode                                            |
+| `npm run test:coverage` | Run tests with 100% coverage enforcement                           |
+| `npm run validate`      | Full validation (clean + build + typecheck + lint + test:coverage) |
 
 ## Code Standards
 

@@ -1,6 +1,7 @@
 # Backlog
 
 Priority levels:
+
 - **P0** — Must-have for v1 release
 - **P1** — Should-have for v1 (implement if time permits)
 - **P2** — Nice-to-have (future versions)

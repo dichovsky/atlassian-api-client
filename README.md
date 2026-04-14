@@ -5,7 +5,7 @@ Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
 - **Confluence Cloud REST API v2** - Pages, Spaces, Blog Posts, Comments, Attachments, Labels
 - **Jira Cloud Platform REST API v3** - Issues, Projects, Search (JQL), Users, Issue Types, Priorities, Statuses
 
-Zero runtime dependencies. Uses native `fetch` (Node.js 18+).
+Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 
 ## Install
 
@@ -15,7 +15,7 @@ npm install atlassian-api-client
 
 ## Supported Runtimes
 
-- Node.js >= 18.0.0
+- Node.js >= 24.0.0
 
 ## Quick Start
 
@@ -127,7 +127,7 @@ console.log(result.results); // current page items
 // Jira
 const projects = await jira.projects.list({ maxResults: 50 });
 console.log(projects.values); // current page items
-console.log(projects.total);  // total available
+console.log(projects.total); // total available
 ```
 
 ## Error Handling
@@ -161,9 +161,9 @@ try {
 const client = new JiraClient({
   baseUrl: 'https://yourcompany.atlassian.net',
   auth: { type: 'basic', email: '...', apiToken: '...' },
-  timeout: 15000,      // 15s timeout (default: 30s)
-  retries: 5,          // max retry attempts (default: 3)
-  retryDelay: 2000,    // base delay for backoff (default: 1000ms)
+  timeout: 15000, // 15s timeout (default: 30s)
+  retries: 5, // max retry attempts (default: 3)
+  retryDelay: 2000, // base delay for backoff (default: 1000ms)
   maxRetryDelay: 60000, // max delay cap (default: 30000ms)
 });
 ```
@@ -224,26 +224,26 @@ atlas jira projects list --format minimal
 
 ### ConfluenceClient
 
-| Resource | Methods |
-|---|---|
-| `pages` | `list`, `get`, `create`, `update`, `delete`, `listAll` |
-| `spaces` | `list`, `get`, `listAll` |
-| `blogPosts` | `list`, `get`, `create`, `update`, `delete`, `listAll` |
-| `comments` | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
-| `attachments` | `listForPage`, `get`, `delete`, `listAllForPage` |
-| `labels` | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage` |
+| Resource      | Methods                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`       | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `spaces`      | `list`, `get`, `listAll`                                                                                                                             |
+| `blogPosts`   | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `comments`    | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
+| `attachments` | `listForPage`, `get`, `delete`, `listAllForPage`                                                                                                     |
+| `labels`      | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
 
 ### JiraClient
 
-| Resource | Methods |
-|---|---|
-| `issues` | `get`, `create`, `update`, `delete`, `getTransitions`, `transition` |
-| `projects` | `list`, `get`, `listAll` |
-| `search` | `search`, `searchGet`, `searchAll` |
-| `users` | `get`, `getCurrentUser`, `search` |
-| `issueTypes` | `list`, `get` |
-| `priorities` | `list`, `get` |
-| `statuses` | `list` |
+| Resource     | Methods                                                             |
+| ------------ | ------------------------------------------------------------------- |
+| `issues`     | `get`, `create`, `update`, `delete`, `getTransitions`, `transition` |
+| `projects`   | `list`, `get`, `listAll`                                            |
+| `search`     | `search`, `searchGet`, `searchAll`                                  |
+| `users`      | `get`, `getCurrentUser`, `search`                                   |
+| `issueTypes` | `list`, `get`                                                       |
+| `priorities` | `list`, `get`                                                       |
+| `statuses`   | `list`                                                              |
 
 ## Architecture
 
