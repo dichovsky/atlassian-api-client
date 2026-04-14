@@ -245,6 +245,10 @@ atlas jira projects list --format minimal
 | `priorities` | `list`, `get` |
 | `statuses` | `list` |
 
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed description of the layered design, core infrastructure, and key design decisions.
+
 ## Development
 
 ```bash
