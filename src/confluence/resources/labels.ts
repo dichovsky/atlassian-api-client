@@ -16,7 +16,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/labels`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -29,7 +29,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${spaceId}/labels`,
+      path: `${this.baseUrl}/spaces/${encodeURIComponent(spaceId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -42,7 +42,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${blogPostId}/labels`,
+      path: `${this.baseUrl}/blogposts/${encodeURIComponent(blogPostId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -55,7 +55,7 @@ export class LabelsResource {
   ): AsyncGenerator<Label> {
     yield* paginateCursor<Label>(
       this.transport,
-      `${this.baseUrl}/pages/${pageId}/labels`,
+      `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels`,
       params as Record<string, string | number | boolean | undefined>,
     );
   }

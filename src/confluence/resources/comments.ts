@@ -25,7 +25,7 @@ export class CommentsResource {
   ): Promise<CursorPaginatedResponse<FooterComment>> {
     const response = await this.transport.request<CursorPaginatedResponse<FooterComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/footer-comments`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/footer-comments`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -35,7 +35,7 @@ export class CommentsResource {
   async getFooter(commentId: string): Promise<FooterComment> {
     const response = await this.transport.request<FooterComment>({
       method: 'GET',
-      path: `${this.baseUrl}/footer-comments/${commentId}`,
+      path: `${this.baseUrl}/footer-comments/${encodeURIComponent(commentId)}`,
     });
     return response.data;
   }
@@ -54,7 +54,7 @@ export class CommentsResource {
   async updateFooter(commentId: string, data: UpdateCommentData): Promise<FooterComment> {
     const response = await this.transport.request<FooterComment>({
       method: 'PUT',
-      path: `${this.baseUrl}/footer-comments/${commentId}`,
+      path: `${this.baseUrl}/footer-comments/${encodeURIComponent(commentId)}`,
       body: data,
     });
     return response.data;
@@ -64,7 +64,7 @@ export class CommentsResource {
   async deleteFooter(commentId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/footer-comments/${commentId}`,
+      path: `${this.baseUrl}/footer-comments/${encodeURIComponent(commentId)}`,
     });
   }
 
@@ -77,7 +77,7 @@ export class CommentsResource {
   ): Promise<CursorPaginatedResponse<InlineComment>> {
     const response = await this.transport.request<CursorPaginatedResponse<InlineComment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/inline-comments`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/inline-comments`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -87,7 +87,7 @@ export class CommentsResource {
   async getInline(commentId: string): Promise<InlineComment> {
     const response = await this.transport.request<InlineComment>({
       method: 'GET',
-      path: `${this.baseUrl}/inline-comments/${commentId}`,
+      path: `${this.baseUrl}/inline-comments/${encodeURIComponent(commentId)}`,
     });
     return response.data;
   }
@@ -106,7 +106,7 @@ export class CommentsResource {
   async updateInline(commentId: string, data: UpdateCommentData): Promise<InlineComment> {
     const response = await this.transport.request<InlineComment>({
       method: 'PUT',
-      path: `${this.baseUrl}/inline-comments/${commentId}`,
+      path: `${this.baseUrl}/inline-comments/${encodeURIComponent(commentId)}`,
       body: data,
     });
     return response.data;
@@ -116,7 +116,7 @@ export class CommentsResource {
   async deleteInline(commentId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/inline-comments/${commentId}`,
+      path: `${this.baseUrl}/inline-comments/${encodeURIComponent(commentId)}`,
     });
   }
 }

@@ -20,7 +20,7 @@ export class PrioritiesResource {
   async get(id: string): Promise<Priority> {
     const response = await this.transport.request<Priority>({
       method: 'GET',
-      path: `${this.baseUrl}/priority/${id}`,
+      path: `${this.baseUrl}/priority/${encodeURIComponent(id)}`,
     });
     return response.data;
   }

@@ -180,4 +180,14 @@ describe('SpacesResource', () => {
       expect(items).toHaveLength(1);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes special characters in id for get()', async () => {
+      transport.respondWith(makeSpace('x'));
+      await spaces.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces/..%2Fadmin`);
+    });
+  });
 });

@@ -37,7 +37,7 @@ export class ProjectsResource {
 
     const response = await this.transport.request<Project>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${projectIdOrKey}`,
+      path: `${this.baseUrl}/project/${encodeURIComponent(projectIdOrKey)}`,
       query,
     });
     return response.data;

@@ -20,7 +20,7 @@ export class IssueTypesResource {
   async get(id: string): Promise<IssueType> {
     const response = await this.transport.request<IssueType>({
       method: 'GET',
-      path: `${this.baseUrl}/issuetype/${id}`,
+      path: `${this.baseUrl}/issuetype/${encodeURIComponent(id)}`,
     });
     return response.data;
   }

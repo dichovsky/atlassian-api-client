@@ -17,7 +17,7 @@ export class AttachmentsResource {
   ): Promise<CursorPaginatedResponse<Attachment>> {
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/attachments`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -27,7 +27,7 @@ export class AttachmentsResource {
   async get(id: string): Promise<Attachment> {
     const response = await this.transport.request<Attachment>({
       method: 'GET',
-      path: `${this.baseUrl}/attachments/${id}`,
+      path: `${this.baseUrl}/attachments/${encodeURIComponent(id)}`,
     });
     return response.data;
   }
@@ -36,7 +36,7 @@ export class AttachmentsResource {
   async delete(id: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/attachments/${id}`,
+      path: `${this.baseUrl}/attachments/${encodeURIComponent(id)}`,
     });
   }
 
@@ -61,7 +61,7 @@ export class AttachmentsResource {
 
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'POST',
-      path: `${this.baseUrl}/pages/${pageId}/attachments`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
       formData,
     });
     return response.data;
@@ -74,7 +74,7 @@ export class AttachmentsResource {
   ): AsyncGenerator<Attachment> {
     yield* paginateCursor<Attachment>(
       this.transport,
-      `${this.baseUrl}/pages/${pageId}/attachments`,
+      `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
       params as Record<string, string | number | boolean | undefined>,
     );
   }

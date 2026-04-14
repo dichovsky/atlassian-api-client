@@ -149,4 +149,38 @@ describe('ContentPropertiesResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes pageId in listForPage()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.listForPage('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties`);
+    });
+
+    it('encodes pageId and propertyKey in getForPage()', async () => {
+      transport.respondWith(makeProperty('x', 'k'));
+      await resource.getForPage('../admin', '../key');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties/..%2Fkey`);
+    });
+
+    it('encodes pageId in createForPage()', async () => {
+      transport.respondWith(makeProperty('x', 'k'));
+      await resource.createForPage('../admin', { key: 'k', value: {} });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties`);
+    });
+
+    it('encodes pageId and propertyKey in updateForPage()', async () => {
+      transport.respondWith(makeProperty('x', 'k'));
+      await resource.updateForPage('../admin', '../key', { key: '../key', value: {}, version: { number: 2 } });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties/..%2Fkey`);
+    });
+
+    it('encodes pageId and propertyKey in deleteForPage()', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteForPage('../admin', '../key');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties/..%2Fkey`);
+    });
+  });
 });

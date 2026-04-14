@@ -12,8 +12,8 @@ Priority levels:
 
 ### Audit Remediation
 
-- [ ] Encode all user-controlled path segments before URL construction to prevent same-host path traversal across Jira and Confluence resource methods
-- [ ] Reject non-HTTPS `baseUrl` values before sending authenticated requests
+- [x] Encode all user-controlled path segments before URL construction to prevent same-host path traversal across Jira and Confluence resource methods
+- [x] Reject non-HTTPS `baseUrl` values before sending authenticated requests
 
 ### Core Infrastructure
 

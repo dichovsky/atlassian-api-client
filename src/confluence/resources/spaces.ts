@@ -32,7 +32,7 @@ export class SpacesResource {
   async get(id: string): Promise<Space> {
     const response = await this.transport.request<Space>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${id}`,
+      path: `${this.baseUrl}/spaces/${encodeURIComponent(id)}`,
     });
     return response.data;
   }

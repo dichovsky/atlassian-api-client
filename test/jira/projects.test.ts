@@ -269,4 +269,14 @@ describe('ProjectsResource', () => {
       await expect(projects.list({ maxResults: -1 })).rejects.toThrow(RangeError);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes projectIdOrKey in get()', async () => {
+      transport.respondWith(makeProject('x', 'x'));
+      await projects.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/..%2Fadmin`);
+    });
+  });
 });

@@ -181,4 +181,38 @@ describe('IssuesResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes issueIdOrKey in get()', async () => {
+      transport.respondWith(makeIssue('x', 'x'));
+      await issues.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin`);
+    });
+
+    it('encodes issueIdOrKey in update()', async () => {
+      transport.respondWith(undefined);
+      await issues.update('../admin', { fields: {} });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin`);
+    });
+
+    it('encodes issueIdOrKey in delete()', async () => {
+      transport.respondWith(undefined);
+      await issues.delete('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin`);
+    });
+
+    it('encodes issueIdOrKey in getTransitions()', async () => {
+      transport.respondWith({ transitions: [] });
+      await issues.getTransitions('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/transitions`);
+    });
+
+    it('encodes issueIdOrKey in transition()', async () => {
+      transport.respondWith(undefined);
+      await issues.transition('../admin', { transition: { id: '1' } });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/transitions`);
+    });
+  });
 });

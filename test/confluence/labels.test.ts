@@ -190,4 +190,26 @@ describe('LabelsResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes pageId in listForPage()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listForPage('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/labels`);
+    });
+
+    it('encodes spaceId in listForSpace()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listForSpace('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces/..%2Fadmin/labels`);
+    });
+
+    it('encodes blogPostId in listForBlogPost()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listForBlogPost('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin/labels`);
+    });
+  });
 });

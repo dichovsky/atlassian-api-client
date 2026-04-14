@@ -28,7 +28,7 @@ export class BlogPostsResource {
   async get(id: string): Promise<BlogPost> {
     const response = await this.transport.request<BlogPost>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${id}`,
+      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
     });
     return response.data;
   }
@@ -47,7 +47,7 @@ export class BlogPostsResource {
   async update(id: string, data: UpdateBlogPostData): Promise<BlogPost> {
     const response = await this.transport.request<BlogPost>({
       method: 'PUT',
-      path: `${this.baseUrl}/blogposts/${id}`,
+      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
       body: data,
     });
     return response.data;
@@ -57,7 +57,7 @@ export class BlogPostsResource {
   async delete(id: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/blogposts/${id}`,
+      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
     });
   }
 

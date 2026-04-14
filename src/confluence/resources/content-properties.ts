@@ -31,7 +31,7 @@ export class ContentPropertiesResource {
 
     const response = await this.transport.request<CursorPaginatedResponse<ContentProperty>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/properties`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/properties`,
       query,
     });
     return response.data;
@@ -41,7 +41,7 @@ export class ContentPropertiesResource {
   async getForPage(pageId: string, propertyKey: string): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${pageId}/properties/${propertyKey}`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/properties/${encodeURIComponent(propertyKey)}`,
     });
     return response.data;
   }
@@ -50,7 +50,7 @@ export class ContentPropertiesResource {
   async createForPage(pageId: string, data: CreateContentPropertyData): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'POST',
-      path: `${this.baseUrl}/pages/${pageId}/properties`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/properties`,
       body: data,
     });
     return response.data;
@@ -64,7 +64,7 @@ export class ContentPropertiesResource {
   ): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'PUT',
-      path: `${this.baseUrl}/pages/${pageId}/properties/${propertyKey}`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/properties/${encodeURIComponent(propertyKey)}`,
       body: data,
     });
     return response.data;
@@ -74,7 +74,7 @@ export class ContentPropertiesResource {
   async deleteForPage(pageId: string, propertyKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/pages/${pageId}/properties/${propertyKey}`,
+      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/properties/${encodeURIComponent(propertyKey)}`,
     });
   }
 }

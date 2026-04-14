@@ -193,4 +193,38 @@ describe('IssueCommentsResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes issueIdOrKey in list()', async () => {
+      transport.respondWith({ comments: [], startAt: 0, maxResults: 50, total: 0 });
+      await resource.list('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment`);
+    });
+
+    it('encodes issueIdOrKey and commentId in get()', async () => {
+      transport.respondWith(makeComment('x'));
+      await resource.get('../admin', '../cid');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+    });
+
+    it('encodes issueIdOrKey in create()', async () => {
+      transport.respondWith(makeComment('x'));
+      await resource.create('../admin', { body: {} });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment`);
+    });
+
+    it('encodes issueIdOrKey and commentId in update()', async () => {
+      transport.respondWith(makeComment('x'));
+      await resource.update('../admin', '../cid', { body: {} });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+    });
+
+    it('encodes issueIdOrKey and commentId in delete()', async () => {
+      transport.respondWith(undefined);
+      await resource.delete('../admin', '../cid');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+    });
+  });
 });

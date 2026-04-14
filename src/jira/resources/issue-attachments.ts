@@ -19,7 +19,7 @@ export class IssueAttachmentsResource {
       fields?: { attachment?: IssueAttachment[] };
     }>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}`,
+      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}`,
       query: { fields: 'attachment' },
     });
     return response.data.fields?.attachment ?? [];
@@ -29,7 +29,7 @@ export class IssueAttachmentsResource {
   async get(attachmentId: string): Promise<IssueAttachment> {
     const response = await this.transport.request<IssueAttachment>({
       method: 'GET',
-      path: `${this.baseUrl}/attachment/${attachmentId}`,
+      path: `${this.baseUrl}/attachment/${encodeURIComponent(attachmentId)}`,
     });
     return response.data;
   }
@@ -56,7 +56,7 @@ export class IssueAttachmentsResource {
 
     const response = await this.transport.request<IssueAttachment[]>({
       method: 'POST',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}/attachments`,
+      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/attachments`,
       formData,
       headers: { 'X-Atlassian-Token': 'no-check' },
     });
