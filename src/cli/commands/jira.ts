@@ -76,7 +76,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
   switch (cmd.action) {
     case 'list':
       return client.projects.list({
-        maxResults: asNumber(cmd.options['max-results']),
+        maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
       });
     case 'get':
       return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
@@ -99,7 +99,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   return client.search.search({
     jql,
-    maxResults: asNumber(cmd.options['max-results']),
+    maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
     fields: asString(cmd.options['fields'])?.split(','),
   });
 }
@@ -113,7 +113,7 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'search':
       return client.users.search({
         query: requireOpt(cmd.options['query'], '--query'),
-        maxResults: asNumber(cmd.options['max-results']),
+        maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
       });
     default:
       throw new Error(`Unknown users action: ${cmd.action}. Actions: get, me, search`);
@@ -165,8 +165,11 @@ function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function asNumber(value: string | boolean | undefined): number | undefined {
+function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
   const n = Number(value);
-  return Number.isNaN(n) ? undefined : n;
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
 }

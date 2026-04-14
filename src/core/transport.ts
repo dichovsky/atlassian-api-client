@@ -1,4 +1,10 @@
-import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
+import type {
+  Transport,
+  RequestOptions,
+  ApiResponse,
+  ResolvedConfig,
+  Middleware,
+} from './types.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
 import {
@@ -7,6 +13,7 @@ import {
   TimeoutError,
   NetworkError,
   RateLimitError,
+  ValidationError,
 } from './errors.js';
 import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
 import { getRetryAfterMs } from './rate-limiter.js';
@@ -16,19 +23,42 @@ export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly baseUrl: string;
   private readonly authProvider: AuthProvider;
+  private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
   constructor(config: ResolvedConfig, baseUrl: string) {
     this.config = config;
     this.baseUrl = baseUrl;
     this.authProvider = createAuthProvider(config.auth);
+    this.requestHandler = this.buildMiddlewareChain();
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+    return this.requestHandler(options) as Promise<ApiResponse<T>>;
+  }
+
+  /**
+   * Build the full middleware chain ending with the core fetch+retry executor.
+   * Middleware runs outermost-first (index 0 wraps all subsequent middleware).
+   */
+  private buildMiddlewareChain(): (options: RequestOptions) => Promise<ApiResponse<unknown>> {
+    const middleware: Middleware[] = this.config.middleware ?? [];
+
+    const coreExecutor = (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+      this.executeWithRetry(opts);
+
+    return middleware.reduceRight<(opts: RequestOptions) => Promise<ApiResponse<unknown>>>(
+      (next, mw) => (opts) => mw(opts, next),
+      coreExecutor,
+    );
+  }
+
+  private async executeWithRetry<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     let attempt = 0;
 
     for (;;) {
       try {
-        return await this.executeFetch<T>(options);
+        const result = await this.executeFetch<T>(options);
+        return result;
       } catch (error) {
         if (!this.shouldRetry(error, attempt)) {
           throw error;
@@ -43,6 +73,7 @@ export class HttpTransport implements Transport {
 
   private async executeFetch<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     const url = this.buildUrl(options.path, options.query);
+    this.config.logger?.debug('HTTP request', { method: options.method, url });
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
@@ -52,8 +83,18 @@ export class HttpTransport implements Transport {
       ...options.headers,
     };
 
-    if (options.body !== undefined) {
+    let fetchBody: FormData | string | undefined;
+
+    if (options.formData !== undefined && options.body !== undefined) {
+      throw new ValidationError('RequestOptions.formData and RequestOptions.body are mutually exclusive');
+    }
+
+    if (options.formData !== undefined) {
+      // Let the browser/node set Content-Type with the multipart boundary automatically
+      fetchBody = options.formData;
+    } else if (options.body !== undefined) {
       headers['Content-Type'] = 'application/json';
+      fetchBody = JSON.stringify(options.body);
     }
 
     let response: Response;
@@ -62,7 +103,7 @@ export class HttpTransport implements Transport {
       response = await fetch(url, {
         method: options.method,
         headers,
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        body: fetchBody,
         signal: controller.signal,
       });
     } catch (error) {
@@ -85,6 +126,12 @@ export class HttpTransport implements Transport {
     }
 
     const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+
+    this.config.logger?.debug('HTTP response', {
+      method: options.method,
+      url,
+      status: response.status,
+    });
 
     return {
       data,

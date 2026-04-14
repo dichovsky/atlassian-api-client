@@ -163,3 +163,66 @@ export interface SearchUsersParams {
   readonly startAt?: number;
   readonly maxResults?: number;
 }
+
+/** Jira Issue Comment. */
+export interface IssueComment {
+  readonly id: string;
+  readonly self: string;
+  readonly author?: UserRef;
+  readonly body: Record<string, unknown>;
+  readonly renderedBody?: string;
+  readonly created: string;
+  readonly updated: string;
+}
+
+/** Jira Issue Attachment. */
+export interface IssueAttachment {
+  readonly id: string;
+  readonly self: string;
+  readonly filename: string;
+  readonly author?: UserRef;
+  readonly created: string;
+  readonly size: number;
+  readonly mimeType: string;
+  readonly content: string;
+  readonly thumbnail?: string;
+}
+
+/** Jira Label (string). */
+export type JiraLabel = string;
+
+// --- Comment Params ---
+
+/** Parameters for listing comments on an issue. */
+export interface ListIssueCommentsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly orderBy?: string;
+  readonly expand?: string;
+}
+
+/** Request body for creating a comment on an issue. */
+export interface CreateIssueCommentData {
+  readonly body: Record<string, unknown>;
+  readonly visibility?: {
+    readonly type: string;
+    readonly value: string;
+  };
+}
+
+/** Request body for updating an existing issue comment. */
+export interface UpdateIssueCommentData {
+  readonly body: Record<string, unknown>;
+  readonly visibility?: {
+    readonly type: string;
+    readonly value: string;
+  };
+}
+
+// --- Label Params ---
+
+/** Parameters for listing Jira labels. */
+export interface ListLabelsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}

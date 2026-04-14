@@ -7,6 +7,8 @@ export interface RequestOptions {
   readonly path: string;
   readonly query?: Readonly<Record<string, string | number | boolean | undefined>>;
   readonly body?: unknown;
+  /** FormData body for multipart/form-data uploads. Mutually exclusive with body. */
+  readonly formData?: FormData;
   readonly headers?: Readonly<Record<string, string>>;
 }
 
@@ -19,6 +21,7 @@ export interface ApiResponse<T> {
 
 /** Transport abstraction — the only interface resource modules depend on. */
 export interface Transport {
+  /** Execute an HTTP request and return the parsed response. */
   request<T>(options: RequestOptions): Promise<ApiResponse<T>>;
 }
 
@@ -54,16 +57,30 @@ export interface ClientConfig {
   readonly maxRetryDelay?: number;
   /** Injectable transport (for testing or custom HTTP layers). */
   readonly transport?: Transport;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logger;
+  /** Optional middleware chain for request/response interception. */
+  readonly middleware?: Middleware[];
 }
 
 /** Internal resolved config with defaults applied. */
 export interface ResolvedConfig {
+  /** Validated base URL with trailing slash removed. */
   readonly baseUrl: string;
+  /** Authentication strategy. */
   readonly auth: AuthConfig;
+  /** Request timeout in ms. */
   readonly timeout: number;
+  /** Max retry attempts for retryable failures. */
   readonly retries: number;
+  /** Base delay in ms for retry backoff. */
   readonly retryDelay: number;
+  /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /** Optional logger for observability. */
+  readonly logger?: Logger;
+  /** Optional middleware chain. */
+  readonly middleware?: Middleware[];
 }
 
 /** Rate limit information parsed from response headers. */
@@ -73,3 +90,27 @@ export interface RateLimitInfo {
   readonly reset?: string;
   readonly nearLimit?: boolean;
 }
+
+/**
+ * Logger interface for request/response observability.
+ * Compatible with console, pino, winston, and any structured logger.
+ */
+export interface Logger {
+  /** Log a debug-level message. */
+  debug(message: string, context?: Record<string, unknown>): void;
+  /** Log an info-level message. */
+  info(message: string, context?: Record<string, unknown>): void;
+  /** Log a warning-level message. */
+  warn(message: string, context?: Record<string, unknown>): void;
+  /** Log an error-level message. */
+  error(message: string, context?: Record<string, unknown>): void;
+}
+
+/**
+ * Middleware function for intercepting and transforming requests.
+ * Call next(options) to pass control to the next middleware or the transport.
+ */
+export type Middleware = (
+  options: RequestOptions,
+  next: (options: RequestOptions) => Promise<ApiResponse<unknown>>,
+) => Promise<ApiResponse<unknown>>;

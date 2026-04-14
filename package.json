@@ -54,6 +54,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "bench": "vitest bench",
     "typecheck": "tsc --noEmit",
     "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
   },

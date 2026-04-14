@@ -170,4 +170,50 @@ describe('AttachmentsResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
   });
+
+  // ── upload ────────────────────────────────────────────────────────────────
+
+  describe('upload()', () => {
+    it('calls POST /pages/{pageId}/attachments with FormData', async () => {
+      // Arrange
+      const payload = { results: [makeAttachment('new-1')], _links: {} };
+      transport.respondWith(payload);
+      const content = new Blob(['file content'], { type: 'text/plain' });
+
+      // Act
+      const result = await attachments.upload('page-1', 'test.txt', content, 'text/plain');
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/pages/page-1/attachments`,
+      });
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+
+    it('accepts upload without a mimeType override', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+      const content = new Blob(['file content']);
+
+      // Act
+      await attachments.upload('page-1', 'test.txt', content);
+
+      // Assert
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+
+    it('allows overriding mimeType when it differs from Blob.type', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+      const content = new Blob(['file content'], { type: 'application/octet-stream' });
+
+      // Act
+      await attachments.upload('page-1', 'test.png', content, 'image/png');
+
+      // Assert
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+  });
 });

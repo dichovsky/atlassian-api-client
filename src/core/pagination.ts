@@ -1,5 +1,15 @@
 import type { Transport, RequestOptions } from './types.js';
 
+/**
+ * Validate a pagination size value (maxResults / pageSize / limit).
+ * Throws RangeError for zero, negative, non-integer, or non-finite values.
+ */
+export function validatePageSize(value: number, name = 'pageSize'): void {
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+    throw new RangeError(`${name} must be a positive integer, got: ${value}`);
+  }
+}
+
 /** Confluence v2 cursor-based paginated response. */
 export interface CursorPaginatedResponse<T> {
   readonly results: T[];
@@ -84,6 +94,7 @@ export async function* paginateOffset<T>(
   query?: Readonly<Record<string, string | number | boolean | undefined>>,
   pageSize = 50,
 ): AsyncGenerator<T> {
+  validatePageSize(pageSize);
   let startAt = 0;
   let done = false;
 
@@ -129,6 +140,7 @@ export async function* paginateSearch<T>(
   body: Record<string, unknown>,
   pageSize = 50,
 ): AsyncGenerator<T> {
+  validatePageSize(pageSize);
   let startAt = 0;
   let done = false;
 

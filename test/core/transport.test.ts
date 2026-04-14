@@ -7,8 +7,9 @@ import {
   HttpError,
   TimeoutError,
   NetworkError,
+  ValidationError,
 } from '../../src/core/errors.js';
-import type { ResolvedConfig } from '../../src/core/types.js';
+import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 // ---------------------------------------------------------------------------
 // Default config used in most tests
@@ -576,6 +577,177 @@ describe('HttpTransport', () => {
       );
       // Should only be called once since shouldRetry returns false for unknown errors
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('logger', () => {
+    it('calls logger.debug before request and after response', async () => {
+      // Arrange
+      const payload = { id: '1' };
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, payload));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const debugSpy = vi.fn();
+      const transport = new HttpTransport(
+        {
+          ...defaultConfig,
+          retries: 0,
+          logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        },
+        BASE_URL,
+      );
+
+      // Act
+      await transport.request({ method: 'GET', path: '/pages' });
+
+      // Assert — called twice: once before request, once after response
+      expect(debugSpy).toHaveBeenCalledTimes(2);
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ status: 200 }),
+      );
+    });
+
+    it('does not throw when no logger is configured', async () => {
+      // Arrange
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: '1' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+
+      // Act & Assert — should not throw
+      await expect(transport.request({ method: 'GET', path: '/pages' })).resolves.toBeDefined();
+    });
+  });
+
+  describe('middleware', () => {
+    it('runs middleware and calls next() to proceed with the request', async () => {
+      // Arrange
+      const payload = { id: '42' };
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, payload));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const middlewareSpy = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) =>
+          next(opts),
+      );
+
+      const transport = new HttpTransport(
+        { ...defaultConfig, retries: 0, middleware: [middlewareSpy] },
+        BASE_URL,
+      );
+
+      // Act
+      const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
+
+      // Assert
+      expect(middlewareSpy).toHaveBeenCalledOnce();
+      expect(result.data).toEqual(payload);
+    });
+
+    it('middleware can short-circuit the request', async () => {
+      // Arrange — middleware returns a synthetic response without calling next
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const syntheticResponse: ApiResponse<{ id: string }> = {
+        data: { id: 'synthetic' },
+        status: 200,
+        headers: new Headers(),
+      };
+
+      const middleware = vi.fn().mockResolvedValue(syntheticResponse);
+
+      const transport = new HttpTransport(
+        { ...defaultConfig, retries: 0, middleware: [middleware] },
+        BASE_URL,
+      );
+
+      // Act
+      const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
+
+      // Assert — fetch was never called
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(result.data.id).toBe('synthetic');
+    });
+
+    it('runs multiple middleware in order (outermost first)', async () => {
+      // Arrange
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+      const order: number[] = [];
+
+      const mw1 = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          order.push(1);
+          return next(opts);
+        },
+      );
+      const mw2 = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          order.push(2);
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport(
+        { ...defaultConfig, retries: 0, middleware: [mw1, mw2] },
+        BASE_URL,
+      );
+
+      // Act
+      await transport.request({ method: 'GET', path: '/pages' });
+
+      // Assert — mw1 runs first, then mw2
+      expect(order).toEqual([1, 2]);
+    });
+  });
+
+  describe('FormData upload', () => {
+    it('sends FormData body without setting Content-Type header (let browser set boundary)', async () => {
+      // Arrange
+      const payload = [{ id: '1', filename: 'test.txt' }];
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, payload));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const formData = new FormData();
+      formData.append('file', new Blob(['content'], { type: 'text/plain' }), 'test.txt');
+
+      // Act
+      await transport.request({ method: 'POST', path: '/pages/1/attachments', formData });
+
+      // Assert
+      const [, fetchInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(fetchInit.body).toBeInstanceOf(FormData);
+      // Content-Type must NOT be manually set (browser sets it with multipart boundary)
+      expect((fetchInit.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+    });
+
+    it('throws ValidationError when both formData and body are provided', async () => {
+      // Arrange
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const transport = makeTransport();
+      const formData = new FormData();
+      formData.append('file', new Blob(['content'], { type: 'text/plain' }), 'test.txt');
+
+      // Act + Assert
+      await expect(
+        transport.request({
+          method: 'POST',
+          path: '/pages/1/attachments',
+          formData,
+          body: { unexpected: true },
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 

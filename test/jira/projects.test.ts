@@ -187,5 +187,86 @@ describe('ProjectsResource', () => {
         orderBy: 'name',
       });
     });
+
+    it('passes expand, status, and typeKey params', async () => {
+      // Arrange
+      transport.respondWith({
+        values: [{ id: '1', key: 'P' }],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      });
+
+      // Act
+      const items: unknown[] = [];
+      for await (const item of projects.listAll({
+        expand: ['description'],
+        status: ['live'],
+        typeKey: 'software',
+        orderBy: 'name',
+      })) {
+        items.push(item);
+      }
+
+      // Assert
+      expect(items).toHaveLength(1);
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        expand: 'description',
+        status: 'live',
+        typeKey: 'software',
+        orderBy: 'name',
+      });
+    });
+
+    it('works with no params', async () => {
+      // Arrange
+      transport.respondWith({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      });
+
+      // Act
+      const items: unknown[] = [];
+      for await (const item of projects.listAll()) {
+        items.push(item);
+      }
+
+      // Assert
+      expect(items).toHaveLength(0);
+    });
+
+    it('omits orderBy when not specified', async () => {
+      // Arrange
+      transport.respondWith({
+        values: [{ id: '2', key: 'Q' }],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      });
+
+      // Act
+      for await (const _ of projects.listAll({ maxResults: 10 })) {
+        // consume
+      }
+
+      // Assert
+      expect(transport.calls[0]?.options.query?.['orderBy']).toBeUndefined();
+    });
+  });
+
+  // ── validation ────────────────────────────────────────────────────────────
+
+  describe('validation', () => {
+    it('throws RangeError when list() is called with maxResults: 0', async () => {
+      // Act & Assert
+      await expect(projects.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError when list() is called with negative maxResults', async () => {
+      // Act & Assert
+      await expect(projects.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+    });
   });
 });

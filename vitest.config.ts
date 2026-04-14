@@ -5,6 +5,9 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['test/**/*.test.ts'],
+    benchmark: {
+      include: ['bench/**/*.bench.ts'],
+    },
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

@@ -5,3 +5,6 @@ export { UsersResource } from './users.js';
 export { IssueTypesResource } from './issue-types.js';
 export { PrioritiesResource } from './priorities.js';
 export { StatusesResource } from './statuses.js';
+export { IssueCommentsResource } from './issue-comments.js';
+export { IssueAttachmentsResource } from './issue-attachments.js';
+export { LabelsResource } from './labels.js';

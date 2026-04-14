@@ -26,6 +26,10 @@ export type {
   CreateInlineCommentData,
   ListAttachmentsParams,
   ListLabelsParams,
+  ContentProperty,
+  ListContentPropertiesParams,
+  CreateContentPropertyData,
+  UpdateContentPropertyData,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -34,3 +38,4 @@ export { BlogPostsResource } from './resources/blog-posts.js';
 export { CommentsResource } from './resources/comments.js';
 export { AttachmentsResource } from './resources/attachments.js';
 export { LabelsResource } from './resources/labels.js';
+export { ContentPropertiesResource } from './resources/content-properties.js';

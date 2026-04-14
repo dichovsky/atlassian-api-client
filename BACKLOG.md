@@ -87,29 +87,29 @@ Priority levels:
 
 ### Audit Remediation
 
-- [ ] Validate CLI numeric options (`--version-number`, `--limit`, `--max-results`) and fail fast on invalid values
-- [ ] Validate public pagination sizes (`maxResults` / `pageSize`) to reject zero, negative, and unbounded values
-- [ ] Enforce `npm run validate` in GitHub Actions CI so coverage thresholds and build checks gate merges
-- [ ] Add negative-path tests for invalid identifiers, invalid page sizes, invalid numeric CLI flags, and non-HTTPS base URLs
-- [ ] Align README runtime requirements with `package.json`, `.nvmrc`, and CI
-- [ ] Move tests from `test/coverage-gaps.test.ts` into module-specific test files
+- [x] Validate CLI numeric options (`--version-number`, `--limit`, `--max-results`) and fail fast on invalid values
+- [x] Validate public pagination sizes (`maxResults` / `pageSize`) to reject zero, negative, and unbounded values
+- [x] Enforce `npm run validate` in GitHub Actions CI so coverage thresholds and build checks gate merges
+- [x] Add negative-path tests for invalid identifiers, invalid page sizes, invalid numeric CLI flags, and non-HTTPS base URLs
+- [x] Align README runtime requirements with `package.json`, `.nvmrc`, and CI
+- [x] Move tests from `test/coverage-gaps.test.ts` into module-specific test files
 
 ### Features
 
-- [ ] Confluence attachment upload (multipart/form-data)
-- [ ] Jira attachment upload (multipart/form-data + X-Atlassian-Token)
-- [ ] Jira issue comments resource (list, get, create, update, delete)
-- [ ] Jira issue attachments resource (list, get)
-- [ ] Jira labels resource (list all labels)
-- [ ] Confluence content properties support
-- [ ] Request/response logging abstraction
-- [ ] Custom middleware/interceptor hook on transport
+- [x] Confluence attachment upload (multipart/form-data)
+- [x] Jira attachment upload (multipart/form-data + X-Atlassian-Token)
+- [x] Jira issue comments resource (list, get, create, update, delete)
+- [x] Jira issue attachments resource (list, get)
+- [x] Jira labels resource (list all labels)
+- [x] Confluence content properties support
+- [x] Request/response logging abstraction
+- [x] Custom middleware/interceptor hook on transport
 
 ### Quality
 
-- [ ] TSDoc comments on all public types and methods
-- [ ] Example smoke tests (compile verification)
-- [ ] Performance benchmarks for pagination over large datasets
+- [x] TSDoc comments on all public types and methods
+- [x] Example smoke tests (compile verification)
+- [x] Performance benchmarks for pagination over large datasets
 
 ---
 

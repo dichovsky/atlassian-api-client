@@ -284,6 +284,55 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
     });
 
+    it('pages update passes body when provided', async () => {
+      // Arrange
+      confluencePagesMock.update.mockResolvedValue({ id: '1', title: 'Updated' });
+      const parsed = cmd('pages', 'update', ['1'], {
+        title: 'Updated',
+        'version-number': '2',
+        body: '<p>New body</p>',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluencePagesMock.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          body: { representation: 'storage', value: '<p>New body</p>' },
+        }),
+      );
+    });
+
+    it('pages update throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('pages', 'update', ['1'], { title: 'T', 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('pages update throws when version-number is NaN', async () => {
+      const parsed = cmd('pages', 'update', ['1'], { title: 'T', 'version-number': 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('pages list throws when --limit is non-numeric', async () => {
+      const parsed = cmd('pages', 'list', [], { limit: 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('pages list throws when --limit is zero', async () => {
+      const parsed = cmd('pages', 'list', [], { limit: '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
     it('pages delete calls client.pages.delete and returns { deleted: true }', async () => {
       // Arrange
       confluencePagesMock.delete.mockResolvedValue(undefined);
@@ -498,6 +547,13 @@ describe('executeConfluenceCommand', () => {
     it('blog-posts update throws when version-number is missing', async () => {
       const parsed = cmd('blog-posts', 'update', ['bp-1'], { title: 'T' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('blog-posts update throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('blog-posts', 'update', ['bp-1'], { title: 'T', 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
     });
 
     it('blog-posts delete calls client.blogPosts.delete and returns { deleted: true }', async () => {
@@ -1287,5 +1343,45 @@ describe('executeJiraCommand', () => {
     await expect(executeJiraCommand(cmd('nonexistent', 'list'), GLOBALS)).rejects.toThrow(
       'Unknown Jira resource: nonexistent',
     );
+  });
+
+  // ── numeric validation ────────────────────────────────────────────────────
+
+  describe('numeric option validation', () => {
+    it('throws when --max-results is non-numeric (NaN path)', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': 'abc' }), GLOBALS),
+      ).rejects.toThrow('--max-results must be a positive integer');
+    });
+
+    it('throws when --max-results is zero', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': '0' }), GLOBALS),
+      ).rejects.toThrow('--max-results must be a positive integer');
+    });
+
+    it('throws when --max-results is negative', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': '-5' }), GLOBALS),
+      ).rejects.toThrow('--max-results must be a positive integer');
+    });
+  });
+
+  // ── search action-as-JQL branch ───────────────────────────────────────────
+
+  describe('search resource (extra branches)', () => {
+    it('uses cmd.action as JQL when no --jql flag and action is not "query"', async () => {
+      // Arrange
+      jiraSearchMock.search.mockResolvedValue({ issues: [], total: 0, startAt: 0, maxResults: 50 });
+
+      // Act
+      const result = await executeJiraCommand(cmd('search', 'project = PROJ', [], {}), GLOBALS);
+
+      // Assert
+      expect(jiraSearchMock.search).toHaveBeenCalledWith(
+        expect.objectContaining({ jql: 'project = PROJ' }),
+      );
+      expect(result).toMatchObject({ total: 0 });
+    });
   });
 });
