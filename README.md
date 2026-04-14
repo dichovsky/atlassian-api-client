@@ -5,7 +5,7 @@ Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
 - **Confluence Cloud REST API v2** - Pages, Spaces, Blog Posts, Comments, Attachments, Labels
 - **Jira Cloud Platform REST API v3** - Issues, Projects, Search (JQL), Users, Issue Types, Priorities, Statuses
 
-Zero runtime dependencies. Uses native `fetch` (Node.js 18+).
+Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 
 ## Install
 
@@ -15,7 +15,7 @@ npm install atlassian-api-client
 
 ## Supported Runtimes
 
-- Node.js >= 18.0.0
+- Node.js >= 24.0.0
 
 ## Quick Start
 

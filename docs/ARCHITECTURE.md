@@ -435,10 +435,10 @@ try {
 
 **None.** Zero runtime dependencies.
 
-The package uses only Node.js built-ins:
+The package uses only Node.js built-ins available in the supported runtime (Node 24+):
 
-- `fetch` (global, Node 18+)
-- `AbortController` (global, Node 18+)
+- `fetch` (global, Node 24+)
+- `AbortController` (global, Node 24+)
 - `Buffer` (for Base64 encoding in Basic auth)
 - `URL` / `URLSearchParams` (for URL construction)
 
@@ -511,7 +511,7 @@ Order of precedence (first wins):
 
 ### Design Decisions
 
-- **Zero CLI dependencies** — uses Node.js built-in `util.parseArgs` (stable since Node 18.3)
+- **Zero CLI dependencies** — uses Node.js built-in `util.parseArgs` (stable in the supported Node runtime)
 - **Reuses library clients** — CLI commands instantiate `ConfluenceClient`/`JiraClient` and call resource methods
 - **Pipe-friendly** — JSON default, errors to stderr, data to stdout
 - **Stateless** — no config files or login sessions; auth per-invocation
