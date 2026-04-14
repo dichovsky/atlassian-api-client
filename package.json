@@ -1,0 +1,68 @@
+{
+  "name": "atlassian-api-client",
+  "version": "0.1.0",
+  "description": "Typed Node.js/TypeScript clients and CLI for Atlassian Confluence Cloud REST API v2 and Jira Cloud Platform REST API v3",
+  "keywords": [
+    "atlassian",
+    "confluence",
+    "jira",
+    "api",
+    "client",
+    "sdk",
+    "cli",
+    "typescript",
+    "rest"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/atlassian-api-client.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "atlas": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepublishOnly": "npm run validate",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "validate": "npm run clean && npm run build && npm run typecheck && npm run lint && npm run test:coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
+    "prettier": "^3.8.2",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
