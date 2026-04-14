@@ -23,6 +23,7 @@
   },
   "license": "MIT",
   "author": "Igor Magdich <magdich.igor@gmail.com>",
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
@@ -34,11 +35,6 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "atlas": "./dist/cli/index.js"
-  },
-  "sideEffects": false,
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
   },
   "files": [
     "dist",
@@ -63,7 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
@@ -73,6 +69,10 @@
     "vitest": "^4.1.4"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
