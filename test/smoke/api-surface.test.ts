@@ -4,7 +4,14 @@
  */
 import { describe, it, expect } from 'vitest';
 import { ConfluenceClient, JiraClient } from '../../src/index.js';
-import type { ClientConfig, Logger, Middleware } from '../../src/index.js';
+import type {
+  ClientConfig,
+  Logger,
+  Middleware,
+  ListLabelsParams,
+  ConfluenceListLabelsParams,
+  JiraListLabelsParams,
+} from '../../src/index.js';
 
 const BASE_CONFIG: ClientConfig = {
   baseUrl: 'https://test.atlassian.net',
@@ -106,5 +113,16 @@ describe('Logger and Middleware config', () => {
 
     const client = new ConfluenceClient({ ...BASE_CONFIG, middleware: [middleware] });
     expect(client).toBeDefined();
+  });
+});
+
+describe('root type exports', () => {
+  it('keeps ListLabelsParams backward-compatible while exposing explicit aliases', () => {
+    const confluenceParams: ListLabelsParams = { prefix: 'global', limit: 10 };
+    const confluenceAlias: ConfluenceListLabelsParams = confluenceParams;
+    const jiraParams: JiraListLabelsParams = { startAt: 0, maxResults: 50 };
+
+    expect(confluenceAlias.limit).toBe(10);
+    expect(jiraParams.maxResults).toBe(50);
   });
 });

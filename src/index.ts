@@ -50,6 +50,7 @@ export type {
   ListInlineCommentsParams,
   CreateInlineCommentData,
   ListAttachmentsParams,
+  ListLabelsParams,
   ListLabelsParams as ConfluenceListLabelsParams,
   CursorPaginatedResponse,
   ContentProperty,

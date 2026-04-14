@@ -15,12 +15,14 @@ export class IssueAttachmentsResource {
 
   /** List attachments for an issue (via issue fields). */
   async list(issueIdOrKey: string): Promise<IssueAttachment[]> {
-    const response = await this.transport.request<{ fields: { attachment: IssueAttachment[] } }>({
+    const response = await this.transport.request<{
+      fields?: { attachment?: IssueAttachment[] };
+    }>({
       method: 'GET',
       path: `${this.baseUrl}/issue/${issueIdOrKey}`,
       query: { fields: 'attachment' },
     });
-    return response.data.fields.attachment ?? [];
+    return response.data.fields?.attachment ?? [];
   }
 
   /** Get attachment metadata by ID. */
@@ -38,16 +40,19 @@ export class IssueAttachmentsResource {
    * @param issueIdOrKey - The issue to attach to.
    * @param filename - The filename as it should appear in Jira.
    * @param content - The file content as a Blob.
-   * @param mimeType - The MIME type of the file.
+   * @param mimeType - Optional MIME type override for the uploaded file.
    */
   async upload(
     issueIdOrKey: string,
     filename: string,
     content: Blob,
-    mimeType: string,
+    mimeType?: string,
   ): Promise<IssueAttachment[]> {
     const formData = new FormData();
-    formData.append('file', new Blob([content], { type: mimeType }), filename);
+    const file = mimeType !== undefined && content.type !== mimeType
+      ? new Blob([content], { type: mimeType })
+      : content;
+    formData.append('file', file, filename);
 
     const response = await this.transport.request<IssueAttachment[]>({
       method: 'POST',

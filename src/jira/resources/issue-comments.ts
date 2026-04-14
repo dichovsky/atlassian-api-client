@@ -5,6 +5,7 @@ import type {
   CreateIssueCommentData,
   UpdateIssueCommentData,
 } from '../types.js';
+import { validatePageSize } from '../../core/pagination.js';
 
 /** Paginated response for issue comments. */
 export interface IssueCommentsResponse {
@@ -26,6 +27,8 @@ export class IssueCommentsResource {
     issueIdOrKey: string,
     params?: ListIssueCommentsParams,
   ): Promise<IssueCommentsResponse> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+
     const query: Record<string, string | number | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;

@@ -6,6 +6,7 @@ import type {
   CreateContentPropertyData,
   UpdateContentPropertyData,
 } from '../types.js';
+import { validatePageSize } from '../../core/pagination.js';
 
 /**
  * Resource for Confluence page content properties.
@@ -22,10 +23,16 @@ export class ContentPropertiesResource {
     pageId: string,
     params?: ListContentPropertiesParams,
   ): Promise<CursorPaginatedResponse<ContentProperty>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.key !== undefined) query['key'] = params.key;
+    if (params?.limit !== undefined) query['limit'] = params.limit;
+    if (params?.cursor !== undefined) query['cursor'] = params.cursor;
+
     const response = await this.transport.request<CursorPaginatedResponse<ContentProperty>>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${pageId}/properties`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query,
     });
     return response.data;
   }

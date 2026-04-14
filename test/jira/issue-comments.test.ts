@@ -84,6 +84,15 @@ describe('IssueCommentsResource', () => {
       expect(query['startAt']).toBeUndefined();
       expect(query['maxResults']).toBeUndefined();
     });
+
+    it('throws RangeError when maxResults is invalid', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act + Assert
+      await expect(resource.list('PROJ-1', { maxResults: 0 })).rejects.toThrow(RangeError);
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────

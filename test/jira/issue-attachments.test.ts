@@ -53,6 +53,17 @@ describe('IssueAttachmentsResource', () => {
       // Assert
       expect(result).toEqual([]);
     });
+
+    it('returns empty array when fields are missing', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      const result = await resource.list('PROJ-1');
+
+      // Assert
+      expect(result).toEqual([]);
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -94,6 +105,30 @@ describe('IssueAttachmentsResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/attachments`,
         headers: { 'X-Atlassian-Token': 'no-check' },
       });
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+
+    it('accepts upload without a mimeType override', async () => {
+      // Arrange
+      transport.respondWith([]);
+      const content = new Blob(['file content']);
+
+      // Act
+      await resource.upload('PROJ-1', 'test.txt', content);
+
+      // Assert
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+
+    it('allows overriding mimeType when it differs from Blob.type', async () => {
+      // Arrange
+      transport.respondWith([]);
+      const content = new Blob(['file content'], { type: 'application/octet-stream' });
+
+      // Act
+      await resource.upload('PROJ-1', 'test.png', content, 'image/png');
+
+      // Assert
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
     });
   });

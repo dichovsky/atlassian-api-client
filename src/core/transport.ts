@@ -13,6 +13,7 @@ import {
   TimeoutError,
   NetworkError,
   RateLimitError,
+  ValidationError,
 } from './errors.js';
 import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
 import { getRetryAfterMs } from './rate-limiter.js';
@@ -22,16 +23,17 @@ export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly baseUrl: string;
   private readonly authProvider: AuthProvider;
+  private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
   constructor(config: ResolvedConfig, baseUrl: string) {
     this.config = config;
     this.baseUrl = baseUrl;
     this.authProvider = createAuthProvider(config.auth);
+    this.requestHandler = this.buildMiddlewareChain();
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    const chain = this.buildMiddlewareChain();
-    return chain(options) as Promise<ApiResponse<T>>;
+    return this.requestHandler(options) as Promise<ApiResponse<T>>;
   }
 
   /**
@@ -82,6 +84,10 @@ export class HttpTransport implements Transport {
     };
 
     let fetchBody: FormData | string | undefined;
+
+    if (options.formData !== undefined && options.body !== undefined) {
+      throw new ValidationError('RequestOptions.formData and RequestOptions.body are mutually exclusive');
+    }
 
     if (options.formData !== undefined) {
       // Let the browser/node set Content-Type with the multipart boundary automatically

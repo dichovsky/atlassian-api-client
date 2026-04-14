@@ -53,6 +53,15 @@ describe('ContentPropertiesResource', () => {
         cursor: 'tok',
       });
     });
+
+    it('throws RangeError when limit is invalid', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+
+      // Act + Assert
+      await expect(resource.listForPage('page-1', { limit: 0 })).rejects.toThrow(RangeError);
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── getForPage ────────────────────────────────────────────────────────────

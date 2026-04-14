@@ -7,6 +7,7 @@ import {
   HttpError,
   TimeoutError,
   NetworkError,
+  ValidationError,
 } from '../../src/core/errors.js';
 import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
 
@@ -727,6 +728,26 @@ describe('HttpTransport', () => {
       expect(fetchInit.body).toBeInstanceOf(FormData);
       // Content-Type must NOT be manually set (browser sets it with multipart boundary)
       expect((fetchInit.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+    });
+
+    it('throws ValidationError when both formData and body are provided', async () => {
+      // Arrange
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const transport = makeTransport();
+      const formData = new FormData();
+      formData.append('file', new Blob(['content'], { type: 'text/plain' }), 'test.txt');
+
+      // Act + Assert
+      await expect(
+        transport.request({
+          method: 'POST',
+          path: '/pages/1/attachments',
+          formData,
+          body: { unexpected: true },
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 
