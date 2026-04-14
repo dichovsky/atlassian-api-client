@@ -7,6 +7,7 @@ import { BlogPostsResource } from './resources/blog-posts.js';
 import { CommentsResource } from './resources/comments.js';
 import { AttachmentsResource } from './resources/attachments.js';
 import { LabelsResource } from './resources/labels.js';
+import { ContentPropertiesResource } from './resources/content-properties.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
 export class ConfluenceClient {
@@ -16,6 +17,7 @@ export class ConfluenceClient {
   readonly comments: CommentsResource;
   readonly attachments: AttachmentsResource;
   readonly labels: LabelsResource;
+  readonly contentProperties: ContentPropertiesResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -28,5 +30,6 @@ export class ConfluenceClient {
     this.comments = new CommentsResource(transport, baseUrl);
     this.attachments = new AttachmentsResource(transport, baseUrl);
     this.labels = new LabelsResource(transport, baseUrl);
+    this.contentProperties = new ContentPropertiesResource(transport, baseUrl);
   }
 }

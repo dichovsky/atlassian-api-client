@@ -254,3 +254,30 @@ export interface ListLabelsParams {
   readonly limit?: number;
   readonly cursor?: string;
 }
+
+/** Confluence Content Property. */
+export interface ContentProperty {
+  readonly id: string;
+  readonly key: string;
+  readonly value: unknown;
+  readonly version?: ConfluenceVersion;
+}
+
+// --- Content Property Params ---
+
+export interface ListContentPropertiesParams {
+  readonly key?: string;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+export interface CreateContentPropertyData {
+  readonly key: string;
+  readonly value: unknown;
+}
+
+export interface UpdateContentPropertyData {
+  readonly key: string;
+  readonly value: unknown;
+  readonly version: { readonly number: number; readonly message?: string };
+}

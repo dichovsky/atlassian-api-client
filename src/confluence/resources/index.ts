@@ -4,3 +4,4 @@ export { BlogPostsResource } from './blog-posts.js';
 export { CommentsResource } from './comments.js';
 export { AttachmentsResource } from './attachments.js';
 export { LabelsResource } from './labels.js';
+export { ContentPropertiesResource } from './content-properties.js';
