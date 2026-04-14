@@ -163,3 +163,62 @@ export interface SearchUsersParams {
   readonly startAt?: number;
   readonly maxResults?: number;
 }
+
+/** Jira Issue Comment. */
+export interface IssueComment {
+  readonly id: string;
+  readonly self: string;
+  readonly author?: UserRef;
+  readonly body: Record<string, unknown>;
+  readonly renderedBody?: string;
+  readonly created: string;
+  readonly updated: string;
+}
+
+/** Jira Issue Attachment. */
+export interface IssueAttachment {
+  readonly id: string;
+  readonly self: string;
+  readonly filename: string;
+  readonly author?: UserRef;
+  readonly created: string;
+  readonly size: number;
+  readonly mimeType: string;
+  readonly content: string;
+  readonly thumbnail?: string;
+}
+
+/** Jira Label (string). */
+export type JiraLabel = string;
+
+// --- Comment Params ---
+
+export interface ListIssueCommentsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly orderBy?: string;
+  readonly expand?: string;
+}
+
+export interface CreateIssueCommentData {
+  readonly body: Record<string, unknown>;
+  readonly visibility?: {
+    readonly type: string;
+    readonly value: string;
+  };
+}
+
+export interface UpdateIssueCommentData {
+  readonly body: Record<string, unknown>;
+  readonly visibility?: {
+    readonly type: string;
+    readonly value: string;
+  };
+}
+
+// --- Label Params ---
+
+export interface ListLabelsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
