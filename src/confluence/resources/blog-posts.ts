@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type {
@@ -28,7 +29,7 @@ export class BlogPostsResource {
   async get(id: string): Promise<BlogPost> {
     const response = await this.transport.request<BlogPost>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
     });
     return response.data;
   }
@@ -47,7 +48,7 @@ export class BlogPostsResource {
   async update(id: string, data: UpdateBlogPostData): Promise<BlogPost> {
     const response = await this.transport.request<BlogPost>({
       method: 'PUT',
-      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
       body: data,
     });
     return response.data;
@@ -57,7 +58,7 @@ export class BlogPostsResource {
   async delete(id: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/blogposts/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
     });
   }
 

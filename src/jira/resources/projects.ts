@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import type { Project, ListProjectsParams } from '../types.js';
@@ -37,7 +38,7 @@ export class ProjectsResource {
 
     const response = await this.transport.request<Project>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodeURIComponent(projectIdOrKey)}`,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}`,
       query,
     });
     return response.data;

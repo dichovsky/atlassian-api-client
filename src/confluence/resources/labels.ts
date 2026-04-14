@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type { Label, ListLabelsParams } from '../types.js';
@@ -16,7 +17,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -29,7 +30,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${encodeURIComponent(spaceId)}/labels`,
+      path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -42,7 +43,7 @@ export class LabelsResource {
   ): Promise<CursorPaginatedResponse<Label>> {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
-      path: `${this.baseUrl}/blogposts/${encodeURIComponent(blogPostId)}/labels`,
+      path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/labels`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -55,7 +56,7 @@ export class LabelsResource {
   ): AsyncGenerator<Label> {
     yield* paginateCursor<Label>(
       this.transport,
-      `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/labels`,
+      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/labels`,
       params as Record<string, string | number | boolean | undefined>,
     );
   }

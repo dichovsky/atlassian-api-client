@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type { Attachment, ListAttachmentsParams } from '../types.js';
@@ -17,7 +18,7 @@ export class AttachmentsResource {
   ): Promise<CursorPaginatedResponse<Attachment>> {
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -27,7 +28,7 @@ export class AttachmentsResource {
   async get(id: string): Promise<Attachment> {
     const response = await this.transport.request<Attachment>({
       method: 'GET',
-      path: `${this.baseUrl}/attachments/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/attachments/${encodePathSegment(id)}`,
     });
     return response.data;
   }
@@ -36,7 +37,7 @@ export class AttachmentsResource {
   async delete(id: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/attachments/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/attachments/${encodePathSegment(id)}`,
     });
   }
 
@@ -61,7 +62,7 @@ export class AttachmentsResource {
 
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'POST',
-      path: `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
       formData,
     });
     return response.data;
@@ -74,7 +75,7 @@ export class AttachmentsResource {
   ): AsyncGenerator<Attachment> {
     yield* paginateCursor<Attachment>(
       this.transport,
-      `${this.baseUrl}/pages/${encodeURIComponent(pageId)}/attachments`,
+      `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
       params as Record<string, string | number | boolean | undefined>,
     );
   }

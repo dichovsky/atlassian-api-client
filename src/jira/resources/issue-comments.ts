@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type {
   IssueComment,
   ListIssueCommentsParams,
@@ -37,7 +38,7 @@ export class IssueCommentsResource {
 
     const response = await this.transport.request<IssueCommentsResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/comment`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment`,
       query,
     });
     return response.data;
@@ -47,7 +48,7 @@ export class IssueCommentsResource {
   async get(issueIdOrKey: string, commentId: string): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/comment/${encodeURIComponent(commentId)}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment/${encodePathSegment(commentId)}`,
     });
     return response.data;
   }
@@ -56,7 +57,7 @@ export class IssueCommentsResource {
   async create(issueIdOrKey: string, data: CreateIssueCommentData): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'POST',
-      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/comment`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment`,
       body: data,
     });
     return response.data;
@@ -70,7 +71,7 @@ export class IssueCommentsResource {
   ): Promise<IssueComment> {
     const response = await this.transport.request<IssueComment>({
       method: 'PUT',
-      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/comment/${encodeURIComponent(commentId)}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment/${encodePathSegment(commentId)}`,
       body: data,
     });
     return response.data;
@@ -80,7 +81,7 @@ export class IssueCommentsResource {
   async delete(issueIdOrKey: string, commentId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/issue/${encodeURIComponent(issueIdOrKey)}/comment/${encodeURIComponent(commentId)}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/comment/${encodePathSegment(commentId)}`,
     });
   }
 }

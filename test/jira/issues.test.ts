@@ -214,5 +214,15 @@ describe('IssuesResource', () => {
       await issues.transition('../admin', { transition: { id: '1' } });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/transitions`);
     });
+
+    it.each(['.', '..', '%2e', '%2E%2E'])(
+      'rejects dot-segment issueIdOrKey in get(): %s',
+      async (issueIdOrKey) => {
+        await expect(issues.get(issueIdOrKey)).rejects.toThrow(
+          'path parameter must not be "." or ".."',
+        );
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
   });
 });
