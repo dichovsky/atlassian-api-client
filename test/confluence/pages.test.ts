@@ -295,7 +295,7 @@ describe('PagesResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin`);
     });
 
-    it.each(['.', '..', '%2e', '%2E%2E'])('rejects dot-segment id in get(): %s', async (id) => {
+    it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])('rejects dot-segment id in get(): %s', async (id) => {
       await expect(pages.get(id)).rejects.toThrow('path parameter must not be "." or ".."');
       expect(transport.calls).toHaveLength(0);
     });

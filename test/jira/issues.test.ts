@@ -215,7 +215,7 @@ describe('IssuesResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/transitions`);
     });
 
-    it.each(['.', '..', '%2e', '%2E%2E'])(
+    it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
       'rejects dot-segment issueIdOrKey in get(): %s',
       async (issueIdOrKey) => {
         await expect(issues.get(issueIdOrKey)).rejects.toThrow(
