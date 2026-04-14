@@ -1350,28 +1350,19 @@ describe('executeJiraCommand', () => {
   describe('numeric option validation', () => {
     it('throws when --max-results is non-numeric (NaN path)', async () => {
       await expect(
-        executeJiraCommand(
-          cmd('projects', 'list', [], { 'max-results': 'abc' }),
-          GLOBALS,
-        ),
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': 'abc' }), GLOBALS),
       ).rejects.toThrow('--max-results must be a positive integer');
     });
 
     it('throws when --max-results is zero', async () => {
       await expect(
-        executeJiraCommand(
-          cmd('projects', 'list', [], { 'max-results': '0' }),
-          GLOBALS,
-        ),
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': '0' }), GLOBALS),
       ).rejects.toThrow('--max-results must be a positive integer');
     });
 
     it('throws when --max-results is negative', async () => {
       await expect(
-        executeJiraCommand(
-          cmd('projects', 'list', [], { 'max-results': '-5' }),
-          GLOBALS,
-        ),
+        executeJiraCommand(cmd('projects', 'list', [], { 'max-results': '-5' }), GLOBALS),
       ).rejects.toThrow('--max-results must be a positive integer');
     });
   });
@@ -1384,10 +1375,7 @@ describe('executeJiraCommand', () => {
       jiraSearchMock.search.mockResolvedValue({ issues: [], total: 0, startAt: 0, maxResults: 50 });
 
       // Act
-      const result = await executeJiraCommand(
-        cmd('search', 'project = PROJ', [], {}),
-        GLOBALS,
-      );
+      const result = await executeJiraCommand(cmd('search', 'project = PROJ', [], {}), GLOBALS);
 
       // Assert
       expect(jiraSearchMock.search).toHaveBeenCalledWith(

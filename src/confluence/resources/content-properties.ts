@@ -40,10 +40,7 @@ export class ContentPropertiesResource {
   }
 
   /** Create a content property on a page. */
-  async createForPage(
-    pageId: string,
-    data: CreateContentPropertyData,
-  ): Promise<ContentProperty> {
+  async createForPage(pageId: string, data: CreateContentPropertyData): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'POST',
       path: `${this.baseUrl}/pages/${pageId}/properties`,

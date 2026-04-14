@@ -14,6 +14,7 @@ export interface IssueCommentsResponse {
   readonly total: number;
 }
 
+/** Jira Issue Comments resource — list, get, create, update, and delete comments on issues. */
 export class IssueCommentsResource {
   constructor(
     private readonly transport: Transport,

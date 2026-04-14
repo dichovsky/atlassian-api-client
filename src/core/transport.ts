@@ -121,7 +121,11 @@ export class HttpTransport implements Transport {
 
     const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 
-    this.config.logger?.debug('HTTP response', { method: options.method, url, status: response.status });
+    this.config.logger?.debug('HTTP response', {
+      method: options.method,
+      url,
+      status: response.status,
+    });
 
     return {
       data,

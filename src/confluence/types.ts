@@ -265,17 +265,20 @@ export interface ContentProperty {
 
 // --- Content Property Params ---
 
+/** Parameters for listing content properties on a page. */
 export interface ListContentPropertiesParams {
   readonly key?: string;
   readonly limit?: number;
   readonly cursor?: string;
 }
 
+/** Request body for creating a content property on a page. */
 export interface CreateContentPropertyData {
   readonly key: string;
   readonly value: unknown;
 }
 
+/** Request body for updating a content property on a page. */
 export interface UpdateContentPropertyData {
   readonly key: string;
   readonly value: unknown;

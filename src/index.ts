@@ -20,6 +20,8 @@ export type {
   RequestOptions,
   ApiResponse,
   Transport,
+  Logger,
+  Middleware,
 } from './core/index.js';
 
 // Confluence
@@ -48,8 +50,12 @@ export type {
   ListInlineCommentsParams,
   CreateInlineCommentData,
   ListAttachmentsParams,
-  ListLabelsParams,
+  ListLabelsParams as ConfluenceListLabelsParams,
   CursorPaginatedResponse,
+  ContentProperty,
+  ListContentPropertiesParams,
+  CreateContentPropertyData,
+  UpdateContentPropertyData,
 } from './confluence/index.js';
 
 // Jira
@@ -72,4 +78,11 @@ export type {
   SearchParams,
   SearchUsersParams,
   OffsetPaginatedResponse,
+  IssueComment,
+  IssueAttachment,
+  JiraLabel,
+  ListIssueCommentsParams,
+  CreateIssueCommentData,
+  UpdateIssueCommentData,
+  ListLabelsParams as JiraListLabelsParams,
 } from './jira/index.js';

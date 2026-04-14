@@ -6,6 +6,7 @@ export interface IssueAttachmentsResponse {
   readonly attachments: IssueAttachment[];
 }
 
+/** Jira Issue Attachments resource — list, get, and upload attachments on issues. */
 export class IssueAttachmentsResource {
   constructor(
     private readonly transport: Transport,

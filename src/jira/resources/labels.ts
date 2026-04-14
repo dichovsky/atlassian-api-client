@@ -11,6 +11,7 @@ export interface LabelsResponse {
   readonly isLast?: boolean;
 }
 
+/** Jira Labels resource — list all labels defined in the Jira instance. */
 export class LabelsResource {
   constructor(
     private readonly transport: Transport,

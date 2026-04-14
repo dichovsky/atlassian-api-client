@@ -17,6 +17,7 @@ export class ConfluenceClient {
   readonly comments: CommentsResource;
   readonly attachments: AttachmentsResource;
   readonly labels: LabelsResource;
+  /** Content properties resource. */
   readonly contentProperties: ContentPropertiesResource;
 
   constructor(config: ClientConfig) {

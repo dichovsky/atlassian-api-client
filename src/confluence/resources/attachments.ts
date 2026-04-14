@@ -3,6 +3,7 @@ import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type { Attachment, ListAttachmentsParams } from '../types.js';
 
+/** Confluence Attachments resource — list, get, delete, and upload attachments on pages. */
 export class AttachmentsResource {
   constructor(
     private readonly transport: Transport,

@@ -193,6 +193,7 @@ export type JiraLabel = string;
 
 // --- Comment Params ---
 
+/** Parameters for listing comments on an issue. */
 export interface ListIssueCommentsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -200,6 +201,7 @@ export interface ListIssueCommentsParams {
   readonly expand?: string;
 }
 
+/** Request body for creating a comment on an issue. */
 export interface CreateIssueCommentData {
   readonly body: Record<string, unknown>;
   readonly visibility?: {
@@ -208,6 +210,7 @@ export interface CreateIssueCommentData {
   };
 }
 
+/** Request body for updating an existing issue comment. */
 export interface UpdateIssueCommentData {
   readonly body: Record<string, unknown>;
   readonly visibility?: {
@@ -218,6 +221,7 @@ export interface UpdateIssueCommentData {
 
 // --- Label Params ---
 
+/** Parameters for listing Jira labels. */
 export interface ListLabelsParams {
   readonly startAt?: number;
   readonly maxResults?: number;

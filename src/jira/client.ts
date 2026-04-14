@@ -21,8 +21,11 @@ export class JiraClient {
   readonly issueTypes: IssueTypesResource;
   readonly priorities: PrioritiesResource;
   readonly statuses: StatusesResource;
+  /** Issue comments resource. */
   readonly issueComments: IssueCommentsResource;
+  /** Issue attachments resource. */
   readonly issueAttachments: IssueAttachmentsResource;
+  /** Labels resource. */
   readonly labels: LabelsResource;
 
   constructor(config: ClientConfig) {

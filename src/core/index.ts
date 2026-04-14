@@ -10,6 +10,8 @@ export type {
   ClientConfig,
   ResolvedConfig,
   RateLimitInfo,
+  Logger,
+  Middleware,
 } from './types.js';
 
 // Errors

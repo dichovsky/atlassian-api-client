@@ -1,5 +1,6 @@
 /** Base error for all Atlassian API client errors. */
 export class AtlassianError extends Error {
+  /** Machine-readable error code (e.g. 'HTTP_ERROR', 'TIMEOUT_ERROR'). */
   readonly code: string;
 
   constructor(message: string, code: string, options?: ErrorOptions) {
@@ -11,7 +12,9 @@ export class AtlassianError extends Error {
 
 /** HTTP error for non-2xx responses. */
 export class HttpError extends AtlassianError {
+  /** HTTP status code (e.g. 400, 500). */
   readonly status: number;
+  /** Parsed response body, if any. */
   readonly responseBody?: unknown;
 
   constructor(
@@ -54,6 +57,7 @@ export class NotFoundError extends HttpError {
 
 /** 429 Too Many Requests. */
 export class RateLimitError extends HttpError {
+  /** Seconds to wait before retrying, from the Retry-After header. */
   readonly retryAfter?: number;
 
   constructor(
@@ -70,6 +74,7 @@ export class RateLimitError extends HttpError {
 
 /** Timeout error (AbortController). */
 export class TimeoutError extends AtlassianError {
+  /** The configured timeout in milliseconds that was exceeded. */
   readonly timeoutMs: number;
 
   constructor(timeoutMs: number, options?: ErrorOptions) {

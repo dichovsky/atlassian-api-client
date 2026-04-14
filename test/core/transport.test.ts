@@ -588,7 +588,11 @@ describe('HttpTransport', () => {
 
       const debugSpy = vi.fn();
       const transport = new HttpTransport(
-        { ...defaultConfig, retries: 0, logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() } },
+        {
+          ...defaultConfig,
+          retries: 0,
+          logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        },
         BASE_URL,
       );
 
@@ -597,8 +601,16 @@ describe('HttpTransport', () => {
 
       // Assert — called twice: once before request, once after response
       expect(debugSpy).toHaveBeenCalledTimes(2);
-      expect(debugSpy).toHaveBeenNthCalledWith(1, 'HTTP request', expect.objectContaining({ method: 'GET' }));
-      expect(debugSpy).toHaveBeenNthCalledWith(2, 'HTTP response', expect.objectContaining({ status: 200 }));
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ status: 200 }),
+      );
     });
 
     it('does not throw when no logger is configured', async () => {
@@ -670,14 +682,18 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
       const order: number[] = [];
 
-      const mw1 = vi.fn((opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
-        order.push(1);
-        return next(opts);
-      });
-      const mw2 = vi.fn((opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
-        order.push(2);
-        return next(opts);
-      });
+      const mw1 = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          order.push(1);
+          return next(opts);
+        },
+      );
+      const mw2 = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          order.push(2);
+          return next(opts);
+        },
+      );
 
       const transport = new HttpTransport(
         { ...defaultConfig, retries: 0, middleware: [mw1, mw2] },

@@ -21,6 +21,7 @@ export interface ApiResponse<T> {
 
 /** Transport abstraction — the only interface resource modules depend on. */
 export interface Transport {
+  /** Execute an HTTP request and return the parsed response. */
   request<T>(options: RequestOptions): Promise<ApiResponse<T>>;
 }
 
@@ -64,13 +65,21 @@ export interface ClientConfig {
 
 /** Internal resolved config with defaults applied. */
 export interface ResolvedConfig {
+  /** Validated base URL with trailing slash removed. */
   readonly baseUrl: string;
+  /** Authentication strategy. */
   readonly auth: AuthConfig;
+  /** Request timeout in ms. */
   readonly timeout: number;
+  /** Max retry attempts for retryable failures. */
   readonly retries: number;
+  /** Base delay in ms for retry backoff. */
   readonly retryDelay: number;
+  /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /** Optional logger for observability. */
   readonly logger?: Logger;
+  /** Optional middleware chain. */
   readonly middleware?: Middleware[];
 }
 
@@ -87,9 +96,13 @@ export interface RateLimitInfo {
  * Compatible with console, pino, winston, and any structured logger.
  */
 export interface Logger {
+  /** Log a debug-level message. */
   debug(message: string, context?: Record<string, unknown>): void;
+  /** Log an info-level message. */
   info(message: string, context?: Record<string, unknown>): void;
+  /** Log a warning-level message. */
   warn(message: string, context?: Record<string, unknown>): void;
+  /** Log an error-level message. */
   error(message: string, context?: Record<string, unknown>): void;
 }
 
