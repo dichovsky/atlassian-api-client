@@ -13,12 +13,16 @@
     "typescript",
     "rest"
   ],
+  "homepage": "https://github.com/dichovsky/atlassian-api-client#readme",
+  "bugs": {
+    "url": "https://github.com/dichovsky/atlassian-api-client/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/atlassian-api-client.git"
+    "url": "https://github.com/dichovsky/atlassian-api-client.git"
   },
   "license": "MIT",
-  "author": "",
+  "author": "Igor Magdich <magdich.igor@gmail.com>",
   "type": "module",
   "exports": {
     ".": {
@@ -31,11 +35,17 @@
   "bin": {
     "atlas": "./dist/cli/index.js"
   },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "files": [
     "dist",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -49,11 +59,11 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run clean && npm run build && npm run typecheck && npm run lint && npm run test:coverage"
+    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
@@ -63,6 +73,6 @@
     "vitest": "^4.1.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

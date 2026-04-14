@@ -179,7 +179,7 @@ The `atlas` CLI provides command-line access to both APIs.
 npm install -g atlassian-api-client
 
 # Or use via npx
-npx atlassian-api-client atlas --help
+npx -p atlassian-api-client atlas --help
 ```
 
 ### Syntax

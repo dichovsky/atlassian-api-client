@@ -11,7 +11,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do not** open a public issue.
-2. Email the maintainer with details of the vulnerability.
+2. Email **magdich.igor@gmail.com** with details of the vulnerability.
 3. Include steps to reproduce the issue.
 4. Allow reasonable time for a fix before public disclosure.
 
