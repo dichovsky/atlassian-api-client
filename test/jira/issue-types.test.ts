@@ -71,4 +71,14 @@ describe('IssueTypesResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes special characters in id for get()', async () => {
+      transport.respondWith(makeIssueType('x'));
+      await issueTypes.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issuetype/..%2Fadmin`);
+    });
+  });
 });

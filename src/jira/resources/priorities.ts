@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { Priority } from '../types.js';
 
 export class PrioritiesResource {
@@ -20,7 +21,7 @@ export class PrioritiesResource {
   async get(id: string): Promise<Priority> {
     const response = await this.transport.request<Priority>({
       method: 'GET',
-      path: `${this.baseUrl}/priority/${id}`,
+      path: `${this.baseUrl}/priority/${encodePathSegment(id)}`,
     });
     return response.data;
   }

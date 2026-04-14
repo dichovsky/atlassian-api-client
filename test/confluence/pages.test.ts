@@ -268,4 +268,36 @@ describe('PagesResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes special characters in id for get()', async () => {
+      transport.respondWith(makePage('x'));
+      await pages.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin`);
+    });
+
+    it('encodes special characters in id for update()', async () => {
+      transport.respondWith(makePage('x'));
+      await pages.update('../admin', {
+        id: '../admin',
+        title: 'T',
+        status: 'current',
+        version: { number: 2 },
+      });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin`);
+    });
+
+    it('encodes special characters in id for delete()', async () => {
+      transport.respondWith(undefined);
+      await pages.delete('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin`);
+    });
+
+    it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])('rejects dot-segment id in get(): %s', async (id) => {
+      await expect(pages.get(id)).rejects.toThrow('path parameter must not be "." or ".."');
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
 });

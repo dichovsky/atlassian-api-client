@@ -216,4 +216,32 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes pageId in listForPage()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listForPage('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/attachments`);
+    });
+
+    it('encodes id in get()', async () => {
+      transport.respondWith(makeAttachment('x'));
+      await attachments.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/..%2Fadmin`);
+    });
+
+    it('encodes id in delete()', async () => {
+      transport.respondWith(undefined);
+      await attachments.delete('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/..%2Fadmin`);
+    });
+
+    it('encodes pageId in upload()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.upload('../admin', 'test.txt', new Blob(['x']));
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/attachments`);
+    });
+  });
 });

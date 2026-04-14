@@ -228,4 +228,32 @@ describe('BlogPostsResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes special characters in id for get()', async () => {
+      transport.respondWith(makeBlogPost('x'));
+      await blogPosts.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin`);
+    });
+
+    it('encodes special characters in id for update()', async () => {
+      transport.respondWith(makeBlogPost('x'));
+      await blogPosts.update('../admin', {
+        id: '../admin',
+        title: 'T',
+        status: 'current',
+        version: { number: 2 },
+        body: { representation: 'storage', value: '' },
+      });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin`);
+    });
+
+    it('encodes special characters in id for delete()', async () => {
+      transport.respondWith(undefined);
+      await blogPosts.delete('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin`);
+    });
+  });
 });

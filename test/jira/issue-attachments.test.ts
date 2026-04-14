@@ -132,4 +132,26 @@ describe('IssueAttachmentsResource', () => {
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes issueIdOrKey in list()', async () => {
+      transport.respondWith({ fields: { attachment: [] } });
+      await resource.list('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin`);
+    });
+
+    it('encodes attachmentId in get()', async () => {
+      transport.respondWith(makeAttachment('x'));
+      await resource.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachment/..%2Fadmin`);
+    });
+
+    it('encodes issueIdOrKey in upload()', async () => {
+      transport.respondWith([]);
+      await resource.upload('../admin', 'test.txt', new Blob(['x']));
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/attachments`);
+    });
+  });
 });

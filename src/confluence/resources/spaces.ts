@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type { Space, ListSpacesParams } from '../types.js';
@@ -32,7 +33,7 @@ export class SpacesResource {
   async get(id: string): Promise<Space> {
     const response = await this.transport.request<Space>({
       method: 'GET',
-      path: `${this.baseUrl}/spaces/${id}`,
+      path: `${this.baseUrl}/spaces/${encodePathSegment(id)}`,
     });
     return response.data;
   }

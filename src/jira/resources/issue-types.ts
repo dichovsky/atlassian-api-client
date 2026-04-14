@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { IssueType } from '../types.js';
 
 export class IssueTypesResource {
@@ -20,7 +21,7 @@ export class IssueTypesResource {
   async get(id: string): Promise<IssueType> {
     const response = await this.transport.request<IssueType>({
       method: 'GET',
-      path: `${this.baseUrl}/issuetype/${id}`,
+      path: `${this.baseUrl}/issuetype/${encodePathSegment(id)}`,
     });
     return response.data;
   }

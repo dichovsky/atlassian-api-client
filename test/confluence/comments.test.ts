@@ -254,4 +254,56 @@ describe('CommentsResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes pageId in listFooter()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await comments.listFooter('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/footer-comments`);
+    });
+
+    it('encodes commentId in getFooter()', async () => {
+      transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
+      await comments.getFooter('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/footer-comments/..%2Fadmin`);
+    });
+
+    it('encodes commentId in updateFooter()', async () => {
+      transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
+      await comments.updateFooter('../admin', { version: { number: 2 }, body: { representation: 'storage', value: '' } });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/footer-comments/..%2Fadmin`);
+    });
+
+    it('encodes commentId in deleteFooter()', async () => {
+      transport.respondWith(undefined);
+      await comments.deleteFooter('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/footer-comments/..%2Fadmin`);
+    });
+
+    it('encodes pageId in listInline()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await comments.listInline('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/inline-comments`);
+    });
+
+    it('encodes commentId in getInline()', async () => {
+      transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
+      await comments.getInline('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
+    });
+
+    it('encodes commentId in updateInline()', async () => {
+      transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
+      await comments.updateInline('../admin', { version: { number: 2 }, body: { representation: 'storage', value: '' } });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
+    });
+
+    it('encodes commentId in deleteInline()', async () => {
+      transport.respondWith(undefined);
+      await comments.deleteInline('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
+    });
+  });
 });

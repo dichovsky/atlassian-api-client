@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type {
   Issue,
   CreatedIssue,
@@ -24,7 +25,7 @@ export class IssuesResource {
 
     const response = await this.transport.request<Issue>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
       query,
     });
     return response.data;
@@ -44,7 +45,7 @@ export class IssuesResource {
   async update(issueIdOrKey: string, data: UpdateIssueData): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
       body: data,
     });
   }
@@ -53,7 +54,7 @@ export class IssuesResource {
   async delete(issueIdOrKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
     });
   }
 
@@ -61,7 +62,7 @@ export class IssuesResource {
   async getTransitions(issueIdOrKey: string): Promise<Transition[]> {
     const response = await this.transport.request<{ transitions: Transition[] }>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}/transitions`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/transitions`,
     });
     return response.data.transitions;
   }
@@ -70,7 +71,7 @@ export class IssuesResource {
   async transition(issueIdOrKey: string, data: TransitionData): Promise<void> {
     await this.transport.request<undefined>({
       method: 'POST',
-      path: `${this.baseUrl}/issue/${issueIdOrKey}/transitions`,
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/transitions`,
       body: data,
     });
   }

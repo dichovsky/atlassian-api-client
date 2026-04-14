@@ -72,4 +72,14 @@ describe('PrioritiesResource', () => {
       });
     });
   });
+
+  // ── path encoding ─────────────────────────────────────────────────────────
+
+  describe('path encoding', () => {
+    it('encodes special characters in id for get()', async () => {
+      transport.respondWith(makePriority('x'));
+      await priorities.get('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/priority/..%2Fadmin`);
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
@@ -31,7 +32,7 @@ export class PagesResource {
   async get(id: string, params?: GetPageParams): Promise<Page> {
     const response = await this.transport.request<Page>({
       method: 'GET',
-      path: `${this.baseUrl}/pages/${id}`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
     return response.data;
@@ -51,7 +52,7 @@ export class PagesResource {
   async update(id: string, data: UpdatePageData): Promise<Page> {
     const response = await this.transport.request<Page>({
       method: 'PUT',
-      path: `${this.baseUrl}/pages/${id}`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}`,
       body: data,
     });
     return response.data;
@@ -61,7 +62,7 @@ export class PagesResource {
   async delete(id: string, params?: DeletePageParams): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/pages/${id}`,
+      path: `${this.baseUrl}/pages/${encodePathSegment(id)}`,
       query: params as Record<string, string | number | boolean | undefined>,
     });
   }
