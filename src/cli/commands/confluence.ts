@@ -36,7 +36,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         spaceId: asString(opts['space-id']),
         title: asString(opts['title']),
         status: asString(opts['status']),
-        limit: asNumber(opts['limit']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
         'body-format': asString(opts['body-format']) as 'storage' | undefined,
       });
@@ -48,16 +48,22 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         title: requireOpt(opts['title'], '--title'),
         body: makeBody(asString(opts['body'])),
       });
-    case 'update':
+    case 'update': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
       return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
         id: requireArg(cmd.positionalArgs[0], 'page ID'),
         title: requireOpt(opts['title'], '--title'),
         status: 'current',
         version: {
-          number: Number(requireOpt(opts['version-number'], '--version-number')),
+          number: versionNum,
         },
         body: makeBody(asString(opts['body'])),
       });
+    }
     case 'delete':
       await client.pages.delete(requireArg(cmd.positionalArgs[0], 'page ID'), {
         purge: opts['purge'] === true ? true : undefined,
@@ -74,7 +80,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
   switch (cmd.action) {
     case 'list':
       return client.spaces.list({
-        limit: asNumber(cmd.options['limit']),
+        limit: asPositiveInt(cmd.options['limit'], '--limit'),
         cursor: asString(cmd.options['cursor']),
       });
     case 'get':
@@ -91,7 +97,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'list':
       return client.blogPosts.list({
         spaceId: asString(opts['space-id']),
-        limit: asNumber(opts['limit']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
       });
     case 'get':
       return client.blogPosts.get(requireArg(cmd.positionalArgs[0], 'blog post ID'));
@@ -101,15 +107,21 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         title: requireOpt(opts['title'], '--title'),
         body: makeBody(asString(opts['body'])),
       });
-    case 'update':
+    case 'update': {
+      const blogVersionStr = requireOpt(opts['version-number'], '--version-number');
+      const blogVersionNum = Number(blogVersionStr);
+      if (!Number.isInteger(blogVersionNum) || blogVersionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${blogVersionStr}`);
+      }
       return client.blogPosts.update(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
         id: requireArg(cmd.positionalArgs[0], 'blog post ID'),
         title: requireOpt(opts['title'], '--title'),
         status: 'current',
         version: {
-          number: Number(requireOpt(opts['version-number'], '--version-number')),
+          number: blogVersionNum,
         },
       });
+    }
     case 'delete':
       await client.blogPosts.delete(requireArg(cmd.positionalArgs[0], 'blog post ID'));
       return { deleted: true };
@@ -168,7 +180,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
   switch (cmd.action) {
     case 'list':
       return client.attachments.listForPage(requireOpt(cmd.options['page-id'], '--page-id'), {
-        limit: asNumber(cmd.options['limit']),
+        limit: asPositiveInt(cmd.options['limit'], '--limit'),
       });
     case 'get':
       return client.attachments.get(requireArg(cmd.positionalArgs[0], 'attachment ID'));
@@ -184,7 +196,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
   switch (cmd.action) {
     case 'list':
       return client.labels.listForPage(requireOpt(cmd.options['page-id'], '--page-id'), {
-        limit: asNumber(cmd.options['limit']),
+        limit: asPositiveInt(cmd.options['limit'], '--limit'),
       });
     default:
       throw new Error(`Unknown labels action: ${cmd.action}. Actions: list`);
@@ -205,10 +217,13 @@ function asString(value: string | boolean | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function asNumber(value: string | boolean | undefined): number | undefined {
+function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
   const n = Number(value);
-  return Number.isNaN(n) ? undefined : n;
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
 }
 
 function makeBody(value: string | undefined) {

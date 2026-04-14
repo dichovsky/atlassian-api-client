@@ -97,6 +97,15 @@ describe('resolveConfig', () => {
         resolveConfig({ ...validBasicConfig, baseUrl: 'mycompany.atlassian.net' }),
       ).toThrow(ValidationError);
     });
+
+    it('throws ValidationError when baseUrl uses HTTP instead of HTTPS', () => {
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, baseUrl: 'http://mycompany.atlassian.net' }),
+      ).toThrow(ValidationError);
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, baseUrl: 'http://mycompany.atlassian.net' }),
+      ).toThrow('baseUrl must use HTTPS');
+    });
   });
 
   describe('auth validation', () => {

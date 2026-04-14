@@ -1,5 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import { paginateSearch } from '../../core/pagination.js';
+import { paginateSearch, validatePageSize } from '../../core/pagination.js';
 import type { SearchResult, SearchParams, Issue } from '../types.js';
 
 export class SearchResource {
@@ -10,6 +10,7 @@ export class SearchResource {
 
   /** Search for issues using JQL (POST). */
   async search(params: SearchParams): Promise<SearchResult> {
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const response = await this.transport.request<SearchResult>({
       method: 'POST',
       path: `${this.baseUrl}/search`,
@@ -26,6 +27,7 @@ export class SearchResource {
 
   /** Search for issues using JQL (GET). */
   async searchGet(params: SearchParams): Promise<SearchResult> {
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | undefined> = {
       jql: params.jql,
     };

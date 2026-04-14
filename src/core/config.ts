@@ -27,10 +27,15 @@ function validateConfig(config: ClientConfig): void {
     throw new ValidationError('baseUrl is required');
   }
 
+  let parsedUrl: URL;
   try {
-    new URL(config.baseUrl);
+    parsedUrl = new URL(config.baseUrl);
   } catch {
     throw new ValidationError(`baseUrl is not a valid URL: ${config.baseUrl}`);
+  }
+
+  if (parsedUrl.protocol !== 'https:') {
+    throw new ValidationError(`baseUrl must use HTTPS: ${config.baseUrl}`);
   }
 
   if (!config.auth) {

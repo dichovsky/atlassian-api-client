@@ -189,6 +189,83 @@ describe('printOutput', () => {
       // Assert
       expect(stdoutWrite).toHaveBeenCalledWith('plain-string\n');
     });
+
+    it('prints name for a single object when neither id nor key is present', () => {
+      // Arrange
+      const data = { name: 'Named' };
+
+      // Act
+      printOutput(data, 'minimal');
+
+      // Assert
+      expect(stdoutWrite).toHaveBeenCalledWith('Named\n');
+    });
+
+    it('prints empty line for a single object with no id, key, or name', () => {
+      // Arrange
+      const data = { foo: 'bar' };
+
+      // Act
+      printOutput(data, 'minimal');
+
+      // Assert
+      expect(stdoutWrite).toHaveBeenCalledWith('\n');
+    });
+
+    it('prints empty line for array item with no id, key, or name', () => {
+      // Act
+      printOutput([{ foo: 'bar' }], 'minimal');
+
+      // Assert
+      expect(stdoutWrite).toHaveBeenCalledWith('\n');
+    });
+
+    it('prints numeric id as string', () => {
+      // Arrange
+      const data = { id: 123 };
+
+      // Act
+      printOutput(data, 'minimal');
+
+      // Assert
+      expect(stdoutWrite).toHaveBeenCalledWith('123\n');
+    });
+
+    it('prints primitive array items directly', () => {
+      // Act
+      printOutput(['hello', 42, null], 'minimal');
+
+      // Assert
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      expect(calls).toContain('hello\n');
+      expect(calls).toContain('42\n');
+      expect(calls).toContain('null\n');
+    });
+  });
+
+  // ── table edge cases ──────────────────────────────────────────────────────
+
+  describe('table edge cases', () => {
+    it('handles array where a value is longer than the key name', () => {
+      // Arrange
+      const data = [{ id: '12345678901234567890', n: 'a' }];
+
+      // Act & Assert — should not throw
+      expect(() => printOutput(data, 'table')).not.toThrow();
+      expect(stdoutWrite).toHaveBeenCalled();
+    });
+
+    it('handles array with null values in rows', () => {
+      // Arrange
+      const data = [{ id: '1', value: null }];
+
+      // Act
+      printOutput(data, 'table');
+
+      // Assert
+      const allOutput = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(allOutput).toContain('1');
+    });
   });
 });
 

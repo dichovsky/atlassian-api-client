@@ -1,6 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
-import { paginateOffset } from '../../core/pagination.js';
+import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import type { Project, ListProjectsParams } from '../types.js';
 
 export class ProjectsResource {
@@ -11,6 +11,7 @@ export class ProjectsResource {
 
   /** List projects with optional filtering. */
   async list(params?: ListProjectsParams): Promise<OffsetPaginatedResponse<Project>> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;

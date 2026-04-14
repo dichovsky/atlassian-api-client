@@ -1,6 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
-import { paginateCursor } from '../../core/pagination.js';
+import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
   Page,
   ListPagesParams,
@@ -18,6 +18,7 @@ export class PagesResource {
 
   /** List pages with optional filtering. */
   async list(params?: ListPagesParams): Promise<CursorPaginatedResponse<Page>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
       path: `${this.baseUrl}/pages`,
