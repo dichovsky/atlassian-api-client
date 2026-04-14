@@ -56,6 +56,10 @@ export interface ClientConfig {
   readonly maxRetryDelay?: number;
   /** Injectable transport (for testing or custom HTTP layers). */
   readonly transport?: Transport;
+  /** Optional logger for request/response observability. */
+  readonly logger?: Logger;
+  /** Optional middleware chain for request/response interception. */
+  readonly middleware?: Middleware[];
 }
 
 /** Internal resolved config with defaults applied. */
@@ -66,6 +70,8 @@ export interface ResolvedConfig {
   readonly retries: number;
   readonly retryDelay: number;
   readonly maxRetryDelay: number;
+  readonly logger?: Logger;
+  readonly middleware?: Middleware[];
 }
 
 /** Rate limit information parsed from response headers. */
@@ -75,3 +81,23 @@ export interface RateLimitInfo {
   readonly reset?: string;
   readonly nearLimit?: boolean;
 }
+
+/**
+ * Logger interface for request/response observability.
+ * Compatible with console, pino, winston, and any structured logger.
+ */
+export interface Logger {
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+}
+
+/**
+ * Middleware function for intercepting and transforming requests.
+ * Call next(options) to pass control to the next middleware or the transport.
+ */
+export type Middleware = (
+  options: RequestOptions,
+  next: (options: RequestOptions) => Promise<ApiResponse<unknown>>,
+) => Promise<ApiResponse<unknown>>;
