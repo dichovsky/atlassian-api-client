@@ -10,6 +10,11 @@ Priority levels:
 
 ## P0 — Must-Have
 
+### Audit Remediation
+
+- [ ] Encode all user-controlled path segments before URL construction to prevent same-host path traversal across Jira and Confluence resource methods
+- [ ] Reject non-HTTPS `baseUrl` values before sending authenticated requests
+
 ### Core Infrastructure
 
 - [x] HTTP transport abstraction (native fetch)
@@ -79,6 +84,15 @@ Priority levels:
 ---
 
 ## P1 — Should-Have
+
+### Audit Remediation
+
+- [ ] Validate CLI numeric options (`--version-number`, `--limit`, `--max-results`) and fail fast on invalid values
+- [ ] Validate public pagination sizes (`maxResults` / `pageSize`) to reject zero, negative, and unbounded values
+- [ ] Enforce `npm run validate` in GitHub Actions CI so coverage thresholds and build checks gate merges
+- [ ] Add negative-path tests for invalid identifiers, invalid page sizes, invalid numeric CLI flags, and non-HTTPS base URLs
+- [ ] Align README runtime requirements with `package.json`, `.nvmrc`, and CI
+- [ ] Move tests from `test/coverage-gaps.test.ts` into module-specific test files
 
 ### Features
 
