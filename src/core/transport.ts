@@ -52,8 +52,14 @@ export class HttpTransport implements Transport {
       ...options.headers,
     };
 
-    if (options.body !== undefined) {
+    let fetchBody: BodyInit | undefined;
+
+    if (options.formData !== undefined) {
+      // Let the browser/node set Content-Type with the multipart boundary automatically
+      fetchBody = options.formData;
+    } else if (options.body !== undefined) {
       headers['Content-Type'] = 'application/json';
+      fetchBody = JSON.stringify(options.body);
     }
 
     let response: Response;
@@ -62,7 +68,7 @@ export class HttpTransport implements Transport {
       response = await fetch(url, {
         method: options.method,
         headers,
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        body: fetchBody,
         signal: controller.signal,
       });
     } catch (error) {

@@ -39,6 +39,30 @@ export class AttachmentsResource {
     });
   }
 
+  /**
+   * Upload an attachment to a page.
+   * @param pageId - The page to attach to.
+   * @param filename - The filename as it should appear in Confluence.
+   * @param content - The file content as a Blob or Buffer-compatible object.
+   * @param mimeType - The MIME type of the file (e.g. 'image/png').
+   */
+  async upload(
+    pageId: string,
+    filename: string,
+    content: Blob,
+    mimeType: string,
+  ): Promise<CursorPaginatedResponse<Attachment>> {
+    const formData = new FormData();
+    formData.append('file', new Blob([content], { type: mimeType }), filename);
+
+    const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
+      method: 'POST',
+      path: `${this.baseUrl}/pages/${pageId}/attachments`,
+      formData,
+    });
+    return response.data;
+  }
+
   /** Iterate over all attachments for a page. */
   async *listAllForPage(
     pageId: string,

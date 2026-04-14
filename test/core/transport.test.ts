@@ -579,6 +579,28 @@ describe('HttpTransport', () => {
     });
   });
 
+  describe('FormData upload', () => {
+    it('sends FormData body without setting Content-Type header (let browser set boundary)', async () => {
+      // Arrange
+      const payload = [{ id: '1', filename: 'test.txt' }];
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, payload));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const formData = new FormData();
+      formData.append('file', new Blob(['content'], { type: 'text/plain' }), 'test.txt');
+
+      // Act
+      await transport.request({ method: 'POST', path: '/pages/1/attachments', formData });
+
+      // Assert
+      const [, fetchInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(fetchInit.body).toBeInstanceOf(FormData);
+      // Content-Type must NOT be manually set (browser sets it with multipart boundary)
+      expect((fetchInit.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+    });
+  });
+
   describe('timeout fires via setTimeout callback', () => {
     it('abort controller is invoked by the scheduled timer when fetch hangs', async () => {
       // This test covers the () => controller.abort() arrow function inside executeFetch.

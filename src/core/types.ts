@@ -7,6 +7,8 @@ export interface RequestOptions {
   readonly path: string;
   readonly query?: Readonly<Record<string, string | number | boolean | undefined>>;
   readonly body?: unknown;
+  /** FormData body for multipart/form-data uploads. Mutually exclusive with body. */
+  readonly formData?: FormData;
   readonly headers?: Readonly<Record<string, string>>;
 }
 

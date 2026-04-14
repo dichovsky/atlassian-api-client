@@ -170,4 +170,26 @@ describe('AttachmentsResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
   });
+
+  // ── upload ────────────────────────────────────────────────────────────────
+
+  describe('upload()', () => {
+    it('calls POST /pages/{pageId}/attachments with FormData', async () => {
+      // Arrange
+      const payload = { results: [makeAttachment('new-1')], _links: {} };
+      transport.respondWith(payload);
+      const content = new Blob(['file content'], { type: 'text/plain' });
+
+      // Act
+      const result = await attachments.upload('page-1', 'test.txt', content, 'text/plain');
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/pages/page-1/attachments`,
+      });
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+  });
 });

@@ -74,4 +74,27 @@ describe('IssueAttachmentsResource', () => {
       });
     });
   });
+
+  // ── upload ────────────────────────────────────────────────────────────────
+
+  describe('upload()', () => {
+    it('calls POST /issue/{key}/attachments with FormData and X-Atlassian-Token header', async () => {
+      // Arrange
+      const attachments = [makeAttachment('20001')];
+      transport.respondWith(attachments);
+      const content = new Blob(['file content'], { type: 'text/plain' });
+
+      // Act
+      const result = await resource.upload('PROJ-1', 'test.txt', content, 'text/plain');
+
+      // Assert
+      expect(result).toEqual(attachments);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/attachments`,
+        headers: { 'X-Atlassian-Token': 'no-check' },
+      });
+      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+  });
 });

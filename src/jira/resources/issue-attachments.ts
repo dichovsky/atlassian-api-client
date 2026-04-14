@@ -30,4 +30,30 @@ export class IssueAttachmentsResource {
     });
     return response.data;
   }
+
+  /**
+   * Upload an attachment to an issue.
+   * Jira requires the X-Atlassian-Token: no-check header to prevent XSRF validation.
+   * @param issueIdOrKey - The issue to attach to.
+   * @param filename - The filename as it should appear in Jira.
+   * @param content - The file content as a Blob.
+   * @param mimeType - The MIME type of the file.
+   */
+  async upload(
+    issueIdOrKey: string,
+    filename: string,
+    content: Blob,
+    mimeType: string,
+  ): Promise<IssueAttachment[]> {
+    const formData = new FormData();
+    formData.append('file', new Blob([content], { type: mimeType }), filename);
+
+    const response = await this.transport.request<IssueAttachment[]>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/${issueIdOrKey}/attachments`,
+      formData,
+      headers: { 'X-Atlassian-Token': 'no-check' },
+    });
+    return response.data;
+  }
 }
