@@ -316,9 +316,9 @@ describe('fetchRefreshedTokens', () => {
       json: async () => ({ access_token: '' }),
     }) as unknown as typeof fetch;
 
-    await expect(
-      fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref'),
-    ).rejects.toThrow(OAuthError);
+    await expect(fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref')).rejects.toThrow(
+      OAuthError,
+    );
   });
 
   it('throws OAuthError when ok response has no access_token', async () => {
@@ -327,8 +327,8 @@ describe('fetchRefreshedTokens', () => {
       json: async () => ({ token_type: 'Bearer' }),
     }) as unknown as typeof fetch;
 
-    await expect(
-      fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref'),
-    ).rejects.toThrow(OAuthError);
+    await expect(fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref')).rejects.toThrow(
+      OAuthError,
+    );
   });
 });
