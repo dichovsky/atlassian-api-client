@@ -2,8 +2,8 @@
 
 Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
 
-- **Confluence Cloud REST API v2** - Pages, Spaces, Blog Posts, Comments, Attachments, Labels
-- **Jira Cloud Platform REST API v3** - Issues, Projects, Search (JQL), Users, Issue Types, Priorities, Statuses
+- **Confluence Cloud REST API v2** — Pages, Spaces, Blog Posts, Comments, Attachments, Labels, Content Properties, Custom Content, Whiteboards, Tasks, Versions
+- **Jira Cloud Platform REST API v3** — Issues, Projects, Search (JQL), Users, Issue Types, Priorities, Statuses, Issue Comments, Issue Attachments, Labels, Boards, Sprints, Workflows, Dashboards, Filters, Fields, Webhooks, JQL helpers, Bulk operations
 
 Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 
@@ -170,6 +170,128 @@ const client = new JiraClient({
 
 Retries use exponential backoff with jitter. Retryable: 429, 500, 502, 503, 504, and network errors.
 
+## Middleware
+
+`HttpTransport` accepts an optional middleware chain for cross-cutting concerns.
+
+### OAuth 2.0 Token Refresh
+
+```typescript
+import { ConfluenceClient, createOAuthRefreshMiddleware } from 'atlassian-api-client';
+
+const oauthMiddleware = createOAuthRefreshMiddleware({
+  accessToken: process.env.ACCESS_TOKEN!,
+  refreshToken: process.env.REFRESH_TOKEN!,
+  clientId: process.env.CLIENT_ID!,
+  clientSecret: process.env.CLIENT_SECRET!,
+  onTokenRefreshed: (tokens) => {
+    // Persist the new tokens
+    saveTokens(tokens.accessToken, tokens.refreshToken);
+  },
+});
+
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: process.env.ACCESS_TOKEN! },
+  middleware: [oauthMiddleware],
+});
+```
+
+Automatically injects `Authorization: Bearer` and silently refreshes on 401 responses.
+
+### Atlassian Connect JWT
+
+```typescript
+import { createConnectJwtMiddleware } from 'atlassian-api-client';
+
+const connectMiddleware = createConnectJwtMiddleware({
+  issuer: 'com.example.my-app',
+  sharedSecret: process.env.CONNECT_SECRET!,
+});
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: '' },
+  middleware: [connectMiddleware],
+});
+```
+
+Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
+
+### Response Caching
+
+```typescript
+import { createCacheMiddleware } from 'atlassian-api-client';
+
+const cacheMiddleware = createCacheMiddleware({
+  ttl: 30_000,   // 30s TTL (default: 60s)
+  maxSize: 200,  // max entries (default: 100, FIFO eviction)
+});
+
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email: '...', apiToken: '...' },
+  middleware: [cacheMiddleware],
+});
+```
+
+Caches GET responses in memory. Keyed by method + path + query string. Lazily evicts expired entries.
+
+### Request Batching / Deduplication
+
+```typescript
+import { createBatchMiddleware } from 'atlassian-api-client';
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email: '...', apiToken: '...' },
+  middleware: [createBatchMiddleware()],
+});
+```
+
+Coalesces concurrent identical in-flight requests so only one HTTP call is made.
+
+## OAuth Scope Detection
+
+Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:
+
+```typescript
+import { detectRequiredScopes, listKnownOperations } from 'atlassian-api-client';
+
+const scopes = detectRequiredScopes(['jira.issues.create', 'confluence.pages.read']);
+// → ['write:jira-work', 'read:confluence-content.summary']
+
+const allOps = listKnownOperations();
+// → ['jira.issues.create', 'jira.issues.read', ...]
+```
+
+## OpenAPI Type Generation
+
+Generate TypeScript interfaces from an OpenAPI 3.x schema:
+
+```typescript
+import { generateTypes } from 'atlassian-api-client';
+
+const spec = {
+  components: {
+    schemas: {
+      Issue: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          summary: { type: 'string', nullable: true },
+        },
+      },
+    },
+  },
+};
+
+const { code } = generateTypes(spec);
+// → 'export interface Issue { id?: string; summary?: string | null; }'
+```
+
+Supports `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`.
+
 ## CLI
 
 The `atlas` CLI provides command-line access to both APIs.
@@ -224,26 +346,43 @@ atlas jira projects list --format minimal
 
 ### ConfluenceClient
 
-| Resource      | Methods                                                                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pages`       | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
-| `spaces`      | `list`, `get`, `listAll`                                                                                                                             |
-| `blogPosts`   | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
-| `comments`    | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
-| `attachments` | `listForPage`, `get`, `delete`, `listAllForPage`                                                                                                     |
-| `labels`      | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
+| Resource            | Methods                                                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`             | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `spaces`            | `list`, `get`, `listAll`                                                                                                                             |
+| `blogPosts`         | `list`, `get`, `create`, `update`, `delete`, `listAll`                                                                                               |
+| `comments`          | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
+| `attachments`       | `listForPage`, `get`, `upload`, `delete`, `listAllForPage`                                                                                           |
+| `labels`            | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
+| `contentProperties` | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
+| `customContent`     | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
+| `whiteboards`       | `get`, `create`, `delete`                                                                                                                            |
+| `tasks`             | `list`, `get`, `update`                                                                                                                              |
+| `versions`          | `listForPage`, `getForPage`, `listForBlogPost`, `getForBlogPost`                                                                                     |
 
 ### JiraClient
 
-| Resource     | Methods                                                             |
-| ------------ | ------------------------------------------------------------------- |
-| `issues`     | `get`, `create`, `update`, `delete`, `getTransitions`, `transition` |
-| `projects`   | `list`, `get`, `listAll`                                            |
-| `search`     | `search`, `searchGet`, `searchAll`                                  |
-| `users`      | `get`, `getCurrentUser`, `search`                                   |
-| `issueTypes` | `list`, `get`                                                       |
-| `priorities` | `list`, `get`                                                       |
-| `statuses`   | `list`                                                              |
+| Resource           | Methods                                                                      |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition`          |
+| `projects`         | `list`, `get`, `listAll`                                                     |
+| `search`           | `search`, `searchGet`, `searchAll`                                           |
+| `users`            | `get`, `getCurrentUser`, `search`                                            |
+| `issueTypes`       | `list`, `get`                                                                |
+| `priorities`       | `list`, `get`                                                                |
+| `statuses`         | `list`                                                                       |
+| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                                  |
+| `issueAttachments` | `list`, `get`, `upload`                                                      |
+| `labels`           | `list`                                                                       |
+| `boards`           | `list`, `get`, `listIssues`                                                  |
+| `sprints`          | `get`, `create`, `update`, `delete`, `listIssues`                            |
+| `workflows`        | `list`, `get`                                                                |
+| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                                  |
+| `filters`          | `list`, `get`, `create`, `update`, `delete`                                  |
+| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                              |
+| `webhooks`         | `list`, `register`, `delete`                                                 |
+| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getSuggestions`                 |
+| `bulk`             | `createIssues`, `setIssueProperty`, `deleteIssueProperty`                   |
 
 ## Architecture
 
