@@ -408,7 +408,12 @@ describe('HttpError.toJSON()', () => {
   it('omits responseBody from serialisation', () => {
     const err = new HttpError('bad request', 400, { sensitive: 'data' });
     const json = err.toJSON();
-    expect(json).toEqual({ name: 'HttpError', code: 'HTTP_ERROR', status: 400, message: 'bad request' });
+    expect(json).toEqual({
+      name: 'HttpError',
+      code: 'HTTP_ERROR',
+      status: 400,
+      message: 'bad request',
+    });
     expect(json).not.toHaveProperty('responseBody');
   });
 

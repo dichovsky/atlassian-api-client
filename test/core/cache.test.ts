@@ -149,11 +149,15 @@ describe('createCacheMiddleware', () => {
 
 describe('createCacheMiddleware option validation', () => {
   it('throws ValidationError when maxSize is 0', () => {
-    expect(() => createCacheMiddleware({ maxSize: 0 })).toThrow('maxSize must be a positive integer');
+    expect(() => createCacheMiddleware({ maxSize: 0 })).toThrow(
+      'maxSize must be a positive integer',
+    );
   });
 
   it('throws ValidationError when maxSize is negative', () => {
-    expect(() => createCacheMiddleware({ maxSize: -1 })).toThrow('maxSize must be a positive integer');
+    expect(() => createCacheMiddleware({ maxSize: -1 })).toThrow(
+      'maxSize must be a positive integer',
+    );
   });
 
   it('throws ValidationError when ttl is 0', () => {

@@ -429,9 +429,9 @@ describe('generateTypes', () => {
 
   describe('injection protection', () => {
     it('throws when schema name is not a valid identifier', () => {
-      expect(() =>
-        generateTypes(makeSpec({ 'Invalid-Name': { type: 'string' } })),
-      ).toThrow('not a valid TypeScript identifier');
+      expect(() => generateTypes(makeSpec({ 'Invalid-Name': { type: 'string' } }))).toThrow(
+        'not a valid TypeScript identifier',
+      );
     });
 
     it('escapes star-slash sequences in description JSDoc to prevent comment breakout', () => {
@@ -450,9 +450,7 @@ describe('generateTypes', () => {
     });
 
     it('escapes single quotes in enum string values', () => {
-      const { source } = generateTypes(
-        makeSpec({ Status: { enum: ["it's"] } }),
-      );
+      const { source } = generateTypes(makeSpec({ Status: { enum: ["it's"] } }));
       expect(source).toContain("\\'");
     });
   });

@@ -1371,9 +1371,9 @@ describe('executeJiraCommand', () => {
 
   describe('search resource (extra branches)', () => {
     it('throws when --jql flag is missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('search', 'query', [], {}), GLOBALS),
-      ).rejects.toThrow('Missing --jql option for search');
+      await expect(executeJiraCommand(cmd('search', 'query', [], {}), GLOBALS)).rejects.toThrow(
+        'Missing --jql option for search',
+      );
     });
   });
 });

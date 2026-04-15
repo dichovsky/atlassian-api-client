@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.0 (2026-04-16)
+
+### Security
+
+- **oauth** — `tokenEndpoint` is now validated to require HTTPS, preventing credential exfiltration to non-encrypted endpoints (SSRF)
+- **oauth** — concurrent 401 responses now trigger exactly one token refresh via a shared `refreshPromise`, eliminating the race condition that could rotate refresh tokens multiple times
+- **transport** — caller-supplied `Authorization` headers are stripped before merging so the configured auth provider always wins; prevents auth bypass via middleware
+- **transport** — debug logging now records `method + path` only; query strings (which may contain cursor tokens or filter values) are no longer written to logs
+- **errors** — `HttpError.toJSON()` omits `responseBody` so raw API payloads do not leak into log aggregators via `JSON.stringify(error)`
+- **openapi** — schema names are validated as legal TypeScript identifiers; `*/` sequences in descriptions are escaped; single quotes in enum string values are escaped — prevents code injection in generated source
+- **cache / batch** — cache and deduplication keys now `encodeURIComponent`-encode each query key and value, eliminating key-collision attacks via crafted query parameters
+- **boards / sprints** — `boardId` and `sprintId` are validated as positive integers before URL interpolation
+- **versions** — `versionNumber` is validated as a positive integer before URL interpolation
+- **cli router** — `strict: false` removed; unknown CLI flags now throw instead of being silently swallowed (typos in `--token` no longer fall back to env-var auth unnoticed)
+- **cli jira search** — positional argument as raw JQL removed; `--jql` is now required explicitly
+
+### Changed
+
+- **cache** — `createCacheMiddleware` throws `ValidationError` for `maxSize < 1` or `ttl ≤ 0` at construction time
+- **openapi** — property names that are not valid JS identifiers (e.g. `content-type`) are now emitted as quoted keys (`'content-type'`)
+- **openapi** — `additionalProperties: { type: … }` in object schemas now emits a typed index signature (`[key: string]: T`) rather than being silently dropped
+- **openapi** — `generateTypes` return field was already `source`; README and ARCHITECTURE docs corrected to match
+- **tsconfig.cjs** — `moduleResolution` kept at `Node10` (required by `module: CommonJS`); `ignoreDeprecations: "6.0"` added to silence TypeScript 6.x deprecation warning
+
 ## 0.3.0 (2026-04-15)
 
 ### Added

@@ -164,10 +164,7 @@ function generateInterface(
 
   if (schema.additionalProperties === true) {
     lines.push(`  readonly [key: string]: unknown;`);
-  } else if (
-    schema.additionalProperties !== undefined &&
-    schema.additionalProperties !== false
-  ) {
+  } else if (schema.additionalProperties !== undefined && schema.additionalProperties !== false) {
     const addlSchema = schema.additionalProperties;
     const addlType = schemaToTsType(addlSchema, allSchemas);
     const addlNullable = addlSchema.nullable === true ? ' | null' : '';

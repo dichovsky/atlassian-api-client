@@ -137,6 +137,8 @@ interface Transport {
 - `HttpTransport` implements this using native `fetch`
 - Tests inject a `MockTransport` (defined in `test/helpers/`)
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
+- **Auth always wins:** any caller-supplied `Authorization` header is stripped before the auth provider's header is applied, preventing accidental auth override via middleware
+- **Safe debug logging:** debug logs record `method + path` only; full URLs (which may contain cursor tokens or sensitive query values) are never written to logs
 
 **Data flow:**
 
@@ -218,6 +220,8 @@ Each error includes:
 - `cause` — original error (for wrapping)
 
 Errors never include auth credentials or tokens in their message.
+
+**`HttpError.toJSON()`** omits `responseBody` so raw API payloads are not written to log aggregators via `JSON.stringify(error)`. The serialised form includes only `name`, `code`, `status`, and `message`.
 
 ### Retry (`src/core/retry.ts`)
 
@@ -301,6 +305,8 @@ for await (const page of confluence.pages.listAll({ spaceId: '123' })) {
 
 All user-controlled path segments (IDs, keys) are percent-encoded before URL construction. Dot-segment sequences (`../`, `./`) are rejected with `ValidationError`. This prevents path traversal vulnerabilities across all resource methods.
 
+**Numeric ID validation:** `boardId` and `sprintId` (Jira agile resources) and `versionNumber` (Confluence versions) are validated as positive integers before URL interpolation. Non-integer or non-positive values throw `ValidationError` immediately rather than producing malformed URLs.
+
 ### Middleware Layer
 
 `HttpTransport` accepts an optional `middleware` array on `ClientConfig`. Each middleware is a function `(req, next) => Promise<ApiResponse>` that can inspect/modify requests and responses.
@@ -309,10 +315,10 @@ Built-in middleware factories:
 
 | Export                         | File             | Description                                          |
 | ------------------------------ | ---------------- | ---------------------------------------------------- |
-| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401               |
+| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races) |
 | `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                  |
-| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL)             |
-| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests |
+| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL); `maxSize` and `ttl` validated at construction; cache keys `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
+| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache |
 
 Helper utilities:
 
@@ -328,7 +334,14 @@ Helper utilities:
 
 ### OpenAPI Type Generator (`src/core/openapi.ts`)
 
-`generateTypes(spec)` converts an OpenAPI 3.x `components.schemas` document into TypeScript interface/type declarations. Supported schema features: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, `additionalProperties`. Returns `{ code: string }`.
+`generateTypes(spec)` converts an OpenAPI 3.x `components.schemas` document into TypeScript interface/type declarations. Supported schema features: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, `additionalProperties`. Returns `{ source: string, typeNames: string[] }`.
+
+**Injection protection:**
+- Schema names are validated as legal TypeScript identifiers; invalid names throw `ValidationError`
+- `*/` sequences in JSDoc descriptions are escaped to `*\/` to prevent comment block breakout
+- Single quotes in enum string values are escaped to `\'`
+- Property names that are not valid JS identifiers (e.g. `content-type`) are emitted as quoted keys (`'content-type'`)
+- `additionalProperties: { type: … }` emits a typed index signature (`[key: string]: T`) rather than being silently dropped
 
 ---
 

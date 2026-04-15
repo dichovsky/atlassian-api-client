@@ -2,7 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "CommonJS",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node10",
+    "ignoreDeprecations": "6.0",
     "noEmit": false,
     "outDir": "./dist/cjs",
     "rootDir": "./src",

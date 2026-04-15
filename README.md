@@ -362,27 +362,27 @@ atlas jira projects list --format minimal
 
 ### JiraClient
 
-| Resource           | Methods                                                             |
-| ------------------ | ------------------------------------------------------------------- |
-| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition` |
-| `projects`         | `list`, `get`, `listAll`                                            |
-| `search`           | `search`, `searchGet`, `searchAll`                                  |
-| `users`            | `get`, `getCurrentUser`, `search`                                   |
-| `issueTypes`       | `list`, `get`                                                       |
-| `priorities`       | `list`, `get`                                                       |
-| `statuses`         | `list`                                                              |
-| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                         |
-| `issueAttachments` | `list`, `get`, `upload`                                             |
-| `labels`           | `list`                                                              |
-| `boards`           | `list`, `get`, `getIssues`                                          |
-| `sprints`          | `get`, `create`, `update`, `delete`, `getIssues`                    |
-| `workflows`        | `list`, `get`                                                       |
-| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                         |
-| `filters`          | `list`, `get`, `create`, `update`, `delete`                         |
-| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                     |
-| `webhooks`         | `list`, `register`, `delete`                                        |
+| Resource           | Methods                                                                    |
+| ------------------ | -------------------------------------------------------------------------- |
+| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition`        |
+| `projects`         | `list`, `get`, `listAll`                                                   |
+| `search`           | `search`, `searchGet`, `searchAll`                                         |
+| `users`            | `get`, `getCurrentUser`, `search`                                          |
+| `issueTypes`       | `list`, `get`                                                              |
+| `priorities`       | `list`, `get`                                                              |
+| `statuses`         | `list`                                                                     |
+| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                                |
+| `issueAttachments` | `list`, `get`, `upload`                                                    |
+| `labels`           | `list`                                                                     |
+| `boards`           | `list`, `get`, `getIssues`                                                 |
+| `sprints`          | `get`, `create`, `update`, `delete`, `getIssues`                           |
+| `workflows`        | `list`, `get`                                                              |
+| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                                |
+| `filters`          | `list`, `get`, `create`, `update`, `delete`                                |
+| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                            |
+| `webhooks`         | `list`, `register`, `delete`                                               |
 | `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getFieldReferenceSuggestions` |
-| `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`              |
+| `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`                      |
 
 ## Architecture
 
