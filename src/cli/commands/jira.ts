@@ -86,14 +86,9 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
 }
 
 async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const jqlOpt = asString(cmd.options['jql']);
-  let jql: string;
+  const jql = asString(cmd.options['jql']);
 
-  if (jqlOpt) {
-    jql = jqlOpt;
-  } else if (cmd.action && cmd.action !== 'query') {
-    jql = cmd.action;
-  } else {
+  if (!jql) {
     throw new Error('Missing --jql option for search');
   }
 

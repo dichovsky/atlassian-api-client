@@ -284,3 +284,150 @@ export interface UpdateContentPropertyData {
   readonly value: unknown;
   readonly version: { readonly number: number; readonly message?: string };
 }
+
+// --- Custom Content ---
+
+/** Confluence Custom Content item. */
+export interface CustomContent {
+  readonly id: string;
+  readonly type: string;
+  readonly status: string;
+  readonly title?: string;
+  readonly spaceId?: string;
+  readonly pageId?: string;
+  readonly blogPostId?: string;
+  readonly authorId?: string;
+  readonly createdAt?: string;
+  readonly version?: ConfluenceVersion;
+  readonly body?: ContentBody;
+  readonly _links?: Record<string, string>;
+}
+
+export interface ListCustomContentParams {
+  readonly type?: string;
+  readonly id?: string;
+  readonly spaceId?: string;
+  readonly pageId?: string;
+  readonly blogPostId?: string;
+  readonly status?: string;
+  readonly 'body-format'?: BodyFormat;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+export interface GetCustomContentParams {
+  readonly 'body-format'?: BodyFormat;
+  readonly version?: number;
+}
+
+export interface CreateCustomContentData {
+  readonly type: string;
+  readonly status?: 'current' | 'draft';
+  readonly spaceId?: string;
+  readonly pageId?: string;
+  readonly blogPostId?: string;
+  readonly title?: string;
+  readonly body?: {
+    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly value: string;
+  };
+}
+
+export interface UpdateCustomContentData {
+  readonly id: string;
+  readonly type: string;
+  readonly status: 'current' | 'draft';
+  readonly title?: string;
+  readonly version: { readonly number: number; readonly message?: string };
+  readonly body?: {
+    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly value: string;
+  };
+}
+
+// --- Whiteboards ---
+
+/** Confluence Whiteboard. */
+export interface Whiteboard {
+  readonly id: string;
+  readonly title?: string;
+  readonly status?: string;
+  readonly spaceId?: string;
+  readonly parentId?: string;
+  readonly parentType?: string;
+  readonly authorId?: string;
+  readonly createdAt?: string;
+  readonly _links?: Record<string, string>;
+}
+
+export interface CreateWhiteboardData {
+  readonly spaceId: string;
+  readonly title?: string;
+  readonly parentId?: string;
+  readonly templateKey?: string;
+  readonly locale?: string;
+}
+
+// --- Tasks ---
+
+/** Confluence Task. */
+export interface ConfluenceTask {
+  readonly id: string;
+  readonly localId?: string;
+  readonly spaceId?: string;
+  readonly pageId?: string;
+  readonly blogPostId?: string;
+  readonly status: 'incomplete' | 'complete';
+  readonly body?: ContentBody;
+  readonly createdBy?: string;
+  readonly assignedTo?: string;
+  readonly completedBy?: string;
+  readonly createdAt?: string;
+  readonly updatedAt?: string;
+  readonly dueAt?: string;
+  readonly completedAt?: string;
+  readonly _links?: Record<string, string>;
+}
+
+export interface ListTasksParams {
+  readonly 'body-format'?: BodyFormat;
+  readonly includeBlankTasks?: boolean;
+  readonly status?: 'incomplete' | 'complete';
+  readonly taskId?: number;
+  readonly spaceId?: string;
+  readonly pageId?: string;
+  readonly blogPostId?: string;
+  readonly createdBy?: string;
+  readonly assignedTo?: string;
+  readonly completedBy?: string;
+  readonly createdAtFrom?: string;
+  readonly createdAtTo?: string;
+  readonly dueAtFrom?: string;
+  readonly dueAtTo?: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+export interface GetTaskParams {
+  readonly 'body-format'?: BodyFormat;
+}
+
+export interface UpdateTaskData {
+  readonly status: 'incomplete' | 'complete';
+}
+
+// --- Versions ---
+
+/** Confluence Content Version. */
+export interface ContentVersion {
+  readonly number: number;
+  readonly message?: string;
+  readonly minorEdit?: boolean;
+  readonly authorId?: string;
+  readonly createdAt?: string;
+}
+
+export interface ListVersionsParams {
+  readonly limit?: number;
+  readonly cursor?: string;
+}

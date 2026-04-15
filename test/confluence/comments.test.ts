@@ -272,7 +272,10 @@ describe('CommentsResource', () => {
 
     it('encodes commentId in updateFooter()', async () => {
       transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
-      await comments.updateFooter('../admin', { version: { number: 2 }, body: { representation: 'storage', value: '' } });
+      await comments.updateFooter('../admin', {
+        version: { number: 2 },
+        body: { representation: 'storage', value: '' },
+      });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/footer-comments/..%2Fadmin`);
     });
 
@@ -296,7 +299,10 @@ describe('CommentsResource', () => {
 
     it('encodes commentId in updateInline()', async () => {
       transport.respondWith({ id: 'x', version: { number: 1 }, body: { storage: { value: '' } } });
-      await comments.updateInline('../admin', { version: { number: 2 }, body: { representation: 'storage', value: '' } });
+      await comments.updateInline('../admin', {
+        version: { number: 2 },
+        body: { representation: 'storage', value: '' },
+      });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
     });
 

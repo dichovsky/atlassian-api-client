@@ -55,9 +55,10 @@ export class AttachmentsResource {
     mimeType?: string,
   ): Promise<CursorPaginatedResponse<Attachment>> {
     const formData = new FormData();
-    const file = mimeType !== undefined && content.type !== mimeType
-      ? new Blob([content], { type: mimeType })
-      : content;
+    const file =
+      mimeType !== undefined && content.type !== mimeType
+        ? new Blob([content], { type: mimeType })
+        : content;
     formData.append('file', file, filename);
 
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({

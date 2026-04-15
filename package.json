@@ -1,6 +1,6 @@
 {
   "name": "atlassian-api-client",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Typed Node.js/TypeScript clients and CLI for Atlassian Confluence Cloud REST API v2 and Jira Cloud Platform REST API v3",
   "keywords": [
     "atlassian",
@@ -28,10 +28,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js"
     }
   },
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "atlas": "./dist/cli/index.js"
@@ -44,7 +46,9 @@
     "SECURITY.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build:esm": "tsc -p tsconfig.build.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build": "npm run build:esm && npm run build:cjs",
     "clean": "rm -rf dist",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -55,16 +59,18 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "bench": "vitest bench",
+    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
     "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.0.0",
+    "conventional-changelog-cli": "^5.0.0",
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
-    "prettier": "^3.8.2",
+    "prettier": "^3.8.3",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.4"

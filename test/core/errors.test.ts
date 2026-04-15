@@ -403,3 +403,24 @@ describe('createHttpError', () => {
     });
   });
 });
+
+describe('HttpError.toJSON()', () => {
+  it('omits responseBody from serialisation', () => {
+    const err = new HttpError('bad request', 400, { sensitive: 'data' });
+    const json = err.toJSON();
+    expect(json).toEqual({
+      name: 'HttpError',
+      code: 'HTTP_ERROR',
+      status: 400,
+      message: 'bad request',
+    });
+    expect(json).not.toHaveProperty('responseBody');
+  });
+
+  it('subclasses inherit toJSON', () => {
+    const err = new AuthenticationError('denied', { secret: 'token' });
+    const json = err.toJSON();
+    expect(json).not.toHaveProperty('responseBody');
+    expect(json).toMatchObject({ status: 401, message: 'denied' });
+  });
+});

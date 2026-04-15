@@ -1370,18 +1370,10 @@ describe('executeJiraCommand', () => {
   // ── search action-as-JQL branch ───────────────────────────────────────────
 
   describe('search resource (extra branches)', () => {
-    it('uses cmd.action as JQL when no --jql flag and action is not "query"', async () => {
-      // Arrange
-      jiraSearchMock.search.mockResolvedValue({ issues: [], total: 0, startAt: 0, maxResults: 50 });
-
-      // Act
-      const result = await executeJiraCommand(cmd('search', 'project = PROJ', [], {}), GLOBALS);
-
-      // Assert
-      expect(jiraSearchMock.search).toHaveBeenCalledWith(
-        expect.objectContaining({ jql: 'project = PROJ' }),
+    it('throws when --jql flag is missing', async () => {
+      await expect(executeJiraCommand(cmd('search', 'query', [], {}), GLOBALS)).rejects.toThrow(
+        'Missing --jql option for search',
       );
-      expect(result).toMatchObject({ total: 0 });
     });
   });
 });

@@ -7,13 +7,10 @@ describe('encodePathSegment()', () => {
     expect(encodePathSegment('../admin')).toBe('..%2Fadmin');
   });
 
-  it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
-    'rejects dot-segment value: %s',
-    (value) => {
-      expect(() => encodePathSegment(value)).toThrow(ValidationError);
-      expect(() => encodePathSegment(value)).toThrow('path parameter must not be "." or ".."');
-    },
-  );
+  it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])('rejects dot-segment value: %s', (value) => {
+    expect(() => encodePathSegment(value)).toThrow(ValidationError);
+    expect(() => encodePathSegment(value)).toThrow('path parameter must not be "." or ".."');
+  });
 
   it('uses the provided parameter name in validation errors', () => {
     expect(() => encodePathSegment('.', 'issueIdOrKey')).toThrow(

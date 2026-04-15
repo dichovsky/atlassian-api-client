@@ -5,3 +5,7 @@ export { CommentsResource } from './comments.js';
 export { AttachmentsResource } from './attachments.js';
 export { LabelsResource } from './labels.js';
 export { ContentPropertiesResource } from './content-properties.js';
+export { CustomContentResource } from './custom-content.js';
+export { WhiteboardsResource } from './whiteboards.js';
+export { TasksResource } from './tasks.js';
+export { VersionsResource } from './versions.js';

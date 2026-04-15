@@ -5,24 +5,31 @@
 `atlassian-api-client` is a typed Node.js/TypeScript SDK for Atlassian Cloud APIs. It provides two client classes — `ConfluenceClient` (REST API v2) and `JiraClient` (REST API v3) — built on a shared core infrastructure layer.
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  CLI (atlas)                      │
-│  atlas confluence ...      atlas jira ...         │
-├─────────────────────────────────────────────────┤
-│                  Public API                      │
-│  ConfluenceClient          JiraClient            │
-├─────────────────────────────────────────────────┤
-│              Resource Modules                    │
-│  pages, spaces, blogPosts   issues, projects,   │
-│  comments, attachments,     search, users,      │
-│  labels                     issueTypes, ...     │
-├─────────────────────────────────────────────────┤
-│               Core Layer                         │
-│  Transport │ Auth │ Retry │ RateLimit │ Errors  │
-│  Config    │ Pagination   │ Types               │
-├─────────────────────────────────────────────────┤
-│           Node.js native fetch                   │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        CLI (atlas)                            │
+│        atlas confluence ...        atlas jira ...             │
+├──────────────────────────────────────────────────────────────┤
+│                        Public API                            │
+│        ConfluenceClient              JiraClient              │
+├──────────────────────────────────────────────────────────────┤
+│                     Resource Modules                         │
+│  pages, spaces, blogPosts,    issues, projects, search,      │
+│  comments, attachments,       users, issueTypes, priorities, │
+│  labels, contentProperties,   statuses, issueComments,       │
+│  customContent, whiteboards,  issueAttachments, labels,      │
+│  tasks, versions              boards, sprints, workflows,    │
+│                               dashboards, filters, fields,   │
+│                               webhooks, jql, bulk            │
+├──────────────────────────────────────────────────────────────┤
+│                      Middleware Chain                        │
+│  OAuthRefresh │ ConnectJwt │ Cache │ Batch │ (custom)        │
+├──────────────────────────────────────────────────────────────┤
+│                       Core Layer                             │
+│  Transport │ Auth │ Retry │ RateLimit │ Errors │ Path        │
+│  Config    │ Pagination   │ Types    │ Scopes │ OpenAPI      │
+├──────────────────────────────────────────────────────────────┤
+│                   Node.js native fetch                        │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -43,50 +50,74 @@
 
 ```
 src/
-├── core/                   # Shared infrastructure
-│   ├── types.ts            # Shared type definitions
-│   ├── errors.ts           # Error class hierarchy
-│   ├── config.ts           # Config validation & defaults
-│   ├── auth.ts             # Auth strategy factory
-│   ├── transport.ts        # HTTP transport abstraction
-│   ├── retry.ts            # Retry with exponential backoff
-│   ├── rate-limiter.ts     # Rate-limit detection & backoff
-│   ├── pagination.ts       # Pagination iterators
-│   └── index.ts            # Core barrel export
-├── confluence/             # Confluence Cloud REST API v2
-│   ├── types.ts            # Confluence-specific types
+├── core/                        # Shared infrastructure
+│   ├── types.ts                 # Shared type definitions (Transport, Middleware, etc.)
+│   ├── errors.ts                # Error class hierarchy
+│   ├── config.ts                # Config validation & defaults
+│   ├── auth.ts                  # Auth strategy factory
+│   ├── transport.ts             # HTTP transport + middleware chain
+│   ├── retry.ts                 # Retry with exponential backoff
+│   ├── rate-limiter.ts          # Rate-limit detection & backoff
+│   ├── pagination.ts            # Pagination iterators
+│   ├── path.ts                  # Path encoding & dot-segment rejection
+│   ├── oauth.ts                 # OAuth 2.0 token refresh middleware
+│   ├── connect-jwt.ts           # Atlassian Connect HS256 JWT middleware
+│   ├── cache.ts                 # In-memory response caching middleware
+│   ├── batch.ts                 # Request deduplication/batching middleware
+│   ├── scopes.ts                # OAuth scope detection
+│   ├── openapi.ts               # OpenAPI 3.x → TypeScript type generator
+│   └── index.ts                 # Core barrel export
+├── confluence/                  # Confluence Cloud REST API v2
+│   ├── types.ts                 # Confluence-specific types
 │   ├── resources/
-│   │   ├── pages.ts        # /wiki/api/v2/pages
-│   │   ├── spaces.ts       # /wiki/api/v2/spaces
-│   │   ├── blog-posts.ts   # /wiki/api/v2/blogposts
-│   │   ├── comments.ts     # /wiki/api/v2/footer-comments, inline-comments
-│   │   ├── attachments.ts  # /wiki/api/v2/attachments
-│   │   ├── labels.ts       # /wiki/api/v2/labels
-│   │   └── index.ts        # Resources barrel
-│   ├── client.ts           # ConfluenceClient class
-│   └── index.ts            # Confluence barrel export
-├── jira/                   # Jira Cloud Platform REST API v3
-│   ├── types.ts            # Jira-specific types
+│   │   ├── pages.ts             # /wiki/api/v2/pages
+│   │   ├── spaces.ts            # /wiki/api/v2/spaces
+│   │   ├── blog-posts.ts        # /wiki/api/v2/blogposts
+│   │   ├── comments.ts          # /wiki/api/v2/footer-comments, inline-comments
+│   │   ├── attachments.ts       # /wiki/api/v2/attachments (incl. multipart upload)
+│   │   ├── labels.ts            # /wiki/api/v2/labels
+│   │   ├── content-properties.ts # /wiki/api/v2/*/properties
+│   │   ├── custom-content.ts    # /wiki/api/v2/custom-content
+│   │   ├── whiteboards.ts       # /wiki/api/v2/whiteboards
+│   │   ├── tasks.ts             # /wiki/api/v2/tasks
+│   │   ├── versions.ts          # /wiki/api/v2/pages|blogposts/*/versions
+│   │   └── index.ts             # Resources barrel
+│   ├── client.ts                # ConfluenceClient class
+│   └── index.ts                 # Confluence barrel export
+├── jira/                        # Jira Cloud Platform REST API v3
+│   ├── types.ts                 # Jira-specific types
 │   ├── resources/
-│   │   ├── issues.ts       # /rest/api/3/issue
-│   │   ├── projects.ts     # /rest/api/3/project
-│   │   ├── search.ts       # /rest/api/3/search
-│   │   ├── users.ts        # /rest/api/3/user, /rest/api/3/myself
-│   │   ├── issue-types.ts  # /rest/api/3/issuetype
-│   │   ├── priorities.ts   # /rest/api/3/priority
-│   │   ├── statuses.ts     # /rest/api/3/statuses
-│   │   └── index.ts        # Resources barrel
-│   ├── client.ts           # JiraClient class
-│   └── index.ts            # Jira barrel export
-└── index.ts                # Package entry point
+│   │   ├── issues.ts            # /rest/api/3/issue
+│   │   ├── projects.ts          # /rest/api/3/project
+│   │   ├── search.ts            # /rest/api/3/search
+│   │   ├── users.ts             # /rest/api/3/user, /rest/api/3/myself
+│   │   ├── issue-types.ts       # /rest/api/3/issuetype
+│   │   ├── priorities.ts        # /rest/api/3/priority
+│   │   ├── statuses.ts          # /rest/api/3/statuses
+│   │   ├── issue-comments.ts    # /rest/api/3/issue/*/comment
+│   │   ├── issue-attachments.ts # /rest/api/3/issue/*/attachments (incl. upload)
+│   │   ├── labels.ts            # /rest/api/3/label
+│   │   ├── boards.ts            # /rest/agile/1.0/board
+│   │   ├── sprints.ts           # /rest/agile/1.0/sprint
+│   │   ├── workflows.ts         # /rest/api/3/workflow
+│   │   ├── dashboards.ts        # /rest/api/3/dashboard
+│   │   ├── filters.ts           # /rest/api/3/filter
+│   │   ├── fields.ts            # /rest/api/3/field
+│   │   ├── webhooks.ts          # /rest/api/3/webhook
+│   │   ├── jql.ts               # /rest/api/3/jql/*
+│   │   ├── bulk.ts              # /rest/api/3/issue/bulk, issuetype/*/properties/bulk
+│   │   └── index.ts             # Resources barrel
+│   ├── client.ts                # JiraClient class
+│   └── index.ts                 # Jira barrel export
+└── index.ts                     # Package entry point
 
 test/
-├── core/                   # Core module tests
-├── confluence/             # Confluence client tests
-├── jira/                   # Jira client tests
-├── helpers/                # Test utilities
-│   └── mock-transport.ts   # Mock transport for testing
-└── index.test.ts           # Public API export tests
+├── core/                        # Core module tests
+├── confluence/                  # Confluence client tests
+├── jira/                        # Jira client tests
+├── helpers/                     # Test utilities
+│   └── mock-transport.ts        # Mock transport for testing
+└── index.test.ts                # Public API export tests
 ```
 
 ---
@@ -106,6 +137,8 @@ interface Transport {
 - `HttpTransport` implements this using native `fetch`
 - Tests inject a `MockTransport` (defined in `test/helpers/`)
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
+- **Auth always wins:** any caller-supplied `Authorization` header is stripped before the auth provider's header is applied, preventing accidental auth override via middleware
+- **Safe debug logging:** debug logs record `method + path` only; full URLs (which may contain cursor tokens or sensitive query values) are never written to logs
 
 **Data flow:**
 
@@ -113,11 +146,13 @@ interface Transport {
 Client method call
   → Resource module builds RequestOptions
     → Transport.request()
-      → Auth adds Authorization header
-        → Retry wraps the fetch call
-          → Rate limiter checks/waits if needed
-            → fetch() executes
-              → Response parsed or error thrown
+      → Middleware chain (pre-request: OAuth, Connect JWT, Cache, Batch…)
+        → Auth adds Authorization header
+          → Retry wraps the fetch call
+            → Rate limiter checks/waits if needed
+              → fetch() executes
+                → Response parsed or error thrown
+                  → Middleware chain (post-response: Cache store, OAuth refresh…)
 ```
 
 ### Auth (`src/core/auth.ts`)
@@ -185,6 +220,8 @@ Each error includes:
 - `cause` — original error (for wrapping)
 
 Errors never include auth credentials or tokens in their message.
+
+**`HttpError.toJSON()`** omits `responseBody` so raw API payloads are not written to log aggregators via `JSON.stringify(error)`. The serialised form includes only `name`, `code`, `status`, and `message`.
 
 ### Retry (`src/core/retry.ts`)
 
@@ -264,6 +301,49 @@ for await (const page of confluence.pages.listAll({ spaceId: '123' })) {
 }
 ```
 
+### Path Safety (`src/core/path.ts`)
+
+All user-controlled path segments (IDs, keys) are percent-encoded before URL construction. Dot-segment sequences (`../`, `./`) are rejected with `ValidationError`. This prevents path traversal vulnerabilities across all resource methods.
+
+**Numeric ID validation:** `boardId` and `sprintId` (Jira agile resources) and `versionNumber` (Confluence versions) are validated as positive integers before URL interpolation. Non-integer or non-positive values throw `ValidationError` immediately rather than producing malformed URLs.
+
+### Middleware Layer
+
+`HttpTransport` accepts an optional `middleware` array on `ClientConfig`. Each middleware is a function `(req, next) => Promise<ApiResponse>` that can inspect/modify requests and responses.
+
+Built-in middleware factories:
+
+| Export                         | File             | Description                                                                                                                                                                           |
+| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                        |
+| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                                                                                                                                                   |
+| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL); `maxSize` and `ttl` validated at construction; cache keys `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
+| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                 |
+
+Helper utilities:
+
+| Export                 | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `signConnectJwt`       | Low-level JWT signing (iss, iat, exp, qsh) |
+| `computeQsh`           | Canonical request hash for Connect JWT     |
+| `fetchRefreshedTokens` | Low-level token endpoint call              |
+
+### OAuth Scope Detection (`src/core/scopes.ts`)
+
+`detectRequiredScopes(operations)` maps Atlassian operation strings (e.g. `'jira.issues.create'`) to the required Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns all known operation names for tooling.
+
+### OpenAPI Type Generator (`src/core/openapi.ts`)
+
+`generateTypes(spec)` converts an OpenAPI 3.x `components.schemas` document into TypeScript interface/type declarations. Supported schema features: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, `additionalProperties`. Returns `{ source: string, typeNames: string[] }`.
+
+**Injection protection:**
+
+- Schema names are validated as legal TypeScript identifiers; invalid names throw `ValidationError`
+- `*/` sequences in JSDoc descriptions are escaped to `*\/` to prevent comment block breakout
+- Single quotes in enum string values are escaped to `\'`
+- Property names that are not valid JS identifiers (e.g. `content-type`) are emitted as quoted keys (`'content-type'`)
+- `additionalProperties: { type: … }` emits a typed index signature (`[key: string]: T`) rather than being silently dropped
+
 ---
 
 ## Confluence Client
@@ -278,6 +358,11 @@ class ConfluenceClient {
   readonly comments: CommentsResource;
   readonly attachments: AttachmentsResource;
   readonly labels: LabelsResource;
+  readonly contentProperties: ContentPropertiesResource;
+  readonly customContent: CustomContentResource;
+  readonly whiteboards: WhiteboardsResource;
+  readonly tasks: TasksResource;
+  readonly versions: VersionsResource;
 }
 ```
 
@@ -329,10 +414,23 @@ class JiraClient {
   readonly issueTypes: IssueTypesResource;
   readonly priorities: PrioritiesResource;
   readonly statuses: StatusesResource;
+  readonly issueComments: IssueCommentsResource;
+  readonly issueAttachments: IssueAttachmentsResource;
+  readonly labels: LabelsResource;
+  readonly boards: BoardsResource; // base: /rest/agile/1.0
+  readonly sprints: SprintsResource; // base: /rest/agile/1.0
+  readonly workflows: WorkflowsResource;
+  readonly dashboards: DashboardsResource;
+  readonly filters: FiltersResource;
+  readonly fields: FieldsResource;
+  readonly webhooks: WebhooksResource;
+  readonly jql: JqlResource;
+  readonly bulk: BulkResource;
 }
 ```
 
 **Base URL:** `${config.baseUrl}/rest/api/3`
+**Agile Base URL:** `${config.baseUrl}/rest/agile/1.0` (boards, sprints)
 
 ### Resource Pattern
 
@@ -367,31 +465,40 @@ class IssuesResource {
 export { ConfluenceClient } from './confluence/index.js';
 export { JiraClient } from './jira/index.js';
 
-// Core types & errors (for catch blocks and config)
+// Core types & errors
 export {
-  AtlassianError,
-  HttpError,
-  AuthenticationError,
-  ForbiddenError,
-  NotFoundError,
-  RateLimitError,
-  TimeoutError,
-  NetworkError,
-  ValidationError,
+  AtlassianError, HttpError, AuthenticationError, ForbiddenError,
+  NotFoundError, RateLimitError, TimeoutError, NetworkError,
+  ValidationError, OAuthError,
 } from './core/index.js';
 
-// Config types
+// Core infrastructure types
 export type {
-  ClientConfig,
-  AuthConfig,
-  BasicAuthConfig,
-  BearerAuthConfig,
+  ClientConfig, AuthConfig, BasicAuthConfig, BearerAuthConfig,
+  RequestOptions, ApiResponse, Transport, Logger, Middleware,
 } from './core/index.js';
 
-// Confluence types
-export type { Page, Space, BlogPost, ... } from './confluence/index.js';
+// Middleware factories
+export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index.js';
+export type { OAuthRefreshConfig, OAuthTokens } from './core/index.js';
 
-// Jira types
+export { createConnectJwtMiddleware, signConnectJwt, computeQsh } from './core/index.js';
+export type { ConnectJwtConfig } from './core/index.js';
+
+export { createCacheMiddleware } from './core/index.js';
+export type { CacheOptions } from './core/index.js';
+
+export { createBatchMiddleware } from './core/index.js';
+
+// Utilities
+export { detectRequiredScopes, listKnownOperations } from './core/index.js';
+export type { AtlassianScope } from './core/index.js';
+
+export { generateTypes } from './core/index.js';
+export type { OpenApiSpec, OpenApiSchemaObject, GeneratedTypes } from './core/index.js';
+
+// Confluence & Jira types (all resource types)
+export type { Page, Space, BlogPost, ... } from './confluence/index.js';
 export type { Issue, Project, User, ... } from './jira/index.js';
 ```
 
@@ -458,13 +565,13 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ## Extension Points
 
-The architecture supports future extensions without breaking changes:
+The architecture supports extensions without breaking changes:
 
-1. **Custom transport:** Inject a custom `Transport` implementation (e.g., for logging, metrics, proxying)
-2. **New auth strategies:** Add new `AuthProvider` implementations without modifying existing code
-3. **New resources:** Add resource modules to `confluence/resources/` or `jira/resources/` and wire them into the client
-4. **Custom retry logic:** The retry configuration is externally configurable
-5. **Middleware pattern:** Transport wrapping enables before/after request hooks
+1. **Custom transport:** Inject a custom `Transport` implementation (e.g., for logging, metrics, proxying) via `config.transport`
+2. **Custom middleware:** Pass any `Middleware[]` via `config.middleware` — compose OAuth, caching, batching, or your own interceptors in any order
+3. **New auth strategies:** Add new `AuthProvider` implementations without modifying existing code
+4. **New resources:** Add resource modules to `confluence/resources/` or `jira/resources/` and wire them into the client constructor
+5. **Custom retry logic:** Retry count, base delay, and max delay are all externally configurable
 
 ---
 
@@ -524,10 +631,10 @@ Order of precedence (first wins):
 
 **Output:**
 
-- `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`)
-- Source maps included for debugging
+- `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`) + source maps
+- `dist/cjs/` — CommonJS output for legacy consumers
 
-**Module format:** ESM (`"type": "module"` in `package.json`)
+**Module format:** Dual ESM + CJS (`"type": "module"` in `package.json`; `exports` field maps both)
 
 **Published files:**
 
