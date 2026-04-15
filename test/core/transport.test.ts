@@ -99,6 +99,18 @@ describe('HttpTransport', () => {
       expect((response as { data: unknown }).data).toEqual({ id: 1 });
     });
 
+    it('accepts an absolute URL path (resource-style) without double-prefixing base URL', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: 1 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const absolutePath = `${BASE_URL}/pages/456`;
+      const transport = makeTransport();
+      await runRequest(transport, { method: 'GET', path: absolutePath });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(absolutePath);
+    });
+
     it('includes Accept: application/json header', async () => {
       const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
       vi.stubGlobal('fetch', fetchMock);
@@ -122,6 +134,26 @@ describe('HttpTransport', () => {
       expect((init.headers as Record<string, string>)['Authorization']).toBe(
         `Basic ${expectedToken}`,
       );
+    });
+
+    it('strips a lowercase authorization header supplied by caller', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      // Pass a lowercase 'authorization' header — it must be stripped so the configured
+      // auth provider's header always wins (case-insensitive stripping).
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        headers: { authorization: 'Bearer attacker-token' },
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      // Configured Basic auth must win; the attacker token must not appear
+      expect(headers['Authorization']).toMatch(/^Basic /);
+      expect(headers['authorization']).toBeUndefined();
     });
 
     it('appends query parameters to the URL', async () => {

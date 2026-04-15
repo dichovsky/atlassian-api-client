@@ -79,12 +79,17 @@ export class HttpTransport implements Transport {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-    // Strip any caller-supplied Authorization header so the configured auth provider
-    // always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
-    const { Authorization: _dropped, ...safeHeaders } = options.headers ?? {};
+    // Strip any caller-supplied Authorization header (case-insensitive) so the configured
+    // auth provider always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
+    const safeHeaders: Record<string, string> = {};
+    for (const [key, value] of Object.entries(options.headers ?? {})) {
+      if (key.toLowerCase() !== 'authorization') {
+        safeHeaders[key] = value;
+      }
+    }
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      ...(safeHeaders as Record<string, string>),
+      ...safeHeaders,
       ...this.authProvider.getHeaders(),
     };
 
@@ -175,7 +180,12 @@ export class HttpTransport implements Transport {
     path: string,
     query?: Readonly<Record<string, string | number | boolean | undefined>>,
   ): string {
-    const url = new URL(`${this.baseUrl}${path}`);
+    // Resources pass fully-qualified URLs (e.g. `${baseUrl}/issue/ID`).
+    // Relative paths (e.g. `/pages/123`) are resolved against `this.baseUrl`.
+    const url =
+      path.startsWith('https://') || path.startsWith('http://')
+        ? new URL(path)
+        : new URL(`${this.baseUrl}${path}`);
 
     if (query) {
       for (const [key, value] of Object.entries(query)) {

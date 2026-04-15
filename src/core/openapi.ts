@@ -157,8 +157,9 @@ function generateInterface(
       lines.push(`  /** ${escapeJsDocComment(propSchema.description)} */`);
     }
 
-    // Non-identifier keys (e.g. "body-format", "x-custom") must be quoted.
-    const propKey = isValidIdentifier(propName) ? propName : `'${propName}'`;
+    // Non-identifier keys (e.g. "body-format", "x-custom") must be quoted and safely escaped.
+    // JSON.stringify provides correct escaping for any characters (quotes, backslashes, etc.).
+    const propKey = isValidIdentifier(propName) ? propName : JSON.stringify(propName);
     lines.push(`  readonly ${propKey}${optional}: ${tsType}${nullable};`);
   }
 
@@ -248,7 +249,8 @@ function objectSchemaToTsType(
   if (schema.properties !== undefined) {
     const props = Object.entries(schema.properties).map(([k, v]) => {
       const tsType = schemaToTsType(v, allSchemas);
-      return `${k}: ${tsType}`;
+      const propKey = isValidIdentifier(k) ? k : JSON.stringify(k);
+      return `${propKey}: ${tsType}`;
     });
     return `{ ${props.join('; ')} }`;
   }

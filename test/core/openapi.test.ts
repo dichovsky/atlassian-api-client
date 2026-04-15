@@ -491,7 +491,52 @@ describe('generateTypes', () => {
           },
         }),
       );
-      expect(source).toContain("'content-type'");
+      expect(source).toContain('"content-type"');
+    });
+
+    it('escapes property names containing single quotes', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Response: {
+            type: 'object',
+            properties: { "it's": { type: 'string' } },
+          },
+        }),
+      );
+      // JSON.stringify produces "it's" (double-quoted, no escaping needed for single quote)
+      expect(source).toContain('"it\'s"');
+    });
+
+    it('escapes property names containing backslashes', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Response: {
+            type: 'object',
+            properties: { 'path\\n': { type: 'string' } },
+          },
+        }),
+      );
+      // JSON.stringify escapes backslashes: "path\\n"
+      expect(source).toContain('"path\\\\n"');
+    });
+  });
+
+  describe('inline object types (objectSchemaToTsType)', () => {
+    it('quotes non-identifier keys in inline object type properties', () => {
+      // allOf/oneOf referencing an inline object schema exercises objectSchemaToTsType
+      const { source } = generateTypes(
+        makeSpec({
+          Union: {
+            oneOf: [
+              {
+                type: 'object',
+                properties: { 'content-type': { type: 'string' } },
+              },
+            ],
+          },
+        }),
+      );
+      expect(source).toContain('"content-type"');
     });
   });
 });
