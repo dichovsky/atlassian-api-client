@@ -73,14 +73,19 @@ export class HttpTransport implements Transport {
 
   private async executeFetch<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     const url = this.buildUrl(options.path, options.query);
-    this.config.logger?.debug('HTTP request', { method: options.method, url });
+    // Log only method + path to avoid query parameters (which may contain cursors or
+    // filter values) landing in persistent log aggregators.
+    this.config.logger?.debug('HTTP request', { method: options.method, path: options.path });
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
+    // Strip any caller-supplied Authorization header so the configured auth provider
+    // always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
+    const { Authorization: _dropped, ...safeHeaders } = options.headers ?? {};
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      ...(safeHeaders as Record<string, string>),
       ...this.authProvider.getHeaders(),
-      ...options.headers,
     };
 
     let fetchBody: FormData | string | undefined;
@@ -131,7 +136,7 @@ export class HttpTransport implements Transport {
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,
-      url,
+      path: options.path,
       status: response.status,
     });
 

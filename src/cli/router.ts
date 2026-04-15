@@ -40,7 +40,6 @@ export function parseCommand(argv: string[]): ParsedCommand & {
     args: argv.slice(2),
     options: GLOBAL_OPTIONS,
     allowPositionals: true,
-    strict: false,
   });
 
   const api = positionals[0] ?? '';

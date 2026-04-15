@@ -36,7 +36,7 @@ function buildRequestKey(opts: RequestOptions): string {
       Object.entries(opts.query)
         .filter(([, v]) => v !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}=${String(v)}`)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';

@@ -1,5 +1,5 @@
 import type { Middleware, RequestOptions } from './types.js';
-import { AtlassianError, AuthenticationError } from './errors.js';
+import { AtlassianError, AuthenticationError, ValidationError } from './errors.js';
 
 /** Tokens returned by the OAuth 2.0 token endpoint. */
 export interface OAuthTokens {
@@ -58,6 +58,7 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
     accessToken: config.accessToken,
     refreshToken: config.refreshToken,
   };
+  let refreshPromise: Promise<OAuthTokens> | null = null;
 
   return async (options: RequestOptions, next) => {
     const authedOptions = injectBearerToken(options, currentTokens.accessToken);
@@ -67,14 +68,23 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
     } catch (error) {
       if (!(error instanceof AuthenticationError)) throw error;
 
-      const newTokens = await fetchRefreshedTokens(config, currentTokens.refreshToken);
-      currentTokens = newTokens;
-
-      if (config.onTokenRefreshed !== undefined) {
-        await config.onTokenRefreshed(newTokens);
+      // Deduplicate concurrent refresh calls — only one token exchange runs at a time.
+      if (refreshPromise === null) {
+        refreshPromise = fetchRefreshedTokens(config, currentTokens.refreshToken)
+          .then(async (tokens) => {
+            currentTokens = tokens;
+            if (config.onTokenRefreshed !== undefined) {
+              await config.onTokenRefreshed(tokens);
+            }
+            return tokens;
+          })
+          .finally(() => {
+            refreshPromise = null;
+          });
       }
 
-      return next(injectBearerToken(options, currentTokens.accessToken));
+      const newTokens = await refreshPromise;
+      return next(injectBearerToken(options, newTokens.accessToken));
     }
   };
 }
@@ -98,6 +108,12 @@ export async function fetchRefreshedTokens(
   refreshToken: string,
 ): Promise<OAuthTokens> {
   const endpoint = config.tokenEndpoint ?? 'https://auth.atlassian.com/oauth/token';
+
+  // Enforce HTTPS to prevent credential exfiltration to non-encrypted endpoints.
+  const parsed = new URL(endpoint);
+  if (parsed.protocol !== 'https:') {
+    throw new ValidationError('tokenEndpoint must use HTTPS');
+  }
 
   const response = await fetch(endpoint, {
     method: 'POST',

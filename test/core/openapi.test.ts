@@ -426,4 +426,74 @@ describe('generateTypes', () => {
       expect(source).toContain('DirectTypeName');
     });
   });
+
+  describe('injection protection', () => {
+    it('throws when schema name is not a valid identifier', () => {
+      expect(() =>
+        generateTypes(makeSpec({ 'Invalid-Name': { type: 'string' } })),
+      ).toThrow('not a valid TypeScript identifier');
+    });
+
+    it('escapes star-slash sequences in description JSDoc to prevent comment breakout', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Safe: {
+            type: 'object',
+            description: 'Payload */ trailing',
+          },
+        }),
+      );
+      // The raw */ must be escaped so the JSDoc block is not terminated early
+      expect(source).toContain('*\\/');
+      // The interface declaration must follow the comment (not appear outside it)
+      expect(source).toContain('export interface Safe');
+    });
+
+    it('escapes single quotes in enum string values', () => {
+      const { source } = generateTypes(
+        makeSpec({ Status: { enum: ["it's"] } }),
+      );
+      expect(source).toContain("\\'");
+    });
+  });
+
+  describe('additionalProperties object form in generateInterface', () => {
+    it('emits typed index signature', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          MapType: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
+        }),
+      );
+      expect(source).toContain('[key: string]: string');
+    });
+
+    it('emits nullable typed index signature', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          NullableMap: {
+            type: 'object',
+            additionalProperties: { type: 'number', nullable: true },
+          },
+        }),
+      );
+      expect(source).toContain('[key: string]: number | null');
+    });
+  });
+
+  describe('non-identifier property names', () => {
+    it('wraps hyphenated property names in quotes', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Response: {
+            type: 'object',
+            properties: { 'content-type': { type: 'string' } },
+          },
+        }),
+      );
+      expect(source).toContain("'content-type'");
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
+import { ValidationError } from './errors.js';
 
 /** Options for the response caching middleware. */
 export interface CacheOptions {
@@ -36,6 +37,14 @@ interface CacheEntry {
 export function createCacheMiddleware(options?: CacheOptions): Middleware {
   const maxSize = options?.maxSize ?? 100;
   const ttl = options?.ttl ?? 60_000;
+
+  if (!Number.isInteger(maxSize) || maxSize < 1) {
+    throw new ValidationError('CacheOptions.maxSize must be a positive integer');
+  }
+  if (typeof ttl !== 'number' || ttl <= 0) {
+    throw new ValidationError('CacheOptions.ttl must be a positive number');
+  }
+
   const methods = new Set<HttpMethod>(options?.methods ?? ['GET']);
   const cache = new Map<string, CacheEntry>();
 
@@ -74,7 +83,7 @@ function buildCacheKey(opts: RequestOptions): string {
       Object.entries(opts.query)
         .filter(([, v]) => v !== undefined)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}=${String(v)}`)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';
   return `${opts.method}:${opts.path}${queryStr}`;

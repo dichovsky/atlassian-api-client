@@ -202,5 +202,32 @@ describe('SprintsResource', () => {
     it('throws RangeError for maxResults: Infinity', async () => {
       await expect(sprints.getIssues(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
     });
+
+    it('throws ValidationError for non-positive sprintId', async () => {
+      await expect(sprints.getIssues(0)).rejects.toThrow('sprintId must be a positive integer');
+    });
+  });
+});
+
+describe('SprintsResource sprintId validation', () => {
+  let transport: MockTransport;
+  let sprints: SprintsResource;
+
+  beforeEach(() => {
+    transport = new MockTransport();
+    sprints = new SprintsResource(transport, BASE_URL);
+  });
+
+  it('get() throws ValidationError for sprintId <= 0', async () => {
+    await expect(sprints.get(0)).rejects.toThrow('sprintId must be a positive integer');
+    await expect(sprints.get(-1)).rejects.toThrow('sprintId must be a positive integer');
+  });
+
+  it('update() throws ValidationError for sprintId <= 0', async () => {
+    await expect(sprints.update(0, {})).rejects.toThrow('sprintId must be a positive integer');
+  });
+
+  it('delete() throws ValidationError for sprintId <= 0', async () => {
+    await expect(sprints.delete(0)).rejects.toThrow('sprintId must be a positive integer');
   });
 });

@@ -48,11 +48,39 @@ export interface GeneratedTypes {
   readonly typeNames: readonly string[];
 }
 
+const IDENTIFIER_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+/**
+ * Returns true if `value` is a valid TypeScript / JavaScript identifier.
+ * Used to reject schema/property names that would allow code injection.
+ */
+function isValidIdentifier(value: string): boolean {
+  return IDENTIFIER_RE.test(value);
+}
+
+/**
+ * Escapes a string value for safe embedding inside a single-quoted TypeScript literal.
+ * Prevents enum string values from breaking out of their literal context.
+ */
+function escapeStringLiteral(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
+ * Escapes a description string for safe embedding inside a JSDoc comment block.
+ * Prevents star-slash sequences from terminating the comment block early.
+ */
+function escapeJsDocComment(value: string): string {
+  return value.replace(/\*\//g, '*\\/');
+}
+
 /**
  * Generates TypeScript type declarations from an OpenAPI 3.x spec.
  *
  * Each schema in `components.schemas` produces one `interface` or `type` declaration.
  * The result is a standalone TypeScript source string ready to be written to a `.ts` file.
+ *
+ * @throws {Error} when a schema name or property name is not a valid TypeScript identifier.
  */
 export function generateTypes(spec: OpenApiSpec): GeneratedTypes {
   const schemas = spec.components?.schemas ?? {};
@@ -64,6 +92,11 @@ export function generateTypes(spec: OpenApiSpec): GeneratedTypes {
   ];
 
   for (const [name, schema] of Object.entries(schemas)) {
+    if (!isValidIdentifier(name)) {
+      throw new Error(
+        `OpenAPI schema name "${name}" is not a valid TypeScript identifier and cannot be used in generated code`,
+      );
+    }
     typeNames.push(name);
     parts.push(generateTypeDeclaration(name, schema, schemas));
   }
@@ -95,7 +128,7 @@ function generateTypeDeclaration(
 function generateEnumType(name: string, schema: OpenApiSchemaObject): string {
   // schema.enum is guaranteed non-undefined here (checked in generateTypeDeclaration)
   const values = (schema.enum as readonly unknown[]).map((v) =>
-    typeof v === 'string' ? `'${v}'` : String(v),
+    typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v),
   );
   return `export type ${name} = ${values.join(' | ')};`;
 }
@@ -110,7 +143,7 @@ function generateInterface(
   const lines: string[] = [];
 
   if (schema.description !== undefined) {
-    lines.push(`/** ${schema.description} */`);
+    lines.push(`/** ${escapeJsDocComment(schema.description)} */`);
   }
 
   lines.push(`export interface ${name} {`);
@@ -121,13 +154,24 @@ function generateInterface(
     const nullable = propSchema.nullable === true ? ' | null' : '';
 
     if (propSchema.description !== undefined) {
-      lines.push(`  /** ${propSchema.description} */`);
+      lines.push(`  /** ${escapeJsDocComment(propSchema.description)} */`);
     }
-    lines.push(`  readonly ${propName}${optional}: ${tsType}${nullable};`);
+
+    // Non-identifier keys (e.g. "body-format", "x-custom") must be quoted.
+    const propKey = isValidIdentifier(propName) ? propName : `'${propName}'`;
+    lines.push(`  readonly ${propKey}${optional}: ${tsType}${nullable};`);
   }
 
   if (schema.additionalProperties === true) {
     lines.push(`  readonly [key: string]: unknown;`);
+  } else if (
+    schema.additionalProperties !== undefined &&
+    schema.additionalProperties !== false
+  ) {
+    const addlSchema = schema.additionalProperties;
+    const addlType = schemaToTsType(addlSchema, allSchemas);
+    const addlNullable = addlSchema.nullable === true ? ' | null' : '';
+    lines.push(`  readonly [key: string]: ${addlType}${addlNullable};`);
   }
 
   lines.push('}');
@@ -175,7 +219,9 @@ function schemaToTsType(
   }
 
   if (schema.enum !== undefined) {
-    return schema.enum.map((v) => (typeof v === 'string' ? `'${v}'` : String(v))).join(' | ');
+    return schema.enum
+      .map((v) => (typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v)))
+      .join(' | ');
   }
 
   switch (schema.type) {

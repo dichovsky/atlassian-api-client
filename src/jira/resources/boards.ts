@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
@@ -65,6 +66,9 @@ export class BoardsResource {
 
   /** Get a board by ID. */
   async get(boardId: number): Promise<Board> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
     const response = await this.transport.request<Board>({
       method: 'GET',
       path: `${this.baseUrl}/board/${boardId}`,
@@ -77,6 +81,9 @@ export class BoardsResource {
     boardId: number,
     params?: ListBoardIssuesParams,
   ): Promise<OffsetPaginatedResponse<BoardIssue>> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {

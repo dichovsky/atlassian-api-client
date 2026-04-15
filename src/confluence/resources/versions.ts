@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
@@ -26,6 +27,9 @@ export class VersionsResource {
 
   /** Get a specific version of a page. */
   async getForPage(pageId: string, versionNumber: number): Promise<ContentVersion> {
+    if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+      throw new ValidationError('versionNumber must be a positive integer');
+    }
     const response = await this.transport.request<ContentVersion>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/versions/${versionNumber}`,
@@ -49,6 +53,9 @@ export class VersionsResource {
 
   /** Get a specific version of a blog post. */
   async getForBlogPost(blogPostId: string, versionNumber: number): Promise<ContentVersion> {
+    if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+      throw new ValidationError('versionNumber must be a positive integer');
+    }
     const response = await this.transport.request<ContentVersion>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions/${versionNumber}`,

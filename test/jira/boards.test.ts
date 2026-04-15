@@ -147,6 +147,11 @@ describe('BoardsResource', () => {
         path: `${BASE_URL}/board/42`,
       });
     });
+
+    it('throws ValidationError for non-positive boardId', async () => {
+      await expect(boards.get(0)).rejects.toThrow('boardId must be a positive integer');
+      await expect(boards.get(-1)).rejects.toThrow('boardId must be a positive integer');
+    });
   });
 
   // ── getIssues ─────────────────────────────────────────────────────────────
@@ -210,6 +215,11 @@ describe('BoardsResource', () => {
 
     it('throws RangeError for maxResults: Infinity', async () => {
       await expect(boards.getIssues(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    });
+
+    it('throws ValidationError for non-positive boardId', async () => {
+      await expect(boards.getIssues(0)).rejects.toThrow('boardId must be a positive integer');
+      await expect(boards.getIssues(-5)).rejects.toThrow('boardId must be a positive integer');
     });
   });
 

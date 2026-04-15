@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 import type { BoardIssue } from './boards.js';
@@ -46,6 +47,9 @@ export class SprintsResource {
 
   /** Get a sprint by ID. */
   async get(sprintId: number): Promise<Sprint> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
     const response = await this.transport.request<Sprint>({
       method: 'GET',
       path: `${this.baseUrl}/sprint/${sprintId}`,
@@ -65,6 +69,9 @@ export class SprintsResource {
 
   /** Update a sprint. */
   async update(sprintId: number, data: UpdateSprintData): Promise<Sprint> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
     const response = await this.transport.request<Sprint>({
       method: 'PUT',
       path: `${this.baseUrl}/sprint/${sprintId}`,
@@ -75,6 +82,9 @@ export class SprintsResource {
 
   /** Delete a sprint. */
   async delete(sprintId: number): Promise<void> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/sprint/${sprintId}`,
@@ -86,6 +96,9 @@ export class SprintsResource {
     sprintId: number,
     params?: ListSprintIssuesParams,
   ): Promise<OffsetPaginatedResponse<BoardIssue>> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {

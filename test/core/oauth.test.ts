@@ -195,6 +195,39 @@ describe('createOAuthRefreshMiddleware', () => {
     await mw(makeOpts(), next);
     expect((refreshed[0] as { refreshToken: string }).refreshToken).toBe('old-refresh');
   });
+
+  it('deduplicates concurrent token refreshes — only one fetch call is made', async () => {
+    let fetchCalls = 0;
+
+    // next always throws 401 on the first call, succeeds after refresh
+    let callCount = 0;
+    const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+      callCount++;
+      if (callCount <= 2) throw new AuthenticationError();
+      return makeResponse({ ok: true });
+    });
+
+    global.fetch = vi.fn(async () => {
+      fetchCalls++;
+      return {
+        ok: true,
+        json: async () => ({ access_token: 'refreshed', refresh_token: 'new-refresh' }),
+      };
+    }) as unknown as typeof fetch;
+
+    const mw = createOAuthRefreshMiddleware({
+      accessToken: 'initial',
+      refreshToken: 'refresh-1',
+      clientId: 'cid',
+      clientSecret: 'csec',
+    });
+
+    // Fire two concurrent requests that both hit 401 simultaneously
+    await Promise.all([mw(makeOpts(), next), mw(makeOpts(), next)]);
+
+    // Only one token refresh call should have been made
+    expect(fetchCalls).toBe(1);
+  });
 });
 
 describe('fetchRefreshedTokens', () => {
@@ -330,5 +363,14 @@ describe('fetchRefreshedTokens', () => {
     await expect(fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref')).rejects.toThrow(
       OAuthError,
     );
+  });
+
+  it('throws ValidationError when tokenEndpoint uses HTTP (not HTTPS)', async () => {
+    await expect(
+      fetchRefreshedTokens(
+        { clientId: 'c', clientSecret: 's', tokenEndpoint: 'http://attacker.com/token' },
+        'ref',
+      ),
+    ).rejects.toThrow('tokenEndpoint must use HTTPS');
   });
 });

@@ -100,6 +100,15 @@ describe('VersionsResource', () => {
         expect(transport.calls).toHaveLength(0);
       },
     );
+
+    it('throws ValidationError for non-positive versionNumber', async () => {
+      await expect(resource.getForPage('page-1', 0)).rejects.toThrow(
+        'versionNumber must be a positive integer',
+      );
+      await expect(resource.getForPage('page-1', -1)).rejects.toThrow(
+        'versionNumber must be a positive integer',
+      );
+    });
   });
 
   // ── listForBlogPost ───────────────────────────────────────────────────────
@@ -181,6 +190,15 @@ describe('VersionsResource', () => {
         expect(transport.calls).toHaveLength(0);
       },
     );
+
+    it('throws ValidationError for non-positive versionNumber', async () => {
+      await expect(resource.getForBlogPost('blog-1', 0)).rejects.toThrow(
+        'versionNumber must be a positive integer',
+      );
+      await expect(resource.getForBlogPost('blog-1', -1)).rejects.toThrow(
+        'versionNumber must be a positive integer',
+      );
+    });
   });
 
   // ── listAllForPage ────────────────────────────────────────────────────────

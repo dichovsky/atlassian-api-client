@@ -258,11 +258,11 @@ Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:
 ```typescript
 import { detectRequiredScopes, listKnownOperations } from 'atlassian-api-client';
 
-const scopes = detectRequiredScopes(['jira.issues.create', 'confluence.pages.read']);
-// → ['write:jira-work', 'read:confluence-content.summary']
+const scopes = detectRequiredScopes(['jira.issues.create', 'confluence.pages.get']);
+// → ['write:jira-work', 'read:confluence-content.all']
 
 const allOps = listKnownOperations();
-// → ['jira.issues.create', 'jira.issues.read', ...]
+// → ['confluence.pages.create', 'confluence.pages.delete', ...]
 ```
 
 ## OpenAPI Type Generation
@@ -286,7 +286,7 @@ const spec = {
   },
 };
 
-const { code } = generateTypes(spec);
+const { source } = generateTypes(spec);
 // → 'export interface Issue { id?: string; summary?: string | null; }'
 ```
 
@@ -374,15 +374,15 @@ atlas jira projects list --format minimal
 | `issueComments`    | `list`, `get`, `create`, `update`, `delete`                         |
 | `issueAttachments` | `list`, `get`, `upload`                                             |
 | `labels`           | `list`                                                              |
-| `boards`           | `list`, `get`, `listIssues`                                         |
-| `sprints`          | `get`, `create`, `update`, `delete`, `listIssues`                   |
+| `boards`           | `list`, `get`, `getIssues`                                          |
+| `sprints`          | `get`, `create`, `update`, `delete`, `getIssues`                    |
 | `workflows`        | `list`, `get`                                                       |
 | `dashboards`       | `list`, `get`, `create`, `update`, `delete`                         |
 | `filters`          | `list`, `get`, `create`, `update`, `delete`                         |
 | `fields`           | `list`, `listAll`, `create`, `update`, `delete`                     |
 | `webhooks`         | `list`, `register`, `delete`                                        |
-| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getSuggestions`        |
-| `bulk`             | `createIssues`, `setIssueProperty`, `deleteIssueProperty`           |
+| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getFieldReferenceSuggestions` |
+| `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`              |
 
 ## Architecture
 

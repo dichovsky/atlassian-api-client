@@ -29,6 +29,15 @@ export class HttpError extends AtlassianError {
     this.status = status;
     this.responseBody = responseBody;
   }
+
+  /**
+   * Safe serialisation — omits `responseBody` to prevent raw API payloads
+   * (which may include internal tenant identifiers or auth details) from
+   * being sent to log aggregators via `JSON.stringify(error)`.
+   */
+  toJSON(): Record<string, unknown> {
+    return { name: this.name, code: this.code, status: this.status, message: this.message };
+  }
 }
 
 /** 401 Unauthorized. */
