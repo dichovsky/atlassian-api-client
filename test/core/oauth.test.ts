@@ -309,4 +309,26 @@ describe('fetchRefreshedTokens', () => {
       OAuthError,
     );
   });
+
+  it('throws OAuthError when ok response has empty access_token', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: '' }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref'),
+    ).rejects.toThrow(OAuthError);
+  });
+
+  it('throws OAuthError when ok response has no access_token', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ token_type: 'Bearer' }),
+    }) as unknown as typeof fetch;
+
+    await expect(
+      fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref'),
+    ).rejects.toThrow(OAuthError);
+  });
 });

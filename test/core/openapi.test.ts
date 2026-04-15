@@ -250,6 +250,20 @@ describe('generateTypes', () => {
       expect(source).toContain('Record<string, unknown>');
     });
 
+    it('generates {} for object with additionalProperties:false inline', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Strict: {
+            type: 'object',
+            properties: {
+              data: { type: 'object', additionalProperties: false },
+            },
+          },
+        }),
+      );
+      expect(source).toContain('data?: {}');
+    });
+
     it('generates Record<string, T> for object with typed additionalProperties inline', () => {
       const { source } = generateTypes(
         makeSpec({
