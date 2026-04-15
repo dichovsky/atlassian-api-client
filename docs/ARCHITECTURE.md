@@ -307,20 +307,20 @@ All user-controlled path segments (IDs, keys) are percent-encoded before URL con
 
 Built-in middleware factories:
 
-| Export | File | Description |
-| --- | --- | --- |
-| `createOAuthRefreshMiddleware` | `oauth.ts` | Injects Bearer token; refreshes on 401 |
-| `createConnectJwtMiddleware` | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH) |
-| `createCacheMiddleware` | `cache.ts` | In-memory GET response cache (FIFO, TTL) |
-| `createBatchMiddleware` | `batch.ts` | Deduplicates concurrent identical in-flight requests |
+| Export                         | File             | Description                                          |
+| ------------------------------ | ---------------- | ---------------------------------------------------- |
+| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401               |
+| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                  |
+| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL)             |
+| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests |
 
 Helper utilities:
 
-| Export | Description |
-| --- | --- |
-| `signConnectJwt` | Low-level JWT signing (iss, iat, exp, qsh) |
-| `computeQsh` | Canonical request hash for Connect JWT |
-| `fetchRefreshedTokens` | Low-level token endpoint call |
+| Export                 | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `signConnectJwt`       | Low-level JWT signing (iss, iat, exp, qsh) |
+| `computeQsh`           | Canonical request hash for Connect JWT     |
+| `fetchRefreshedTokens` | Low-level token endpoint call              |
 
 ### OAuth Scope Detection (`src/core/scopes.ts`)
 
@@ -403,8 +403,8 @@ class JiraClient {
   readonly issueComments: IssueCommentsResource;
   readonly issueAttachments: IssueAttachmentsResource;
   readonly labels: LabelsResource;
-  readonly boards: BoardsResource;       // base: /rest/agile/1.0
-  readonly sprints: SprintsResource;     // base: /rest/agile/1.0
+  readonly boards: BoardsResource; // base: /rest/agile/1.0
+  readonly sprints: SprintsResource; // base: /rest/agile/1.0
   readonly workflows: WorkflowsResource;
   readonly dashboards: DashboardsResource;
   readonly filters: FiltersResource;

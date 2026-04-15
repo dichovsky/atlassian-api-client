@@ -224,8 +224,8 @@ Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, 
 import { createCacheMiddleware } from 'atlassian-api-client';
 
 const cacheMiddleware = createCacheMiddleware({
-  ttl: 30_000,   // 30s TTL (default: 60s)
-  maxSize: 200,  // max entries (default: 100, FIFO eviction)
+  ttl: 30_000, // 30s TTL (default: 60s)
+  maxSize: 200, // max entries (default: 100, FIFO eviction)
 });
 
 const client = new ConfluenceClient({
@@ -362,27 +362,27 @@ atlas jira projects list --format minimal
 
 ### JiraClient
 
-| Resource           | Methods                                                                      |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition`          |
-| `projects`         | `list`, `get`, `listAll`                                                     |
-| `search`           | `search`, `searchGet`, `searchAll`                                           |
-| `users`            | `get`, `getCurrentUser`, `search`                                            |
-| `issueTypes`       | `list`, `get`                                                                |
-| `priorities`       | `list`, `get`                                                                |
-| `statuses`         | `list`                                                                       |
-| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                                  |
-| `issueAttachments` | `list`, `get`, `upload`                                                      |
-| `labels`           | `list`                                                                       |
-| `boards`           | `list`, `get`, `listIssues`                                                  |
-| `sprints`          | `get`, `create`, `update`, `delete`, `listIssues`                            |
-| `workflows`        | `list`, `get`                                                                |
-| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                                  |
-| `filters`          | `list`, `get`, `create`, `update`, `delete`                                  |
-| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                              |
-| `webhooks`         | `list`, `register`, `delete`                                                 |
-| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getSuggestions`                 |
-| `bulk`             | `createIssues`, `setIssueProperty`, `deleteIssueProperty`                   |
+| Resource           | Methods                                                             |
+| ------------------ | ------------------------------------------------------------------- |
+| `issues`           | `get`, `create`, `update`, `delete`, `getTransitions`, `transition` |
+| `projects`         | `list`, `get`, `listAll`                                            |
+| `search`           | `search`, `searchGet`, `searchAll`                                  |
+| `users`            | `get`, `getCurrentUser`, `search`                                   |
+| `issueTypes`       | `list`, `get`                                                       |
+| `priorities`       | `list`, `get`                                                       |
+| `statuses`         | `list`                                                              |
+| `issueComments`    | `list`, `get`, `create`, `update`, `delete`                         |
+| `issueAttachments` | `list`, `get`, `upload`                                             |
+| `labels`           | `list`                                                              |
+| `boards`           | `list`, `get`, `listIssues`                                         |
+| `sprints`          | `get`, `create`, `update`, `delete`, `listIssues`                   |
+| `workflows`        | `list`, `get`                                                       |
+| `dashboards`       | `list`, `get`, `create`, `update`, `delete`                         |
+| `filters`          | `list`, `get`, `create`, `update`, `delete`                         |
+| `fields`           | `list`, `listAll`, `create`, `update`, `delete`                     |
+| `webhooks`         | `list`, `register`, `delete`                                        |
+| `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getSuggestions`        |
+| `bulk`             | `createIssues`, `setIssueProperty`, `deleteIssueProperty`           |
 
 ## Architecture
 
