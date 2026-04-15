@@ -212,7 +212,7 @@ function objectSchemaToTsType(
 
   if (schema.additionalProperties !== undefined) {
     if (typeof schema.additionalProperties === 'boolean') {
-      return 'Record<string, unknown>';
+      return schema.additionalProperties ? 'Record<string, unknown>' : '{}';
     }
     return `Record<string, ${schemaToTsType(schema.additionalProperties, allSchemas)}>`;
   }

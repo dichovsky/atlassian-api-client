@@ -86,8 +86,10 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   'confluence.tasks.update': ['write:confluence-content'],
 
   // Confluence — Versions
-  'confluence.versions.list': ['read:confluence-content.all'],
-  'confluence.versions.get': ['read:confluence-content.all'],
+  'confluence.versions.listForPage': ['read:confluence-content.all'],
+  'confluence.versions.listForBlogPost': ['read:confluence-content.all'],
+  'confluence.versions.getForPage': ['read:confluence-content.all'],
+  'confluence.versions.getForBlogPost': ['read:confluence-content.all'],
 
   // Jira — Issues
   'jira.issues.get': ['read:jira-work'],
@@ -125,8 +127,8 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   'jira.boards.list': ['read:jira-work'],
   'jira.boards.get': ['read:jira-work'],
   'jira.boards.getIssues': ['read:jira-work'],
-  'jira.sprints.list': ['read:jira-work'],
   'jira.sprints.get': ['read:jira-work'],
+  'jira.sprints.getIssues': ['read:jira-work'],
   'jira.sprints.create': ['manage:jira-project'],
   'jira.sprints.update': ['manage:jira-project'],
   'jira.sprints.delete': ['manage:jira-project'],
@@ -160,7 +162,7 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   'jira.jql.getAutocompleteData': ['read:jira-work'],
   'jira.jql.parse': ['read:jira-work'],
   'jira.jql.sanitize': ['read:jira-work'],
-  'jira.jql.getSuggestions': ['read:jira-work'],
+  'jira.jql.getFieldReferenceSuggestions': ['read:jira-work'],
 
   // Jira — Bulk
   'jira.bulk.createBulk': ['write:jira-work'],

@@ -128,6 +128,7 @@ describe('JiraClient', () => {
     expect(typeof client.webhooks.register).toBe('function');
     expect(typeof client.webhooks.delete).toBe('function');
     expect(typeof client.jql.getAutocompleteData).toBe('function');
+    expect(typeof client.jql.getFieldReferenceSuggestions).toBe('function');
     expect(typeof client.jql.parse).toBe('function');
     expect(typeof client.jql.sanitize).toBe('function');
     expect(typeof client.bulk.createBulk).toBe('function');

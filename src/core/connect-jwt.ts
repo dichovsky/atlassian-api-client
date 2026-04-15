@@ -30,8 +30,8 @@ export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware
     return next({
       ...options,
       headers: {
-        Authorization: `JWT ${token}`,
         ...options.headers,
+        Authorization: `JWT ${token}`,
       },
     });
   };

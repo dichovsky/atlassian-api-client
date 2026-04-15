@@ -123,7 +123,8 @@ export class DashboardsResource {
   /** Iterate over all dashboards across all result pages. */
   async *listAll(params?: Omit<ListDashboardsParams, 'startAt'>): AsyncGenerator<Dashboard> {
     let startAt = 0;
-    const maxResults = 50;
+    const maxResults = params?.maxResults ?? 50;
+    validatePageSize(maxResults, 'maxResults');
     while (true) {
       const page = await this.list({ ...params, startAt, maxResults });
       for (const item of page.values) yield item;

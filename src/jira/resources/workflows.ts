@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { NotFoundError } from '../../core/errors.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
@@ -78,7 +79,7 @@ export class WorkflowsResource {
       query: { workflowName },
     });
     if (!resp.data.values[0]) {
-      throw new Error(`Workflow not found: ${workflowName}`);
+      throw new NotFoundError(`Workflow not found: ${workflowName}`);
     }
     return resp.data.values[0];
   }

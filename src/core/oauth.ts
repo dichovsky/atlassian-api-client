@@ -83,8 +83,8 @@ function injectBearerToken(options: RequestOptions, token: string): RequestOptio
   return {
     ...options,
     headers: {
-      Authorization: `Bearer ${token}`,
       ...options.headers,
+      Authorization: `Bearer ${token}`,
     },
   };
 }
@@ -119,6 +119,16 @@ export async function fetchRefreshedTokens(
 
   if (!response.ok) {
     throw new OAuthError(`Token refresh failed with HTTP ${response.status}`, response.status);
+  }
+
+  if (
+    body === null ||
+    body === undefined ||
+    typeof body !== 'object' ||
+    typeof (body as Record<string, unknown>)['access_token'] !== 'string' ||
+    (body as Record<string, unknown>)['access_token'] === ''
+  ) {
+    throw new OAuthError('Token refresh response missing access_token');
   }
 
   const data = body as {
