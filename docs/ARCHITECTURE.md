@@ -313,12 +313,12 @@ All user-controlled path segments (IDs, keys) are percent-encoded before URL con
 
 Built-in middleware factories:
 
-| Export                         | File             | Description                                          |
-| ------------------------------ | ---------------- | ---------------------------------------------------- |
-| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races) |
-| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                  |
+| Export                         | File             | Description                                                                                                                                                                           |
+| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                        |
+| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                                                                                                                                                   |
 | `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL); `maxSize` and `ttl` validated at construction; cache keys `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
-| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache |
+| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                 |
 
 Helper utilities:
 
@@ -337,6 +337,7 @@ Helper utilities:
 `generateTypes(spec)` converts an OpenAPI 3.x `components.schemas` document into TypeScript interface/type declarations. Supported schema features: `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, `additionalProperties`. Returns `{ source: string, typeNames: string[] }`.
 
 **Injection protection:**
+
 - Schema names are validated as legal TypeScript identifiers; invalid names throw `ValidationError`
 - `*/` sequences in JSDoc descriptions are escaped to `*\/` to prevent comment block breakout
 - Single quotes in enum string values are escaped to `\'`
