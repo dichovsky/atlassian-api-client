@@ -248,9 +248,7 @@ describe('FiltersResource', () => {
     it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
       'rejects dot-segment id in delete(): %s',
       async (id) => {
-        await expect(filters.delete(id)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
+        await expect(filters.delete(id)).rejects.toThrow('path parameter must not be "." or ".."');
         expect(transport.calls).toHaveLength(0);
       },
     );

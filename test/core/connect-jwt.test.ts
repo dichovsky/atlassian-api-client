@@ -167,11 +167,13 @@ describe('createConnectJwtMiddleware', () => {
   });
 
   it('forwards the response from next unchanged', async () => {
-    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => ({
-      data: { id: 42 },
-      status: 200,
-      headers: new Headers(),
-    }));
+    const next = vi.fn(
+      async (): Promise<ApiResponse<unknown>> => ({
+        data: { id: 42 },
+        status: 200,
+        headers: new Headers(),
+      }),
+    );
 
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     const result = await mw(makeOpts(), next);

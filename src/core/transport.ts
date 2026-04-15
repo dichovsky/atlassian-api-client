@@ -86,7 +86,9 @@ export class HttpTransport implements Transport {
     let fetchBody: FormData | string | undefined;
 
     if (options.formData !== undefined && options.body !== undefined) {
-      throw new ValidationError('RequestOptions.formData and RequestOptions.body are mutually exclusive');
+      throw new ValidationError(
+        'RequestOptions.formData and RequestOptions.body are mutually exclusive',
+      );
     }
 
     if (options.formData !== undefined) {

@@ -68,8 +68,9 @@ describe('createCacheMiddleware', () => {
 
   it('evicts the oldest entry when maxSize is reached', async () => {
     let counter = 0;
-    const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-      makeResponse({ path: opts.path, n: ++counter }),
+    const next = vi.fn(
+      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ path: opts.path, n: ++counter }),
     );
 
     const mw = createCacheMiddleware({ maxSize: 2 });

@@ -25,7 +25,12 @@ describe('FieldsResource', () => {
   describe('list()', () => {
     it('calls GET /field/search with no params', async () => {
       // Arrange
-      const page = { values: [makeField('f1', 'Summary', false)], startAt: 0, maxResults: 50, total: 1 };
+      const page = {
+        values: [makeField('f1', 'Summary', false)],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+      };
       transport.respondWith(page);
 
       // Act
@@ -70,7 +75,9 @@ describe('FieldsResource', () => {
       await fields.list({ id: ['customfield_10001', 'customfield_10002'] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ id: 'customfield_10001,customfield_10002' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        id: 'customfield_10001,customfield_10002',
+      });
     });
 
     it('passes query, orderBy, expand params', async () => {
@@ -135,7 +142,10 @@ describe('FieldsResource', () => {
       // Arrange
       const created = makeField('customfield_10050', 'My Field', true);
       transport.respondWith(created);
-      const data = { name: 'My Field', type: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield' };
+      const data = {
+        name: 'My Field',
+        type: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+      };
 
       // Act
       const result = await fields.create(data);

@@ -110,9 +110,7 @@ describe('generateTypes', () => {
     });
 
     it('generates an empty interface for an object with no properties field', () => {
-      const { source } = generateTypes(
-        makeSpec({ EmptyObj: { type: 'object' } }),
-      );
+      const { source } = generateTypes(makeSpec({ EmptyObj: { type: 'object' } }));
       expect(source).toContain('export interface EmptyObj {');
     });
 

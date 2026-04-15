@@ -206,7 +206,9 @@ describe('IssueCommentsResource', () => {
     it('encodes issueIdOrKey and commentId in get()', async () => {
       transport.respondWith(makeComment('x'));
       await resource.get('../admin', '../cid');
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`,
+      );
     });
 
     it('encodes issueIdOrKey in create()', async () => {
@@ -218,13 +220,17 @@ describe('IssueCommentsResource', () => {
     it('encodes issueIdOrKey and commentId in update()', async () => {
       transport.respondWith(makeComment('x'));
       await resource.update('../admin', '../cid', { body: {} });
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`,
+      );
     });
 
     it('encodes issueIdOrKey and commentId in delete()', async () => {
       transport.respondWith(undefined);
       await resource.delete('../admin', '../cid');
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/..%2Fadmin/comment/..%2Fcid`,
+      );
     });
   });
 });

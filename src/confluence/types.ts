@@ -327,7 +327,10 @@ export interface CreateCustomContentData {
   readonly pageId?: string;
   readonly blogPostId?: string;
   readonly title?: string;
-  readonly body?: { readonly representation: 'storage' | 'atlas_doc_format'; readonly value: string };
+  readonly body?: {
+    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly value: string;
+  };
 }
 
 export interface UpdateCustomContentData {
@@ -336,7 +339,10 @@ export interface UpdateCustomContentData {
   readonly status: 'current' | 'draft';
   readonly title?: string;
   readonly version: { readonly number: number; readonly message?: string };
-  readonly body?: { readonly representation: 'storage' | 'atlas_doc_format'; readonly value: string };
+  readonly body?: {
+    readonly representation: 'storage' | 'atlas_doc_format';
+    readonly value: string;
+  };
 }
 
 // --- Whiteboards ---

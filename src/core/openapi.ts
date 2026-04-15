@@ -149,8 +149,8 @@ function generateComposedType(
   }
   // anyOf must be defined here — this function is only reached when at least one of
   // allOf/oneOf/anyOf is set, and allOf/oneOf are handled above.
-  const anyOfParts = (schema.anyOf as readonly OpenApiSchemaObject[]).map(
-    (s) => schemaToTsType(s, allSchemas),
+  const anyOfParts = (schema.anyOf as readonly OpenApiSchemaObject[]).map((s) =>
+    schemaToTsType(s, allSchemas),
   );
   return `export type ${name} = ${anyOfParts.join(' | ')};`;
 }
@@ -175,9 +175,7 @@ function schemaToTsType(
   }
 
   if (schema.enum !== undefined) {
-    return schema.enum
-      .map((v) => (typeof v === 'string' ? `'${v}'` : String(v)))
-      .join(' | ');
+    return schema.enum.map((v) => (typeof v === 'string' ? `'${v}'` : String(v))).join(' | ');
   }
 
   switch (schema.type) {

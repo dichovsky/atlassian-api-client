@@ -47,9 +47,7 @@ export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions
   const qsh = computeQsh(options.method, options.path, options.query);
 
   const headerB64 = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payloadB64 = base64UrlEncode(
-    JSON.stringify({ iss: config.issuer, iat: now, exp, qsh }),
-  );
+  const payloadB64 = base64UrlEncode(JSON.stringify({ iss: config.issuer, iat: now, exp, qsh }));
 
   const signingInput = `${headerB64}.${payloadB64}`;
   const signature = createHmac('sha256', config.sharedSecret)

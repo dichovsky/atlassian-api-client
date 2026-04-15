@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { JqlResource } from '../../src/jira/resources/jql.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import type { JqlAutocompleteData, JqlSuggestions, ParsedJqlQueries, SanitizedJqlQueries } from '../../src/jira/resources/jql.js';
+import type {
+  JqlAutocompleteData,
+  JqlSuggestions,
+  ParsedJqlQueries,
+  SanitizedJqlQueries,
+} from '../../src/jira/resources/jql.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -118,9 +123,7 @@ describe('JqlResource', () => {
     it('calls POST /jql/parse with the provided data', async () => {
       // Arrange
       const parsed: ParsedJqlQueries = {
-        queries: [
-          { query: 'project = TEST AND status = Open', structure: {} },
-        ],
+        queries: [{ query: 'project = TEST AND status = Open', structure: {} }],
       };
       transport.respondWith(parsed);
       const data = { queries: ['project = TEST AND status = Open'] };
@@ -178,7 +181,9 @@ describe('JqlResource', () => {
       };
       transport.respondWith(sanitized);
       const data = {
-        queries: [{ query: 'project = TEST AND assignee = currentUser()', accountId: '612345:abc' }],
+        queries: [
+          { query: 'project = TEST AND assignee = currentUser()', accountId: '612345:abc' },
+        ],
       };
 
       // Act

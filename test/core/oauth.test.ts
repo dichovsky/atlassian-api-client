@@ -187,7 +187,9 @@ describe('createOAuthRefreshMiddleware', () => {
       refreshToken: 'old-refresh',
       clientId: 'cid',
       clientSecret: 'csec',
-      onTokenRefreshed: (tokens) => { refreshed.push(tokens); },
+      onTokenRefreshed: (tokens) => {
+        refreshed.push(tokens);
+      },
     });
 
     await mw(makeOpts(), next);
@@ -216,10 +218,7 @@ describe('fetchRefreshedTokens', () => {
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    await fetchRefreshedTokens(
-      { clientId: 'cid', clientSecret: 'csec' },
-      'my-refresh-token',
-    );
+    await fetchRefreshedTokens({ clientId: 'cid', clientSecret: 'csec' }, 'my-refresh-token');
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://auth.atlassian.com/oauth/token');
@@ -301,11 +300,13 @@ describe('fetchRefreshedTokens', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 502,
-      json: async () => { throw new SyntaxError('bad json'); },
+      json: async () => {
+        throw new SyntaxError('bad json');
+      },
     }) as unknown as typeof fetch;
 
-    await expect(
-      fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref'),
-    ).rejects.toThrow(OAuthError);
+    await expect(fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'ref')).rejects.toThrow(
+      OAuthError,
+    );
   });
 });

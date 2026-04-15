@@ -40,10 +40,7 @@ describe('createBatchMiddleware', () => {
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
     const mw = createBatchMiddleware();
 
-    await Promise.all([
-      mw(makeOpts({ path: '/a' }), next),
-      mw(makeOpts({ path: '/b' }), next),
-    ]);
+    await Promise.all([mw(makeOpts({ path: '/a' }), next), mw(makeOpts({ path: '/b' }), next)]);
 
     expect(next).toHaveBeenCalledTimes(2);
   });

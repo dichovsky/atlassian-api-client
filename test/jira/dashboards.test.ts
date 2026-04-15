@@ -201,9 +201,9 @@ describe('DashboardsResource', () => {
     it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
       'rejects dot-segment id in update(): %s',
       async (id) => {
-        await expect(
-          dashboards.update(id, { name: 'x', sharePermissions: [] }),
-        ).rejects.toThrow('path parameter must not be "." or ".."');
+        await expect(dashboards.update(id, { name: 'x', sharePermissions: [] })).rejects.toThrow(
+          'path parameter must not be "." or ".."',
+        );
         expect(transport.calls).toHaveLength(0);
       },
     );
