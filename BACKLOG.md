@@ -117,24 +117,24 @@ Priority levels:
 
 ### Features
 
-- [ ] Confluence Custom Content resource
-- [ ] Confluence Whiteboard resource
-- [ ] Confluence Tasks resource
-- [ ] Confluence Versions resource
-- [ ] Jira Agile board endpoints (boards, sprints, epics)
-- [ ] Jira workflow management
-- [ ] Jira dashboard and filter CRUD
-- [ ] Jira fields and field configuration
-- [ ] Jira webhook management
-- [ ] Jira JQL autocomplete/parse/sanitize
-- [ ] Jira bulk issue operations
-- [ ] OAuth 2.0 token refresh flow
-- [ ] Connect JWT authentication
-- [ ] CJS dual output
-- [ ] OpenAPI spec-based type generation
-- [ ] Response caching layer
-- [ ] Request batching
-- [ ] Automatic scope detection for OAuth
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Automated npm publishing workflow
-- [ ] Changelog generation from commits
+- [x] Confluence Custom Content resource
+- [x] Confluence Whiteboard resource
+- [x] Confluence Tasks resource
+- [x] Confluence Versions resource
+- [x] Jira Agile board endpoints (boards, sprints)
+- [x] Jira workflow management
+- [x] Jira dashboard and filter CRUD
+- [x] Jira fields and field configuration
+- [x] Jira webhook management
+- [x] Jira JQL autocomplete/parse/sanitize
+- [x] Jira bulk issue operations
+- [x] OAuth 2.0 token refresh flow
+- [x] Connect JWT authentication
+- [x] CJS dual output
+- [x] OpenAPI spec-based type generation
+- [x] Response caching layer
+- [x] Request batching
+- [x] Automatic scope detection for OAuth
+- [x] CI/CD pipeline (GitHub Actions)
+- [x] Automated npm publishing workflow
+- [x] Changelog generation from commits

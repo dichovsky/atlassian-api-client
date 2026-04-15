@@ -9,6 +9,7 @@ export {
   TimeoutError,
   NetworkError,
   ValidationError,
+  OAuthError,
 } from './core/index.js';
 
 // Core types
@@ -23,6 +24,29 @@ export type {
   Logger,
   Middleware,
 } from './core/index.js';
+
+// OAuth 2.0 token refresh
+export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index.js';
+export type { OAuthRefreshConfig, OAuthTokens } from './core/index.js';
+
+// Atlassian Connect JWT
+export { createConnectJwtMiddleware, signConnectJwt, computeQsh } from './core/index.js';
+export type { ConnectJwtConfig } from './core/index.js';
+
+// Response caching
+export { createCacheMiddleware } from './core/index.js';
+export type { CacheOptions } from './core/index.js';
+
+// Request batching (deduplication)
+export { createBatchMiddleware } from './core/index.js';
+
+// OAuth scope detection
+export { detectRequiredScopes, listKnownOperations } from './core/index.js';
+export type { AtlassianScope } from './core/index.js';
+
+// OpenAPI type generation
+export { generateTypes } from './core/index.js';
+export type { OpenApiSpec, OpenApiSchemaObject, GeneratedTypes } from './core/index.js';
 
 // Confluence
 export { ConfluenceClient } from './confluence/index.js';
@@ -57,6 +81,19 @@ export type {
   ListContentPropertiesParams,
   CreateContentPropertyData,
   UpdateContentPropertyData,
+  CustomContent,
+  ListCustomContentParams,
+  GetCustomContentParams,
+  CreateCustomContentData,
+  UpdateCustomContentData,
+  Whiteboard,
+  CreateWhiteboardData,
+  ConfluenceTask,
+  ListTasksParams as ConfluenceListTasksParams,
+  GetTaskParams,
+  UpdateTaskData,
+  ContentVersion,
+  ListVersionsParams,
 } from './confluence/index.js';
 
 // Jira
@@ -86,4 +123,45 @@ export type {
   CreateIssueCommentData,
   UpdateIssueCommentData,
   ListLabelsParams as JiraListLabelsParams,
+  Board,
+  BoardIssue,
+  ListBoardsParams,
+  ListBoardIssuesParams,
+  Sprint,
+  CreateSprintData,
+  UpdateSprintData,
+  ListSprintIssuesParams,
+  Workflow,
+  WorkflowTransition,
+  WorkflowStatus,
+  ListWorkflowsParams,
+  Dashboard,
+  DashboardSharePermission,
+  ListDashboardsParams,
+  CreateDashboardData,
+  UpdateDashboardData,
+  Filter,
+  FilterSharePermission,
+  ListFiltersParams,
+  CreateFilterData,
+  UpdateFilterData,
+  Field,
+  CreateFieldData,
+  UpdateFieldData,
+  ListFieldsParams,
+  Webhook,
+  RegisterWebhookData,
+  RegisteredWebhooks,
+  ListWebhooksParams,
+  JqlAutocompleteData,
+  ParseJqlQueriesData,
+  ParsedJqlQueries,
+  SanitizeJqlQueriesData,
+  SanitizedJqlQueries,
+  JqlSuggestionsParams,
+  JqlSuggestions,
+  BulkCreateIssueData,
+  BulkCreatedIssues,
+  BulkSetIssuePropertyData,
+  BulkDeleteIssuePropertyData,
 } from './jira/index.js';
