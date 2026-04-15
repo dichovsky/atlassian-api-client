@@ -11,6 +11,15 @@ import { StatusesResource } from './resources/statuses.js';
 import { IssueCommentsResource } from './resources/issue-comments.js';
 import { IssueAttachmentsResource } from './resources/issue-attachments.js';
 import { LabelsResource } from './resources/labels.js';
+import { BoardsResource } from './resources/boards.js';
+import { SprintsResource } from './resources/sprints.js';
+import { WorkflowsResource } from './resources/workflows.js';
+import { DashboardsResource } from './resources/dashboards.js';
+import { FiltersResource } from './resources/filters.js';
+import { FieldsResource } from './resources/fields.js';
+import { WebhooksResource } from './resources/webhooks.js';
+import { JqlResource } from './resources/jql.js';
+import { BulkResource } from './resources/bulk.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -27,10 +36,29 @@ export class JiraClient {
   readonly issueAttachments: IssueAttachmentsResource;
   /** Labels resource. */
   readonly labels: LabelsResource;
+  /** Agile boards resource. */
+  readonly boards: BoardsResource;
+  /** Agile sprints resource. */
+  readonly sprints: SprintsResource;
+  /** Workflows resource. */
+  readonly workflows: WorkflowsResource;
+  /** Dashboards resource. */
+  readonly dashboards: DashboardsResource;
+  /** Filters resource. */
+  readonly filters: FiltersResource;
+  /** Fields resource. */
+  readonly fields: FieldsResource;
+  /** Webhooks resource. */
+  readonly webhooks: WebhooksResource;
+  /** JQL utilities resource. */
+  readonly jql: JqlResource;
+  /** Bulk issue operations resource. */
+  readonly bulk: BulkResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
+    const agileBaseUrl = `${resolved.baseUrl}/rest/agile/1.0`;
     const transport: Transport = config.transport ?? new HttpTransport(resolved, baseUrl);
 
     this.issues = new IssuesResource(transport, baseUrl);
@@ -43,5 +71,14 @@ export class JiraClient {
     this.issueComments = new IssueCommentsResource(transport, baseUrl);
     this.issueAttachments = new IssueAttachmentsResource(transport, baseUrl);
     this.labels = new LabelsResource(transport, baseUrl);
+    this.boards = new BoardsResource(transport, agileBaseUrl);
+    this.sprints = new SprintsResource(transport, agileBaseUrl);
+    this.workflows = new WorkflowsResource(transport, baseUrl);
+    this.dashboards = new DashboardsResource(transport, baseUrl);
+    this.filters = new FiltersResource(transport, baseUrl);
+    this.fields = new FieldsResource(transport, baseUrl);
+    this.webhooks = new WebhooksResource(transport, baseUrl);
+    this.jql = new JqlResource(transport, baseUrl);
+    this.bulk = new BulkResource(transport, baseUrl);
   }
 }
