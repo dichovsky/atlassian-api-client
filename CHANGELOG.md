@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **transport** — `HttpTransport` previously held two distinct `baseUrl` values: `config.baseUrl` (the raw instance URL) and a separate constructor parameter (the API-specific URL). Only the constructor argument was ever used for URL construction, making `config.baseUrl` a silent dead field inside the transport class and creating a confusing dual-source of truth. The redundant private field has been removed; clients now pass `{ ...resolved, baseUrl: apiUrl }` so `config.baseUrl` is the sole source used for URL construction. The second constructor parameter is retained as an optional, deprecated overload for backwards compatibility — when supplied it overrides `config.baseUrl` exactly as before, so existing call sites are unaffected.
+
 ## 0.4.0 (2026-04-16)
 
 ### Security
