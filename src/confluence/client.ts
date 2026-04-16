@@ -35,7 +35,7 @@ export class ConfluenceClient {
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/wiki/api/v2`;
-    const transport: Transport = config.transport ?? new HttpTransport(resolved, baseUrl);
+    const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.pages = new PagesResource(transport, baseUrl);
     this.spaces = new SpacesResource(transport, baseUrl);

@@ -21,13 +21,11 @@ import { getRetryAfterMs } from './rate-limiter.js';
 /** HTTP transport using native fetch with auth, retry, rate-limit, and timeout support. */
 export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
-  private readonly baseUrl: string;
   private readonly authProvider: AuthProvider;
   private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
-  constructor(config: ResolvedConfig, baseUrl: string) {
+  constructor(config: ResolvedConfig) {
     this.config = config;
-    this.baseUrl = baseUrl;
     this.authProvider = createAuthProvider(config.auth);
     this.requestHandler = this.buildMiddlewareChain();
   }
@@ -180,12 +178,12 @@ export class HttpTransport implements Transport {
     path: string,
     query?: Readonly<Record<string, string | number | boolean | undefined>>,
   ): string {
-    // Resources pass fully-qualified URLs (e.g. `${baseUrl}/issue/ID`).
-    // Relative paths (e.g. `/pages/123`) are resolved against `this.baseUrl`.
+    // Resources pass fully-qualified URLs (e.g. `${config.baseUrl}/issue/ID`).
+    // Relative paths (e.g. `/pages/123`) are resolved against `config.baseUrl`.
     const url =
       path.startsWith('https://') || path.startsWith('http://')
         ? new URL(path)
-        : new URL(`${this.baseUrl}${path}`);
+        : new URL(`${this.config.baseUrl}${path}`);
 
     if (query) {
       for (const [key, value] of Object.entries(query)) {

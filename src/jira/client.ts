@@ -59,7 +59,7 @@ export class JiraClient {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
     const agileBaseUrl = `${resolved.baseUrl}/rest/agile/1.0`;
-    const transport: Transport = config.transport ?? new HttpTransport(resolved, baseUrl);
+    const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl);
     this.projects = new ProjectsResource(transport, baseUrl);
