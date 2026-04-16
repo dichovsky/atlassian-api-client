@@ -14,9 +14,12 @@ import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core
 // ---------------------------------------------------------------------------
 // Default config used in most tests
 // ---------------------------------------------------------------------------
-const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
+const INSTANCE_URL = 'https://test.atlassian.net';
+const BASE_URL = `${INSTANCE_URL}/wiki/api/v2`;
 
 const defaultConfig: ResolvedConfig = {
+  // baseUrl is the API-specific endpoint (instance URL + path prefix), matching
+  // how clients construct it: `{ ...resolved, baseUrl: apiSpecificUrl }`.
   baseUrl: BASE_URL,
   auth: {
     type: 'basic',
@@ -47,7 +50,7 @@ function makeResponse(status: number, body?: unknown, headers?: Record<string, s
 }
 
 function makeTransport(config: ResolvedConfig = defaultConfig): HttpTransport {
-  return new HttpTransport(config, BASE_URL);
+  return new HttpTransport(config);
 }
 
 /**
@@ -82,6 +85,119 @@ describe('HttpTransport', () => {
   });
 
   // -------------------------------------------------------------------------
+  // URL construction (buildUrl)
+  // -------------------------------------------------------------------------
+  describe('URL construction', () => {
+    it('prepends config.baseUrl to a relative path', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      await runRequest(transport, { method: 'GET', path: '/pages/123' });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/pages/123`);
+    });
+
+    it('uses config.baseUrl (API path) not the raw instance URL for relative paths', async () => {
+      // Simulate how clients call HttpTransport: pass the API-specific baseUrl
+      // in config, NOT the raw instance URL.  This verifies there is only one
+      // baseUrl source — `config.baseUrl` — so a relative path is resolved
+      // against the correct endpoint, not just the hostname.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const apiUrl = `${INSTANCE_URL}/rest/api/3`;
+      const transport = new HttpTransport({ ...defaultConfig, baseUrl: apiUrl });
+      await runRequest(transport, { method: 'GET', path: '/issue/PROJ-1' });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      // Must include the API path prefix — NOT just the hostname.
+      expect(url).toBe(`${apiUrl}/issue/PROJ-1`);
+      expect(url).not.toBe(`${INSTANCE_URL}/issue/PROJ-1`);
+    });
+
+    it('uses a fully-qualified path as-is (no double-prefix)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const absolutePath = `${BASE_URL}/pages/456`;
+      const transport = makeTransport();
+      await runRequest(transport, { method: 'GET', path: absolutePath });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(absolutePath);
+    });
+
+    it('does not double-prefix when path baseUrl differs from config.baseUrl', async () => {
+      // Agile resources use a different base path than REST resources.
+      // The transport must use the path verbatim when it is fully-qualified.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const agileBaseUrl = `${INSTANCE_URL}/rest/agile/1.0`;
+      const transport = makeTransport(); // config.baseUrl uses the default API base, which differs from the agile base path
+      const agilePath = `${agileBaseUrl}/board/42`;
+      await runRequest(transport, { method: 'GET', path: agilePath });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(agilePath);
+    });
+
+    it('appends query parameters to the URL', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        query: { limit: 25, spaceId: 'SPACE1', active: true },
+      });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const parsed = new URL(url);
+      expect(parsed.searchParams.get('limit')).toBe('25');
+      expect(parsed.searchParams.get('spaceId')).toBe('SPACE1');
+      expect(parsed.searchParams.get('active')).toBe('true');
+    });
+
+    it('omits query params with undefined value', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        query: { limit: 25, cursor: undefined },
+      });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const parsed = new URL(url);
+      expect(parsed.searchParams.has('cursor')).toBe(false);
+      expect(parsed.searchParams.get('limit')).toBe('25');
+    });
+
+    it('deprecated second baseUrl parameter overrides config.baseUrl for URL construction', async () => {
+      // Exercises the backwards-compatible path: new HttpTransport(config, baseUrl)
+      // where config.baseUrl is the raw instance URL and the second arg is the
+      // API-specific URL.  The second arg must win.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const instanceConfig = { ...defaultConfig, baseUrl: INSTANCE_URL };
+      const transport = new HttpTransport(instanceConfig, BASE_URL);
+      await runRequest(transport, { method: 'GET', path: '/pages/1' });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      // URL must use BASE_URL (the second arg), not INSTANCE_URL (config.baseUrl)
+      expect(url).toBe(`${BASE_URL}/pages/1`);
+      expect(url).not.toContain(`${INSTANCE_URL}/pages/1`);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Successful requests
   // -------------------------------------------------------------------------
   describe('successful GET request', () => {
@@ -97,18 +213,6 @@ describe('HttpTransport', () => {
       expect(url).toBe(`${BASE_URL}/pages/123`);
       expect((response as { status: number }).status).toBe(200);
       expect((response as { data: unknown }).data).toEqual({ id: 1 });
-    });
-
-    it('accepts an absolute URL path (resource-style) without double-prefixing base URL', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: 1 }));
-      vi.stubGlobal('fetch', fetchMock);
-
-      const absolutePath = `${BASE_URL}/pages/456`;
-      const transport = makeTransport();
-      await runRequest(transport, { method: 'GET', path: absolutePath });
-
-      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(absolutePath);
     });
 
     it('includes Accept: application/json header', async () => {
@@ -620,14 +724,11 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const debugSpy = vi.fn();
-      const transport = new HttpTransport(
-        {
-          ...defaultConfig,
-          retries: 0,
-          logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-        },
-        BASE_URL,
-      );
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      });
 
       // Act
       await transport.request({ method: 'GET', path: '/pages' });
@@ -670,10 +771,7 @@ describe('HttpTransport', () => {
           next(opts),
       );
 
-      const transport = new HttpTransport(
-        { ...defaultConfig, retries: 0, middleware: [middlewareSpy] },
-        BASE_URL,
-      );
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middlewareSpy] });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -696,10 +794,7 @@ describe('HttpTransport', () => {
 
       const middleware = vi.fn().mockResolvedValue(syntheticResponse);
 
-      const transport = new HttpTransport(
-        { ...defaultConfig, retries: 0, middleware: [middleware] },
-        BASE_URL,
-      );
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -728,10 +823,7 @@ describe('HttpTransport', () => {
         },
       );
 
-      const transport = new HttpTransport(
-        { ...defaultConfig, retries: 0, middleware: [mw1, mw2] },
-        BASE_URL,
-      );
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [mw1, mw2] });
 
       // Act
       await transport.request({ method: 'GET', path: '/pages' });

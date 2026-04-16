@@ -138,7 +138,22 @@ interface Transport {
 - Tests inject a `MockTransport` (defined in `test/helpers/`)
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
 - **Auth always wins:** any caller-supplied `Authorization` header is stripped before the auth provider's header is applied, preventing accidental auth override via middleware
-- **Safe debug logging:** debug logs record `method + path` only; full URLs (which may contain cursor tokens or sensitive query values) are never written to logs
+- **Safe debug logging:** debug logs record `method + path` only; query parameters (which may contain cursor tokens or sensitive filter values) are never appended to the logged path
+
+**URL construction — single source of truth:**
+
+`HttpTransport` uses `config.baseUrl` as the sole base URL for constructing request URLs. Clients set `config.baseUrl` to the API-specific endpoint (e.g. `https://host/wiki/api/v2`) before passing the config to the transport:
+
+```typescript
+// ConfluenceClient (simplified)
+const resolved = resolveConfig(config);           // resolved.baseUrl = 'https://host'
+const baseUrl  = `${resolved.baseUrl}/wiki/api/v2`;
+const transport = new HttpTransport({ ...resolved, baseUrl }); // config.baseUrl = API URL
+```
+
+Resource modules receive the same `baseUrl` and always pass fully-qualified URLs to the transport (e.g. `${this.baseUrl}/pages/123`). The transport detects the `https://` prefix and uses the path verbatim; relative paths (e.g. `/pages/123`) fall back to prepending `config.baseUrl`.
+
+> **Deprecated:** `HttpTransport` accepts an optional second `baseUrl` argument for backwards compatibility with v0.x call sites. When provided it overrides `config.baseUrl` for URL construction. New code should pass the API-specific URL in `config.baseUrl` and omit the second argument.
 
 **Data flow:**
 

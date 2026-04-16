@@ -21,14 +21,26 @@ import { getRetryAfterMs } from './rate-limiter.js';
 /** HTTP transport using native fetch with auth, retry, rate-limit, and timeout support. */
 export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
-  private readonly baseUrl: string;
   private readonly authProvider: AuthProvider;
   private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
-  constructor(config: ResolvedConfig, baseUrl: string) {
-    this.config = config;
-    this.baseUrl = baseUrl;
-    this.authProvider = createAuthProvider(config.auth);
+  /**
+   * @param config - Resolved client configuration. `config.baseUrl` must be the
+   *   API-specific endpoint URL (e.g. `https://host/wiki/api/v2`), not the raw
+   *   instance URL. Both `ConfluenceClient` and `JiraClient` set this correctly
+   *   when constructing the transport internally.
+   */
+  constructor(config: ResolvedConfig);
+  /**
+   * @deprecated Pass the API-specific URL in `config.baseUrl` instead and omit
+   *   the second argument. When provided, `baseUrl` takes precedence over
+   *   `config.baseUrl` for URL construction (preserves v0.x behavior).
+   */
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  constructor(config: ResolvedConfig, baseUrl: string);
+  constructor(config: ResolvedConfig, baseUrl?: string) {
+    this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
+    this.authProvider = createAuthProvider(this.config.auth);
     this.requestHandler = this.buildMiddlewareChain();
   }
 
@@ -180,12 +192,12 @@ export class HttpTransport implements Transport {
     path: string,
     query?: Readonly<Record<string, string | number | boolean | undefined>>,
   ): string {
-    // Resources pass fully-qualified URLs (e.g. `${baseUrl}/issue/ID`).
-    // Relative paths (e.g. `/pages/123`) are resolved against `this.baseUrl`.
+    // Resources pass fully-qualified URLs (e.g. `${config.baseUrl}/issue/ID`).
+    // Relative paths (e.g. `/pages/123`) are resolved against `config.baseUrl`.
     const url =
       path.startsWith('https://') || path.startsWith('http://')
         ? new URL(path)
-        : new URL(`${this.baseUrl}${path}`);
+        : new URL(`${this.config.baseUrl}${path}`);
 
     if (query) {
       for (const [key, value] of Object.entries(query)) {
