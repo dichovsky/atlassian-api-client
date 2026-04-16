@@ -136,7 +136,7 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const agileBaseUrl = `${INSTANCE_URL}/rest/agile/1.0`;
-      const transport = makeTransport(); // config.baseUrl = REST API base
+      const transport = makeTransport(); // config.baseUrl uses the default API base, which differs from the agile base path
       const agilePath = `${agileBaseUrl}/board/42`;
       await runRequest(transport, { method: 'GET', path: agilePath });
 

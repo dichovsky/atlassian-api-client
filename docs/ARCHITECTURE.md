@@ -138,7 +138,7 @@ interface Transport {
 - Tests inject a `MockTransport` (defined in `test/helpers/`)
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
 - **Auth always wins:** any caller-supplied `Authorization` header is stripped before the auth provider's header is applied, preventing accidental auth override via middleware
-- **Safe debug logging:** debug logs record `method + path` only; full URLs (which may contain cursor tokens or sensitive query values) are never written to logs
+- **Safe debug logging:** debug logs record `method + path` only; query parameters (which may contain cursor tokens or sensitive filter values) are never appended to the logged path
 
 **URL construction — single source of truth:**
 
