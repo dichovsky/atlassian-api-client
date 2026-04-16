@@ -24,9 +24,18 @@ export class HttpTransport implements Transport {
   private readonly authProvider: AuthProvider;
   private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
-  constructor(config: ResolvedConfig) {
-    this.config = config;
-    this.authProvider = createAuthProvider(config.auth);
+  /**
+   * @param config - Resolved client configuration. `config.baseUrl` must be the
+   *   API-specific endpoint URL (e.g. `https://host/wiki/api/v2`), not the raw
+   *   instance URL. Both `ConfluenceClient` and `JiraClient` set this correctly
+   *   when constructing the transport internally.
+   * @param baseUrl - @deprecated Pass the API-specific URL in `config.baseUrl`
+   *   instead. When provided this value takes precedence over `config.baseUrl`
+   *   for URL construction (preserves v0.x behaviour).
+   */
+  constructor(config: ResolvedConfig, baseUrl?: string) {
+    this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
+    this.authProvider = createAuthProvider(this.config.auth);
     this.requestHandler = this.buildMiddlewareChain();
   }
 
