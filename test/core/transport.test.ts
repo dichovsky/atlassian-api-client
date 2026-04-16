@@ -178,6 +178,23 @@ describe('HttpTransport', () => {
       expect(parsed.searchParams.has('cursor')).toBe(false);
       expect(parsed.searchParams.get('limit')).toBe('25');
     });
+
+    it('deprecated second baseUrl parameter overrides config.baseUrl for URL construction', async () => {
+      // Exercises the backwards-compatible path: new HttpTransport(config, baseUrl)
+      // where config.baseUrl is the raw instance URL and the second arg is the
+      // API-specific URL.  The second arg must win.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const instanceConfig = { ...defaultConfig, baseUrl: INSTANCE_URL };
+      const transport = new HttpTransport(instanceConfig, BASE_URL);
+      await runRequest(transport, { method: 'GET', path: '/pages/1' });
+
+      const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+      // URL must use BASE_URL (the second arg), not INSTANCE_URL (config.baseUrl)
+      expect(url).toBe(`${BASE_URL}/pages/1`);
+      expect(url).not.toContain(`${INSTANCE_URL}/pages/1`);
+    });
   });
 
   // -------------------------------------------------------------------------

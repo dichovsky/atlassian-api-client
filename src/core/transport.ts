@@ -29,10 +29,15 @@ export class HttpTransport implements Transport {
    *   API-specific endpoint URL (e.g. `https://host/wiki/api/v2`), not the raw
    *   instance URL. Both `ConfluenceClient` and `JiraClient` set this correctly
    *   when constructing the transport internally.
-   * @param baseUrl - @deprecated Pass the API-specific URL in `config.baseUrl`
-   *   instead. When provided this value takes precedence over `config.baseUrl`
-   *   for URL construction (preserves v0.x behaviour).
    */
+  constructor(config: ResolvedConfig);
+  /**
+   * @deprecated Pass the API-specific URL in `config.baseUrl` instead and omit
+   *   the second argument. When provided, `baseUrl` takes precedence over
+   *   `config.baseUrl` for URL construction (preserves v0.x behavior).
+   */
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  constructor(config: ResolvedConfig, baseUrl: string);
   constructor(config: ResolvedConfig, baseUrl?: string) {
     this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
     this.authProvider = createAuthProvider(this.config.auth);
