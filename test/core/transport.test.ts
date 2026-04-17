@@ -590,6 +590,81 @@ describe('HttpTransport', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(result.status).toBe(200);
     });
+
+    it('applies jitter on top of Retry-After (never below the advertised floor)', async () => {
+      // Force jitter to its maximum (Math.random() -> 1)
+      vi.spyOn(Math, 'random').mockReturnValue(1);
+
+      const retryAfterSeconds = 2;
+      const retryDelayMs = 500;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          makeResponse(429, undefined, { 'retry-after': String(retryAfterSeconds) }),
+        )
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: retryDelayMs,
+        maxRetryDelay: 10_000,
+      });
+
+      // Kick off the request
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      // Allow the first fetch (429) to settle.
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Advance exactly up to the server floor: the retry must NOT fire yet
+      // because jitter pushes the delay above the floor.
+      await vi.advanceTimersByTimeAsync(retryAfterSeconds * 1000);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Advance past the jitter window; the retry should now fire.
+      await vi.advanceTimersByTimeAsync(retryDelayMs);
+      await vi.runAllTimersAsync();
+
+      const result = (await resultPromise) as { status: number };
+      expect(result.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('caps jittered Retry-After delay at maxRetryDelay', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(1);
+
+      const retryAfterSeconds = 10;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          makeResponse(429, undefined, { 'retry-after': String(retryAfterSeconds) }),
+        )
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      // maxRetryDelay smaller than retryAfter*1000 — result must cap there
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: 1_000,
+        maxRetryDelay: 5_000,
+      });
+
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Capped at 5s regardless of 10s advertised delay
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.runAllTimersAsync();
+
+      const result = (await resultPromise) as { status: number };
+      expect(result.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('retry on NetworkError', () => {

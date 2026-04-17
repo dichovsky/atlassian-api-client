@@ -202,7 +202,13 @@ export class HttpTransport implements Transport {
 
   private getRetryDelay(error: unknown, attempt: number): number {
     if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-      return error.retryAfter * 1000;
+      // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
+      // of clients hitting the same 429 wall don't resume in lockstep. The
+      // server-advertised floor is preserved, and the total is bounded by
+      // maxRetryDelay to avoid pathologically long sleeps on large Retry-After.
+      const base = error.retryAfter * 1000;
+      const jitter = Math.random() * this.config.retryDelay;
+      return Math.min(base + jitter, this.config.maxRetryDelay);
     }
 
     return calculateDelay(attempt, this.config.retryDelay, this.config.maxRetryDelay);
