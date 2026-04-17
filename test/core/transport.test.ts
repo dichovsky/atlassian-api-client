@@ -9,6 +9,7 @@ import {
   NetworkError,
   ValidationError,
 } from '../../src/core/errors.js';
+import { OAuthError } from '../../src/core/oauth.js';
 import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 // ---------------------------------------------------------------------------
@@ -475,11 +476,22 @@ describe('HttpTransport', () => {
   // Timeout
   // -------------------------------------------------------------------------
   describe('timeout', () => {
-    it('throws TimeoutError when fetch throws AbortError', async () => {
-      const abortError = new Error('The operation was aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
-      vi.stubGlobal('fetch', fetchMock);
+    // Hang fetch until the transport's internal timeout signal aborts. Only then
+    // do we reject with AbortError, mirroring how runtime fetch reacts to timers.
+    function hangingFetchMock(): ReturnType<typeof vi.fn> {
+      return vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('The operation was aborted');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+    }
+
+    it('throws TimeoutError when the timeout signal aborts the request', async () => {
+      vi.stubGlobal('fetch', hangingFetchMock());
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0 };
       const transport = makeTransport(noRetryConfig);
@@ -490,10 +502,7 @@ describe('HttpTransport', () => {
     });
 
     it('TimeoutError carries the configured timeout value', async () => {
-      const abortError = new Error('aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
-      vi.stubGlobal('fetch', fetchMock);
+      vi.stubGlobal('fetch', hangingFetchMock());
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0, timeout: 5_000 };
       const transport = makeTransport(noRetryConfig);
@@ -582,6 +591,81 @@ describe('HttpTransport', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(result.status).toBe(200);
     });
+
+    it('applies jitter on top of Retry-After (never below the advertised floor)', async () => {
+      // Force jitter to its maximum (Math.random() -> 1)
+      vi.spyOn(Math, 'random').mockReturnValue(1);
+
+      const retryAfterSeconds = 2;
+      const retryDelayMs = 500;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          makeResponse(429, undefined, { 'retry-after': String(retryAfterSeconds) }),
+        )
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: retryDelayMs,
+        maxRetryDelay: 10_000,
+      });
+
+      // Kick off the request
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      // Allow the first fetch (429) to settle.
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Advance exactly up to the server floor: the retry must NOT fire yet
+      // because jitter pushes the delay above the floor.
+      await vi.advanceTimersByTimeAsync(retryAfterSeconds * 1000);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Advance past the jitter window; the retry should now fire.
+      await vi.advanceTimersByTimeAsync(retryDelayMs);
+      await vi.runAllTimersAsync();
+
+      const result = (await resultPromise) as { status: number };
+      expect(result.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('caps jittered Retry-After delay at maxRetryDelay', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(1);
+
+      const retryAfterSeconds = 10;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          makeResponse(429, undefined, { 'retry-after': String(retryAfterSeconds) }),
+        )
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      // maxRetryDelay smaller than retryAfter*1000 — result must cap there
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: 1_000,
+        maxRetryDelay: 5_000,
+      });
+
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Capped at 5s regardless of 10s advertised delay
+      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.runAllTimersAsync();
+
+      const result = (await resultPromise) as { status: number };
+      expect(result.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('retry on NetworkError', () => {
@@ -619,9 +703,15 @@ describe('HttpTransport', () => {
 
   describe('no retry on timeout', () => {
     it('does not retry when request times out', async () => {
-      const abortError = new Error('aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
       vi.stubGlobal('fetch', fetchMock);
 
       const transport = makeTransport(); // retries: 1
@@ -759,6 +849,172 @@ describe('HttpTransport', () => {
     });
   });
 
+  describe('OAuth refresh errors as HttpError', () => {
+    it('retries when middleware throws a 5xx OAuthError', async () => {
+      // OAuthError now extends HttpError, so a 5xx refresh failure should be
+      // classified as retryable the same way a 500 response would be.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let callCount = 0;
+      const oauthMw = vi.fn(
+        async (
+          opts: RequestOptions,
+          next: (o: RequestOptions) => Promise<ApiResponse<unknown>>,
+        ): Promise<ApiResponse<unknown>> => {
+          callCount++;
+          if (callCount === 1) {
+            throw new OAuthError('refresh endpoint down', 503);
+          }
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 1,
+        middleware: [oauthMw],
+      });
+
+      const result = await runRequest<{ status: number }>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.status).toBe(200);
+      expect(callCount).toBe(2);
+      // The inner fetch only fires on the successful retry
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a non-5xx OAuthError (status 0 / refresh body invalid)', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      let callCount = 0;
+      const oauthMw = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        // No refreshStatus → status defaults to 0, non-retryable
+        throw new OAuthError('missing access_token');
+      });
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 1,
+        middleware: [oauthMw],
+      });
+
+      await expect(runRequest(transport, { method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        OAuthError,
+      );
+      expect(callCount).toBe(1);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('rate-limit metadata', () => {
+    it('populates rateLimit from x-ratelimit-* response headers', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(
+          200,
+          { ok: true },
+          {
+            'x-ratelimit-limit': '1000',
+            'x-ratelimit-remaining': '42',
+            'x-ratelimit-reset': '2026-04-18T12:00:00Z',
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit).toBeDefined();
+      expect(result.rateLimit?.limit).toBe(1000);
+      expect(result.rateLimit?.remaining).toBe(42);
+      expect(result.rateLimit?.reset).toBe('2026-04-18T12:00:00Z');
+      expect(result.rateLimit?.nearLimit).toBeUndefined();
+    });
+
+    it('rateLimit fields are undefined when headers are absent', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit).toBeDefined();
+      expect(result.rateLimit?.limit).toBeUndefined();
+      expect(result.rateLimit?.remaining).toBeUndefined();
+      expect(result.rateLimit?.reset).toBeUndefined();
+      expect(result.rateLimit?.nearLimit).toBeUndefined();
+    });
+
+    it('logs a warning when x-ratelimit-nearlimit is true', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(
+          200,
+          {},
+          {
+            'x-ratelimit-limit': '1000',
+            'x-ratelimit-remaining': '5',
+            'x-ratelimit-nearlimit': 'true',
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const warnSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: vi.fn(), info: vi.fn(), warn: warnSpy, error: vi.fn() },
+      });
+
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit?.nearLimit).toBe(true);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Rate limit near threshold',
+        expect.objectContaining({
+          method: 'GET',
+          path: '/pages',
+          limit: 1000,
+          remaining: 5,
+        }),
+      );
+    });
+
+    it('does not log a warning when nearlimit header is absent', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(makeResponse(200, {}, { 'x-ratelimit-remaining': '500' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const warnSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: vi.fn(), info: vi.fn(), warn: warnSpy, error: vi.fn() },
+      });
+
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('middleware', () => {
     it('runs middleware and calls next() to proceed with the request', async () => {
       // Arrange
@@ -771,7 +1027,11 @@ describe('HttpTransport', () => {
           next(opts),
       );
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middlewareSpy] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middlewareSpy],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -794,7 +1054,11 @@ describe('HttpTransport', () => {
 
       const middleware = vi.fn().mockResolvedValue(syntheticResponse);
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -872,6 +1136,86 @@ describe('HttpTransport', () => {
         }),
       ).rejects.toBeInstanceOf(ValidationError);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('external AbortSignal passthrough', () => {
+    it('forwards a composed signal to fetch', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('external abort surfaces as AbortError, not TimeoutError', async () => {
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted by caller');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      // Abort externally before the timeout fires
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      const error = await resultPromise.catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).name).toBe('AbortError');
+      expect(error).not.toBeInstanceOf(TimeoutError);
+    });
+
+    it('does not retry on external abort', async () => {
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted by caller');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      // retries: 1 — verify external abort still short-circuits
+      const transport = makeTransport(defaultConfig);
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 

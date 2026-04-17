@@ -16,7 +16,7 @@ import {
   ValidationError,
 } from './errors.js';
 import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
-import { getRetryAfterMs } from './rate-limiter.js';
+import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
 /** HTTP transport using native fetch with auth, retry, rate-limit, and timeout support. */
 export class HttpTransport implements Transport {
@@ -45,18 +45,20 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    return this.requestHandler(options) as Promise<ApiResponse<T>>;
+    return this.executeWithRetry<T>(options);
   }
 
   /**
-   * Build the full middleware chain ending with the core fetch+retry executor.
+   * Build the middleware chain wrapping the core fetch executor.
    * Middleware runs outermost-first (index 0 wraps all subsequent middleware).
+   * The retry loop sits OUTSIDE this chain so retryable errors thrown by
+   * middleware (e.g. OAuthError with 5xx refreshStatus) are also retried.
    */
   private buildMiddlewareChain(): (options: RequestOptions) => Promise<ApiResponse<unknown>> {
     const middleware: Middleware[] = this.config.middleware ?? [];
 
     const coreExecutor = (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-      this.executeWithRetry(opts);
+      this.executeFetch(opts);
 
     return middleware.reduceRight<(opts: RequestOptions) => Promise<ApiResponse<unknown>>>(
       (next, mw) => (opts) => mw(opts, next),
@@ -69,7 +71,7 @@ export class HttpTransport implements Transport {
 
     for (;;) {
       try {
-        const result = await this.executeFetch<T>(options);
+        const result = (await this.requestHandler(options)) as ApiResponse<T>;
         return result;
       } catch (error) {
         if (!this.shouldRetry(error, attempt)) {
@@ -88,8 +90,13 @@ export class HttpTransport implements Transport {
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
     this.config.logger?.debug('HTTP request', { method: options.method, path: options.path });
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);
+    const signals: AbortSignal[] = [timeoutController.signal];
+    if (options.signal !== undefined) {
+      signals.push(options.signal);
+    }
+    const fetchSignal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 
     // Strip any caller-supplied Authorization header (case-insensitive) so the configured
     // auth provider always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
@@ -128,11 +135,14 @@ export class HttpTransport implements Transport {
         method: options.method,
         headers,
         body: fetchBody,
-        signal: controller.signal,
+        signal: fetchSignal,
       });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new TimeoutError(this.config.timeout);
+        if (timeoutController.signal.aborted) {
+          throw new TimeoutError(this.config.timeout);
+        }
+        throw error;
       }
       if (isNetworkError(error)) {
         throw new NetworkError((error as Error).message, { cause: error as Error });
@@ -157,10 +167,22 @@ export class HttpTransport implements Transport {
       status: response.status,
     });
 
+    const rateLimit = parseRateLimitHeaders(response.headers);
+    if (rateLimit.nearLimit === true) {
+      this.config.logger?.warn('Rate limit near threshold', {
+        method: options.method,
+        path: options.path,
+        limit: rateLimit.limit,
+        remaining: rateLimit.remaining,
+        reset: rateLimit.reset,
+      });
+    }
+
     return {
       data,
       status: response.status,
       headers: response.headers,
+      rateLimit,
     };
   }
 
@@ -182,7 +204,13 @@ export class HttpTransport implements Transport {
 
   private getRetryDelay(error: unknown, attempt: number): number {
     if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-      return error.retryAfter * 1000;
+      // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
+      // of clients hitting the same 429 wall don't resume in lockstep. The
+      // server-advertised floor is preserved, and the total is bounded by
+      // maxRetryDelay to avoid pathologically long sleeps on large Retry-After.
+      const base = error.retryAfter * 1000;
+      const jitter = Math.random() * this.config.retryDelay;
+      return Math.min(base + jitter, this.config.maxRetryDelay);
     }
 
     return calculateDelay(attempt, this.config.retryDelay, this.config.maxRetryDelay);

@@ -3,6 +3,7 @@ import type { ParsedCommand } from './types.js';
 
 const GLOBAL_OPTIONS = {
   'base-url': { type: 'string' as const, short: 'u' },
+  'auth-type': { type: 'string' as const },
   email: { type: 'string' as const, short: 'e' },
   token: { type: 'string' as const, short: 't' },
   format: { type: 'string' as const, short: 'f' },
