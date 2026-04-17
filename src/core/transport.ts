@@ -88,8 +88,13 @@ export class HttpTransport implements Transport {
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
     this.config.logger?.debug('HTTP request', { method: options.method, path: options.path });
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);
+    const signals: AbortSignal[] = [timeoutController.signal];
+    if (options.signal !== undefined) {
+      signals.push(options.signal);
+    }
+    const fetchSignal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 
     // Strip any caller-supplied Authorization header (case-insensitive) so the configured
     // auth provider always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
@@ -128,11 +133,14 @@ export class HttpTransport implements Transport {
         method: options.method,
         headers,
         body: fetchBody,
-        signal: controller.signal,
+        signal: fetchSignal,
       });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new TimeoutError(this.config.timeout);
+        if (timeoutController.signal.aborted) {
+          throw new TimeoutError(this.config.timeout);
+        }
+        throw error;
       }
       if (isNetworkError(error)) {
         throw new NetworkError((error as Error).message, { cause: error as Error });

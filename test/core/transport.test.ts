@@ -475,11 +475,22 @@ describe('HttpTransport', () => {
   // Timeout
   // -------------------------------------------------------------------------
   describe('timeout', () => {
-    it('throws TimeoutError when fetch throws AbortError', async () => {
-      const abortError = new Error('The operation was aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
-      vi.stubGlobal('fetch', fetchMock);
+    // Hang fetch until the transport's internal timeout signal aborts. Only then
+    // do we reject with AbortError, mirroring how runtime fetch reacts to timers.
+    function hangingFetchMock(): ReturnType<typeof vi.fn> {
+      return vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('The operation was aborted');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+    }
+
+    it('throws TimeoutError when the timeout signal aborts the request', async () => {
+      vi.stubGlobal('fetch', hangingFetchMock());
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0 };
       const transport = makeTransport(noRetryConfig);
@@ -490,10 +501,7 @@ describe('HttpTransport', () => {
     });
 
     it('TimeoutError carries the configured timeout value', async () => {
-      const abortError = new Error('aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
-      vi.stubGlobal('fetch', fetchMock);
+      vi.stubGlobal('fetch', hangingFetchMock());
 
       const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0, timeout: 5_000 };
       const transport = makeTransport(noRetryConfig);
@@ -619,9 +627,15 @@ describe('HttpTransport', () => {
 
   describe('no retry on timeout', () => {
     it('does not retry when request times out', async () => {
-      const abortError = new Error('aborted');
-      abortError.name = 'AbortError';
-      const fetchMock = vi.fn().mockRejectedValue(abortError);
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
       vi.stubGlobal('fetch', fetchMock);
 
       const transport = makeTransport(); // retries: 1
@@ -975,6 +989,86 @@ describe('HttpTransport', () => {
         }),
       ).rejects.toBeInstanceOf(ValidationError);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('external AbortSignal passthrough', () => {
+    it('forwards a composed signal to fetch', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('external abort surfaces as AbortError, not TimeoutError', async () => {
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted by caller');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      // Abort externally before the timeout fires
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      const error = await resultPromise.catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).name).toBe('AbortError');
+      expect(error).not.toBeInstanceOf(TimeoutError);
+    });
+
+    it('does not retry on external abort', async () => {
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => {
+        return new Promise<Response>((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const abortError = new Error('aborted by caller');
+            abortError.name = 'AbortError';
+            reject(abortError);
+          });
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      // retries: 1 — verify external abort still short-circuits
+      const transport = makeTransport(defaultConfig);
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 

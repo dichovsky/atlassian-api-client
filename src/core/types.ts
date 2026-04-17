@@ -10,6 +10,12 @@ export interface RequestOptions {
   /** FormData body for multipart/form-data uploads. Mutually exclusive with body. */
   readonly formData?: FormData;
   readonly headers?: Readonly<Record<string, string>>;
+  /**
+   * External AbortSignal for caller-driven cancellation. Composed with the
+   * internal timeout signal — aborting this signal surfaces as an abort error
+   * preserving the original reason, distinct from TimeoutError.
+   */
+  readonly signal?: AbortSignal;
 }
 
 /** Parsed API response. */
