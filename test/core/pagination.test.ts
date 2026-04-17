@@ -258,6 +258,24 @@ describe('paginateOffset', () => {
     expect(transport.calls[0]!.options.query).toMatchObject({ startAt: 0, maxResults: 2 });
     expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 2, maxResults: 2 });
   });
+
+  it('terminates on a short page when isLast and total are absent', async () => {
+    // Server's own maxResults is 10 but it returned only 2 rows and didn't set
+    // isLast or total. Without short-page termination the generator would issue
+    // a trailing empty request. The generator must recognize the short page
+    // (values.length < response.maxResults) as the last one.
+    const transport = new MockTransport();
+    const page: OffsetPaginatedResponse<string> = {
+      values: ['a', 'b'],
+      startAt: 0,
+      maxResults: 10,
+    };
+    transport.respondWith(page);
+
+    const items = await collect(paginateOffset<string>(transport, '/items', {}, 10));
+    expect(items).toEqual(['a', 'b']);
+    expect(transport.calls).toHaveLength(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -379,5 +397,21 @@ describe('paginateSearch', () => {
 
     await collect(paginateSearch<number>(transport, '/search', {}));
     expect(transport.calls[0]!.options.method).toBe('POST');
+  });
+
+  it('terminates on a short page when total is absent', async () => {
+    // Server's own maxResults is 10 but only 2 issues came back and `total`
+    // was omitted. Generator must treat the short page as final.
+    const transport = new MockTransport();
+    const page: SearchPaginatedResponse<number> = {
+      issues: [1, 2],
+      startAt: 0,
+      maxResults: 10,
+    };
+    transport.respondWith(page);
+
+    const items = await collect(paginateSearch<number>(transport, '/search', {}, 10));
+    expect(items).toEqual([1, 2]);
+    expect(transport.calls).toHaveLength(1);
   });
 });

@@ -124,6 +124,11 @@ export async function* paginateOffset<T>(
       done = true;
     } else if (total !== undefined && startAt + maxResults >= total) {
       done = true;
+    } else if (values.length < maxResults) {
+      // Short page — the server returned fewer rows than its own maxResults
+      // for this page, so there is no further data even if the response
+      // omitted `isLast` and `total`. Avoids an unnecessary trailing request.
+      done = true;
     } else {
       startAt += maxResults;
     }
@@ -165,6 +170,11 @@ export async function* paginateSearch<T>(
     if (issues.length === 0) {
       done = true;
     } else if (total !== undefined && startAt + maxResults >= total) {
+      done = true;
+    } else if (issues.length < maxResults) {
+      // Short page — the server returned fewer rows than its own maxResults
+      // for this page, so there is no further data even if the response
+      // omitted `total`.
       done = true;
     } else {
       startAt += maxResults;
