@@ -759,6 +759,109 @@ describe('HttpTransport', () => {
     });
   });
 
+  describe('rate-limit metadata', () => {
+    it('populates rateLimit from x-ratelimit-* response headers', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(
+          200,
+          { ok: true },
+          {
+            'x-ratelimit-limit': '1000',
+            'x-ratelimit-remaining': '42',
+            'x-ratelimit-reset': '2026-04-18T12:00:00Z',
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit).toBeDefined();
+      expect(result.rateLimit?.limit).toBe(1000);
+      expect(result.rateLimit?.remaining).toBe(42);
+      expect(result.rateLimit?.reset).toBe('2026-04-18T12:00:00Z');
+      expect(result.rateLimit?.nearLimit).toBeUndefined();
+    });
+
+    it('rateLimit fields are undefined when headers are absent', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit).toBeDefined();
+      expect(result.rateLimit?.limit).toBeUndefined();
+      expect(result.rateLimit?.remaining).toBeUndefined();
+      expect(result.rateLimit?.reset).toBeUndefined();
+      expect(result.rateLimit?.nearLimit).toBeUndefined();
+    });
+
+    it('logs a warning when x-ratelimit-nearlimit is true', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(
+          200,
+          {},
+          {
+            'x-ratelimit-limit': '1000',
+            'x-ratelimit-remaining': '5',
+            'x-ratelimit-nearlimit': 'true',
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const warnSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: vi.fn(), info: vi.fn(), warn: warnSpy, error: vi.fn() },
+      });
+
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.rateLimit?.nearLimit).toBe(true);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Rate limit near threshold',
+        expect.objectContaining({
+          method: 'GET',
+          path: '/pages',
+          limit: 1000,
+          remaining: 5,
+        }),
+      );
+    });
+
+    it('does not log a warning when nearlimit header is absent', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(200, {}, { 'x-ratelimit-remaining': '500' }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const warnSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: vi.fn(), info: vi.fn(), warn: warnSpy, error: vi.fn() },
+      });
+
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('middleware', () => {
     it('runs middleware and calls next() to proceed with the request', async () => {
       // Arrange

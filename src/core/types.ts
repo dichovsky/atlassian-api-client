@@ -17,6 +17,12 @@ export interface ApiResponse<T> {
   readonly data: T;
   readonly status: number;
   readonly headers: Headers;
+  /**
+   * Rate-limit metadata parsed from response headers.
+   * Present on every successful response — individual fields are undefined
+   * when the corresponding header is absent or malformed.
+   */
+  readonly rateLimit?: RateLimitInfo;
 }
 
 /** Transport abstraction — the only interface resource modules depend on. */

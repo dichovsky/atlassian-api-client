@@ -16,7 +16,7 @@ import {
   ValidationError,
 } from './errors.js';
 import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
-import { getRetryAfterMs } from './rate-limiter.js';
+import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
 /** HTTP transport using native fetch with auth, retry, rate-limit, and timeout support. */
 export class HttpTransport implements Transport {
@@ -157,10 +157,22 @@ export class HttpTransport implements Transport {
       status: response.status,
     });
 
+    const rateLimit = parseRateLimitHeaders(response.headers);
+    if (rateLimit.nearLimit === true) {
+      this.config.logger?.warn('Rate limit near threshold', {
+        method: options.method,
+        path: options.path,
+        limit: rateLimit.limit,
+        remaining: rateLimit.remaining,
+        reset: rateLimit.reset,
+      });
+    }
+
     return {
       data,
       status: response.status,
       headers: response.headers,
+      rateLimit,
     };
   }
 
