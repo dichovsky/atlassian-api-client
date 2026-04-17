@@ -8,16 +8,17 @@ APIs:
   jira          Jira Cloud Platform REST API v3
 
 GLOBAL OPTIONS:
-  --base-url, -u  Atlassian instance URL (or ATLASSIAN_BASE_URL)
-  --email, -e     Email for basic auth (or ATLASSIAN_EMAIL)
-  --token, -t     API token (or ATLASSIAN_API_TOKEN)
-  --format, -f    Output format: json (default), table, minimal
-  --help, -h      Show help
-  --version       Show version
+  --base-url, -u   Atlassian instance URL (or ATLASSIAN_BASE_URL)
+  --auth-type      Auth scheme: basic (default) or bearer (or ATLASSIAN_AUTH_TYPE)
+  --email, -e      Email for basic auth (or ATLASSIAN_EMAIL); not used for bearer
+  --token, -t      API token (basic) or bearer token (or ATLASSIAN_API_TOKEN)
+  --format, -f     Output format: json (default), table, minimal
+  --help, -h       Show help
+  --version        Show version
 
 EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN
-  atlas jira issues get PROJ-123
+  atlas jira issues get PROJ-123 --auth-type bearer --token OAUTH_TOKEN
   atlas jira search --jql "project = PROJ"
 `;
 

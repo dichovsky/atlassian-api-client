@@ -7,6 +7,7 @@ describe('resolveGlobalOptions', () => {
     delete process.env['ATLASSIAN_BASE_URL'];
     delete process.env['ATLASSIAN_EMAIL'];
     delete process.env['ATLASSIAN_API_TOKEN'];
+    delete process.env['ATLASSIAN_AUTH_TYPE'];
   });
 
   it('uses flag values when all flags are present', () => {
@@ -23,6 +24,7 @@ describe('resolveGlobalOptions', () => {
 
     // Assert
     expect(result.baseUrl).toBe('https://flags.atlassian.net');
+    expect(result.authType).toBe('basic');
     expect(result.email).toBe('flags@example.com');
     expect(result.token).toBe('flags-token');
     expect(result.format).toBe('json');
@@ -162,6 +164,115 @@ describe('resolveGlobalOptions', () => {
     expect(result.format).toBe('json');
   });
 
+  it('defaults authType to basic when not provided', () => {
+    // Arrange
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      email: 'user@example.com',
+      token: 'token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('basic');
+  });
+
+  it('accepts --auth-type bearer and skips the email requirement', () => {
+    // Arrange - no email provided; bearer should not require one
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'bearer-token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('bearer');
+    expect(result.token).toBe('bearer-token');
+    expect(result.email).toBe('');
+  });
+
+  it('resolves auth type from ATLASSIAN_AUTH_TYPE env var', () => {
+    // Arrange
+    vi.stubEnv('ATLASSIAN_AUTH_TYPE', 'bearer');
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      token: 'bearer-token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('bearer');
+  });
+
+  it('flag auth-type takes precedence over env', () => {
+    // Arrange - env says bearer, flag says basic, flag wins
+    vi.stubEnv('ATLASSIAN_AUTH_TYPE', 'bearer');
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'basic',
+      email: 'user@example.com',
+      token: 'token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('basic');
+  });
+
+  it('falls back to basic for an unknown auth-type value', () => {
+    // Arrange
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'oauth2',
+      email: 'user@example.com',
+      token: 'token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('basic');
+  });
+
+  it('still requires a token when using bearer auth', () => {
+    // Arrange
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+    };
+
+    // Act & Assert
+    expect(() => resolveGlobalOptions(options)).toThrow(
+      'Missing --token or ATLASSIAN_API_TOKEN environment variable',
+    );
+  });
+
+  it('does not require email for bearer auth even when env is unset', () => {
+    // Arrange - explicitly unset email env, should still succeed for bearer
+    vi.stubEnv('ATLASSIAN_EMAIL', '');
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'bearer',
+      token: 'bearer-token',
+    };
+
+    // Act
+    const result = resolveGlobalOptions(options);
+
+    // Assert
+    expect(result.authType).toBe('bearer');
+  });
+
   it('ignores boolean flag values for string options', () => {
     // Arrange - boolean value for base-url should be ignored, fall back to env
     vi.stubEnv('ATLASSIAN_BASE_URL', 'https://env.atlassian.net');
@@ -184,6 +295,7 @@ describe('buildClientConfig', () => {
     // Arrange
     const globals = {
       baseUrl: 'https://test.atlassian.net',
+      authType: 'basic' as const,
       email: 'user@example.com',
       token: 'my-api-token',
       format: 'json' as const,
@@ -207,6 +319,7 @@ describe('buildClientConfig', () => {
     // Arrange
     const globals = {
       baseUrl: 'https://test.atlassian.net',
+      authType: 'basic' as const,
       email: 'user@example.com',
       token: 'token',
       format: 'json' as const,
@@ -217,5 +330,28 @@ describe('buildClientConfig', () => {
 
     // Assert
     expect(config.auth.type).toBe('basic');
+  });
+
+  it('produces a bearer ClientConfig when authType is bearer', () => {
+    // Arrange - no email in bearer shape; must not leak into the config
+    const globals = {
+      baseUrl: 'https://test.atlassian.net',
+      authType: 'bearer' as const,
+      email: '',
+      token: 'bearer-token',
+      format: 'json' as const,
+    };
+
+    // Act
+    const config = buildClientConfig(globals);
+
+    // Assert
+    expect(config).toEqual({
+      baseUrl: 'https://test.atlassian.net',
+      auth: {
+        type: 'bearer',
+        token: 'bearer-token',
+      },
+    });
   });
 });
