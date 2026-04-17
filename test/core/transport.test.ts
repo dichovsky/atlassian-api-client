@@ -892,13 +892,11 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       let callCount = 0;
-      const oauthMw = vi.fn(
-        async (): Promise<ApiResponse<unknown>> => {
-          callCount++;
-          // No refreshStatus → status defaults to 0, non-retryable
-          throw new OAuthError('missing access_token');
-        },
-      );
+      const oauthMw = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        // No refreshStatus → status defaults to 0, non-retryable
+        throw new OAuthError('missing access_token');
+      });
 
       const transport = new HttpTransport({
         ...defaultConfig,
@@ -906,9 +904,9 @@ describe('HttpTransport', () => {
         middleware: [oauthMw],
       });
 
-      await expect(
-        runRequest(transport, { method: 'GET', path: '/pages' }),
-      ).rejects.toBeInstanceOf(OAuthError);
+      await expect(runRequest(transport, { method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        OAuthError,
+      );
       expect(callCount).toBe(1);
       expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -999,9 +997,9 @@ describe('HttpTransport', () => {
     });
 
     it('does not log a warning when nearlimit header is absent', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        makeResponse(200, {}, { 'x-ratelimit-remaining': '500' }),
-      );
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(makeResponse(200, {}, { 'x-ratelimit-remaining': '500' }));
       vi.stubGlobal('fetch', fetchMock);
 
       const warnSpy = vi.fn();
@@ -1029,7 +1027,11 @@ describe('HttpTransport', () => {
           next(opts),
       );
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middlewareSpy] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middlewareSpy],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -1052,7 +1054,11 @@ describe('HttpTransport', () => {
 
       const middleware = vi.fn().mockResolvedValue(syntheticResponse);
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
