@@ -631,10 +631,10 @@ Order of precedence (first wins):
 
 **Supported `--auth-type` values:**
 
-| Value    | Required inputs                        | Produced `ClientConfig.auth`                      |
-| -------- | -------------------------------------- | ------------------------------------------------- |
-| `basic`  | `--base-url`, `--email`, `--token`     | `{ type: 'basic', email, apiToken: token }`       |
-| `bearer` | `--base-url`, `--token`                | `{ type: 'bearer', token }`                       |
+| Value    | Required inputs                    | Produced `ClientConfig.auth`                |
+| -------- | ---------------------------------- | ------------------------------------------- |
+| `basic`  | `--base-url`, `--email`, `--token` | `{ type: 'basic', email, apiToken: token }` |
+| `bearer` | `--base-url`, `--token`            | `{ type: 'bearer', token }`                 |
 
 Default is `basic`. Unknown values fall back to `basic` so existing invocations keep working. Bearer mode skips the `--email` requirement; `--token` is still required for both modes.
 
