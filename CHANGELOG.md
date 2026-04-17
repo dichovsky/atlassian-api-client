@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **transport** — `ApiResponse<T>` now exposes a `rateLimit?: RateLimitInfo` field populated from `x-ratelimit-*` response headers on every successful request. When `nearLimit === true` the configured `logger` emits a `warn` so callers can proactively slow down before a 429.
+- **transport** — `RequestOptions.signal?: AbortSignal` lets callers cancel in-flight requests (e.g. React `useEffect` cleanup, CLI SIGINT). The caller signal is composed with the internal timeout signal via `AbortSignal.any`; external aborts surface as `AbortError` while timeouts still throw `TimeoutError`.
+- **cli** — `--auth-type basic|bearer` flag (and `ATLASSIAN_AUTH_TYPE` env var) so the `atlas` CLI can call Atlassian APIs with an OAuth/PAT bearer token. `--email` is not required when `bearer` is selected; `--token` is still required. Unknown values fall back to `basic` to preserve the historical default for existing invocations.
+
+### Changed
+
+- **transport** — 429 `Retry-After` delays now receive `0..retryDelay` jitter on top of the server-advertised floor (still bounded by `maxRetryDelay`). Prevents synchronized retry stampedes from clients that share a rate-limit bucket.
+- **transport** — the retry loop now wraps the middleware chain (previously middleware wrapped retry). Errors thrown from middleware — including `OAuthError` with a 5xx refresh status — are now eligible for the standard retry/backoff path.
+- **oauth** — `OAuthError` now extends `HttpError` (previously `AtlassianError`) and sets `status = refreshStatus ?? 0`. Transient token-endpoint failures (5xx) are retried automatically via `shouldRetry`; 4xx stay fatal. Public error `code` remains `'OAUTH_ERROR'`.
+- **pagination** — offset paginators (`paginateOffset`, `paginateSearch`) now terminate when the server returns a short page (`values.length < maxResults` / `issues.length < maxResults`), even if `isLast` and `total` are absent from the response. Prevents infinite loops against servers that clamp page size without populating those fields.
+
 ## 0.5.0 (2026-04-16)
 
 ### Fixed
