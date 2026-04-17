@@ -164,13 +164,14 @@ Resource modules receive the same `baseUrl` and always pass fully-qualified URLs
 Client method call
   → Resource module builds RequestOptions
     → Transport.request()
-      → Middleware chain (pre-request: OAuth, Connect JWT, Cache, Batch…)
-        → Auth adds Authorization header
-          → Retry wraps the fetch call
-            → Rate limiter checks/waits if needed
-              → fetch() executes
-                → Response parsed or error thrown
-                  → Middleware chain (post-response: Cache store, OAuth refresh…)
+      → Retry loop (wraps middleware + fetch; retries on 429/5xx/network/OAuth 5xx)
+        → Middleware chain (pre-request: OAuth, Connect JWT, Cache, Batch…)
+          → executeFetch
+            → Auth adds Authorization header (caller `Authorization` stripped)
+              → fetch() executes (with timeout + optional caller AbortSignal)
+                → Response parsed; rate-limit headers surfaced on success,
+                  HttpError thrown on non-2xx (RateLimitError includes Retry-After)
+          → Middleware chain (post-response: Cache store, OAuth refresh on 401…)
 ```
 
 ### Auth (`src/core/auth.ts`)

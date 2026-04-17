@@ -24,9 +24,11 @@ export interface ApiResponse<T> {
   readonly status: number;
   readonly headers: Headers;
   /**
-   * Rate-limit metadata parsed from response headers.
-   * Present on every successful response — individual fields are undefined
-   * when the corresponding header is absent or malformed.
+   * Rate-limit metadata parsed from response headers when provided by the
+   * transport implementation. Populated by `HttpTransport` from `x-ratelimit-*`
+   * headers on every successful response; may be absent for custom `Transport`
+   * implementations. Individual fields are undefined when the corresponding
+   * header is absent or malformed.
    */
   readonly rateLimit?: RateLimitInfo;
 }
