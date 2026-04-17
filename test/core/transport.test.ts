@@ -9,6 +9,7 @@ import {
   NetworkError,
   ValidationError,
 } from '../../src/core/errors.js';
+import { OAuthError } from '../../src/core/oauth.js';
 import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 // ---------------------------------------------------------------------------
@@ -845,6 +846,71 @@ describe('HttpTransport', () => {
 
       // Act & Assert — should not throw
       await expect(transport.request({ method: 'GET', path: '/pages' })).resolves.toBeDefined();
+    });
+  });
+
+  describe('OAuth refresh errors as HttpError', () => {
+    it('retries when middleware throws a 5xx OAuthError', async () => {
+      // OAuthError now extends HttpError, so a 5xx refresh failure should be
+      // classified as retryable the same way a 500 response would be.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let callCount = 0;
+      const oauthMw = vi.fn(
+        async (
+          opts: RequestOptions,
+          next: (o: RequestOptions) => Promise<ApiResponse<unknown>>,
+        ): Promise<ApiResponse<unknown>> => {
+          callCount++;
+          if (callCount === 1) {
+            throw new OAuthError('refresh endpoint down', 503);
+          }
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 1,
+        middleware: [oauthMw],
+      });
+
+      const result = await runRequest<{ status: number }>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.status).toBe(200);
+      expect(callCount).toBe(2);
+      // The inner fetch only fires on the successful retry
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a non-5xx OAuthError (status 0 / refresh body invalid)', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      let callCount = 0;
+      const oauthMw = vi.fn(
+        async (): Promise<ApiResponse<unknown>> => {
+          callCount++;
+          // No refreshStatus → status defaults to 0, non-retryable
+          throw new OAuthError('missing access_token');
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 1,
+        middleware: [oauthMw],
+      });
+
+      await expect(
+        runRequest(transport, { method: 'GET', path: '/pages' }),
+      ).rejects.toBeInstanceOf(OAuthError);
+      expect(callCount).toBe(1);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 

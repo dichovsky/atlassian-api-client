@@ -4,7 +4,7 @@ import {
   fetchRefreshedTokens,
   OAuthError,
 } from '../../src/core/oauth.js';
-import { AuthenticationError, NetworkError } from '../../src/core/errors.js';
+import { AuthenticationError, HttpError, NetworkError } from '../../src/core/errors.js';
 import type { RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
@@ -39,6 +39,22 @@ describe('OAuthError', () => {
   it('is an instance of Error', () => {
     const err = new OAuthError('x');
     expect(err).toBeInstanceOf(Error);
+  });
+
+  it('is an instance of HttpError so transport retry logic can classify it', () => {
+    const err = new OAuthError('refresh failed', 503);
+    expect(err).toBeInstanceOf(HttpError);
+    // status mirrors refreshStatus so isRetryableStatus can decide on retry
+    expect(err.status).toBe(503);
+  });
+
+  it('defaults status to 0 when no HTTP response was produced', () => {
+    // Covers the body-validation and network-failure paths where refreshStatus
+    // is undefined. Status 0 is non-retryable per isRetryableStatus, so these
+    // errors correctly propagate out of the transport without retries.
+    const err = new OAuthError('missing access_token');
+    expect(err.status).toBe(0);
+    expect(err.refreshStatus).toBeUndefined();
   });
 });
 
@@ -310,6 +326,27 @@ describe('fetchRefreshedTokens', () => {
     await expect(
       fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'bad-refresh'),
     ).rejects.toThrow(OAuthError);
+  });
+
+  it('produces a retryable OAuthError (isRetryableStatus) when token endpoint returns 5xx', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({}),
+    }) as unknown as typeof fetch;
+
+    let capturedErr: OAuthError | undefined;
+    try {
+      await fetchRefreshedTokens({ clientId: 'c', clientSecret: 's' }, 'r');
+    } catch (e) {
+      capturedErr = e as OAuthError;
+    }
+
+    // Must be an HttpError subclass so transport.shouldRetry treats it the
+    // same as any other retryable 5xx response.
+    expect(capturedErr).toBeInstanceOf(HttpError);
+    expect(capturedErr?.status).toBe(503);
+    expect(capturedErr?.refreshStatus).toBe(503);
   });
 
   it('includes the HTTP status in OAuthError when endpoint returns non-ok', async () => {

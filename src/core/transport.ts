@@ -45,18 +45,20 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    return this.requestHandler(options) as Promise<ApiResponse<T>>;
+    return this.executeWithRetry<T>(options);
   }
 
   /**
-   * Build the full middleware chain ending with the core fetch+retry executor.
+   * Build the middleware chain wrapping the core fetch executor.
    * Middleware runs outermost-first (index 0 wraps all subsequent middleware).
+   * The retry loop sits OUTSIDE this chain so retryable errors thrown by
+   * middleware (e.g. OAuthError with 5xx refreshStatus) are also retried.
    */
   private buildMiddlewareChain(): (options: RequestOptions) => Promise<ApiResponse<unknown>> {
     const middleware: Middleware[] = this.config.middleware ?? [];
 
     const coreExecutor = (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-      this.executeWithRetry(opts);
+      this.executeFetch(opts);
 
     return middleware.reduceRight<(opts: RequestOptions) => Promise<ApiResponse<unknown>>>(
       (next, mw) => (opts) => mw(opts, next),
@@ -69,7 +71,7 @@ export class HttpTransport implements Transport {
 
     for (;;) {
       try {
-        const result = await this.executeFetch<T>(options);
+        const result = (await this.requestHandler(options)) as ApiResponse<T>;
         return result;
       } catch (error) {
         if (!this.shouldRetry(error, attempt)) {
