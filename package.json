@@ -61,7 +61,8 @@
     "bench": "vitest bench",
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
+    "test:exports": "node scripts/validate-exports.js",
+    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build && npm run test:exports"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

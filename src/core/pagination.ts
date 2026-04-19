@@ -118,9 +118,7 @@ export async function* paginateOffset<T>(
       yield item;
     }
 
-    if (values.length === 0) {
-      done = true;
-    } else if (isLast === true) {
+    if (isLast === true || values.length === 0) {
       done = true;
     } else if (total !== undefined && startAt + maxResults >= total) {
       done = true;

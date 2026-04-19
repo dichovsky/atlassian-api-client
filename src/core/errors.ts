@@ -134,7 +134,7 @@ export function createHttpError(
 function extractErrorMessage(body: unknown): string | undefined {
   if (body === null || body === undefined) return undefined;
   if (typeof body === 'string') return body;
-  if (typeof body !== 'object') return undefined;
+  if (typeof body !== 'object' || Array.isArray(body)) return undefined;
 
   const obj = body as Record<string, unknown>;
 

@@ -45,7 +45,18 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    return this.requestHandler(options) as Promise<ApiResponse<T>>;
+    const response = await this.requestHandler(options);
+
+    // Basic structural validation of the ApiResponse
+    if (
+      response.status === undefined ||
+      response.headers === undefined ||
+      !('data' in response)
+    ) {
+      throw new ValidationError('Invalid ApiResponse structure received from transport');
+    }
+
+    return response as ApiResponse<T>;
   }
 
   /**
@@ -85,9 +96,11 @@ export class HttpTransport implements Transport {
 
   private async executeFetch<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     const url = this.buildUrl(options.path, options.query);
+    // Redact sensitive patterns from the path before logging.
+    const sanitizedPath = options.path.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
-    this.config.logger?.debug('HTTP request', { method: options.method, path: options.path });
+    this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
@@ -153,7 +166,7 @@ export class HttpTransport implements Transport {
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,
-      path: options.path,
+      path: sanitizedPath,
       status: response.status,
     });
 
