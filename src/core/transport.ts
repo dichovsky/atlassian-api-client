@@ -48,11 +48,7 @@ export class HttpTransport implements Transport {
     const response = await this.requestHandler(options);
 
     // Basic structural validation of the ApiResponse
-    if (
-      response.status === undefined ||
-      response.headers === undefined ||
-      !('data' in response)
-    ) {
+    if (response.status === undefined || response.headers === undefined || !('data' in response)) {
       throw new ValidationError('Invalid ApiResponse structure received from transport');
     }
 

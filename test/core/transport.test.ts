@@ -771,7 +771,11 @@ describe('HttpTransport', () => {
           next(opts),
       );
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middlewareSpy] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middlewareSpy],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });
@@ -794,7 +798,11 @@ describe('HttpTransport', () => {
 
       const middleware = vi.fn().mockResolvedValue(syntheticResponse);
 
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       // Act
       const result = await transport.request<{ id: string }>({ method: 'GET', path: '/pages' });

@@ -146,8 +146,8 @@ interface Transport {
 
 ```typescript
 // ConfluenceClient (simplified)
-const resolved = resolveConfig(config);           // resolved.baseUrl = 'https://host'
-const baseUrl  = `${resolved.baseUrl}/wiki/api/v2`;
+const resolved = resolveConfig(config); // resolved.baseUrl = 'https://host'
+const baseUrl = `${resolved.baseUrl}/wiki/api/v2`;
 const transport = new HttpTransport({ ...resolved, baseUrl }); // config.baseUrl = API URL
 ```
 
