@@ -757,6 +757,34 @@ describe('HttpTransport', () => {
       // Act & Assert — should not throw
       await expect(transport.request({ method: 'GET', path: '/pages' })).resolves.toBeDefined();
     });
+
+    it('sanitizes logged paths by removing query and redacting sensitive segments', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: '1' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const debugSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      });
+
+      await transport.request({
+        method: 'GET',
+        path: '/token/very-secret-value?cursor=abc123&auth=top-secret',
+      });
+
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ path: '/token/***' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ path: '/token/***' }),
+      );
+    });
   });
 
   describe('middleware', () => {
@@ -802,6 +830,32 @@ describe('HttpTransport', () => {
       // Assert — fetch was never called
       expect(fetchMock).not.toHaveBeenCalled();
       expect(result.data.id).toBe('synthetic');
+    });
+
+    it('throws ValidationError when middleware returns null', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const middleware = vi.fn().mockResolvedValue(null);
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('throws ValidationError when middleware returns a primitive', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const middleware = vi.fn().mockResolvedValue('invalid-response');
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('runs multiple middleware in order (outermost first)', async () => {

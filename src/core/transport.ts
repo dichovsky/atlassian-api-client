@@ -47,11 +47,14 @@ export class HttpTransport implements Transport {
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     const response = await this.requestHandler(options);
 
-    // Basic structural validation of the ApiResponse
     if (
-      response.status === undefined ||
-      response.headers === undefined ||
-      !('data' in response)
+      typeof response !== 'object' ||
+      response === null ||
+      !('data' in response) ||
+      !('status' in response) ||
+      !('headers' in response) ||
+      typeof response.status !== 'number' ||
+      !(response.headers instanceof Headers)
     ) {
       throw new ValidationError('Invalid ApiResponse structure received from transport');
     }
@@ -75,12 +78,12 @@ export class HttpTransport implements Transport {
     );
   }
 
-  private async executeWithRetry<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+  private async executeWithRetry(options: RequestOptions): Promise<ApiResponse<unknown>> {
     let attempt = 0;
 
     for (;;) {
       try {
-        const result = await this.executeFetch<T>(options);
+        const result = await this.executeFetch(options);
         return result;
       } catch (error) {
         if (!this.shouldRetry(error, attempt)) {
@@ -94,10 +97,30 @@ export class HttpTransport implements Transport {
     }
   }
 
-  private async executeFetch<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+  private sanitizePathForLogging(path: string): string {
+    const redactSensitiveMarkers = (value: string): string =>
+      value.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
+
+    const sensitiveSegmentNames = new Set(['token', 'key', 'secret', 'auth']);
+    const redactSensitiveSegments = (pathname: string): string =>
+      pathname
+        .split('/')
+        .map((segment, index, segments) => {
+          const previousSegment = segments[index - 1]?.toLowerCase();
+          if (previousSegment !== undefined && sensitiveSegmentNames.has(previousSegment)) {
+            return '***';
+          }
+          return redactSensitiveMarkers(segment);
+        })
+        .join('/');
+
+    const parsedUrl = new URL(path, 'http://localhost');
+    return redactSensitiveSegments(parsedUrl.pathname);
+  }
+
+  private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
     const url = this.buildUrl(options.path, options.query);
-    // Redact sensitive patterns from the path before logging.
-    const sanitizedPath = options.path.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
+    const sanitizedPath = this.sanitizePathForLogging(options.path);
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
     this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
@@ -162,7 +185,7 @@ export class HttpTransport implements Transport {
       throw createHttpError(response.status, body, retryAfterSeconds);
     }
 
-    const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+    const data: unknown = response.status === 204 ? undefined : await response.json();
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,

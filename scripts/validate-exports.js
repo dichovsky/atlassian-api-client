@@ -1,24 +1,27 @@
-/* eslint-disable */
-const fs = require('fs');
-const path = require('path');
-const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+import fs from 'node:fs';
+import path from 'node:path';
 
-const exports = pkg.exports['.'];
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const rootExport = pkg.exports['.'];
 const errors = [];
 
+function resolveExportPath(exportPath) {
+  return path.normalize(exportPath.replace(/^\.\//, ''));
+}
+
 // Check types
-if (exports.types && !fs.existsSync(path.join('dist', path.basename(exports.types)))) {
-  errors.push(`Missing types: ${exports.types}`);
+if (rootExport.types && !fs.existsSync(resolveExportPath(rootExport.types))) {
+  errors.push(`Missing types: ${rootExport.types}`);
 }
 
 // Check import
-if (exports.import && !fs.existsSync(path.join('dist', path.basename(exports.import)))) {
-  errors.push(`Missing import: ${exports.import}`);
+if (rootExport.import && !fs.existsSync(resolveExportPath(rootExport.import))) {
+  errors.push(`Missing import: ${rootExport.import}`);
 }
 
 // Check require
-if (exports.require && !fs.existsSync(path.join('dist', path.basename(exports.require)))) {
-  errors.push(`Missing require: ${exports.require}`);
+if (rootExport.require && !fs.existsSync(resolveExportPath(rootExport.require))) {
+  errors.push(`Missing require: ${rootExport.require}`);
 }
 
 if (errors.length > 0) {

@@ -391,6 +391,16 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Access forbidden');
     });
 
+    it('non-plain object body (Date) → uses default message', () => {
+      const err = createHttpError(500, new Date('2026-01-01T00:00:00Z'));
+      expect(err.message).toBe('HTTP error 500');
+    });
+
+    it('non-plain object body (Error) → uses default message', () => {
+      const err = createHttpError(500, new Error('boom'));
+      expect(err.message).toBe('HTTP error 500');
+    });
+
     it('object without message or errorMessages → uses default for 500', () => {
       const err = createHttpError(500, { unrelated: 'data' });
       expect(err.message).toBe('HTTP error 500');
