@@ -5,6 +5,7 @@ import type { ParsedCommand, GlobalOptions } from '../../src/cli/types.js';
 
 const GLOBALS: GlobalOptions = {
   baseUrl: 'https://test.atlassian.net',
+  authType: 'basic',
   email: 'user@example.com',
   token: 'test-token',
   format: 'json',

@@ -10,6 +10,12 @@ export interface RequestOptions {
   /** FormData body for multipart/form-data uploads. Mutually exclusive with body. */
   readonly formData?: FormData;
   readonly headers?: Readonly<Record<string, string>>;
+  /**
+   * External AbortSignal for caller-driven cancellation. Composed with the
+   * internal timeout signal — aborting this signal surfaces as an abort error
+   * preserving the original reason, distinct from TimeoutError.
+   */
+  readonly signal?: AbortSignal;
 }
 
 /** Parsed API response. */
@@ -17,6 +23,14 @@ export interface ApiResponse<T> {
   readonly data: T;
   readonly status: number;
   readonly headers: Headers;
+  /**
+   * Rate-limit metadata parsed from response headers when provided by the
+   * transport implementation. Populated by `HttpTransport` from `x-ratelimit-*`
+   * headers on every successful response; may be absent for custom `Transport`
+   * implementations. Individual fields are undefined when the corresponding
+   * header is absent or malformed.
+   */
+  readonly rateLimit?: RateLimitInfo;
 }
 
 /** Transport abstraction — the only interface resource modules depend on. */

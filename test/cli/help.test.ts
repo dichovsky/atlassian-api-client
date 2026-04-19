@@ -58,4 +58,14 @@ describe('getHelpText', () => {
     // Assert
     expect(text).toContain('atlas - Atlassian Cloud API CLI');
   });
+
+  it('documents the --auth-type flag and bearer scheme', () => {
+    // Act
+    const text = getHelpText();
+
+    // Assert
+    expect(text).toContain('--auth-type');
+    expect(text).toContain('bearer');
+    expect(text).toContain('ATLASSIAN_AUTH_TYPE');
+  });
 });
