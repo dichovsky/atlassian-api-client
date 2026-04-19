@@ -10,7 +10,7 @@
 
 ### Changed
 
-- **transport** — 429 `Retry-After` delays now receive `0..retryDelay` jitter on top of the server-advertised floor (still bounded by `maxRetryDelay`). Prevents synchronized retry stampedes from clients that share a rate-limit bucket.
+- **transport** — 429 `Retry-After` delays now receive `0..retryDelay` jitter on top of the server-advertised floor. If `maxRetryDelay` leaves headroom above that floor, only the added jitter is capped to stay within that headroom. Prevents synchronized retry stampedes from clients that share a rate-limit bucket.
 - **transport** — the retry loop now wraps the middleware chain (previously middleware wrapped retry). Errors thrown from middleware — including `OAuthError` with a 5xx refresh status — are now eligible for the standard retry/backoff path.
 - **oauth** — `OAuthError` now extends `HttpError` (previously `AtlassianError`) and sets `status = refreshStatus ?? 0`. Transient token-endpoint failures (5xx) are retried automatically via `shouldRetry`; 4xx stay fatal. Public error `code` remains `'OAUTH_ERROR'`.
 - **pagination** — offset paginators (`paginateOffset`, `paginateSearch`) now terminate when the server returns a short page (`values.length < maxResults` / `issues.length < maxResults`), even if `isLast` and `total` are absent from the response. Prevents infinite loops against servers that clamp page size without populating those fields.

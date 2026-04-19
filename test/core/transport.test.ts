@@ -634,7 +634,7 @@ describe('HttpTransport', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('caps jittered Retry-After delay at maxRetryDelay', async () => {
+    it('preserves Retry-After floor when it exceeds maxRetryDelay', async () => {
       vi.spyOn(Math, 'random').mockReturnValue(1);
 
       const retryAfterSeconds = 10;
@@ -658,8 +658,11 @@ describe('HttpTransport', () => {
       void resultPromise.catch((_e: unknown) => undefined);
       await vi.advanceTimersByTimeAsync(0);
 
-      // Capped at 5s regardless of 10s advertised delay
-      await vi.advanceTimersByTimeAsync(5_000);
+      // Retry does not fire before the full server-advertised floor.
+      await vi.advanceTimersByTimeAsync(9_999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1);
       await vi.runAllTimersAsync();
 
       const result = (await resultPromise) as { status: number };
@@ -1210,6 +1213,38 @@ describe('HttpTransport', () => {
         signal: external.signal,
       });
       void resultPromise.catch((_e: unknown) => undefined);
+
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('aborts while waiting for retry backoff', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(makeResponse(429, undefined, { 'retry-after': '5' }))
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: 0,
+        maxRetryDelay: 10_000,
+      });
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
 
       external.abort();
       await vi.runAllTimersAsync();

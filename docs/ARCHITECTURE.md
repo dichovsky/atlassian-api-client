@@ -259,7 +259,7 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 **Retryable conditions:**
 
-- HTTP 429 (Too Many Requests) — uses `Retry-After` header if present, with `0..retryDelay` jitter added on top of the server-advertised floor (still bounded by `maxRetryDelay`) to prevent synchronized retry stampedes
+- HTTP 429 (Too Many Requests) — uses `Retry-After` header if present, with `0..retryDelay` jitter added on top of the server-advertised floor. If `maxRetryDelay` leaves headroom above that floor, the added jitter is capped to stay within that headroom and prevent synchronized retry stampedes
 - HTTP 500, 502, 503, 504 (server errors)
 - Network errors (connection reset, DNS failure)
 - `OAuthError` with `refreshStatus` in the 5xx range (transient token-endpoint failures)

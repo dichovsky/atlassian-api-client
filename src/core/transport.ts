@@ -79,7 +79,7 @@ export class HttpTransport implements Transport {
         }
 
         const delayMs = this.getRetryDelay(error, attempt);
-        await sleep(delayMs);
+        await this.sleepWithAbort(delayMs, options.signal);
         attempt++;
       }
     }
@@ -206,14 +206,50 @@ export class HttpTransport implements Transport {
     if (error instanceof RateLimitError && error.retryAfter !== undefined) {
       // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
       // of clients hitting the same 429 wall don't resume in lockstep. The
-      // server-advertised floor is preserved, and the total is bounded by
-      // maxRetryDelay to avoid pathologically long sleeps on large Retry-After.
+      // server-advertised floor is always preserved. When maxRetryDelay leaves
+      // headroom above that floor, cap only the added jitter to stay within it.
       const base = error.retryAfter * 1000;
       const jitter = Math.random() * this.config.retryDelay;
-      return Math.min(base + jitter, this.config.maxRetryDelay);
+      const maxAdditionalDelay = Math.max(0, this.config.maxRetryDelay - base);
+      return base + Math.min(jitter, maxAdditionalDelay);
     }
 
     return calculateDelay(attempt, this.config.retryDelay, this.config.maxRetryDelay);
+  }
+
+  private async sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
+    if (signal === undefined) {
+      await sleep(delayMs);
+      return;
+    }
+
+    if (signal.aborted) {
+      throw this.getAbortReason(signal);
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, delayMs);
+
+      const onAbort = (): void => {
+        clearTimeout(timeoutId);
+        reject(this.getAbortReason(signal));
+      };
+
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  private getAbortReason(signal: AbortSignal): Error {
+    if (signal.reason instanceof Error) {
+      return signal.reason;
+    }
+
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    return abortError;
   }
 
   private buildUrl(
