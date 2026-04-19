@@ -1252,6 +1252,66 @@ describe('HttpTransport', () => {
       await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it('retries after backoff when external signal stays active', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(makeResponse(429, undefined, { 'retry-after': '1' }))
+        .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const external = new AbortController();
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: 0,
+        maxRetryDelay: 10_000,
+      });
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      await vi.advanceTimersByTimeAsync(999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).resolves.toHaveProperty('status', 200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('uses AbortError when aborted with a non-Error reason during backoff', async () => {
+      const external = new AbortController();
+      const fetchMock = vi.fn(() => {
+        external.abort('stop');
+        return Promise.resolve(makeResponse(429, undefined, { 'retry-after': '5' }));
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({
+        ...defaultConfig,
+        retries: 1,
+        retryDelay: 0,
+        maxRetryDelay: 10_000,
+      });
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('timeout fires via setTimeout callback', () => {
