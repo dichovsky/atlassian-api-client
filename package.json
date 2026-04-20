@@ -29,7 +29,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/cjs/index.js"
+      "default": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -46,10 +46,8 @@
     "SECURITY.md"
   ],
   "scripts": {
-    "build:esm": "tsc -p tsconfig.build.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build": "npm run build:esm && npm run build:cjs",
-    "clean": "rimraf dist",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -58,10 +56,11 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "bench": "vitest bench",
+    "test:integration": "ATLASSIAN_INTEGRATION=1 vitest run --config vitest.integration.config.ts",
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
+    "test:exports": "node scripts/validate-exports.js",
+    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,4 +1,4 @@
-import type { Transport, RequestOptions } from './types.js';
+import type { Transport, RequestOptions, Logger } from './types.js';
 
 /**
  * Validate a pagination size value (maxResults / pageSize / limit).
@@ -52,11 +52,17 @@ export function extractCursor(nextUrl: string | undefined): string | undefined {
 /**
  * Async generator for Confluence cursor-based pagination.
  * Yields individual items across all pages.
+ *
+ * If a non-empty `_links.next` URL is returned but no `cursor` query parameter
+ * can be extracted, iteration stops and `logger?.warn` is called so the silent
+ * termination is observable (Confluence v2 always includes `cursor`, so an
+ * un-parsable next URL typically signals an upstream schema change).
  */
 export async function* paginateCursor<T>(
   transport: Transport,
   basePath: string,
   query?: Readonly<Record<string, string | number | boolean | undefined>>,
+  logger?: Logger,
 ): AsyncGenerator<T> {
   let cursor: string | undefined;
 
@@ -80,7 +86,17 @@ export async function* paginateCursor<T>(
       yield item;
     }
 
-    cursor = extractCursor(response.data._links.next);
+    const nextUrl = response.data._links.next;
+    cursor = extractCursor(nextUrl);
+    if (nextUrl !== undefined && nextUrl !== '' && cursor === undefined) {
+      logger?.warn(
+        'paginateCursor: _links.next was returned without a parseable cursor; stopping',
+        {
+          nextUrl,
+          path: basePath,
+        },
+      );
+    }
   } while (cursor);
 }
 
@@ -118,9 +134,7 @@ export async function* paginateOffset<T>(
       yield item;
     }
 
-    if (values.length === 0) {
-      done = true;
-    } else if (isLast === true) {
+    if (isLast === true || values.length === 0) {
       done = true;
     } else if (total !== undefined && startAt + maxResults >= total) {
       done = true;

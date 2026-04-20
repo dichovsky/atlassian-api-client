@@ -384,6 +384,120 @@ atlas jira projects list --format minimal
 | `jql`              | `getAutocompleteData`, `parse`, `sanitize`, `getFieldReferenceSuggestions` |
 | `bulk`             | `createBulk`, `setPropertyBulk`, `deletePropertyBulk`                      |
 
+## Recipes
+
+Copy-paste snippets for common setups. Each recipe is self-contained.
+
+### Custom logger
+
+Warnings the client emits through its configured logger, such as rate-limit proximity and deprecated constructor usage, are routed through the logger you provide.
+
+```typescript
+import { ConfluenceClient, type Logger } from 'atlassian-api-client';
+import pino from 'pino';
+
+const pinoLogger = pino();
+const logger: Logger = {
+  debug: (msg, ctx) => pinoLogger.debug(ctx, msg),
+  info: (msg, ctx) => pinoLogger.info(ctx, msg),
+  warn: (msg, ctx) => pinoLogger.warn(ctx, msg),
+  error: (msg, ctx) => pinoLogger.error(ctx, msg),
+};
+
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email, apiToken },
+  logger,
+});
+```
+
+### Proxy / custom `fetch` dispatcher
+
+Inject an `undici`-powered `fetch` to route every request through a proxy or tune keep-alive. The custom `fetch` is used by the transport _and_ by OAuth token-refresh calls.
+
+```typescript
+import { ConfluenceClient } from 'atlassian-api-client';
+import { fetch as undiciFetch, ProxyAgent } from 'undici';
+
+const dispatcher = new ProxyAgent('http://proxy.internal:8080');
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email, apiToken },
+  fetch: ((url, init) => undiciFetch(url, { ...init, dispatcher })) as typeof fetch,
+});
+```
+
+### OAuth 2.0 with token persistence
+
+`createOAuthRefreshMiddleware` injects the access token on every request and refreshes automatically on a 401. A shared in-flight refresh promise prevents stampedes. Use `onTokenRefreshed` to persist new tokens so worker restarts don't lose them.
+
+```typescript
+import { JiraClient, createOAuthRefreshMiddleware } from 'atlassian-api-client';
+import { readFile, writeFile } from 'node:fs/promises';
+
+const tokens = JSON.parse(await readFile('.atlassian-tokens.json', 'utf8'));
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: tokens.accessToken }, // initial header; middleware keeps it fresh
+  middleware: [
+    createOAuthRefreshMiddleware({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      clientId: process.env.ATLASSIAN_CLIENT_ID!,
+      clientSecret: process.env.ATLASSIAN_CLIENT_SECRET!,
+      // tokenEndpoint defaults to 'https://auth.atlassian.com/oauth/token'
+      onTokenRefreshed: async (next) => {
+        await writeFile(
+          '.atlassian-tokens.json',
+          JSON.stringify({ accessToken: next.accessToken, refreshToken: next.refreshToken }),
+        );
+      },
+    }),
+  ],
+});
+```
+
+### Retry tuning
+
+Override the defaults per client. Non-retryable statuses (4xx except 429) are never retried regardless of `retries`.
+
+```typescript
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token },
+  retries: 5, // default 3
+  retryDelay: 500, // default 1000 ms (base for exponential backoff)
+  maxRetryDelay: 15_000, // default 30_000 ms (ceiling)
+  timeout: 20_000, // default 30_000 ms (per-request AbortController)
+});
+```
+
+### Caching + batching
+
+For a read-heavy dashboard, layer the cache outermost _under_ auth so every request still carries a fresh token, and batch innermost so concurrent identical requests collapse into one fetch. See [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md) for the full ordering rationale.
+
+```typescript
+import {
+  JiraClient,
+  createCacheMiddleware,
+  createBatchMiddleware,
+  createOAuthRefreshMiddleware,
+} from 'atlassian-api-client';
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: accessToken },
+  middleware: [
+    createOAuthRefreshMiddleware({
+      /* … */
+    }),
+    createCacheMiddleware({ ttl: 30_000, maxSize: 500 }),
+    createBatchMiddleware(),
+  ],
+});
+```
+
 ## Architecture
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed description of the layered design, core infrastructure, and key design decisions.

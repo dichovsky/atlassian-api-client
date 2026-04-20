@@ -129,6 +129,60 @@ describe('createCacheMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
+  it('reclaims expired entries via TTL sweep before FIFO eviction', async () => {
+    vi.useFakeTimers();
+    let counter = 0;
+    const next = vi.fn(
+      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ path: opts.path, n: ++counter }),
+    );
+
+    const mw = createCacheMiddleware({ maxSize: 2, ttl: 1000 });
+
+    // Cache /a at t=0 (expires at t=1000)
+    await mw(makeOpts({ path: '/a' }), next);
+
+    // Cache /b at t=600 (expires at t=1600)
+    vi.advanceTimersByTime(600);
+    await mw(makeOpts({ path: '/b' }), next);
+
+    // At t=1100 /a is expired but /b is still valid
+    vi.advanceTimersByTime(500);
+
+    // Insert /c — sweepExpired reclaims the expired /a slot instead of FIFO
+    // evicting the still-valid /b. /b must remain cached after this.
+    await mw(makeOpts({ path: '/c' }), next);
+
+    // Re-fetch /b — expect cache hit (no new underlying call)
+    await mw(makeOpts({ path: '/b' }), next);
+
+    // Underlying calls so far: /a, /b, /c. The final /b is a cache hit.
+    expect(next).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
+  it('falls back to FIFO eviction when no entries are expired', async () => {
+    let counter = 0;
+    const next = vi.fn(
+      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ path: opts.path, n: ++counter }),
+    );
+
+    const mw = createCacheMiddleware({ maxSize: 2, ttl: 10_000 });
+
+    // Insert /a, /b — both still valid when /c arrives. sweepExpired finds
+    // nothing to reclaim, so FIFO evicts the oldest entry (/a).
+    await mw(makeOpts({ path: '/a' }), next);
+    await mw(makeOpts({ path: '/b' }), next);
+    await mw(makeOpts({ path: '/c' }), next);
+
+    // /a should have been FIFO-evicted; re-fetching it triggers a fresh call
+    await mw(makeOpts({ path: '/a' }), next);
+
+    // /a, /b, /c, /a-again
+    expect(next).toHaveBeenCalledTimes(4);
+  });
+
   it('applies default TTL of 60 seconds', async () => {
     vi.useFakeTimers();
     let n = 0;

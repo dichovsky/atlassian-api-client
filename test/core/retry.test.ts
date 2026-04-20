@@ -99,6 +99,66 @@ describe('isNetworkError', () => {
   it('returns false for a plain object', () => {
     expect(isNetworkError({ message: 'oops' })).toBe(false);
   });
+
+  it.each([
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+    'ETIMEDOUT',
+    'EPIPE',
+    'UND_ERR_SOCKET',
+    'UND_ERR_CONNECT_TIMEOUT',
+  ])('returns true for Error with code %s on the error itself', (code) => {
+    const err = Object.assign(new Error('network down'), { code });
+    expect(isNetworkError(err)).toBe(true);
+  });
+
+  it('returns true for Error whose cause carries a retryable code', () => {
+    const cause = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+    const err = new Error('fetch failed', { cause });
+    expect(isNetworkError(err)).toBe(true);
+  });
+
+  it('returns true for deeply nested cause with retryable code', () => {
+    const inner = Object.assign(new Error('dns'), { code: 'EAI_AGAIN' });
+    const middle = new Error('wrapper', { cause: inner });
+    const outer = new Error('outer', { cause: middle });
+    expect(isNetworkError(outer)).toBe(true);
+  });
+
+  it('returns false for unknown codes', () => {
+    const err = Object.assign(new Error('unrecognised'), { code: 'EDOOFUS' });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('returns false for non-string codes', () => {
+    const err = Object.assign(new Error('wrong type'), { code: 42 });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('returns false when AbortError also has a retryable code (abort wins)', () => {
+    const err = Object.assign(new Error('aborted'), { code: 'ECONNRESET' });
+    err.name = 'AbortError';
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('returns false when cause is null', () => {
+    const err = Object.assign(new Error('empty'), { cause: null });
+    expect(isNetworkError(err)).toBe(false);
+  });
+
+  it('stops walking cause chain at depth 5 to avoid cycles', () => {
+    const a: { cause?: unknown; code?: string } = { code: 'ECONNRESET' };
+    const b = { cause: a };
+    const c = { cause: b };
+    const d = { cause: c };
+    const e = { cause: d };
+    const f = { cause: e };
+    const g = { cause: f };
+    // depth 0=g, 1=f, 2=e, 3=d, 4=c, 5=b -> stops before reaching a at depth 6
+    expect(isNetworkError(g)).toBe(false);
+  });
 });
 
 describe('sleep', () => {

@@ -25,12 +25,12 @@ EXAMPLES:
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
-  pages         List, get, create, update, delete pages
-  spaces        List, get spaces
-  blog-posts    List, get, create, update, delete blog posts
-  comments      List, get, create, update, delete comments
-  attachments   List, get, delete attachments
-  labels        List labels
+  pages         list, get, create, update, delete
+  spaces        list, get
+  blog-posts    list, get, create, update, delete
+  comments      list, get, create, delete
+  attachments   list, get, delete
+  labels        list
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
@@ -41,13 +41,13 @@ EXAMPLES:
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 
 RESOURCES:
-  issues        Get, create, update, delete, transition issues
-  projects      List, get projects
-  search        Search issues via JQL
-  users         Get, search users
-  issue-types   List issue types
-  priorities    List priorities
-  statuses      List statuses
+  issues        get, create, update, delete, transition, transitions
+  projects      list, get
+  search        search (via JQL)
+  users         get, me, search
+  issue-types   list, get
+  priorities    list, get
+  statuses      list
 
 EXAMPLES:
   atlas jira issues get PROJ-123

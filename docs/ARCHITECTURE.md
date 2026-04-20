@@ -350,6 +350,32 @@ Helper utilities:
 | `computeQsh`           | Canonical request hash for Connect JWT     |
 | `fetchRefreshedTokens` | Low-level token endpoint call              |
 
+#### Middleware ordering
+
+`HttpTransport` composes the `middleware` array with `reduceRight`, so the **first entry is the outermost wrapper**. Incoming requests flow through entries in array order; responses bubble back in reverse. The retry loop sits _outside_ the middleware chain, so a retry re-runs the entire chain.
+
+```
+config.middleware = [a, b, c]
+
+request:   a → b → c → fetch
+response:  a ← b ← c ← fetch
+```
+
+Why order matters:
+
+- **Caching wins _inside_ of auth.** `[oauth, cache, batch]` is correct for most apps: the cache stores the response body only, never the `Authorization` header, so a fresh token is always attached to each request by OAuth before the cached payload short-circuits the fetch. Putting cache outermost (`[cache, oauth, batch]`) risks serving stale responses to requests that _should_ trigger a token refresh.
+- **Batching wins _innermost_.** Placing `batch` last means deduplication happens after auth headers are injected, so two concurrent requests from the same user actually collapse into one `fetch`. If batch were outermost, requests from different auth contexts could alias to the same in-flight call.
+- **Connect JWT replaces OAuth, not stacks with it.** JWT signing depends on the final request URL + method, so the JWT middleware must be the innermost auth layer. Use `[connectJwt, cache, batch]` for Connect apps — do _not_ layer `oauth` and `connectJwt` together.
+
+Recommended orderings:
+
+| Use case               | Middleware array                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| OAuth 2.0 + cache      | `[oauthRefresh, cache, batch]`                                                                                                        |
+| Atlassian Connect app  | `[connectJwt, cache, batch]`                                                                                                          |
+| Plain Basic/Bearer app | `[cache, batch]` (no auth layer)                                                                                                      |
+| Custom logging shim    | Place your logger outermost (`[logger, oauthRefresh, cache, batch]`) so it sees the final response — including retries and cache hits |
+
 ### OAuth Scope Detection (`src/core/scopes.ts`)
 
 `detectRequiredScopes(operations)` maps Atlassian operation strings (e.g. `'jira.issues.create'`) to the required Cloud OAuth 2.0 scope strings. `listKnownOperations()` returns all known operation names for tooling.
@@ -663,9 +689,8 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 **Output:**
 
 - `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`) + source maps
-- `dist/cjs/` — CommonJS output for legacy consumers
 
-**Module format:** Dual ESM + CJS (`"type": "module"` in `package.json`; `exports` field maps both)
+**Module format:** ESM-only (`"type": "module"` in `package.json`). CommonJS consumers on Node ≥ 22.12 can `require()` the ESM entry directly.
 
 **Published files:**
 

@@ -5,6 +5,7 @@ dist/
 .env.*
 !.env.example
 coverage/
+bench/.results.json
 .DS_Store
 ._*
 *.log

@@ -67,14 +67,31 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
     const response = await next(opts);
 
     if (cache.size >= maxSize) {
+      sweepExpired(cache, Date.now());
+    }
+    if (cache.size >= maxSize) {
       // Map.keys().next().value is always defined here because cache.size >= maxSize >= 1
       const oldestKey = cache.keys().next().value as string;
       cache.delete(oldestKey);
     }
 
-    cache.set(key, { response, expiresAt: now + ttl });
+    cache.set(key, { response, expiresAt: Date.now() + ttl });
     return response;
   };
+}
+
+/**
+ * Delete every expired entry from the cache.
+ * Called on eviction to reclaim TTL-expired slots before resorting to FIFO,
+ * so that a still-valid entry is not pushed out by a dead one that happened
+ * to be inserted earlier.
+ */
+function sweepExpired(cache: Map<string, CacheEntry>, now: number): void {
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) {
+      cache.delete(key);
+    }
+  }
 }
 
 function buildCacheKey(opts: RequestOptions): string {

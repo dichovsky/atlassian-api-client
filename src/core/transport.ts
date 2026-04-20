@@ -32,9 +32,10 @@ export class HttpTransport implements Transport {
    */
   constructor(config: ResolvedConfig);
   /**
-   * @deprecated Pass the API-specific URL in `config.baseUrl` instead and omit
-   *   the second argument. When provided, `baseUrl` takes precedence over
-   *   `config.baseUrl` for URL construction (preserves v0.x behavior).
+   * @deprecated Since 0.6.0 — scheduled for removal in 0.8.0. Pass the
+   *   API-specific URL in `config.baseUrl` instead and omit the second
+   *   argument. When provided, `baseUrl` takes precedence over `config.baseUrl`
+   *   for URL construction (preserves v0.x behavior).
    */
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   constructor(config: ResolvedConfig, baseUrl: string);
@@ -42,10 +43,33 @@ export class HttpTransport implements Transport {
     this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
     this.authProvider = createAuthProvider(this.config.auth);
     this.requestHandler = this.buildMiddlewareChain();
+    if (baseUrl !== undefined) {
+      this.config.logger?.warn(
+        'HttpTransport(config, baseUrl) is deprecated and will be removed in 0.8.0; ' +
+          'pass the API-specific URL via config.baseUrl instead.',
+      );
+    }
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    return this.executeWithRetry<T>(options);
+    const response = await this.executeWithRetry(options);
+
+    // Validate middleware/transport output shape before exposing it as ApiResponse<T>.
+    // Guard non-null/object first so the subsequent field checks cannot throw on
+    // primitives (e.g. null/undefined/string returned by a misbehaving middleware).
+    if (
+      response === null ||
+      typeof response !== 'object' ||
+      !('data' in response) ||
+      !('status' in response) ||
+      !('headers' in response) ||
+      typeof response.status !== 'number' ||
+      !(response.headers instanceof Headers)
+    ) {
+      throw new ValidationError('Invalid ApiResponse structure received from transport');
+    }
+
+    return response as ApiResponse<T>;
   }
 
   /**
@@ -66,12 +90,12 @@ export class HttpTransport implements Transport {
     );
   }
 
-  private async executeWithRetry<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+  private async executeWithRetry(options: RequestOptions): Promise<ApiResponse<unknown>> {
     let attempt = 0;
 
     for (;;) {
       try {
-        const result = (await this.requestHandler(options)) as ApiResponse<T>;
+        const result = await this.requestHandler(options);
         return result;
       } catch (error) {
         if (!this.shouldRetry(error, attempt)) {
@@ -85,11 +109,39 @@ export class HttpTransport implements Transport {
     }
   }
 
-  private async executeFetch<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+  private sanitizePathForLogging(path: string): string {
+    const redactSensitiveMarkers = (value: string): string =>
+      value.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
+
+    const sensitiveSegmentNames = new Set(['token', 'key', 'secret', 'auth']);
+    const redactSensitiveSegments = (pathname: string): string =>
+      pathname
+        .split('/')
+        .map((segment, index, segments) => {
+          const previousSegment = segments[index - 1]?.toLowerCase();
+          if (previousSegment !== undefined && sensitiveSegmentNames.has(previousSegment)) {
+            return '***';
+          }
+          return redactSensitiveMarkers(segment);
+        })
+        .join('/');
+
+    try {
+      const parsedUrl = new URL(path, 'http://localhost');
+      return redactSensitiveSegments(parsedUrl.pathname);
+    } catch {
+      // Malformed input — fall back to a best-effort pathname so logging never
+      // throws and crashes the request. `replace` strips query/fragment parts.
+      return redactSensitiveSegments(path.replace(/[?#].*$/, ''));
+    }
+  }
+
+  private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
     const url = this.buildUrl(options.path, options.query);
+    const sanitizedPath = this.sanitizePathForLogging(options.path);
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
-    this.config.logger?.debug('HTTP request', { method: options.method, path: options.path });
+    this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);
     const signals: AbortSignal[] = [timeoutController.signal];
@@ -129,9 +181,10 @@ export class HttpTransport implements Transport {
     }
 
     let response: Response;
+    const doFetch = this.config.fetch ?? fetch;
 
     try {
-      response = await fetch(url, {
+      response = await doFetch(url, {
         method: options.method,
         headers,
         body: fetchBody,
@@ -159,11 +212,11 @@ export class HttpTransport implements Transport {
       throw createHttpError(response.status, body, retryAfterSeconds);
     }
 
-    const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+    const data: unknown = await this.parseResponseBody(response, options.responseType);
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,
-      path: options.path,
+      path: sanitizedPath,
       status: response.status,
     });
 
@@ -171,7 +224,7 @@ export class HttpTransport implements Transport {
     if (rateLimit.nearLimit === true) {
       this.config.logger?.warn('Rate limit near threshold', {
         method: options.method,
-        path: options.path,
+        path: sanitizedPath,
         limit: rateLimit.limit,
         remaining: rateLimit.remaining,
         reset: rateLimit.reset,
@@ -279,6 +332,30 @@ export class HttpTransport implements Transport {
       return (await response.json()) as unknown;
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * Parse a successful response body according to the caller-supplied
+   * responseType. 204 responses always yield `undefined` regardless of mode —
+   * there is no body to parse. For `'stream'` the raw `ReadableStream` is
+   * handed to the caller without consumption so large downloads do not
+   * buffer in memory; the caller must drain or cancel the stream.
+   */
+  private async parseResponseBody(
+    response: Response,
+    responseType: RequestOptions['responseType'],
+  ): Promise<unknown> {
+    if (response.status === 204) return undefined;
+
+    switch (responseType) {
+      case 'arrayBuffer':
+        return await response.arrayBuffer();
+      case 'stream':
+        return response.body;
+      case 'json':
+      case undefined:
+        return await response.json();
     }
   }
 }

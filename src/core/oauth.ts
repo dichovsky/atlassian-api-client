@@ -28,6 +28,11 @@ export interface OAuthRefreshConfig {
    * @default 'https://auth.atlassian.com/oauth/token'
    */
   readonly tokenEndpoint?: string;
+  /**
+   * Injectable `fetch` for calling the token endpoint. Defaults to global `fetch`.
+   * Supply this to route token-endpoint traffic through a proxy or custom dispatcher.
+   */
+  readonly fetch?: typeof fetch;
   /** Invoked after a successful token refresh so callers can persist the new tokens. */
   readonly onTokenRefreshed?: (tokens: OAuthTokens) => void | Promise<void>;
 }
@@ -112,7 +117,7 @@ function injectBearerToken(options: RequestOptions, token: string): RequestOptio
  * Exported for direct use in advanced scenarios (e.g. proactive token refresh).
  */
 export async function fetchRefreshedTokens(
-  config: Pick<OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoint'>,
+  config: Pick<OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoint' | 'fetch'>,
   refreshToken: string,
 ): Promise<OAuthTokens> {
   const endpoint = config.tokenEndpoint ?? 'https://auth.atlassian.com/oauth/token';
@@ -123,7 +128,8 @@ export async function fetchRefreshedTokens(
     throw new ValidationError('tokenEndpoint must use HTTPS');
   }
 
-  const response = await fetch(endpoint, {
+  const doFetch = config.fetch ?? fetch;
+  const response = await doFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -134,15 +140,21 @@ export async function fetchRefreshedTokens(
     }),
   });
 
+  const rawText = await response.text().catch(() => '');
   let body: unknown;
   try {
-    body = (await response.json()) as unknown;
+    body = rawText === '' ? undefined : (JSON.parse(rawText) as unknown);
   } catch {
     body = undefined;
   }
 
   if (!response.ok) {
-    throw new OAuthError(`Token refresh failed with HTTP ${response.status}`, response.status);
+    const snippet = formatBodySnippet(rawText);
+    const detail = snippet === '' ? '' : `: ${snippet}`;
+    throw new OAuthError(
+      `Token refresh failed with HTTP ${response.status}${detail}`,
+      response.status,
+    );
   }
 
   if (
@@ -152,7 +164,12 @@ export async function fetchRefreshedTokens(
     typeof (body as Record<string, unknown>)['access_token'] !== 'string' ||
     (body as Record<string, unknown>)['access_token'] === ''
   ) {
-    throw new OAuthError('Token refresh response missing access_token');
+    const snippet = formatBodySnippet(rawText);
+    const detail = snippet === '' ? '' : `: ${snippet}`;
+    throw new OAuthError(
+      `Token refresh response missing access_token (HTTP ${response.status})${detail}`,
+      response.status,
+    );
   }
 
   const data = body as {
@@ -168,4 +185,20 @@ export async function fetchRefreshedTokens(
     expiresIn: data.expires_in,
     tokenType: data.token_type,
   };
+}
+
+/**
+ * Build a short diagnostic snippet of a token-endpoint response body.
+ * Truncates to 200 chars after replacing any token values with `***` so that
+ * an accidentally-echoed credential never reaches an error message or log.
+ */
+function formatBodySnippet(raw: string): string {
+  if (raw === '') return '';
+  const redacted = raw.replace(
+    /("(?:access_token|refresh_token|id_token|client_secret)"\s*:\s*")[^"]*(")/gi,
+    '$1***$2',
+  );
+  const trimmed = redacted.trim();
+  if (trimmed.length <= 200) return trimmed;
+  return trimmed.slice(0, 200) + '…';
 }

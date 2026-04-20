@@ -5,6 +5,7 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['test/**/*.test.ts'],
+    exclude: ['test/integration/**', 'node_modules/**', 'dist/**'],
     benchmark: {
       include: ['bench/**/*.bench.ts'],
     },

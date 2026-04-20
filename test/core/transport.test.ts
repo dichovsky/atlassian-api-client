@@ -196,6 +196,67 @@ describe('HttpTransport', () => {
       expect(url).toBe(`${BASE_URL}/pages/1`);
       expect(url).not.toContain(`${INSTANCE_URL}/pages/1`);
     });
+
+    it('deprecated 2-arg constructor emits logger.warn at construction time', () => {
+      const logger = {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+      new HttpTransport({ ...defaultConfig, baseUrl: INSTANCE_URL, logger }, BASE_URL);
+
+      expect(logger.warn).toHaveBeenCalledOnce();
+      const [message] = logger.warn.mock.calls[0] as [string];
+      expect(message).toContain('deprecated');
+      expect(message).toContain('0.8.0');
+    });
+
+    it('1-arg constructor does not emit the deprecation warn', () => {
+      const logger = {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+      new HttpTransport({ ...defaultConfig, logger });
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Injectable fetch
+  // -------------------------------------------------------------------------
+  describe('injectable fetch', () => {
+    it('uses config.fetch when provided, bypassing globalThis.fetch', async () => {
+      const globalFetch = vi.fn();
+      vi.stubGlobal('fetch', globalFetch);
+
+      const customFetch = vi.fn().mockResolvedValue(makeResponse(200, { ok: true }));
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        fetch: customFetch as unknown as typeof fetch,
+      });
+
+      const result = await runRequest<ApiResponse<{ ok: boolean }>>(transport, {
+        method: 'GET',
+        path: '/pages/1',
+      });
+
+      expect(customFetch).toHaveBeenCalledOnce();
+      expect(globalFetch).not.toHaveBeenCalled();
+      expect(result.data).toEqual({ ok: true });
+    });
+
+    it('falls back to globalThis.fetch when config.fetch is undefined', async () => {
+      const globalFetch = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', globalFetch);
+
+      const transport = new HttpTransport(defaultConfig);
+      await runRequest(transport, { method: 'GET', path: '/pages/1' });
+
+      expect(globalFetch).toHaveBeenCalledOnce();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -850,6 +911,64 @@ describe('HttpTransport', () => {
       // Act & Assert — should not throw
       await expect(transport.request({ method: 'GET', path: '/pages' })).resolves.toBeDefined();
     });
+
+    it('sanitizes logged paths by removing query and redacting sensitive segments', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: '1' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const debugSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      });
+
+      await transport.request({
+        method: 'GET',
+        path: '/token/very-secret-value?cursor=abc123&auth=top-secret',
+      });
+
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ path: '/token/***' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ path: '/token/***' }),
+      );
+    });
+
+    it('falls back gracefully when the path cannot be parsed as a URL', async () => {
+      // `//bad]` is a protocol-relative path that makes `new URL(path, base)` throw
+      // (malformed authority), but passes through `buildUrl` concatenation unharmed.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: '1' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const debugSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      });
+
+      await expect(
+        transport.request({ method: 'GET', path: '//bad]?token=secret' }),
+      ).resolves.toBeDefined();
+
+      // Fallback path: split on `?`/`#` and redact — no throw, no crash.
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ path: '//bad]' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ path: '//bad]' }),
+      );
+    });
   });
 
   describe('OAuth refresh errors as HttpError', () => {
@@ -1069,6 +1188,116 @@ describe('HttpTransport', () => {
       // Assert — fetch was never called
       expect(fetchMock).not.toHaveBeenCalled();
       expect(result.data.id).toBe('synthetic');
+    });
+
+    it('throws ValidationError when middleware returns null', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const middleware = vi.fn().mockResolvedValue(null);
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('throws ValidationError when middleware returns a primitive', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const middleware = vi.fn().mockResolvedValue('invalid-response');
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('throws ValidationError when middleware omits the data field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ status: 200, headers: new Headers() });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware omits the status field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ data: {}, headers: new Headers() });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware omits the headers field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ data: {}, status: 200 });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware returns non-numeric status', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi
+        .fn()
+        .mockResolvedValue({ data: {}, status: '200', headers: new Headers() });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware returns non-Headers headers', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({
+        data: {},
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
     });
 
     it('runs multiple middleware in order (outermost first)', async () => {
@@ -1311,6 +1540,90 @@ describe('HttpTransport', () => {
 
       await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('responseType', () => {
+    it('defaults to JSON parsing (responseType undefined)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: 'x' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const response = await runRequest<ApiResponse<{ id: string }>>(transport, {
+        method: 'GET',
+        path: '/pages/x',
+      });
+
+      expect(response.data).toEqual({ id: 'x' });
+    });
+
+    it('parses JSON explicitly when responseType is "json"', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: 'y' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const response = await runRequest<ApiResponse<{ id: string }>>(transport, {
+        method: 'GET',
+        path: '/pages/y',
+        responseType: 'json',
+      });
+
+      expect(response.data).toEqual({ id: 'y' });
+    });
+
+    it('returns ArrayBuffer when responseType is "arrayBuffer"', async () => {
+      const bodyBytes = new Uint8Array([1, 2, 3, 4]);
+      const raw = new Response(bodyBytes, {
+        status: 200,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      const fetchMock = vi.fn().mockResolvedValue(raw);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const response = await runRequest<ApiResponse<ArrayBuffer>>(transport, {
+        method: 'GET',
+        path: '/attachments/a',
+        responseType: 'arrayBuffer',
+      });
+
+      expect(response.data).toBeInstanceOf(ArrayBuffer);
+      expect(new Uint8Array(response.data)).toEqual(bodyBytes);
+    });
+
+    it('returns the ReadableStream body without consuming it when responseType is "stream"', async () => {
+      const bodyBytes = new Uint8Array([10, 20, 30]);
+      const raw = new Response(bodyBytes, {
+        status: 200,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      const fetchMock = vi.fn().mockResolvedValue(raw);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const response = await runRequest<ApiResponse<ReadableStream<Uint8Array> | null>>(transport, {
+        method: 'GET',
+        path: '/attachments/b',
+        responseType: 'stream',
+      });
+
+      // Caller receives the raw stream; body was not pre-read by the transport.
+      expect(response.data).toBe(raw.body);
+      expect(raw.bodyUsed).toBe(false);
+    });
+
+    it('returns undefined for 204 regardless of responseType', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(204));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport();
+      const response = await runRequest<ApiResponse<undefined>>(transport, {
+        method: 'DELETE',
+        path: '/pages/x',
+        responseType: 'arrayBuffer',
+      });
+
+      expect(response.data).toBeUndefined();
     });
   });
 

@@ -67,6 +67,10 @@ export { createCacheMiddleware } from './cache.js';
 // Request batching (deduplication)
 export { createBatchMiddleware } from './batch.js';
 
+// Response helpers
+export type { SerializableApiResponse } from './response.js';
+export { toJSON } from './response.js';
+
 // OAuth scope detection
 export type { AtlassianScope } from './scopes.js';
 export { detectRequiredScopes, listKnownOperations } from './scopes.js';

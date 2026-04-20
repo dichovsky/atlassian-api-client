@@ -371,6 +371,26 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Authentication failed');
     });
 
+    it('object with errorMessages containing non-strings → filters them out', () => {
+      const err = createHttpError(400, {
+        errorMessages: ['Field A is required', 123, null, { nested: 'obj' }, 'Field B is required'],
+      });
+      expect(err.message).toBe('Field A is required; Field B is required');
+    });
+
+    it('object with errorMessages containing only non-strings → falls through to message', () => {
+      const err = createHttpError(401, {
+        errorMessages: [123, null, { nested: 'obj' }],
+        message: 'fallback from message field',
+      });
+      expect(err.message).toBe('fallback from message field');
+    });
+
+    it('object with errorMessages containing only non-strings and no message → uses default', () => {
+      const err = createHttpError(404, { errorMessages: [123, null, { nested: 'obj' }] });
+      expect(err.message).toBe('Resource not found');
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');
@@ -389,6 +409,16 @@ describe('createHttpError', () => {
     it('non-object body (boolean) → uses default message', () => {
       const err = createHttpError(403, true);
       expect(err.message).toBe('Access forbidden');
+    });
+
+    it('non-plain object body (Date) → uses default message', () => {
+      const err = createHttpError(500, new Date('2026-01-01T00:00:00Z'));
+      expect(err.message).toBe('HTTP error 500');
+    });
+
+    it('non-plain object body (Error) → uses default message', () => {
+      const err = createHttpError(500, new Error('boom'));
+      expect(err.message).toBe('HTTP error 500');
     });
 
     it('object without message or errorMessages → uses default for 500', () => {

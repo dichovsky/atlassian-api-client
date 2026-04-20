@@ -134,19 +134,31 @@ export function createHttpError(
 function extractErrorMessage(body: unknown): string | undefined {
   if (body === null || body === undefined) return undefined;
   if (typeof body === 'string') return body;
-  if (typeof body !== 'object') return undefined;
-
-  const obj = body as Record<string, unknown>;
+  if (!isPlainObject(body)) return undefined;
 
   // Jira error format: { errorMessages: string[], errors: Record<string, string> }
-  if (Array.isArray(obj['errorMessages']) && (obj['errorMessages'] as unknown[]).length > 0) {
-    return (obj['errorMessages'] as string[]).join('; ');
+  if (Array.isArray(body.errorMessages)) {
+    const stringMessages = body.errorMessages.filter(
+      (message): message is string => typeof message === 'string',
+    );
+    if (stringMessages.length > 0) {
+      return stringMessages.join('; ');
+    }
   }
 
   // Generic: { message: string }
-  if (typeof obj['message'] === 'string') {
-    return obj['message'];
+  if (typeof body.message === 'string') {
+    return body.message;
   }
 
   return undefined;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
