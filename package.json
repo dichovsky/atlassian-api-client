@@ -49,7 +49,7 @@
     "build:esm": "tsc -p tsconfig.build.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build": "npm run build:esm && npm run build:cjs",
-    "clean": "rm -rf dist",
+    "clean": "rimraf dist",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -65,12 +65,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "conventional-changelog-cli": "^5.0.0",
     "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.4",
+    "conventional-changelog-cli": "^5.0.0",
     "eslint": "^10.2.0",
     "globals": "^17.5.0",
     "prettier": "^3.8.3",
+    "rimraf": "^6.1.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.4"
