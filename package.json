@@ -28,7 +28,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -58,7 +59,8 @@
     "test:integration": "ATLASSIAN_INTEGRATION=1 vitest run --config vitest.integration.config.ts",
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build"
+    "test:exports": "node scripts/validate-exports.js",
+    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

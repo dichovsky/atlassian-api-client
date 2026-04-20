@@ -8,18 +8,17 @@
 - **retry** — `isNetworkError` now walks `error.cause` for undici / Node error codes (`ECONNRESET`, `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `UND_ERR_SOCKET`, `UND_ERR_CONNECT_TIMEOUT`) in addition to bare `TypeError`. Transient socket failures that used to slip through as fatal are now retried.
 - **errors** — `OAuthError` messages now include the token-endpoint HTTP status and a scrubbed 200-char body snippet so misconfigured auth servers are debuggable without inspecting network captures.
 - **transport** — `RequestOptions.responseType?: 'json' | 'arrayBuffer' | 'stream'` supports large attachment downloads without buffering the whole body. `'stream'` returns the raw `ReadableStream`; `'json'` remains the default.
-- **transport** — `ApiResponse.toJSON(response)` helper converts the `Headers` instance to a plain `Record<string, string>` for logging/persistence.
-- **pagination** — Confluence cursor paginator logs a `warn` via `config.logger` when `_links.next` is defined but yields no `cursor` parameter, making silent iteration termination observable.
+- **transport** — standalone `toJSON(response)` helper converts the `Headers` instance to a plain `Record<string, string>` for logging/persistence, producing a `SerializableApiResponse`.
+- **pagination** — Confluence cursor paginator logs a `warn` when `_links.next` is defined but yields no `cursor` parameter if a logger is explicitly supplied to the paginator, making silent iteration termination observable in those call paths.
 - **cache** — FIFO eviction now sweeps expired entries before dropping the oldest slot, preventing expired entries from pushing out still-valid ones.
 - **batch** — deduplication key now includes a hash of caller-supplied headers (excluding `Authorization`), so concurrent requests with different custom headers no longer alias to the same in-flight call.
 - **cli** — end-to-end test suite exercises `--help` for every resource (`atlas`, `atlas <api> --help`, `atlas <api> <resource> --help`) and asserts help text stays in sync with the dispatcher's `case` statements, preventing silent drift when resources or actions are added.
-- **bench** — `bench:capture` / `bench:compare` scripts plus `bench/baseline.json` wire the retry/backoff microbench to a 20% regression gate (see `.github/workflows/bench.yml`).
 - **tests** — opt-in integration suite under `test/integration/` gated on `ATLASSIAN_INTEGRATION=1`; nightly GitHub Actions workflow hits a sandbox workspace with a service-account token from repository secrets.
 - **docs** — `docs/ARCHITECTURE.md` gains a "Middleware ordering" section documenting the `reduceRight` composition order and when to put cache vs auth vs batch outermost. README gains a "Recipes" section with copy-paste snippets for custom logger, proxy, OAuth with token persistence, retry tuning, and cache+batch layering.
 
 ### Changed
 
-- **transport** — the deprecated `new HttpTransport(config, baseUrl)` overload now emits a `logger.warn` on construction with an explicit removal target of v0.7.0; use `new HttpTransport({ ...config, baseUrl })` instead.
+- **transport** — the deprecated `new HttpTransport(config, baseUrl)` overload now emits a `logger.warn` on construction with an explicit removal target of v0.8.0; use `new HttpTransport({ ...config, baseUrl })` instead.
 
 ### Removed
 

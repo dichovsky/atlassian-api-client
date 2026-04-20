@@ -390,7 +390,7 @@ Copy-paste snippets for common setups. Each recipe is self-contained.
 
 ### Custom logger
 
-Every warning the client would otherwise write to stdout (rate-limit proximity, silent cursor termination, deprecated constructor usage) is routed through the configured logger.
+Warnings the client emits through its configured logger, such as rate-limit proximity and deprecated constructor usage, are routed through the logger you provide.
 
 ```typescript
 import { ConfluenceClient, type Logger } from 'atlassian-api-client';
