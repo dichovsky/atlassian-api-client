@@ -36,7 +36,6 @@ npm run test:coverage
 
 # Packaging/build
 npm run build
-npm run test:exports
 
 # Full gate (must pass before finalizing broad changes)
 npm run validate
