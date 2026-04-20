@@ -663,9 +663,8 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 **Output:**
 
 - `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`) + source maps
-- `dist/cjs/` — CommonJS output for legacy consumers
 
-**Module format:** Dual ESM + CJS (`"type": "module"` in `package.json`; `exports` field maps both)
+**Module format:** ESM-only (`"type": "module"` in `package.json`). CommonJS consumers on Node ≥ 22.12 can `require()` the ESM entry directly.
 
 **Published files:**
 

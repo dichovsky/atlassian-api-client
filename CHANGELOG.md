@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Removed
+
+- **package** — CommonJS build dropped. Package is now ESM-only: removed `build:cjs` script, `tsconfig.cjs.json`, `dist/cjs/` output, and the `require` condition from `exports`. Consumers on Node ≥ 22.12 can still `require()` the ESM entry directly via the runtime `require(esm)` support; older CJS-only consumers should upgrade Node or pin to `0.6.0`.
+- **package** — `test:exports` script and its `scripts/test-exports.js` helper removed; the CJS smoke check it performed no longer applies, and the ESM entry is exercised by the test suite.
+
+## 0.6.0 (2026-04-20)
+
 ### Added
 
 - **transport** — `ApiResponse<T>` now exposes a `rateLimit?: RateLimitInfo` field populated from `x-ratelimit-*` response headers on every successful request. When `nearLimit === true` the configured `logger` emits a `warn` so callers can proactively slow down before a 429.
@@ -14,6 +21,13 @@
 - **transport** — the retry loop now wraps the middleware chain (previously middleware wrapped retry). Errors thrown from middleware — including `OAuthError` with a 5xx refresh status — are now eligible for the standard retry/backoff path.
 - **oauth** — `OAuthError` now extends `HttpError` (previously `AtlassianError`) and sets `status = refreshStatus ?? 0`. Transient token-endpoint failures (5xx) are retried automatically via `shouldRetry`; 4xx stay fatal. Public error `code` remains `'OAUTH_ERROR'`.
 - **pagination** — offset paginators (`paginateOffset`, `paginateSearch`) now terminate when the server returns a short page (`values.length < maxResults` / `issues.length < maxResults`), even if `isLast` and `total` are absent from the response. Prevents infinite loops against servers that clamp page size without populating those fields.
+
+### Fixed
+
+- **transport** — `request<T>()` now validates the shape of the response produced by the middleware chain before exposing it as `ApiResponse<T>`, throwing `ValidationError` on null, primitives, or objects missing `data`/`status`/`headers` (or with non-numeric `status` or non-`Headers` headers). A misbehaving middleware can no longer return a malformed value that crashes downstream consumers.
+- **transport** — logged request paths are now passed through `sanitizePathForLogging`, which strips query/fragment parts and redacts path segments following sensitive markers (`token`, `key`, `secret`, `auth`). Applies to debug and near-limit warn logging. URL parsing is wrapped in a try/catch so a malformed input falls back to a best-effort pathname rather than crashing the request.
+- **errors** — `extractErrorMessage` now filters non-string entries out of Jira-style `errorMessages` arrays before joining, so objects or `null` in the array no longer leak as `[object Object]` or `"null"` into error messages.
+- **package** — removed dead `test:exports` script whose target file had been deleted in an earlier commit.
 
 ## 0.5.0 (2026-04-16)
 

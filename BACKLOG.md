@@ -128,15 +128,6 @@ Severity: **P2** (enhancement), **P3** (polish / DX).
 
 ## Tooling & release hygiene
 
-### [P2] CI does not verify dual ESM/CJS exports
-
-- **Where:** `package.json` (`exports`, `build:esm`, `build:cjs`)
-- **Problem:** The package publishes both ESM and CJS builds but `npm run validate`
-  only tsc-checks the ESM side. A broken CJS entry (e.g. missing `.cjs` extension)
-  ships silently.
-- **Action:** add a post-build smoke step that `require()`s `dist/cjs/index.js`
-  and `import()`s `dist/index.js` in a scratch file. Run under `npm run validate`.
-
 ### [P3] No integration tests against a real Atlassian sandbox
 
 - **Where:** `test/`
