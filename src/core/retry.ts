@@ -1,17 +1,13 @@
-const RETRYABLE_STATUS_CODES = new Uint8Array(600);
-[429, 500, 502, 503, 504].forEach((s) => (RETRYABLE_STATUS_CODES[s] = 1));
+const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
 
 /** Check whether an HTTP status code is retryable. */
 export function isRetryableStatus(status: number): boolean {
-  return status >= 0 && status < 600 && RETRYABLE_STATUS_CODES[status] === 1;
+  return RETRYABLE_STATUS_CODES.has(status);
 }
-
-const POW_2 = new Float64Array(31);
-for (let i = 0; i < 31; i++) POW_2[i] = Math.pow(2, i);
 
 /** Calculate retry delay with exponential backoff and jitter. */
 export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number {
-  const exponential = baseDelay * POW_2[Math.min(attempt, 30)];
+  const exponential = baseDelay * Math.pow(2, attempt);
   const jitter = Math.random() * baseDelay;
   return Math.min(exponential + jitter, maxDelay);
 }
