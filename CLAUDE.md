@@ -1,61 +1,113 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Repo guidance for Claude Code (claude.ai/code).
 
-## Behavior
+Goal: maximize correctness per token. Prefer short, verifiable steps over long plans.
 
-- State assumptions explicitly before implementing. If multiple interpretations exist, surface them — don't pick silently.
-- Minimum code that solves the problem. No speculative features, abstractions for single-use code, or error handling for impossible scenarios.
-- Touch only what the request requires. Match existing style. If you notice unrelated dead code, mention it — don't delete it.
-- Transform tasks into verifiable goals: "Fix bug" → "Write a failing test, then make it pass."
+## Operating Mode
 
-## Commands
+- State assumptions before implementing.
+- If intent is ambiguous, present options briefly; do not silently pick a risky interpretation.
+- Implement the smallest change that fully solves the request.
+- Do not add speculative abstractions, optional features, or impossible-path handling.
+- Touch only requested scope. Match local style.
+- If you see unrelated issues, mention them; do not refactor opportunistically.
+- Convert vague tasks into verifiable outcomes.
+
+## Required Workflow
+
+1. Reproduce/understand.
+2. Write or update failing test when applicable.
+3. Implement minimal fix.
+4. Run focused checks first, then broader checks if needed.
+5. Summarize what changed + evidence (tests/commands).
+
+## Fast Commands
 
 ```bash
-npm run build          # compile to dist/
-npm run typecheck      # tsc --noEmit
-npm run lint           # eslint
-npm test               # vitest run
-npm run test:coverage  # vitest run --coverage (100% threshold)
-npm run validate       # clean + build + typecheck + lint + coverage
-
-# Single test file
+# Focused
 npx vitest run test/core/transport.test.ts
+
+# Quality gates
+npm run typecheck
+npm run lint
+npm test
+npm run test:coverage
+
+# Packaging/build
+npm run build
+npm run test:exports
+
+# Full gate (must pass before finalizing broad changes)
+npm run validate
 ```
 
-## Architecture
+## Architecture Snapshot
 
-Typed Node.js/TypeScript library + CLI for Confluence Cloud REST API v2 and Jira Cloud Platform REST API v3. ESM package with `dist/` output and `atlas` CLI binary.
+- Typed Node.js/TypeScript library + CLI for Confluence v2 and Jira v3.
+- ESM package output in `dist/`; CLI binary is `atlas`.
+- `src/core/*`: shared transport/auth/config/errors/pagination.
+- `src/confluence/*`, `src/jira/*`: API clients + resources.
+- `src/cli/*`: lightweight router/commands using `node:util.parseArgs`.
 
+## Critical Invariants
+
+- `ClientConfig.auth` is a discriminated union:
+    - `{ type: 'basic', email, apiToken }`
+    - `{ type: 'bearer', token }`
+- Keep resource APIs stable; avoid breaking public method signatures unless requested.
+- Prefer transport/middleware composition over resource-specific hacks.
+- Preserve retry, timeout, and error taxonomy behavior in `core/errors.ts` and `core/transport.ts`.
+
+## Testing Rules
+
+- Tests mirror `src/` under `test/`.
+- Coverage target is 100% (barrel/type exclusions handled by config).
+- Prefer focused tests for the changed module first.
+- For transport/pagination behavior, assert concrete request options and outputs.
+- For regressions: add a test that fails pre-fix and passes post-fix.
+
+## Common Patterns
+
+- Transport is injectable (`config.transport`) for unit tests.
+- Use `MockTransport` (`test/helpers/mock-transport.ts`) for deterministic API tests.
+- Pagination:
+    - Confluence: cursor-based (`paginateCursor`)
+    - Jira: offset/search-based (`paginateOffset`, `paginateSearch`)
+- CLI shape: `atlas <api> <resource> <action> [id] [--flags]`
+
+## Response Format Expectations
+
+- Keep updates concise and evidence-based.
+- Include only relevant command/test outputs.
+- Prefer file+symbol references over long prose.
+
+## Mistake Logging (Token-Efficient)
+
+When a mistake occurs, log one compact event:
+
+```text
+Ctx:
+Err:
+Cause:
+Fix:
+Rule:
 ```
-src/
-├── core/           # Shared infrastructure
-│   ├── transport.ts     # HttpTransport: fetch + auth + retry + timeout + rate-limit
-│   ├── auth.ts          # AuthProvider (basic / bearer)
-│   ├── config.ts        # resolveConfig() — validates input, applies defaults
-│   ├── errors.ts        # AtlassianError → HttpError → 401/403/404/429 subtypes
-│   ├── pagination.ts    # paginateCursor (Confluence) / paginateOffset / paginateSearch (Jira)
-│   └── types.ts         # Transport interface, ClientConfig, ApiResponse
-├── confluence/     # ConfluenceClient; baseUrl = {baseUrl}/wiki/api/v2
-│   └── resources/       # pages, spaces, blog-posts, comments, attachments, labels
-├── jira/           # JiraClient; baseUrl = {baseUrl}/rest/api/3
-│   └── resources/       # issues, projects, users, issue-types, priorities, statuses, search
-└── cli/            # `atlas` binary — uses node:util parseArgs, no external framework
-    └── commands/        # confluence.ts, jira.ts dispatch action → client call
-```
 
-## Key Design Decisions
+Constraints:
 
-**Injectable transport.** Both clients accept `config.transport?: Transport`. Tests inject `MockTransport` (`test/helpers/mock-transport.ts`) — no HTTP mocks needed.
+- ~20-40 tokens total
+- no filler
+- deduplicate existing rules
 
-**Async-generator pagination.** `listAll()` on every resource uses `paginateCursor` (Confluence, cursor-based) or `paginateOffset` (Jira, offset-based). `list()` returns the raw page for callers needing direct control.
+Storage:
 
-**Auth.** `ClientConfig.auth` is a discriminated union: `{ type: 'basic', email, apiToken }` or `{ type: 'bearer', token }`.
+- Project-specific: local `.agent/memory`
+- Generalizable: global memory
+- If both: store both (distilled global rule)
 
-**CLI shape:** `atlas <api> <resource> <action> [id] [--flags]`
+Behavior:
 
-## Test Conventions
-
-- Tests mirror `src/` under `test/` (e.g. `test/core/transport.test.ts`).
-- Coverage threshold is **100%**; `src/**/types.ts` and `src/**/index.ts` barrels are excluded.
-- Use `MockTransport`: queue with `mock.respondWith(data)` / `mock.respondWithError(err)`, assert with `mock.lastCall.options`.
+- Check relevant past rules before acting.
+- Apply preventive rules proactively.
+- Repeating the same mistake is a critical failure.
