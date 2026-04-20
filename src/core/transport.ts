@@ -48,9 +48,12 @@ export class HttpTransport implements Transport {
     const response = await this.requestHandler(options);
 
     // Validate middleware/transport output shape before exposing it as ApiResponse<T>.
+    // Guard non-null/object first so the subsequent field checks cannot throw on
+    // primitives (e.g. null/undefined/string returned by a misbehaving middleware).
+    if (response === null || typeof response !== 'object') {
+      throw new ValidationError('Invalid ApiResponse structure received from transport');
+    }
     if (
-      typeof response !== 'object' ||
-      response === null ||
       !('data' in response) ||
       !('status' in response) ||
       !('headers' in response) ||
@@ -115,8 +118,14 @@ export class HttpTransport implements Transport {
         })
         .join('/');
 
-    const parsedUrl = new URL(path, 'http://localhost');
-    return redactSensitiveSegments(parsedUrl.pathname);
+    try {
+      const parsedUrl = new URL(path, 'http://localhost');
+      return redactSensitiveSegments(parsedUrl.pathname);
+    } catch {
+      // Malformed input — fall back to a best-effort pathname so logging never
+      // throws and crashes the request. `replace` strips query/fragment parts.
+      return redactSensitiveSegments(path.replace(/[?#].*$/, ''));
+    }
   }
 
   private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {

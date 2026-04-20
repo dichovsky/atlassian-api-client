@@ -785,6 +785,36 @@ describe('HttpTransport', () => {
         expect.objectContaining({ path: '/token/***' }),
       );
     });
+
+    it('falls back gracefully when the path cannot be parsed as a URL', async () => {
+      // `//bad]` is a protocol-relative path that makes `new URL(path, base)` throw
+      // (malformed authority), but passes through `buildUrl` concatenation unharmed.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: '1' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const debugSpy = vi.fn();
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        logger: { debug: debugSpy, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      });
+
+      await expect(
+        transport.request({ method: 'GET', path: '//bad]?token=secret' }),
+      ).resolves.toBeDefined();
+
+      // Fallback path: split on `?`/`#` and redact — no throw, no crash.
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        1,
+        'HTTP request',
+        expect.objectContaining({ path: '//bad]' }),
+      );
+      expect(debugSpy).toHaveBeenNthCalledWith(
+        2,
+        'HTTP response',
+        expect.objectContaining({ path: '//bad]' }),
+      );
+    });
   });
 
   describe('middleware', () => {
@@ -864,6 +894,60 @@ describe('HttpTransport', () => {
         ValidationError,
       );
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('throws ValidationError when middleware omits the data field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ status: 200, headers: new Headers() });
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware omits the status field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ data: {}, headers: new Headers() });
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware omits the headers field', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi.fn().mockResolvedValue({ data: {}, status: 200 });
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware returns non-numeric status', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi
+        .fn()
+        .mockResolvedValue({ data: {}, status: '200', headers: new Headers() });
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when middleware returns non-Headers headers', async () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const middleware = vi
+        .fn()
+        .mockResolvedValue({ data: {}, status: 200, headers: { 'content-type': 'application/json' } });
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+
+      await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
     });
 
     it('runs multiple middleware in order (outermost first)', async () => {

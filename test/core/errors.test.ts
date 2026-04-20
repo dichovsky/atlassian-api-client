@@ -371,6 +371,26 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Authentication failed');
     });
 
+    it('object with errorMessages containing non-strings → filters them out', () => {
+      const err = createHttpError(400, {
+        errorMessages: ['Field A is required', 123, null, { nested: 'obj' }, 'Field B is required'],
+      });
+      expect(err.message).toBe('Field A is required; Field B is required');
+    });
+
+    it('object with errorMessages containing only non-strings → falls through to message', () => {
+      const err = createHttpError(401, {
+        errorMessages: [123, null, { nested: 'obj' }],
+        message: 'fallback from message field',
+      });
+      expect(err.message).toBe('fallback from message field');
+    });
+
+    it('object with errorMessages containing only non-strings and no message → uses default', () => {
+      const err = createHttpError(404, { errorMessages: [123, null, { nested: 'obj' }] });
+      expect(err.message).toBe('Resource not found');
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');

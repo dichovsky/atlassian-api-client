@@ -137,8 +137,13 @@ function extractErrorMessage(body: unknown): string | undefined {
   if (!isPlainObject(body)) return undefined;
 
   // Jira error format: { errorMessages: string[], errors: Record<string, string> }
-  if (Array.isArray(body.errorMessages) && body.errorMessages.length > 0) {
-    return body.errorMessages.join('; ');
+  if (Array.isArray(body.errorMessages)) {
+    const stringMessages = body.errorMessages.filter(
+      (message): message is string => typeof message === 'string',
+    );
+    if (stringMessages.length > 0) {
+      return stringMessages.join('; ');
+    }
   }
 
   // Generic: { message: string }
