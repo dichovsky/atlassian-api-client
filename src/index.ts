@@ -25,6 +25,10 @@ export type {
   Middleware,
 } from './core/index.js';
 
+// Response serialisation helper
+export { toJSON } from './core/index.js';
+export type { SerializableApiResponse } from './core/index.js';
+
 // OAuth 2.0 token refresh
 export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index.js';
 export type { OAuthRefreshConfig, OAuthTokens } from './core/index.js';

@@ -16,6 +16,16 @@ export interface RequestOptions {
    * preserving the original reason, distinct from TimeoutError.
    */
   readonly signal?: AbortSignal;
+  /**
+   * Shape of the response `data` field.
+   * - `'json'` (default) — body is parsed as JSON.
+   * - `'arrayBuffer'` — body is returned as `ArrayBuffer` (binary downloads).
+   * - `'stream'` — body is returned as a `ReadableStream<Uint8Array>` without
+   *   buffering. Caller is responsible for consuming or cancelling the stream.
+   *
+   * 204 responses always return `undefined` regardless of `responseType`.
+   */
+  readonly responseType?: 'json' | 'arrayBuffer' | 'stream';
 }
 
 /** Parsed API response. */
@@ -71,6 +81,13 @@ export interface ClientConfig {
   readonly maxRetryDelay?: number;
   /** Injectable transport (for testing or custom HTTP layers). */
   readonly transport?: Transport;
+  /**
+   * Injectable `fetch` implementation. Defaults to the global `fetch`.
+   * Use this to plug in `undici.fetch` with a custom `Dispatcher` for proxy
+   * support, keep-alive tuning, or mTLS. Ignored when a custom `transport` is
+   * supplied.
+   */
+  readonly fetch?: typeof fetch;
   /** Optional logger for request/response observability. */
   readonly logger?: Logger;
   /** Optional middleware chain for request/response interception. */
@@ -91,6 +108,8 @@ export interface ResolvedConfig {
   readonly retryDelay: number;
   /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /** Injectable fetch implementation; defaults to global `fetch`. */
+  readonly fetch?: typeof fetch;
   /** Optional logger for observability. */
   readonly logger?: Logger;
   /** Optional middleware chain. */

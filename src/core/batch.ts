@@ -40,5 +40,24 @@ function buildRequestKey(opts: RequestOptions): string {
         .join('&')
     : '';
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
-  return `${opts.method}:${opts.path}${queryStr}:${bodyStr}`;
+  const headersStr = serializeHeaders(opts.headers);
+  return `${opts.method}:${opts.path}${queryStr}:${bodyStr}:${headersStr}`;
+}
+
+/**
+ * Build a deterministic string representation of request headers for use in
+ * the dedupe key. `Authorization` is excluded because it is injected by the
+ * transport from the configured auth provider, not by callers — two dedupe
+ * candidates that differ only in the transport-injected Authorization should
+ * still collapse into one. Any other custom header (e.g. `X-Atlassian-Token`,
+ * `Accept-Language`) MUST keep them separate.
+ */
+function serializeHeaders(headers: RequestOptions['headers']): string {
+  if (headers === undefined) return '';
+  return Object.entries(headers)
+    .filter(([k]) => k.toLowerCase() !== 'authorization')
+    .map(([k, v]) => [k.toLowerCase(), v] as const)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
 }

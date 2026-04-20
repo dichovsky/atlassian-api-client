@@ -1,0 +1,47 @@
+{
+  "capturedAt": "2026-04-20T20:34:05.557Z",
+  "node": "v24.14.1",
+  "platform": "darwin-arm64",
+  "benchmarks": {
+    "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=0, base=100, max=5000": {
+      "hz": 22454585.640714496,
+      "mean": 0.00004453433325381908
+    },
+    "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=3, base=100, max=5000": {
+      "hz": 23541989.15241372,
+      "mean": 0.000042477294230571493
+    },
+    "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=10, base=100, max=5000 (saturates at max)": {
+      "hz": 23407994.40827594,
+      "mean": 0.000042720447662378464
+    },
+    "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 200 (non-retryable)": {
+      "hz": 26749810.44847797,
+      "mean": 0.00003738344247059511
+    },
+    "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 429 (retryable)": {
+      "hz": 26253936.477180436,
+      "mean": 0.00003808952615045696
+    },
+    "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 503 (retryable)": {
+      "hz": 26338864.841035128,
+      "mean": 0.000037966708361782976
+    },
+    "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > plain Error (no match)": {
+      "hz": 25389431.08596022,
+      "mean": 0.00003938646740899119
+    },
+    "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > TypeError (fetch network failure)": {
+      "hz": 26344509.698834017,
+      "mean": 0.00003795857320678316
+    },
+    "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > undici UND_ERR_SOCKET direct code": {
+      "hz": 25410974.784762666,
+      "mean": 0.000039353075136638835
+    },
+    "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > nested ECONNRESET via cause chain": {
+      "hz": 21182275.237206034,
+      "mean": 0.00004720928176041872
+    }
+  }
+}

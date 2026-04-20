@@ -12,19 +12,55 @@ export function calculateDelay(attempt: number, baseDelay: number, maxDelay: num
   return Math.min(exponential + jitter, maxDelay);
 }
 
+/**
+ * System-level error codes that represent transient network failures eligible
+ * for retry. Covers both libuv (`ECONN*`, `ENOTFOUND`, `EAI_AGAIN`) and
+ * undici-specific (`UND_ERR_*`) causes.
+ */
+const RETRYABLE_CAUSE_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ETIMEDOUT',
+  'EPIPE',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+]);
+
 /** Check whether a caught error represents a retryable network failure. */
 export function isNetworkError(error: unknown): boolean {
+  if (error instanceof Error && error.name === 'AbortError') {
+    // Abort errors are NOT retryable (user-initiated cancellation or timeout).
+    // Checked before TypeError because some runtimes tag aborts as TypeError.
+    return false;
+  }
+
   if (error instanceof TypeError) {
     // fetch throws TypeError for network failures (DNS, connection refused, etc.)
     return true;
   }
 
-  if (error instanceof Error && error.name === 'AbortError') {
-    // Abort errors are NOT retryable (user-initiated cancellation or timeout)
-    return false;
+  // Runtime-level failures (Node SystemError, undici-wrapped errors) may surface
+  // with a retryable code either directly on the error or in its `cause` chain.
+  if (hasRetryableCode(error)) {
+    return true;
   }
 
   return false;
+}
+
+/** Walk the error + `cause` chain looking for a known-retryable system code. */
+function hasRetryableCode(error: unknown, depth = 0): boolean {
+  if (depth > 5 || error === null || typeof error !== 'object') return false;
+
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === 'string' && RETRYABLE_CAUSE_CODES.has(code)) {
+    return true;
+  }
+
+  const cause = (error as { cause?: unknown }).cause;
+  return cause !== undefined ? hasRetryableCode(cause, depth + 1) : false;
 }
 
 /** Sleep for the given number of milliseconds. */

@@ -123,6 +123,57 @@ describe('createBatchMiddleware', () => {
     expect(r1).toBe(r2);
   });
 
+  it('issues separate requests when non-Authorization headers differ', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ headers: { 'X-Atlassian-Token': 'no-check' } }), next),
+      mw(makeOpts({ headers: { 'X-Atlassian-Token': 'check' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('collapses requests that differ only in Authorization header', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ headers: { Authorization: 'Basic aaaa' } }), next),
+      mw(makeOpts({ headers: { Authorization: 'Basic bbbb' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+  });
+
+  it('ignores Authorization header casing when building the dedupe key', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ headers: { authorization: 'Bearer a' } }), next),
+      mw(makeOpts({ headers: { AUTHORIZATION: 'Bearer b' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+  });
+
+  it('deduplicates identical header sets regardless of insertion order', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ headers: { 'X-Foo': 'a', 'X-Bar': 'b' } }), next),
+      mw(makeOpts({ headers: { 'X-Bar': 'b', 'X-Foo': 'a' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+  });
+
   it('deduplicates requests regardless of query parameter order (sort comparator coverage)', async () => {
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
     const mw = createBatchMiddleware();

@@ -56,6 +56,9 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "bench": "vitest bench",
+    "bench:capture": "node scripts/bench-compare.mjs --capture",
+    "bench:compare": "node scripts/bench-compare.mjs",
+    "test:integration": "ATLASSIAN_INTEGRATION=1 vitest run --config vitest.integration.config.ts",
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
     "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build"

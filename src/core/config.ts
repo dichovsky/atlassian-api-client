@@ -19,6 +19,7 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
     retries: config.retries ?? DEFAULT_RETRIES,
     retryDelay: config.retryDelay ?? DEFAULT_RETRY_DELAY,
     maxRetryDelay: config.maxRetryDelay ?? DEFAULT_MAX_RETRY_DELAY,
+    fetch: config.fetch,
     logger: config.logger,
     middleware: config.middleware,
   };

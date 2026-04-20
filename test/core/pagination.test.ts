@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   extractCursor,
   paginateCursor,
@@ -138,6 +138,87 @@ describe('paginateCursor', () => {
     expect(transport.calls[0]!.options.query).toEqual({ spaceId: '123' });
     // Second call should have cursor extracted from page1's next link
     expect(transport.calls[1]!.options.query).toEqual({ spaceId: '123', cursor: 'NEXT' });
+  });
+
+  it('logs a warn and stops when next URL is present but has no cursor param', async () => {
+    const transport = new MockTransport();
+
+    const page: CursorPaginatedResponse<string> = {
+      results: ['only'],
+      _links: { next: '/pages?limit=50' }, // intentionally no cursor param
+    };
+    transport.respondWith(page);
+
+    const logs: { message: string; context?: Record<string, unknown> }[] = [];
+    const logger = {
+      debug: () => undefined,
+      info: () => undefined,
+      warn: (message: string, context?: Record<string, unknown>) => {
+        logs.push({ message, context });
+      },
+      error: () => undefined,
+    };
+
+    const items = await collect(paginateCursor<string>(transport, '/pages', undefined, logger));
+
+    expect(items).toEqual(['only']);
+    expect(transport.calls).toHaveLength(1);
+    expect(logs).toHaveLength(1);
+    expect(logs[0]!.message).toContain('parseable cursor');
+    expect(logs[0]!.context).toMatchObject({ nextUrl: '/pages?limit=50', path: '/pages' });
+  });
+
+  it('does not warn when next URL is absent (normal termination)', async () => {
+    const transport = new MockTransport();
+    const page: CursorPaginatedResponse<string> = {
+      results: ['a'],
+      _links: {},
+    };
+    transport.respondWith(page);
+
+    const warn = vi.fn();
+    const logger = {
+      debug: () => undefined,
+      info: () => undefined,
+      warn,
+      error: () => undefined,
+    };
+
+    await collect(paginateCursor<string>(transport, '/pages', undefined, logger));
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when next URL is an empty string', async () => {
+    const transport = new MockTransport();
+    const page: CursorPaginatedResponse<string> = {
+      results: ['a'],
+      _links: { next: '' },
+    };
+    transport.respondWith(page);
+
+    const warn = vi.fn();
+    const logger = {
+      debug: () => undefined,
+      info: () => undefined,
+      warn,
+      error: () => undefined,
+    };
+
+    await collect(paginateCursor<string>(transport, '/pages', undefined, logger));
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('still stops silently without a logger when cursor cannot be parsed', async () => {
+    const transport = new MockTransport();
+    const page: CursorPaginatedResponse<string> = {
+      results: ['only'],
+      _links: { next: '/pages?limit=50' },
+    };
+    transport.respondWith(page);
+
+    const items = await collect(paginateCursor<string>(transport, '/pages'));
+    expect(items).toEqual(['only']);
+    expect(transport.calls).toHaveLength(1);
   });
 });
 

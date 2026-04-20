@@ -32,9 +32,10 @@ export class HttpTransport implements Transport {
    */
   constructor(config: ResolvedConfig);
   /**
-   * @deprecated Pass the API-specific URL in `config.baseUrl` instead and omit
-   *   the second argument. When provided, `baseUrl` takes precedence over
-   *   `config.baseUrl` for URL construction (preserves v0.x behavior).
+   * @deprecated Since 0.6.0 — scheduled for removal in 0.8.0. Pass the
+   *   API-specific URL in `config.baseUrl` instead and omit the second
+   *   argument. When provided, `baseUrl` takes precedence over `config.baseUrl`
+   *   for URL construction (preserves v0.x behavior).
    */
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   constructor(config: ResolvedConfig, baseUrl: string);
@@ -42,6 +43,12 @@ export class HttpTransport implements Transport {
     this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
     this.authProvider = createAuthProvider(this.config.auth);
     this.requestHandler = this.buildMiddlewareChain();
+    if (baseUrl !== undefined) {
+      this.config.logger?.warn(
+        'HttpTransport(config, baseUrl) is deprecated and will be removed in 0.8.0; ' +
+          'pass the API-specific URL via config.baseUrl instead.',
+      );
+    }
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
@@ -174,9 +181,10 @@ export class HttpTransport implements Transport {
     }
 
     let response: Response;
+    const doFetch = this.config.fetch ?? fetch;
 
     try {
-      response = await fetch(url, {
+      response = await doFetch(url, {
         method: options.method,
         headers,
         body: fetchBody,
@@ -204,7 +212,7 @@ export class HttpTransport implements Transport {
       throw createHttpError(response.status, body, retryAfterSeconds);
     }
 
-    const data: unknown = response.status === 204 ? undefined : await response.json();
+    const data: unknown = await this.parseResponseBody(response, options.responseType);
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,
@@ -324,6 +332,30 @@ export class HttpTransport implements Transport {
       return (await response.json()) as unknown;
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * Parse a successful response body according to the caller-supplied
+   * responseType. 204 responses always yield `undefined` regardless of mode —
+   * there is no body to parse. For `'stream'` the raw `ReadableStream` is
+   * handed to the caller without consumption so large downloads do not
+   * buffer in memory; the caller must drain or cancel the stream.
+   */
+  private async parseResponseBody(
+    response: Response,
+    responseType: RequestOptions['responseType'],
+  ): Promise<unknown> {
+    if (response.status === 204) return undefined;
+
+    switch (responseType) {
+      case 'arrayBuffer':
+        return await response.arrayBuffer();
+      case 'stream':
+        return response.body;
+      case 'json':
+      case undefined:
+        return await response.json();
     }
   }
 }
