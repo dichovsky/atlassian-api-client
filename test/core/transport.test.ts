@@ -1134,7 +1134,11 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const middleware = vi.fn().mockResolvedValue(null);
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1147,7 +1151,11 @@ describe('HttpTransport', () => {
       vi.stubGlobal('fetch', fetchMock);
 
       const middleware = vi.fn().mockResolvedValue('invalid-response');
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1158,7 +1166,11 @@ describe('HttpTransport', () => {
     it('throws ValidationError when middleware omits the data field', async () => {
       vi.stubGlobal('fetch', vi.fn());
       const middleware = vi.fn().mockResolvedValue({ status: 200, headers: new Headers() });
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1168,7 +1180,11 @@ describe('HttpTransport', () => {
     it('throws ValidationError when middleware omits the status field', async () => {
       vi.stubGlobal('fetch', vi.fn());
       const middleware = vi.fn().mockResolvedValue({ data: {}, headers: new Headers() });
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1178,7 +1194,11 @@ describe('HttpTransport', () => {
     it('throws ValidationError when middleware omits the headers field', async () => {
       vi.stubGlobal('fetch', vi.fn());
       const middleware = vi.fn().mockResolvedValue({ data: {}, status: 200 });
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1190,7 +1210,11 @@ describe('HttpTransport', () => {
       const middleware = vi
         .fn()
         .mockResolvedValue({ data: {}, status: '200', headers: new Headers() });
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,
@@ -1199,10 +1223,16 @@ describe('HttpTransport', () => {
 
     it('throws ValidationError when middleware returns non-Headers headers', async () => {
       vi.stubGlobal('fetch', vi.fn());
-      const middleware = vi
-        .fn()
-        .mockResolvedValue({ data: {}, status: 200, headers: { 'content-type': 'application/json' } });
-      const transport = new HttpTransport({ ...defaultConfig, retries: 0, middleware: [middleware] });
+      const middleware = vi.fn().mockResolvedValue({
+        data: {},
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [middleware],
+      });
 
       await expect(transport.request({ method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         ValidationError,

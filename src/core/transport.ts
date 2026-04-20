@@ -50,10 +50,9 @@ export class HttpTransport implements Transport {
     // Validate middleware/transport output shape before exposing it as ApiResponse<T>.
     // Guard non-null/object first so the subsequent field checks cannot throw on
     // primitives (e.g. null/undefined/string returned by a misbehaving middleware).
-    if (response === null || typeof response !== 'object') {
-      throw new ValidationError('Invalid ApiResponse structure received from transport');
-    }
     if (
+      response === null ||
+      typeof response !== 'object' ||
       !('data' in response) ||
       !('status' in response) ||
       !('headers' in response) ||
