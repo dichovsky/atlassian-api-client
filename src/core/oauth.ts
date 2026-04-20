@@ -1,5 +1,5 @@
 import type { Middleware, RequestOptions } from './types.js';
-import { AtlassianError, AuthenticationError, ValidationError } from './errors.js';
+import { AuthenticationError, HttpError, ValidationError } from './errors.js';
 
 /** Tokens returned by the OAuth 2.0 token endpoint. */
 export interface OAuthTokens {
@@ -32,13 +32,21 @@ export interface OAuthRefreshConfig {
   readonly onTokenRefreshed?: (tokens: OAuthTokens) => void | Promise<void>;
 }
 
-/** Thrown when the token refresh request itself fails. */
-export class OAuthError extends AtlassianError {
+/**
+ * Thrown when the token refresh request itself fails.
+ *
+ * Extends {@link HttpError} so the transport's retry logic can treat
+ * token-endpoint 5xx failures as retryable (matching how it handles any other
+ * 5xx response). When no HTTP response was produced (e.g. the refresh body
+ * was malformed), `status` is 0 and `refreshStatus` is undefined, which is
+ * classified as non-retryable by `isRetryableStatus`.
+ */
+export class OAuthError extends HttpError {
   /** HTTP status returned by the token endpoint, if applicable. */
   readonly refreshStatus?: number;
 
   constructor(message: string, refreshStatus?: number, options?: ErrorOptions) {
-    super(message, 'OAUTH_ERROR', options);
+    super(message, refreshStatus ?? 0, undefined, options, 'OAUTH_ERROR');
     this.name = 'OAuthError';
     this.refreshStatus = refreshStatus;
   }

@@ -1,75 +1,175 @@
-# BACKLOG.md
+# Backlog
 
-## [TypeScript & Code Quality]
+Deep-review findings for `atlassian-api-client` — items for future implementation.
+Severity: **P2** (enhancement), **P3** (polish / DX).
 
-[MEDIUM] Replace unsafe type assertions in `transport.ts` with type guards
-Severity: medium
-Location: `src/core/transport.ts:48`, `src/core/transport.ts:152`
-Problem:
-The `request` method and `executeFetch` method use `as T` to cast the response data. This assumes the API response strictly follows the expected type `T` without any validation.
-Impact:
-If the Atlassian API returns a different structure (e.g., due to a version change or unexpected error payload), the application will encounter runtime errors when accessing properties of the incorrectly typed object.
-Recommendation:
-Implement a lightweight validation or use a library like `zod` to validate the response shape at the boundary, or at least use type guards to verify the presence of expected properties before casting.
-Acceptance Criteria:
+> The P1 findings from the initial deep review have all shipped on the
+> `up/review` branch and are documented under the `Unreleased` section of
+> `CHANGELOG.md`. The items below are the remaining P2/P3 backlog.
 
-- `request` method returns a type that has been verified.
-- No `as T` usage for unvalidated external API responses.
+---
 
-[LOW] Improve type safety in `extractErrorMessage`
-Severity: low
-Location: `src/core/errors.ts:139`
-Problem:
-The code uses `const obj = body as Record<string, unknown>;` after a basic check. While `typeof body === 'object'` is checked, it doesn't strictly guarantee that the object is a non-null dictionary that can be safely indexed with string keys in all environments.
-Impact:
-Potential for minor runtime errors if `body` is an unexpected object type (e.g., an array, which is technically an object in JS).
-Recommendation:
-Use a more robust check to ensure `body` is a plain object, for example: `if (body !== null && typeof body === 'object' && !Array.isArray(body))`.
-Acceptance Criteria:
+## Transport & HTTP
 
-- `extractErrorMessage` handles all possible `unknown` inputs safely without type assertions.
+### [P2] Configurable `fetch` injection for proxies / custom agents
 
-## [Security]
+- **Where:** `src/core/transport.ts`, `src/core/oauth.ts`
+- **Problem:** Both call sites use the global `fetch`. There is no supported path to
+  plug in `undici.fetch` with a custom `Dispatcher` (proxy, keep-alive tuning, mTLS)
+  or to intercept requests in tests without a full `Transport` replacement.
+- **Action:** accept an optional `fetch?: typeof fetch` on `ClientConfig` (and pass
+  through to `fetchRefreshedTokens`). Document the Node 20 `undici` proxy recipe in
+  `docs/ARCHITECTURE.md`.
 
-[MEDIUM] Audit logger for sensitive query parameter leakage
-Severity: medium
-Location: `src/core/transport.ts:88-90`
-Problem:
-The logger is explicitly instructed to skip query parameters: `// Log only method + path to avoid query parameters...`. However, the `path` itself is used. If a developer or a custom middleware passes sensitive information (like a session ID or a private ID) as part of the URL path, it will be logged.
-Impact:
-Sensitive identifiers might be leaked to persistent log aggregators (Splunk, CloudWatch, etc.).
-Recommendation:
-Ensure that the `path` is also sanitized or that the logger configuration is audited to prevent sensitive path segments from being logged in production.
-Acceptance Criteria:
+### [P2] `isNetworkError` matches only `TypeError`
 
-- No sensitive information is logged via `this.config.logger?.debug`.
+- **Where:** `src/core/retry.ts`
+- **Problem:** Node's `fetch` does wrap network errors as `TypeError`, but undici
+  can surface `AbortError` with a non-timeout cause, and runtime-level failures
+  (`SystemError` with `code: 'ECONNRESET'`) may reach user code unwrapped in some
+  Node builds. We will miss retries in those cases.
+- **Action:** inspect `error.cause?.code` for the known retryable set
+  (`ECONNRESET`, `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `UND_ERR_SOCKET`,
+  `UND_ERR_CONNECT_TIMEOUT`). Add unit tests that construct these causes explicitly.
 
-## [Performance]
+### [P2] Deprecated `HttpTransport(config, baseUrl)` constructor overload
 
-[LOW] Optimize `paginateOffset` loop termination
-Severity: low
-Location: `src/core/pagination.ts:125`
-Problem:
-The loop checks `else if (total !== undefined && startAt + maxResults >= total)`. While correct, the `isLast` flag from the API is often provided by Atlassian and should be prioritized to avoid a redundant request when the boundary is already known.
-Impact:
-An unnecessary final network request might be made if the `total` check is slightly off or delayed.
-Recommendation:
-Refine the termination logic to use `isLast` as the primary signal and use the `total` check as a secondary safeguard.
-Acceptance Criteria:
+- **Where:** `src/core/transport.ts`
+- **Problem:** The v0.x-compatibility overload is already documented as deprecated
+  in CHANGELOG 0.5.0 but has no removal target.
+- **Action:** schedule removal for 0.7.0 (or 1.0.0). Emit a `logger.warn` on
+  construction when the two-argument form is used so downstream consumers see it
+  at runtime, not just in docs. Track with a `@deprecated` tag including the target
+  version.
 
-- `paginateOffset` terminates immediately upon receiving `isLast: true`.
+---
 
-## [npm & Build]
+## Pagination
 
-[LOW] Verify `package.json` exports alignment with `dist/`
-Severity: low
-Location: `package.json:28-33`
-Problem:
-The `exports` field defines `.`, `.import`, and `.require`. There is no verification that the `build:cjs` script (which creates a custom `package.json` in `dist/cjs/`) correctly supports these entries for the CJS path.
-Impact:
-Users attempting to `require` the package might encounter "module not found" or "cannot find module" errors if the internal `dist/cjs/package.json` is misconfigured.
-Recommendation:
-Add a validation step in the `validate` script to check that the `dist/` structure matches the `exports` definition.
-Acceptance Criteria:
+### [P3] `extractCursor` silently stops when next URL lacks `cursor` param
 
-- `npm run validate` fails if `exports` cannot be resolved within the `dist/` directory.
+- **Where:** `src/core/pagination.ts`
+- **Problem:** Confluence v2 always includes `cursor` in `_links.next`, but if the
+  shape ever changes (e.g. opaque next URL), iteration stops with no diagnostic.
+- **Action:** if `nextUrl` is defined but yields no cursor, log a `warn` via
+  `config.logger` so the silent termination is observable.
+
+---
+
+## Cache & Batch middleware
+
+### [P2] Cache FIFO eviction ignores TTL expiry
+
+- **Where:** `src/core/cache.ts`
+- **Problem:** Expired entries aren't reclaimed until the same key is re-read.
+  When keys vary by query string (common for paginated reads), expired entries
+  occupy slots until FIFO evicts them, which can push out still-valid entries.
+- **Action:** sweep expired entries during eviction (scan before FIFO drop) or
+  switch to an LRU with a max-age check. Benchmark both on a realistic access
+  pattern before choosing.
+
+### [P3] Batch dedupe key ignores headers
+
+- **Where:** `src/core/batch.ts`
+- **Problem:** Two concurrent requests to the same path/query/body with different
+  `X-Atlassian-Token` or custom headers collapse into one. Safe today since
+  `Authorization` is injected by the transport, but user-set headers can diverge.
+- **Action:** include a hash of `headers` (excluding `Authorization`) in the key,
+  or document the limitation with a clear warning.
+
+---
+
+## OAuth / Errors
+
+### [P2] Token endpoint response: missing fields surface as a generic error
+
+- **Where:** `src/core/oauth.ts`
+- **Problem:** The "missing access_token" error does not include the HTTP status
+  or a body hint. Debugging a misconfigured auth server is harder than it needs to
+  be.
+- **Action:** include `response.status` and a truncated body snippet (first 200
+  chars, with secrets scrubbed) in the error message.
+
+---
+
+## CLI
+
+### [P2] Help text has no end-to-end test
+
+- **Where:** `src/cli/help.ts`, `test/cli/`
+- **Problem:** Help text is emitted via a separate module; if a command is added
+  and help forgets it, nothing fails. CLI smoke coverage exists but not for `-h`.
+- **Action:** add a test that spawns `atlas <resource> --help` for every known
+  resource and asserts the action list is non-empty and matches the command
+  dispatcher.
+
+---
+
+## Types & public API
+
+### [P2] Streaming response bodies are not supported
+
+- **Where:** `src/core/transport.ts`
+- **Problem:** `response.json()` buffers the entire body. Large attachment
+  downloads (Confluence/Jira) can blow memory.
+- **Action:** add `RequestOptions.responseType?: 'json' | 'arrayBuffer' | 'stream'`.
+  For `'stream'` return the `ReadableStream` directly and skip parsing. Keep
+  default as `'json'` for backwards compatibility.
+
+### [P3] `ApiResponse.headers` is `Headers` — not JSON-serialisable
+
+- **Where:** `src/core/types.ts`
+- **Problem:** Callers who log or persist responses must manually convert the
+  `Headers` instance. Minor DX paper-cut.
+- **Action:** either expose `headers: Record<string, string>` or add a helper
+  `toJSON(response: ApiResponse<T>)`.
+
+---
+
+## Tooling & release hygiene
+
+### [P2] CI does not verify dual ESM/CJS exports
+
+- **Where:** `package.json` (`exports`, `build:esm`, `build:cjs`)
+- **Problem:** The package publishes both ESM and CJS builds but `npm run validate`
+  only tsc-checks the ESM side. A broken CJS entry (e.g. missing `.cjs` extension)
+  ships silently.
+- **Action:** add a post-build smoke step that `require()`s `dist/cjs/index.js`
+  and `import()`s `dist/index.js` in a scratch file. Run under `npm run validate`.
+
+### [P3] No integration tests against a real Atlassian sandbox
+
+- **Where:** `test/`
+- **Problem:** 100% unit coverage proves the mock contracts — not that the library
+  actually talks to Confluence v2 / Jira v3 correctly.
+- **Action:** add an opt-in integration suite gated by
+  `ATLASSIAN_INTEGRATION=1` that hits a dedicated sandbox workspace. Run in CI
+  nightly against a service-account token stored in GitHub secrets.
+
+### [P3] Bench suite exists but isn't wired to CI regression detection
+
+- **Where:** `bench/`, `npm run bench`
+- **Problem:** Vitest benches are runnable but there is no baseline / regression
+  gate. Performance regressions land unnoticed.
+- **Action:** capture baseline results in `bench/baseline.json`, compare in CI,
+  fail on >20% regression. Start with transport retry/backoff microbench since
+  that's the hottest code path.
+
+---
+
+## Docs
+
+### [P3] `docs/ARCHITECTURE.md` does not describe the middleware chain ordering
+
+- **Where:** `docs/ARCHITECTURE.md`, `src/core/transport.ts`
+- **Problem:** The `reduceRight` composition order (outermost-first) is non-obvious
+  and affects OAuth + cache + batch interaction semantics. Not documented.
+- **Action:** add a short "middleware ordering" section with an example chain
+  (`[oauth, cache, batch]` vs `[cache, oauth, batch]`) and when each is correct.
+
+### [P3] `README.md` lacks a cookbook section
+
+- **Where:** `README.md`
+- **Problem:** Common recipes — custom logger, proxy setup, OAuth with token
+  persistence, retry tuning — are spread across examples or missing.
+- **Action:** add a "Recipes" H2 with copy-pasteable snippets linked from the TOC.

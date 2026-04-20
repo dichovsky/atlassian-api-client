@@ -139,6 +139,9 @@ interface Transport {
 - The transport handles: URL construction, header merging, body serialisation, response parsing, timeout via AbortController
 - **Auth always wins:** any caller-supplied `Authorization` header is stripped before the auth provider's header is applied, preventing accidental auth override via middleware
 - **Safe debug logging:** debug logs record `method + path` only; query parameters (which may contain cursor tokens or sensitive filter values) are never appended to the logged path
+- **Caller-driven cancellation:** `RequestOptions.signal?: AbortSignal` is composed with the internal timeout signal via `AbortSignal.any`. External aborts surface as `AbortError`; timeouts still throw `TimeoutError` so callers can distinguish the two
+- **Rate-limit visibility:** every successful `ApiResponse<T>` exposes `rateLimit?: RateLimitInfo` parsed from `x-ratelimit-*` response headers. When `nearLimit === true` the configured `logger` emits a `warn` so callers can proactively slow down before a 429
+- **Retry wraps middleware:** the retry/backoff loop sits outside the middleware chain, so errors thrown by middleware (e.g. `OAuthError` with a 5xx `refreshStatus`) are retried by the same logic as transport errors
 
 **URL construction — single source of truth:**
 
@@ -161,13 +164,14 @@ Resource modules receive the same `baseUrl` and always pass fully-qualified URLs
 Client method call
   → Resource module builds RequestOptions
     → Transport.request()
-      → Middleware chain (pre-request: OAuth, Connect JWT, Cache, Batch…)
-        → Auth adds Authorization header
-          → Retry wraps the fetch call
-            → Rate limiter checks/waits if needed
-              → fetch() executes
-                → Response parsed or error thrown
-                  → Middleware chain (post-response: Cache store, OAuth refresh…)
+      → Retry loop (wraps middleware + fetch; retries on 429/5xx/network/OAuth 5xx)
+        → Middleware chain (pre-request: OAuth, Connect JWT, Cache, Batch…)
+          → executeFetch
+            → Auth adds Authorization header (caller `Authorization` stripped)
+              → fetch() executes (with timeout + optional caller AbortSignal)
+                → Response parsed; rate-limit headers surfaced on success,
+                  HttpError thrown on non-2xx (RateLimitError includes Retry-After)
+          → Middleware chain (post-response: Cache store, OAuth refresh on 401…)
 ```
 
 ### Auth (`src/core/auth.ts`)
@@ -221,7 +225,8 @@ AtlassianError (base)
 │   ├── AuthenticationError (401)
 │   ├── ForbiddenError (403)
 │   ├── NotFoundError (404)
-│   └── RateLimitError (429, includes retryAfter)
+│   ├── RateLimitError (429, includes retryAfter)
+│   └── OAuthError (token-endpoint failures; status = refreshStatus ?? 0)
 ├── TimeoutError (AbortController timeout)
 ├── NetworkError (fetch failures, DNS, connection)
 └── ValidationError (invalid config/params)
@@ -254,14 +259,16 @@ delay = min(baseDelay * 2^attempt + random_jitter, maxDelay)
 
 **Retryable conditions:**
 
-- HTTP 429 (Too Many Requests) — uses `Retry-After` header if present
+- HTTP 429 (Too Many Requests) — uses `Retry-After` header if present, with `0..retryDelay` jitter added on top of the server-advertised floor. If `maxRetryDelay` leaves headroom above that floor, the added jitter is capped to stay within that headroom and prevent synchronized retry stampedes
 - HTTP 500, 502, 503, 504 (server errors)
 - Network errors (connection reset, DNS failure)
+- `OAuthError` with `refreshStatus` in the 5xx range (transient token-endpoint failures)
 
 **Non-retryable:**
 
 - HTTP 400, 401, 403, 404, 409 (client errors)
 - Timeout errors (already represents a long wait)
+- `OAuthError` with `refreshStatus` in the 4xx range (misconfigured OAuth)
 
 ### Rate Limiter (`src/core/rate-limiter.ts`)
 
@@ -304,7 +311,7 @@ interface OffsetPaginatedResponse<T> {
 ```
 
 - Next page: `startAt += maxResults`
-- Done: `isLast === true` OR `startAt >= total` OR empty results
+- Done: `isLast === true` OR `startAt >= total` OR empty results OR a short page (`values.length < maxResults`). The short-page fallback uses the server's response-level `maxResults` (not the caller-requested page size) so servers that clamp the page size terminate cleanly even when `isLast` / `total` are omitted
 
 **Async iterators:**
 
@@ -619,9 +626,18 @@ src/cli/
 
 Order of precedence (first wins):
 
-1. CLI flags: `--base-url`, `--email`, `--token`
-2. Environment variables: `ATLASSIAN_BASE_URL`, `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`
+1. CLI flags: `--base-url`, `--auth-type`, `--email`, `--token`
+2. Environment variables: `ATLASSIAN_BASE_URL`, `ATLASSIAN_AUTH_TYPE`, `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`
 3. Error with helpful message
+
+**Supported `--auth-type` values:**
+
+| Value    | Required inputs                    | Produced `ClientConfig.auth`                |
+| -------- | ---------------------------------- | ------------------------------------------- |
+| `basic`  | `--base-url`, `--email`, `--token` | `{ type: 'basic', email, apiToken: token }` |
+| `bearer` | `--base-url`, `--token`            | `{ type: 'bearer', token }`                 |
+
+Default is `basic`. Unknown values fall back to `basic` so existing invocations keep working. Bearer mode skips the `--email` requirement; `--token` is still required for both modes.
 
 ### Output Formats
 

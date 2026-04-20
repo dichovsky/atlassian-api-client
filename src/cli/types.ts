@@ -1,7 +1,10 @@
 export type OutputFormat = 'json' | 'table' | 'minimal';
 
+export type AuthType = 'basic' | 'bearer';
+
 export interface GlobalOptions {
   readonly baseUrl: string;
+  readonly authType: AuthType;
   readonly email: string;
   readonly token: string;
   readonly format: OutputFormat;
