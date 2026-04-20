@@ -12,17 +12,17 @@ function resolveExportPath(exportPath) {
 if (rootExport === undefined) {
   errors.push('Missing exports["."] entry in package.json');
 } else {
-  if (rootExport.types && !fs.existsSync(resolveExportPath(rootExport.types))) {
-    errors.push(`Missing types: ${rootExport.types}`);
-  }
+  const validateExportField = (fieldName) => {
+    const exportPath = rootExport[fieldName];
+    if (typeof exportPath !== 'string') return;
+    if (!fs.existsSync(resolveExportPath(exportPath))) {
+      errors.push(`Missing ${fieldName}: ${exportPath}`);
+    }
+  };
 
-  if (rootExport.import && !fs.existsSync(resolveExportPath(rootExport.import))) {
-    errors.push(`Missing import: ${rootExport.import}`);
-  }
-
-  if (rootExport.default && !fs.existsSync(resolveExportPath(rootExport.default))) {
-    errors.push(`Missing default: ${rootExport.default}`);
-  }
+  validateExportField('types');
+  validateExportField('import');
+  validateExportField('default');
 }
 
 if (errors.length > 0) {
