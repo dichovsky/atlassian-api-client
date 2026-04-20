@@ -1,47 +1,48 @@
 {
-  "capturedAt": "2026-04-20T21:22:58.344Z",
+  "capturedAt": "2026-04-20T21:30:07.082Z",
   "node": "v24.15.0",
   "platform": "darwin-arm64",
+  "calibrationHz": 297747415.72137344,
   "benchmarks": {
     "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=0, base=100, max=5000": {
-      "hz": 22609312.5529987,
-      "mean": 0.00004422956238301765
+      "hz": 21342283.445098992,
+      "mean": 0.000046855342474126794
     },
     "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=3, base=100, max=5000": {
-      "hz": 22283781.01959198,
-      "mean": 0.00004487568779825993
+      "hz": 22902465.954149935,
+      "mean": 0.000043663420436994456
     },
     "bench/retry.bench.ts > retry — calculateDelay (exponential backoff + jitter) > attempt=10, base=100, max=5000 (saturates at max)": {
-      "hz": 19798945.80197619,
-      "mean": 0.00005050773965451166
+      "hz": 21815855.825564526,
+      "mean": 0.0000458382200540658
     },
     "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 200 (non-retryable)": {
-      "hz": 25061331.24822199,
-      "mean": 0.00003990211015110965
+      "hz": 25955209.92355937,
+      "mean": 0.00003852791030953314
     },
     "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 429 (retryable)": {
-      "hz": 25878920.343754377,
-      "mean": 0.000038641488389655335
+      "hz": 24979242.850725073,
+      "mean": 0.00004003323903674578
     },
     "bench/retry.bench.ts > retry — isRetryableStatus (Set lookup) > 503 (retryable)": {
-      "hz": 25918753.688995972,
-      "mean": 0.00003858210205626355
+      "hz": 25766398.60850883,
+      "mean": 0.000038810235578276365
     },
     "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > plain Error (no match)": {
-      "hz": 25037584.247069016,
-      "mean": 0.00003993995547382185
+      "hz": 23485961.01354351,
+      "mean": 0.00004257862811844642
     },
     "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > TypeError (fetch network failure)": {
-      "hz": 25949716.75428837,
-      "mean": 0.00003853606609539362
+      "hz": 25309258.53187228,
+      "mean": 0.00003951123256893073
     },
     "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > undici UND_ERR_SOCKET direct code": {
-      "hz": 25172105.94987903,
-      "mean": 0.000039726513228219016
+      "hz": 25086511.0466878,
+      "mean": 0.00003986205965982787
     },
     "bench/retry.bench.ts > retry — isNetworkError (cause-chain walk) > nested ECONNRESET via cause chain": {
-      "hz": 22566050.82659353,
-      "mean": 0.00004431435556378012
+      "hz": 21679110.56921292,
+      "mean": 0.000046127353647991744
     }
   }
 }

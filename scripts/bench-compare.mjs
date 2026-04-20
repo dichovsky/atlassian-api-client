@@ -21,7 +21,17 @@ const PROJECT_ROOT = resolve(__dirname, '..');
 const BASELINE_PATH = resolve(PROJECT_ROOT, 'bench/baseline.json');
 const RESULTS_PATH = resolve(PROJECT_ROOT, 'bench/.results.json');
 const BENCH_FILE = 'bench/retry.bench.ts';
-const THRESHOLD = 0.2; // fail if current hz is >20% below baseline
+const THRESHOLD = 0.2; // fail if current hz is >20% below normalized baseline
+
+// Calibration benchmark: a simple loop to estimate environment speed relative to baseline platform
+function getCalibrationHz() {
+  const start = performance.now();
+  let count = 0;
+  while (performance.now() - start < 100) {
+    for (let i = 0; i < 1000; i++) { count += i; }
+  }
+  return count / (performance.now() - start);
+}
 
 const mode = process.argv.includes('--capture') ? 'capture' : 'compare';
 
@@ -64,10 +74,11 @@ if (mode === 'capture') {
     capturedAt: new Date().toISOString(),
     node: process.version,
     platform: `${process.platform}-${process.arch}`,
+    calibrationHz: getCalibrationHz(),
     benchmarks: current,
   };
   writeFileSync(BASELINE_PATH, JSON.stringify(snapshot, null, 2) + '\n');
-  console.log(`Baseline captured at ${BASELINE_PATH}`);
+  console.log(`Baseline captured at ${BASELINE_PATH} (calibration: ${snapshot.calibrationHz.toFixed(0)})`);
   process.exit(0);
 }
 
@@ -80,11 +91,15 @@ const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baseMap = baseline.benchmarks ?? {};
 const failures = [];
 
+const currentCalibration = getCalibrationHz();
+const environmentFactor = baseline.calibrationHz ? currentCalibration / baseline.calibrationHz : 1;
+
 console.log(`\nBench regression gate — threshold ${THRESHOLD * 100}%`);
 console.log(
   `Baseline: ${baseline.platform ?? '?'} on ${baseline.node ?? '?'} (${baseline.capturedAt ?? '?'})`,
 );
-console.log(`Current:  ${process.platform}-${process.arch} on ${process.version}\n`);
+console.log(`Current:  ${process.platform}-${process.arch} on ${process.version}`);
+console.log(`Environment factor (current/baseline speed): ${environmentFactor.toFixed(2)}x\n`);
 
 for (const [key, cur] of Object.entries(current)) {
   const base = baseMap[key];
@@ -92,12 +107,13 @@ for (const [key, cur] of Object.entries(current)) {
     console.log(`NEW:  ${key}  hz=${cur.hz.toFixed(0)}`);
     continue;
   }
-  const ratio = cur.hz / base.hz;
+  const normalizedBaseHz = base.hz * environmentFactor;
+  const ratio = cur.hz / normalizedBaseHz;
   const delta = (ratio - 1) * 100;
   const sign = delta >= 0 ? '+' : '';
-  const line = `${key}\n      current=${cur.hz.toFixed(0)} baseline=${base.hz.toFixed(0)} (${sign}${delta.toFixed(1)}%)`;
+  const line = `${key}\n      current=${cur.hz.toFixed(0)} normalized_base=${normalizedBaseHz.toFixed(0)} (${sign}${delta.toFixed(1)}%)`;
   if (ratio < 1 - THRESHOLD) {
-    failures.push({ key, current: cur.hz, baseline: base.hz, delta });
+    failures.push({ key, current: cur.hz, baseline: normalizedBaseHz, delta });
     console.log(`FAIL: ${line}`);
   } else {
     console.log(`ok:   ${line}`);

@@ -1,13 +1,17 @@
-const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+const RETRYABLE_STATUS_CODES = new Uint8Array(600);
+[429, 500, 502, 503, 504].forEach((s) => (RETRYABLE_STATUS_CODES[s] = 1));
 
 /** Check whether an HTTP status code is retryable. */
 export function isRetryableStatus(status: number): boolean {
-  return RETRYABLE_STATUS_CODES.has(status);
+  return status >= 0 && status < 600 && RETRYABLE_STATUS_CODES[status] === 1;
 }
+
+const POW_2 = new Float64Array(31);
+for (let i = 0; i < 31; i++) POW_2[i] = Math.pow(2, i);
 
 /** Calculate retry delay with exponential backoff and jitter. */
 export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number {
-  const exponential = baseDelay * Math.pow(2, attempt);
+  const exponential = baseDelay * POW_2[Math.min(attempt, 30)];
   const jitter = Math.random() * baseDelay;
   return Math.min(exponential + jitter, maxDelay);
 }
@@ -51,16 +55,20 @@ export function isNetworkError(error: unknown): boolean {
 }
 
 /** Walk the error + `cause` chain looking for a known-retryable system code. */
-function hasRetryableCode(error: unknown, depth = 0): boolean {
-  if (depth > 5 || error === null || typeof error !== 'object') return false;
+function hasRetryableCode(error: unknown): boolean {
+  let curr = error;
+  for (let i = 0; i <= 5; i++) {
+    if (curr === null || typeof curr !== 'object') break;
 
-  const code = (error as { code?: unknown }).code;
-  if (typeof code === 'string' && RETRYABLE_CAUSE_CODES.has(code)) {
-    return true;
+    const code = (curr as { code?: unknown }).code;
+    if (typeof code === 'string' && RETRYABLE_CAUSE_CODES.has(code)) {
+      return true;
+    }
+
+    curr = (curr as { cause?: unknown }).cause;
+    if (curr === undefined) break;
   }
-
-  const cause = (error as { cause?: unknown }).cause;
-  return cause !== undefined ? hasRetryableCode(cause, depth + 1) : false;
+  return false;
 }
 
 /** Sleep for the given number of milliseconds. */
