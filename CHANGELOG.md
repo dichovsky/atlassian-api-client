@@ -13,7 +13,6 @@
 - **cache** — FIFO eviction now sweeps expired entries before dropping the oldest slot, preventing expired entries from pushing out still-valid ones.
 - **batch** — deduplication key now includes a hash of caller-supplied headers (excluding `Authorization`), so concurrent requests with different custom headers no longer alias to the same in-flight call.
 - **cli** — end-to-end test suite exercises `--help` for every resource (`atlas`, `atlas <api> --help`, `atlas <api> <resource> --help`) and asserts help text stays in sync with the dispatcher's `case` statements, preventing silent drift when resources or actions are added.
-- **tests** — opt-in integration suite under `test/integration/` gated on `ATLASSIAN_INTEGRATION=1`; nightly GitHub Actions workflow hits a sandbox workspace with a service-account token from repository secrets.
 - **docs** — `docs/ARCHITECTURE.md` gains a "Middleware ordering" section documenting the `reduceRight` composition order and when to put cache vs auth vs batch outermost. README gains a "Recipes" section with copy-paste snippets for custom logger, proxy, OAuth with token persistence, retry tuning, and cache+batch layering.
 
 ### Changed

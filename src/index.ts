@@ -20,10 +20,14 @@ export type {
   BearerAuthConfig,
   RequestOptions,
   ApiResponse,
+  RateLimitInfo,
   Transport,
   Logger,
   Middleware,
 } from './core/index.js';
+
+// Core config and transport
+export { resolveConfig, HttpTransport } from './core/index.js';
 
 // Response serialisation helper
 export { toJSON } from './core/index.js';

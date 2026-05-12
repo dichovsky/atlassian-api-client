@@ -6,7 +6,17 @@ const DEFAULT_RETRIES = 3;
 const DEFAULT_RETRY_DELAY = 1_000;
 const DEFAULT_MAX_RETRY_DELAY = 30_000;
 
-/** Validate and resolve a ClientConfig into a ResolvedConfig with defaults applied. */
+/**
+ * Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied.
+ *
+ * Validates `baseUrl` (must be a valid HTTPS URL), `auth` (must be present and valid),
+ * and optional numeric fields (must be positive when provided). Throws {@link ValidationError}
+ * for invalid input.
+ *
+ * @param config - Raw client configuration to validate and resolve.
+ * @returns Resolved configuration with all defaults applied.
+ * @throws {ValidationError} if the config is invalid.
+ */
 export function resolveConfig(config: ClientConfig): ResolvedConfig {
   validateConfig(config);
 

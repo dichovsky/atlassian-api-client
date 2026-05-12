@@ -3,7 +3,7 @@
  * These tests do not make network calls; they validate structure and type compatibility.
  */
 import { describe, it, expect } from 'vitest';
-import { ConfluenceClient, JiraClient } from '../../src/index.js';
+import { ConfluenceClient, JiraClient, HttpTransport, resolveConfig } from '../../src/index.js';
 import type {
   ClientConfig,
   Logger,
@@ -173,5 +173,13 @@ describe('root type exports', () => {
 
     expect(confluenceAlias.limit).toBe(10);
     expect(jiraParams.maxResults).toBe(50);
+  });
+
+  it('exports core transport helpers used in public JSDoc examples', () => {
+    const resolved = resolveConfig(BASE_CONFIG);
+    const transport = new HttpTransport(resolved);
+
+    expect(resolved.baseUrl).toBe('https://test.atlassian.net');
+    expect(transport).toBeInstanceOf(HttpTransport);
   });
 });

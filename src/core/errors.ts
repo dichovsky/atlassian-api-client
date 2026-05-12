@@ -40,7 +40,22 @@ export class HttpError extends AtlassianError {
   }
 }
 
-/** 401 Unauthorized. */
+/**
+ * 401 Unauthorized error.
+ *
+ * Thrown when the API returns a 401 status code, indicating invalid or missing authentication credentials.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await client.pages.getPage(pageId);
+ * } catch (error) {
+ *   if (error instanceof AuthenticationError) {
+ *     console.error('Auth failed:', error.message);
+ *   }
+ * }
+ * ```
+ */
 export class AuthenticationError extends HttpError {
   constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
     super(message ?? 'Authentication failed', 401, responseBody, options, 'AUTHENTICATION_ERROR');
@@ -48,7 +63,11 @@ export class AuthenticationError extends HttpError {
   }
 }
 
-/** 403 Forbidden. */
+/**
+ * 403 Forbidden error.
+ *
+ * Thrown when the API returns a 403 status code, indicating the authenticated user lacks permissions for the requested resource.
+ */
 export class ForbiddenError extends HttpError {
   constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
     super(message ?? 'Access forbidden', 403, responseBody, options, 'FORBIDDEN_ERROR');
@@ -56,7 +75,11 @@ export class ForbiddenError extends HttpError {
   }
 }
 
-/** 404 Not Found. */
+/**
+ * 404 Not Found error.
+ *
+ * Thrown when the API returns a 404 status code, indicating the requested resource does not exist.
+ */
 export class NotFoundError extends HttpError {
   constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
     super(message ?? 'Resource not found', 404, responseBody, options, 'NOT_FOUND_ERROR');
@@ -64,7 +87,12 @@ export class NotFoundError extends HttpError {
   }
 }
 
-/** 429 Too Many Requests. */
+/**
+ * 429 Too Many Requests error.
+ *
+ * Thrown when the API returns a 429 status code. The {@link retryAfter} field contains
+ * the recommended wait time in seconds (from the Retry-After header).
+ */
 export class RateLimitError extends HttpError {
   /** Seconds to wait before retrying, from the Retry-After header. */
   readonly retryAfter?: number;
@@ -81,7 +109,11 @@ export class RateLimitError extends HttpError {
   }
 }
 
-/** Timeout error (AbortController). */
+/**
+ * Timeout error (AbortController).
+ *
+ * Thrown when a request exceeds the configured {@link ClientConfig.timeout}.
+ */
 export class TimeoutError extends AtlassianError {
   /** The configured timeout in milliseconds that was exceeded. */
   readonly timeoutMs: number;
@@ -93,7 +125,11 @@ export class TimeoutError extends AtlassianError {
   }
 }
 
-/** Network-level error (DNS, connection refused, etc.). */
+/**
+ * Network-level error (DNS failure, connection refused, etc.).
+ *
+ * Thrown when the underlying `fetch` call fails due to a network issue rather than an HTTP response.
+ */
 export class NetworkError extends AtlassianError {
   constructor(message: string, options?: ErrorOptions) {
     super(message, 'NETWORK_ERROR', options);
@@ -101,7 +137,11 @@ export class NetworkError extends AtlassianError {
   }
 }
 
-/** Validation error for invalid config or params. */
+/**
+ * Validation error for invalid config or parameters.
+ *
+ * Thrown when config validation or resource methods receive invalid input.
+ */
 export class ValidationError extends AtlassianError {
   constructor(message: string, options?: ErrorOptions) {
     super(message, 'VALIDATION_ERROR', options);
@@ -109,7 +149,18 @@ export class ValidationError extends AtlassianError {
   }
 }
 
-/** Create the appropriate HttpError subclass from an HTTP status code. */
+/**
+ * Create the appropriate {@link HttpError} subclass from an HTTP status code.
+ *
+ * Maps status codes to specific error classes: 401 → {@link AuthenticationError},
+ * 403 → {@link ForbiddenError}, 404 → {@link NotFoundError}, 429 → {@link RateLimitError},
+ * and all others → {@link HttpError}.
+ *
+ * @param status - HTTP status code.
+ * @param body - Parsed response body (used to extract error message).
+ * @param retryAfterSeconds - Retry-After header value in seconds (for 429 responses).
+ * @returns An {@link HttpError} instance with the appropriate subclass for the status code.
+ */
 export function createHttpError(
   status: number,
   body?: unknown,
