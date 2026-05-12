@@ -41,6 +41,7 @@ npm run validate
 4. Export types and class from the barrel `index.ts` files
 5. Add comprehensive tests
 6. Update the README
+7. If the resource is exposed via the CLI, document it in `skill/reference/confluence.md` or `skill/reference/jira.md` — the `skill-content.test.ts` drift check fails otherwise.
 
 ## Commit Messages
 

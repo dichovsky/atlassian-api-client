@@ -1,0 +1,302 @@
+import { readFileSync, writeFileSync, mkdirSync, statSync, readdirSync, existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
+import type { ParsedCommand } from '../types.js';
+
+export const SKILL_NAME = 'atlassian-api-client-cli';
+
+export interface InstallSkillOptions {
+  readonly target: string;
+  readonly force: boolean;
+  readonly dryRun: boolean;
+  readonly print: boolean;
+}
+
+export interface InstallSkillResult {
+  readonly action: 'copied' | 'noop-same-version' | 'printed' | 'dry-run';
+  readonly source: string;
+  readonly target: string;
+  readonly files: readonly string[];
+  readonly version: string;
+}
+
+export class InstallSkillError extends Error {
+  readonly exitCode: number;
+  constructor(message: string, exitCode: number) {
+    super(message);
+    this.name = 'InstallSkillError';
+    this.exitCode = exitCode;
+  }
+}
+
+interface FilesystemDeps {
+  readonly readFile: (path: string) => string;
+  readonly writeFile: (path: string, content: string) => void;
+  readonly mkdir: (path: string) => void;
+  readonly exists: (path: string) => boolean;
+  readonly readDir: (path: string) => readonly string[];
+  readonly isDirectory: (path: string) => boolean;
+}
+
+const realFs: FilesystemDeps = {
+  readFile: (path) => readFileSync(path, 'utf8'),
+  writeFile: (path, content) => writeFileSync(path, content, 'utf8'),
+  mkdir: (path) => mkdirSync(path, { recursive: true }),
+  exists: (path) => existsSync(path),
+  readDir: (path) => readdirSync(path),
+  isDirectory: (path) => statSync(path).isDirectory(),
+};
+
+/** Resolve the bundled skill source directory relative to this module. */
+export function resolveSkillSource(moduleUrl: string): string {
+  // From dist/cli/commands/install-skill.js the skill/ dir sits 3 levels up.
+  // From src/cli/commands/install-skill.ts (in tests) it also sits 3 levels up.
+  return resolve(dirname(fileURLToPath(moduleUrl)), '..', '..', '..', 'skill');
+}
+
+/** Resolve the package version by reading the nearest package.json. */
+export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string {
+  const start = dirname(fileURLToPath(moduleUrl));
+  let dir = start;
+  for (let i = 0; i < 6; i++) {
+    const candidate = join(dir, 'package.json');
+    if (fs.exists(candidate)) {
+      const pkg = JSON.parse(fs.readFile(candidate)) as { version?: string };
+      if (typeof pkg.version === 'string' && pkg.version.length > 0) {
+        return pkg.version;
+      }
+      throw new InstallSkillError(`package.json at ${candidate} has no version field`, 1);
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new InstallSkillError(`Could not locate package.json starting from ${start}`, 1);
+}
+
+/** Resolve the install target based on flag combination. */
+export function resolveInstallTarget(
+  options: Record<string, string | boolean | undefined>,
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+): string {
+  const envHome = env['HOME'];
+  const home = typeof envHome === 'string' && envHome.length > 0 ? envHome : homedir();
+
+  const explicit = options['path'];
+  if (typeof explicit === 'string' && explicit.length > 0) {
+    return resolve(cwd, expandTilde(explicit, home));
+  }
+  if (options['local'] === true) {
+    return resolve(cwd, '.claude', 'skills', SKILL_NAME);
+  }
+  return resolve(home, '.claude', 'skills', SKILL_NAME);
+}
+
+/** Expand a leading `~` or `~/` in a path to the resolved home directory. */
+function expandTilde(input: string, home: string): string {
+  if (input === '~') return home;
+  if (input.startsWith('~/')) return join(home, input.slice(2));
+  return input;
+}
+
+/** List every file path under a directory, recursively, relative to the root. */
+function listFilesRecursive(root: string, fs: FilesystemDeps): string[] {
+  const out: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    for (const entry of fs.readDir(dir)) {
+      const abs = join(dir, entry);
+      const rel = prefix === '' ? entry : `${prefix}/${entry}`;
+      if (fs.isDirectory(abs)) {
+        walk(abs, rel);
+      } else {
+        out.push(rel);
+      }
+    }
+  };
+  walk(root, '');
+  return out.sort();
+}
+
+/** Stamp the destination SKILL.md frontmatter `version:` with the given value. */
+export function stampVersion(content: string, version: string): string {
+  const match = /^---\n([\s\S]*?)\n---\n/.exec(content);
+  if (!match) {
+    throw new InstallSkillError('SKILL.md is missing frontmatter delimiters', 1);
+  }
+  const frontmatter = match[1] as string;
+  if (!/^version:\s*\S/m.test(frontmatter)) {
+    throw new InstallSkillError('SKILL.md frontmatter is missing a version: field', 1);
+  }
+  const updatedFrontmatter = frontmatter.replace(/^version:\s*\S.*$/m, `version: ${version}`);
+  return `---\n${updatedFrontmatter}\n---\n${content.slice(match[0].length)}`;
+}
+
+/** Read the version field from a SKILL.md frontmatter string. */
+export function readSkillVersion(content: string): string | null {
+  const match = /^---\n([\s\S]*?)\n---\n/.exec(content);
+  if (!match) return null;
+  const versionMatch = /^version:\s*(\S.*)$/m.exec(match[1] as string);
+  return versionMatch ? (versionMatch[1] as string).trim() : null;
+}
+
+/** Perform the install. Pure with respect to the injected filesystem. */
+export function runInstall(
+  source: string,
+  version: string,
+  options: InstallSkillOptions,
+  fs: FilesystemDeps = realFs,
+): InstallSkillResult {
+  if (!fs.exists(source) || !fs.isDirectory(source)) {
+    throw new InstallSkillError(`Bundled skill directory not found at ${source}`, 1);
+  }
+
+  const files = listFilesRecursive(source, fs);
+  if (files.length === 0) {
+    throw new InstallSkillError(`Bundled skill directory ${source} is empty`, 1);
+  }
+
+  if (options.print) {
+    return {
+      action: 'printed',
+      source,
+      target: options.target,
+      files,
+      version,
+    };
+  }
+
+  // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
+  const destSkillPath = join(options.target, 'SKILL.md');
+  if (!options.dryRun && fs.exists(destSkillPath)) {
+    const existing = fs.readFile(destSkillPath);
+    const existingVersion = readSkillVersion(existing);
+    if (existingVersion === version) {
+      return {
+        action: 'noop-same-version',
+        source,
+        target: options.target,
+        files,
+        version,
+      };
+    }
+    if (!options.force) {
+      throw new InstallSkillError(
+        `Target ${options.target} already exists with a different version (${existingVersion ?? 'unknown'}). Pass --force to overwrite.`,
+        2,
+      );
+    }
+  }
+
+  if (options.dryRun) {
+    return {
+      action: 'dry-run',
+      source,
+      target: options.target,
+      files,
+      version,
+    };
+  }
+
+  for (const rel of files) {
+    const src = join(source, rel);
+    const dest = join(options.target, rel);
+    writeWithPermissionGuard(dest, () => {
+      fs.mkdir(dirname(dest));
+    });
+    const content = fs.readFile(src);
+    const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
+    writeWithPermissionGuard(dest, () => {
+      fs.writeFile(dest, stamped);
+    });
+  }
+
+  return {
+    action: 'copied',
+    source,
+    target: options.target,
+    files,
+    version,
+  };
+}
+
+function isPermissionError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = (err as { code?: unknown }).code;
+  return code === 'EACCES' || code === 'EPERM';
+}
+
+/** Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3. */
+function writeWithPermissionGuard(dest: string, op: () => void): void {
+  try {
+    op();
+  } catch (err) {
+    if (isPermissionError(err)) {
+      throw new InstallSkillError(`Permission denied writing ${dest}`, 3);
+    }
+    throw err;
+  }
+}
+
+/** CLI entrypoint for `atlas install-skill`. Returns the exit code. */
+export function executeInstallSkill(
+  cmd: ParsedCommand,
+  stdout: (line: string) => void,
+  stderr: (line: string) => void,
+  moduleUrl: string = import.meta.url,
+  env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
+  fs: FilesystemDeps = realFs,
+): number {
+  const source = resolveSkillSource(moduleUrl);
+  const target = resolveInstallTarget(cmd.options, env, cwd);
+  const options: InstallSkillOptions = {
+    target,
+    force: cmd.options['force'] === true,
+    dryRun: cmd.options['dry-run'] === true,
+    print: cmd.options['print'] === true,
+  };
+
+  try {
+    const version = resolvePackageVersion(moduleUrl, fs);
+    const result = runInstall(source, version, options, fs);
+    emitResult(result, stdout, stderr);
+    return 0;
+  } catch (err) {
+    if (err instanceof InstallSkillError) {
+      stderr(`Error: ${err.message}`);
+      return err.exitCode;
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    stderr(`Error: ${message}`);
+    return 1;
+  }
+}
+
+function emitResult(
+  result: InstallSkillResult,
+  stdout: (line: string) => void,
+  stderr: (line: string) => void,
+): void {
+  switch (result.action) {
+    case 'printed':
+      stdout(result.source);
+      return;
+    case 'dry-run':
+      stderr(`Would install ${result.files.length} files to ${result.target}:`);
+      for (const f of result.files) stderr(`  ${f}`);
+      stdout(result.target);
+      return;
+    case 'noop-same-version':
+      stderr(`Skill already installed at ${result.target} (version ${result.version}).`);
+      stdout(result.target);
+      return;
+    case 'copied':
+      stderr(
+        `Installed ${result.files.length} files (version ${result.version}) to ${result.target}.`,
+      );
+      stdout(result.target);
+      return;
+  }
+}

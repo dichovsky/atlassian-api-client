@@ -4,6 +4,7 @@
 
 ### Added
 
+- **skill** — bundled Claude Code skill `atlassian-api-client-cli` ships at `skill/SKILL.md` + `skill/reference/{confluence,jira}.md`. New `atlas install-skill` subcommand copies it into `~/.claude/skills/` (default), `<cwd>/.claude/skills/` (`--local`), or a custom `--path`. Stamps the destination frontmatter `version:` with the package version at install time so installed skills correlate with `npm list atlassian-api-client`. Supports `--print`, `--dry-run`, `--force`; idempotent at the same version; exit codes 0/1/2/3 distinguish success / generic failure / version-mismatch-without-force / permission-denied. Adds `claude-code`, `agent`, `skill` to `keywords` and `skill` to the `files` whitelist.
 - **transport** — `ClientConfig.fetch?: typeof fetch` injects a custom fetch implementation for both the main transport and OAuth token-refresh calls. Enables proxy support (`undici.ProxyAgent`), keep-alive tuning, mTLS, and request interception without replacing the whole `Transport`.
 - **retry** — `isNetworkError` now walks `error.cause` for undici / Node error codes (`ECONNRESET`, `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `UND_ERR_SOCKET`, `UND_ERR_CONNECT_TIMEOUT`) in addition to bare `TypeError`. Transient socket failures that used to slip through as fatal are now retried.
 - **errors** — `OAuthError` messages now include the token-endpoint HTTP status and a scrubbed 200-char body snippet so misconfigured auth servers are debuggable without inspecting network captures.

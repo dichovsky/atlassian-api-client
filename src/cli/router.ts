@@ -31,6 +31,12 @@ const GLOBAL_OPTIONS = {
   expand: { type: 'string' as const },
   'version-number': { type: 'string' as const },
   'comment-type': { type: 'string' as const },
+  // install-skill options
+  local: { type: 'boolean' as const },
+  path: { type: 'string' as const },
+  force: { type: 'boolean' as const },
+  'dry-run': { type: 'boolean' as const },
+  print: { type: 'boolean' as const },
 };
 
 /** Parse process.argv into a structured command. */
