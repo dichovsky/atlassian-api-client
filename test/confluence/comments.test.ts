@@ -312,4 +312,71 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
     });
   });
+
+  // ── B027: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B027: spec-aligned Comment schema + params', () => {
+    it('exposes parentCommentId, attachmentId, customContentId on FooterComment', async () => {
+      transport.respondWith({
+        id: 'fc1',
+        status: 'current',
+        parentCommentId: 'parent-1',
+        attachmentId: 'att-1',
+        customContentId: 'cc-1',
+      });
+      const fc = await comments.getFooter('fc1');
+      expect(fc.parentCommentId).toBe('parent-1');
+      expect(fc.attachmentId).toBe('att-1');
+      expect(fc.customContentId).toBe('cc-1');
+    });
+
+    it('exposes typed resolutionStatus, resolution timestamps and properties on InlineComment', async () => {
+      transport.respondWith({
+        id: 'ic1',
+        status: 'current',
+        resolutionStatus: 'resolved',
+        resolutionLastModifierId: 'user-1',
+        resolutionLastModifiedAt: '2025-06-01T00:00:00.000Z',
+        parentCommentId: 'parent-7',
+        properties: {
+          inlineMarkerRef: 'marker-xyz',
+          inlineOriginalSelection: 'highlighted text',
+        },
+      });
+      const ic = await comments.getInline('ic1');
+      expect(ic.resolutionStatus).toBe('resolved');
+      expect(ic.resolutionLastModifierId).toBe('user-1');
+      expect(ic.parentCommentId).toBe('parent-7');
+      expect(ic.properties?.inlineMarkerRef).toBe('marker-xyz');
+      expect(ic.properties?.inlineOriginalSelection).toBe('highlighted text');
+    });
+
+    it('forwards sort param on listFooter and listInline', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await comments.listFooter('page-1', { sort: '-modified-date' });
+      expect(transport.lastCall?.options.query).toMatchObject({ sort: '-modified-date' });
+
+      transport.respondWith({ results: [], _links: {} });
+      await comments.listInline('page-1', { sort: 'created-date' });
+      expect(transport.lastCall?.options.query).toMatchObject({ sort: 'created-date' });
+    });
+
+    it('accepts parentCommentId on createFooter and createInline payloads', async () => {
+      transport.respondWith({ id: 'fc2', status: 'current' });
+      await comments.createFooter({
+        pageId: 'p1',
+        parentCommentId: 'parent-99',
+        body: { representation: 'storage', value: '<p>reply</p>' },
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ parentCommentId: 'parent-99' });
+
+      transport.respondWith({ id: 'ic2', status: 'current' });
+      await comments.createInline({
+        pageId: 'p1',
+        parentCommentId: 'parent-100',
+        body: { representation: 'storage', value: '<p>reply</p>' },
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ parentCommentId: 'parent-100' });
+    });
+  });
 });

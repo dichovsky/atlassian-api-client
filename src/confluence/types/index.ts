@@ -37,10 +37,13 @@ export type {
   UpdateBlogPostData,
 } from './blog-post.js';
 export type {
+  CommentSortOrder,
   CreateFooterCommentData,
   CreateInlineCommentData,
   FooterComment,
   InlineComment,
+  InlineCommentProperties,
+  InlineCommentResolutionStatus,
   ListFooterCommentsParams,
   ListInlineCommentsParams,
   UpdateCommentData,
