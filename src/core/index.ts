@@ -25,6 +25,7 @@ export {
   TimeoutError,
   NetworkError,
   ValidationError,
+  PaginationError,
   createHttpError,
 } from './errors.js';
 
@@ -49,6 +50,7 @@ export type {
   CursorPaginatedResponse,
   OffsetPaginatedResponse,
   SearchPaginatedResponse,
+  PaginateOptions,
 } from './pagination.js';
 export { extractCursor, paginateCursor, paginateOffset, paginateSearch } from './pagination.js';
 

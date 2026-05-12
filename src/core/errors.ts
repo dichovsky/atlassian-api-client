@@ -150,6 +150,20 @@ export class ValidationError extends AtlassianError {
 }
 
 /**
+ * Pagination safety error.
+ *
+ * Thrown by {@link paginateCursor} when the server returns the same `cursor`
+ * value on consecutive responses, which would otherwise cause an infinite
+ * request loop.
+ */
+export class PaginationError extends AtlassianError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, 'PAGINATION_ERROR', options);
+    this.name = 'PaginationError';
+  }
+}
+
+/**
  * Create the appropriate {@link HttpError} subclass from an HTTP status code.
  *
  * Maps status codes to specific error classes: 401 → {@link AuthenticationError},

@@ -9,6 +9,7 @@ import {
   TimeoutError,
   NetworkError,
   ValidationError,
+  PaginationError,
   createHttpError,
 } from '../../src/core/errors.js';
 
@@ -26,6 +27,7 @@ describe('src/core/index.ts barrel re-exports', () => {
     expect(CoreIndex.TimeoutError).toBe(TimeoutError);
     expect(CoreIndex.NetworkError).toBe(NetworkError);
     expect(CoreIndex.ValidationError).toBe(ValidationError);
+    expect(CoreIndex.PaginationError).toBe(PaginationError);
     expect(CoreIndex.createHttpError).toBe(createHttpError);
   });
 
@@ -295,6 +297,29 @@ describe('ValidationError', () => {
     expect(err).toBeInstanceOf(AtlassianError);
     expect(err).toBeInstanceOf(ValidationError);
     expect(err).not.toBeInstanceOf(HttpError);
+  });
+});
+
+describe('PaginationError', () => {
+  it('sets name, code, and message', () => {
+    const err = new PaginationError('cursor not advancing');
+    expect(err.name).toBe('PaginationError');
+    expect(err.code).toBe('PAGINATION_ERROR');
+    expect(err.message).toBe('cursor not advancing');
+  });
+
+  it('instanceof chain: Error → AtlassianError → PaginationError', () => {
+    const err = new PaginationError('stuck');
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(AtlassianError);
+    expect(err).toBeInstanceOf(PaginationError);
+    expect(err).not.toBeInstanceOf(HttpError);
+  });
+
+  it('forwards ErrorOptions.cause', () => {
+    const cause = new Error('underlying');
+    const err = new PaginationError('wrapped', { cause });
+    expect(err.cause).toBe(cause);
   });
 });
 
