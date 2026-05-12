@@ -104,7 +104,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Acceptance criteria:**
   - [ ] `transport.ts` is <= 200 lines
   - [ ] `HttpTransport` class still has the same public API (no breaking changes)
-  - [ ] All tests pass (unit + integration)
+  - [ ] All tests pass
   - [ ] `npx tsc` passes with no type errors
   - [ ] Code review confirms each remaining function is <50 lines
 - **Files:** `src/core/transport.ts`, `src/core/request.ts` (possibly new), `src/core/response.ts` (possibly new)
@@ -196,20 +196,20 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Phase 5 — Testing (depends on all code changes being stable)
 
-### [ ] B012: Add integration tests against mock server
+### [ ] B012: Add mock-server transport tests
 
 - **Priority:** P1 — High
-- **Description:** Create a minimal HTTP mock server (using `node:http` or `undici.MockAgent`) that simulates Atlassian API behavior: rate limit headers, retry-after, 5xx failures, structured error responses, pagination links. Write integration tests that verify: header formatting, URL encoding, retry behavior against real HTTP responses, pagination state machine, streaming response handling.
+- **Description:** Create a minimal HTTP mock server (using `node:http` or `undici.MockAgent`) that simulates Atlassian API behavior: rate limit headers, retry-after, 5xx failures, structured error responses, pagination links. Write mock-server tests that verify: header formatting, URL encoding, retry behavior against real HTTP responses, pagination state machine, streaming response handling.
 - **Acceptance criteria:**
   - [ ] Mock server simulates rate limiting with `retry-after` header
-  - [ ] Integration test: client retries correctly on 429 with retry-after
-  - [ ] Integration test: client retries correctly on 5xx
-  - [ ] Integration test: structured error response is parsed correctly
-  - [ ] Integration test: cursor pagination advances correctly
-  - [ ] Integration test: offset pagination works for Jira search
-  - [ ] Integration test: streaming response returns correct data
-  - [ ] Integration test: URL encoding handles special characters in space/key/page titles
-- **Files:** `test/integration/` (new directory), `test/integration/mock-server.ts`, `test/integration/transport.test.ts`, `test/integration/pagination.test.ts`
+  - [ ] Mock-server test: client retries correctly on 429 with retry-after
+  - [ ] Mock-server test: client retries correctly on 5xx
+  - [ ] Mock-server test: structured error response is parsed correctly
+  - [ ] Mock-server test: cursor pagination advances correctly
+  - [ ] Mock-server test: offset pagination works for Jira search
+  - [ ] Mock-server test: streaming response returns correct data
+  - [ ] Mock-server test: URL encoding handles special characters in space/key/page titles
+- **Files:** `test/mock-server/` (new directory), `test/mock-server/server.ts`, `test/mock-server/transport.test.ts`, `test/mock-server/pagination.test.ts`
 - **Dependencies:** B006 (stable transport)
 
 ### [ ] B013: Add CLI E2E tests
