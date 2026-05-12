@@ -29,6 +29,7 @@ npm run validate                              # full gate — run before broad c
 - `src/core/*`: transport/auth/config/errors/pagination.
 - `src/confluence/*`, `src/jira/*`: API clients + resources.
 - `src/cli/*`: router/commands via `node:util.parseArgs`.
+- `skill/*`: bundled Claude Code skill `atlassian-api-client-cli`; installed via `atlas install-skill` (`--local` for project-scoped). Version is injected from `package.json` at install time.
 
 ## Critical Invariants
 

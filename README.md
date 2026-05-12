@@ -17,6 +17,26 @@ npm install atlassian-api-client
 
 - Node.js >= 24.0.0
 
+## Use with coding agents
+
+A Claude Code skill named **`atlassian-api-client-cli`** ships inside this package and teaches coding agents how to drive the `atlas` CLI safely (env-only auth, first-try gotchas, JQL quoting, pagination, output formats).
+
+```bash
+# User-wide install, into ~/.claude/skills/atlassian-api-client-cli
+npx atlas install-skill
+
+# Project-local install, into <cwd>/.claude/skills/atlassian-api-client-cli
+npx atlas install-skill --local
+
+# Print the bundled source path without copying (for symlinks / custom tooling)
+npx atlas install-skill --print
+
+# Preview what would be copied
+npx atlas install-skill --dry-run
+```
+
+The skill source lives at [`skill/SKILL.md`](skill/SKILL.md) with deeper resource matrices in [`skill/reference/`](skill/reference). It's versioned alongside the npm package: every install stamps the destination `SKILL.md` with the package version it was copied from.
+
 ## Quick Start
 
 ### Confluence

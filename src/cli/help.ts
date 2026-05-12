@@ -2,10 +2,14 @@ const GLOBAL_HELP = `atlas - Atlassian Cloud API CLI
 
 USAGE:
   atlas <api> <resource> <action> [args] [options]
+  atlas install-skill [--local|--path <dir>] [--print|--dry-run|--force]
 
 APIs:
-  confluence    Confluence Cloud REST API v2
-  jira          Jira Cloud Platform REST API v3
+  confluence       Confluence Cloud REST API v2
+  jira             Jira Cloud Platform REST API v3
+
+UTILITIES:
+  install-skill    Install the bundled Claude Code skill (for coding agents)
 
 GLOBAL OPTIONS:
   --base-url, -u   Atlassian instance URL (or ATLASSIAN_BASE_URL)
@@ -20,6 +24,29 @@ EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN
   atlas jira issues get PROJ-123 --auth-type bearer --token OAUTH_TOKEN
   atlas jira search --jql "project = PROJ"
+  atlas install-skill --local
+`;
+
+const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill
+
+USAGE:
+  atlas install-skill [options]
+
+OPTIONS:
+  --local          Install into <cwd>/.claude/skills/ instead of ~/.claude/skills/
+  --path <dir>     Install into a custom directory (overrides --local)
+  --force          Overwrite an existing install of a different version
+  --dry-run        List files that would be copied; do not write
+  --print          Print the bundled source directory and exit
+
+DEFAULT TARGET:
+  ~/.claude/skills/atlassian-api-client-cli
+
+EXIT CODES:
+  0   success (copied, noop-same-version, printed, or dry-run)
+  1   generic failure
+  2   target exists with a different version (rerun with --force)
+  3   permission denied writing to target
 `;
 
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
@@ -63,6 +90,8 @@ export function getHelpText(api?: string): string {
       return CONFLUENCE_HELP;
     case 'jira':
       return JIRA_HELP;
+    case 'install-skill':
+      return INSTALL_SKILL_HELP;
     default:
       return GLOBAL_HELP;
   }

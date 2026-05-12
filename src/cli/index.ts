@@ -6,6 +6,7 @@ import { printOutput, printError } from './output.js';
 import { getHelpText } from './help.js';
 import { executeConfluenceCommand } from './commands/confluence.js';
 import { executeJiraCommand } from './commands/jira.js';
+import { executeInstallSkill } from './commands/install-skill.js';
 
 const VERSION = '0.1.0';
 
@@ -19,6 +20,16 @@ async function main(): Promise<void> {
 
   if (cmd.options['help'] || !cmd.api) {
     process.stdout.write(getHelpText(cmd.api || undefined) + '\n');
+    return;
+  }
+
+  if (cmd.api === 'install-skill') {
+    const code = executeInstallSkill(
+      cmd,
+      (line) => process.stdout.write(line + '\n'),
+      (line) => process.stderr.write(line + '\n'),
+    );
+    if (code !== 0) process.exitCode = code;
     return;
   }
 

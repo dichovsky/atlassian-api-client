@@ -150,4 +150,40 @@ describe('parseCommand', () => {
     // Assert
     expect(result.options['help']).toBe(true);
   });
+
+  it('parses install-skill with --local boolean flag', () => {
+    // Arrange
+    const argv = ['node', 'atlas', 'install-skill', '--local'];
+
+    // Act
+    const result = parseCommand(argv);
+
+    // Assert
+    expect(result.api).toBe('install-skill');
+    expect(result.options['local']).toBe(true);
+  });
+
+  it('parses install-skill with --path, --force, --dry-run, --print flags', () => {
+    // Arrange
+    const argv = [
+      'node',
+      'atlas',
+      'install-skill',
+      '--path',
+      '/tmp/skill',
+      '--force',
+      '--dry-run',
+      '--print',
+    ];
+
+    // Act
+    const result = parseCommand(argv);
+
+    // Assert
+    expect(result.api).toBe('install-skill');
+    expect(result.options['path']).toBe('/tmp/skill');
+    expect(result.options['force']).toBe(true);
+    expect(result.options['dry-run']).toBe(true);
+    expect(result.options['print']).toBe(true);
+  });
 });

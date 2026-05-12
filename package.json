@@ -11,7 +11,10 @@
     "sdk",
     "cli",
     "typescript",
-    "rest"
+    "rest",
+    "claude-code",
+    "agent",
+    "skill"
   ],
   "homepage": "https://github.com/dichovsky/atlassian-api-client#readme",
   "bugs": {
@@ -40,6 +43,7 @@
   },
   "files": [
     "dist",
+    "skill",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",

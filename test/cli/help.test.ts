@@ -68,4 +68,26 @@ describe('getHelpText', () => {
     expect(text).toContain('bearer');
     expect(text).toContain('ATLASSIAN_AUTH_TYPE');
   });
+
+  it('mentions install-skill in global help', () => {
+    // Act
+    const text = getHelpText();
+
+    // Assert
+    expect(text).toContain('install-skill');
+  });
+
+  it('returns install-skill help text for "install-skill"', () => {
+    // Act
+    const text = getHelpText('install-skill');
+
+    // Assert
+    expect(text).toContain('atlas install-skill');
+    expect(text).toContain('--local');
+    expect(text).toContain('--path');
+    expect(text).toContain('--force');
+    expect(text).toContain('--dry-run');
+    expect(text).toContain('--print');
+    expect(text).toContain('EXIT CODES:');
+  });
 });
