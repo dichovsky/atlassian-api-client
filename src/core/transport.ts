@@ -27,7 +27,7 @@ import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
  *
  * @example
  * ```ts
- * import { HttpTransport, resolveConfig } from '@yourscope/atlassian-api-client';
+ * import { HttpTransport, resolveConfig } from 'atlassian-api-client';
  *
  * const config = resolveConfig({
  *   baseUrl: 'https://mycompany.atlassian.net/wiki/api/v2',

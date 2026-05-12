@@ -56,9 +56,9 @@ The items are grouped into **phases**. Each phase should be completed before the
 ### [ ] B003: Add `retryAfter` property to `RateLimitError`
 
 - **Priority:** P1 — High
-- **Description:** `RateLimitError` currently doesn't carry the parsed `retryAfter` value. Add `retryAfter?: number` (milliseconds) to the class and include it in the constructor. Update `createHttpError` factory to pass it. Consumers can then display "Please retry after X seconds" to users.
+- **Description:** `RateLimitError` currently doesn't carry the parsed `retryAfter` value. Add `retryAfter?: number` (seconds) to the class and include it in the constructor. Update `createHttpError` factory to pass it. Consumers can then display "Please retry after X seconds" to users.
 - **Acceptance criteria:**
-  - [ ] `RateLimitError` has optional `retryAfter: number` property
+  - [ ] `RateLimitError` has optional `retryAfter: number` property (seconds)
   - [ ] `createHttpError` passes `retryAfter` when status is 429
   - [ ] `RateLimitError` constructor accepts and stores `retryAfter`
   - [ ] Unit test: creating `RateLimitError` with `retryAfter` preserves value

@@ -26,6 +26,9 @@ export type {
   Middleware,
 } from './core/index.js';
 
+// Core config and transport
+export { resolveConfig, HttpTransport } from './core/index.js';
+
 // Response serialisation helper
 export { toJSON } from './core/index.js';
 export type { SerializableApiResponse } from './core/index.js';
