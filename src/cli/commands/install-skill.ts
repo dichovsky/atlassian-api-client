@@ -88,7 +88,8 @@ export function resolveInstallTarget(
   if (options['local'] === true) {
     return resolve(cwd, '.claude', 'skills', SKILL_NAME);
   }
-  const home = env['HOME'] ?? homedir();
+  const envHome = env['HOME'];
+  const home = typeof envHome === 'string' && envHome.length > 0 ? envHome : homedir();
   return resolve(home, '.claude', 'skills', SKILL_NAME);
 }
 
@@ -193,17 +194,14 @@ export function runInstall(
   for (const rel of files) {
     const src = join(source, rel);
     const dest = join(options.target, rel);
-    fs.mkdir(dirname(dest));
+    writeWithPermissionGuard(dest, () => {
+      fs.mkdir(dirname(dest));
+    });
     const content = fs.readFile(src);
     const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
-    try {
+    writeWithPermissionGuard(dest, () => {
       fs.writeFile(dest, stamped);
-    } catch (err) {
-      if (isPermissionError(err)) {
-        throw new InstallSkillError(`Permission denied writing ${dest}`, 3);
-      }
-      throw err;
-    }
+    });
   }
 
   return {
@@ -219,6 +217,18 @@ function isPermissionError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;
   const code = (err as { code?: unknown }).code;
   return code === 'EACCES' || code === 'EPERM';
+}
+
+/** Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3. */
+function writeWithPermissionGuard(dest: string, op: () => void): void {
+  try {
+    op();
+  } catch (err) {
+    if (isPermissionError(err)) {
+      throw new InstallSkillError(`Permission denied writing ${dest}`, 3);
+    }
+    throw err;
+  }
 }
 
 /** CLI entrypoint for `atlas install-skill`. Returns the exit code. */

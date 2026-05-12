@@ -180,6 +180,13 @@ describe('resolveInstallTarget', () => {
     const target = resolveInstallTarget({}, {}, '/tmp/cwd');
     expect(target).toContain(`/.claude/skills/${SKILL_NAME}`);
   });
+
+  it('falls back to os.homedir() when HOME env is empty string', () => {
+    // Empty HOME should be treated as unset, not joined as the prefix.
+    const target = resolveInstallTarget({}, { HOME: '' }, '/tmp/cwd');
+    expect(target).toContain(`/.claude/skills/${SKILL_NAME}`);
+    expect(target.startsWith('/.claude')).toBe(false);
+  });
 });
 
 describe('runInstall against bundled skill', () => {
@@ -339,6 +346,64 @@ describe('runInstall against bundled skill', () => {
       expect(err).toBeInstanceOf(InstallSkillError);
       expect((err as InstallSkillError).exitCode).toBe(3);
     }
+  });
+
+  it('returns exit code 3 when mkdir fails with EACCES', () => {
+    // Covers permission guard around fs.mkdir (not just fs.writeFile).
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (_: string, __: string): void => undefined,
+      mkdir: (_: string): void => {
+        const err = new Error('mkdir denied') as Error & { code: string };
+        err.code = 'EACCES';
+        throw err;
+      },
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+    };
+    try {
+      runInstall(
+        BUNDLED_SKILL,
+        '1.0.0',
+        { target: join(tmpRoot, 'mkdir-denied'), force: false, dryRun: false, print: false },
+        fakeFs,
+      );
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(InstallSkillError);
+      expect((err as InstallSkillError).exitCode).toBe(3);
+      expect((err as InstallSkillError).message).toMatch(/Permission denied writing/);
+    }
+  });
+
+  it('rethrows non-permission mkdir errors verbatim', () => {
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (_: string, __: string): void => undefined,
+      mkdir: (_: string): void => {
+        const err = new Error('mkdir failed') as Error & { code: string };
+        err.code = 'ENOSPC';
+        throw err;
+      },
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+    };
+    let caught: unknown;
+    try {
+      runInstall(
+        BUNDLED_SKILL,
+        '1.0.0',
+        { target: join(tmpRoot, 'enospc'), force: false, dryRun: false, print: false },
+        fakeFs,
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect(caught).not.toBeInstanceOf(InstallSkillError);
+    expect((caught as Error & { code?: string }).code).toBe('ENOSPC');
   });
 
   it('rethrows non-permission filesystem errors verbatim', () => {
