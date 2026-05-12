@@ -387,10 +387,21 @@ function sliceToBody(node, sf) {
 
 function sliceArrowToBody(stmt, decl, sf) {
   const init = decl.initializer;
-  if (!init) return normalizeWs(stmt.getText(sf));
-  const bodyStart = ts.isArrowFunction(init) ? init.body?.getStart(sf) : init.body?.getStart(sf);
-  if (bodyStart == null) return normalizeWs(stmt.getText(sf));
-  return normalizeWs(sf.text.substring(stmt.getStart(sf), bodyStart));
+  if (!init) return normalizeWs(decl.getText(sf));
+  const bodyStart = init.body?.getStart(sf);
+  // Slice from the declarator's start, not the statement's. Otherwise a
+  // multi-declarator statement like `const a = () => 1, b = () => 2` would
+  // include all prior declarators in `b`'s signature.
+  // For single-declarator statements we prepend the leading keyword
+  // (`export const`/`export let`/`const`/etc.) so the signature still reads
+  // as a recognizable top-level declaration.
+  const declOnly =
+    bodyStart == null ? decl.getText(sf) : sf.text.substring(decl.getStart(sf), bodyStart);
+  if (stmt.declarationList.declarations.length === 1) {
+    const stmtPrefix = sf.text.substring(stmt.getStart(sf), decl.getStart(sf));
+    return normalizeWs(stmtPrefix + declOnly);
+  }
+  return normalizeWs(declOnly);
 }
 
 function classSignature(node, sf) {
@@ -652,10 +663,14 @@ function resolveNamedExport(filePath, name, fileMap, visited, depth) {
       const match = re.names.find((n) => n.exported === name);
       if (match) {
         const next = resolveImportPath(filePath, re.from);
+        // No target → genuinely external (e.g. `export { Foo } from 'react'`).
         if (!next) return { external: true, from: re.from };
         const r = resolveNamedExport(next, match.original, fileMap, new Set(visited), depth + 1);
         if (r) return r;
-        return { external: true, from: re.from };
+        // Target resolved but the name is not present in its export graph.
+        // Return null so buildPublicApi emits an "unresolved" warning rather
+        // than mislabeling a broken/internal re-export as external.
+        return null;
       }
     } else if (re.kind === 'namespace' && re.name === name) {
       // The namespace itself is not a resolvable leaf — treat as a synthetic
@@ -674,6 +689,15 @@ function resolveNamedExport(filePath, name, fileMap, visited, depth) {
 
 function localEntry(exportedName, typeOnly, resolved) {
   const sym = resolved.symbol;
+  // aliasOf can come from two places:
+  //  (a) the entrypoint renamed the export (`exportedName !== sym.name`)
+  //  (b) the leaf symbol itself was created as an alias of a local declaration
+  //      by extractFileInfo (from-less `export { foo as bar }`); in that case
+  //      sym.name already equals exportedName but sym.aliasOf points at foo.
+  // (a) takes precedence — it reflects the entrypoint-visible rename — but
+  // (b) is propagated when (a) doesn't apply so renamed local exports still
+  // carry their alias metadata into publicApi.
+  const aliasOf = exportedName !== sym.name ? sym.name : (sym.aliasOf ?? undefined);
   return omitUndefined({
     name: exportedName,
     kind: sym.kind,
@@ -682,7 +706,7 @@ function localEntry(exportedName, typeOnly, resolved) {
     signature: sym.signature,
     jsdoc: sym.jsdoc ?? undefined,
     typeOnly: typeOnly || undefined,
-    aliasOf: exportedName !== sym.name ? sym.name : undefined,
+    aliasOf,
   });
 }
 
