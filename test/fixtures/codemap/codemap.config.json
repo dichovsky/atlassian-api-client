@@ -1,0 +1,7 @@
+{
+  "schema": "codemap.v2",
+  "sourceDirs": ["src"],
+  "entrypoints": ["src/index.ts"],
+  "exclude": ["**/*.test.ts", "**/node_modules/**"],
+  "maxSignatureLength": 120
+}
