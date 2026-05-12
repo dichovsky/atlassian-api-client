@@ -5,15 +5,19 @@
  * entries are stripped so they don't serialize as `key=undefined`.
  */
 export function buildScalarQuery(
-  params?: Readonly<Record<string, unknown>>,
+  params?: object,
 ): Record<string, string | number | boolean | undefined> {
   if (!params) return {};
   const query: Record<string, string | number | boolean | undefined> = {};
-  for (const [key, value] of Object.entries(params)) {
+  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
     if (value === undefined) continue;
     if (Array.isArray(value)) {
       query[key] = value.join(',');
-    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    } else if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
       query[key] = value;
     } else {
       // Defensive fallback: coerce unrecognized scalars to string.

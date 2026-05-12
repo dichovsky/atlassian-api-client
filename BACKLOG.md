@@ -10,17 +10,17 @@
 
 The items are grouped into **phases**. Each phase should be completed before the next begins due to dependencies.
 
-| Phase | Name                | Items            | Why This Order                                                  |
-| ----- | ------------------- | ---------------- | --------------------------------------------------------------- |
-| 0     | Documentation       | B001             | No code changes; unblocks consumers immediately                 |
-| 1     | Type correctness    | B002, B003       | Low-risk, high-impact; no behavioral changes                    |
-| 2     | Transport refactor  | B004, B005, B006 | High-risk; needs its own focus; unblocks later items            |
-| 3     | Type organization   | B007, B008       | Mechanical split; benefits from transport refactor being stable |
-| 4     | Reliability         | B009, B010, B011 | Builds on refactor; adds runtime behavior                       |
-| 5     | Testing             | B012, B013, B014 | Depends on all code changes being stable                        |
-| 6     | Security & advanced | B015, B016, B017 | Lower urgency; requires design discussion                       |
-| 7     | Automation          | B018, B019, B020 | CI/CD; can be done incrementally                                |
-| 8     | Confluence v2 spec compliance | B021–B062 | Aligns Confluence client with official OpenAPI v2 spec (`_v=1.8494.0`, 213 ops, 29 tags). Foundation → schema → endpoint additions → new resources → migration |
+| Phase | Name                          | Items            | Why This Order                                                                                                                                                 |
+| ----- | ----------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Documentation                 | B001             | No code changes; unblocks consumers immediately                                                                                                                |
+| 1     | Type correctness              | B002, B003       | Low-risk, high-impact; no behavioral changes                                                                                                                   |
+| 2     | Transport refactor            | B004, B005, B006 | High-risk; needs its own focus; unblocks later items                                                                                                           |
+| 3     | Type organization             | B007, B008       | Mechanical split; benefits from transport refactor being stable                                                                                                |
+| 4     | Reliability                   | B009, B010, B011 | Builds on refactor; adds runtime behavior                                                                                                                      |
+| 5     | Testing                       | B012, B013, B014 | Depends on all code changes being stable                                                                                                                       |
+| 6     | Security & advanced           | B015, B016, B017 | Lower urgency; requires design discussion                                                                                                                      |
+| 7     | Automation                    | B018, B019, B020 | CI/CD; can be done incrementally                                                                                                                               |
+| 8     | Confluence v2 spec compliance | B021–B062        | Aligns Confluence client with official OpenAPI v2 spec (`_v=1.8494.0`, 213 ops, 29 tags). Foundation → schema → endpoint additions → new resources → migration |
 
 ---
 
@@ -115,7 +115,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Phase 3 — Type Organization (mechanical splits)
 
-### [ ] B007: Split `src/confluence/types.ts` into domain files
+### [x] B007: Split `src/confluence/types.ts` into domain files
 
 - **Priority:** P1 — High
 - **Description:** `src/confluence/types.ts` is 433 lines. Split by domain: `page.ts` (Page, CreatePageParams, UpdatePageParams), `space.ts` (Space, CreateSpaceParams), `attachment.ts` (Attachment), `blogPost.ts` (BlogPost), `comment.ts` (FooterComment, InlineComment), `contentProperty.ts` (ContentProperty), `customContent.ts` (CustomContent), `whiteboard.ts` (Whiteboard), `task.ts` (ConfluenceTask), `version.ts` (ContentVersion). Each file exports its types and re-exports from others as needed. Update `src/confluence/index.ts` barrel.
@@ -352,7 +352,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ### Foundation
 
-#### [ ] B021: Pin Confluence v2 OpenAPI spec snapshot
+#### [x] B021: Pin Confluence v2 OpenAPI spec snapshot
 
 - **Priority:** P0 — Critical (gates B022–B062)
 - **Description:** Download the upstream OpenAPI document, normalize JSON key order (`jq -S`), commit a versioned snapshot at `spec/confluence-v2.v1.8494.0.openapi.json`, and write a stable alias `spec/confluence-v2.openapi.json` (copy or symlink). Add `scripts/audit/refresh-spec.mjs` that re-downloads, re-normalizes, writes a sibling `.sha256` checksum, and prints a diff summary. Add `spec/README.md` documenting refresh + audit process.
@@ -366,7 +366,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `spec/`, `scripts/audit/refresh-spec.mjs`, `package.json`
 - **Dependencies:** None
 
-#### [ ] B022: Spec-vs-implementation coverage matrix generator
+#### [x] B022: Spec-vs-implementation coverage matrix generator
 
 - **Priority:** P0 — Critical
 - **Description:** Write `scripts/audit/extract-operations.mjs` (walks `spec.paths[*][verb]` → normalized operation list), `scripts/audit/extract-implementation.mjs` (TypeScript Compiler API parse of `src/confluence/resources/*.ts`, extracts `{resource, method, httpVerb, pathTemplate}` from `this.transport.request({...})` literal `${this.baseUrl}/...` paths), and `scripts/audit/render-matrix.mjs` (joins on `{method, normalizedPath}`, emits `spec/coverage-matrix.md` with four sections: **matched**, **missing-in-code**, **extra-in-code**, **deprecated-in-spec**). Wire `npm run audit:spec` and `npm run audit:spec -- --check` (exits non-zero on drift).
@@ -380,7 +380,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `scripts/audit/{extract-operations,extract-implementation,render-matrix}.mjs`, `spec/coverage-matrix.md`, `test/audit/`, `package.json`
 - **Dependencies:** B021
 
-#### [ ] B023: Per-resource conformance audit reports
+#### [x] B023: Per-resource conformance audit reports
 
 - **Priority:** P1 — High
 - **Description:** For every Confluence resource (existing + missing), generate a structured report at `spec/audit/<resource>.md` with sections: **Operations matrix** (filtered subset of B022), **Per-operation conformance** (verb/path/query/body/response checks), **Pagination conformance**, **Error mapping**, **Severity ranking** (BLOCK/HIGH/MEDIUM/LOW), **Fix proposal**. Reports are checked into the repo; they drive B024–B059.
@@ -399,7 +399,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 > Non-breaking type widening (adding optional fields, adding enum values) ships immediately.
 > Breaking tightening (`field?: T` → `field: T`, renames, signature changes) is **gated by B062**.
 
-#### [ ] B024: Align `Page` type + page request params with spec schema
+#### [x] B024: Align `Page` type + page request params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Audit `Page`, `ListPagesParams`, `GetPageParams`, `CreatePageData`, `UpdatePageData`, `DeletePageParams` against spec schemas `Page`, `PageBulk`, `PageSingle`, plus query-param sets on `getPages`, `getPageById`, `createPage`, `updatePage`, `deletePage`. Add missing fields: `ownerId`, `lastOwnerId`, `parentType`, `position`, `subType`, `authorId`, `createdAt`, `version` shape, `body.atlas_doc_format`/`view`/`raw`/`export_view`/`anonymous_export_view`/`styled_view`/`editor`, `_links` shape. Add missing query params: `serialize-ids-as-strings`, `body-format`, `get-draft`, `version`, `status[]`, `space-id[]`, `sort`, `cursor`, `limit`. Fix any `unknown`/loose types found.
@@ -412,7 +412,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts` (or `src/confluence/types/page.ts` if B007 done), `test/confluence/pages.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B025: Align `Space` type + space request params with spec schema
+#### [x] B025: Align `Space` type + space request params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Same exercise for `Space`, `ListSpacesParams`. Add missing query params: `ids[]`, `keys[]`, `type`, `status`, `labels[]`, `favorited-by`, `not-favorited-by`, `sort`, `description-format`, `include-icon`, `serialize-ids-as-strings`. Add missing fields: `authorId`, `createdAt`, `homepageId`, `description.{view,plain}`, `icon`.
@@ -423,7 +423,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/spaces.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B026: Align `BlogPost` type + blog-post request params with spec schema
+#### [x] B026: Align `BlogPost` type + blog-post request params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Same exercise for `BlogPost`, `ListBlogPostsParams`, `CreateBlogPostData`, `UpdateBlogPostData`. Mirror missing fields/params from B024 (most blog-post endpoints share page parameter shapes per spec).
@@ -433,7 +433,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/blog-posts.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B027: Align `FooterComment` + `InlineComment` types and params with spec
+#### [x] B027: Align `FooterComment` + `InlineComment` types and params with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile `FooterComment`, `InlineComment`, `CreateFooterCommentData`, `CreateInlineCommentData`, `UpdateCommentData`, list params. Add: `InlineCommentProperties` schema (`inline-marker-ref`, `inline-original-selection`, `text-selection`, `text-selection-match-count`, `text-selection-match-index`, `resolution-status`, `resolution-last-modifier-id`, `resolution-last-modified-at`), `resolved` field, parent-comment relationships, `body-format` enum expansion. Add missing query params on listFooter/listInline.
@@ -443,7 +443,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/comments.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B028: Align `Attachment` type + params with spec schema
+#### [x] B028: Align `Attachment` type + params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Add fields: `mediaTypeDescription`, `comment`, `fileId`, `fileSize`, `webuiLink`, `downloadLink`, `pageId`, `blogPostId`, `customContentId`, `status`, `version` shape, `_links`. Add params: `mediaType`, `filename`, `sort`, `serialize-ids-as-strings`.
@@ -452,7 +452,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/attachments.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B029: Tighten `ContentProperty.key` validation and widen `value` union per spec
+#### [x] B029: Tighten `ContentProperty.key` validation and widen `value` union per spec
 
 - **Priority:** P1 — High
 - **Description:** Spec restricts content-property `key` to a regex pattern (typically `^[a-zA-Z0-9_.-]+$` with length limits — confirm from spec). Add `validateContentPropertyKey(key: string): void` that throws `ValidationError` on mismatch. Widen `ContentProperty.value` from `unknown` to `JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue }`. Apply across all content-property surfaces (B044 extends this to other content types).
@@ -464,7 +464,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/resources/content-properties.ts`, `src/confluence/types.ts`, `src/core/errors.ts` (re-use existing `ValidationError`), `test/confluence/content-properties.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B030: Align `CustomContent` type + params with spec schema
+#### [x] B030: Align `CustomContent` type + params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Add fields: `authorId`, `createdAt`, `version`, `body` (multiple formats), `spaceId`, `pageId`, `blogPostId`, `customContentId`, `_links`. Add params: `type` (required for many endpoints), `body-format`, `sort`, `space-id[]`, `serialize-ids-as-strings`.
@@ -472,7 +472,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/custom-content.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B031: Align `Whiteboard` type + params with spec schema
+#### [x] B031: Align `Whiteboard` type + params with spec schema
 
 - **Priority:** P1 — High
 - **Description:** Add fields: `parentId`, `parentType`, `ownerId`, `authorId`, `createdAt`, `position`, `_links`. Validate `CreateWhiteboardData` shape (spaceId, title, parentId).
@@ -480,7 +480,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/whiteboards.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B032: Align `ConfluenceTask` type + params with spec schema
+#### [x] B032: Align `ConfluenceTask` type + params with spec schema
 
 - **Priority:** P2 — Medium
 - **Description:** Verify `createdAtFrom`/`createdAtTo`/`dueAtFrom`/`dueAtTo` typing as ISO-8601 strings (not `Date`), assignee/creator account-id types, `status` enum (`complete` | `incomplete`), `body-format`, `include-blank-tasks`. Add any missing optional fields.
@@ -488,7 +488,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/tasks.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B033: Align `ContentVersion` type and version params with spec schema
+#### [x] B033: Align `ContentVersion` type and version params with spec schema
 
 - **Priority:** P2 — Medium
 - **Description:** Confirm fields: `createdAt`, `message`, `number`, `minorEdit`, `authorId`, `contentTypeModified`, `_links`. Add `body-format` query param on detail endpoints. Version path uses `{version-number}` (numeric).
@@ -496,7 +496,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/confluence/types.ts`, `test/confluence/versions.test.ts`
 - **Dependencies:** B023
 
-#### [ ] B034: Add full `BodyFormat` enum + body shape coverage
+#### [x] B034: Add full `BodyFormat` enum + body shape coverage
 
 - **Priority:** P1 — High
 - **Description:** Spec accepts body formats: `storage`, `atlas_doc_format`, `view`, `raw`, `export_view`, `anonymous_export_view`, `styled_view`, `editor`. Current types cover only `storage` + `atlas_doc_format`. Add `BodyFormat` enum and `Body` discriminated union (`{representation, value}`) supporting all spec representations. Apply to Page, BlogPost, CustomContent, Comment bodies.
@@ -830,7 +830,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ### Infrastructure & migration
 
-#### [ ] B060: Decide codegen strategy and set up `openapi-typescript` for response types
+#### [x] B060: Decide codegen strategy and set up `openapi-typescript` for response types
 
 - **Priority:** P1 — High
 - **Description:** Decision: hybrid — codegen for response types from spec via `openapi-typescript`; hand-author request `*Params`/`*Data` types for ergonomics. Generated output committed under `src/confluence/types/generated.ts`; barrel re-exports it. Add `npm run codegen:confluence` script. Document in `spec/README.md`. Open question Q1 from the audit plan resolved by this item.
@@ -878,18 +878,18 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Summary
 
-| Phase                              | Items                | Est. Effort | Priority |
-| ---------------------------------- | -------------------- | ----------- | -------- |
-| 0 — Documentation                  | B001                 | 2h          | P1       |
-| 1 — Type correctness               | B002, B003           | 3h          | P0+P1    |
-| 2 — Transport refactor             | B004, B005, B006     | 8h          | P0       |
-| 3 — Type organization              | B007, B008           | 4h          | P1       |
-| 4 — Reliability                    | B009, B010, B011     | 10h         | P1+P2    |
-| 5 — Testing                        | B012, B013, B014     | 12h         | P1+P2    |
-| 6 — Security & advanced            | B015, B016, B017     | 12h         | P2+P3    |
-| 7 — Automation                     | B018, B019, B020     | 6h          | P2+P3    |
-| 8 — Confluence v2 spec compliance  | B021–B062            | ~80h        | P0–P3    |
-| **Total**                          | **62 items**         | **~137h**   |          |
+| Phase                             | Items            | Est. Effort | Priority |
+| --------------------------------- | ---------------- | ----------- | -------- |
+| 0 — Documentation                 | B001             | 2h          | P1       |
+| 1 — Type correctness              | B002, B003       | 3h          | P0+P1    |
+| 2 — Transport refactor            | B004, B005, B006 | 8h          | P0       |
+| 3 — Type organization             | B007, B008       | 4h          | P1       |
+| 4 — Reliability                   | B009, B010, B011 | 10h         | P1+P2    |
+| 5 — Testing                       | B012, B013, B014 | 12h         | P1+P2    |
+| 6 — Security & advanced           | B015, B016, B017 | 12h         | P2+P3    |
+| 7 — Automation                    | B018, B019, B020 | 6h          | P2+P3    |
+| 8 — Confluence v2 spec compliance | B021–B062        | ~80h        | P0–P3    |
+| **Total**                         | **62 items**     | **~137h**   |          |
 
 **Recommended first PR:** B002 + B003 (type correctness, low risk, high impact, independent)
 **Recommended second PR:** B004 + B005 + B006 (transport refactor — do together to minimize breakage)

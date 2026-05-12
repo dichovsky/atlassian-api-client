@@ -17,7 +17,7 @@ export const CONTENT_PROPERTY_KEY_MAX_LENGTH = 255;
  * 400s in practice so callers fail fast instead of waiting for the upstream
  * to reject the request.
  */
-export const CONTENT_PROPERTY_KEY_PATTERN = /^[A-Za-z0-9_.\-]+$/;
+export const CONTENT_PROPERTY_KEY_PATTERN = /^[A-Za-z0-9_.-]+$/;
 
 /**
  * Throw `ValidationError` if the supplied content-property key is empty,

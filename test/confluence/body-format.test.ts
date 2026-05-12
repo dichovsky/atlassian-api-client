@@ -29,10 +29,10 @@ describe('B034: ContentBody covers all 8 spec body representations', () => {
     };
   }
 
-  const cases: Array<{
+  const cases: {
     representation: NonNullable<keyof ContentBody>;
     sample: string;
-  }> = [
+  }[] = [
     { representation: 'storage', sample: '<p>storage</p>' },
     { representation: 'atlas_doc_format', sample: '{"version":1,"type":"doc","content":[]}' },
     { representation: 'view', sample: '<p>view</p>' },
@@ -43,16 +43,19 @@ describe('B034: ContentBody covers all 8 spec body representations', () => {
     { representation: 'editor', sample: '<p>editor</p>' },
   ];
 
-  it.each(cases)('parses $representation body representation', async ({ representation, sample }) => {
-    const { client, transport } = buildClient();
-    const body: ContentBody = {
-      [representation]: { value: sample, representation },
-    } as ContentBody;
-    transport.respondWith<Page>(pageWithBody(body));
-    const page = await client.pages.get('1', { 'body-format': representation });
-    expect(page.body?.[representation]?.value).toBe(sample);
-    expect(page.body?.[representation]?.representation).toBe(representation);
-  });
+  it.each(cases)(
+    'parses $representation body representation',
+    async ({ representation, sample }) => {
+      const { client, transport } = buildClient();
+      const body: ContentBody = {
+        [representation]: { value: sample, representation },
+      } as ContentBody;
+      transport.respondWith<Page>(pageWithBody(body));
+      const page = await client.pages.get('1', { 'body-format': representation });
+      expect(page.body?.[representation]?.value).toBe(sample);
+      expect(page.body?.[representation]?.representation).toBe(representation);
+    },
+  );
 
   it('accepts every BodyFormat value as a query parameter', async () => {
     const { client, transport } = buildClient();

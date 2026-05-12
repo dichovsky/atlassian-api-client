@@ -198,9 +198,9 @@ describe('ContentPropertiesResource', () => {
 
   describe('B029: content-property key validation', () => {
     it('rejects invalid key in createForPage data', async () => {
-      await expect(
-        resource.createForPage('page-1', { key: '../bad', value: {} }),
-      ).rejects.toThrow(/content property key must match/);
+      await expect(resource.createForPage('page-1', { key: '../bad', value: {} })).rejects.toThrow(
+        /content property key must match/,
+      );
       expect(transport.calls).toHaveLength(0);
     });
 

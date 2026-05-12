@@ -73,14 +73,14 @@ function extractFromSourceFile(sourceFile, resourceName, file) {
         callee.expression.expression.kind === ts.SyntaxKind.ThisKeyword &&
         callee.expression.name.text === 'transport' &&
         callee.name.text === 'request';
-      const isPaginateCursor =
-        ts.isIdentifier(callee) && callee.text === 'paginateCursor';
+      const isPaginateCursor = ts.isIdentifier(callee) && callee.text === 'paginateCursor';
 
       if (isTransportRequest && node.arguments.length >= 1) {
         const arg = node.arguments[0];
         if (ts.isObjectLiteralExpression(arg)) {
           const methodProp = arg.properties.find(
-            (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'method',
+            (p) =>
+              ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'method',
           );
           const pathProp = arg.properties.find(
             (p) => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === 'path',

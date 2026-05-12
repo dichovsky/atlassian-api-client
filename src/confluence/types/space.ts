@@ -18,7 +18,9 @@ export type SpaceType =
 export type SpaceStatus = 'current' | 'archived';
 
 /** Single space-description body representation entry. */
-export interface SpaceDescriptionRepresentation<R extends SpaceDescriptionFormat = SpaceDescriptionFormat> {
+export interface SpaceDescriptionRepresentation<
+  R extends SpaceDescriptionFormat = SpaceDescriptionFormat,
+> {
   readonly value: string;
   readonly representation: R;
 }

@@ -14,7 +14,14 @@
  * exact spec operationId, HTTP verb, and path so they satisfy B023 acceptance
  * criteria without prose curation.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractOperations } from './extract-operations.mjs';
@@ -136,7 +143,10 @@ function fmtExtraTable(rows) {
 }
 
 /** Render the global coverage matrix markdown. */
-export function renderGlobalMatrix({ matched, missingInCode, extraInCode, deprecatedInSpec }, specOps) {
+export function renderGlobalMatrix(
+  { matched, missingInCode, extraInCode, deprecatedInSpec },
+  specOps,
+) {
   const total = specOps.length;
   const implemented = matched.length;
   const pct = total === 0 ? 0 : Math.round((implemented / total) * 1000) / 10;

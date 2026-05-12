@@ -32,6 +32,10 @@ export class SpacesResource {
 
   /** Iterate over all spaces across all result pages. */
   async *listAll(params?: Omit<ListSpacesParams, 'cursor'>): AsyncGenerator<Space> {
-    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, buildScalarQuery(params));
+    yield* paginateCursor<Space>(
+      this.transport,
+      `${this.baseUrl}/spaces`,
+      buildScalarQuery(params),
+    );
   }
 }
