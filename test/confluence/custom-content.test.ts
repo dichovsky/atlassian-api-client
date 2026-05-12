@@ -254,4 +254,40 @@ describe('CustomContentResource', () => {
       },
     );
   });
+
+  // ── B030: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B030: spec-aligned CustomContent schema + params', () => {
+    it('exposes customContentId (parent ref) on response', async () => {
+      transport.respondWith({
+        id: 'cc1',
+        type: 'extension.foo',
+        status: 'current',
+        customContentId: 'parent-cc-1',
+      });
+      const cc = await resource.get('cc1');
+      expect(cc.customContentId).toBe('parent-cc-1');
+    });
+
+    it('forwards spec id and space-id array params as comma-separated', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.list({ id: ['1', '2'], 'space-id': ['x'] });
+      expect(transport.lastCall?.options.query).toMatchObject({ id: '1,2', 'space-id': 'x' });
+    });
+
+    it('forwards sort param', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.list({ sort: '-modified-date' });
+      expect(transport.lastCall?.options.query).toMatchObject({ sort: '-modified-date' });
+    });
+
+    it('accepts customContentId on create payload', async () => {
+      transport.respondWith({ id: 'cc2', type: 'extension.bar', status: 'current' });
+      await resource.create({
+        type: 'extension.bar',
+        customContentId: 'parent-cc-9',
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ customContentId: 'parent-cc-9' });
+    });
+  });
 });

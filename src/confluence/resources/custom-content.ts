@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { buildScalarQuery } from '../../core/query.js';
 import type {
   CustomContent,
   ListCustomContentParams,
@@ -22,7 +23,7 @@ export class CustomContentResource {
     const response = await this.transport.request<CursorPaginatedResponse<CustomContent>>({
       method: 'GET',
       path: `${this.baseUrl}/custom-content`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -32,7 +33,7 @@ export class CustomContentResource {
     const response = await this.transport.request<CustomContent>({
       method: 'GET',
       path: `${this.baseUrl}/custom-content/${encodePathSegment(id)}`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -70,7 +71,7 @@ export class CustomContentResource {
     yield* paginateCursor<CustomContent>(
       this.transport,
       `${this.baseUrl}/custom-content`,
-      params as Record<string, string | number | boolean | undefined>,
+      buildScalarQuery(params),
     );
   }
 }

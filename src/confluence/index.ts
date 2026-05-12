@@ -47,6 +47,7 @@ export type {
   CreateContentPropertyData,
   UpdateContentPropertyData,
   CustomContent,
+  CustomContentSortOrder,
   ListCustomContentParams,
   GetCustomContentParams,
   CreateCustomContentData,

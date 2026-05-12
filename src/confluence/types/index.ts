@@ -60,6 +60,7 @@ export type {
 export type {
   CreateCustomContentData,
   CustomContent,
+  CustomContentSortOrder,
   GetCustomContentParams,
   ListCustomContentParams,
   UpdateCustomContentData,
