@@ -63,7 +63,9 @@
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
     "test:exports": "node scripts/validate-exports.js",
-    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
+    "codemap": "node scripts/generate-codemap.js",
+    "codemap:check": "node scripts/generate-codemap.js --check",
+    "validate": "npm run clean && npm run typecheck && npm run codemap:check && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
