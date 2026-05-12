@@ -32,16 +32,38 @@ const SIZE_BUDGET_KB = 150;
  *   maxSignatureLength: number,
  * }} Config */
 
-/** @typedef {{
- *   name: string, kind: string, line: number, exported: boolean,
- *   signature: string, jsdoc: string | null,
+/**
+ * A top-level declaration extracted from a source file. Optional fields are
+ * omitted from JSON output when absent (the generator uses `omitUndefined`
+ * to keep token cost in line): `exported` is present only when true,
+ * `jsdoc` is present only when extractable, `members` only on classes.
+ *
+ * @typedef {{
+ *   name: string,
+ *   kind: string,
+ *   line: number,
+ *   signature: string,
+ *   exported?: true,
+ *   jsdoc?: string,
  *   members?: Array<{name: string, kind: string, line: number}>,
- * }} Symbol */
+ *   aliasOf?: string,
+ * }} Symbol
+ */
 
-/** @typedef {{
- *   kind: 'named' | 'star', from: string, typeOnly: boolean,
+/**
+ * A re-export declaration found in a source file.
+ * - `named`: `export { a, b as c } from './mod'`
+ * - `star`:  `export * from './mod'` (transitively flattens mod's exports)
+ * - `namespace`: `export * as ns from './mod'` (exposes single name `ns`)
+ *
+ * @typedef {{
+ *   kind: 'named' | 'star' | 'namespace',
+ *   from: string,
+ *   typeOnly: boolean,
  *   names?: Array<{exported: string, original: string}>,
- * }} ReExport */
+ *   name?: string,
+ * }} ReExport
+ */
 
 /** @typedef {{
  *   absPath: string, relPath: string,
@@ -183,31 +205,71 @@ function extractFileInfo(sf, absPath, config) {
   /** @type {string[]} */
   const imports = [];
 
+  /** @type {Array<{exported: string, original: string}>} */
+  const localExports = [];
+
   for (const stmt of sf.statements) {
     if (ts.isImportDeclaration(stmt) && ts.isStringLiteral(stmt.moduleSpecifier)) {
       imports.push(stmt.moduleSpecifier.text);
-    } else if (
-      ts.isExportDeclaration(stmt) &&
-      stmt.moduleSpecifier &&
-      ts.isStringLiteral(stmt.moduleSpecifier)
-    ) {
-      const from = stmt.moduleSpecifier.text;
+    } else if (ts.isExportDeclaration(stmt)) {
+      const from =
+        stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)
+          ? stmt.moduleSpecifier.text
+          : null;
       const typeOnly = stmt.isTypeOnly;
-      if (stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+      const clause = stmt.exportClause;
+
+      if (from === null && clause && ts.isNamedExports(clause)) {
+        // `export { foo, bar as baz }` — exposes locally-declared names
+        // (or names imported earlier in the file) without a module specifier.
+        for (const el of clause.elements) {
+          localExports.push({
+            exported: el.name.text,
+            original: (el.propertyName ?? el.name).text,
+          });
+        }
+      } else if (from !== null && clause && ts.isNamespaceExport(clause)) {
+        // `export * as ns from './mod'` — exposes a single namespace name `ns`,
+        // NOT all of mod's exports (which is what `export *` would do).
+        reExports.push({
+          kind: 'namespace',
+          from,
+          typeOnly,
+          name: clause.name.text,
+        });
+      } else if (from !== null && clause && ts.isNamedExports(clause)) {
         reExports.push({
           kind: 'named',
           from,
           typeOnly,
-          names: stmt.exportClause.elements.map((el) => ({
+          names: clause.elements.map((el) => ({
             exported: el.name.text,
             original: (el.propertyName ?? el.name).text,
           })),
         });
-      } else {
+      } else if (from !== null) {
         reExports.push({ kind: 'star', from, typeOnly });
       }
+      // `export { foo }` with no clause and no `from` is syntactically invalid; skip.
     } else {
       collectSymbol(stmt, sf, symbols, config);
+    }
+  }
+
+  // Mark locally-declared symbols that are exported via from-less `export { foo }`.
+  for (const le of localExports) {
+    const sym = symbols.find((s) => s.name === le.original);
+    if (sym) {
+      sym.exported = true;
+      if (le.exported !== le.original) {
+        // `export { foo as bar }` — surface `bar` as a separate exported entry
+        // aliasing `foo` so resolveNamedExport can find it by either name.
+        symbols.push({
+          ...sym,
+          name: le.exported,
+          aliasOf: le.original,
+        });
+      }
     }
   }
 
@@ -253,7 +315,7 @@ function collectSymbol(stmt, sf, symbols, config) {
   } else if (ts.isExportAssignment(stmt)) {
     // `export default <expr>` — record as default
     symbols.push(
-      omitFalsy({
+      omitUndefined({
         name: 'default',
         kind: 'variable',
         line: lineOf(stmt, sf),
@@ -266,7 +328,7 @@ function collectSymbol(stmt, sf, symbols, config) {
 }
 
 function makeSymbol(name, kind, node, sf, exported, signature, config) {
-  return omitFalsy({
+  return omitUndefined({
     name,
     kind,
     line: lineOf(node, sf),
@@ -286,7 +348,7 @@ function makeSymbolFromVar(name, kind, decl, stmt, sf, exported, config) {
   } else {
     sig = normalizeWs(stmt.getText(sf));
   }
-  return omitFalsy({
+  return omitUndefined({
     name,
     kind,
     line: lineOf(decl, sf),
@@ -297,7 +359,7 @@ function makeSymbolFromVar(name, kind, decl, stmt, sf, exported, config) {
 }
 
 /** Strip keys whose value is undefined so JSON.stringify omits them. */
-function omitFalsy(obj) {
+function omitUndefined(obj) {
   const out = {};
   for (const k of Object.keys(obj)) {
     if (obj[k] !== undefined) out[k] = obj[k];
@@ -471,17 +533,44 @@ function byteCompare(a, b) {
 
 // ---------- module resolution ----------
 
+/**
+ * Resolve a relative import specifier to an absolute source path under sourceDirs.
+ * Returns null for external modules (no leading `.`).
+ *
+ * Handles three specifier styles:
+ *   - extensionless: `'./foo'` → tries `foo.ts`, `foo.tsx`, `foo/index.ts`
+ *   - .js (Node16 convention): `'./foo.js'` → tries `foo.ts`, `foo.tsx`
+ *   - .ts / .tsx / .mts / .cts: `'./foo.ts'` → tries `foo.ts` as-is
+ *
+ * The extension-aware branch is important: naively appending `.ts` to a
+ * specifier that already ends in `.ts` produces `foo.ts.ts`, which silently
+ * fails to resolve and the export gets bucketed as `external`.
+ */
 function resolveImportPath(fromFile, specifier) {
   if (!specifier.startsWith('.')) return null;
   const base = resolve(dirname(fromFile), specifier);
-  const candidates = [
-    base.replace(/\.js$/, '.ts'),
-    base.replace(/\.js$/, '.tsx'),
-    base + '.ts',
-    base + '.tsx',
-    join(base.replace(/\.js$/, ''), 'index.ts'),
-    join(base, 'index.ts'),
-  ];
+  const candidates = [];
+  const hasJsExt = /\.[mc]?js$/.test(specifier);
+  const hasTsExt = /\.[mc]?tsx?$/.test(specifier);
+
+  if (hasJsExt) {
+    // Node16 convention: imports of compiled output → source has .ts/.tsx
+    candidates.push(base.replace(/\.[mc]?js$/, '.ts'));
+    candidates.push(base.replace(/\.[mc]?js$/, '.tsx'));
+  } else if (hasTsExt) {
+    // Specifier already targets TS source directly
+    candidates.push(base);
+  } else {
+    // Extensionless: try .ts/.tsx, then as a directory
+    candidates.push(base + '.ts');
+    candidates.push(base + '.tsx');
+    candidates.push(join(base, 'index.ts'));
+  }
+  // Always try directory/index.ts as a final fallback (handles `'./foo.js'`
+  // pointing at a directory's index when source/dist parallels are involved).
+  if (!hasTsExt) {
+    candidates.push(join(base.replace(/\.[mc]?js$/, ''), 'index.ts'));
+  }
   for (const c of candidates) {
     try {
       if (existsSync(c)) return c;
@@ -508,7 +597,7 @@ function buildPublicApi(entrypoints, fileMap) {
       seenKeys.add(key);
       const resolved = resolveNamedExport(epAbs, exp.exported, fileMap, new Set(), 0);
       if (resolved && resolved.external) {
-        result.push(externalEntry(exp.exported, exp.typeOnly, resolved.from));
+        result.push(externalEntry(exp.exported, exp.typeOnly, resolved.from, resolved.namespace));
       } else if (resolved && resolved.symbol) {
         result.push(localEntry(exp.exported, exp.typeOnly, resolved));
       } else {
@@ -531,6 +620,9 @@ function enumerateExports(filePath, fileMap, visited, depth) {
   for (const re of fi.reExports) {
     if (re.kind === 'named' && re.names) {
       for (const n of re.names) out.push({ exported: n.exported, typeOnly: re.typeOnly });
+    } else if (re.kind === 'namespace' && re.name) {
+      // `export * as ns from './mod'` exposes a single name `ns`.
+      out.push({ exported: re.name, typeOnly: re.typeOnly });
     } else if (re.kind === 'star') {
       const next = resolveImportPath(filePath, re.from);
       if (next) {
@@ -565,6 +657,10 @@ function resolveNamedExport(filePath, name, fileMap, visited, depth) {
         if (r) return r;
         return { external: true, from: re.from };
       }
+    } else if (re.kind === 'namespace' && re.name === name) {
+      // The namespace itself is not a resolvable leaf — treat as a synthetic
+      // entry pointing at the target module.
+      return { external: true, from: re.from, namespace: true };
     } else if (re.kind === 'star') {
       const next = resolveImportPath(filePath, re.from);
       if (next) {
@@ -578,7 +674,7 @@ function resolveNamedExport(filePath, name, fileMap, visited, depth) {
 
 function localEntry(exportedName, typeOnly, resolved) {
   const sym = resolved.symbol;
-  return omitFalsy({
+  return omitUndefined({
     name: exportedName,
     kind: sym.kind,
     file: toRel(resolved.file),
@@ -590,10 +686,10 @@ function localEntry(exportedName, typeOnly, resolved) {
   });
 }
 
-function externalEntry(name, typeOnly, from) {
-  return omitFalsy({
+function externalEntry(name, typeOnly, from, namespace) {
+  return omitUndefined({
     name,
-    kind: 'external',
+    kind: namespace ? 'namespace' : 'external',
     from,
     typeOnly: typeOnly || undefined,
     external: true,

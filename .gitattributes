@@ -1,0 +1,6 @@
+# Generator output and its fixture snapshot must use LF line endings.
+# Without this, Windows checkouts with core.autocrlf=true would convert LF to
+# CRLF on checkout — and the byte-identical determinism check would then fail
+# because the generator always writes LF.
+CODEMAP.md text eol=lf
+test/fixtures/codemap/CODEMAP.md text eol=lf

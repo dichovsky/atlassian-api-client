@@ -61,6 +61,16 @@ function parseCodemapJson(md: string): Record<string, unknown> {
   return JSON.parse(match[1]!) as Record<string, unknown>;
 }
 
+/**
+ * The generator always writes LF. `.gitattributes` pins committed CODEMAP.md
+ * files to LF on checkout. This normalization is a belt-and-suspenders guard
+ * against contributor environments that bypass .gitattributes (e.g. files
+ * pulled in via tarball / non-git tooling).
+ */
+function normalizeLf(text: string): string {
+  return text.replace(/\r\n/g, '\n');
+}
+
 describe('generate-codemap fixture', () => {
   it('matches committed CODEMAP.md snapshot byte-for-byte', async () => {
     const tmp = tempFixture();
@@ -68,8 +78,8 @@ describe('generate-codemap fixture', () => {
     const result = await runGenerator(tmp);
     expect(result.exitCode).toBe(0);
 
-    const generated = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
-    const expected = readFileSync(join(FIXTURE_DIR, 'CODEMAP.md'), 'utf8');
+    const generated = normalizeLf(readFileSync(join(tmp, 'CODEMAP.md'), 'utf8'));
+    const expected = normalizeLf(readFileSync(join(FIXTURE_DIR, 'CODEMAP.md'), 'utf8'));
     expect(generated).toBe(expected);
   });
 
@@ -77,9 +87,9 @@ describe('generate-codemap fixture', () => {
     const tmp = tempFixture();
     rmSync(join(tmp, 'CODEMAP.md'), { force: true });
     await runGenerator(tmp);
-    const first = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
+    const first = normalizeLf(readFileSync(join(tmp, 'CODEMAP.md'), 'utf8'));
     await runGenerator(tmp);
-    const second = readFileSync(join(tmp, 'CODEMAP.md'), 'utf8');
+    const second = normalizeLf(readFileSync(join(tmp, 'CODEMAP.md'), 'utf8'));
     expect(second).toBe(first);
   });
 
@@ -107,7 +117,7 @@ describe('generate-codemap fixture', () => {
 });
 
 describe('generate-codemap publicApi semantics', () => {
-  const fixtureMd = readFileSync(join(FIXTURE_DIR, 'CODEMAP.md'), 'utf8');
+  const fixtureMd = normalizeLf(readFileSync(join(FIXTURE_DIR, 'CODEMAP.md'), 'utf8'));
   const parsed = parseCodemapJson(fixtureMd) as {
     publicApi: {
       name: string;
