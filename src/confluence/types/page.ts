@@ -42,7 +42,7 @@ export interface Page {
 
 /** Parameters for listing Confluence pages (spec: `GET /pages`). */
 export interface ListPagesParams {
-  /** Existing camelCase variant; forwarded as-is (see audit/page.md for rename plan). */
+  /** Existing camelCase variant; forwarded as-is. Rename to spec kebab-case is gated by B062. */
   readonly spaceId?: string;
   readonly title?: string;
   readonly status?: string;

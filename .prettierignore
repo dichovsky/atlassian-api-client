@@ -1,6 +1,0 @@
-dist/
-coverage/
-node_modules/
-# Auto-generated artifacts (do not format)
-spec/
-src/confluence/types/generated.ts

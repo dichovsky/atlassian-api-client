@@ -63,10 +63,7 @@
     "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "typecheck": "tsc --noEmit",
     "test:exports": "node scripts/validate-exports.js",
-    "audit:refresh": "node scripts/audit/refresh-spec.mjs",
-    "audit:spec": "node scripts/audit/render-matrix.mjs",
-    "codegen:confluence": "node scripts/audit/codegen-confluence.mjs",
-    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports && npm run audit:spec -- --check && npm run codegen:confluence -- --check"
+    "validate": "npm run clean && npm run typecheck && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -75,7 +72,6 @@
     "conventional-changelog-cli": "^5.0.0",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
-    "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.3",
     "rimraf": "^6.1.3",
     "typescript": "^6.0.3",

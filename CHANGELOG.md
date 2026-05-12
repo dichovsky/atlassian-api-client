@@ -4,9 +4,6 @@
 
 ### Added
 
-- **spec** — pinned Confluence v2 OpenAPI snapshot at `spec/confluence-v2.openapi.json` (`_v=1.8494.0`, 213 ops, 29 tags). `npm run audit:refresh` re-downloads, normalizes (deep-sorted JSON), writes a `.sha256` sidecar, and prints a diff summary. `spec/README.md` documents the refresh + audit + codegen workflow. (B021)
-- **audit** — `npm run audit:spec` generates `spec/coverage-matrix.md` (4-section global matrix) and `spec/audit/<resource>.md` (one auto-generated report per spec tag, citing operationId / verb / path / target backlog item). `--check` mode fails CI on drift. Implementation parser walks resources with the TypeScript Compiler API. (B022, B023)
-- **codegen** — `npm run codegen:confluence` regenerates `src/confluence/types/generated.ts` from the pinned spec via `openapi-typescript`. The file is committed (treat as lockfile) and not re-exported; `--check` drift gate runs in `npm run validate`. (B060)
 - **types** — `src/confluence/types.ts` split into per-domain files (`page.ts`, `space.ts`, `blog-post.ts`, `comment.ts`, `attachment.ts`, `label.ts`, `content-property.ts`, `custom-content.ts`, `whiteboard.ts`, `task.ts`, `version.ts`, `body.ts`, `index.ts` barrel). Public imports from `'../types.js'` still resolve to the same barrel; no API change. (B007)
 - **types/body** — `BodyFormat` widened from 4 to 8 spec representations (`storage`, `atlas_doc_format`, `view`, `raw`, `export_view`, `anonymous_export_view`, `styled_view`, `editor`). `ContentBody` adds optional fields for each, typed via a new generic `BodyRepresentation<R>`. (B034)
 - **types/page** — `Page` adds `lastOwnerId`, `subType`, `isFavoritedByCurrentUser`, typed `parentType` (`ParentContentType`), `position` widened to `number | null`. `ListPagesParams` adds spec kebab-case `id[]`, `space-id[]`, `sort` (`PageSortOrder`), `subtype`. `GetPageParams` adds `get-draft`, `include-likes`, `include-version`, `include-favorited-by-current-user-status`, `include-webresources`, `include-collaborators`, `include-direct-children`. (B024)
@@ -19,13 +16,12 @@
 - **types/whiteboard** — `Whiteboard` adds `ownerId`, `position`, `type`, `version`, typed `parentType`. (B031)
 - **types/version** — `ContentVersion` adds `contentTypeModified` (DetailedVersion). `ListVersionsParams` adds `body-format`. (B033)
 - **core** — `src/core/query.ts#buildScalarQuery` shared helper joins array-typed Params into comma-separated query strings; consumed by pages / spaces / blog-posts / attachments / custom-content resources.
-- **validate** — `npm run validate` now runs `audit:spec --check` and `codegen:confluence --check` as the final two gates, guaranteeing spec snapshot, audit artifacts, and `generated.ts` stay in lockstep.
 - **pagination** — `PaginateOptions { maxPages?, logger? }` parameter on `paginateCursor`, `paginateOffset`, `paginateSearch`. `maxPages` (default 10000) caps the number of pages requested and emits a single `warn` once the page count crosses 80% of the limit, making runaway iteration observable before it terminates. `paginateCursor` additionally throws the new `PaginationError` when the server returns the same cursor on consecutive responses, preventing infinite-loop failure modes from an upstream regression. The legacy positional `Logger` argument on `paginateCursor` is still accepted for backwards compatibility.
 - **errors** — `PaginationError` (extends `AtlassianError`, code `PAGINATION_ERROR`) exported from `src/core/index.ts` for callers that want to catch pagination-specific failures distinctly from validation or transport errors.
 
 ### Notes
 
-- **deferred (B062)** — pre-existing camelCase query parameters that diverge from spec kebab-case (`spaceId`, `mediaType`, `includeBlankTasks`, `createdAtFrom`, `createdAtTo`, `dueAtFrom`, `dueAtTo`) are knowingly left unchanged in this release. The audit reports under `spec/audit/` surface each as a finding. Renames are gated behind the 1.0.0 cut.
+- **deferred (B062)** — pre-existing camelCase query parameters that diverge from spec kebab-case (`spaceId`, `mediaType`, `includeBlankTasks`, `createdAtFrom`, `createdAtTo`, `dueAtFrom`, `dueAtTo`) are knowingly left unchanged in this release. Renames are gated behind the 1.0.0 cut.
 - **deferred (B032)** — `ConfluenceTask` type was reviewed against the spec; ISO-8601 timestamp params are already typed as `string`. No code changes required.
 
 ### Changed

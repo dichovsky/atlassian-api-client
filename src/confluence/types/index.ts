@@ -2,10 +2,7 @@
  * Public type surface for the Confluence v2 client.
  *
  * Domain types are split across sibling files. This barrel re-exports them so
- * downstream importers can keep importing from `confluence/types.js`. The
- * `generated.ts` file (openapi-typescript output) is intentionally NOT
- * re-exported here — it is for internal codegen drift detection only and not
- * part of the public API surface (see B060, B062).
+ * downstream importers can keep importing from `confluence/types.js`.
  */
 export type { BodyFormat, BodyRepresentation, ConfluenceVersion, ContentBody } from './body.js';
 export type {

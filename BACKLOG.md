@@ -10,18 +10,18 @@
 
 The items are grouped into **phases**. Each phase should be completed before the next begins due to dependencies.
 
-| Phase | Name                          | Items            | Why This Order                                                                                                                                                 |
-| ----- | ----------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Documentation                 | B001             | No code changes; unblocks consumers immediately                                                                                                                |
-| 1     | Type correctness              | B002, B003       | Low-risk, high-impact; no behavioral changes                                                                                                                   |
-| 2     | Transport refactor            | B004, B005, B006 | High-risk; needs its own focus; unblocks later items                                                                                                           |
-| 3     | Type organization             | B007, B008       | Mechanical split; benefits from transport refactor being stable                                                                                                |
-| 4     | Reliability                   | B009, B010, B011 | Builds on refactor; adds runtime behavior                                                                                                                      |
-| 5     | Testing                       | B012, B013, B014 | Depends on all code changes being stable                                                                                                                       |
-| 6     | Security & advanced           | B015, B016, B017 | Lower urgency; requires design discussion                                                                                                                      |
-| 7     | Automation                    | B018, B019, B020 | CI/CD; can be done incrementally                                                                                                                               |
-| 8     | Confluence v2 spec compliance | B021–B062        | Aligns Confluence client with official OpenAPI v2 spec (`_v=1.8494.0`, 213 ops, 29 tags). Foundation → schema → endpoint additions → new resources → migration |
-| 9     | Jira Platform v3 spec compliance | B063–B187        | Aligns Jira client with official Jira Platform v3 OpenAPI spec (`_v=1.8494.0`, ~600 ops, ~80 tags). Same Foundation → cross-cutting → schema → endpoint additions → new resources → migration shape as Phase 8. Independent of Phase 8 except for explicit per-item shared-prereq gates. Out of scope: experimental ops (Phase 9b), CLI parity (Phase 9c), Agile (Phase 10), JSM (Phase 11). |
+| Phase | Name                             | Items            | Why This Order                                                                                                                                                                                                                                                                                                                             |
+| ----- | -------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0     | Documentation                    | B001             | No code changes; unblocks consumers immediately                                                                                                                                                                                                                                                                                            |
+| 1     | Type correctness                 | B002, B003       | Low-risk, high-impact; no behavioral changes                                                                                                                                                                                                                                                                                               |
+| 2     | Transport refactor               | B004, B005, B006 | High-risk; needs its own focus; unblocks later items                                                                                                                                                                                                                                                                                       |
+| 3     | Type organization                | B007, B008       | Mechanical split; benefits from transport refactor being stable                                                                                                                                                                                                                                                                            |
+| 4     | Reliability                      | B009, B010, B011 | Builds on refactor; adds runtime behavior                                                                                                                                                                                                                                                                                                  |
+| 5     | Testing                          | B012, B013, B014 | Depends on all code changes being stable                                                                                                                                                                                                                                                                                                   |
+| 6     | Security & advanced              | B015, B016, B017 | Lower urgency; requires design discussion                                                                                                                                                                                                                                                                                                  |
+| 7     | Automation                       | B018, B019, B020 | CI/CD; can be done incrementally                                                                                                                                                                                                                                                                                                           |
+| 8     | Confluence v2 spec compliance    | B021–B062        | Aligns Confluence client with official OpenAPI v2 spec (`_v=1.8494.0`, 213 ops, 29 tags). Foundation → schema → endpoint additions → new resources → migration                                                                                                                                                                             |
+| 9     | Jira Platform v3 spec compliance | B069–B187        | Aligns Jira client with official Jira Platform v3 OpenAPI spec (~600 ops, ~80 tags). Cross-cutting → schema → endpoint additions → new resources → migration. Independent of Phase 8 except for explicit per-item shared-prereq gates. Out of scope: experimental ops (Phase 9b), CLI parity (Phase 9c), Agile (Phase 10), JSM (Phase 11). |
 
 ---
 
@@ -353,7 +353,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ### Foundation
 
-#### [x] B021: Pin Confluence v2 OpenAPI spec snapshot
+#### [ ] B021: Pin Confluence v2 OpenAPI spec snapshot
 
 - **Priority:** P0 — Critical (gates B022–B062)
 - **Description:** Download the upstream OpenAPI document, normalize JSON key order (`jq -S`), commit a versioned snapshot at `spec/confluence-v2.v1.8494.0.openapi.json`, and write a stable alias `spec/confluence-v2.openapi.json` (copy or symlink). Add `scripts/audit/refresh-spec.mjs` that re-downloads, re-normalizes, writes a sibling `.sha256` checksum, and prints a diff summary. Add `spec/README.md` documenting refresh + audit process.
@@ -367,7 +367,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `spec/`, `scripts/audit/refresh-spec.mjs`, `package.json`
 - **Dependencies:** None
 
-#### [x] B022: Spec-vs-implementation coverage matrix generator
+#### [ ] B022: Spec-vs-implementation coverage matrix generator
 
 - **Priority:** P0 — Critical
 - **Description:** Write `scripts/audit/extract-operations.mjs` (walks `spec.paths[*][verb]` → normalized operation list), `scripts/audit/extract-implementation.mjs` (TypeScript Compiler API parse of `src/confluence/resources/*.ts`, extracts `{resource, method, httpVerb, pathTemplate}` from `this.transport.request({...})` literal `${this.baseUrl}/...` paths), and `scripts/audit/render-matrix.mjs` (joins on `{method, normalizedPath}`, emits `spec/coverage-matrix.md` with four sections: **matched**, **missing-in-code**, **extra-in-code**, **deprecated-in-spec**). Wire `npm run audit:spec` and `npm run audit:spec -- --check` (exits non-zero on drift).
@@ -381,7 +381,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `scripts/audit/{extract-operations,extract-implementation,render-matrix}.mjs`, `spec/coverage-matrix.md`, `test/audit/`, `package.json`
 - **Dependencies:** B021
 
-#### [x] B023: Per-resource conformance audit reports
+#### [ ] B023: Per-resource conformance audit reports
 
 - **Priority:** P1 — High
 - **Description:** For every Confluence resource (existing + missing), generate a structured report at `spec/audit/<resource>.md` with sections: **Operations matrix** (filtered subset of B022), **Per-operation conformance** (verb/path/query/body/response checks), **Pagination conformance**, **Error mapping**, **Severity ranking** (BLOCK/HIGH/MEDIUM/LOW), **Fix proposal**. Reports are checked into the repo; they drive B024–B059.
@@ -831,7 +831,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ### Infrastructure & migration
 
-#### [x] B060: Decide codegen strategy and set up `openapi-typescript` for response types
+#### [ ] B060: Decide codegen strategy and set up `openapi-typescript` for response types
 
 - **Priority:** P1 — High
 - **Description:** Decision: hybrid — codegen for response types from spec via `openapi-typescript`; hand-author request `*Params`/`*Data` types for ergonomics. Generated output committed under `src/confluence/types/generated.ts`; barrel re-exports it. Add `npm run codegen:confluence` script. Document in `spec/README.md`. Open question Q1 from the audit plan resolved by this item.
@@ -880,99 +880,13 @@ The items are grouped into **phases**. Each phase should be completed before the
 ## Phase 9 — Jira Platform v3 OpenAPI Spec Compliance
 
 > Source of truth: `https://dac-static.atlassian.com/cloud/jira/platform/swagger-v3.v3.json?_v=1.8494.0`
-> Spec inventory at audit time: **~600 operations, ~80 tags** (final counts confirmed by B065). Current implementation covers ~30 operations across 20 resources.
+> Spec inventory: **~600 operations, ~80 tags**. Current implementation covers ~30 operations across 20 resources.
 > Scope: Jira **Platform v3 only**. Existing `/rest/agile/1.0` boards/sprints code is untouched by Phase 9 and tracked under a future Phase 10. Service Management is Phase 11.
 > Default policy: **additive — new methods alongside existing ones; renames behind `@deprecated` aliases; breakers gated by B182 (Jira 1.0.0 cutover, independent of Confluence B062).**
 > Test bar: happy-path MockTransport test per method; project coverage target (100%) preserved.
 > Phase 8 ↔ Phase 9: independent in general; per-item shared-prereq gates listed under `Dependencies`.
 > Out of scope (Phase 9): experimental/EAP ops (Phase 9b), CLI parity for new methods (Phase 9c).
 > All design decisions documented in the plan session 2026-05-12; this section is the implementation contract.
-
-### Foundation
-
-#### [ ] B063: Generalize audit scripts to be product-aware
-
-- **Priority:** P0 — Critical (gates B064–B187)
-- **Description:** Refactor `scripts/audit/{extract-operations,extract-implementation,render-matrix,refresh-spec}.mjs` plus `codegen-confluence.mjs` to accept `--product=<jira|confluence>` and resolve product-specific paths from a single config map. Rename `codegen-confluence.mjs` → `codegen.mjs`. `extract-implementation.mjs` walks `src/<product>/resources/`. Matrix output path becomes `spec/<product>-coverage-matrix.md`; per-resource reports move to `spec/<product>-audit/<tag>.md`. Confluence outputs must be **byte-identical** post-refactor (the existing `--check` drift gate proves it).
-- **Acceptance criteria:**
-  - [ ] All five scripts accept `--product=jira|confluence`, default behavior preserved when product flag omitted **only** if no other breakage results (prefer making the flag required and updating `package.json` scripts accordingly)
-  - [ ] Existing `spec/coverage-matrix.md` migrates to `spec/confluence-coverage-matrix.md`; alias or redirect documented
-  - [ ] Existing `spec/audit/*.md` migrates to `spec/confluence-audit/*.md`
-  - [ ] `npm run audit:spec -- --product=confluence --check` exits 0 (no content drift)
-  - [ ] `npm run codegen:confluence -- --check` continues to pass with identical generated bytes
-  - [ ] `package.json` scripts updated: `audit:spec:confluence`, `audit:spec:jira`, `codegen:confluence`, `codegen:jira`, and umbrella `audit:spec` / `codegen` that run both
-  - [ ] No `src/` changes
-- **Files:** `scripts/audit/*.mjs`, `package.json`, `spec/README.md`, `CLAUDE.md` (Fast Commands block)
-- **Dependencies:** B021, B022, B023, B060 (Confluence audit + codegen already shipped — refactor must preserve outputs)
-
-#### [ ] B064: Pin Jira Platform v3 OpenAPI spec snapshot
-
-- **Priority:** P0 — Critical
-- **Description:** Download `https://dac-static.atlassian.com/cloud/jira/platform/swagger-v3.v3.json?_v=1.8494.0`, normalize with deep-sorted JSON keys (`jq -S`), commit versioned snapshot `spec/jira-platform-v3.v1.8494.0.json` + stable alias `spec/jira-platform-v3.openapi.json` + `.sha256`. Extend `scripts/audit/refresh-spec.mjs` (already generalized in B063) so `npm run audit:refresh -- --product=jira` re-downloads and re-normalizes. Update `spec/README.md` to document the Jira spec pin alongside Confluence.
-- **Acceptance criteria:**
-  - [ ] `spec/jira-platform-v3.v1.8494.0.json` exists, normalized, byte-stable on re-run
-  - [ ] `spec/jira-platform-v3.openapi.json` resolves to the same content
-  - [ ] `spec/jira-platform-v3.openapi.json.sha256` written
-  - [ ] `npm run audit:refresh -- --product=jira` exits 0 on success, writes `.sha256`, emits diff line count
-  - [ ] `spec/README.md` documents both products' snapshots, pinning policy, and refresh workflow
-  - [ ] No production code under `src/` is changed
-- **Files:** `spec/jira-platform-v3.v1.8494.0.json` (new), `spec/jira-platform-v3.openapi.json` (new), `spec/jira-platform-v3.openapi.json.sha256` (new), `spec/README.md`, `scripts/audit/refresh-spec.mjs`, `package.json`
-- **Dependencies:** B063
-
-#### [ ] B065: Generate Jira coverage matrix
-
-- **Priority:** P0 — Critical
-- **Description:** `npm run audit:spec -- --product=jira` produces `spec/jira-platform-v3-coverage-matrix.md` with the same four sections used for Confluence: **matched**, **missing-in-code**, **extra-in-code**, **deprecated-in-spec**. Lookup table: join spec `{method, normalizedPath}` against `src/jira/resources/*.ts` `this.transport.request({...})` calls. Snapshot test under `test/audit/`. `--check` flag exits non-zero on drift.
-- **Acceptance criteria:**
-  - [ ] `npm run audit:spec -- --product=jira` regenerates matrix deterministically
-  - [ ] Matrix lists every spec operation with implemented?/Resource.method/notes/deprecated?/experimental?
-  - [ ] Counts in header (total ops, implemented, missing, extra, deprecated, experimental) verified
-  - [ ] Extra-in-code section explicitly enumerates any path the client calls that isn't in the spec (note: `/rest/agile/1.0/*` is exempt — annotate clearly as "out of scope for Phase 9")
-  - [ ] `--check` exits 1 on drift
-  - [ ] Snapshot test added under `test/audit/jira-coverage-matrix.test.ts`
-  - [ ] Coverage for the audit script stays at 100%
-- **Files:** `spec/jira-platform-v3-coverage-matrix.md` (new), `scripts/audit/render-matrix.mjs`, `test/audit/jira-coverage-matrix.test.ts` (new)
-- **Dependencies:** B063, B064
-
-#### [ ] B066: Generate per-resource Jira conformance audit reports
-
-- **Priority:** P1 — High
-- **Description:** For every Jira Platform v3 spec tag (~80), generate `spec/jira-audit/<tag>.md` with sections: **Operations matrix** (filtered subset of B065), **Per-operation conformance** (verb/path/query/body/response checks against current implementation if any), **Pagination conformance** (offset vs nextPageToken vs none), **Error mapping**, **Severity ranking** (BLOCK/HIGH/MEDIUM/LOW), **Fix proposal** (cites target backlog item B074–B181). Reports are checked into the repo; they drive every downstream Phase-9 item.
-- **Acceptance criteria:**
-  - [ ] One markdown report per spec tag (count matches `unique(tag) ∈ spec`)
-  - [ ] Each finding tagged with severity and target backlog item
-  - [ ] Reports cite exact spec `operationId`, path, verb
-  - [ ] No `src/` changes
-  - [ ] `--check` mode detects drift in any report
-- **Files:** `spec/jira-audit/*.md` (~80 files)
-- **Dependencies:** B065
-
-#### [ ] B067: Add Jira codegen via `openapi-typescript`
-
-- **Priority:** P1 — High
-- **Description:** `npm run codegen:jira` regenerates `src/jira/types/generated.ts` from `spec/jira-platform-v3.openapi.json` using `openapi-typescript`. Generated module is committed; barrel does NOT re-export it (matches Confluence policy — generated types are an internal reference for hand-authored types to import from). Add same header banner as Confluence ("AUTO-GENERATED. DO NOT EDIT BY HAND."). `--check` mode writes to a temp dir, diffs, exits 1 on drift.
-- **Acceptance criteria:**
-  - [ ] `npm run codegen:jira` regenerates types deterministically
-  - [ ] `src/jira/types/generated.ts` committed (large file; review with collapsed diff)
-  - [ ] No public re-exports change for downstream callers
-  - [ ] Generated types compile under `npm run typecheck`
-  - [ ] `--check` flag exits 1 on drift
-- **Files:** `scripts/audit/codegen.mjs` (the renamed product-aware codegen from B063), `src/jira/types/generated.ts` (new, auto-generated), `package.json`
-- **Dependencies:** B063, B064, B069 (types directory must exist before generated.ts can land in it)
-
-#### [ ] B068: Wire all Jira drift gates into `npm run validate`
-
-- **Priority:** P1 — High
-- **Description:** Extend `npm run validate` to add: `audit:spec -- --product=jira --check`, `codegen:jira -- --check`, and (implicitly via `audit:refresh`'s contract) `.sha256` integrity check on the spec snapshot. After this lands, CI fails on any drift in Jira matrix, per-resource reports, generated types, or spec checksum.
-- **Acceptance criteria:**
-  - [ ] `npm run validate` runs all three Jira drift gates
-  - [ ] CI fails on any drift with a clear message and remediation hint
-  - [ ] Documentation in `spec/README.md` updated
-  - [ ] No `src/` changes
-- **Files:** `package.json`, `spec/README.md`
-- **Dependencies:** B065, B066, B067
-
----
 
 ### Cross-cutting infrastructure
 
@@ -983,7 +897,6 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Acceptance criteria:**
   - [ ] Each new type file ≤ 100 lines
   - [ ] `src/jira/types.ts` either removed or reduced to a ≤ 20-line re-export
-  - [ ] `src/jira/types/generated.ts` slot exists for B067 (file may be empty placeholder until B067 lands, or B067 ships in the same PR)
   - [ ] `npx tsc` passes
   - [ ] All tests pass
   - [ ] No breaking changes to public API
@@ -1059,7 +972,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Description:** Reconcile `Issue`, `CreatedIssue`, `CreateIssueData`, `UpdateIssueData`, `GetIssueParams` against spec `IssueBean`, `CreateIssueDetails`, `IssueUpdateDetails`. Add missing fields/params: `expand` enum values, `properties[]`, `updateHistory`, `fieldsByKeys`, `notifyUsers`, `overrideScreenSecurity`, `overrideEditableFlag`, `returnIssue`, `_links`. Apply `Issue<TFields>` generic from B073.
 - **Acceptance criteria:** Every field/param matches spec; tests assert newly added fields exposed via MockTransport responses.
 - **Files:** `src/jira/types/issue.ts`, `src/jira/types/params.ts` (or co-located), `test/jira/issues.test.ts`
-- **Dependencies:** B066, B069, B073
+- **Dependencies:** B069, B073
 
 #### [ ] B075: Align `Project` type + project request params with spec
 
@@ -1067,7 +980,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Description:** Reconcile `Project`, `ListProjectsParams` against spec `Project`, `ProjectIssueTypeHierarchy`. Add missing fields: `simplified`, `style`, `favourite`, `archived`, `deleted`, `retentionTillDate`, `archivedDate`, `deletedDate`, `archivedBy`, `deletedBy`, `entityId`, `uuid`, `projectKeys`, `insight`, `properties`, `roles`, `issueTypeHierarchy`. Add missing params: `searchBy`, `action`, `expand[]`, `properties[]`, `propertyQuery`.
 - **Acceptance criteria:** Type/param parity with spec; tests updated.
 - **Files:** `src/jira/types/project.ts`, `test/jira/projects.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B076: Align `User`/`UserRef` types with spec
 
@@ -1075,119 +988,119 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Description:** Reconcile against spec `User`, `UserDetails`. Add missing fields: `key` (deprecated, ID-mode), `name` (deprecated), `applicationRoles` (paginated), `groups` (paginated), `expand`, `self`. Tighten `accountType` to `'atlassian' | 'app' | 'customer' | 'unknown'` union. Align `SearchUsersParams` with spec `getAllUsersDefault` query params.
 - **Acceptance criteria:** Parity with spec; tests updated.
 - **Files:** `src/jira/types/user.ts`, `test/jira/users.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B077: Align `IssueType` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `IssueTypeDetails`. Add `entityId`, `scope`, `avatarId`, `untranslatedName`. Confirm `hierarchyLevel` typing.
 - **Files:** `src/jira/types/issue-type.ts`, `test/jira/issue-types.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B078: Align `Priority` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Priority`. Add `isDefault`, `schemes` references where present.
 - **Files:** `src/jira/types/priority.ts`, `test/jira/priorities.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B079: Align `Status`/`StatusCategory` types with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `StatusDetails`, `StatusCategory`. Confirm `usages[]` shape (project/issueType array). Add `workflowUsages`.
 - **Files:** `src/jira/types/status.ts`, `test/jira/statuses.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B080: Align `Transition` + `TransitionData` with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `IssueTransition`, `IssueUpdateDetails`. Add `expand`, `looped`, `fields` per-screen shape, conditions. `TransitionData.update` becomes structured (`Record<string, FieldUpdateOperation[]>`).
 - **Files:** `src/jira/types/transition.ts`, `test/jira/issues.test.ts` (transition flow)
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B081: Align `SearchResult` + introduce `JqlSearchResult` for cursor model
 
 - **Priority:** P1 — High
 - **Description:** Existing `SearchResult` matches legacy `/search` offset shape (`startAt`/`maxResults`/`total`/`issues`). Add `JqlSearchResult` for the new `/search/jql` endpoint: `{ nextPageToken?: string; isLast?: boolean; issues: Issue<TFields>[] }`. Both exported. Wire `Issue<TFields>` generic through both result types. Legacy `SearchResult` marked `@deprecated Use JqlSearchResult; legacy /search has hard limits.`
 - **Files:** `src/jira/types/search.ts`, `test/jira/search.test.ts`
-- **Dependencies:** B066, B069, B073
+- **Dependencies:** B069, B073
 
 #### [ ] B082: Align `IssueComment` + comment params with spec (ADF body, visibility, properties)
 
 - **Priority:** P1 — High
 - **Description:** Reconcile `IssueComment`, `CreateIssueCommentData`, `UpdateIssueCommentData`, `ListIssueCommentsParams` against spec `Comment`. Replace `body: Record<string, unknown>` with `body: AdfDocument`. Add `jsdPublic`, `jsdAuthorCanSeeRequest`, `properties[]`, structured `visibility: { type: 'group' | 'role'; value?: string; identifier?: string }`. Add list params: `expand`, `properties[]`.
 - **Files:** `src/jira/types/issue-comment.ts`, `test/jira/issue-comments.test.ts`
-- **Dependencies:** B066, B069, B071
+- **Dependencies:** B069, B071
 
 #### [ ] B083: Align `IssueAttachment` + params with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Attachment`. Confirm fields; add `created`, `mimeType`, `content` URL, `thumbnail`, `self`, and any `_links` if present.
 - **Files:** `src/jira/types/issue-attachment.ts`, `test/jira/issue-attachments.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B084: Add `Worklog` domain type (new)
 
 - **Priority:** P1 — High
 - **Description:** No existing `Worklog` type. Add `src/jira/types/worklog.ts` modeling spec `Worklog`: `id`, `self`, `author`, `updateAuthor`, `comment: AdfDocument`, `created`, `updated`, `started`, `timeSpent`, `timeSpentSeconds`, `visibility`, `issueId`, `properties`. Add `CreateWorklogData`, `UpdateWorklogData`, `ListWorklogsParams` (offset paginated with `expand`, `startedAfter`, `startedBefore`).
 - **Files:** `src/jira/types/worklog.ts` (new), `src/jira/types/index.ts`, `src/index.ts`, `test/jira/worklogs.test.ts` (new — gated by B112)
-- **Dependencies:** B066, B069, B071
+- **Dependencies:** B069, B071
 
 #### [ ] B085: Align `Workflow` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Workflow`, `WorkflowReadResponse`. Add `id` (object form with `name`, `entityId`), `description`, `created`, `updated`, `transitions[]`, `statuses[]`, `isDefault`, `schemes[]`, `projects[]`, `hasDraftWorkflow`, `operations`.
 - **Files:** `src/jira/types/workflow.ts`, `test/jira/workflows.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B086: Align `Dashboard` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Dashboard`. Add `description`, `owner: User`, `popularity`, `rank`, `sharePermissions[]`, `editPermissions[]`, `view`, `isFavourite`, `isWritable`, `systemDashboard`, `automaticRefreshMs`.
 - **Files:** `src/jira/types/dashboard.ts`, `test/jira/dashboards.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B087: Align `Filter` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Filter`. Add `description`, `owner`, `jql`, `viewUrl`, `searchUrl`, `favourite`, `favouritedCount`, `sharePermissions[]`, `editPermissions[]`, `subscriptions[]`, `approximateLastUsed`.
 - **Files:** `src/jira/types/filter.ts`, `test/jira/filters.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B088: Align `Field` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `FieldDetails`. Add `key`, `custom`, `orderable`, `navigable`, `searchable`, `clauseNames[]`, `scope`, `schema: { type, items, system, custom, customId }`, `description`, `lastUsed`, `untranslatedName`.
 - **Files:** `src/jira/types/field.ts`, `test/jira/fields.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B089: Align `Webhook` type with spec
 
 - **Priority:** P1 — High
 - **Description:** Reconcile against spec `Webhook`, `WebhookDetails`. Add `expirationDate`, `fieldIdsFilter`, `issuePropertyKeysFilter`. Confirm `events[]` enum coverage.
 - **Files:** `src/jira/types/webhook.ts`, `test/jira/webhooks.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B090: Align labels params with spec
 
 - **Priority:** P2 — Medium
 - **Description:** Confirm `ListLabelsParams` matches spec `getAllLabels` query params. Add any missing.
 - **Files:** `src/jira/types/label.ts`, `test/jira/labels.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B091: Align JQL parse/autocomplete params with spec
 
 - **Priority:** P2 — Medium
 - **Description:** Reconcile `src/jira/resources/jql.ts` params against spec `parseJqlQueries`, `getAutoComplete`, `getAutoCompleteSuggestions`, `getFieldAutoCompleteForQueryString`. Add request body shape, `validation` enum.
 - **Files:** `src/jira/types/jql.ts` (new domain file), `test/jira/jql.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 #### [ ] B092: Align bulk ops payload shapes with spec
 
 - **Priority:** P2 — Medium
 - **Description:** Reconcile `src/jira/resources/bulk.ts` against spec bulk ops (`bulkSetIssuesProperties`, etc.). Type request bodies precisely; align response shapes.
 - **Files:** `src/jira/types/bulk.ts` (new domain file), `test/jira/bulk.test.ts`
-- **Dependencies:** B066, B069
+- **Dependencies:** B069
 
 ---
 
@@ -1376,8 +1289,8 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 #### [ ] B111: (reserved — spillover)
 
 - **Priority:** N/A
-- **Description:** Placeholder for endpoints discovered during B066 that don't fit the prior items. Re-numbered or absorbed at PR time.
-- **Dependencies:** B066
+- **Description:** Placeholder for endpoints discovered later that don't fit the prior items. Re-numbered or absorbed at PR time.
+- **Dependencies:** None
 
 ---
 
@@ -1417,19 +1330,19 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B119: New resource — Issue Link Types (`client.jira.issueLinkTypes`)
 
-- **Priority:** P1 — High · **Description:** CRUD for link types (`GET/POST /issueLinkType`, by id GET/PUT/DELETE). · **Files:** `src/jira/resources/issue-link-types.ts`, `src/jira/types/issue-link-type.ts`, `test/jira/issue-link-types.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P1 — High · **Description:** CRUD for link types (`GET/POST /issueLinkType`, by id GET/PUT/DELETE). · **Files:** `src/jira/resources/issue-link-types.ts`, `src/jira/types/issue-link-type.ts`, `test/jira/issue-link-types.test.ts` · **Dependencies:** B069
 
 ##### [ ] B120: New resource — Issue Resolutions (`client.jira.resolutions`)
 
-- **Priority:** P2 — Medium · **Description:** CRUD + search + move + default. · **Files:** `src/jira/resources/resolutions.ts`, `src/jira/types/resolution.ts`, `test/jira/resolutions.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** CRUD + search + move + default. · **Files:** `src/jira/resources/resolutions.ts`, `src/jira/types/resolution.ts`, `test/jira/resolutions.test.ts` · **Dependencies:** B069
 
 ##### [ ] B121: New resource — Issue Redactions (`client.jira.redactions`)
 
-- **Priority:** P2 — Medium · **Description:** Redact issue content. · **Files:** `src/jira/resources/redactions.ts`, `test/jira/redactions.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** Redact issue content. · **Files:** `src/jira/resources/redactions.ts`, `test/jira/redactions.test.ts` · **Dependencies:** B069
 
 ##### [ ] B122: New resource — Issue Security Schemes (`client.jira.issueSecuritySchemes`)
 
-- **Priority:** P2 — Medium · **Description:** Full CRUD + level + member ops. · **Files:** `src/jira/resources/issue-security-schemes.ts`, `src/jira/types/issue-security-scheme.ts`, `test/jira/issue-security-schemes.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** Full CRUD + level + member ops. · **Files:** `src/jira/resources/issue-security-schemes.ts`, `src/jira/types/issue-security-scheme.ts`, `test/jira/issue-security-schemes.test.ts` · **Dependencies:** B069
 
 ##### [ ] B123: New resource — Issue Security Level (`client.jira.issueSecurityLevels`)
 
@@ -1457,7 +1370,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B129: New resource — Issue Notification Schemes (`client.jira.notificationSchemes`)
 
-- **Priority:** P2 — Medium · **Description:** CRUD + event/notification membership. · **Files:** `src/jira/resources/notification-schemes.ts`, `src/jira/types/notification-scheme.ts`, `test/jira/notification-schemes.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** CRUD + event/notification membership. · **Files:** `src/jira/resources/notification-schemes.ts`, `src/jira/types/notification-scheme.ts`, `test/jira/notification-schemes.test.ts` · **Dependencies:** B069
 
 ##### [ ] B130: New resource — Issue Field Configurations (`client.jira.fieldConfigurations`)
 
@@ -1473,11 +1386,11 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B133: New resource — Issue Navigator Settings (`client.jira.issueNavigatorSettings`)
 
-- **Priority:** P3 — Low · **Description:** Default columns get/set. · **Files:** `src/jira/resources/issue-navigator-settings.ts`, `test/jira/issue-navigator-settings.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Default columns get/set. · **Files:** `src/jira/resources/issue-navigator-settings.ts`, `test/jira/issue-navigator-settings.test.ts` · **Dependencies:** None
 
 ##### [ ] B134: New resource — Avatars (`client.jira.avatars`)
 
-- **Priority:** P2 — Medium · **Description:** System avatars + per-type CRUD. · **Files:** `src/jira/resources/avatars.ts`, `src/jira/types/avatar.ts`, `test/jira/avatars.test.ts` · **Dependencies:** B066
+- **Priority:** P2 — Medium · **Description:** System avatars + per-type CRUD. · **Files:** `src/jira/resources/avatars.ts`, `src/jira/types/avatar.ts`, `test/jira/avatars.test.ts` · **Dependencies:** None
 
 #### Projects domain
 
@@ -1515,7 +1428,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B143: New resource — Project Roles (`client.jira.projectRoles`)
 
-- **Priority:** P2 — Medium · **Description:** Global role CRUD + project role details. · **Files:** `src/jira/resources/project-roles.ts`, `src/jira/types/project-role.ts`, `test/jira/project-roles.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** Global role CRUD + project role details. · **Files:** `src/jira/resources/project-roles.ts`, `src/jira/types/project-role.ts`, `test/jira/project-roles.test.ts` · **Dependencies:** B069
 
 ##### [ ] B144: New resource — Project Role Actors (`client.jira.projectRoleActors`)
 
@@ -1527,11 +1440,11 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B146: New resource — Project Types (`client.jira.projectTypes`)
 
-- **Priority:** P2 — Medium · **Description:** Get all + by key + accessible. · **Files:** `src/jira/resources/project-types.ts`, `test/jira/project-types.test.ts` · **Dependencies:** B066
+- **Priority:** P2 — Medium · **Description:** Get all + by key + accessible. · **Files:** `src/jira/resources/project-types.ts`, `test/jira/project-types.test.ts` · **Dependencies:** None
 
 ##### [ ] B147: New resource — Project Key & Name Validation (`client.jira.projectValidation`)
 
-- **Priority:** P3 — Low · **Description:** Validate uniqueness. · **Files:** `src/jira/resources/project-validation.ts`, `test/jira/project-validation.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Validate uniqueness. · **Files:** `src/jira/resources/project-validation.ts`, `test/jira/project-validation.test.ts` · **Dependencies:** None
 
 ##### [ ] B148: New resource — Project Classification Levels (`client.jira.projectClassificationLevels`)
 
@@ -1541,7 +1454,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B149: New resource — Permissions (`client.jira.permissions`)
 
-- **Priority:** P2 — Medium · **Description:** Get permitted projects + my permissions + bulk permissions. · **Files:** `src/jira/resources/permissions.ts`, `src/jira/types/permission.ts`, `test/jira/permissions.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** Get permitted projects + my permissions + bulk permissions. · **Files:** `src/jira/resources/permissions.ts`, `src/jira/types/permission.ts`, `test/jira/permissions.test.ts` · **Dependencies:** B069
 
 ##### [ ] B150: New resource — Permission Schemes (`client.jira.permissionSchemes`)
 
@@ -1549,11 +1462,11 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B151: New resource — Application Roles (`client.jira.applicationRoles`)
 
-- **Priority:** P3 — Low · **Description:** List + get by key. · **Files:** `src/jira/resources/application-roles.ts`, `test/jira/application-roles.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** List + get by key. · **Files:** `src/jira/resources/application-roles.ts`, `test/jira/application-roles.test.ts` · **Dependencies:** None
 
 ##### [ ] B152: New resource — Groups (`client.jira.groups`)
 
-- **Priority:** P2 — Medium · **Description:** CRUD + add/remove user + bulk get. · **Files:** `src/jira/resources/groups.ts`, `src/jira/types/group.ts`, `test/jira/groups.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** CRUD + add/remove user + bulk get. · **Files:** `src/jira/resources/groups.ts`, `src/jira/types/group.ts`, `test/jira/groups.test.ts` · **Dependencies:** B069
 
 ##### [ ] B153: New resource — Group & User Picker (`client.jira.groupAndUserPicker`)
 
@@ -1591,7 +1504,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B161: New resource — Screens (`client.jira.screens`)
 
-- **Priority:** P2 — Medium · **Description:** CRUD + available fields + add field to default. · **Files:** `src/jira/resources/screens.ts`, `src/jira/types/screen.ts`, `test/jira/screens.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P2 — Medium · **Description:** CRUD + available fields + add field to default. · **Files:** `src/jira/resources/screens.ts`, `src/jira/types/screen.ts`, `test/jira/screens.test.ts` · **Dependencies:** B069
 
 ##### [ ] B162: New resource — Screen Schemes (`client.jira.screenSchemes`)
 
@@ -1621,39 +1534,39 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B168: New resource — Server Info (`client.jira.serverInfo`)
 
-- **Priority:** P3 — Low · **Description:** Single GET. · **Files:** `src/jira/resources/server-info.ts`, `test/jira/server-info.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Single GET. · **Files:** `src/jira/resources/server-info.ts`, `test/jira/server-info.test.ts` · **Dependencies:** None
 
 ##### [ ] B169: New resource — Jira Settings (`client.jira.settings`)
 
-- **Priority:** P3 — Low · **Description:** Get global settings + advanced settings + columns. · **Files:** `src/jira/resources/settings.ts`, `test/jira/settings.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Get global settings + advanced settings + columns. · **Files:** `src/jira/resources/settings.ts`, `test/jira/settings.test.ts` · **Dependencies:** None
 
 ##### [ ] B170: New resource — License Metrics (`client.jira.licenseMetrics`)
 
-- **Priority:** P3 — Low · **Description:** Application license info. · **Files:** `src/jira/resources/license-metrics.ts`, `test/jira/license-metrics.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Application license info. · **Files:** `src/jira/resources/license-metrics.ts`, `test/jira/license-metrics.test.ts` · **Dependencies:** None
 
 ##### [ ] B171: New resource — Audit Records (`client.jira.auditRecords`)
 
-- **Priority:** P3 — Low · **Description:** Paginated audit log with filter/from/to. · **Files:** `src/jira/resources/audit-records.ts`, `src/jira/types/audit-record.ts`, `test/jira/audit-records.test.ts` · **Dependencies:** B066, B069
+- **Priority:** P3 — Low · **Description:** Paginated audit log with filter/from/to. · **Files:** `src/jira/resources/audit-records.ts`, `src/jira/types/audit-record.ts`, `test/jira/audit-records.test.ts` · **Dependencies:** B069
 
 ##### [ ] B172: New resource — App Properties (`client.jira.appProperties`)
 
-- **Priority:** P3 — Low · **Description:** Forge/Connect app property CRUD. · **Files:** `src/jira/resources/app-properties.ts`, `test/jira/app-properties.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Forge/Connect app property CRUD. · **Files:** `src/jira/resources/app-properties.ts`, `test/jira/app-properties.test.ts` · **Dependencies:** None
 
 ##### [ ] B173: New resource — App Migration (`client.jira.appMigration`)
 
-- **Priority:** P3 — Low · **Description:** Migration endpoints for Connect/Forge apps. · **Files:** `src/jira/resources/app-migration.ts`, `test/jira/app-migration.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Migration endpoints for Connect/Forge apps. · **Files:** `src/jira/resources/app-migration.ts`, `test/jira/app-migration.test.ts` · **Dependencies:** None
 
 ##### [ ] B174: New resource — Jira Expressions (`client.jira.expressions`)
 
-- **Priority:** P3 — Low · **Description:** `analyseExpression`, `evaluateJiraExpression` (stable variant only — experimental variants deferred to Phase 9b). · **Files:** `src/jira/resources/expressions.ts`, `test/jira/expressions.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** `analyseExpression`, `evaluateJiraExpression` (stable variant only — experimental variants deferred to Phase 9b). · **Files:** `src/jira/resources/expressions.ts`, `test/jira/expressions.test.ts` · **Dependencies:** None
 
 ##### [ ] B175: New resource — Tasks (`client.jira.tasks`)
 
-- **Priority:** P3 — Low · **Description:** Long-running task status (`GET /task/{taskId}`, `POST /task/{taskId}/cancel`). · **Files:** `src/jira/resources/tasks.ts`, `test/jira/tasks.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Long-running task status (`GET /task/{taskId}`, `POST /task/{taskId}/cancel`). · **Files:** `src/jira/resources/tasks.ts`, `test/jira/tasks.test.ts` · **Dependencies:** None
 
 ##### [ ] B176: New resource — Time Tracking (`client.jira.timeTracking`)
 
-- **Priority:** P3 — Low · **Description:** Provider list/select + global config. · **Files:** `src/jira/resources/time-tracking.ts`, `test/jira/time-tracking.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Provider list/select + global config. · **Files:** `src/jira/resources/time-tracking.ts`, `test/jira/time-tracking.test.ts` · **Dependencies:** None
 
 ##### [ ] B177: New resource — Priority Schemes (`client.jira.prioritySchemes`)
 
@@ -1665,7 +1578,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ##### [ ] B179: New resource — Plans (`client.jira.plans`)
 
-- **Priority:** P3 — Low · **Description:** Plans Advanced Roadmaps endpoints. · **Files:** `src/jira/resources/plans.ts`, `src/jira/types/plan.ts`, `test/jira/plans.test.ts` · **Dependencies:** B066
+- **Priority:** P3 — Low · **Description:** Plans Advanced Roadmaps endpoints. · **Files:** `src/jira/resources/plans.ts`, `src/jira/types/plan.ts`, `test/jira/plans.test.ts` · **Dependencies:** None
 
 ##### [ ] B180: New resource — Teams in Plan (`client.jira.teamsInPlan`)
 
@@ -1688,23 +1601,16 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
   - [ ] All Jira `@deprecated` aliases removed
   - [ ] Tightened types: complete list in MIGRATION-jira.md
   - [ ] `CHANGELOG.md` has the Jira 1.0.0 section
-  - [ ] `npm run validate` passes (typecheck, lint, tests, coverage 100%, all drift gates)
+  - [ ] `npm run validate` passes (typecheck, lint, tests, coverage 100%)
   - [ ] No Confluence files touched (Confluence 1.0.0 is B062)
 - **Files:** `src/jira/**`, `MIGRATION-jira.md` (new), `CHANGELOG.md`, `package.json` (version bump per release-management decision)
-- **Dependencies:** All of B063–B181 (every Phase-9 item before the cutover)
+- **Dependencies:** All of B069–B181 (every Phase-9 item before the cutover)
 
 ---
 
 ### Documentation & skill bundle refresh
 
-> Skill bundle `skill/SKILL.md` is consumed by Claude Code agents; refresh cadence is per-tier (4 times) rather than per-PR to avoid noise in `atlas install-skill` output. README + ARCHITECTURE.md follow the same cadence: one update at Foundation kickoff, one per tier completion.
-
-#### [ ] B183: README + ARCHITECTURE.md — Phase 9 Foundation kickoff
-
-- **Priority:** P2 — Medium
-- **Description:** When Foundation (B063–B068) lands, update README's Jira section: announce the audit infrastructure, link to `spec/jira-platform-v3-coverage-matrix.md`, document new audit/codegen scripts (`audit:spec:jira`, `codegen:jira`), call out the Phase-9 policy (additive, breakers gated). Update ARCHITECTURE.md with a Phase-9 section describing the audit harness shared with Confluence and the per-product layout.
-- **Files:** `README.md`, `docs/ARCHITECTURE.md`
-- **Dependencies:** B068
+> Skill bundle `skill/SKILL.md` is consumed by Claude Code agents; refresh cadence is per-tier (3 times) rather than per-PR to avoid noise in `atlas install-skill` output. README + ARCHITECTURE.md follow the same cadence: one update per tier completion.
 
 #### [ ] B184: Skill bundle refresh — Schema tier complete
 
@@ -1749,19 +1655,19 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 
 ## Summary
 
-| Phase                             | Items            | Est. Effort | Priority |
-| --------------------------------- | ---------------- | ----------- | -------- |
-| 0 — Documentation                 | B001             | 2h          | P1       |
-| 1 — Type correctness              | B002, B003       | 3h          | P0+P1    |
-| 2 — Transport refactor            | B004, B005, B006 | 8h          | P0       |
-| 3 — Type organization             | B007, B008       | 4h          | P1       |
-| 4 — Reliability                   | B009, B010, B011 | 10h         | P1+P2    |
-| 5 — Testing                       | B012, B013, B014 | 12h         | P1+P2    |
-| 6 — Security & advanced           | B015, B016, B017 | 12h         | P2+P3    |
-| 7 — Automation                    | B018, B019, B020 | 6h          | P2+P3    |
-| 8 — Confluence v2 spec compliance | B021–B062        | ~80h        | P0–P3    |
-| 9 — Jira Platform v3 spec compliance | B063–B187     | ~200h       | P0–P3    |
-| **Total**                         | **187 items**    | **~337h**   |          |
+| Phase                                | Items            | Est. Effort | Priority |
+| ------------------------------------ | ---------------- | ----------- | -------- |
+| 0 — Documentation                    | B001             | 2h          | P1       |
+| 1 — Type correctness                 | B002, B003       | 3h          | P0+P1    |
+| 2 — Transport refactor               | B004, B005, B006 | 8h          | P0       |
+| 3 — Type organization                | B007, B008       | 4h          | P1       |
+| 4 — Reliability                      | B009, B010, B011 | 10h         | P1+P2    |
+| 5 — Testing                          | B012, B013, B014 | 12h         | P1+P2    |
+| 6 — Security & advanced              | B015, B016, B017 | 12h         | P2+P3    |
+| 7 — Automation                       | B018, B019, B020 | 6h          | P2+P3    |
+| 8 — Confluence v2 spec compliance    | B021–B062        | ~80h        | P0–P3    |
+| 9 — Jira Platform v3 spec compliance | B069–B187        | ~190h       | P0–P3    |
+| **Total**                            | **181 items**    | **~327h**   |          |
 
 **Recommended first PR:** B002 + B003 (type correctness, low risk, high impact, independent)
 **Recommended second PR:** B004 + B005 + B006 (transport refactor — do together to minimize breakage)
@@ -1771,9 +1677,7 @@ Spec has >25 ops on the Issues tag; split into atomic sub-items.
 **Recommended Phase 8 endpoint sweep:** group B035–B043 by resource family across 4–6 PRs
 **Recommended Phase 8 new-resource sweep:** B045–B059 split into PR-per-resource (15 PRs) or grouped by domain (content-types, governance, users — 3 PRs)
 **Recommended Phase 8 final PR:** B061 + B062 → Confluence `1.0.0` cut
-**Recommended Phase 9 starter PR:** B063 + B064 + B065 (generalize audit scripts, pin Jira spec, generate coverage matrix — no `src/` changes; gates everything else in Phase 9)
-**Recommended Phase 9 second PR:** B066 + B067 + B068 (per-resource audit reports, codegen, drift gates wired into validate)
-**Recommended Phase 9 third PR:** B069 (= B008) — split `src/jira/types.ts`; hard prereq for all downstream Phase-9 work
+**Recommended Phase 9 starter PR:** B069 (= B008) — split `src/jira/types.ts`; hard prereq for all downstream Phase-9 work
 **Recommended Phase 9 cross-cutting PR:** B070 + B071 + B072 + B073 (pagination primitive, ADF type, error parser, `Issue<TFields>` + `SystemFields`)
 **Recommended Phase 9 schema sweep:** B074–B092 grouped by resource family across 5–7 PRs
 **Recommended Phase 9 endpoint sweep:** B093 sub-items + B094–B109 split into PR-per-resource or PR-per-2-resources (~15 PRs)

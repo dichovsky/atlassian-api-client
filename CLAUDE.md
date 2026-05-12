@@ -21,9 +21,6 @@ Repo guidance. Goal: correctness per token. Prefer short, verifiable steps.
 npx vitest run test/core/transport.test.ts   # focused
 npm run typecheck && npm run lint && npm test
 npm run validate                              # full gate — run before broad changes
-npm run audit:refresh                         # re-download Confluence v2 OpenAPI snapshot
-npm run audit:spec                            # regenerate spec/coverage-matrix.md + spec/audit/*.md
-npm run codegen:confluence                    # regenerate src/confluence/types/generated.ts
 ```
 
 ## Architecture Snapshot
@@ -31,9 +28,8 @@ npm run codegen:confluence                    # regenerate src/confluence/types/
 - TypeScript library + CLI for Confluence v2 and Jira v3. ESM output in `dist/`; CLI binary is `atlas`.
 - `src/core/*`: transport/auth/config/errors/pagination/query helpers.
 - `src/confluence/*`, `src/jira/*`: API clients + resources.
-- `src/confluence/types/*`: per-domain type files (`body.ts`, `page.ts`, etc.) + barrel; `generated.ts` is auto-generated from `spec/confluence-v2.openapi.json` and not re-exported.
+- `src/confluence/types/*`: per-domain type files (`body.ts`, `page.ts`, etc.) + barrel.
 - `src/cli/*`: router/commands via `node:util.parseArgs`.
-- `spec/`: pinned OpenAPI snapshot + auto-generated coverage matrix and per-resource audit reports. CI runs `audit:spec --check` and `codegen:confluence --check` as drift gates.
 - `skill/*`: bundled Claude Code skill `atlassian-api-client-cli`; installed via `atlas install-skill` (`--local` for project-scoped). Version is injected from `package.json` at install time.
 
 ## Critical Invariants
