@@ -115,4 +115,27 @@ describe('WhiteboardsResource', () => {
       },
     );
   });
+
+  // ── B031: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B031: spec-aligned Whiteboard schema', () => {
+    it('exposes ownerId, position, type, version on response', async () => {
+      transport.respondWith({
+        id: 'wb1',
+        type: 'whiteboard',
+        title: 'Brainstorm',
+        spaceId: 'space-1',
+        ownerId: 'user-1',
+        position: 7,
+        version: { number: 1 },
+        parentType: 'page',
+      });
+      const wb = await resource.get('wb1');
+      expect(wb.ownerId).toBe('user-1');
+      expect(wb.position).toBe(7);
+      expect(wb.type).toBe('whiteboard');
+      expect(wb.version?.number).toBe(1);
+      expect(wb.parentType).toBe('page');
+    });
+  });
 });

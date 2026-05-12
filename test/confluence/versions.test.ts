@@ -334,4 +334,32 @@ describe('VersionsResource', () => {
       },
     );
   });
+
+  // ── B033: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B033: spec-aligned ContentVersion schema', () => {
+    it('exposes contentTypeModified flag from DetailedVersion', async () => {
+      transport.respondWith({
+        results: [
+          {
+            number: 5,
+            authorId: 'u',
+            createdAt: '2025-06-01T00:00:00.000Z',
+            minorEdit: false,
+            message: 'edit',
+            contentTypeModified: true,
+          },
+        ],
+        _links: {},
+      });
+      const result = await resource.listForPage('p1');
+      expect(result.results[0]?.contentTypeModified).toBe(true);
+    });
+
+    it('forwards body-format param on list', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.listForPage('p1', { 'body-format': 'storage' });
+      expect(transport.lastCall?.options.query).toMatchObject({ 'body-format': 'storage' });
+    });
+  });
 });
