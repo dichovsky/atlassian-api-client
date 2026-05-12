@@ -31,6 +31,7 @@ export type {
 } from './space.js';
 export type {
   BlogPost,
+  BlogPostSortOrder,
   CreateBlogPostData,
   ListBlogPostsParams,
   UpdateBlogPostData,

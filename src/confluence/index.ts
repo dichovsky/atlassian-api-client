@@ -12,6 +12,7 @@ export type {
   SpaceStatus,
   SpaceType,
   BlogPost,
+  BlogPostSortOrder,
   FooterComment,
   InlineComment,
   Attachment,

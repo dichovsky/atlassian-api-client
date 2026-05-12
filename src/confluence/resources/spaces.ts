@@ -2,24 +2,8 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import { buildScalarQuery } from '../../core/query.js';
 import type { Space, ListSpacesParams } from '../types.js';
-
-/** Join array query params into comma-separated strings for transport forwarding. */
-function buildListQuery(
-  params?: ListSpacesParams,
-): Record<string, string | number | boolean | undefined> {
-  if (!params) return {};
-  const query: Record<string, string | number | boolean | undefined> = {};
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined) continue;
-    if (Array.isArray(value)) {
-      query[key] = value.join(',');
-    } else {
-      query[key] = value as string | number | boolean;
-    }
-  }
-  return query;
-}
 
 export class SpacesResource {
   constructor(
@@ -32,7 +16,7 @@ export class SpacesResource {
     const response = await this.transport.request<CursorPaginatedResponse<Space>>({
       method: 'GET',
       path: `${this.baseUrl}/spaces`,
-      query: buildListQuery(params),
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -48,6 +32,6 @@ export class SpacesResource {
 
   /** Iterate over all spaces across all result pages. */
   async *listAll(params?: Omit<ListSpacesParams, 'cursor'>): AsyncGenerator<Space> {
-    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, buildListQuery(params));
+    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, buildScalarQuery(params));
   }
 }

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { buildScalarQuery } from '../../core/query.js';
 import type {
   Page,
   ListPagesParams,
@@ -10,27 +11,6 @@ import type {
   UpdatePageData,
   DeletePageParams,
 } from '../types.js';
-
-/**
- * Build the outbound query for `GET /pages`. Array-typed spec parameters
- * (`id`, `space-id`) are joined into comma-separated strings because the
- * shared transport layer accepts only scalar query values.
- */
-function buildListQuery(
-  params?: ListPagesParams,
-): Record<string, string | number | boolean | undefined> {
-  if (!params) return {};
-  const query: Record<string, string | number | boolean | undefined> = {};
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined) continue;
-    if (Array.isArray(value)) {
-      query[key] = value.join(',');
-    } else {
-      query[key] = value as string | number | boolean;
-    }
-  }
-  return query;
-}
 
 export class PagesResource {
   constructor(
@@ -44,7 +24,7 @@ export class PagesResource {
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
       path: `${this.baseUrl}/pages`,
-      query: buildListQuery(params),
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -90,6 +70,6 @@ export class PagesResource {
 
   /** Iterate over all pages across all result pages. */
   async *listAll(params?: Omit<ListPagesParams, 'cursor'>): AsyncGenerator<Page> {
-    yield* paginateCursor<Page>(this.transport, `${this.baseUrl}/pages`, buildListQuery(params));
+    yield* paginateCursor<Page>(this.transport, `${this.baseUrl}/pages`, buildScalarQuery(params));
   }
 }

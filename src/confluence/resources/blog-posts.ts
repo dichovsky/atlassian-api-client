@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import { buildScalarQuery } from '../../core/query.js';
 import type {
   BlogPost,
   ListBlogPostsParams,
@@ -20,7 +21,7 @@ export class BlogPostsResource {
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -67,7 +68,7 @@ export class BlogPostsResource {
     yield* paginateCursor<BlogPost>(
       this.transport,
       `${this.baseUrl}/blogposts`,
-      params as Record<string, string | number | boolean | undefined>,
+      buildScalarQuery(params),
     );
   }
 }

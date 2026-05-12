@@ -256,4 +256,47 @@ describe('BlogPostsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin`);
     });
   });
+
+  // ── B026: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B026: spec-aligned BlogPost schema + params', () => {
+    it('exposes ownerId, lastOwnerId, parentType, position from response', async () => {
+      transport.respondWith({
+        id: '99',
+        status: 'current',
+        title: 'Spec Blog',
+        spaceId: 'space-1',
+        ownerId: 'o',
+        lastOwnerId: 'prev-o',
+        parentType: 'page',
+        position: 5,
+      });
+      const post = await blogPosts.get('99');
+      expect(post.ownerId).toBe('o');
+      expect(post.lastOwnerId).toBe('prev-o');
+      expect(post.parentType).toBe('page');
+      expect(post.position).toBe(5);
+    });
+
+    it('forwards id and space-id array params as comma-separated strings', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await blogPosts.list({ id: ['1', '2'], 'space-id': ['x', 'y'] });
+      expect(transport.lastCall?.options.query).toMatchObject({ id: '1,2', 'space-id': 'x,y' });
+    });
+
+    it('forwards sort param', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await blogPosts.list({ sort: '-created-date' });
+      expect(transport.lastCall?.options.query).toMatchObject({ sort: '-created-date' });
+    });
+
+    it('forwards new params via listAll generator', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const items: unknown[] = [];
+      for await (const p of blogPosts.listAll({ id: ['1', '2'], sort: 'id' })) {
+        items.push(p);
+      }
+      expect(transport.calls[0]?.options.query).toMatchObject({ id: '1,2', sort: 'id' });
+    });
+  });
 });
