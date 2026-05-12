@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PagesResource } from '../../src/confluence/resources/pages.js';
+import type { Page } from '../../src/confluence/types/index.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
@@ -302,5 +303,88 @@ describe('PagesResource', () => {
         expect(transport.calls).toHaveLength(0);
       },
     );
+  });
+
+  // ── B024: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B024: spec-aligned Page schema + params', () => {
+    it('exposes lastOwnerId, subType, isFavoritedByCurrentUser, parentType from response', async () => {
+      const response: Page = {
+        id: '99',
+        status: 'current',
+        title: 'Spec Page',
+        spaceId: 'space-1',
+        parentId: 'parent-1',
+        parentType: 'page',
+        position: 3,
+        ownerId: 'owner-1',
+        lastOwnerId: 'prev-owner',
+        subType: 'live',
+        isFavoritedByCurrentUser: true,
+      };
+      transport.respondWith(response);
+      const page = await pages.get('99');
+      expect(page.lastOwnerId).toBe('prev-owner');
+      expect(page.subType).toBe('live');
+      expect(page.isFavoritedByCurrentUser).toBe(true);
+      expect(page.parentType).toBe('page');
+      expect(page.position).toBe(3);
+    });
+
+    it('forwards id and space-id array params as comma-separated strings', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await pages.list({
+        id: ['1', '2', '3'],
+        'space-id': ['a', 'b'],
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        id: '1,2,3',
+        'space-id': 'a,b',
+      });
+    });
+
+    it('forwards sort and subtype params for list', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await pages.list({ sort: '-modified-date', subtype: 'live' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        sort: '-modified-date',
+        subtype: 'live',
+      });
+    });
+
+    it('forwards new include-* and get-draft params on get()', async () => {
+      transport.respondWith(makePage('1'));
+      await pages.get('1', {
+        'get-draft': true,
+        'include-likes': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+      const q = transport.lastCall?.options.query;
+      expect(q).toMatchObject({
+        'get-draft': true,
+        'include-likes': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+        'include-direct-children': true,
+      });
+    });
+
+    it('forwards array params via listAll generator', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const items: unknown[] = [];
+      for await (const p of pages.listAll({ id: ['1', '2'], 'space-id': ['x'] })) {
+        items.push(p);
+      }
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        id: '1,2',
+        'space-id': 'x',
+      });
+    });
   });
 });

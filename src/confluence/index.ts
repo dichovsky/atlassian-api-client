@@ -1,6 +1,8 @@
 export { ConfluenceClient } from './client.js';
 export type {
   Page,
+  PageSortOrder,
+  ParentContentType,
   Space,
   BlogPost,
   FooterComment,

@@ -14,6 +14,8 @@ export type {
   GetPageParams,
   ListPagesParams,
   Page,
+  PageSortOrder,
+  ParentContentType,
   UpdatePageData,
 } from './page.js';
 export type { ListSpacesParams, Space } from './space.js';
