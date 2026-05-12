@@ -129,7 +129,7 @@ describe('createCacheMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  it('reclaims expired entries via TTL sweep before FIFO eviction', async () => {
+  it('reclaims expired entries via TTL sweep before LRU eviction', async () => {
     vi.useFakeTimers();
     let counter = 0;
     const next = vi.fn(
@@ -149,7 +149,7 @@ describe('createCacheMiddleware', () => {
     // At t=1100 /a is expired but /b is still valid
     vi.advanceTimersByTime(500);
 
-    // Insert /c — sweepExpired reclaims the expired /a slot instead of FIFO
+    // Insert /c — sweepExpired reclaims the expired /a slot instead of LRU
     // evicting the still-valid /b. /b must remain cached after this.
     await mw(makeOpts({ path: '/c' }), next);
 
@@ -161,7 +161,7 @@ describe('createCacheMiddleware', () => {
     vi.useRealTimers();
   });
 
-  it('falls back to FIFO eviction when no entries are expired', async () => {
+  it('falls back to LRU eviction when no entries are expired', async () => {
     let counter = 0;
     const next = vi.fn(
       async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
@@ -171,15 +171,41 @@ describe('createCacheMiddleware', () => {
     const mw = createCacheMiddleware({ maxSize: 2, ttl: 10_000 });
 
     // Insert /a, /b — both still valid when /c arrives. sweepExpired finds
-    // nothing to reclaim, so FIFO evicts the oldest entry (/a).
+    // nothing to reclaim, so LRU evicts the least-recently-used entry (/a,
+    // since it was inserted first and never touched again).
     await mw(makeOpts({ path: '/a' }), next);
     await mw(makeOpts({ path: '/b' }), next);
     await mw(makeOpts({ path: '/c' }), next);
 
-    // /a should have been FIFO-evicted; re-fetching it triggers a fresh call
+    // /a should have been LRU-evicted; re-fetching it triggers a fresh call
     await mw(makeOpts({ path: '/a' }), next);
 
     // /a, /b, /c, /a-again
+    expect(next).toHaveBeenCalledTimes(4);
+  });
+
+  it('protects recently-accessed entries from LRU eviction', async () => {
+    let counter = 0;
+    const next = vi.fn(
+      async (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ path: opts.path, n: ++counter }),
+    );
+
+    const mw = createCacheMiddleware({ maxSize: 2, ttl: 10_000 });
+
+    // Insert /a, /b. Now access /a (cache hit) — this bumps /a to MRU,
+    // making /b the LRU candidate. Inserting /c must evict /b, not /a.
+    await mw(makeOpts({ path: '/a' }), next);
+    await mw(makeOpts({ path: '/b' }), next);
+    await mw(makeOpts({ path: '/a' }), next); // hit, bumps /a
+    await mw(makeOpts({ path: '/c' }), next); // should evict /b
+
+    // /a still cached — no new call
+    await mw(makeOpts({ path: '/a' }), next);
+    // /b should have been evicted — triggers a fresh call
+    await mw(makeOpts({ path: '/b' }), next);
+
+    // Underlying calls: /a, /b, /c, /b-again. /a was a hit on both reads.
     expect(next).toHaveBeenCalledTimes(4);
   });
 

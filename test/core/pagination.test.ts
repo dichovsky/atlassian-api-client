@@ -5,6 +5,7 @@ import {
   paginateOffset,
   paginateSearch,
 } from '../../src/core/pagination.js';
+import { PaginationError, ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
   CursorPaginatedResponse,
@@ -494,5 +495,243 @@ describe('paginateSearch', () => {
     const items = await collect(paginateSearch<number>(transport, '/search', {}, 10));
     expect(items).toEqual([1, 2]);
     expect(transport.calls).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Safety guards: cursor non-advance + maxPages cap
+// ---------------------------------------------------------------------------
+describe('pagination safety guards', () => {
+  describe('paginateCursor', () => {
+    it('throws PaginationError when the server returns the same cursor twice', async () => {
+      const transport = new MockTransport();
+      const stuck: CursorPaginatedResponse<string> = {
+        results: ['a'],
+        _links: { next: '/pages?cursor=STUCK&limit=1' },
+      };
+      // Two pages, identical cursor — the second response would force a third
+      // request with the same cursor again, so iteration must abort.
+      transport.respondWith(stuck).respondWith(stuck);
+
+      const gen = paginateCursor<string>(transport, '/pages');
+      const items: string[] = [];
+      await expect(async () => {
+        for await (const item of gen) {
+          items.push(item);
+        }
+      }).rejects.toBeInstanceOf(PaginationError);
+
+      // Both pages were consumed before the stall was detected.
+      expect(items).toEqual(['a', 'a']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('stops cleanly at maxPages without throwing', async () => {
+      const transport = new MockTransport();
+      const page = (cursor: string): CursorPaginatedResponse<string> => ({
+        results: [cursor],
+        _links: { next: `/pages?cursor=${cursor}_next&limit=1` },
+      });
+      transport.respondWith(page('P1')).respondWith(page('P2')).respondWith(page('P3'));
+
+      const items = await collect(
+        paginateCursor<string>(transport, '/pages', undefined, { maxPages: 2 }),
+      );
+      // Only 2 pages requested; 3rd queued response is never consumed.
+      expect(items).toEqual(['P1', 'P2']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('emits a single warn at the 80% threshold', async () => {
+      const transport = new MockTransport();
+      // maxPages = 5 → warn threshold = floor(5 * 0.8) = 4. Need 5 pages so
+      // we cross the threshold and continue past it without re-warning.
+      for (let i = 1; i <= 5; i++) {
+        transport.respondWith<CursorPaginatedResponse<number>>({
+          results: [i],
+          _links: i < 5 ? { next: `/pages?cursor=C${i}` } : {},
+        });
+      }
+      const warn = vi.fn();
+      const logger = {
+        debug: () => undefined,
+        info: () => undefined,
+        warn,
+        error: () => undefined,
+      };
+
+      await collect(
+        paginateCursor<number>(transport, '/pages', undefined, { maxPages: 5, logger }),
+      );
+
+      const nearLimitCalls = warn.mock.calls.filter((call) =>
+        String(call[0]).includes('nearing maxPages'),
+      );
+      expect(nearLimitCalls).toHaveLength(1);
+      expect(nearLimitCalls[0]![1]).toMatchObject({
+        pageCount: 4,
+        maxPages: 5,
+        path: '/pages',
+      });
+    });
+
+    it('accepts the legacy positional Logger argument', async () => {
+      const transport = new MockTransport();
+      transport.respondWith<CursorPaginatedResponse<string>>({
+        results: ['only'],
+        _links: { next: '/pages?limit=50' }, // no cursor → triggers existing warn path
+      });
+      const warn = vi.fn();
+      const logger = {
+        debug: () => undefined,
+        info: () => undefined,
+        warn,
+        error: () => undefined,
+      };
+
+      const items = await collect(paginateCursor<string>(transport, '/pages', undefined, logger));
+      expect(items).toEqual(['only']);
+      // The legacy code path still wires the logger through so the unparsable
+      // cursor warning fires.
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain('parseable cursor');
+    });
+
+    it('accepts PaginateOptions with only a logger (default maxPages)', async () => {
+      const transport = new MockTransport();
+      transport.respondWith<CursorPaginatedResponse<string>>({
+        results: ['only'],
+        _links: { next: '/pages?limit=50' }, // triggers unparsable-cursor warn
+      });
+      const warn = vi.fn();
+      const logger = {
+        debug: () => undefined,
+        info: () => undefined,
+        warn,
+        error: () => undefined,
+      };
+
+      const items = await collect(
+        paginateCursor<string>(transport, '/pages', undefined, { logger }),
+      );
+      expect(items).toEqual(['only']);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain('parseable cursor');
+    });
+
+    it('rejects non-positive maxPages with RangeError', async () => {
+      const transport = new MockTransport();
+      // Generators throw on first `next()`, not at construction time.
+      const gen = paginateCursor<string>(transport, '/pages', undefined, { maxPages: 0 });
+      await expect(gen.next()).rejects.toThrow(RangeError);
+    });
+
+    it('rejects non-object 4th argument with ValidationError', async () => {
+      const transport = new MockTransport();
+      // Simulates a JS caller passing the wrong shape (null, primitive, etc.).
+      // Without the runtime guard the `in` operator would throw a generic
+      // TypeError; the guard converts that into a descriptive ValidationError.
+      const cases: unknown[] = [null, 42, 'logger', true];
+      for (const bogus of cases) {
+        const gen = paginateCursor<string>(
+          transport,
+          '/pages',
+          undefined,
+          bogus as Parameters<typeof paginateCursor>[3],
+        );
+        await expect(gen.next()).rejects.toBeInstanceOf(ValidationError);
+      }
+    });
+  });
+
+  describe('paginateOffset', () => {
+    it('stops cleanly at maxPages without throwing', async () => {
+      const transport = new MockTransport();
+      // Server keeps reporting total=999 so the generator would keep going.
+      for (let i = 0; i < 3; i++) {
+        transport.respondWith<OffsetPaginatedResponse<number>>({
+          values: [i * 2, i * 2 + 1],
+          startAt: i * 2,
+          maxResults: 2,
+          total: 999,
+        });
+      }
+      const items = await collect(
+        paginateOffset<number>(transport, '/items', {}, 2, { maxPages: 2 }),
+      );
+      expect(items).toEqual([0, 1, 2, 3]);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('emits a single warn at the 80% threshold', async () => {
+      const transport = new MockTransport();
+      for (let i = 0; i < 5; i++) {
+        transport.respondWith<OffsetPaginatedResponse<number>>({
+          values: [i],
+          startAt: i,
+          maxResults: 1,
+          total: 999,
+        });
+      }
+      const warn = vi.fn();
+      const logger = {
+        debug: () => undefined,
+        info: () => undefined,
+        warn,
+        error: () => undefined,
+      };
+
+      await collect(paginateOffset<number>(transport, '/items', {}, 1, { maxPages: 5, logger }));
+
+      const nearLimitCalls = warn.mock.calls.filter((call) =>
+        String(call[0]).includes('nearing maxPages'),
+      );
+      expect(nearLimitCalls).toHaveLength(1);
+    });
+  });
+
+  describe('paginateSearch', () => {
+    it('stops cleanly at maxPages without throwing', async () => {
+      const transport = new MockTransport();
+      for (let i = 0; i < 3; i++) {
+        transport.respondWith<SearchPaginatedResponse<number>>({
+          issues: [i * 2, i * 2 + 1],
+          startAt: i * 2,
+          maxResults: 2,
+          total: 999,
+        });
+      }
+      const items = await collect(
+        paginateSearch<number>(transport, '/search', { jql: 'project=X' }, 2, { maxPages: 2 }),
+      );
+      expect(items).toEqual([0, 1, 2, 3]);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('emits a single warn at the 80% threshold', async () => {
+      const transport = new MockTransport();
+      for (let i = 0; i < 5; i++) {
+        transport.respondWith<SearchPaginatedResponse<number>>({
+          issues: [i],
+          startAt: i,
+          maxResults: 1,
+          total: 999,
+        });
+      }
+      const warn = vi.fn();
+      const logger = {
+        debug: () => undefined,
+        info: () => undefined,
+        warn,
+        error: () => undefined,
+      };
+
+      await collect(paginateSearch<number>(transport, '/search', {}, 1, { maxPages: 5, logger }));
+
+      const nearLimitCalls = warn.mock.calls.filter((call) =>
+        String(call[0]).includes('nearing maxPages'),
+      );
+      expect(nearLimitCalls).toHaveLength(1);
+    });
   });
 });

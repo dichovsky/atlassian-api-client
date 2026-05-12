@@ -146,7 +146,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Phase 4 — Reliability (adds runtime behavior)
 
-### [ ] B009: Add LRU eviction to cache middleware
+### [x] B009: Add LRU eviction to cache middleware
 
 - **Priority:** P1 — High
 - **Description:** Current `createCacheMiddleware` uses FIFO eviction for `maxSize` enforcement. Replace with LRU: entries accessed most recently are protected from eviction. Use a `Map` (which preserves insertion order) and move accessed entries to the end on read. Sweep expired entries before checking size.
@@ -324,7 +324,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/cli/commands/scopes.ts` (new), `src/cli/router.ts`, `src/core/scopes.ts`
 - **Dependencies:** None
 
-### [ ] B020: Add pagination cursor validation
+### [x] B020: Add pagination cursor validation
 
 - **Priority:** P3 — Low
 - **Description:** Detect infinite loops in cursor-based pagination: if the cursor value doesn't change between consecutive API responses, stop and throw `PaginationError('cursor not advancing')`. Also add a `maxPages` option (default 10000) to prevent runaway pagination. Log a warning when approaching the limit.
