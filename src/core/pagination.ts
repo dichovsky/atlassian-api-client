@@ -1,5 +1,5 @@
 import type { Transport, RequestOptions, Logger } from './types.js';
-import { PaginationError } from './errors.js';
+import { PaginationError, ValidationError } from './errors.js';
 
 /**
  * Validate a pagination size value (maxResults / pageSize / limit).
@@ -67,12 +67,22 @@ interface ResolvedPaginateOptions {
  * a bare `Logger`. New callers may pass `PaginateOptions` instead. The legacy
  * form is detected by duck-typing: a value whose `warn` is a function and that
  * lacks both `maxPages` and `logger` keys is treated as a `Logger`.
+ *
+ * Throws {@link ValidationError} when the argument is neither `undefined` nor
+ * an object (e.g. `null`, a number, or a string) so JS callers that pass the
+ * wrong shape get a descriptive failure instead of a `TypeError` from the
+ * `in` operator.
  */
 function resolvePaginateOptions(
   arg: Logger | PaginateOptions | undefined,
 ): ResolvedPaginateOptions {
   if (arg === undefined) {
     return { maxPages: DEFAULT_MAX_PAGES };
+  }
+  if (typeof arg !== 'object' || arg === null) {
+    throw new ValidationError(
+      `paginateCursor: 4th argument must be a Logger, PaginateOptions, or undefined; got ${arg === null ? 'null' : typeof arg}`,
+    );
   }
 
   const maybeOptions = arg as Partial<PaginateOptions>;
@@ -157,7 +167,10 @@ export async function* paginateCursor<T>(
 ): AsyncGenerator<T> {
   const resolved = resolvePaginateOptions(loggerOrOptions);
   const maxPages = normalizeMaxPages(resolved.maxPages);
-  const warnThreshold = Math.max(1, Math.floor(maxPages * 0.8));
+  // ceil so the warning fires at or after 80% of the cap (never below it).
+  // For maxPages=10000 the threshold is 8000; for very small caps it lands
+  // at the cap itself, which is still a useful "you've hit the limit" signal.
+  const warnThreshold = Math.ceil(maxPages * 0.8);
   const logger = resolved.logger;
 
   let cursor: string | undefined;
@@ -233,7 +246,10 @@ export async function* paginateOffset<T>(
 ): AsyncGenerator<T> {
   validatePageSize(pageSize);
   const maxPages = normalizeMaxPages(options?.maxPages);
-  const warnThreshold = Math.max(1, Math.floor(maxPages * 0.8));
+  // ceil so the warning fires at or after 80% of the cap (never below it).
+  // For maxPages=10000 the threshold is 8000; for very small caps it lands
+  // at the cap itself, which is still a useful "you've hit the limit" signal.
+  const warnThreshold = Math.ceil(maxPages * 0.8);
   const logger = options?.logger;
 
   let startAt = 0;
@@ -304,7 +320,10 @@ export async function* paginateSearch<T>(
 ): AsyncGenerator<T> {
   validatePageSize(pageSize);
   const maxPages = normalizeMaxPages(options?.maxPages);
-  const warnThreshold = Math.max(1, Math.floor(maxPages * 0.8));
+  // ceil so the warning fires at or after 80% of the cap (never below it).
+  // For maxPages=10000 the threshold is 8000; for very small caps it lands
+  // at the cap itself, which is still a useful "you've hit the limit" signal.
+  const warnThreshold = Math.ceil(maxPages * 0.8);
   const logger = options?.logger;
 
   let startAt = 0;

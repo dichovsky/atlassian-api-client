@@ -5,7 +5,7 @@ import {
   paginateOffset,
   paginateSearch,
 } from '../../src/core/pagination.js';
-import { PaginationError } from '../../src/core/errors.js';
+import { PaginationError, ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type {
   CursorPaginatedResponse,
@@ -624,6 +624,23 @@ describe('pagination safety guards', () => {
       // Generators throw on first `next()`, not at construction time.
       const gen = paginateCursor<string>(transport, '/pages', undefined, { maxPages: 0 });
       await expect(gen.next()).rejects.toThrow(RangeError);
+    });
+
+    it('rejects non-object 4th argument with ValidationError', async () => {
+      const transport = new MockTransport();
+      // Simulates a JS caller passing the wrong shape (null, primitive, etc.).
+      // Without the runtime guard the `in` operator would throw a generic
+      // TypeError; the guard converts that into a descriptive ValidationError.
+      const cases: unknown[] = [null, 42, 'logger', true];
+      for (const bogus of cases) {
+        const gen = paginateCursor<string>(
+          transport,
+          '/pages',
+          undefined,
+          bogus as Parameters<typeof paginateCursor>[3],
+        );
+        await expect(gen.next()).rejects.toBeInstanceOf(ValidationError);
+      }
     });
   });
 
