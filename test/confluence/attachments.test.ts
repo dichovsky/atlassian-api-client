@@ -244,4 +244,44 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/attachments`);
     });
   });
+
+  // ── B028: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B028: spec-aligned Attachment schema + params', () => {
+    it('exposes fileId, customContentId, createdAt on response', async () => {
+      transport.respondWith({
+        id: 'a1',
+        status: 'current',
+        title: 'image.png',
+        fileId: 'file-xyz',
+        customContentId: 'cc-1',
+        createdAt: '2025-06-01T00:00:00.000Z',
+      });
+      const att = await attachments.get('a1');
+      expect(att.fileId).toBe('file-xyz');
+      expect(att.customContentId).toBe('cc-1');
+      expect(att.createdAt).toBe('2025-06-01T00:00:00.000Z');
+    });
+
+    it('forwards sort param on listForPage', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listForPage('page-1', { sort: '-modified-date' });
+      expect(transport.lastCall?.options.query).toMatchObject({ sort: '-modified-date' });
+    });
+
+    it('forwards status array as comma-separated', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listForPage('page-1', { status: ['current', 'archived'] });
+      expect(transport.lastCall?.options.query).toMatchObject({ status: 'current,archived' });
+    });
+
+    it('forwards array params via listAllForPage generator', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const items: unknown[] = [];
+      for await (const a of attachments.listAllForPage('page-1', { status: ['current'] })) {
+        items.push(a);
+      }
+      expect(transport.calls[0]?.options.query).toMatchObject({ status: 'current' });
+    });
+  });
 });

@@ -19,6 +19,7 @@ export type {
   InlineCommentProperties,
   InlineCommentResolutionStatus,
   Attachment,
+  AttachmentSortOrder,
   Label,
   ConfluenceVersion,
   BodyFormat,

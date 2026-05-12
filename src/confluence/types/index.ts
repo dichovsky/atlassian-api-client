@@ -48,7 +48,7 @@ export type {
   ListInlineCommentsParams,
   UpdateCommentData,
 } from './comment.js';
-export type { Attachment, ListAttachmentsParams } from './attachment.js';
+export type { Attachment, AttachmentSortOrder, ListAttachmentsParams } from './attachment.js';
 export type { Label, ListLabelsParams } from './label.js';
 export type {
   ContentProperty,

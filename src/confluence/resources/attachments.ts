@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import { buildScalarQuery } from '../../core/query.js';
 import type { Attachment, ListAttachmentsParams } from '../types.js';
 
 /** Confluence Attachments resource — list, get, delete, and upload attachments on pages. */
@@ -19,7 +20,7 @@ export class AttachmentsResource {
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: buildScalarQuery(params),
     });
     return response.data;
   }
@@ -77,7 +78,7 @@ export class AttachmentsResource {
     yield* paginateCursor<Attachment>(
       this.transport,
       `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
-      params as Record<string, string | number | boolean | undefined>,
+      buildScalarQuery(params),
     );
   }
 }
