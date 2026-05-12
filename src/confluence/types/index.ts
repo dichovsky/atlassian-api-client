@@ -7,7 +7,7 @@
  * re-exported here — it is for internal codegen drift detection only and not
  * part of the public API surface (see B060, B062).
  */
-export type { BodyFormat, ConfluenceVersion, ContentBody } from './body.js';
+export type { BodyFormat, BodyRepresentation, ConfluenceVersion, ContentBody } from './body.js';
 export type {
   CreatePageData,
   DeletePageParams,

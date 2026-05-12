@@ -9,6 +9,7 @@ export type {
   Label,
   ConfluenceVersion,
   BodyFormat,
+  BodyRepresentation,
   ContentBody,
   ListPagesParams,
   GetPageParams,
