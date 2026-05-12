@@ -4,6 +4,23 @@ import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
 import type { Space, ListSpacesParams } from '../types.js';
 
+/** Join array query params into comma-separated strings for transport forwarding. */
+function buildListQuery(
+  params?: ListSpacesParams,
+): Record<string, string | number | boolean | undefined> {
+  if (!params) return {};
+  const query: Record<string, string | number | boolean | undefined> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      query[key] = value.join(',');
+    } else {
+      query[key] = value as string | number | boolean;
+    }
+  }
+  return query;
+}
+
 export class SpacesResource {
   constructor(
     private readonly transport: Transport,
@@ -12,19 +29,10 @@ export class SpacesResource {
 
   /** List spaces with optional filtering. */
   async list(params?: ListSpacesParams): Promise<CursorPaginatedResponse<Space>> {
-    const query: Record<string, string | number | boolean | undefined> = {};
-    if (params) {
-      if (params.keys) query['keys'] = params.keys.join(',');
-      if (params.type) query['type'] = params.type;
-      if (params.status) query['status'] = params.status;
-      if (params.limit !== undefined) query['limit'] = params.limit;
-      if (params.cursor) query['cursor'] = params.cursor;
-    }
-
     const response = await this.transport.request<CursorPaginatedResponse<Space>>({
       method: 'GET',
       path: `${this.baseUrl}/spaces`,
-      query,
+      query: buildListQuery(params),
     });
     return response.data;
   }
@@ -40,13 +48,6 @@ export class SpacesResource {
 
   /** Iterate over all spaces across all result pages. */
   async *listAll(params?: Omit<ListSpacesParams, 'cursor'>): AsyncGenerator<Space> {
-    const query: Record<string, string | number | boolean | undefined> = {};
-    if (params) {
-      if (params.keys) query['keys'] = params.keys.join(',');
-      if (params.type) query['type'] = params.type;
-      if (params.status) query['status'] = params.status;
-      if (params.limit !== undefined) query['limit'] = params.limit;
-    }
-    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, query);
+    yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, buildListQuery(params));
   }
 }

@@ -18,7 +18,17 @@ export type {
   ParentContentType,
   UpdatePageData,
 } from './page.js';
-export type { ListSpacesParams, Space } from './space.js';
+export type {
+  ListSpacesParams,
+  Space,
+  SpaceDescription,
+  SpaceDescriptionFormat,
+  SpaceDescriptionRepresentation,
+  SpaceIcon,
+  SpaceSortOrder,
+  SpaceStatus,
+  SpaceType,
+} from './space.js';
 export type {
   BlogPost,
   CreateBlogPostData,

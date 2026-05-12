@@ -190,4 +190,63 @@ describe('SpacesResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/spaces/..%2Fadmin`);
     });
   });
+
+  // ── B025: spec-aligned schema additions ───────────────────────────────────
+
+  describe('B025: spec-aligned Space schema + params', () => {
+    it('exposes authorId, currentActiveAlias, icon, typed description on response', async () => {
+      transport.respondWith({
+        id: '1',
+        key: 'SP',
+        name: 'Space',
+        type: 'global',
+        status: 'current',
+        authorId: 'author-1',
+        currentActiveAlias: 'old-alias',
+        icon: { path: '/wiki/aa/x', apiDownloadLink: '/wiki/dl' },
+        description: { plain: { value: 'plain text', representation: 'plain' } },
+      });
+      const space = await spaces.get('1');
+      expect(space.authorId).toBe('author-1');
+      expect(space.currentActiveAlias).toBe('old-alias');
+      expect(space.icon?.path).toBe('/wiki/aa/x');
+      expect(space.description?.plain?.value).toBe('plain text');
+    });
+
+    it('forwards spec-aligned array params (ids, labels) as comma-separated', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await spaces.list({ ids: ['10', '20'], labels: ['eng', 'docs'] });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        ids: '10,20',
+        labels: 'eng,docs',
+      });
+    });
+
+    it('forwards favorited-by, not-favorited-by, sort, description-format, include-icon', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await spaces.list({
+        'favorited-by': 'user-1',
+        'not-favorited-by': 'user-2',
+        sort: '-name',
+        'description-format': 'view',
+        'include-icon': true,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'favorited-by': 'user-1',
+        'not-favorited-by': 'user-2',
+        sort: '-name',
+        'description-format': 'view',
+        'include-icon': true,
+      });
+    });
+
+    it('forwards new params via listAll generator', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const items: unknown[] = [];
+      for await (const s of spaces.listAll({ ids: ['1'], sort: 'name' })) {
+        items.push(s);
+      }
+      expect(transport.calls[0]?.options.query).toMatchObject({ ids: '1', sort: 'name' });
+    });
+  });
 });
