@@ -116,6 +116,7 @@ export interface Label {
 
 // --- Params ---
 
+/** Parameters for listing Confluence pages. */
 export interface ListPagesParams {
   readonly spaceId?: string;
   readonly title?: string;
@@ -125,6 +126,7 @@ export interface ListPagesParams {
   readonly cursor?: string;
 }
 
+/** Parameters for retrieving a single Confluence page. */
 export interface GetPageParams {
   readonly 'body-format'?: BodyFormat;
   readonly 'include-labels'?: boolean;
@@ -134,6 +136,7 @@ export interface GetPageParams {
   readonly version?: number;
 }
 
+/** Request body for creating a Confluence page. */
 export interface CreatePageData {
   readonly spaceId: string;
   readonly title: string;
@@ -145,6 +148,7 @@ export interface CreatePageData {
   };
 }
 
+/** Request body for updating a Confluence page. */
 export interface UpdatePageData {
   readonly id: string;
   readonly title: string;
@@ -156,11 +160,13 @@ export interface UpdatePageData {
   };
 }
 
+/** Parameters for deleting a Confluence page. */
 export interface DeletePageParams {
   readonly purge?: boolean;
   readonly draft?: boolean;
 }
 
+/** Parameters for listing Confluence spaces. */
 export interface ListSpacesParams {
   readonly keys?: string[];
   readonly type?: string;
@@ -169,6 +175,7 @@ export interface ListSpacesParams {
   readonly cursor?: string;
 }
 
+/** Parameters for listing Confluence blog posts. */
 export interface ListBlogPostsParams {
   readonly spaceId?: string;
   readonly title?: string;
@@ -178,6 +185,7 @@ export interface ListBlogPostsParams {
   readonly cursor?: string;
 }
 
+/** Request body for creating a Confluence blog post. */
 export interface CreateBlogPostData {
   readonly spaceId: string;
   readonly title: string;
@@ -188,6 +196,7 @@ export interface CreateBlogPostData {
   };
 }
 
+/** Request body for updating a Confluence blog post. */
 export interface UpdateBlogPostData {
   readonly id: string;
   readonly title: string;
@@ -199,12 +208,14 @@ export interface UpdateBlogPostData {
   };
 }
 
+/** Parameters for listing footer comments on a page or blog post. */
 export interface ListFooterCommentsParams {
   readonly 'body-format'?: BodyFormat;
   readonly limit?: number;
   readonly cursor?: string;
 }
 
+/** Request body for creating a footer comment. */
 export interface CreateFooterCommentData {
   readonly pageId?: string;
   readonly blogPostId?: string;
@@ -214,6 +225,7 @@ export interface CreateFooterCommentData {
   };
 }
 
+/** Request body for updating an existing comment. */
 export interface UpdateCommentData {
   readonly version: { readonly number: number; readonly message?: string };
   readonly body: {
@@ -222,12 +234,14 @@ export interface UpdateCommentData {
   };
 }
 
+/** Parameters for listing inline comments on a page or blog post. */
 export interface ListInlineCommentsParams {
   readonly 'body-format'?: BodyFormat;
   readonly limit?: number;
   readonly cursor?: string;
 }
 
+/** Request body for creating an inline comment. */
 export interface CreateInlineCommentData {
   readonly pageId?: string;
   readonly blogPostId?: string;
@@ -242,6 +256,7 @@ export interface CreateInlineCommentData {
   };
 }
 
+/** Parameters for listing attachments on a page or blog post. */
 export interface ListAttachmentsParams {
   readonly limit?: number;
   readonly cursor?: string;
@@ -249,6 +264,7 @@ export interface ListAttachmentsParams {
   readonly filename?: string;
 }
 
+/** Parameters for listing labels on a page or blog post. */
 export interface ListLabelsParams {
   readonly prefix?: string;
   readonly limit?: number;
@@ -303,6 +319,7 @@ export interface CustomContent {
   readonly _links?: Record<string, string>;
 }
 
+/** Parameters for listing custom content items. */
 export interface ListCustomContentParams {
   readonly type?: string;
   readonly id?: string;
@@ -315,11 +332,13 @@ export interface ListCustomContentParams {
   readonly limit?: number;
 }
 
+/** Parameters for retrieving a single custom content item. */
 export interface GetCustomContentParams {
   readonly 'body-format'?: BodyFormat;
   readonly version?: number;
 }
 
+/** Request body for creating a custom content item. */
 export interface CreateCustomContentData {
   readonly type: string;
   readonly status?: 'current' | 'draft';
@@ -333,6 +352,7 @@ export interface CreateCustomContentData {
   };
 }
 
+/** Request body for updating a custom content item. */
 export interface UpdateCustomContentData {
   readonly id: string;
   readonly type: string;
@@ -360,6 +380,7 @@ export interface Whiteboard {
   readonly _links?: Record<string, string>;
 }
 
+/** Request body for creating a whiteboard. */
 export interface CreateWhiteboardData {
   readonly spaceId: string;
   readonly title?: string;
@@ -389,6 +410,7 @@ export interface ConfluenceTask {
   readonly _links?: Record<string, string>;
 }
 
+/** Parameters for listing Confluence tasks. */
 export interface ListTasksParams {
   readonly 'body-format'?: BodyFormat;
   readonly includeBlankTasks?: boolean;
@@ -408,10 +430,12 @@ export interface ListTasksParams {
   readonly limit?: number;
 }
 
+/** Parameters for retrieving a single Confluence task. */
 export interface GetTaskParams {
   readonly 'body-format'?: BodyFormat;
 }
 
+/** Request body for updating a Confluence task. */
 export interface UpdateTaskData {
   readonly status: 'incomplete' | 'complete';
 }
@@ -427,6 +451,7 @@ export interface ContentVersion {
   readonly createdAt?: string;
 }
 
+/** Parameters for listing content versions. */
 export interface ListVersionsParams {
   readonly limit?: number;
   readonly cursor?: string;

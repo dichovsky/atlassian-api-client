@@ -1,4 +1,9 @@
-/** Jira Issue. */
+/**
+ * Jira Issue with full field expansion.
+ *
+ * Contains the issue's core fields plus optional expanded data like
+ * transitions, rendered fields, and changelog when requested.
+ */
 export interface Issue {
   readonly id: string;
   readonly key: string;
@@ -10,14 +15,22 @@ export interface Issue {
   readonly changelog?: Record<string, unknown>;
 }
 
-/** Minimal response after creating an issue. */
+/**
+ * Minimal response returned after creating an issue.
+ *
+ * Contains the issue key, ID, and self URL for referencing the newly created issue.
+ */
 export interface CreatedIssue {
   readonly id: string;
   readonly key: string;
   readonly self: string;
 }
 
-/** Jira Project. */
+/**
+ * Jira Project with metadata.
+ *
+ * Includes project type, privacy, lead information, and avatar URLs.
+ */
 export interface Project {
   readonly id: string;
   readonly key: string;
@@ -31,7 +44,11 @@ export interface Project {
   readonly avatarUrls?: Record<string, string>;
 }
 
-/** Jira User. */
+/**
+ * Jira User with account details.
+ *
+ * Includes email, display name, timezone, locale, and avatar URLs.
+ */
 export interface User {
   readonly accountId: string;
   readonly accountType?: string;
@@ -44,14 +61,22 @@ export interface User {
   readonly locale?: string;
 }
 
-/** Compact user reference. */
+/**
+ * Compact user reference used in nested objects to avoid full User payloads.
+ *
+ * Contains only accountId, displayName, and self URL.
+ */
 export interface UserRef {
   readonly accountId: string;
   readonly displayName?: string;
   readonly self?: string;
 }
 
-/** Jira Issue Type. */
+/**
+ * Jira Issue Type (e.g. Bug, Task, Story).
+ *
+ * Includes hierarchy level and icon URL for display purposes.
+ */
 export interface IssueType {
   readonly id: string;
   readonly name: string;
@@ -62,7 +87,11 @@ export interface IssueType {
   readonly iconUrl?: string;
 }
 
-/** Jira Priority. */
+/**
+ * Jira Priority level (e.g. Highest, High, Medium, Low, Lowest).
+ *
+ * Includes description and icon URL for display purposes.
+ */
 export interface Priority {
   readonly id: string;
   readonly name: string;
@@ -72,7 +101,11 @@ export interface Priority {
   readonly statusColor?: string;
 }
 
-/** Jira Status. */
+/**
+ * Jira Status (e.g. Open, In Progress, Done).
+ *
+ * Includes status category and scope information.
+ */
 export interface Status {
   readonly id: string;
   readonly name: string;
@@ -83,7 +116,11 @@ export interface Status {
   readonly usages?: Record<string, unknown>[];
 }
 
-/** Jira Status Category. */
+/**
+ * Jira Status Category (e.g. New, In Progress, Done).
+ *
+ * Provides the high-level grouping for issue statuses.
+ */
 export interface StatusCategory {
   readonly id: number;
   readonly key: string;
@@ -92,7 +129,11 @@ export interface StatusCategory {
   readonly self?: string;
 }
 
-/** Jira Transition. */
+/**
+ * Jira Workflow Transition (e.g. Resolve Issue, Start Progress).
+ *
+ * Includes the target status and whether the transition is global, initial, or conditional.
+ */
 export interface Transition {
   readonly id: string;
   readonly name: string;
@@ -107,7 +148,11 @@ export interface Transition {
   readonly isConditional?: boolean;
 }
 
-/** Jira Search result wrapper. */
+/**
+ * Jira Search result wrapper returned by the search API.
+ *
+ * Contains the list of matching issues along with pagination metadata.
+ */
 export interface SearchResult {
   readonly issues: Issue[];
   readonly startAt: number;
@@ -118,29 +163,34 @@ export interface SearchResult {
 
 // --- Params ---
 
+/** Parameters for retrieving a single Jira issue. */
 export interface GetIssueParams {
   readonly fields?: string[];
   readonly expand?: string[];
   readonly properties?: string[];
 }
 
+/** Request body for creating a Jira issue. */
 export interface CreateIssueData {
   readonly fields: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
 }
 
+/** Request body for updating a Jira issue. */
 export interface UpdateIssueData {
   readonly fields?: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
   readonly properties?: Record<string, unknown>[];
 }
 
+/** Request body for transitioning a Jira issue. */
 export interface TransitionData {
   readonly transition: { readonly id: string };
   readonly fields?: Record<string, unknown>;
   readonly update?: Record<string, unknown[]>;
 }
 
+/** Parameters for listing Jira projects. */
 export interface ListProjectsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -150,6 +200,7 @@ export interface ListProjectsParams {
   readonly typeKey?: string;
 }
 
+/** Parameters for Jira JQL search queries. */
 export interface SearchParams {
   readonly jql: string;
   readonly startAt?: number;
@@ -158,6 +209,7 @@ export interface SearchParams {
   readonly expand?: string[];
 }
 
+/** Parameters for searching Jira users. */
 export interface SearchUsersParams {
   readonly query: string;
   readonly startAt?: number;

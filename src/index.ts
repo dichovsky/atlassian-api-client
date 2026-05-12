@@ -20,6 +20,7 @@ export type {
   BearerAuthConfig,
   RequestOptions,
   ApiResponse,
+  RateLimitInfo,
   Transport,
   Logger,
   Middleware,

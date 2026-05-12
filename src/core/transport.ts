@@ -18,7 +18,30 @@ import {
 import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
-/** HTTP transport using native fetch with auth, retry, rate-limit, and timeout support. */
+/**
+ * HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support.
+ *
+ * Wraps the configured `fetch` with automatic Authorization header injection
+ * (via {@link AuthProvider}), exponential backoff retry, rate-limit header
+ * parsing, and middleware composition.
+ *
+ * @example
+ * ```ts
+ * import { HttpTransport, resolveConfig } from '@yourscope/atlassian-api-client';
+ *
+ * const config = resolveConfig({
+ *   baseUrl: 'https://mycompany.atlassian.net/wiki/api/v2',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'x-api-token' },
+ * });
+ *
+ * const transport = new HttpTransport(config);
+ * const response = await transport.request({
+ *   method: 'GET',
+ *   path: '/space',
+ *   query: { limit: 10 },
+ * });
+ * ```
+ */
 export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly authProvider: AuthProvider;

@@ -49,23 +49,69 @@ export interface Transport {
   request<T>(options: RequestOptions): Promise<ApiResponse<T>>;
 }
 
-/** Basic auth config (email + API token). */
+/**
+ * Basic auth config (email + API token).
+ *
+ * @example
+ * ```ts
+ * const config: ClientConfig = {
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'x-api-token' }
+ * };
+ * ```
+ */
 export interface BasicAuthConfig {
   readonly type: 'basic';
   readonly email: string;
   readonly apiToken: string;
 }
 
-/** Bearer auth config (OAuth 2.0 access token or PAT). */
+/**
+ * Bearer auth config (OAuth 2.0 access token or PAT).
+ *
+ * @example
+ * ```ts
+ * const config: ClientConfig = {
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'bearer', token: 'at&txxxxx' }
+ * };
+ * ```
+ */
 export interface BearerAuthConfig {
   readonly type: 'bearer';
   readonly token: string;
 }
 
-/** Discriminated union of supported auth strategies. */
+/**
+ * Discriminated union of supported auth strategies.
+ *
+ * @example
+ * ```ts
+ * // Basic auth
+ * const basicAuth: AuthConfig = { type: 'basic', email: 'user@example.com', apiToken: 'x-api-token' };
+ *
+ * // Bearer auth
+ * const bearerAuth: AuthConfig = { type: 'bearer', token: 'at&txxxxx' };
+ * ```
+ */
 export type AuthConfig = BasicAuthConfig | BearerAuthConfig;
 
-/** Client configuration. */
+/**
+ * Client configuration.
+ *
+ * @example
+ * ```ts
+ * const config: ClientConfig = {
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'x-api-token' },
+ *   timeout: 30000,
+ *   retries: 3,
+ *   retryDelay: 1000,
+ *   maxRetryDelay: 30000,
+ *   logger: console,
+ * };
+ * ```
+ */
 export interface ClientConfig {
   /** Atlassian instance URL (e.g. https://mycompany.atlassian.net). */
   readonly baseUrl: string;
@@ -94,7 +140,12 @@ export interface ClientConfig {
   readonly middleware?: Middleware[];
 }
 
-/** Internal resolved config with defaults applied. */
+/**
+ * Internal resolved config with defaults applied.
+ *
+ * Produced by {@link resolveConfig} from a {@link ClientConfig}.
+ * Contains validated values with all optional fields resolved to their defaults.
+ */
 export interface ResolvedConfig {
   /** Validated base URL with trailing slash removed. */
   readonly baseUrl: string;
@@ -116,7 +167,11 @@ export interface ResolvedConfig {
   readonly middleware?: Middleware[];
 }
 
-/** Rate limit information parsed from response headers. */
+/**
+ * Rate limit information parsed from response headers.
+ *
+ * Populated by the transport layer from `x-ratelimit-*` headers on every successful response.
+ */
 export interface RateLimitInfo {
   readonly limit?: number;
   readonly remaining?: number;
