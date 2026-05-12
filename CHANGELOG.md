@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 (2026-05-12)
+
 ### Added
 
 - **skill** — bundled Claude Code skill `atlassian-api-client-cli` ships at `skill/SKILL.md` + `skill/reference/{confluence,jira}.md`. New `atlas install-skill` subcommand copies it into `~/.claude/skills/` (default), `<cwd>/.claude/skills/` (`--local`), or a custom `--path`. Stamps the destination frontmatter `version:` with the package version at install time so installed skills correlate with `npm list atlassian-api-client`. Supports `--print`, `--dry-run`, `--force`; idempotent at the same version; exit codes 0/1/2/3 distinguish success / generic failure / version-mismatch-without-force / permission-denied. Adds `claude-code`, `agent`, `skill` to `keywords` and `skill` to the `files` whitelist.
@@ -23,7 +25,6 @@
 ### Removed
 
 - **package** — CommonJS build dropped. Package is now ESM-only: removed `build:cjs` script, `tsconfig.cjs.json`, `dist/cjs/` output, and the `require` condition from `exports`. Consumers on Node ≥ 22.12 can still `require()` the ESM entry directly via the runtime `require(esm)` support; older CJS-only consumers should upgrade Node or pin to `0.6.0`.
-- **package** — `test:exports` script and its `scripts/test-exports.js` helper removed; the CJS smoke check it performed no longer applies, and the ESM entry is exercised by the test suite.
 
 ## 0.6.0 (2026-04-20)
 
