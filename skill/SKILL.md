@@ -127,3 +127,5 @@ npx --package atlassian-api-client -- atlas install-skill --dry-run
 # Overwrite an existing install with a different version
 npx --package atlassian-api-client -- atlas install-skill --force
 ```
+
+`install-skill` is a top-level utility command with an options-only shape: run it as `atlas install-skill [options]`.

@@ -498,6 +498,26 @@ describe('runInstall against bundled skill', () => {
 });
 
 describe('executeInstallSkill', () => {
+  it('rejects unexpected subcommands and positional arguments', () => {
+    const io = makeIo();
+    const code = executeInstallSkill(
+      {
+        api: 'install-skill',
+        resource: 'pages',
+        action: 'list',
+        positionalArgs: ['extra'],
+        options: { local: true },
+      },
+      io.capture.out,
+      io.capture.err,
+    );
+    expect(code).toBe(1);
+    expect(io.stdout).toEqual([]);
+    expect(io.stderr).toEqual([
+      'Error: install-skill does not accept subcommands or positional arguments',
+    ]);
+  });
+
   it('happy path: writes files and returns 0', () => {
     const target = join(tmpRoot, 'happy');
     const io = makeIo();

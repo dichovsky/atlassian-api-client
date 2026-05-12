@@ -249,6 +249,11 @@ export function executeInstallSkill(
   cwd: string = process.cwd(),
   fs: FilesystemDeps = realFs,
 ): number {
+  if (cmd.resource || cmd.action || cmd.positionalArgs.length > 0) {
+    stderr('Error: install-skill does not accept subcommands or positional arguments');
+    return 1;
+  }
+
   const source = resolveSkillSource(moduleUrl);
   const target = resolveInstallTarget(cmd.options, env, cwd);
   const options: InstallSkillOptions = {
