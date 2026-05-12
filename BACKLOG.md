@@ -10,16 +10,16 @@
 
 The items are grouped into **phases**. Each phase should be completed before the next begins due to dependencies.
 
-| Phase | Name | Items | Why This Order |
-|-------|------|-------|----------------|
-| 0 | Documentation | B001 | No code changes; unblocks consumers immediately |
-| 1 | Type correctness | B002, B003 | Low-risk, high-impact; no behavioral changes |
-| 2 | Transport refactor | B004, B005, B006 | High-risk; needs its own focus; unblocks later items |
-| 3 | Type organization | B007, B008 | Mechanical split; benefits from transport refactor being stable |
-| 4 | Reliability | B009, B010, B011 | Builds on refactor; adds runtime behavior |
-| 5 | Testing | B012, B013, B014 | Depends on all code changes being stable |
-| 6 | Security & advanced | B015, B016, B017 | Lower urgency; requires design discussion |
-| 7 | Automation | B018, B019, B020 | CI/CD; can be done incrementally |
+| Phase | Name                | Items            | Why This Order                                                  |
+| ----- | ------------------- | ---------------- | --------------------------------------------------------------- |
+| 0     | Documentation       | B001             | No code changes; unblocks consumers immediately                 |
+| 1     | Type correctness    | B002, B003       | Low-risk, high-impact; no behavioral changes                    |
+| 2     | Transport refactor  | B004, B005, B006 | High-risk; needs its own focus; unblocks later items            |
+| 3     | Type organization   | B007, B008       | Mechanical split; benefits from transport refactor being stable |
+| 4     | Reliability         | B009, B010, B011 | Builds on refactor; adds runtime behavior                       |
+| 5     | Testing             | B012, B013, B014 | Depends on all code changes being stable                        |
+| 6     | Security & advanced | B015, B016, B017 | Lower urgency; requires design discussion                       |
+| 7     | Automation          | B018, B019, B020 | CI/CD; can be done incrementally                                |
 
 ---
 
@@ -343,17 +343,17 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Summary
 
-| Phase | Items | Est. Effort | Priority |
-|-------|-------|-------------|----------|
-| 0 — Documentation | B001 | 2h | P1 |
-| 1 — Type correctness | B002, B003 | 3h | P0+P1 |
-| 2 — Transport refactor | B004, B005, B006 | 8h | P0 |
-| 3 — Type organization | B007, B008 | 4h | P1 |
-| 4 — Reliability | B009, B010, B011 | 10h | P1+P2 |
-| 5 — Testing | B012, B013, B014 | 12h | P1+P2 |
-| 6 — Security & advanced | B015, B016, B017 | 12h | P2+P3 |
-| 7 — Automation | B018, B019, B020 | 6h | P2+P3 |
-| **Total** | **20 items** | **~57h** | |
+| Phase                   | Items            | Est. Effort | Priority |
+| ----------------------- | ---------------- | ----------- | -------- |
+| 0 — Documentation       | B001             | 2h          | P1       |
+| 1 — Type correctness    | B002, B003       | 3h          | P0+P1    |
+| 2 — Transport refactor  | B004, B005, B006 | 8h          | P0       |
+| 3 — Type organization   | B007, B008       | 4h          | P1       |
+| 4 — Reliability         | B009, B010, B011 | 10h         | P1+P2    |
+| 5 — Testing             | B012, B013, B014 | 12h         | P1+P2    |
+| 6 — Security & advanced | B015, B016, B017 | 12h         | P2+P3    |
+| 7 — Automation          | B018, B019, B020 | 6h          | P2+P3    |
+| **Total**               | **20 items**     | **~57h**    |          |
 
 **Recommended first PR:** B002 + B003 (type correctness, low risk, high impact, independent)
 **Recommended second PR:** B004 + B005 + B006 (transport refactor — do together to minimize breakage)
