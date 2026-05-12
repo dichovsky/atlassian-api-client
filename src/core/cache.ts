@@ -5,7 +5,9 @@ import { ValidationError } from './errors.js';
 export interface CacheOptions {
   /**
    * Maximum number of entries held in memory.
-   * When the limit is reached the oldest entry is evicted (FIFO).
+   * When the limit is reached the least-recently-used entry is evicted (LRU).
+   * Cache hits move the entry to the most-recently-used position; expired
+   * entries are reclaimed before LRU eviction kicks in.
    * @default 100
    */
   readonly maxSize?: number;
@@ -59,6 +61,11 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
 
     if (cached !== undefined) {
       if (cached.expiresAt > now) {
+        // Move to the most-recently-used position so future evictions target
+        // truly cold entries. Map iteration order is insertion order, so
+        // delete + re-insert is the canonical LRU bump.
+        cache.delete(key);
+        cache.set(key, cached);
         return cached.response;
       }
       cache.delete(key);
@@ -82,7 +89,7 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
 
 /**
  * Delete every expired entry from the cache.
- * Called on eviction to reclaim TTL-expired slots before resorting to FIFO,
+ * Called on eviction to reclaim TTL-expired slots before resorting to LRU,
  * so that a still-valid entry is not pushed out by a dead one that happened
  * to be inserted earlier.
  */
