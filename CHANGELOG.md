@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- **pagination** — `PaginateOptions { maxPages?, logger? }` parameter on `paginateCursor`, `paginateOffset`, `paginateSearch`. `maxPages` (default 10000) caps the number of pages requested and emits a single `warn` once the page count crosses 80% of the limit, making runaway iteration observable before it terminates. `paginateCursor` additionally throws the new `PaginationError` when the server returns the same cursor on consecutive responses, preventing infinite-loop failure modes from an upstream regression. The legacy positional `Logger` argument on `paginateCursor` is still accepted for backwards compatibility.
+- **errors** — `PaginationError` (extends `AtlassianError`, code `PAGINATION_ERROR`) exported from `src/core/index.ts` for callers that want to catch pagination-specific failures distinctly from validation or transport errors.
+
 ### Changed
 
+- **cache** — response cache eviction switched from FIFO to LRU. Cache hits now move the entry to the most-recently-used position, so frequently-read entries are protected from being evicted by churn on cold keys. TTL sweep still runs before eviction; for write-only workloads the behavior is identical to the old FIFO.
 - **cli** — `atlas install-skill` now rejects extra subcommands / positional arguments instead of silently ignoring them during execution; help text and install docs now call out the options-only command shape explicitly.
 
 ## 0.7.0 (2026-05-12)
