@@ -20,6 +20,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 | 5     | Testing             | B012, B013, B014 | Depends on all code changes being stable                        |
 | 6     | Security & advanced | B015, B016, B017 | Lower urgency; requires design discussion                       |
 | 7     | Automation          | B018, B019, B020 | CI/CD; can be done incrementally                                |
+| 8     | Confluence v2 spec compliance | B021–B062 | Aligns Confluence client with official OpenAPI v2 spec (`_v=1.8494.0`, 213 ops, 29 tags). Foundation → schema → endpoint additions → new resources → migration |
 
 ---
 
@@ -341,20 +342,560 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ---
 
+## Phase 8 — Confluence v2 OpenAPI Spec Compliance
+
+> Source of truth: `https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json?_v=1.8494.0`
+> Spec inventory at audit time: **213 operations, 29 tags**. Current implementation covers ~38 operations.
+> All findings from the audit are in scope. Items below are atomic and PR-sized.
+> Default policy: **add new methods alongside existing ones; deprecate before remove.** Breaking changes (renames, type tightening) are gated behind B062 (1.0.0 release).
+> Pagination, transport, retry, error taxonomy are governed by Phases 2/4 and **must not** be modified by Phase 8 items unless explicitly noted.
+
+### Foundation
+
+#### [ ] B021: Pin Confluence v2 OpenAPI spec snapshot
+
+- **Priority:** P0 — Critical (gates B022–B062)
+- **Description:** Download the upstream OpenAPI document, normalize JSON key order (`jq -S`), commit a versioned snapshot at `spec/confluence-v2.v1.8494.0.openapi.json`, and write a stable alias `spec/confluence-v2.openapi.json` (copy or symlink). Add `scripts/audit/refresh-spec.mjs` that re-downloads, re-normalizes, writes a sibling `.sha256` checksum, and prints a diff summary. Add `spec/README.md` documenting refresh + audit process.
+- **Acceptance criteria:**
+  - [ ] `spec/confluence-v2.v1.8494.0.openapi.json` exists, normalized, byte-stable on re-run
+  - [ ] `spec/confluence-v2.openapi.json` resolves to the same content
+  - [ ] `scripts/audit/refresh-spec.mjs` exits 0 on success, writes `.sha256`, emits diff line count
+  - [ ] `spec/README.md` documents refresh + audit workflow
+  - [ ] `npm run audit:refresh` script added to `package.json`
+  - [ ] No production code under `src/` is changed
+- **Files:** `spec/`, `scripts/audit/refresh-spec.mjs`, `package.json`
+- **Dependencies:** None
+
+#### [ ] B022: Spec-vs-implementation coverage matrix generator
+
+- **Priority:** P0 — Critical
+- **Description:** Write `scripts/audit/extract-operations.mjs` (walks `spec.paths[*][verb]` → normalized operation list), `scripts/audit/extract-implementation.mjs` (TypeScript Compiler API parse of `src/confluence/resources/*.ts`, extracts `{resource, method, httpVerb, pathTemplate}` from `this.transport.request({...})` literal `${this.baseUrl}/...` paths), and `scripts/audit/render-matrix.mjs` (joins on `{method, normalizedPath}`, emits `spec/coverage-matrix.md` with four sections: **matched**, **missing-in-code**, **extra-in-code**, **deprecated-in-spec**). Wire `npm run audit:spec` and `npm run audit:spec -- --check` (exits non-zero on drift).
+- **Acceptance criteria:**
+  - [ ] `npm run audit:spec` regenerates `spec/coverage-matrix.md` deterministically
+  - [ ] Matrix contains all 213 spec operations with implemented?/Resource.method/notes
+  - [ ] Extra-in-code section is empty OR documents the discrepancy
+  - [ ] `--check` flag exits 1 if generated matrix differs from committed
+  - [ ] Snapshot test on rendered matrix output under `test/audit/`
+  - [ ] Coverage stays at project target (100%) for the new audit scripts
+- **Files:** `scripts/audit/{extract-operations,extract-implementation,render-matrix}.mjs`, `spec/coverage-matrix.md`, `test/audit/`, `package.json`
+- **Dependencies:** B021
+
+#### [ ] B023: Per-resource conformance audit reports
+
+- **Priority:** P1 — High
+- **Description:** For every Confluence resource (existing + missing), generate a structured report at `spec/audit/<resource>.md` with sections: **Operations matrix** (filtered subset of B022), **Per-operation conformance** (verb/path/query/body/response checks), **Pagination conformance**, **Error mapping**, **Severity ranking** (BLOCK/HIGH/MEDIUM/LOW), **Fix proposal**. Reports are checked into the repo; they drive B024–B059.
+- **Acceptance criteria:**
+  - [ ] One markdown report per resource tag (29 tags from spec)
+  - [ ] Each finding is tagged with severity and a target backlog item (B024–B059)
+  - [ ] Reports cite the exact spec `operationId`, path, and verb
+  - [ ] No `src/` changes
+- **Files:** `spec/audit/*.md` (29 files)
+- **Dependencies:** B022
+
+---
+
+### Schema / type alignment for existing resources
+
+> Non-breaking type widening (adding optional fields, adding enum values) ships immediately.
+> Breaking tightening (`field?: T` → `field: T`, renames, signature changes) is **gated by B062**.
+
+#### [ ] B024: Align `Page` type + page request params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Audit `Page`, `ListPagesParams`, `GetPageParams`, `CreatePageData`, `UpdatePageData`, `DeletePageParams` against spec schemas `Page`, `PageBulk`, `PageSingle`, plus query-param sets on `getPages`, `getPageById`, `createPage`, `updatePage`, `deletePage`. Add missing fields: `ownerId`, `lastOwnerId`, `parentType`, `position`, `subType`, `authorId`, `createdAt`, `version` shape, `body.atlas_doc_format`/`view`/`raw`/`export_view`/`anonymous_export_view`/`styled_view`/`editor`, `_links` shape. Add missing query params: `serialize-ids-as-strings`, `body-format`, `get-draft`, `version`, `status[]`, `space-id[]`, `sort`, `cursor`, `limit`. Fix any `unknown`/loose types found.
+- **Acceptance criteria:**
+  - [ ] Every field in spec `Page` schema is present in TS type (with correct optionality)
+  - [ ] Every query parameter on `getPages`/`getPageById` is present in `ListPagesParams`/`GetPageParams`
+  - [ ] Body create/update payload matches spec request body schemas
+  - [ ] No widening of `unknown` where the spec defines a concrete type
+  - [ ] Existing tests pass; new tests assert presence of newly added fields when MockTransport returns spec-shaped responses
+- **Files:** `src/confluence/types.ts` (or `src/confluence/types/page.ts` if B007 done), `test/confluence/pages.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B025: Align `Space` type + space request params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Same exercise for `Space`, `ListSpacesParams`. Add missing query params: `ids[]`, `keys[]`, `type`, `status`, `labels[]`, `favorited-by`, `not-favorited-by`, `sort`, `description-format`, `include-icon`, `serialize-ids-as-strings`. Add missing fields: `authorId`, `createdAt`, `homepageId`, `description.{view,plain}`, `icon`.
+- **Acceptance criteria:**
+  - [ ] Every field/param matches spec
+  - [ ] `description-format` enum values match spec (`plain` | `view`)
+  - [ ] Tests assert new fields are exposed
+- **Files:** `src/confluence/types.ts`, `test/confluence/spaces.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B026: Align `BlogPost` type + blog-post request params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Same exercise for `BlogPost`, `ListBlogPostsParams`, `CreateBlogPostData`, `UpdateBlogPostData`. Mirror missing fields/params from B024 (most blog-post endpoints share page parameter shapes per spec).
+- **Acceptance criteria:**
+  - [ ] BlogPost fields/params parity with spec
+  - [ ] Tests updated
+- **Files:** `src/confluence/types.ts`, `test/confluence/blog-posts.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B027: Align `FooterComment` + `InlineComment` types and params with spec
+
+- **Priority:** P1 — High
+- **Description:** Reconcile `FooterComment`, `InlineComment`, `CreateFooterCommentData`, `CreateInlineCommentData`, `UpdateCommentData`, list params. Add: `InlineCommentProperties` schema (`inline-marker-ref`, `inline-original-selection`, `text-selection`, `text-selection-match-count`, `text-selection-match-index`, `resolution-status`, `resolution-last-modifier-id`, `resolution-last-modified-at`), `resolved` field, parent-comment relationships, `body-format` enum expansion. Add missing query params on listFooter/listInline.
+- **Acceptance criteria:**
+  - [ ] Comment types match spec schemas exactly
+  - [ ] Tests assert structured `InlineCommentProperties`
+- **Files:** `src/confluence/types.ts`, `test/confluence/comments.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B028: Align `Attachment` type + params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Add fields: `mediaTypeDescription`, `comment`, `fileId`, `fileSize`, `webuiLink`, `downloadLink`, `pageId`, `blogPostId`, `customContentId`, `status`, `version` shape, `_links`. Add params: `mediaType`, `filename`, `sort`, `serialize-ids-as-strings`.
+- **Acceptance criteria:**
+  - [ ] Type matches spec; existing tests pass; new field exposure verified via MockTransport
+- **Files:** `src/confluence/types.ts`, `test/confluence/attachments.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B029: Tighten `ContentProperty.key` validation and widen `value` union per spec
+
+- **Priority:** P1 — High
+- **Description:** Spec restricts content-property `key` to a regex pattern (typically `^[a-zA-Z0-9_.-]+$` with length limits — confirm from spec). Add `validateContentPropertyKey(key: string): void` that throws `ValidationError` on mismatch. Widen `ContentProperty.value` from `unknown` to `JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue }`. Apply across all content-property surfaces (B044 extends this to other content types).
+- **Acceptance criteria:**
+  - [ ] `validateContentPropertyKey` exported and called in `create*`/`update*` paths
+  - [ ] Invalid keys throw `ValidationError` with the offending key in the message
+  - [ ] `value` type is `JsonValue`, not `unknown`
+  - [ ] Tests: valid keys pass, invalid keys throw; JsonValue type-checks for nested objects
+- **Files:** `src/confluence/resources/content-properties.ts`, `src/confluence/types.ts`, `src/core/errors.ts` (re-use existing `ValidationError`), `test/confluence/content-properties.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B030: Align `CustomContent` type + params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Add fields: `authorId`, `createdAt`, `version`, `body` (multiple formats), `spaceId`, `pageId`, `blogPostId`, `customContentId`, `_links`. Add params: `type` (required for many endpoints), `body-format`, `sort`, `space-id[]`, `serialize-ids-as-strings`.
+- **Acceptance criteria:** Type/param parity with spec; tests updated.
+- **Files:** `src/confluence/types.ts`, `test/confluence/custom-content.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B031: Align `Whiteboard` type + params with spec schema
+
+- **Priority:** P1 — High
+- **Description:** Add fields: `parentId`, `parentType`, `ownerId`, `authorId`, `createdAt`, `position`, `_links`. Validate `CreateWhiteboardData` shape (spaceId, title, parentId).
+- **Acceptance criteria:** Parity with spec; tests updated.
+- **Files:** `src/confluence/types.ts`, `test/confluence/whiteboards.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B032: Align `ConfluenceTask` type + params with spec schema
+
+- **Priority:** P2 — Medium
+- **Description:** Verify `createdAtFrom`/`createdAtTo`/`dueAtFrom`/`dueAtTo` typing as ISO-8601 strings (not `Date`), assignee/creator account-id types, `status` enum (`complete` | `incomplete`), `body-format`, `include-blank-tasks`. Add any missing optional fields.
+- **Acceptance criteria:** Param shape matches spec; tests cover ISO-8601 string format.
+- **Files:** `src/confluence/types.ts`, `test/confluence/tasks.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B033: Align `ContentVersion` type and version params with spec schema
+
+- **Priority:** P2 — Medium
+- **Description:** Confirm fields: `createdAt`, `message`, `number`, `minorEdit`, `authorId`, `contentTypeModified`, `_links`. Add `body-format` query param on detail endpoints. Version path uses `{version-number}` (numeric).
+- **Acceptance criteria:** Type parity; tests pass.
+- **Files:** `src/confluence/types.ts`, `test/confluence/versions.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B034: Add full `BodyFormat` enum + body shape coverage
+
+- **Priority:** P1 — High
+- **Description:** Spec accepts body formats: `storage`, `atlas_doc_format`, `view`, `raw`, `export_view`, `anonymous_export_view`, `styled_view`, `editor`. Current types cover only `storage` + `atlas_doc_format`. Add `BodyFormat` enum and `Body` discriminated union (`{representation, value}`) supporting all spec representations. Apply to Page, BlogPost, CustomContent, Comment bodies.
+- **Acceptance criteria:**
+  - [ ] `BodyFormat` enum exported with all 8 values
+  - [ ] `Body` union covers all representations
+  - [ ] Tests parse a representative response per format
+- **Files:** `src/confluence/types.ts`, related resources, tests
+- **Dependencies:** B023
+
+---
+
+### Endpoint additions on existing resources
+
+> Each item adds the listed missing endpoints from the spec as new methods. Naming follows the spec `operationId`, camel-cased, scoped to the resource. Existing methods are unchanged (B061 handles renames).
+
+#### [ ] B035: Pages — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `PagesResource`:
+  - `getPagesInSpace(spaceId, params)` → `GET /spaces/{id}/pages` + `listAllInSpace` generator
+  - `getLabelPages(labelId, params)` → `GET /labels/{id}/pages` + `listAllForLabel`
+  - `updateTitle(id, data)` → `PUT /pages/{id}/title`
+  - `getAncestors(id, params)` → `GET /pages/{id}/ancestors`
+  - `getDirectChildren(id, params)` → `GET /pages/{id}/direct-children` + generator
+  - `getChildren(id, params)` → `GET /pages/{id}/children` (mark `@deprecated` per spec)
+  - `getDescendants(id, params)` → `GET /pages/{id}/descendants` + generator
+- **Acceptance criteria:**
+  - [ ] All 7 methods exist with spec-aligned params/return types
+  - [ ] Cursor pagination wired via `paginateCursor` for list endpoints
+  - [ ] Deprecated `getChildren` carries `@deprecated` JSDoc citing the spec
+  - [ ] One happy-path test per method using `MockTransport`
+  - [ ] Coverage stays at 100%
+- **Files:** `src/confluence/resources/pages.ts`, `src/confluence/types.ts`, `test/confluence/pages.test.ts`
+- **Dependencies:** B024, B033
+
+#### [ ] B036: Blog posts — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `BlogPostsResource`:
+  - `getBlogPostsInSpace(spaceId, params)` → `GET /spaces/{id}/blogposts` + generator
+  - `getLabelBlogPosts(labelId, params)` → `GET /labels/{id}/blogposts` + generator
+- **Acceptance criteria:** Methods + pagination + tests; coverage maintained.
+- **Files:** `src/confluence/resources/blog-posts.ts`, `src/confluence/types.ts`, `test/confluence/blog-posts.test.ts`
+- **Dependencies:** B026
+
+#### [ ] B037: Spaces — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `SpacesResource`:
+  - `create(data)` → `POST /spaces` (currently missing)
+- **Acceptance criteria:** Method present, payload matches spec, test covers it.
+- **Files:** `src/confluence/resources/spaces.ts`, `src/confluence/types.ts`, `test/confluence/spaces.test.ts`
+- **Dependencies:** B025
+- **Note:** Other space-related endpoints (permissions, properties, roles, classification) are split into B053, B054, B055, B048 to keep PR scope minimal.
+
+#### [ ] B038: Comments — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `CommentsResource` (or split into `FooterCommentsResource` + `InlineCommentsResource` — decide in B061):
+  - `listFooterAll(params)` → `GET /footer-comments` (top-level)
+  - `listInlineAll(params)` → `GET /inline-comments` (top-level)
+  - `getFooterChildren(commentId, params)` → `GET /footer-comments/{id}/children`
+  - `getInlineChildren(commentId, params)` → `GET /inline-comments/{id}/children`
+  - `listFooterOnBlogPost(blogPostId, params)` → `GET /blogposts/{id}/footer-comments`
+  - `listInlineOnBlogPost(blogPostId, params)` → `GET /blogposts/{id}/inline-comments`
+  - `listFooterOnAttachment(attachmentId, params)` → `GET /attachments/{id}/footer-comments`
+  - `listFooterOnCustomContent(customContentId, params)` → `GET /custom-content/{id}/footer-comments`
+- **Acceptance criteria:** 8 new methods, pagination wired, tests for each, coverage maintained.
+- **Files:** `src/confluence/resources/comments.ts`, `src/confluence/types.ts`, `test/confluence/comments.test.ts`
+- **Dependencies:** B027
+
+#### [ ] B039: Attachments — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `AttachmentsResource`:
+  - `list(params)` → `GET /attachments` (top-level) + generator
+  - `listForBlogPost(blogPostId, params)` → `GET /blogposts/{id}/attachments` + generator
+  - `listForCustomContent(customContentId, params)` → `GET /custom-content/{id}/attachments` + generator
+  - `listForLabel(labelId, params)` → `GET /labels/{id}/attachments` + generator
+  - `getThumbnail(id)` → `GET /attachments/{id}/thumbnail/download` (returns binary `ArrayBuffer` or stream — match transport binary response handling)
+- **Acceptance criteria:** 5 methods, binary thumbnail returns `ArrayBuffer` (or stream per transport contract), tests use MockTransport with binary body.
+- **Files:** `src/confluence/resources/attachments.ts`, `src/confluence/types.ts`, `test/confluence/attachments.test.ts`
+- **Dependencies:** B028
+
+#### [ ] B040: Labels — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `LabelsResource`:
+  - `list(params)` → `GET /labels` (top-level) + generator
+  - `listForAttachment(attachmentId, params)` → `GET /attachments/{id}/labels`
+  - `listForCustomContent(customContentId, params)` → `GET /custom-content/{id}/labels`
+  - `listSpaceContentLabels(spaceId, params)` → `GET /spaces/{id}/content/labels`
+- **Acceptance criteria:** 4 methods, pagination, tests, coverage.
+- **Files:** `src/confluence/resources/labels.ts`, `src/confluence/types.ts`, `test/confluence/labels.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B041: Custom content — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `CustomContentResource`:
+  - `getByTypeInSpace(spaceId, params)` → `GET /spaces/{id}/custom-content`
+  - `getByTypeInPage(pageId, params)` → `GET /pages/{id}/custom-content`
+  - `getByTypeInBlogPost(blogPostId, params)` → `GET /blogposts/{id}/custom-content`
+  - `getChildren(customContentId, params)` → `GET /custom-content/{id}/children`
+- **Acceptance criteria:** 4 methods, pagination, tests, coverage.
+- **Files:** `src/confluence/resources/custom-content.ts`, `src/confluence/types.ts`, `test/confluence/custom-content.test.ts`
+- **Dependencies:** B030
+
+#### [ ] B042: Whiteboards — add missing endpoints
+
+- **Priority:** P1 — High
+- **Description:** Add to `WhiteboardsResource`:
+  - `getAncestors(id, params)` → `GET /whiteboards/{id}/ancestors`
+  - `getDirectChildren(id, params)` → `GET /whiteboards/{id}/direct-children`
+  - `getDescendants(id, params)` → `GET /whiteboards/{id}/descendants`
+- **Acceptance criteria:** 3 methods, pagination, tests, coverage.
+- **Files:** `src/confluence/resources/whiteboards.ts`, `src/confluence/types.ts`, `test/confluence/whiteboards.test.ts`
+- **Dependencies:** B031
+
+#### [ ] B043: Versions — add missing per-content-type endpoints
+
+- **Priority:** P1 — High
+- **Description:** Extend `VersionsResource` with:
+  - `listForAttachment(attachmentId, params)` / `getForAttachment(attachmentId, versionNumber)` → `/attachments/{id}/versions`, `/attachments/{attachment-id}/versions/{version-number}`
+  - `listForCustomContent(customContentId, params)` / `getForCustomContent(customContentId, versionNumber)` → `/custom-content/{custom-content-id}/versions[/{version-number}]`
+  - `listForFooterComment(commentId, params)` / `getForFooterComment(commentId, versionNumber)` → `/footer-comments/{id}/versions[/{version-number}]`
+  - `listForInlineComment(commentId, params)` / `getForInlineComment(commentId, versionNumber)` → `/inline-comments/{id}/versions[/{version-number}]`
+  - Plus `listAll*` generators.
+- **Acceptance criteria:** 8 new methods + 4 generators, pagination, tests, coverage.
+- **Files:** `src/confluence/resources/versions.ts`, `src/confluence/types.ts`, `test/confluence/versions.test.ts`
+- **Dependencies:** B033
+
+#### [ ] B044: Content properties — extend to all spec-covered content types
+
+- **Priority:** P0 — Critical (large surface area; 45 spec operations)
+- **Description:** Spec exposes content-property CRUD on 10 content types: page, blogpost, attachment, custom-content, whiteboard, database, embed (smart link), folder, comment (both footer + inline), space. Current code only handles pages. Refactor `ContentPropertiesResource` into a generic shape parameterized by content-type, or split into per-content-type sub-resources (decision in this PR). Cover:
+  - `list*ContentProperties(sourceId, params)` GET
+  - `create*Property(sourceId, data)` POST
+  - `get*ContentPropertiesById(sourceId, propertyId)` GET
+  - `update*PropertyById(sourceId, propertyId, data)` PUT
+  - `delete*PropertyById(sourceId, propertyId)` DELETE
+- **Acceptance criteria:**
+  - [ ] All 45 content-property operations from the spec are reachable from the client
+  - [ ] Public API is ergonomic (e.g., `client.confluence.contentProperties.forPages.list(pageId)` or `client.confluence.pages.properties.list(pageId)` — decide via spec audit B023)
+  - [ ] Validation from B029 (key regex, JsonValue) applies uniformly
+  - [ ] Tests cover at least one CRUD cycle per content-type variant
+  - [ ] Coverage maintained
+- **Files:** `src/confluence/resources/content-properties.ts` (major refactor), `src/confluence/types.ts`, `test/confluence/content-properties.test.ts`
+- **Dependencies:** B029, B023
+
+---
+
+### New resources (entirely missing from current client)
+
+#### [ ] B045: New resource — Databases
+
+- **Priority:** P1 — High
+- **Description:** Implement `DatabasesResource` covering all Database-related spec ops:
+  - `create(data)` → `POST /databases`
+  - `get(id)` → `GET /databases/{id}`
+  - `delete(id)` → `DELETE /databases/{id}`
+  - `getAncestors(id, params)` → `GET /databases/{id}/ancestors`
+  - `getDirectChildren(id, params)` → `GET /databases/{id}/direct-children`
+  - `getDescendants(id, params)` → `GET /databases/{id}/descendants`
+  - Classification (3): see B048
+  - Operations: see B059
+  - Content properties (5): see B044
+- **Acceptance criteria:** Resource module + types + tests; wired into `ConfluenceClient`; coverage maintained.
+- **Files:** `src/confluence/resources/databases.ts` (new), `src/confluence/types.ts` (add `Database`, `CreateDatabaseData`), `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/databases.test.ts` (new)
+- **Dependencies:** B023, B044, B048, B059
+
+#### [ ] B046: New resource — Folders
+
+- **Priority:** P1 — High
+- **Description:** Implement `FoldersResource`:
+  - `create(data)` → `POST /folders`
+  - `get(id)` → `GET /folders/{id}`
+  - `delete(id)` → `DELETE /folders/{id}`
+  - `getAncestors`, `getDirectChildren`, `getDescendants` (3 ops)
+  - Operations: see B059
+  - Content properties (5): see B044
+- **Acceptance criteria:** Same pattern as B045.
+- **Files:** `src/confluence/resources/folders.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/folders.test.ts`
+- **Dependencies:** B023, B044, B059
+
+#### [ ] B047: New resource — Smart Links (Embeds)
+
+- **Priority:** P1 — High
+- **Description:** Implement `SmartLinksResource` (spec path prefix `/embeds`):
+  - `create(data)` → `POST /embeds`
+  - `get(id)` → `GET /embeds/{id}`
+  - `delete(id)` → `DELETE /embeds/{id}`
+  - `getAncestors`, `getDirectChildren`, `getDescendants`
+  - Operations: see B059
+  - Content properties (5): see B044
+- **Acceptance criteria:** Same pattern.
+- **Files:** `src/confluence/resources/smart-links.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/smart-links.test.ts`
+- **Dependencies:** B023, B044, B059
+
+#### [ ] B048: New resource — Classification Levels
+
+- **Priority:** P1 — High
+- **Description:** Implement `ClassificationLevelsResource` covering all 16 Classification Level ops:
+  - `list()` → `GET /classification-levels`
+  - `getSpaceDefault(spaceId)` / `setSpaceDefault(spaceId, data)` / `deleteSpaceDefault(spaceId)`
+  - For each of pages, blogposts, whiteboards, databases: `get(id)` / `set(id, data)` / `reset(id)` (3 ops × 4 content types = 12)
+- **Acceptance criteria:** Module + types + tests for every endpoint; coverage maintained.
+- **Files:** `src/confluence/resources/classification-levels.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/classification-levels.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B049: New resource — Admin Key
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `AdminKeyResource`:
+  - `get()` → `GET /admin-key`
+  - `enable(data)` → `POST /admin-key`
+  - `disable()` → `DELETE /admin-key`
+- **Acceptance criteria:** Module + types + tests.
+- **Files:** `src/confluence/resources/admin-key.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/admin-key.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B050: New resource — App Properties (Forge)
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `AppPropertiesResource`:
+  - `list()` → `GET /app/properties`
+  - `get(propertyKey)` → `GET /app/properties/{propertyKey}`
+  - `put(propertyKey, data)` → `PUT /app/properties/{propertyKey}`
+  - `delete(propertyKey)` → `DELETE /app/properties/{propertyKey}`
+- **Acceptance criteria:** Module + types + tests; key validation re-uses B029.
+- **Files:** `src/confluence/resources/app-properties.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/app-properties.test.ts`
+- **Dependencies:** B023, B029
+
+#### [ ] B051: New resource — Data Policies
+
+- **Priority:** P3 — Low
+- **Description:** Implement `DataPoliciesResource`:
+  - `getMetadata()` → `GET /data-policies/metadata`
+  - `getSpaces(params)` → `GET /data-policies/spaces` + generator
+- **Acceptance criteria:** Module + types + tests.
+- **Files:** `src/confluence/resources/data-policies.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/data-policies.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B052: New resource — Redactions
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `RedactionsResource`:
+  - `redactPage(pageId, data)` → `POST /pages/{id}/redact`
+  - `redactBlogPost(blogPostId, data)` → `POST /blogposts/{id}/redact`
+- **Acceptance criteria:** Module + types + tests covering redaction payload shape.
+- **Files:** `src/confluence/resources/redactions.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/redactions.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B053: New resource — Space Permissions
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `SpacePermissionsResource`:
+  - `getAssignments(spaceId, params)` → `GET /spaces/{id}/permissions` + generator
+  - `listAvailable(params)` → `GET /space-permissions` + generator
+- **Acceptance criteria:** Module + types + tests.
+- **Files:** `src/confluence/resources/space-permissions.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/space-permissions.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B054: New resource — Space Properties
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `SpacePropertiesResource`:
+  - `list(spaceId, params)` → `GET /spaces/{space-id}/properties` + generator
+  - `create(spaceId, data)` → `POST /spaces/{space-id}/properties`
+  - `get(spaceId, propertyId)` → `GET /spaces/{space-id}/properties/{property-id}`
+  - `update(spaceId, propertyId, data)` → `PUT ...`
+  - `delete(spaceId, propertyId)` → `DELETE ...`
+- **Acceptance criteria:** Module + types + tests; key validation re-uses B029.
+- **Files:** `src/confluence/resources/space-properties.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/space-properties.test.ts`
+- **Dependencies:** B023, B029
+
+#### [ ] B055: New resource — Space Roles
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `SpaceRolesResource` covering all 8 Space Roles ops:
+  - `listAvailable(params)` / `create(data)` / `get(id)` / `update(id, data)` / `delete(id)`
+  - `getMode()` → `GET /space-role-mode`
+  - `getAssignments(spaceId, params)` → `GET /spaces/{id}/role-assignments`
+  - `setAssignments(spaceId, data)` → `POST /spaces/{id}/role-assignments`
+- **Acceptance criteria:** Module + types + tests; pagination on list ops.
+- **Files:** `src/confluence/resources/space-roles.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/space-roles.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B056: New resource — Users
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `UsersResource`:
+  - `bulkLookup(data)` → `POST /users-bulk`
+  - `checkAccessByEmail(data)` → `POST /user/access/check-access-by-email`
+  - `inviteByEmail(data)` → `POST /user/access/invite-by-email`
+- **Acceptance criteria:** Module + types + tests.
+- **Files:** `src/confluence/resources/users.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/users.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B057: New resource — Content (id-to-type conversion)
+
+- **Priority:** P3 — Low
+- **Description:** Implement `ContentResource`:
+  - `convertIdsToTypes(data)` → `POST /content/convert-ids-to-types`
+- **Acceptance criteria:** Module + types + tests.
+- **Files:** `src/confluence/resources/content.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/content.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B058: New resource — Likes
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `LikesResource` covering all 8 Like ops across pages, blogposts, footer-comments, inline-comments:
+  - `getCount(contentType, id)` → `GET /{contentType}/{id}/likes/count` (4 endpoints)
+  - `getUsers(contentType, id, params)` → `GET /{contentType}/{id}/likes/users` + generator (4 endpoints)
+- **Acceptance criteria:** Module + types + tests for all 8 endpoints. Discriminated union on `contentType` to ensure type-safe path construction.
+- **Files:** `src/confluence/resources/likes.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/likes.test.ts`
+- **Dependencies:** B023
+
+#### [ ] B059: New resource — Operations (permissions)
+
+- **Priority:** P2 — Medium
+- **Description:** Implement `OperationsResource` covering all 11 Operation ops (permissions list per content type):
+  - `forAttachment(id)`, `forBlogPost(id)`, `forCustomContent(id)`, `forPage(id)`, `forWhiteboard(id)`, `forDatabase(id)`, `forSmartLink(id)`, `forFolder(id)`, `forSpace(id)`, `forFooterComment(id)`, `forInlineComment(id)`
+  - Each returns `OperationsResponse` per spec
+- **Acceptance criteria:** Module + types + tests covering all 11 endpoints.
+- **Files:** `src/confluence/resources/operations.ts` (new), `src/confluence/types.ts`, `src/confluence/client.ts`, `src/confluence/resources/index.ts`, `test/confluence/operations.test.ts`
+- **Dependencies:** B023
+
+---
+
+### Infrastructure & migration
+
+#### [ ] B060: Decide codegen strategy and set up `openapi-typescript` for response types
+
+- **Priority:** P1 — High
+- **Description:** Decision: hybrid — codegen for response types from spec via `openapi-typescript`; hand-author request `*Params`/`*Data` types for ergonomics. Generated output committed under `src/confluence/types/generated.ts`; barrel re-exports it. Add `npm run codegen:confluence` script. Document in `spec/README.md`. Open question Q1 from the audit plan resolved by this item.
+- **Acceptance criteria:**
+  - [ ] `openapi-typescript` added as devDependency
+  - [ ] `npm run codegen:confluence` regenerates types deterministically
+  - [ ] `src/confluence/types/generated.ts` committed and referenced by hand-authored types
+  - [ ] CI step asserts the committed file is up-to-date with the pinned spec
+  - [ ] No public re-exports change for downstream callers without B062
+- **Files:** `package.json`, `scripts/audit/codegen-confluence.mjs`, `src/confluence/types/generated.ts`, `src/confluence/types.ts` (or `src/confluence/types/index.ts` if B007 applied), `spec/README.md`
+- **Dependencies:** B021, B007 (helpful but not required)
+
+#### [ ] B061: Add spec-aligned method names with deprecation aliases
+
+- **Priority:** P2 — Medium
+- **Description:** Several current method names diverge from spec operation IDs:
+  - `comments.listFooter` (on page) → split surface: spec has `getPageFooterComments` + `getFooterComments` (top-level). Recommend renaming to `comments.listFooterOnPage` and keeping `listFooter` as `@deprecated` alias.
+  - `comments.getFooter`/`createFooter`/`updateFooter`/`deleteFooter` → `comments.footer.get`/`create`/`update`/`delete` namespace or `comments.getFooterComment` (decide in PR).
+  - Similar for inline counterparts.
+  - `attachments.listForPage` → consistent with new `listForBlogPost`/etc. from B039; verify naming.
+- **Acceptance criteria:**
+  - [ ] Every divergent name has a new spec-aligned method
+  - [ ] Old names exist as `@deprecated` JSDoc thin aliases
+  - [ ] No runtime warnings (project style)
+  - [ ] CHANGELOG entry lists deprecations
+  - [ ] Tests cover both old and new names (the alias path)
+- **Files:** `src/confluence/resources/*.ts`, `CHANGELOG.md`, `test/confluence/*.test.ts`
+- **Dependencies:** B035–B059
+
+#### [ ] B062: 1.0.0 release plan — remove deprecations, tighten types, migration guide
+
+- **Priority:** P2 — Medium
+- **Description:** Final phase: in a `1.0.0` major bump, remove all `@deprecated` aliases from B061, tighten currently-optional fields that the spec marks required, and consolidate. Write `MIGRATION.md` covering: renamed methods, removed methods, type tightening list (before/after table), how to detect & fix at the call site. Update `CHANGELOG.md` and `package.json` version.
+- **Acceptance criteria:**
+  - [ ] `MIGRATION.md` exists at repo root with before/after for every breaking change
+  - [ ] All `@deprecated` aliases removed
+  - [ ] Tightened types: list documented in MIGRATION
+  - [ ] `CHANGELOG.md` has a `1.0.0` section
+  - [ ] `package.json` bumped to `1.0.0`
+  - [ ] `npm run validate` passes (typecheck, lint, tests, coverage 100%)
+- **Files:** `src/confluence/**`, `MIGRATION.md` (new), `CHANGELOG.md`, `package.json`
+- **Dependencies:** B024–B061 (everything in Phase 8 before the major bump)
+
+---
+
 ## Summary
 
-| Phase                   | Items            | Est. Effort | Priority |
-| ----------------------- | ---------------- | ----------- | -------- |
-| 0 — Documentation       | B001             | 2h          | P1       |
-| 1 — Type correctness    | B002, B003       | 3h          | P0+P1    |
-| 2 — Transport refactor  | B004, B005, B006 | 8h          | P0       |
-| 3 — Type organization   | B007, B008       | 4h          | P1       |
-| 4 — Reliability         | B009, B010, B011 | 10h         | P1+P2    |
-| 5 — Testing             | B012, B013, B014 | 12h         | P1+P2    |
-| 6 — Security & advanced | B015, B016, B017 | 12h         | P2+P3    |
-| 7 — Automation          | B018, B019, B020 | 6h          | P2+P3    |
-| **Total**               | **20 items**     | **~57h**    |          |
+| Phase                              | Items                | Est. Effort | Priority |
+| ---------------------------------- | -------------------- | ----------- | -------- |
+| 0 — Documentation                  | B001                 | 2h          | P1       |
+| 1 — Type correctness               | B002, B003           | 3h          | P0+P1    |
+| 2 — Transport refactor             | B004, B005, B006     | 8h          | P0       |
+| 3 — Type organization              | B007, B008           | 4h          | P1       |
+| 4 — Reliability                    | B009, B010, B011     | 10h         | P1+P2    |
+| 5 — Testing                        | B012, B013, B014     | 12h         | P1+P2    |
+| 6 — Security & advanced            | B015, B016, B017     | 12h         | P2+P3    |
+| 7 — Automation                     | B018, B019, B020     | 6h          | P2+P3    |
+| 8 — Confluence v2 spec compliance  | B021–B062            | ~80h        | P0–P3    |
+| **Total**                          | **62 items**         | **~137h**   |          |
 
 **Recommended first PR:** B002 + B003 (type correctness, low risk, high impact, independent)
 **Recommended second PR:** B004 + B005 + B006 (transport refactor — do together to minimize breakage)
 **Recommended third PR:** B007 + B008 (type splits — mechanical, benefits from stable transport)
+**Recommended Phase 8 starter PR:** B021 + B022 + B023 (foundation: pin spec, generate matrix, write per-resource reports — no `src/` changes; gates everything else in Phase 8)
+**Recommended Phase 8 second PR:** B024–B034 (schema/type alignment in one batch — purely additive, low risk)
+**Recommended Phase 8 endpoint sweep:** group B035–B043 by resource family across 4–6 PRs
+**Recommended Phase 8 new-resource sweep:** B045–B059 split into PR-per-resource (15 PRs) or grouped by domain (content-types, governance, users — 3 PRs)
+**Recommended Phase 8 final PR:** B061 + B062 → `1.0.0` cut
