@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- **cli** — `atlas install-skill` now rejects extra subcommands / positional arguments instead of silently ignoring them during execution; help text and install docs now call out the options-only command shape explicitly.
+
 ## 0.7.0 (2026-05-12)
 
 ### Added

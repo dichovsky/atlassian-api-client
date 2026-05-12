@@ -88,6 +88,7 @@ describe('getHelpText', () => {
     expect(text).toContain('--force');
     expect(text).toContain('--dry-run');
     expect(text).toContain('--print');
+    expect(text).toContain('options-only command');
     expect(text).toContain('EXIT CODES:');
   });
 });

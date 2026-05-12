@@ -9,8 +9,11 @@ const execFileAsync = promisify(execFile);
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CLI_BIN = resolve(PROJECT_ROOT, 'dist', 'cli', 'index.js');
+const CLI_ENTRY_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'index.ts');
+const ROUTER_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'router.ts');
 const CONFLUENCE_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'confluence.ts');
 const JIRA_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'jira.ts');
+const INSTALL_SKILL_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'commands', 'install-skill.ts');
 const HELP_SRC = resolve(PROJECT_ROOT, 'src', 'cli', 'help.ts');
 
 async function runCli(args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
@@ -78,7 +81,9 @@ function actionsForResource(source: string, resource: string): string[] {
 function isBinStale(): boolean {
   if (!existsSync(CLI_BIN)) return true;
   const binMtime = statSync(CLI_BIN).mtimeMs;
-  return [HELP_SRC, CONFLUENCE_SRC, JIRA_SRC].some((src) => statSync(src).mtimeMs > binMtime);
+  return [CLI_ENTRY_SRC, ROUTER_SRC, HELP_SRC, CONFLUENCE_SRC, JIRA_SRC, INSTALL_SKILL_SRC].some(
+    (src) => statSync(src).mtimeMs > binMtime,
+  );
 }
 
 beforeAll(() => {
@@ -121,6 +126,21 @@ describe('CLI --help e2e', () => {
     for (const resource of jiraResources) {
       expect(stdout).toContain(resource);
     }
+  });
+
+  it('prints install-skill help for `atlas install-skill --help`', async () => {
+    const { stdout, code } = await runCli(['install-skill', '--help']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('atlas install-skill');
+    expect(stdout).toContain('options-only command');
+  });
+
+  it('rejects unexpected install-skill positional arguments', async () => {
+    const { stderr, code } = await runCli(['install-skill', 'pages', 'list']);
+    expect(code).toBe(1);
+    expect(stderr).toContain(
+      'Error: install-skill does not accept subcommands or positional arguments',
+    );
   });
 
   describe('per-resource --help spawns', () => {

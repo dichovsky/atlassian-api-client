@@ -32,6 +32,9 @@ const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Cod
 USAGE:
   atlas install-skill [options]
 
+NOTES:
+  install-skill is an options-only command; run it as: atlas install-skill [options]
+
 OPTIONS:
   --local          Install into <cwd>/.claude/skills/ instead of ~/.claude/skills/
   --path <dir>     Install into a custom directory (overrides --local)
