@@ -42,6 +42,7 @@ export type {
   ListAttachmentsParams,
   ListLabelsParams,
   ContentProperty,
+  JsonValue,
   ListContentPropertiesParams,
   CreateContentPropertyData,
   UpdateContentPropertyData,
@@ -71,3 +72,8 @@ export { CustomContentResource } from './resources/custom-content.js';
 export { WhiteboardsResource } from './resources/whiteboards.js';
 export { TasksResource } from './resources/tasks.js';
 export { VersionsResource } from './resources/versions.js';
+export {
+  CONTENT_PROPERTY_KEY_MAX_LENGTH,
+  CONTENT_PROPERTY_KEY_PATTERN,
+  validateContentPropertyKey,
+} from './validators.js';

@@ -53,6 +53,7 @@ export type { Label, ListLabelsParams } from './label.js';
 export type {
   ContentProperty,
   CreateContentPropertyData,
+  JsonValue,
   ListContentPropertiesParams,
   UpdateContentPropertyData,
 } from './content-property.js';

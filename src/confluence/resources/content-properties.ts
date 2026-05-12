@@ -8,6 +8,7 @@ import type {
   UpdateContentPropertyData,
 } from '../types.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { validateContentPropertyKey } from '../validators.js';
 
 /**
  * Resource for Confluence page content properties.
@@ -47,8 +48,9 @@ export class ContentPropertiesResource {
     return response.data;
   }
 
-  /** Create a content property on a page. */
+  /** Create a content property on a page. Validates the property key client-side (B029). */
   async createForPage(pageId: string, data: CreateContentPropertyData): Promise<ContentProperty> {
+    validateContentPropertyKey(data.key);
     const response = await this.transport.request<ContentProperty>({
       method: 'POST',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/properties`,
@@ -57,12 +59,14 @@ export class ContentPropertiesResource {
     return response.data;
   }
 
-  /** Update a content property on a page. */
+  /** Update a content property on a page. Validates the property key client-side (B029). */
   async updateForPage(
     pageId: string,
     propertyKey: string,
     data: UpdateContentPropertyData,
   ): Promise<ContentProperty> {
+    validateContentPropertyKey(propertyKey);
+    validateContentPropertyKey(data.key);
     const response = await this.transport.request<ContentProperty>({
       method: 'PUT',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/properties/${encodePathSegment(propertyKey)}`,

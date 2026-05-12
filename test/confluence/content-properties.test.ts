@@ -173,15 +173,15 @@ describe('ContentPropertiesResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/properties`);
     });
 
-    it('encodes pageId and propertyKey in updateForPage()', async () => {
-      transport.respondWith(makeProperty('x', 'k'));
-      await resource.updateForPage('../admin', '../key', {
-        key: '../key',
+    it('encodes pageId in updateForPage() (propertyKey validated; URL-safe by contract)', async () => {
+      transport.respondWith(makeProperty('x', 'my.key'));
+      await resource.updateForPage('../admin', 'my.key', {
+        key: 'my.key',
         value: {},
         version: { number: 2 },
       });
       expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/pages/..%2Fadmin/properties/..%2Fkey`,
+        `${BASE_URL}/pages/..%2Fadmin/properties/my.key`,
       );
     });
 
@@ -191,6 +191,51 @@ describe('ContentPropertiesResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/pages/..%2Fadmin/properties/..%2Fkey`,
       );
+    });
+  });
+
+  // ── B029: client-side validation of content-property keys ─────────────────
+
+  describe('B029: content-property key validation', () => {
+    it('rejects invalid key in createForPage data', async () => {
+      await expect(
+        resource.createForPage('page-1', { key: '../bad', value: {} }),
+      ).rejects.toThrow(/content property key must match/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects invalid propertyKey in updateForPage path arg', async () => {
+      await expect(
+        resource.updateForPage('page-1', '../bad', {
+          key: 'ok',
+          value: {},
+          version: { number: 2 },
+        }),
+      ).rejects.toThrow(/content property key must match/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects invalid data.key in updateForPage body', async () => {
+      await expect(
+        resource.updateForPage('page-1', 'ok', {
+          key: '../bad',
+          value: {},
+          version: { number: 2 },
+        }),
+      ).rejects.toThrow(/content property key must match/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('accepts a structured JsonValue payload (B029 value widening)', async () => {
+      transport.respondWith(makeProperty('1', 'my.key'));
+      await resource.createForPage('page-1', {
+        key: 'my.key',
+        value: { nested: { array: [1, 'two', null, true] } },
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        key: 'my.key',
+        value: { nested: { array: [1, 'two', null, true] } },
+      });
     });
   });
 });
