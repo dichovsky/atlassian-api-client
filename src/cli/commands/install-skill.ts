@@ -81,16 +81,24 @@ export function resolveInstallTarget(
   env: NodeJS.ProcessEnv,
   cwd: string,
 ): string {
+  const envHome = env['HOME'];
+  const home = typeof envHome === 'string' && envHome.length > 0 ? envHome : homedir();
+
   const explicit = options['path'];
   if (typeof explicit === 'string' && explicit.length > 0) {
-    return resolve(cwd, explicit);
+    return resolve(cwd, expandTilde(explicit, home));
   }
   if (options['local'] === true) {
     return resolve(cwd, '.claude', 'skills', SKILL_NAME);
   }
-  const envHome = env['HOME'];
-  const home = typeof envHome === 'string' && envHome.length > 0 ? envHome : homedir();
   return resolve(home, '.claude', 'skills', SKILL_NAME);
+}
+
+/** Expand a leading `~` or `~/` in a path to the resolved home directory. */
+function expandTilde(input: string, home: string): string {
+  if (input === '~') return home;
+  if (input.startsWith('~/')) return join(home, input.slice(2));
+  return input;
 }
 
 /** List every file path under a directory, recursively, relative to the root. */

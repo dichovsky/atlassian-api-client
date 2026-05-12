@@ -109,19 +109,21 @@ The CLI is a shell-friendly cover over the SDK; reach for the SDK when shell com
 
 ## Installing this skill yourself
 
+Use the `--package` form below from a clean shell to avoid `npx` resolving an unrelated package named `atlas`. If `atlassian-api-client` is already in the current project's `node_modules`, the shorter `npx atlas …` form also works.
+
 ```sh
 # User-wide install (default), into ~/.claude/skills/atlassian-api-client-cli
-npx atlas install-skill
+npx --package atlassian-api-client -- atlas install-skill
 
 # Project-local install, into <cwd>/.claude/skills/atlassian-api-client-cli
-npx atlas install-skill --local
+npx --package atlassian-api-client -- atlas install-skill --local
 
 # Print the bundled source path without copying (useful for symlinks)
-npx atlas install-skill --print
+npx --package atlassian-api-client -- atlas install-skill --print
 
 # Preview what would be copied
-npx atlas install-skill --dry-run
+npx --package atlassian-api-client -- atlas install-skill --dry-run
 
 # Overwrite an existing install with a different version
-npx atlas install-skill --force
+npx --package atlassian-api-client -- atlas install-skill --force
 ```

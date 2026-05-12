@@ -176,6 +176,29 @@ describe('resolveInstallTarget', () => {
     expect(target).toBe('/tmp/cwd/rel/target');
   });
 
+  it('expands a leading `~/` in --path to HOME', () => {
+    const target = resolveInstallTarget(
+      { path: '~/skills/atlas' },
+      { HOME: '/tmp/fakehome' },
+      '/tmp/cwd',
+    );
+    expect(target).toBe('/tmp/fakehome/skills/atlas');
+  });
+
+  it('expands a bare `~` in --path to HOME', () => {
+    const target = resolveInstallTarget({ path: '~' }, { HOME: '/tmp/fakehome' }, '/tmp/cwd');
+    expect(target).toBe('/tmp/fakehome');
+  });
+
+  it('leaves non-leading `~` untouched in --path', () => {
+    const target = resolveInstallTarget(
+      { path: 'foo/~bar' },
+      { HOME: '/tmp/fakehome' },
+      '/tmp/cwd',
+    );
+    expect(target).toBe('/tmp/cwd/foo/~bar');
+  });
+
   it('falls back to os.homedir() when HOME env is absent', () => {
     const target = resolveInstallTarget({}, {}, '/tmp/cwd');
     expect(target).toContain(`/.claude/skills/${SKILL_NAME}`);
