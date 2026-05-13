@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from '../../src/core/retry.js';
+import {
+  isRetryableStatus,
+  calculateDelay,
+  isNetworkError,
+  sleep,
+  executeWithRetry,
+} from '../../src/core/retry.js';
+import {
+  HttpError,
+  NetworkError,
+  RateLimitError,
+  TimeoutError,
+} from '../../src/core/errors.js';
 
 describe('isRetryableStatus', () => {
   it.each([429, 500, 502, 503, 504])('returns true for status %i', (status) => {
@@ -197,5 +209,202 @@ describe('sleep', () => {
     const promise = sleep(0);
     vi.advanceTimersByTime(0);
     await promise; // should not hang
+  });
+});
+
+describe('executeWithRetry', () => {
+  const config = { retries: 3, retryDelay: 10, maxRetryDelay: 1000 };
+
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns operation result without retrying on success', async () => {
+    const operation = vi.fn().mockResolvedValue('ok');
+    const result = await executeWithRetry(operation, config);
+    expect(result).toBe('ok');
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries retryable HttpError up to retries times then throws', async () => {
+    const err = new HttpError('boom', 503);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
+    // 1 initial + 3 retries = 4 attempts
+    expect(operation).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not retry TimeoutError', async () => {
+    const err = new TimeoutError(30_000);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry non-retryable HttpError (e.g. 400)', async () => {
+    const err = new HttpError('bad request', 400);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries NetworkError', async () => {
+    const err = new NetworkError('socket reset');
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(4);
+  });
+
+  it('succeeds on a later attempt after retryable failures', async () => {
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new HttpError('try again', 502))
+      .mockRejectedValueOnce(new NetworkError('flap'))
+      .mockResolvedValueOnce('done');
+
+    const result = await executeWithRetry(operation, config);
+    expect(result).toBe('done');
+    expect(operation).toHaveBeenCalledTimes(3);
+  });
+
+  it('stops retrying when a non-retryable error follows retryable ones', async () => {
+    const fatal = new HttpError('nope', 404);
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new HttpError('flap', 500))
+      .mockRejectedValueOnce(fatal);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(fatal);
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses server retryAfter for RateLimitError delay', async () => {
+    vi.useFakeTimers();
+    try {
+      const err = new RateLimitError('slow down', 2); // 2 seconds = 2000ms
+      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+
+      const setSpy = vi.spyOn(globalThis, 'setTimeout');
+      const promise = executeWithRetry(operation, {
+        retries: 1,
+        retryDelay: 100,
+        maxRetryDelay: 60_000,
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      await promise;
+
+      // First setTimeout call is the inter-attempt sleep
+      expect(setSpy.mock.calls[0]?.[1]).toBe(2000); // Math.random mocked to 0 → no added jitter
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('caps RateLimitError jitter at maxRetryDelay headroom', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(Math, 'random').mockReturnValue(1); // request maximum jitter
+      const err = new RateLimitError('slow down', 5); // 5s
+      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+
+      const setSpy = vi.spyOn(globalThis, 'setTimeout');
+      // maxRetryDelay 5500 leaves 500ms headroom; retryDelay=1000 jitter is capped to 500
+      const promise = executeWithRetry(operation, {
+        retries: 1,
+        retryDelay: 1000,
+        maxRetryDelay: 5500,
+      });
+      await vi.advanceTimersByTimeAsync(5500);
+      await promise;
+
+      expect(setSpy.mock.calls[0]?.[1]).toBe(5500);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('falls back to exponential backoff when RateLimitError has no retryAfter', async () => {
+    vi.useFakeTimers();
+    try {
+      const err = new RateLimitError('throttled');
+      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+
+      const setSpy = vi.spyOn(globalThis, 'setTimeout');
+      const promise = executeWithRetry(operation, {
+        retries: 1,
+        retryDelay: 100,
+        maxRetryDelay: 60_000,
+      });
+      await vi.advanceTimersByTimeAsync(100);
+      await promise;
+
+      // attempt=0, base*2^0 + jitter(0) = 100
+      expect(setSpy.mock.calls[0]?.[1]).toBe(100);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects immediately if signal is already aborted before sleep', async () => {
+    const controller = new AbortController();
+    controller.abort(new Error('cancelled'));
+    const err = new HttpError('boom', 503);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config, controller.signal)).rejects.toThrow(
+      'cancelled',
+    );
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects mid-sleep when signal aborts', async () => {
+    const controller = new AbortController();
+    const err = new HttpError('boom', 503);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    // Use real timers but a long delay; abort fires after a microtask
+    const promise = executeWithRetry(
+      operation,
+      { retries: 5, retryDelay: 10_000, maxRetryDelay: 60_000 },
+      controller.signal,
+    );
+    // Defer abort until executeWithRetry has reached its sleep
+    queueMicrotask(() => controller.abort(new Error('user cancelled')));
+
+    await expect(promise).rejects.toThrow('user cancelled');
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses default AbortError when signal.reason is not an Error', async () => {
+    const controller = new AbortController();
+    const err = new HttpError('boom', 503);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    const promise = executeWithRetry(
+      operation,
+      { retries: 5, retryDelay: 10_000, maxRetryDelay: 60_000 },
+      controller.signal,
+    );
+    queueMicrotask(() => controller.abort('not an error')); // string reason
+
+    await expect(promise).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  it('does not retry when retries is 0', async () => {
+    const err = new HttpError('boom', 503);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(
+      executeWithRetry(operation, { retries: 0, retryDelay: 10, maxRetryDelay: 1000 }),
+    ).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(1);
   });
 });
