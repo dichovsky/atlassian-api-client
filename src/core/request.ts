@@ -76,6 +76,11 @@ export function sanitizePathForLogging(path: string): string {
  * headers (for example `X-Atlassian-Token`) pass through. The auth provider's
  * headers are applied last so they always win.
  *
+ * `Accept: application/json` is set as a default and may be overridden by a
+ * caller-supplied `Accept` header. `Content-Type: application/json` (when
+ * `withJsonBody` is `true`) is applied after the merge and cannot be
+ * overridden by callers.
+ *
  * @param callerHeaders - Headers from the {@link RequestOptions.headers} field.
  * @param authHeaders - Headers returned by the configured `AuthProvider`.
  * @param withJsonBody - When `true`, sets `Content-Type: application/json`.

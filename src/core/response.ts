@@ -78,8 +78,11 @@ export async function parseResponseBody(
  * Assemble an {@link ApiResponse} from a successful `fetch` Response and the
  * parsed body.
  *
- * The `rateLimit` field is included only when at least one rate-limit field
- * was parsed, matching the {@link ApiResponse.rateLimit} optionality.
+ * The `rateLimit` parameter is always set on the returned response. Pass the
+ * full {@link RateLimitInfo} produced by `parseRateLimitHeaders` — individual
+ * fields inside it are undefined when the corresponding header is absent.
+ * {@link ApiResponse.rateLimit} remains optional at the type level so custom
+ * `Transport` implementations may omit it entirely.
  */
 export function buildApiResponse(
   response: Response,

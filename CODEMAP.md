@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "d025237aa52f1957cc89ebee53bd3c3d5c2cfe7d0168321538a2dd01d9835edc",
+  "sourceHash": "fd014041f9abb39a497aac912e34e217ec06409df8cb67159f11b749a71b061f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4614,7 +4614,7 @@
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 84,
+          "line": 89,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4622,7 +4622,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 112,
+          "line": 117,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4630,7 +4630,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 124,
+          "line": 129,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
@@ -4679,7 +4679,7 @@
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 84,
+          "line": 87,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
