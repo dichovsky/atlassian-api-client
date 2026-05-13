@@ -39,6 +39,9 @@ export { createAuthProvider } from './auth.js';
 // Transport
 export { HttpTransport } from './transport.js';
 
+// Middleware composition
+export { createMiddlewareChain } from './middleware.js';
+
 // Retry
 export type { RetryConfig } from './retry.js';
 export {
