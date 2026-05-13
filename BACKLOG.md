@@ -53,7 +53,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/core/types.ts`, `src/core/response.ts`, affected test files
 - **Dependencies:** None
 
-### [ ] B003: Add `retryAfter` property to `RateLimitError`
+### [x] B003: Add `retryAfter` property to `RateLimitError`
 
 - **Priority:** P1 — High
 - **Description:** `RateLimitError` currently doesn't carry the parsed `retryAfter` value. Add `retryAfter?: number` (seconds) to the class and include it in the constructor. Update `createHttpError` factory to pass it. Consumers can then display "Please retry after X seconds" to users.
