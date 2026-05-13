@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "6715c5ba7daaf91eaf19f5217a837260dd8e03e43522f4609587dcb1927872e2",
+  "sourceHash": "d025237aa52f1957cc89ebee53bd3c3d5c2cfe7d0168321538a2dd01d9835edc",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -496,7 +496,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 45,
+      "line": 35,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -3913,6 +3913,17 @@
         },
         {
           "kind": "named",
+          "from": "./middleware.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "createMiddlewareChain",
+              "original": "createMiddlewareChain"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./oauth.js",
           "typeOnly": true,
           "names": [
@@ -4061,6 +4072,17 @@
         {
           "kind": "named",
           "from": "./retry.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "RetryConfig",
+              "original": "RetryConfig"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./retry.js",
           "typeOnly": false,
           "names": [
             {
@@ -4078,6 +4100,10 @@
             {
               "exported": "sleep",
               "original": "sleep"
+            },
+            {
+              "exported": "executeWithRetry",
+              "original": "executeWithRetry"
             }
           ]
         },
@@ -4173,6 +4199,22 @@
             }
           ]
         }
+      ]
+    },
+    {
+      "path": "src/core/middleware.ts",
+      "symbols": [
+        {
+          "name": "createMiddlewareChain",
+          "kind": "function",
+          "line": 32,
+          "exported": true,
+          "signature": "export function createMiddlewareChain( middlewares: readonly Middleware[], terminal: (options: RequestOptions) => Promis…",
+          "jsdoc": "Compose a middleware chain wrapping a terminal request handler. @example ```ts const chain = createMiddlewareChain( [authMiddleware, cacheMiddleware], (o…"
+        }
+      ],
+      "imports": [
+        "./types.js"
       ]
     },
     {
@@ -4533,6 +4575,73 @@
       ]
     },
     {
+      "path": "src/core/request.ts",
+      "symbols": [
+        {
+          "name": "buildUrl",
+          "kind": "function",
+          "line": 14,
+          "exported": true,
+          "signature": "export function buildUrl( baseUrl: string, path: string, query?: Readonly<Record<string, string | number | boolean | und…",
+          "jsdoc": "Resolve a request path against the configured base URL and apply query parameters."
+        },
+        {
+          "name": "SENSITIVE_SEGMENT_NAMES",
+          "kind": "variable",
+          "line": 35,
+          "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
+        },
+        {
+          "name": "redactSensitiveMarkers",
+          "kind": "function",
+          "line": 37,
+          "signature": "function redactSensitiveMarkers(value: string): string"
+        },
+        {
+          "name": "redactSensitiveSegments",
+          "kind": "function",
+          "line": 41,
+          "signature": "function redactSensitiveSegments(pathname: string): string"
+        },
+        {
+          "name": "sanitizePathForLogging",
+          "kind": "function",
+          "line": 62,
+          "exported": true,
+          "signature": "export function sanitizePathForLogging(path: string): string",
+          "jsdoc": "Produce a logging-safe rendering of `path`."
+        },
+        {
+          "name": "buildHeaders",
+          "kind": "function",
+          "line": 84,
+          "exported": true,
+          "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
+          "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
+        },
+        {
+          "name": "FetchBody",
+          "kind": "interface",
+          "line": 112,
+          "exported": true,
+          "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
+          "jsdoc": "Outcome of {@link buildFetchBody}."
+        },
+        {
+          "name": "buildFetchBody",
+          "kind": "function",
+          "line": 124,
+          "exported": true,
+          "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
+          "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
+        }
+      ],
+      "imports": [
+        "./errors.js",
+        "./types.js"
+      ]
+    },
+    {
       "path": "src/core/response.ts",
       "symbols": [
         {
@@ -4550,6 +4659,30 @@
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
+        },
+        {
+          "name": "safeParseBody",
+          "kind": "function",
+          "line": 43,
+          "exported": true,
+          "signature": "export async function safeParseBody(response: Response): Promise<unknown>",
+          "jsdoc": "Parse a response body as JSON, swallowing parse failures."
+        },
+        {
+          "name": "parseResponseBody",
+          "kind": "function",
+          "line": 60,
+          "exported": true,
+          "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], ): Promise<un…",
+          "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
+        },
+        {
+          "name": "buildApiResponse",
+          "kind": "function",
+          "line": 84,
+          "exported": true,
+          "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
+          "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
         }
       ],
       "imports": [
@@ -4562,13 +4695,13 @@
         {
           "name": "RETRYABLE_STATUS_CODES",
           "kind": "variable",
-          "line": 1,
+          "line": 3,
           "signature": "const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);"
         },
         {
           "name": "isRetryableStatus",
           "kind": "function",
-          "line": 4,
+          "line": 6,
           "exported": true,
           "signature": "export function isRetryableStatus(status: number): boolean",
           "jsdoc": "Check whether an HTTP status code is retryable."
@@ -4576,7 +4709,7 @@
         {
           "name": "calculateDelay",
           "kind": "function",
-          "line": 9,
+          "line": 11,
           "exported": true,
           "signature": "export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number",
           "jsdoc": "Calculate retry delay with exponential backoff and jitter."
@@ -4584,14 +4717,14 @@
         {
           "name": "RETRYABLE_CAUSE_CODES",
           "kind": "variable",
-          "line": 20,
+          "line": 22,
           "signature": "const RETRYABLE_CAUSE_CODES = new Set([ 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'EPIPE', 'U…",
           "jsdoc": "System-level error codes that represent transient network failures eligible for retry. Covers both libuv (`ECONN*`, `ENOTFOUND`, `EAI_AGAIN`) and undici-specific (`UND_ERR_*`) causes."
         },
         {
           "name": "isNetworkError",
           "kind": "function",
-          "line": 32,
+          "line": 34,
           "exported": true,
           "signature": "export function isNetworkError(error: unknown): boolean",
           "jsdoc": "Check whether a caught error represents a retryable network failure."
@@ -4599,18 +4732,61 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 54,
+          "line": 56,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 71,
+          "line": 73,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
+        },
+        {
+          "name": "RetryConfig",
+          "kind": "interface",
+          "line": 84,
+          "exported": true,
+          "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
+          "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
+        },
+        {
+          "name": "executeWithRetry",
+          "kind": "function",
+          "line": 109,
+          "exported": true,
+          "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
+          "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
+        },
+        {
+          "name": "shouldRetry",
+          "kind": "function",
+          "line": 131,
+          "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
+        },
+        {
+          "name": "getRetryDelay",
+          "kind": "function",
+          "line": 147,
+          "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
+        },
+        {
+          "name": "sleepWithAbort",
+          "kind": "function",
+          "line": 167,
+          "signature": "async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>"
+        },
+        {
+          "name": "getAbortReason",
+          "kind": "function",
+          "line": 192,
+          "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
+      ],
+      "imports": [
+        "./errors.js"
       ]
     },
     {
@@ -4655,7 +4831,7 @@
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 45,
+          "line": 35,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -4663,92 +4839,42 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 46
+              "line": 36
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 47
+              "line": 37
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 48
+              "line": 38
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 56
+              "line": 46
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 64
+              "line": 54
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 65
+              "line": 55
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 77
-            },
-            {
-              "name": "buildMiddlewareChain",
-              "kind": "method",
-              "line": 104
-            },
-            {
-              "name": "executeWithRetry",
-              "kind": "method",
-              "line": 116
-            },
-            {
-              "name": "sanitizePathForLogging",
-              "kind": "method",
-              "line": 135
+              "line": 69
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 162
-            },
-            {
-              "name": "shouldRetry",
-              "kind": "method",
-              "line": 265
-            },
-            {
-              "name": "getRetryDelay",
-              "kind": "method",
-              "line": 281
-            },
-            {
-              "name": "sleepWithAbort",
-              "kind": "method",
-              "line": 296
-            },
-            {
-              "name": "getAbortReason",
-              "kind": "method",
-              "line": 321
-            },
-            {
-              "name": "buildUrl",
-              "kind": "method",
-              "line": 331
-            },
-            {
-              "name": "safeParseBody",
-              "kind": "method",
-              "line": 353
-            },
-            {
-              "name": "parseResponseBody",
-              "kind": "method",
-              "line": 368
+              "line": 94
             }
           ]
         }
@@ -4756,7 +4882,10 @@
       "imports": [
         "./auth.js",
         "./errors.js",
+        "./middleware.js",
         "./rate-limiter.js",
+        "./request.js",
+        "./response.js",
         "./retry.js",
         "./types.js"
       ]

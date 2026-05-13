@@ -6,12 +6,7 @@ import {
   sleep,
   executeWithRetry,
 } from '../../src/core/retry.js';
-import {
-  HttpError,
-  NetworkError,
-  RateLimitError,
-  TimeoutError,
-} from '../../src/core/errors.js';
+import { HttpError, NetworkError, RateLimitError, TimeoutError } from '../../src/core/errors.js';
 
 describe('isRetryableStatus', () => {
   it.each([429, 500, 502, 503, 504])('returns true for status %i', (status) => {

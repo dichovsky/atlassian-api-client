@@ -40,12 +40,14 @@ describe('createMiddlewareChain', () => {
 
   it('runs multiple middlewares outermost-first', async () => {
     const order: string[] = [];
-    const make = (label: string): Middleware => async (opts, next) => {
-      order.push(`${label}:enter`);
-      const res = await next(opts);
-      order.push(`${label}:exit`);
-      return res;
-    };
+    const make =
+      (label: string): Middleware =>
+      async (opts, next) => {
+        order.push(`${label}:enter`);
+        const res = await next(opts);
+        order.push(`${label}:exit`);
+        return res;
+      };
 
     const terminal = async (): Promise<ApiResponse<unknown>> => {
       order.push('terminal');
