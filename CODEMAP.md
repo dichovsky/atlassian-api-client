@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "7cfbccc8465f385cb3c5d071330f8016b51597dc1d126ad47e70fd915b145887",
+  "sourceHash": "325bf8c388f4827ef4c5540bada6c1c8895680b2866677e5c30edddfb7c6bff2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -496,7 +496,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 39,
+      "line": 34,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -4176,6 +4176,30 @@
       ]
     },
     {
+      "path": "src/core/middleware.ts",
+      "symbols": [
+        {
+          "name": "RequestHandler",
+          "kind": "type",
+          "line": 4,
+          "exported": true,
+          "signature": "export type RequestHandler = (options: RequestOptions) => Promise<ApiResponse<unknown>>;",
+          "jsdoc": "Handler that executes a request and returns the parsed response."
+        },
+        {
+          "name": "createMiddlewareChain",
+          "kind": "function",
+          "line": 19,
+          "exported": true,
+          "signature": "export function createMiddlewareChain( middleware: readonly Middleware[], handler: RequestHandler, ): RequestHandler",
+          "jsdoc": "Compose a middleware chain around a core request handler. @example ```ts const chain = createMiddlewareChain([authMw, retryMw], coreHandler); const…"
+        }
+      ],
+      "imports": [
+        "./types.js"
+      ]
+    },
+    {
       "path": "src/core/oauth.ts",
       "symbols": [
         {
@@ -4709,7 +4733,7 @@
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 39,
+          "line": 34,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -4717,67 +4741,67 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 40
+              "line": 35
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 41
+              "line": 36
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 42
+              "line": 37
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 50
+              "line": 45
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 58
+              "line": 53
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 59
+              "line": 54
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 71
+              "line": 66
             },
             {
               "name": "buildMiddlewareChain",
               "kind": "method",
-              "line": 98
+              "line": 92
             },
             {
               "name": "sanitizePathForLogging",
               "kind": "method",
-              "line": 110
+              "line": 96
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 137
+              "line": 123
             },
             {
               "name": "buildUrl",
               "kind": "method",
-              "line": 240
+              "line": 226
             },
             {
               "name": "safeParseBody",
               "kind": "method",
-              "line": 262
+              "line": 248
             },
             {
               "name": "parseResponseBody",
               "kind": "method",
-              "line": 277
+              "line": 263
             }
           ]
         }
@@ -4785,6 +4809,7 @@
       "imports": [
         "./auth.js",
         "./errors.js",
+        "./middleware.js",
         "./rate-limiter.js",
         "./retry-logic.js",
         "./retry.js",

@@ -1,15 +1,10 @@
-import type {
-  Transport,
-  RequestOptions,
-  ApiResponse,
-  ResolvedConfig,
-  Middleware,
-} from './types.js';
+import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
 import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
 import { isNetworkError } from './retry.js';
 import { executeWithRetry } from './retry-logic.js';
+import { createMiddlewareChain, type RequestHandler } from './middleware.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
 /**
@@ -39,7 +34,7 @@ import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly authProvider: AuthProvider;
-  private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
+  private readonly requestHandler: RequestHandler;
 
   /**
    * @param config - Resolved client configuration. `config.baseUrl` must be the
@@ -91,20 +86,11 @@ export class HttpTransport implements Transport {
 
   /**
    * Build the middleware chain wrapping the core fetch executor.
-   * Middleware runs outermost-first (index 0 wraps all subsequent middleware).
    * The retry loop sits OUTSIDE this chain so retryable errors thrown by
    * middleware (e.g. OAuthError with 5xx refreshStatus) are also retried.
    */
-  private buildMiddlewareChain(): (options: RequestOptions) => Promise<ApiResponse<unknown>> {
-    const middleware: Middleware[] = this.config.middleware ?? [];
-
-    const coreExecutor = (opts: RequestOptions): Promise<ApiResponse<unknown>> =>
-      this.executeFetch(opts);
-
-    return middleware.reduceRight<(opts: RequestOptions) => Promise<ApiResponse<unknown>>>(
-      (next, mw) => (opts) => mw(opts, next),
-      coreExecutor,
-    );
+  private buildMiddlewareChain(): RequestHandler {
+    return createMiddlewareChain(this.config.middleware ?? [], (opts) => this.executeFetch(opts));
   }
 
   private sanitizePathForLogging(path: string): string {
