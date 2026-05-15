@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "6715c5ba7daaf91eaf19f5217a837260dd8e03e43522f4609587dcb1927872e2",
+  "sourceHash": "7cfbccc8465f385cb3c5d071330f8016b51597dc1d126ad47e70fd915b145887",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -496,7 +496,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 45,
+      "line": 39,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -4557,6 +4557,60 @@
       ]
     },
     {
+      "path": "src/core/retry-logic.ts",
+      "symbols": [
+        {
+          "name": "RetryConfig",
+          "kind": "type",
+          "line": 6,
+          "exported": true,
+          "signature": "export type RetryConfig = Pick<ResolvedConfig, 'retries' | 'retryDelay' | 'maxRetryDelay'>;",
+          "jsdoc": "Retry-relevant slice of the resolved config."
+        },
+        {
+          "name": "shouldRetry",
+          "kind": "function",
+          "line": 15,
+          "exported": true,
+          "signature": "export function shouldRetry(error: unknown, attempt: number, maxRetries: number): boolean",
+          "jsdoc": "Decide whether a failed attempt should be retried."
+        },
+        {
+          "name": "getRetryDelay",
+          "kind": "function",
+          "line": 40,
+          "exported": true,
+          "signature": "export function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number",
+          "jsdoc": "Compute the delay (ms) before the next retry attempt."
+        },
+        {
+          "name": "executeWithRetry",
+          "kind": "function",
+          "line": 64,
+          "exported": true,
+          "signature": "export async function executeWithRetry<T>( config: RetryConfig, handler: (options: RequestOptions) => Promise<ApiRespons…",
+          "jsdoc": "Run `handler(options)` with retry on transient failures."
+        },
+        {
+          "name": "sleepWithAbort",
+          "kind": "function",
+          "line": 86,
+          "signature": "async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>"
+        },
+        {
+          "name": "getAbortReason",
+          "kind": "function",
+          "line": 111,
+          "signature": "function getAbortReason(signal: AbortSignal): Error"
+        }
+      ],
+      "imports": [
+        "./errors.js",
+        "./retry.js",
+        "./types.js"
+      ]
+    },
+    {
       "path": "src/core/retry.ts",
       "symbols": [
         {
@@ -4655,7 +4709,7 @@
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 45,
+          "line": 39,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -4663,92 +4717,67 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 46
+              "line": 40
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 47
+              "line": 41
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 48
+              "line": 42
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 56
+              "line": 50
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 64
+              "line": 58
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 65
+              "line": 59
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 77
+              "line": 71
             },
             {
               "name": "buildMiddlewareChain",
               "kind": "method",
-              "line": 104
-            },
-            {
-              "name": "executeWithRetry",
-              "kind": "method",
-              "line": 116
+              "line": 98
             },
             {
               "name": "sanitizePathForLogging",
               "kind": "method",
-              "line": 135
+              "line": 110
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 162
-            },
-            {
-              "name": "shouldRetry",
-              "kind": "method",
-              "line": 265
-            },
-            {
-              "name": "getRetryDelay",
-              "kind": "method",
-              "line": 281
-            },
-            {
-              "name": "sleepWithAbort",
-              "kind": "method",
-              "line": 296
-            },
-            {
-              "name": "getAbortReason",
-              "kind": "method",
-              "line": 321
+              "line": 137
             },
             {
               "name": "buildUrl",
               "kind": "method",
-              "line": 331
+              "line": 240
             },
             {
               "name": "safeParseBody",
               "kind": "method",
-              "line": 353
+              "line": 262
             },
             {
               "name": "parseResponseBody",
               "kind": "method",
-              "line": 368
+              "line": 277
             }
           ]
         }
@@ -4757,6 +4786,7 @@
         "./auth.js",
         "./errors.js",
         "./rate-limiter.js",
+        "./retry-logic.js",
         "./retry.js",
         "./types.js"
       ]

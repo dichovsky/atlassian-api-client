@@ -7,15 +7,9 @@ import type {
 } from './types.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
-import {
-  createHttpError,
-  HttpError,
-  TimeoutError,
-  NetworkError,
-  RateLimitError,
-  ValidationError,
-} from './errors.js';
-import { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
+import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
+import { isNetworkError } from './retry.js';
+import { executeWithRetry } from './retry-logic.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
 /**
@@ -75,7 +69,7 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    const response = await this.executeWithRetry(options);
+    const response = await executeWithRetry(this.config, this.requestHandler, options);
 
     // Validate middleware/transport output shape before exposing it as ApiResponse<T>.
     // Guard non-null/object first so the subsequent field checks cannot throw on
@@ -111,25 +105,6 @@ export class HttpTransport implements Transport {
       (next, mw) => (opts) => mw(opts, next),
       coreExecutor,
     );
-  }
-
-  private async executeWithRetry(options: RequestOptions): Promise<ApiResponse<unknown>> {
-    let attempt = 0;
-
-    for (;;) {
-      try {
-        const result = await this.requestHandler(options);
-        return result;
-      } catch (error) {
-        if (!this.shouldRetry(error, attempt)) {
-          throw error;
-        }
-
-        const delayMs = this.getRetryDelay(error, attempt);
-        await this.sleepWithAbort(delayMs, options.signal);
-        attempt++;
-      }
-    }
   }
 
   private sanitizePathForLogging(path: string): string {
@@ -260,72 +235,6 @@ export class HttpTransport implements Transport {
       headers: response.headers,
       rateLimit,
     };
-  }
-
-  private shouldRetry(error: unknown, attempt: number): boolean {
-    if (attempt >= this.config.retries) return false;
-
-    if (error instanceof RateLimitError) return true;
-
-    if (error instanceof TimeoutError) return false;
-
-    if (error instanceof NetworkError) return true;
-
-    if (error instanceof HttpError) {
-      return isRetryableStatus(error.status);
-    }
-
-    return false;
-  }
-
-  private getRetryDelay(error: unknown, attempt: number): number {
-    if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-      // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
-      // of clients hitting the same 429 wall don't resume in lockstep. The
-      // server-advertised floor is always preserved. When maxRetryDelay leaves
-      // headroom above that floor, cap only the added jitter to stay within it.
-      const base = error.retryAfter * 1000;
-      const jitter = Math.random() * this.config.retryDelay;
-      const maxAdditionalDelay = Math.max(0, this.config.maxRetryDelay - base);
-      return base + Math.min(jitter, maxAdditionalDelay);
-    }
-
-    return calculateDelay(attempt, this.config.retryDelay, this.config.maxRetryDelay);
-  }
-
-  private async sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
-    if (signal === undefined) {
-      await sleep(delayMs);
-      return;
-    }
-
-    if (signal.aborted) {
-      throw this.getAbortReason(signal);
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        signal.removeEventListener('abort', onAbort);
-        resolve();
-      }, delayMs);
-
-      const onAbort = (): void => {
-        clearTimeout(timeoutId);
-        reject(this.getAbortReason(signal));
-      };
-
-      signal.addEventListener('abort', onAbort, { once: true });
-    });
-  }
-
-  private getAbortReason(signal: AbortSignal): Error {
-    if (signal.reason instanceof Error) {
-      return signal.reason;
-    }
-
-    const abortError = new Error('The operation was aborted');
-    abortError.name = 'AbortError';
-    return abortError;
   }
 
   private buildUrl(
