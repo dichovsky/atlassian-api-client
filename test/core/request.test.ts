@@ -53,9 +53,14 @@ describe('buildUrl', () => {
 });
 
 describe('buildHeaders', () => {
-  it('always sets Accept: application/json', () => {
+  it('sets a default Accept: application/json when none supplied', () => {
     const headers = buildHeaders(stubAuth({}));
     expect(headers.Accept).toBe('application/json');
+  });
+
+  it('lets caller override the default Accept header (e.g. for non-JSON downloads)', () => {
+    const headers = buildHeaders(stubAuth({}), { Accept: 'application/octet-stream' });
+    expect(headers.Accept).toBe('application/octet-stream');
   });
 
   it('merges auth-provider headers (auth wins over caller)', () => {

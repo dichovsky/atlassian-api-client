@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "b6977c5ba4b9de1de202d2368ca08d2fa1a17a42e8aa4fcd1c7b02ade19d33e5",
+  "sourceHash": "3ba1a12530917818f4f48b9ecae455c653a5de2a91630e6595fad3e8c4e2272d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4570,7 +4570,7 @@
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 40,
+          "line": 43,
           "exported": true,
           "signature": "export function buildHeaders( authProvider: AuthProvider, callerHeaders?: Readonly<Record<string, string>>, ): Record<st…",
           "jsdoc": "Assemble outbound request headers."
@@ -4578,7 +4578,7 @@
         {
           "name": "BuiltBody",
           "kind": "interface",
-          "line": 58,
+          "line": 61,
           "exported": true,
           "signature": "export interface BuiltBody { readonly body: FormData | string | undefined; readonly contentType?: string; }",
           "jsdoc": "Outbound body shape after serialisation."
@@ -4586,7 +4586,7 @@
         {
           "name": "buildBody",
           "kind": "function",
-          "line": 73,
+          "line": 76,
           "exported": true,
           "signature": "export function buildBody(options: RequestOptions): BuiltBody",
           "jsdoc": "Serialise the request body."
@@ -4594,7 +4594,7 @@
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 97,
+          "line": 100,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Sanitise a path for logging — strips query/fragment, redacts segments that follow `token`/`key`/`secret`/`auth` markers, and masks `name=value` markers inline. Malformed inputs fall back to a best-effort pathname so logging never throws."

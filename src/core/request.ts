@@ -33,9 +33,12 @@ export function buildUrl(
 /**
  * Assemble outbound request headers.
  *
- * Strips any caller-supplied `Authorization` header (case-insensitive) so the
- * configured {@link AuthProvider} always wins. Other custom headers (e.g.
- * `X-Atlassian-Token`) are passed through. Always sets `Accept: application/json`.
+ * Merge order (later wins): default `Accept: application/json`, then any
+ * caller-supplied headers (so a caller can override `Accept`, e.g. for
+ * non-JSON downloads), then auth-provider headers (so the configured
+ * {@link AuthProvider} always wins). Any caller-supplied `Authorization`
+ * header is stripped case-insensitively before merging — auth credentials
+ * can never be overridden by caller headers.
  */
 export function buildHeaders(
   authProvider: AuthProvider,
