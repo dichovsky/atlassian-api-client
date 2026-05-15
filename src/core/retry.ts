@@ -1,3 +1,5 @@
+import { HttpError, NetworkError, RateLimitError, TimeoutError } from './errors.js';
+
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
 
 /** Check whether an HTTP status code is retryable. */
@@ -72,4 +74,127 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+/**
+ * Configuration consumed by {@link executeWithRetry}.
+ * A {@link ResolvedConfig} satisfies this shape structurally, so the transport
+ * can pass its own config object without adapting.
+ */
+export interface RetryConfig {
+  readonly retries: number;
+  readonly retryDelay: number;
+  readonly maxRetryDelay: number;
+}
+
+/**
+ * Run an async operation with retry, exponential backoff, and abort-aware sleep.
+ *
+ * Retry policy:
+ * - {@link RateLimitError} (429) is always retried up to `retries` attempts;
+ *   delay honours the server-advertised `retry-after` value with bounded jitter.
+ * - {@link NetworkError} is retried (transient socket / DNS failures).
+ * - {@link HttpError} is retried only when {@link isRetryableStatus} matches.
+ * - {@link TimeoutError} and all other errors are not retried.
+ *
+ * The retry loop sits OUTSIDE the middleware chain in {@link HttpTransport}, so
+ * retryable errors thrown by middleware (e.g. OAuth refresh failures returning
+ * a 5xx) are retried by the same logic as transport errors.
+ *
+ * @param operation - Async work to execute; called once per attempt.
+ * @param config - Retry configuration (max attempts, base delay, ceiling).
+ * @param signal - Optional caller-supplied abort signal. When fired during a
+ *   between-attempts sleep, the call rejects with the signal's reason.
+ */
+export async function executeWithRetry<T>(
+  operation: () => Promise<T>,
+  config: RetryConfig,
+  signal?: AbortSignal,
+): Promise<T> {
+  let attempt = 0;
+
+  for (;;) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!shouldRetry(error, attempt, config.retries)) {
+        throw error;
+      }
+
+      const delayMs = getRetryDelay(error, attempt, config.retryDelay, config.maxRetryDelay);
+      await sleepWithAbort(delayMs, signal);
+      attempt++;
+    }
+  }
+}
+
+function shouldRetry(error: unknown, attempt: number, retries: number): boolean {
+  if (attempt >= retries) return false;
+
+  if (error instanceof RateLimitError) return true;
+
+  if (error instanceof TimeoutError) return false;
+
+  if (error instanceof NetworkError) return true;
+
+  if (error instanceof HttpError) {
+    return isRetryableStatus(error.status);
+  }
+
+  return false;
+}
+
+function getRetryDelay(
+  error: unknown,
+  attempt: number,
+  retryDelay: number,
+  maxRetryDelay: number,
+): number {
+  if (error instanceof RateLimitError && error.retryAfter !== undefined) {
+    // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
+    // of clients hitting the same 429 wall don't resume in lockstep. The
+    // server-advertised floor is always preserved. When maxRetryDelay leaves
+    // headroom above that floor, cap only the added jitter to stay within it.
+    const base = error.retryAfter * 1000;
+    const jitter = Math.random() * retryDelay;
+    const maxAdditionalDelay = Math.max(0, maxRetryDelay - base);
+    return base + Math.min(jitter, maxAdditionalDelay);
+  }
+
+  return calculateDelay(attempt, retryDelay, maxRetryDelay);
+}
+
+async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (signal === undefined) {
+    await sleep(delayMs);
+    return;
+  }
+
+  if (signal.aborted) {
+    throw getAbortReason(signal);
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, delayMs);
+
+    const onAbort = (): void => {
+      clearTimeout(timeoutId);
+      reject(getAbortReason(signal));
+    };
+
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+function getAbortReason(signal: AbortSignal): Error {
+  if (signal.reason instanceof Error) {
+    return signal.reason;
+  }
+
+  const abortError = new Error('The operation was aborted');
+  abortError.name = 'AbortError';
+  return abortError;
 }

@@ -39,8 +39,18 @@ export { createAuthProvider } from './auth.js';
 // Transport
 export { HttpTransport } from './transport.js';
 
+// Middleware composition
+export { createMiddlewareChain } from './middleware.js';
+
 // Retry
-export { isRetryableStatus, calculateDelay, isNetworkError, sleep } from './retry.js';
+export type { RetryConfig } from './retry.js';
+export {
+  isRetryableStatus,
+  calculateDelay,
+  isNetworkError,
+  sleep,
+  executeWithRetry,
+} from './retry.js';
 
 // Rate limiter
 export { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';

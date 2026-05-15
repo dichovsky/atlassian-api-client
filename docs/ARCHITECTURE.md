@@ -55,8 +55,11 @@ src/
 │   ├── errors.ts                # Error class hierarchy
 │   ├── config.ts                # Config validation & defaults
 │   ├── auth.ts                  # Auth strategy factory
-│   ├── transport.ts             # HTTP transport + middleware chain
-│   ├── retry.ts                 # Retry with exponential backoff
+│   ├── transport.ts             # HTTP transport orchestrator (thin)
+│   ├── request.ts               # URL building, header merging, body serialisation, path sanitisation
+│   ├── response.ts              # Body parsing, ApiResponse assembly, toJSON helper
+│   ├── middleware.ts            # createMiddlewareChain (outermost-first composition)
+│   ├── retry.ts                 # executeWithRetry + retry primitives (status, backoff, network errors)
 │   ├── rate-limiter.ts          # Rate-limit detection & backoff
 │   ├── pagination.ts            # Pagination iterators
 │   ├── path.ts                  # Path encoding & dot-segment rejection
