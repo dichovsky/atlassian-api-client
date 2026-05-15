@@ -1,4 +1,4 @@
-import type { ApiResponse, RateLimitInfo } from './types.js';
+import type { ApiResponse, RateLimitInfo, RequestOptions } from './types.js';
 
 /** JSON-serialisable projection of {@link ApiResponse}. */
 export interface SerializableApiResponse<T> {
@@ -31,4 +31,44 @@ export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> 
     headers,
     ...(response.rateLimit !== undefined ? { rateLimit: response.rateLimit } : {}),
   };
+}
+
+/**
+ * Parse a successful response body according to the caller-supplied
+ * `responseType`.
+ *
+ * 204 responses always yield `undefined` regardless of mode — there is no
+ * body to parse. For `'stream'` the raw `ReadableStream` is returned without
+ * consumption so large downloads do not buffer in memory; the caller must
+ * drain or cancel the stream.
+ */
+export async function parseResponseBody(
+  response: Response,
+  responseType: RequestOptions['responseType'],
+): Promise<unknown> {
+  if (response.status === 204) return undefined;
+
+  switch (responseType) {
+    case 'arrayBuffer':
+      return await response.arrayBuffer();
+    case 'stream':
+      return response.body;
+    case 'json':
+    case undefined:
+      return await response.json();
+  }
+}
+
+/**
+ * Parse an error response body as JSON, returning `undefined` if the body is
+ * absent or not valid JSON. Used to extract structured error details for
+ * {@link createHttpError} without letting a parse failure mask the original
+ * HTTP error.
+ */
+export async function safeParseJsonBody(response: Response): Promise<unknown> {
+  try {
+    return (await response.json()) as unknown;
+  } catch {
+    return undefined;
+  }
 }

@@ -5,6 +5,8 @@ import { createHttpError, TimeoutError, NetworkError, ValidationError } from './
 import { isNetworkError } from './retry.js';
 import { executeWithRetry } from './retry-logic.js';
 import { createMiddlewareChain, type RequestHandler } from './middleware.js';
+import { buildBody, buildHeaders, buildUrl, sanitizePathForLogging } from './request.js';
+import { parseResponseBody, safeParseJsonBody } from './response.js';
 import { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
 
 /**
@@ -54,7 +56,9 @@ export class HttpTransport implements Transport {
   constructor(config: ResolvedConfig, baseUrl?: string) {
     this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
     this.authProvider = createAuthProvider(this.config.auth);
-    this.requestHandler = this.buildMiddlewareChain();
+    this.requestHandler = createMiddlewareChain(this.config.middleware ?? [], (opts) =>
+      this.executeFetch(opts),
+    );
     if (baseUrl !== undefined) {
       this.config.logger?.warn(
         'HttpTransport(config, baseUrl) is deprecated and will be removed in 0.8.0; ' +
@@ -84,48 +88,13 @@ export class HttpTransport implements Transport {
     return response as ApiResponse<T>;
   }
 
-  /**
-   * Build the middleware chain wrapping the core fetch executor.
-   * The retry loop sits OUTSIDE this chain so retryable errors thrown by
-   * middleware (e.g. OAuthError with 5xx refreshStatus) are also retried.
-   */
-  private buildMiddlewareChain(): RequestHandler {
-    return createMiddlewareChain(this.config.middleware ?? [], (opts) => this.executeFetch(opts));
-  }
-
-  private sanitizePathForLogging(path: string): string {
-    const redactSensitiveMarkers = (value: string): string =>
-      value.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
-
-    const sensitiveSegmentNames = new Set(['token', 'key', 'secret', 'auth']);
-    const redactSensitiveSegments = (pathname: string): string =>
-      pathname
-        .split('/')
-        .map((segment, index, segments) => {
-          const previousSegment = segments[index - 1]?.toLowerCase();
-          if (previousSegment !== undefined && sensitiveSegmentNames.has(previousSegment)) {
-            return '***';
-          }
-          return redactSensitiveMarkers(segment);
-        })
-        .join('/');
-
-    try {
-      const parsedUrl = new URL(path, 'http://localhost');
-      return redactSensitiveSegments(parsedUrl.pathname);
-    } catch {
-      // Malformed input — fall back to a best-effort pathname so logging never
-      // throws and crashes the request. `replace` strips query/fragment parts.
-      return redactSensitiveSegments(path.replace(/[?#].*$/, ''));
-    }
-  }
-
   private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
-    const url = this.buildUrl(options.path, options.query);
-    const sanitizedPath = this.sanitizePathForLogging(options.path);
+    const url = buildUrl(this.config.baseUrl, options.path, options.query);
+    const sanitizedPath = sanitizePathForLogging(options.path);
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.
     this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
+
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);
     const signals: AbortSignal[] = [timeoutController.signal];
@@ -134,34 +103,10 @@ export class HttpTransport implements Transport {
     }
     const fetchSignal = signals.length === 1 ? signals[0] : AbortSignal.any(signals);
 
-    // Strip any caller-supplied Authorization header (case-insensitive) so the configured
-    // auth provider always wins. Other custom headers (e.g. X-Atlassian-Token) are passed through.
-    const safeHeaders: Record<string, string> = {};
-    for (const [key, value] of Object.entries(options.headers ?? {})) {
-      if (key.toLowerCase() !== 'authorization') {
-        safeHeaders[key] = value;
-      }
-    }
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-      ...safeHeaders,
-      ...this.authProvider.getHeaders(),
-    };
-
-    let fetchBody: FormData | string | undefined;
-
-    if (options.formData !== undefined && options.body !== undefined) {
-      throw new ValidationError(
-        'RequestOptions.formData and RequestOptions.body are mutually exclusive',
-      );
-    }
-
-    if (options.formData !== undefined) {
-      // Let the browser/node set Content-Type with the multipart boundary automatically
-      fetchBody = options.formData;
-    } else if (options.body !== undefined) {
-      headers['Content-Type'] = 'application/json';
-      fetchBody = JSON.stringify(options.body);
+    const headers = buildHeaders(this.authProvider, options.headers);
+    const { body: fetchBody, contentType } = buildBody(options);
+    if (contentType !== undefined) {
+      headers['Content-Type'] = contentType;
     }
 
     let response: Response;
@@ -190,13 +135,13 @@ export class HttpTransport implements Transport {
     }
 
     if (!response.ok) {
-      const body = await this.safeParseBody(response);
+      const body = await safeParseJsonBody(response);
       const retryAfterMs = getRetryAfterMs(response.headers);
       const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
       throw createHttpError(response.status, body, retryAfterSeconds);
     }
 
-    const data: unknown = await this.parseResponseBody(response, options.responseType);
+    const data: unknown = await parseResponseBody(response, options.responseType);
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,
@@ -221,59 +166,5 @@ export class HttpTransport implements Transport {
       headers: response.headers,
       rateLimit,
     };
-  }
-
-  private buildUrl(
-    path: string,
-    query?: Readonly<Record<string, string | number | boolean | undefined>>,
-  ): string {
-    // Resources pass fully-qualified URLs (e.g. `${config.baseUrl}/issue/ID`).
-    // Relative paths (e.g. `/pages/123`) are resolved against `config.baseUrl`.
-    const url =
-      path.startsWith('https://') || path.startsWith('http://')
-        ? new URL(path)
-        : new URL(`${this.config.baseUrl}${path}`);
-
-    if (query) {
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined) {
-          url.searchParams.set(key, String(value));
-        }
-      }
-    }
-
-    return url.toString();
-  }
-
-  private async safeParseBody(response: Response): Promise<unknown> {
-    try {
-      return (await response.json()) as unknown;
-    } catch {
-      return undefined;
-    }
-  }
-
-  /**
-   * Parse a successful response body according to the caller-supplied
-   * responseType. 204 responses always yield `undefined` regardless of mode —
-   * there is no body to parse. For `'stream'` the raw `ReadableStream` is
-   * handed to the caller without consumption so large downloads do not
-   * buffer in memory; the caller must drain or cancel the stream.
-   */
-  private async parseResponseBody(
-    response: Response,
-    responseType: RequestOptions['responseType'],
-  ): Promise<unknown> {
-    if (response.status === 204) return undefined;
-
-    switch (responseType) {
-      case 'arrayBuffer':
-        return await response.arrayBuffer();
-      case 'stream':
-        return response.body;
-      case 'json':
-      case undefined:
-        return await response.json();
-    }
   }
 }

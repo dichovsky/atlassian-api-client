@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "325bf8c388f4827ef4c5540bada6c1c8895680b2866677e5c30edddfb7c6bff2",
+  "sourceHash": "b6977c5ba4b9de1de202d2368ca08d2fa1a17a42e8aa4fcd1c7b02ade19d33e5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -496,7 +496,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 34,
+      "line": 36,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -4557,6 +4557,56 @@
       ]
     },
     {
+      "path": "src/core/request.ts",
+      "symbols": [
+        {
+          "name": "buildUrl",
+          "kind": "function",
+          "line": 12,
+          "exported": true,
+          "signature": "export function buildUrl( baseUrl: string, path: string, query?: Readonly<Record<string, string | number | boolean | und…",
+          "jsdoc": "Build a fully-qualified request URL."
+        },
+        {
+          "name": "buildHeaders",
+          "kind": "function",
+          "line": 40,
+          "exported": true,
+          "signature": "export function buildHeaders( authProvider: AuthProvider, callerHeaders?: Readonly<Record<string, string>>, ): Record<st…",
+          "jsdoc": "Assemble outbound request headers."
+        },
+        {
+          "name": "BuiltBody",
+          "kind": "interface",
+          "line": 58,
+          "exported": true,
+          "signature": "export interface BuiltBody { readonly body: FormData | string | undefined; readonly contentType?: string; }",
+          "jsdoc": "Outbound body shape after serialisation."
+        },
+        {
+          "name": "buildBody",
+          "kind": "function",
+          "line": 73,
+          "exported": true,
+          "signature": "export function buildBody(options: RequestOptions): BuiltBody",
+          "jsdoc": "Serialise the request body."
+        },
+        {
+          "name": "sanitizePathForLogging",
+          "kind": "function",
+          "line": 97,
+          "exported": true,
+          "signature": "export function sanitizePathForLogging(path: string): string",
+          "jsdoc": "Sanitise a path for logging — strips query/fragment, redacts segments that follow `token`/`key`/`secret`/`auth` markers, and masks `name=value` markers inline. Malformed inputs fall back to a best-effort pathname so logging never throws."
+        }
+      ],
+      "imports": [
+        "./auth.js",
+        "./errors.js",
+        "./types.js"
+      ]
+    },
+    {
       "path": "src/core/response.ts",
       "symbols": [
         {
@@ -4574,6 +4624,22 @@
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
+        },
+        {
+          "name": "parseResponseBody",
+          "kind": "function",
+          "line": 45,
+          "exported": true,
+          "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], ): Promise<un…",
+          "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
+        },
+        {
+          "name": "safeParseJsonBody",
+          "kind": "function",
+          "line": 68,
+          "exported": true,
+          "signature": "export async function safeParseJsonBody(response: Response): Promise<unknown>",
+          "jsdoc": "Parse an error response body as JSON, returning `undefined` if the body is absent or not valid JSON. Used to extract structured error details for {@link createHttpError} without letting a parse failure mask the original HTTP error."
         }
       ],
       "imports": [
@@ -4733,7 +4799,7 @@
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 34,
+          "line": 36,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -4741,67 +4807,42 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 35
+              "line": 37
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 36
+              "line": 38
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 37
+              "line": 39
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 45
+              "line": 47
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 53
+              "line": 55
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 54
+              "line": 56
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 66
-            },
-            {
-              "name": "buildMiddlewareChain",
-              "kind": "method",
-              "line": 92
-            },
-            {
-              "name": "sanitizePathForLogging",
-              "kind": "method",
-              "line": 96
+              "line": 70
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 123
-            },
-            {
-              "name": "buildUrl",
-              "kind": "method",
-              "line": 226
-            },
-            {
-              "name": "safeParseBody",
-              "kind": "method",
-              "line": 248
-            },
-            {
-              "name": "parseResponseBody",
-              "kind": "method",
-              "line": 263
+              "line": 91
             }
           ]
         }
@@ -4811,6 +4852,8 @@
         "./errors.js",
         "./middleware.js",
         "./rate-limiter.js",
+        "./request.js",
+        "./response.js",
         "./retry-logic.js",
         "./retry.js",
         "./types.js"
