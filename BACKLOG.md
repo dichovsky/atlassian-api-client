@@ -41,19 +41,11 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Phase 1 — Type Correctness (low-risk, high-impact)
 
-### [ ] B002: Fix `ApiResponse<T>.error` to preserve structured error data
+### [~] B002: Fix `ApiResponse<T>.error` to preserve structured error data — OBSOLETE
 
-- **Priority:** P0 — Critical
-- **Description:** Change `error?: string` to `error?: string | Record<string, unknown>` in `ApiResponse<T>` and `SerializableApiResponse<T>`. Atlassian APIs return structured errors like `{ error: '...', errorSummary: '...', errorContext: [...] }`. The current `string` typing discards this data. Update `toJSON()` in `SerializableApiResponse` to handle the union type.
-- **Acceptance criteria:**
-  - [ ] `ApiResponse.error` type is `string | Record<string, unknown> | undefined`
-  - [ ] `toJSON()` serializes both string and object error values correctly
-  - [ ] All existing tests pass (update any that assert `error` is string)
-  - [ ] Breaking change noted in changelog; migration guide for consumers
-- **Files:** `src/core/types.ts`, `src/core/response.ts`, affected test files
-- **Dependencies:** None
+- **Status:** Obsolete as of 2026-05-16. The premise is stale: `ApiResponse<T>` has no `error` field — non-2xx responses throw typed errors (`HttpError` and subclasses) and the full structured Atlassian error body is already preserved on `HttpError.responseBody: unknown` (see `src/core/errors.ts`). `extractErrorMessage` extracts a human-readable message, but the structured payload is never discarded. If future work wants to type `responseBody` more precisely or add an opt-in flag to include it in `HttpError.toJSON()`, file a new ticket.
 
-### [ ] B003: Add `retryAfter` property to `RateLimitError`
+### [x] B003: Add `retryAfter` property to `RateLimitError`
 
 - **Priority:** P1 — High
 - **Description:** `RateLimitError` currently doesn't carry the parsed `retryAfter` value. Add `retryAfter?: number` (seconds) to the class and include it in the constructor. Update `createHttpError` factory to pass it. Consumers can then display "Please retry after X seconds" to users.
@@ -70,7 +62,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 
 ## Phase 2 — Transport Refactor (high-risk, needs own focus)
 
-### [ ] B004: Extract retry loop into `src/core/retry-logic.ts`
+### [x] B004: Extract retry loop into `src/core/retry-logic.ts`
 
 - **Priority:** P0 — Critical
 - **Description:** The retry loop in `transport.ts` (~90 lines, roughly lines 170-260) handles: attempt counting, exponential backoff calculation, jitter application, network error detection, status code checking, and delay waiting. Extract this into a standalone `executeWithRetry(config, operation)` function. The function should accept the request context and an async operation, returning the result or throwing the final error.
@@ -84,7 +76,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/core/retry-logic.ts` (new), `src/core/transport.ts`, `test/core/retry*.test.ts`
 - **Dependencies:** None
 
-### [ ] B005: Extract middleware builder into `src/core/middleware.ts`
+### [x] B005: Extract middleware builder into `src/core/middleware.ts`
 
 - **Priority:** P0 — Critical
 - **Description:** Middleware application in `transport.ts` uses `reduceRight` to compose middlewares. Extract the middleware chain builder into its own module: `createMiddlewareChain(middlewares, handler)`. This makes the chain composable and testable independently.
@@ -97,7 +89,7 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/core/middleware.ts` (new), `src/core/transport.ts`, `test/core/middleware.test.ts` (new)
 - **Dependencies:** B004 (do both in same PR to minimize breakage surface)
 
-### [ ] B006: Reduce `transport.ts` to under 200 lines
+### [x] B006: Reduce `transport.ts` to under 200 lines
 
 - **Priority:** P0 — Critical
 - **Description:** After B004 and B005, `transport.ts` should be reduced from 361 to under 200 lines. The remaining file should only contain: `HttpTransport` class definition, request building, response parsing dispatch (json/arrayBuffer/stream), and the `execute` method as a thin orchestrator. Any remaining large functions (e.g., request building, response type dispatch) should be extracted to `src/core/request.ts` and `src/core/response.ts`.
