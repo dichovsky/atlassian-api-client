@@ -209,6 +209,111 @@ describe('resolveConfig', () => {
     });
   });
 
+  describe('allowedHosts (B034)', () => {
+    it('defaults to [baseUrl host] when not provided', () => {
+      const result = resolveConfig(validBasicConfig);
+      expect(result.allowedHosts).toEqual(['mycompany.atlassian.net']);
+    });
+
+    it('passes through an explicit allowedHosts list', () => {
+      const result = resolveConfig({
+        ...validBasicConfig,
+        baseUrl: 'https://internal-proxy.example.com',
+        allowedHosts: ['internal-proxy.example.com', 'mycompany.atlassian.net'],
+      });
+      expect(result.allowedHosts).toEqual([
+        'internal-proxy.example.com',
+        'mycompany.atlassian.net',
+      ]);
+    });
+
+    it('rejects baseUrl outside the default Atlassian suffix allowlist', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'https://evil.example' })).toThrow(
+        ValidationError,
+      );
+      expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'https://evil.example' })).toThrow(
+        /not on the default Atlassian host allowlist/,
+      );
+    });
+
+    it('rejects sneaky look-alike host (suffix substring without dot boundary)', () => {
+      // 'example.atlassian.net' would match a substring check, but the suffix
+      // check requires the leading dot — this must be rejected.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://evil.example-atlassian.net',
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('accepts known Atlassian suffixes', () => {
+      for (const host of [
+        'https://x.atlassian.net',
+        'https://x.atlassian.com',
+        'https://x.jira-dev.com',
+        'https://x.jira.com',
+      ]) {
+        expect(() => resolveConfig({ ...validBasicConfig, baseUrl: host })).not.toThrow();
+      }
+    });
+
+    it('allows non-Atlassian baseUrl when allowedHosts is provided explicitly', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['internal.example.com'],
+        }),
+      ).not.toThrow();
+    });
+
+    it('throws when allowedHosts is empty', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://x.atlassian.net',
+          allowedHosts: [],
+        }),
+      ).toThrow(/allowedHosts must contain at least one host/);
+    });
+
+    it('throws when an allowedHosts entry contains a slash (host only, no path)', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://x.atlassian.net',
+          allowedHosts: ['x.atlassian.net/path'],
+        }),
+      ).toThrow(/bare host/);
+    });
+
+    it('throws when allowedHosts is not an array', () => {
+      const config = {
+        ...validBasicConfig,
+        allowedHosts: 'not-an-array',
+      } as unknown as Parameters<typeof resolveConfig>[0];
+      expect(() => resolveConfig(config)).toThrow(/must be an array of host strings/);
+    });
+
+    it('throws when an allowedHosts entry is an empty string', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          allowedHosts: [''],
+        }),
+      ).toThrow(/non-empty strings/);
+    });
+
+    it('throws when an allowedHosts entry is not a string', () => {
+      const config = {
+        ...validBasicConfig,
+        allowedHosts: [123 as unknown as string],
+      };
+      expect(() => resolveConfig(config)).toThrow(/non-empty strings/);
+    });
+  });
+
   describe('maxRetryDelay validation', () => {
     it('throws ValidationError when maxRetryDelay is 0', () => {
       expect(() => resolveConfig({ ...validBasicConfig, maxRetryDelay: 0 })).toThrow(

@@ -320,6 +320,69 @@ describe('DashboardsResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
 
+    it('B033: caps iteration at maxPages when server returns total: undefined forever', async () => {
+      // Hostile server: every response carries a full page with no `total`,
+      // which would loop forever under the old implementation.
+      for (let i = 0; i < 20; i++) {
+        transport.respondWith({
+          dashboards: [makeDashboard(String(i), `Dashboard ${i}`)],
+          startAt: i,
+          maxResults: 1,
+          // total deliberately omitted
+        });
+      }
+
+      const items: { id: string }[] = [];
+      // Pass maxPages: 5 so the test terminates promptly instead of running
+      // for 10 000 pages (the default cap that protects production).
+      for await (const dashboard of dashboards.listAll(undefined, { maxPages: 5 })) {
+        items.push(dashboard);
+      }
+
+      // Must terminate after exactly 5 page fetches (one item each)
+      expect(items).toHaveLength(5);
+      expect(transport.calls).toHaveLength(5);
+    });
+
+    it('B033: throws RangeError when maxPages is not a positive integer', async () => {
+      transport.respondWith(makeRawListResponse([]));
+      const iterator = dashboards.listAll(undefined, { maxPages: 0 });
+      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+    });
+
+    it('B033: throws RangeError when maxPages is fractional', async () => {
+      transport.respondWith(makeRawListResponse([]));
+      const iterator = dashboards.listAll(undefined, { maxPages: 1.5 });
+      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+    });
+
+    it('B033: emits a warn() once the page count crosses 80% of maxPages', async () => {
+      for (let i = 0; i < 10; i++) {
+        transport.respondWith({
+          dashboards: [makeDashboard(String(i), `D${i}`)],
+          startAt: i,
+          maxResults: 1,
+        });
+      }
+
+      const warnings: string[] = [];
+      const noop = (): void => undefined;
+      const logger = {
+        debug: noop,
+        info: noop,
+        warn: (msg: string): void => {
+          warnings.push(msg);
+        },
+        error: noop,
+      };
+
+      for await (const _ of dashboards.listAll(undefined, { maxPages: 5, logger })) {
+        // consume
+      }
+
+      expect(warnings.some((m) => m.includes('nearing maxPages'))).toBe(true);
+    });
+
     it('passes params to the underlying list call', async () => {
       // Arrange
       transport.respondWith({

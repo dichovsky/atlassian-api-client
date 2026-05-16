@@ -196,7 +196,21 @@ export function createHttpError(
   }
 }
 
+/**
+ * Hard cap on the size of the assembled error message. Bounds the heap impact
+ * of a hostile error response that returns thousands of `errorMessages` (B032)
+ * and ensures the message remains usable in a single terminal scroll.
+ */
+const MAX_ERROR_MESSAGE_LENGTH = 1024;
+
 function extractErrorMessage(body: unknown): string | undefined {
+  const raw = extractErrorMessageRaw(body);
+  if (raw === undefined) return undefined;
+  if (raw.length <= MAX_ERROR_MESSAGE_LENGTH) return raw;
+  return raw.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…';
+}
+
+function extractErrorMessageRaw(body: unknown): string | undefined {
   if (body === null || body === undefined) return undefined;
   if (typeof body === 'string') return body;
   if (!isPlainObject(body)) return undefined;

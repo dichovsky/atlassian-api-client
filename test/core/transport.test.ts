@@ -31,6 +31,10 @@ const defaultConfig: ResolvedConfig = {
   retries: 1,
   retryDelay: 100,
   maxRetryDelay: 1_000,
+  // B021/B034 — populated by resolveConfig in production. Tests that target
+  // the transport directly need to set it explicitly so absolute-path URL
+  // construction passes the origin check against the same host as baseUrl.
+  allowedHosts: ['test.atlassian.net'],
 };
 
 // ---------------------------------------------------------------------------
@@ -695,10 +699,10 @@ describe('HttpTransport', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('preserves Retry-After floor when it exceeds maxRetryDelay', async () => {
-      vi.spyOn(Math, 'random').mockReturnValue(1);
+    it('B023: caps Retry-After at maxRetryDelay (does NOT honour an unbounded server floor)', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0); // no jitter
 
-      const retryAfterSeconds = 10;
+      const retryAfterSeconds = 10; // server requests 10s
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
@@ -707,7 +711,9 @@ describe('HttpTransport', () => {
         .mockResolvedValueOnce(makeResponse(200, { ok: true }));
       vi.stubGlobal('fetch', fetchMock);
 
-      // maxRetryDelay smaller than retryAfter*1000 — result must cap there
+      // maxRetryDelay smaller than retryAfter*1000 — retry must fire at the
+      // cap (5s), not honour the full server-advertised floor (10s). Without
+      // this clamp, a hostile server could pin the client for years (B023).
       const transport = makeTransport({
         ...defaultConfig,
         retries: 1,
@@ -719,10 +725,12 @@ describe('HttpTransport', () => {
       void resultPromise.catch((_e: unknown) => undefined);
       await vi.advanceTimersByTimeAsync(0);
 
-      // Retry does not fire before the full server-advertised floor.
-      await vi.advanceTimersByTimeAsync(9_999);
+      // Retry must NOT fire before the cap is reached.
+      await vi.advanceTimersByTimeAsync(4_999);
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
+      // Retry fires once the cap (5_000 ms) elapses — well before the
+      // server-advertised 10s floor would have allowed it.
       await vi.advanceTimersByTimeAsync(1);
       await vi.runAllTimersAsync();
 

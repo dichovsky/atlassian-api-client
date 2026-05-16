@@ -14,14 +14,46 @@ describe('buildUrl', () => {
     expect(buildUrl(base, '/pages/123')).toBe(`${base}/pages/123`);
   });
 
-  it('uses the absolute path verbatim when starting with https://', () => {
+  it('uses the absolute path verbatim when starting with https:// (no allowedHosts)', () => {
     const absolute = 'https://other.example.com/api/v3/issue/AC-1';
     expect(buildUrl(base, absolute)).toBe(absolute);
   });
 
-  it('uses the absolute path verbatim when starting with http://', () => {
+  it('uses the absolute path verbatim when starting with http:// (no allowedHosts)', () => {
     const absolute = 'http://localhost:3000/api/v2/space';
     expect(buildUrl(base, absolute)).toBe(absolute);
+  });
+
+  it('B021: throws ValidationError when absolute path host is not on allowedHosts', () => {
+    const absolute = 'https://evil.example/steal';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      ValidationError,
+    );
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      /not on the allowedHosts/,
+    );
+  });
+
+  it('B021: accepts absolute path when its host matches allowedHosts (case-insensitive)', () => {
+    // `new URL` normalises the host to lowercase, so we assert the lowercased form.
+    const absolute = 'https://Example.Atlassian.Net/rest/api/3/issue/AC-1';
+    expect(buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toBe(
+      'https://example.atlassian.net/rest/api/3/issue/AC-1',
+    );
+  });
+
+  it('B021: relative paths are unaffected by allowedHosts', () => {
+    expect(buildUrl(base, '/pages/1', undefined, ['example.atlassian.net'])).toBe(
+      `${base}/pages/1`,
+    );
+  });
+
+  it('B021: refuses a sneaky host that contains the allowed suffix only as a substring', () => {
+    expect(() =>
+      buildUrl(base, 'https://evil.example.atlassian.net.attacker.example/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(ValidationError);
   });
 
   it('appends query parameters and skips undefined values', () => {
@@ -108,6 +140,45 @@ describe('buildHeaders', () => {
   it('omits Content-Type when withJsonBody is false', () => {
     const headers = buildHeaders(undefined, { Authorization: 'x' }, false);
     expect('Content-Type' in headers).toBe(false);
+  });
+
+  it('B029: strips caller-supplied Cookie (case-insensitive)', () => {
+    const headers = buildHeaders(
+      { Cookie: 'cloud.session.token=injected', cookie: 'evil2' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Cookie' in headers).toBe(false);
+    expect('cookie' in headers).toBe(false);
+  });
+
+  it('B029: strips Proxy-Authorization', () => {
+    const headers = buildHeaders(
+      { 'Proxy-Authorization': 'Basic injected', 'X-Trace': '1' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Proxy-Authorization' in headers).toBe(false);
+    expect(headers['X-Trace']).toBe('1');
+  });
+
+  it('B029: strips Set-Cookie and X-Atlassian-WebSudo', () => {
+    const headers = buildHeaders(
+      { 'Set-Cookie': 'x=y', 'X-Atlassian-WebSudo': 'true' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Set-Cookie' in headers).toBe(false);
+    expect('X-Atlassian-WebSudo' in headers).toBe(false);
+  });
+
+  it('B029: legitimate X-Atlassian-Token: no-check passes through (attachment upload)', () => {
+    const headers = buildHeaders(
+      { 'X-Atlassian-Token': 'no-check' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect(headers['X-Atlassian-Token']).toBe('no-check');
   });
 });
 

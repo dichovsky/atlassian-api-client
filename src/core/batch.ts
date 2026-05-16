@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Middleware, RequestOptions, ApiResponse } from './types.js';
 
 /**
@@ -41,16 +42,21 @@ function buildRequestKey(opts: RequestOptions): string {
     : '';
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
-  return `${opts.method}:${opts.path}${queryStr}:${bodyStr}:${headersStr}`;
+  // B024: prefix with an auth-identity hash so two concurrent requests that
+  // share method+path+query+body but carry different `Authorization` headers
+  // (e.g. OAuth-refresh middleware rotating tokens, or multi-tenant request
+  // routing) are NOT coalesced — the loser would otherwise receive the
+  // winner's authenticated response.
+  return `${authIdentity(opts.headers)}|${opts.method}:${opts.path}${queryStr}:${bodyStr}:${headersStr}`;
 }
 
 /**
  * Build a deterministic string representation of request headers for use in
- * the dedupe key. `Authorization` is excluded because it is injected by the
- * transport from the configured auth provider, not by callers — two dedupe
- * candidates that differ only in the transport-injected Authorization should
- * still collapse into one. Any other custom header (e.g. `X-Atlassian-Token`,
- * `Accept-Language`) MUST keep them separate.
+ * the dedupe key. `Authorization` is excluded from this section because the
+ * auth identity is already captured by {@link authIdentity} and prefixed
+ * onto the key; including the raw value here would leak the credential into
+ * any place the key is logged or dumped. Any other custom header (e.g.
+ * `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate.
  */
 function serializeHeaders(headers: RequestOptions['headers']): string {
   if (headers === undefined) return '';
@@ -60,4 +66,21 @@ function serializeHeaders(headers: RequestOptions['headers']): string {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
+}
+
+/**
+ * Hash the request's Authorization header into a short identifier so the
+ * dedupe key partitions on auth identity without storing the raw credential.
+ */
+function authIdentity(headers: RequestOptions['headers']): string {
+  if (headers === undefined) return 'no-auth';
+  let auth: string | undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      auth = value;
+      break;
+    }
+  }
+  if (auth === undefined || auth === '') return 'no-auth';
+  return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
 }

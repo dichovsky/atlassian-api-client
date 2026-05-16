@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
 
@@ -110,5 +111,31 @@ function buildCacheKey(opts: RequestOptions): string {
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';
-  return `${opts.method}:${opts.path}${queryStr}`;
+  // B022: scope the cache key to the caller's auth identity so a shared
+  // transport never serves Tenant A's cached body to Tenant B. The auth
+  // identifier prefers an explicit `headers.Authorization` (set by upstream
+  // middleware like createOAuthRefreshMiddleware) and falls back to a
+  // shared-tenant marker when no Authorization header is on the in-flight
+  // options (single-tenant deployments).
+  return `${authScope(opts)}|${opts.method}:${opts.path}${queryStr}`;
+}
+
+/**
+ * Derive a stable, fixed-length identifier for the auth identity attached to
+ * a request. Returns the hex-encoded SHA-256 of the Authorization header (or
+ * a stable sentinel when absent) so the raw credential never lands inside an
+ * in-memory cache key or any debug dump of it.
+ */
+function authScope(opts: RequestOptions): string {
+  const headers = opts.headers;
+  if (headers === undefined) return 'no-auth';
+  let auth: string | undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      auth = value;
+      break;
+    }
+  }
+  if (auth === undefined || auth === '') return 'no-auth';
+  return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
 }

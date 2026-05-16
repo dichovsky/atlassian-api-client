@@ -1,4 +1,13 @@
-import { readFileSync, writeFileSync, mkdirSync, statSync, readdirSync, existsSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  statSync,
+  lstatSync,
+  unlinkSync,
+  readdirSync,
+  existsSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -37,6 +46,18 @@ interface FilesystemDeps {
   readonly exists: (path: string) => boolean;
   readonly readDir: (path: string) => readonly string[];
   readonly isDirectory: (path: string) => boolean;
+  /**
+   * Return `true` when the path exists AND is a symbolic link. Used by
+   * {@link runInstall} to refuse to follow attacker-planted symlinks during
+   * file writes (B030).
+   *
+   * Optional for backwards compatibility with custom fs adapters; when
+   * absent, the symlink guard is treated as a no-op and the install behaves
+   * as it did before B030.
+   */
+  readonly isSymlink?: (path: string) => boolean;
+  /** Remove a path; used to unlink a refused symlink before the destination write. */
+  readonly unlink?: (path: string) => void;
 }
 
 const realFs: FilesystemDeps = {
@@ -46,6 +67,14 @@ const realFs: FilesystemDeps = {
   exists: (path) => existsSync(path),
   readDir: (path) => readdirSync(path),
   isDirectory: (path) => statSync(path).isDirectory(),
+  isSymlink: (path) => {
+    try {
+      return lstatSync(path).isSymbolicLink();
+    } catch {
+      return false;
+    }
+  },
+  unlink: (path) => unlinkSync(path),
 };
 
 /** Resolve the bundled skill source directory relative to this module. */
@@ -205,6 +234,25 @@ export function runInstall(
     writeWithPermissionGuard(dest, () => {
       fs.mkdir(dirname(dest));
     });
+    // B030: refuse to follow a pre-planted symlink at the destination.
+    // Without --force this is a hard error; with --force we unlink the
+    // symlink itself and write a new regular file, never following the link.
+    if (fs.isSymlink?.(dest) === true) {
+      if (!options.force) {
+        throw new InstallSkillError(
+          `Refusing to overwrite symlink at ${dest}. ` +
+            `A pre-planted symlink would cause the install to write into the symlink's target. ` +
+            `Remove the symlink (or re-run with --force, which unlinks before writing) and try again.`,
+          2,
+        );
+      }
+      const unlinkFn = fs.unlink;
+      if (unlinkFn !== undefined) {
+        writeWithPermissionGuard(dest, () => {
+          unlinkFn(dest);
+        });
+      }
+    }
     const content = fs.readFile(src);
     const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
     writeWithPermissionGuard(dest, () => {

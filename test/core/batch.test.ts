@@ -135,8 +135,9 @@ describe('createBatchMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(2);
   });
 
-  it('collapses requests that differ only in Authorization header', async () => {
-    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+  it('B024: does NOT coalesce requests that differ only in Authorization header', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
     const mw = createBatchMiddleware();
 
     const [r1, r2] = await Promise.all([
@@ -144,17 +145,33 @@ describe('createBatchMiddleware', () => {
       mw(makeOpts({ headers: { Authorization: 'Basic bbbb' } }), next),
     ]);
 
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(r1).toBe(r2);
+    // Each identity must execute its own underlying request — otherwise the
+    // loser would receive the winner's authenticated response.
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(r1).not.toBe(r2);
   });
 
-  it('ignores Authorization header casing when building the dedupe key', async () => {
-    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+  it('B024: still partitions by Authorization regardless of header-name casing', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
     const mw = createBatchMiddleware();
 
     const [r1, r2] = await Promise.all([
       mw(makeOpts({ headers: { authorization: 'Bearer a' } }), next),
       mw(makeOpts({ headers: { AUTHORIZATION: 'Bearer b' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(r1).not.toBe(r2);
+  });
+
+  it('B024: still coalesces concurrent requests that share the SAME Authorization header', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ headers: { Authorization: 'Bearer same' } }), next),
+      mw(makeOpts({ headers: { Authorization: 'Bearer same' } }), next),
     ]);
 
     expect(next).toHaveBeenCalledTimes(1);

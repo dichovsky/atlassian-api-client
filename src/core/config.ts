@@ -7,6 +7,42 @@ const DEFAULT_RETRY_DELAY = 1_000;
 const DEFAULT_MAX_RETRY_DELAY = 30_000;
 
 /**
+ * Built-in host suffixes accepted as Atlassian-managed targets. The check is a
+ * suffix-with-leading-dot match so `evil.example.atlassian.net.attacker.com`
+ * cannot bypass the allowlist by appending a legitimate suffix as a substring.
+ */
+const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [
+  '.atlassian.net',
+  '.atlassian.com',
+  '.jira-dev.com',
+  '.jira.com',
+];
+
+/**
+ * Resolve the set of hosts that may receive the configured `Authorization`
+ * header. Returns the explicit allowlist when provided; otherwise returns just
+ * the `baseUrl` host so absolute paths can only target the configured tenant.
+ *
+ * Defence-in-depth pair to {@link buildUrl}'s origin check: even if a caller
+ * smuggles an absolute URL into `RequestOptions.path`, the transport refuses
+ * to send credentials anywhere outside this list.
+ */
+function resolveAllowedHosts(
+  baseUrlHost: string,
+  configured: readonly string[] | undefined,
+): readonly string[] {
+  if (configured !== undefined) {
+    return [...configured];
+  }
+  return [baseUrlHost];
+}
+
+function hostMatchesDefaultAllowlist(host: string): boolean {
+  const lower = host.toLowerCase();
+  return DEFAULT_ATLASSIAN_HOST_SUFFIXES.some((suffix) => lower.endsWith(suffix));
+}
+
+/**
  * Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied.
  *
  * Validates `baseUrl` (must be a valid HTTPS URL), `auth` (must be present and valid),
@@ -21,6 +57,8 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
   validateConfig(config);
 
   const baseUrl = config.baseUrl.replace(/\/+$/, '');
+  const baseUrlHost = new URL(baseUrl).host;
+  const allowedHosts = resolveAllowedHosts(baseUrlHost, config.allowedHosts);
 
   return {
     baseUrl,
@@ -29,6 +67,7 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
     retries: config.retries ?? DEFAULT_RETRIES,
     retryDelay: config.retryDelay ?? DEFAULT_RETRY_DELAY,
     maxRetryDelay: config.maxRetryDelay ?? DEFAULT_MAX_RETRY_DELAY,
+    allowedHosts,
     fetch: config.fetch,
     logger: config.logger,
     middleware: config.middleware,
@@ -49,6 +88,16 @@ function validateConfig(config: ClientConfig): void {
 
   if (parsedUrl.protocol !== 'https:') {
     throw new ValidationError(`baseUrl must use HTTPS: ${config.baseUrl}`);
+  }
+
+  if (config.allowedHosts !== undefined) {
+    validateAllowedHosts(config.allowedHosts);
+  } else if (!hostMatchesDefaultAllowlist(parsedUrl.host)) {
+    throw new ValidationError(
+      `baseUrl host "${parsedUrl.host}" is not on the default Atlassian host allowlist ` +
+        `(${DEFAULT_ATLASSIAN_HOST_SUFFIXES.join(', ')}). ` +
+        `Pass ClientConfig.allowedHosts to opt in for self-hosted or proxy setups.`,
+    );
   }
 
   if (!config.auth) {
@@ -82,6 +131,23 @@ function validateConfig(config: ClientConfig): void {
   if (config.maxRetryDelay !== undefined) {
     if (typeof config.maxRetryDelay !== 'number' || config.maxRetryDelay <= 0) {
       throw new ValidationError('maxRetryDelay must be a positive number');
+    }
+  }
+}
+
+function validateAllowedHosts(hosts: readonly string[]): void {
+  if (!Array.isArray(hosts)) {
+    throw new ValidationError('allowedHosts must be an array of host strings');
+  }
+  if (hosts.length === 0) {
+    throw new ValidationError('allowedHosts must contain at least one host');
+  }
+  for (const host of hosts) {
+    if (typeof host !== 'string' || host.length === 0) {
+      throw new ValidationError('allowedHosts entries must be non-empty strings');
+    }
+    if (host.includes('/') || host.includes(' ')) {
+      throw new ValidationError(`allowedHosts entry must be a bare host, got: ${host}`);
     }
   }
 }

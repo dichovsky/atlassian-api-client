@@ -227,6 +227,73 @@ describe('createCacheMiddleware', () => {
   });
 });
 
+describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
+  it('does NOT serve a cached entry to a different Authorization header', async () => {
+    let counter = 0;
+    const next = vi.fn(
+      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ n: ++counter }),
+    );
+    const mw = createCacheMiddleware();
+
+    // Same path/query/method but different Authorization → must NOT hit the cache.
+    const a = await mw(makeOpts({ headers: { Authorization: 'Bearer tokenA' } }), next);
+    const b = await mw(makeOpts({ headers: { Authorization: 'Bearer tokenB' } }), next);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(a.data).toEqual({ n: 1 });
+    expect(b.data).toEqual({ n: 2 });
+  });
+
+  it('still collapses cache hits when the Authorization header is identical', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
+    const mw = createCacheMiddleware();
+
+    const a = await mw(makeOpts({ headers: { Authorization: 'Bearer same' } }), next);
+    const b = await mw(makeOpts({ headers: { Authorization: 'Bearer same' } }), next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(b).toBe(a);
+  });
+
+  it('treats a missing Authorization header as the "no-auth" scope (legacy single-tenant)', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
+    const mw = createCacheMiddleware();
+
+    const a = await mw(makeOpts(), next);
+    const b = await mw(makeOpts(), next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(b).toBe(a);
+  });
+
+  it('treats a non-Authorization headers map as the "no-auth" scope', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
+    const mw = createCacheMiddleware();
+
+    const a = await mw(makeOpts({ headers: { 'X-Trace': 'a' } }), next);
+    const b = await mw(makeOpts({ headers: { 'X-Trace': 'a' } }), next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(b).toBe(a);
+  });
+
+  it('treats an empty Authorization header value as the "no-auth" scope', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++counter }));
+    const mw = createCacheMiddleware();
+
+    const a = await mw(makeOpts({ headers: { Authorization: '' } }), next);
+    const b = await mw(makeOpts({ headers: { Authorization: '' } }), next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(b).toBe(a);
+  });
+});
+
 describe('createCacheMiddleware option validation', () => {
   it('throws ValidationError when maxSize is 0', () => {
     expect(() => createCacheMiddleware({ maxSize: 0 })).toThrow(

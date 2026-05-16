@@ -416,6 +416,15 @@ describe('createHttpError', () => {
       expect(err.message).toBe('Resource not found');
     });
 
+    it('B032: caps the assembled error message at 1 KiB to prevent log/heap blowup', () => {
+      // Construct a server "errorMessages" array whose joined form blows past 1 KiB.
+      const long = 'x'.repeat(2000);
+      const err = createHttpError(400, { errorMessages: [long] });
+      expect(err.message.length).toBeLessThanOrEqual(1024);
+      // Last char is the truncation ellipsis
+      expect(err.message.endsWith('…')).toBe(true);
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');

@@ -643,6 +643,106 @@ describe('executeInstallSkill', () => {
   });
 });
 
+describe('runInstall — B030 symlink guard', () => {
+  it('refuses to follow a pre-planted symlink at a non-SKILL.md path (no --force)', async () => {
+    // The bundled skill includes `reference/jira.md`. We pre-plant a symlink
+    // at the equivalent destination so the symlink check fires inside the
+    // file loop, bypassing the SKILL.md idempotency check.
+    const target = join(tmpRoot, 'symlink-target');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitiveFile = join(tmpRoot, 'sensitive.txt');
+    writeFileSync(sensitiveFile, 'original-contents');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sensitiveFile, join(target, 'reference', 'jira.md'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/Refusing to overwrite symlink/);
+
+    // Sensitive file content must be untouched
+    expect(readFileSync(sensitiveFile, 'utf8')).toBe('original-contents');
+  });
+
+  it('with --force, unlinks the symlink before writing instead of following it', async () => {
+    const target = join(tmpRoot, 'symlink-force');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitiveFile = join(tmpRoot, 'sensitive2.txt');
+    writeFileSync(sensitiveFile, 'original-contents');
+    const { symlinkSync, lstatSync } = await import('node:fs');
+    symlinkSync(sensitiveFile, join(target, 'reference', 'jira.md'));
+
+    runInstall(BUNDLED_SKILL, '9.9.9', {
+      target,
+      force: true,
+      dryRun: false,
+      print: false,
+    });
+
+    // The sensitive target was NOT overwritten
+    expect(readFileSync(sensitiveFile, 'utf8')).toBe('original-contents');
+    // The destination is now a regular file (lstat would say not a symlink)
+    expect(lstatSync(join(target, 'reference', 'jira.md')).isSymbolicLink()).toBe(false);
+  });
+
+  it('with --force on an isSymlink-only fs adapter (no unlink), falls through without erroring', () => {
+    // Embedder provides isSymlink but not unlink. With --force, the guard
+    // refuses to throw (force is honoured) but cannot unlink — the legacy
+    // writeFile path runs and is expected to succeed in this in-memory fake.
+    const writes: Record<string, string> = {};
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (p: string, c: string): void => {
+        writes[p] = c;
+      },
+      mkdir: (_p: string): void => undefined,
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'), // pretend SKILL.md dest is a symlink
+      // unlink intentionally omitted
+    };
+    const target = join(tmpRoot, 'isSymlink-only');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: true, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).not.toThrow();
+    expect(Object.keys(writes).length).toBeGreaterThan(0);
+  });
+
+  it('treats fs adapter without isSymlink as a no-op guard (backwards compat)', () => {
+    // Custom fs adapter omitting isSymlink → install proceeds without the
+    // guard, preserving the pre-B030 contract for embedders.
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (p: string, c: string): void => writeFileSync(p, c, 'utf8'),
+      mkdir: (p: string): void => {
+        mkdirSync(p, { recursive: true });
+      },
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+    };
+    const target = join(tmpRoot, 'compat');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: false, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).not.toThrow();
+  });
+});
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function makeRealFsWithWriteError(error: { code: string }): {
