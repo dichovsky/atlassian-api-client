@@ -689,21 +689,19 @@ describe('runInstall — B030 symlink guard', () => {
     expect(lstatSync(join(target, 'reference', 'jira.md')).isSymbolicLink()).toBe(false);
   });
 
-  it('with --force on an isSymlink-only fs adapter (no unlink), falls through without erroring', () => {
-    // Embedder provides isSymlink but not unlink. With --force, the guard
-    // refuses to throw (force is honoured) but cannot unlink — the legacy
-    // writeFile path runs and is expected to succeed in this in-memory fake.
-    const writes: Record<string, string> = {};
+  it('B030: --force on an isSymlink-only fs adapter (no unlink) is a hard error, not a silent fallthrough', () => {
+    // Raised in PR review: previously this test asserted insecure behaviour
+    // (the install proceeded and wrote THROUGH the symlink). Now we require
+    // a hard error so the symlink target can never be hit, even when the
+    // injected adapter omits unlink().
     const fakeFs = {
       readFile: (p: string): string => readFileSync(p, 'utf8'),
-      writeFile: (p: string, c: string): void => {
-        writes[p] = c;
-      },
+      writeFile: (_p: string, _c: string): void => undefined,
       mkdir: (_p: string): void => undefined,
       exists: (p: string): boolean => existsSync(p),
       readDir: (p: string): readonly string[] => readdirSync(p),
       isDirectory: (p: string): boolean => statSync(p).isDirectory(),
-      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'), // pretend SKILL.md dest is a symlink
+      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'),
       // unlink intentionally omitted
     };
     const target = join(tmpRoot, 'isSymlink-only');
@@ -714,8 +712,79 @@ describe('runInstall — B030 symlink guard', () => {
         { target, force: true, dryRun: false, print: false },
         fakeFs,
       ),
+    ).toThrow(/does not expose an unlink/);
+  });
+
+  it('B030 (PR review): resolveTargetRealpath walks to root when target has no existing ancestor', () => {
+    // Exists() returns true for the source but false for every path under
+    // the target. resolveTargetRealpath walks up the target until it reaches
+    // root (or the 32-step cap) and breaks, exercising the fallback branch
+    // that returns `target` unchanged.
+    const target = join(tmpRoot, 'never-existed-' + Math.random().toString(36).slice(2));
+    const writes: Record<string, string> = {};
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (p: string, c: string): void => {
+        writes[p] = c;
+      },
+      mkdir: (_p: string): void => undefined,
+      exists: (p: string): boolean => p.startsWith(BUNDLED_SKILL),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      realpath: (p: string): string => p,
+    };
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: false, dryRun: false, print: false },
+        fakeFs,
+      ),
     ).not.toThrow();
     expect(Object.keys(writes).length).toBeGreaterThan(0);
+  });
+
+  it('B030 (PR review): realpath fallback returns the input on ENOENT (resilience)', () => {
+    // Real fs realpath wrapper catches and returns the input on failure. We
+    // can hit it by pointing at a path that has never existed (e.g. inside a
+    // unique tmpdir branch) — realpathSync throws ENOENT, fallback returns
+    // the input unchanged, and the install succeeds via the realFs path.
+    const target = join(tmpRoot, 'never-was-' + Math.random().toString(36).slice(2));
+    // Use the production realFs (default arg) so the real realpath wrapper
+    // is exercised, not an injected fake.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it('B030: refuses to write when a parent directory is a symlink escaping the target', async () => {
+    // Pre-plant `target/reference` as a symlink to a SIBLING directory
+    // outside the target. The dest path `target/reference/jira.md` is not
+    // itself a symlink, so the original B030 guard would allow the write;
+    // the realpath/containment check added in PR review must catch it.
+    const target = join(tmpRoot, 'parent-escape-target');
+    mkdirSync(target, { recursive: true });
+    const sibling = join(tmpRoot, 'sibling-outside-target');
+    mkdirSync(sibling, { recursive: true });
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sibling, join(target, 'reference'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/outside the install target/);
+
+    // Nothing was written into the sibling directory.
+    expect(readdirSync(sibling)).toEqual([]);
   });
 
   it('treats fs adapter without isSymlink as a no-op guard (backwards compat)', () => {

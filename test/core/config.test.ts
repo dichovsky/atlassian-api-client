@@ -227,6 +227,31 @@ describe('resolveConfig', () => {
       ]);
     });
 
+    it('rejects an allowedHosts list that does NOT include the baseUrl host', () => {
+      // The reviewer flagged this contradictory config (allowedHosts claims
+      // the credential-safe set, but baseUrl is outside it). Reject up front.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://mycompany.atlassian.net',
+          allowedHosts: ['totally-different.example'],
+        }),
+      ).toThrow(/baseUrl host .* is not present in allowedHosts/);
+    });
+
+    it('matches allowedHosts entries hostname-only (port-insensitive)', () => {
+      // baseUrl carries no explicit port; an allowedHosts entry with :443
+      // must still match. The reverse (entry without port, URL with :443)
+      // is covered by buildUrl's normalisation.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['internal.example.com:443'],
+        }),
+      ).not.toThrow();
+    });
+
     it('rejects baseUrl outside the default Atlassian suffix allowlist', () => {
       expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'https://evil.example' })).toThrow(
         ValidationError,
@@ -303,6 +328,25 @@ describe('resolveConfig', () => {
           allowedHosts: [''],
         }),
       ).toThrow(/non-empty strings/);
+    });
+
+    it('throws when an allowedHosts entry contains a control byte (PR review)', () => {
+      // Synthesise the hostile inputs via String.fromCharCode so the test
+      // file's raw bytes stay vanilla ASCII (avoids accidental cleanup
+      // when prettier / EOL filters touch this file).
+      const base = 'mycompany.atlassian.net';
+      const hostile = [
+        base + String.fromCharCode(0x09) + 'tab', // C0 (tab)
+        base + String.fromCharCode(0x07), // C0 (BEL)
+        base + String.fromCharCode(0x7f), // DEL
+        base + String.fromCharCode(0x80), // C1 lower bound
+        base + String.fromCharCode(0x9f), // C1 upper bound
+      ];
+      for (const h of hostile) {
+        expect(() => resolveConfig({ ...validBasicConfig, allowedHosts: [h] })).toThrow(
+          /bare host/,
+        );
+      }
     });
 
     it('throws when an allowedHosts entry is not a string', () => {

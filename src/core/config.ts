@@ -28,18 +28,29 @@ const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [
  * to send credentials anywhere outside this list.
  */
 function resolveAllowedHosts(
-  baseUrlHost: string,
+  baseUrlHostname: string,
   configured: readonly string[] | undefined,
 ): readonly string[] {
   if (configured !== undefined) {
     return [...configured];
   }
-  return [baseUrlHost];
+  return [baseUrlHostname];
 }
 
-function hostMatchesDefaultAllowlist(host: string): boolean {
-  const lower = host.toLowerCase();
+function hostMatchesDefaultAllowlist(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
   return DEFAULT_ATLASSIAN_HOST_SUFFIXES.some((suffix) => lower.endsWith(suffix));
+}
+
+/**
+ * Strip any explicit port from a host entry so the comparison is
+ * hostname-only. Mirrors {@link buildUrl}'s normalisation on the request
+ * side so users don't have to think about port matching.
+ */
+function normalizeAllowedHost(entry: string): string {
+  const lower = entry.toLowerCase();
+  const colon = lower.indexOf(':');
+  return colon >= 0 ? lower.slice(0, colon) : lower;
 }
 
 /**
@@ -57,8 +68,8 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
   validateConfig(config);
 
   const baseUrl = config.baseUrl.replace(/\/+$/, '');
-  const baseUrlHost = new URL(baseUrl).host;
-  const allowedHosts = resolveAllowedHosts(baseUrlHost, config.allowedHosts);
+  const baseUrlHostname = new URL(baseUrl).hostname;
+  const allowedHosts = resolveAllowedHosts(baseUrlHostname, config.allowedHosts);
 
   return {
     baseUrl,
@@ -92,9 +103,24 @@ function validateConfig(config: ClientConfig): void {
 
   if (config.allowedHosts !== undefined) {
     validateAllowedHosts(config.allowedHosts);
-  } else if (!hostMatchesDefaultAllowlist(parsedUrl.host)) {
+    // A contradictory config — `allowedHosts` claims to be the credential-safe
+    // set, but `baseUrl` itself points outside it — would silently leak
+    // credentials on the very first request. Reject up front so the conflict
+    // surfaces during construction rather than during a confused 4xx loop.
+    const baseUrlHostname = parsedUrl.hostname.toLowerCase();
+    const allowed = config.allowedHosts.some(
+      (entry) => normalizeAllowedHost(entry) === baseUrlHostname,
+    );
+    if (!allowed) {
+      throw new ValidationError(
+        `baseUrl host "${parsedUrl.hostname}" is not present in allowedHosts ` +
+          `[${config.allowedHosts.join(', ')}]. ` +
+          `allowedHosts must include the baseUrl host so the client can actually call it.`,
+      );
+    }
+  } else if (!hostMatchesDefaultAllowlist(parsedUrl.hostname)) {
     throw new ValidationError(
-      `baseUrl host "${parsedUrl.host}" is not on the default Atlassian host allowlist ` +
+      `baseUrl host "${parsedUrl.hostname}" is not on the default Atlassian host allowlist ` +
         `(${DEFAULT_ATLASSIAN_HOST_SUFFIXES.join(', ')}). ` +
         `Pass ClientConfig.allowedHosts to opt in for self-hosted or proxy setups.`,
     );
@@ -135,6 +161,25 @@ function validateConfig(config: ClientConfig): void {
   }
 }
 
+/**
+ * Reject characters that don't belong in a bare hostname / port grammar:
+ * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), and the
+ * structural URL chars `/ ? # @ \`. Stops a typo or smuggled control byte
+ * from creating a surprising "match by similarity" later in `buildUrl`.
+ */
+function isInvalidAllowedHostChar(code: number): boolean {
+  if (code <= 0x20) return true;
+  if (code === 0x7f) return true;
+  if (code >= 0x80 && code <= 0x9f) return true;
+  return (
+    code === 0x2f /* / */ ||
+    code === 0x3f /* ? */ ||
+    code === 0x23 /* # */ ||
+    code === 0x40 /* @ */ ||
+    code === 0x5c /* backslash */
+  );
+}
+
 function validateAllowedHosts(hosts: readonly string[]): void {
   if (!Array.isArray(hosts)) {
     throw new ValidationError('allowedHosts must be an array of host strings');
@@ -146,8 +191,12 @@ function validateAllowedHosts(hosts: readonly string[]): void {
     if (typeof host !== 'string' || host.length === 0) {
       throw new ValidationError('allowedHosts entries must be non-empty strings');
     }
-    if (host.includes('/') || host.includes(' ')) {
-      throw new ValidationError(`allowedHosts entry must be a bare host, got: ${host}`);
+    for (let i = 0; i < host.length; i++) {
+      if (isInvalidAllowedHostChar(host.charCodeAt(i))) {
+        throw new ValidationError(
+          `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${JSON.stringify(host)}`,
+        );
+      }
     }
   }
 }

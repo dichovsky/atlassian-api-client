@@ -425,6 +425,23 @@ describe('createHttpError', () => {
       expect(err.message.endsWith('…')).toBe(true);
     });
 
+    it('B032 (PR review): never allocates a multi-MB intermediate when given thousands of entries', () => {
+      // 10 000 entries of 200 chars each = 2 MB if joined naively. Running
+      // cap must stop concatenating well before that.
+      const entries = Array.from({ length: 10_000 }, (_, i) => `err-${i}-${'a'.repeat(200)}`);
+      const err = createHttpError(400, { errorMessages: entries });
+      expect(err.message.length).toBeLessThanOrEqual(1024);
+      expect(err.message.endsWith('…')).toBe(true);
+      // First entry's prefix must survive (we didn't accidentally drop it).
+      expect(err.message.startsWith('err-0-')).toBe(true);
+    });
+
+    it('B032 (PR review): caps a single oversized message string', () => {
+      const err = createHttpError(500, { message: 'y'.repeat(5000) });
+      expect(err.message.length).toBeLessThanOrEqual(1024);
+      expect(err.message.endsWith('…')).toBe(true);
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');

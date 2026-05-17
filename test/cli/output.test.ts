@@ -349,6 +349,66 @@ describe('printError', () => {
   });
 });
 
+describe('printOutput — B027 alignment with control-byte keys (PR review)', () => {
+  let stdoutWrite: MockInstance<(...args: unknown[]) => boolean>;
+
+  beforeEach(() => {
+    stdoutWrite = vi
+      .spyOn(process.stdout, 'write')
+      .mockReturnValue(true) as unknown as MockInstance<(...args: unknown[]) => boolean>;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('object branch: column width tracks the SANITISED key length (no overflow)', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      // Key is one literal control byte (sanitises to "\x1B", 4 visible chars)
+      // and a value with three control bytes (sanitises to ~12 visible chars).
+      printOutput({ '': '' }, 'table');
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      // Two spaces are the column gap. The key column must be padded to at
+      // least the sanitised key length (4) so the key string is not shorter
+      // than its column.
+      const line = calls[0] as string;
+      const [keyCol] = line.split('  ');
+      expect((keyCol as string).length).toBeGreaterThanOrEqual(4);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('array branch: column width tracks the SANITISED header length', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      // Header key is one literal ESC; sanitises to 4 chars. Row value is a
+      // single short string. The separator row uses the column width — must
+      // not be shorter than the sanitised header.
+      printOutput([{ '': 'v' }], 'table');
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      const header = calls[0] as string;
+      const separator = calls[1] as string;
+      // Separator dashes match the column width — must cover the sanitised
+      // header without overflowing into the column gap.
+      expect(separator.length).toBeGreaterThanOrEqual(header.length);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+});
+
 describe('sanitizeForTerminal (B027/B032)', () => {
   it('replaces ESC, BEL, and other C0 controls with \\xNN literals when TTY', () => {
     const input = ']0;titleok';

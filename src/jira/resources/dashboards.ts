@@ -142,7 +142,11 @@ export class DashboardsResource {
     if (!Number.isFinite(maxPages) || !Number.isInteger(maxPages) || maxPages <= 0) {
       throw new RangeError(`maxPages must be a positive integer, got: ${maxPages}`);
     }
-    const warnThreshold = Math.ceil(maxPages * 0.8);
+    // PR review: when `maxPages` is intentionally tiny (1 or 2), the 80%
+    // threshold collapses to "first page", which produces a noisy warning on
+    // every normal call. Disable the warning entirely below maxPages=3 so it
+    // remains useful only for the "you're approaching a real cap" case.
+    const warnThreshold = maxPages < 3 ? Number.POSITIVE_INFINITY : Math.ceil(maxPages * 0.8);
     const logger = options?.logger;
 
     let pageCount = 0;

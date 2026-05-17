@@ -4,11 +4,12 @@ import {
   mkdirSync,
   statSync,
   lstatSync,
+  realpathSync,
   unlinkSync,
   readdirSync,
   existsSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import type { ParsedCommand } from '../types.js';
@@ -58,6 +59,13 @@ interface FilesystemDeps {
   readonly isSymlink?: (path: string) => boolean;
   /** Remove a path; used to unlink a refused symlink before the destination write. */
   readonly unlink?: (path: string) => void;
+  /**
+   * Resolve a path to its canonical absolute form (following symlinks in the
+   * parent chain). Used to verify that each destination resolves inside the
+   * install target, defending against symlinked-parent-directory escape
+   * (raised in PR review of B030). Optional for backwards compatibility.
+   */
+  readonly realpath?: (path: string) => string;
 }
 
 const realFs: FilesystemDeps = {
@@ -75,6 +83,18 @@ const realFs: FilesystemDeps = {
     }
   },
   unlink: (path) => unlinkSync(path),
+  realpath: (path) => {
+    try {
+      return realpathSync(path);
+    } catch {
+      // Path may not exist or be unreadable (e.g. EACCES on the parent
+      // chain). Callers always pass an existing path in the happy flow, so
+      // this branch is defensive — return the input unchanged so containment
+      // checks fall back to a literal comparison.
+      /* c8 ignore next */
+      return path;
+    }
+  },
 };
 
 /** Resolve the bundled skill source directory relative to this module. */
@@ -228,15 +248,27 @@ export function runInstall(
     };
   }
 
+  // B030 containment: resolve the target once up front so every write can be
+  // checked against the same canonical root, even if a parent component of
+  // `options.target` was itself a symlink to something else. `options.target`
+  // may not exist yet at this point, so we resolve the deepest existing
+  // ancestor and rebuild the canonical path from there (matching the same
+  // strategy `assertDestUnderTarget` uses on the file side).
+  const targetRealpath = resolveTargetRealpath(options.target, fs);
+
   for (const rel of files) {
     const src = join(source, rel);
     const dest = join(options.target, rel);
     writeWithPermissionGuard(dest, () => {
       fs.mkdir(dirname(dest));
     });
+
     // B030: refuse to follow a pre-planted symlink at the destination.
     // Without --force this is a hard error; with --force we unlink the
     // symlink itself and write a new regular file, never following the link.
+    // Crucially, --force is only honoured when the adapter actually provides
+    // `unlink` — silently falling through would still write THROUGH the
+    // symlink, which is what we're trying to prevent. (Raised in PR review.)
     if (fs.isSymlink?.(dest) === true) {
       if (!options.force) {
         throw new InstallSkillError(
@@ -246,13 +278,26 @@ export function runInstall(
           2,
         );
       }
-      const unlinkFn = fs.unlink;
-      if (unlinkFn !== undefined) {
-        writeWithPermissionGuard(dest, () => {
-          unlinkFn(dest);
-        });
+      if (fs.unlink === undefined) {
+        throw new InstallSkillError(
+          `Refusing to overwrite symlink at ${dest}: --force was set but the configured ` +
+            `filesystem adapter does not expose an unlink(). Writing through the symlink ` +
+            `would still hit the symlink's target.`,
+          2,
+        );
       }
+      const unlinkFn = fs.unlink;
+      writeWithPermissionGuard(dest, () => {
+        unlinkFn(dest);
+      });
     }
+
+    // B030 containment: after any unlink-and-replace, verify the resolved
+    // destination (and its parent) still live inside the install target.
+    // Catches symlinked parent directories that would write outside the
+    // intended root even when `dest` itself is not a symlink. (PR review.)
+    assertDestUnderTarget(dest, targetRealpath, fs);
+
     const content = fs.readFile(src);
     const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
     writeWithPermissionGuard(dest, () => {
@@ -267,6 +312,77 @@ export function runInstall(
     files,
     version,
   };
+}
+
+/**
+ * Resolve the install target's canonical path. The target itself may not
+ * exist yet (we're about to `mkdir -p` it), so we walk up to the deepest
+ * existing ancestor, `realpath` THAT, then append the still-non-existent
+ * tail. The result is the canonical form `assertDestUnderTarget` compares
+ * against — without this normalisation, hosts like macOS (where `/var` is a
+ * symlink to `/private/var`) produce a spurious mismatch.
+ */
+function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
+  if (fs.realpath === undefined) return target;
+  let probe = target;
+  const tail: string[] = [];
+  for (let i = 0; i < 32; i++) {
+    if (fs.exists(probe)) {
+      const resolved = fs.realpath(probe);
+      return tail.length === 0 ? resolved : join(resolved, ...tail.reverse());
+    }
+    const parent = dirname(probe);
+    if (parent === probe) break;
+    tail.push(probe.slice(parent.length + (parent.endsWith(sep) ? 0 : 1)));
+    probe = parent;
+  }
+  return target;
+}
+
+/**
+ * Verify that `dest` resolves inside `targetRealpath` after symlinks in its
+ * parent chain are followed. We resolve the deepest existing ancestor (the
+ * file itself usually does not exist yet at write time) and require that
+ * canonical ancestor to be `targetRealpath` itself or a descendant.
+ *
+ * Defends against the "symlinked parent directory" escape raised in PR
+ * review of B030: even if `dest` is not a symlink, a parent component being
+ * a symlink would land the write outside `options.target`.
+ *
+ * The comparison is done on the realpath of an existing ancestor (which may
+ * differ from the raw `dest` path on platforms like macOS where `/var` is a
+ * symlink to `/private/var`), so we deliberately do NOT do a separate
+ * string-level `..` check against the raw path — that would produce false
+ * positives when the host OS rewrites the prefix.
+ */
+function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void {
+  if (fs.realpath === undefined) return;
+  let resolvedParent: string | undefined;
+  let probe = dirname(dest);
+  // Walk up until we find an existing directory (so realpath can follow it).
+  for (let i = 0; i < 32; i++) {
+    if (fs.exists(probe)) {
+      resolvedParent = fs.realpath(probe);
+      break;
+    }
+    const next = dirname(probe);
+    if (next === probe) break;
+    probe = next;
+  }
+  if (resolvedParent === undefined) return;
+
+  // `realpathSync` and our `resolveTargetRealpath` both strip trailing
+  // separators on every platform we ship to (POSIX + Windows), so a single
+  // appended sep yields a deterministic prefix for the containment check.
+  const targetWithSep = targetRealpath + sep;
+  if (resolvedParent !== targetRealpath && !resolvedParent.startsWith(targetWithSep)) {
+    throw new InstallSkillError(
+      `Refusing to write ${dest}: resolved parent ${resolvedParent} is outside the install ` +
+        `target ${targetRealpath}. A symlinked parent directory would let the install escape ` +
+        `the configured target.`,
+      2,
+    );
+  }
 }
 
 function isPermissionError(err: unknown): boolean {

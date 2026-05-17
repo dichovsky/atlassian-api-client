@@ -122,9 +122,11 @@ function buildCacheKey(opts: RequestOptions): string {
 
 /**
  * Derive a stable, fixed-length identifier for the auth identity attached to
- * a request. Returns the hex-encoded SHA-256 of the Authorization header (or
- * a stable sentinel when absent) so the raw credential never lands inside an
- * in-memory cache key or any debug dump of it.
+ * a request. Returns the first 16 hex chars (64 bits) of the SHA-256 of the
+ * Authorization header — long enough to make accidental collisions vanish in
+ * practice, short enough that the in-memory cache key stays compact and the
+ * raw credential never lands inside any debug dump of it. Returns the stable
+ * sentinel `'no-auth'` when no Authorization header is present.
  */
 function authScope(opts: RequestOptions): string {
   const headers = opts.headers;

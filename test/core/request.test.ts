@@ -56,6 +56,26 @@ describe('buildUrl', () => {
     ).toThrow(ValidationError);
   });
 
+  it('B021: rejects an absolute http:// URL when allowedHosts is in force (downgrade attack)', () => {
+    // Even with the host on the allowlist, falling back to http would put
+    // the auth header on plaintext transport — refuse outright.
+    expect(() =>
+      buildUrl(base, 'http://example.atlassian.net/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(/http:\/\/ URLs would downgrade/);
+  });
+
+  it('B021: matches allowedHosts hostname-only (URL with explicit port still matches bare host)', () => {
+    const absolute = 'https://example.atlassian.net:443/rest/api/3/x';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).not.toThrow();
+  });
+
+  it('B021: matches allowedHosts hostname-only (bare URL still matches entry with explicit port)', () => {
+    const absolute = 'https://example.atlassian.net/rest/api/3/x';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net:443'])).not.toThrow();
+  });
+
   it('appends query parameters and skips undefined values', () => {
     const url = buildUrl(base, '/space', { limit: 10, status: 'current', cursor: undefined });
     expect(url).toBe(`${base}/space?limit=10&status=current`);

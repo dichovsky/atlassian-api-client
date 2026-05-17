@@ -356,6 +356,31 @@ describe('DashboardsResource', () => {
       await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
     });
 
+    it('B033 (PR review): does NOT emit a warn() when maxPages is intentionally small (1 or 2)', async () => {
+      transport.respondWith({
+        dashboards: [makeDashboard('1', 'D1')],
+        startAt: 0,
+        maxResults: 1,
+      });
+
+      const warnings: string[] = [];
+      const noop = (): void => undefined;
+      const logger = {
+        debug: noop,
+        info: noop,
+        warn: (msg: string): void => {
+          warnings.push(msg);
+        },
+        error: noop,
+      };
+
+      for await (const _ of dashboards.listAll(undefined, { maxPages: 1, logger })) {
+        // consume
+      }
+
+      expect(warnings).toEqual([]);
+    });
+
     it('B033: emits a warn() once the page count crosses 80% of maxPages', async () => {
       for (let i = 0; i < 10; i++) {
         transport.respondWith({

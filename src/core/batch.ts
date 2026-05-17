@@ -71,6 +71,10 @@ function serializeHeaders(headers: RequestOptions['headers']): string {
 /**
  * Hash the request's Authorization header into a short identifier so the
  * dedupe key partitions on auth identity without storing the raw credential.
+ * Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough to make
+ * accidental collisions vanish in practice, narrow enough to keep the dedupe
+ * key compact. Returns the stable sentinel `'no-auth'` when no Authorization
+ * header is present.
  */
 function authIdentity(headers: RequestOptions['headers']): string {
   if (headers === undefined) return 'no-auth';

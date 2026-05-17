@@ -5,22 +5,35 @@ import { ValidationError } from './errors.js';
  * Resolve a request path against the configured base URL and apply query
  * parameters.
  *
- * Absolute paths (starting with `https://` or `http://`) bypass `baseUrl`
- * concatenation — Atlassian resources pass fully-qualified URLs for the
- * `agile/1.0` cross-API call. When `allowedHosts` is provided, the absolute
- * URL's host MUST match the allowlist; otherwise `ValidationError` is thrown
+ * Absolute paths (starting with `https://`) bypass `baseUrl` concatenation —
+ * Atlassian resources pass fully-qualified URLs for the `agile/1.0`
+ * cross-API call. When `allowedHosts` is provided, the absolute URL's
+ * hostname MUST match the allowlist; otherwise `ValidationError` is thrown
  * BEFORE the request is dispatched. This prevents an attacker-controlled
  * `path` value from causing the transport to attach the configured
  * `Authorization` header to a foreign host (B021).
+ *
+ * `http://` absolute paths are always rejected when `allowedHosts` is
+ * supplied — even if the host is allowed — because allowing a downgrade
+ * to plaintext transport would expose the auth header on the wire. This
+ * matches the HTTPS-only constraint already enforced by {@link resolveConfig}
+ * for the `baseUrl` itself.
  *
  * Relative paths are concatenated onto `baseUrl` verbatim, so the caller is
  * responsible for the leading slash. Query values of `undefined` are dropped
  * so optional flags do not emit empty `?foo=` pairs.
  *
+ * Host comparison is **hostname-only** and case-insensitive: the port and
+ * userinfo are ignored, so `example.atlassian.net:443` matches an
+ * `allowedHosts` entry of `example.atlassian.net` (and vice versa). The
+ * trade-off is intentional — Atlassian's cloud surface always uses the
+ * implicit 443 / 80 ports, and authoring `allowedHosts` with explicit ports
+ * was a recurring source of confusion in the original implementation.
+ *
  * @param allowedHosts - When provided, absolute paths must resolve to one of
- *   these hosts (case-insensitive). When omitted, no host check is performed
- *   — legacy callers stay backwards-compatible, but the transport always
- *   passes the resolved list.
+ *   these hosts (case-insensitive, hostname-only). When omitted, no host
+ *   check is performed — legacy callers stay backwards-compatible, but the
+ *   transport always passes the resolved list.
  */
 export function buildUrl(
   baseUrl: string,
@@ -28,11 +41,21 @@ export function buildUrl(
   query?: Readonly<Record<string, string | number | boolean | undefined>>,
   allowedHosts?: readonly string[],
 ): string {
-  const isAbsolute = path.startsWith('https://') || path.startsWith('http://');
+  const isHttps = path.startsWith('https://');
+  const isHttp = path.startsWith('http://');
+  const isAbsolute = isHttps || isHttp;
+
+  if (isHttp && allowedHosts !== undefined) {
+    throw new ValidationError(
+      `Refusing to send request to ${path}: absolute http:// URLs would downgrade ` +
+        `the auth header to plaintext transport. Use https:// or a relative path.`,
+    );
+  }
+
   const url = isAbsolute ? new URL(path) : new URL(`${baseUrl}${path}`);
 
   if (isAbsolute && allowedHosts !== undefined) {
-    assertHostAllowed(url.host, allowedHosts);
+    assertHostAllowed(url.hostname, allowedHosts);
   }
 
   if (query) {
@@ -46,15 +69,27 @@ export function buildUrl(
   return url.toString();
 }
 
-function assertHostAllowed(host: string, allowedHosts: readonly string[]): void {
-  const target = host.toLowerCase();
+function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void {
+  const target = hostname.toLowerCase();
   for (const allowed of allowedHosts) {
-    if (allowed.toLowerCase() === target) return;
+    if (normalizeAllowedHost(allowed) === target) return;
   }
   throw new ValidationError(
-    `Refusing to send request to ${host}: host is not on the allowedHosts list. ` +
+    `Refusing to send request to ${hostname}: host is not on the allowedHosts list. ` +
       `Attaching the configured Authorization header to a foreign host would leak credentials.`,
   );
+}
+
+/**
+ * Lower-case and strip any explicit port from an `allowedHosts` entry so the
+ * comparison stays hostname-only. Users who configured `allowedHosts:
+ * ['example.atlassian.net:443']` still get a match for the implicit-port
+ * URL `https://example.atlassian.net/...`.
+ */
+function normalizeAllowedHost(entry: string): string {
+  const lower = entry.toLowerCase();
+  const colon = lower.indexOf(':');
+  return colon >= 0 ? lower.slice(0, colon) : lower;
 }
 
 const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);
