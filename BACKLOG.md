@@ -444,8 +444,8 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Acceptance criteria:**
   - [ ] `resolveRef` validates the resolved name with `isValidIdentifier` and throws `Error('Invalid $ref target name: …')` otherwise.
   - [ ] Every `$ref` value is also checked to start with `#/components/schemas/` (or a documented prefix) to avoid out-of-spec references.
-  - [ ] Property names emitted via `JSON.stringify(propName)` are also rejected when they contain non-ASCII characters that could break out via Unicode line terminators (` `, ` `).
-  - [ ] Enum string values in `escapeStringLiteral` additionally escape `\n`, `\r`, ` `, ` ` so they cannot break out of the single-quoted literal.
+  - [ ] Property names emitted via `JSON.stringify(propName)` are also rejected when they contain non-ASCII characters that could break out via Unicode line terminators (``, ``).
+  - [ ] Enum string values in `escapeStringLiteral` additionally escape `\n`, `\r`, ``, `` so they cannot break out of the single-quoted literal.
   - [ ] Unit test: spec with `$ref: '#/components/schemas/Foo; eval(1)//'` throws before emitting source.
   - [ ] Unit test: spec with enum value `"a\nb"` produces a syntactically valid TS string literal.
   - [ ] Fuzz test: 100 random refs / enum values either round-trip or throw, never emit broken source.
@@ -661,6 +661,58 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/core/request.ts`, `test/core/request.test.ts`
 - **Dependencies:** None
 
+### [ ] B036: OAuth `tokenEndpoint` has no host allowlist → refresh-token / client-secret leak via misconfigured endpoint
+
+- **Priority:** P0 — Critical
+- **Severity:** High — direct credential disclosure (refresh_token + client_id + client_secret) to attacker-controlled host
+- **Description:** `fetchRefreshedTokens` (`src/core/oauth.ts:119-141`) enforces only that `tokenEndpoint` uses HTTPS — there is no host allowlist. When the caller misconfigures `OAuthRefreshConfig.tokenEndpoint` (typo in an env var, poisoned config file, attacker-controlled config provider, dependency-injection mistake in a multi-tenant orchestrator), the library happily POSTs `client_id` + `client_secret` + `refresh_token` to the attacker-controlled URL — even though `baseUrl` and `allowedHosts` (added by [[B034]]) are correctly scoped to Atlassian. The OAuth credentials are the most sensitive material the library handles: they grant the attacker offline access to the entire Atlassian tenant for the lifetime of the refresh token. This is the same configuration-trap class as [[B034]] but for an entirely separate credential-bearing endpoint that the existing fix does NOT cover.
+- **Attack scenario:**
+  1. CI secret store is partially compromised (or a config-file PR is socially engineered) and `ATLAS_OAUTH_TOKEN_ENDPOINT` is changed from `https://auth.atlassian.com/oauth/token` to `https://attacker.example/token`. `baseUrl` and `ATLASSIAN_API_TOKEN` are left untouched, so the operator cannot detect the change from a typical request-path audit.
+  2. The next 401 from any `JiraClient.*` / `ConfluenceClient.*` call triggers `createOAuthRefreshMiddleware`'s refresh path.
+  3. `fetchRefreshedTokens` POSTs `{ grant_type: 'refresh_token', client_id, client_secret, refresh_token }` to `https://attacker.example/token`.
+  4. Attacker now has the full OAuth credential set and can mint access tokens directly against `https://auth.atlassian.com/oauth/token`. The refresh token can be exfiltrated and reused for days/weeks until the operator notices.
+  5. (Bonus) The attacker's response can return crafted `access_token` / `refresh_token` values, which the middleware persists via `onTokenRefreshed` — pivoting the operator's process to use attacker-supplied tokens for all subsequent Atlassian calls.
+- **Why the existing fix doesn't cover this:** [[B034]]'s `allowedHosts` gate sits inside `buildUrl` / `HttpTransport`, which is only consulted for `transport.request(...)` calls. `fetchRefreshedTokens` calls `fetch` directly with its own URL — it never goes through `HttpTransport`, so the existing allowlist is bypassed by design.
+- **Acceptance criteria:**
+  - [ ] `fetchRefreshedTokens` rejects `tokenEndpoint` whose host is not on a default Atlassian-auth allowlist (`auth.atlassian.com`, `id.atlassian.com`, plus any `*.atlassian.net` / `*.jira-dev.com` for staging) unless the caller opts in.
+  - [ ] `OAuthRefreshConfig` gains an explicit `allowedTokenEndpointHosts?: readonly string[]` (or reuses `ClientConfig.allowedHosts`) escape hatch for self-hosted IdPs and proxied auth.
+  - [ ] When the default allowlist applies, the error message names the rejected host AND the accepted suffixes so a misconfiguration is obvious in CI logs.
+  - [ ] `createOAuthRefreshMiddleware` threads the allowlist into `fetchRefreshedTokens` so the rejection happens at construction time when possible — not lazily on the first 401.
+  - [ ] Unit test: `tokenEndpoint: 'https://evil.example/token'` throws `ValidationError` (or `OAuthError`) BEFORE any HTTP call is made.
+  - [ ] Unit test: `tokenEndpoint: 'https://auth.atlassian.com/oauth/token'` passes the default allowlist.
+  - [ ] Unit test: explicit `allowedTokenEndpointHosts: ['idp.internal.example']` lets a non-Atlassian endpoint through.
+  - [ ] Documentation update: `OAuthRefreshConfig.tokenEndpoint` JSDoc calls out the allowlist and the rationale (defence-in-depth for refresh-token + client-secret).
+  - [ ] Cross-reference [[B034]] in code comments so future maintainers don't relax the host check on either side independently.
+- **Files:** `src/core/oauth.ts`, `src/core/config.ts` (share the suffix list), `test/core/oauth.test.ts`
+- **Dependencies:** Complements [[B034]] — closes the second credential-bearing channel left open after the transport-layer fix.
+
+### [ ] B037: `paginateOffset` / `paginateSearch` trust server-supplied `maxResults` for cursor advancement → server-driven DoS, duplicate-yield, and silent data loss
+
+- **Priority:** P1 — High
+- **Severity:** High — hostile or buggy server can amplify client load up to ~50x, deliver duplicate items as if they were distinct, OR silently drop entire result sets — all without the caller noticing
+- **Description:** `paginateOffset` (`src/core/pagination.ts:294-303`) and `paginateSearch` (`src/core/pagination.ts:366-375`) advance their cursor with `startAt += maxResults` where `maxResults` is read directly from `response.data.maxResults`. The same response field is also used as the "short page" sentinel via `values.length < maxResults → done`. Neither value is validated. The client controls `pageSize` (validated via `validatePageSize`), but the SERVER's `maxResults` is trusted blindly even though it is a wire-protocol value the server may set to anything. This breaks three ways simultaneously:
+  1. **Infinite-loop / amplification DoS.** If `response.data.maxResults === 0`, `startAt` never advances. Iteration only stops at the `maxPages` safety cap (default 10,000) — i.e. the client makes 10,000 identical requests to the same `startAt=0`, yielding the same page 10,000 times. With `maxResults === 1` and a full 50-row page, the client makes 50× the requests it would have made under a well-behaved server, and yields each item ~50 times (overlapping windows). Either way the caller observes "lots of items, took forever" with no error.
+  2. **Silent data loss.** If `response.data.maxResults === Number.MAX_SAFE_INTEGER` (or any value larger than the actual page), the `values.length < maxResults` branch trips on page 1 and iteration terminates immediately — even though more pages exist. The generator returns a partial set as if it were complete; the caller cannot tell from the public API that data was dropped.
+  3. **NaN / negative poisoning.** If `response.data.maxResults` is `NaN` (e.g. body parsed to `{"maxResults": null}` and cast through the type), `startAt += NaN` makes startAt permanently `NaN`. The next request serializes `startAt: NaN` to the wire (likely as `"NaN"`), which the server either rejects or treats as 0 — re-yielding the same page indefinitely. Negative `maxResults` causes startAt to walk BACKWARDS, revisiting earlier pages until the maxPages cap fires.
+- **Attack scenario (untrusted Atlassian-compatible endpoint):**
+  1. A self-hosted or proxied Jira-compatible endpoint (or a compromised cloud tenant) responds to `GET /rest/api/3/project?startAt=0&maxResults=50` with `{ values: [...50 rows...], startAt: 0, maxResults: 0 }`.
+  2. `paginateOffset` yields the 50 rows, advances `startAt` by 0, re-requests the same page, yields the same 50 rows again — for 10,000 iterations before `maxPages` halts iteration. The caller sees ~500,000 yielded items (mostly duplicates), 10,000 HTTP requests, and no error.
+  3. Variant: server returns `maxResults: 1` instead → 50× request amplification with overlapping pages and partial deduplication required at the caller — even though the caller asked for `pageSize=50`.
+- **Why the existing `maxPages` cap doesn't fix this:** `maxPages` only bounds the worst case at 10,000 iterations — that's already an amplification factor of 200× over the expected request count for a typical paginated list (50 pages × 50 items). It also doesn't prevent duplicate-item yield or silent data loss (cases 2 and 3 above are not request-count-bounded — they are data-correctness bugs).
+- **Why this is distinct from [[B033]]:** B033 is about `DashboardsResource.listAll` looping when `total` is undefined. B037 is about the GENERIC `paginateOffset` / `paginateSearch` helpers that every Jira resource calls into trusting an entirely different field (`maxResults`) — and it manifests as duplicate-yield / data-loss in addition to DoS.
+- **Acceptance criteria:**
+  - [ ] Cursor advancement uses the CALLER's `pageSize` (already validated), not `response.data.maxResults`. The response's `maxResults` is treated as informational only.
+  - [ ] Add a server-response sanity guard: if `response.data.maxResults` is non-numeric, ≤ 0, or > a documented ceiling (e.g. 10× `pageSize`), emit `logger.warn` and ignore the server value for short-page detection — use `values.length < pageSize` instead.
+  - [ ] Short-page detection compares `values.length < pageSize` (caller-controlled), NOT `values.length < response.maxResults`.
+  - [ ] Forward-progress guard: if a page yields `values.length > 0` but `startAt` would not advance (after applying the caller-`pageSize` correction), throw `PaginationError` (same shape as the cursor-stall guard in `paginateCursor`).
+  - [ ] Unit test: server returns `maxResults: 0` with a full page → `PaginationError` thrown on the SECOND iteration (not 10,000 silent iterations).
+  - [ ] Unit test: server returns `maxResults: Number.MAX_SAFE_INTEGER` with a partial page → iteration continues using `pageSize` as the short-page threshold, no silent termination.
+  - [ ] Unit test: server returns `maxResults: NaN` → treated as the caller-supplied `pageSize`; no `NaN` ever appears in an outgoing `startAt` query parameter.
+  - [ ] Unit test: server returns negative `maxResults` → guard fires; startAt never moves backwards.
+  - [ ] Mirror all of the above for `paginateSearch` (uses `issues` instead of `values`).
+- **Files:** `src/core/pagination.ts`, `test/core/pagination.test.ts`
+- **Dependencies:** None. Lives alongside [[B033]] (resource-specific pagination guard) as the generic-helper counterpart.
+
 ---
 
 ## Summary
@@ -675,8 +727,8 @@ The items are grouped into **phases**. Each phase should be completed before the
 | 5 — Testing             | B012, B013, B014 | 12h         | P1+P2    |
 | 6 — Security & advanced | B015, B016, B017 | 12h         | P2+P3    |
 | 7 — Automation          | B018, B019, B020 | 6h          | P2+P3    |
-| 8 — CTF / Security      | B021–B035        | 30h         | P0–P2    |
-| **Total**               | **35 items**     | **~87h**    |          |
+| 8 — CTF / Security      | B021–B037        | 35h         | P0–P2    |
+| **Total**               | **37 items**     | **~92h**    |          |
 
 **Recommended first PR:** B002 + B003 (type correctness, low risk, high impact, independent)
 **Recommended second PR:** B004 + B005 + B006 (transport refactor — do together to minimize breakage)
