@@ -75,16 +75,28 @@ function serializeHeaders(headers: RequestOptions['headers']): string {
  * accidental collisions vanish in practice, narrow enough to keep the dedupe
  * key compact. Returns the stable sentinel `'no-auth'` when no Authorization
  * header is present.
+ *
+ * PR review hardening: when multiple Authorization-like keys are present
+ * (e.g. a caller leaves a stale lowercase `authorization` and middleware
+ * later spreads in `Authorization`), the LAST occurrence in iteration order
+ * wins. This matches `fetch` semantics (last-write-wins on duplicate keys
+ * after case-insensitive merge) and prevents a stale caller header from
+ * defeating the auth partition when the actual injected token would land
+ * later in the merged object.
  */
 function authIdentity(headers: RequestOptions['headers']): string {
-  if (headers === undefined) return 'no-auth';
-  let auth: string | undefined;
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === 'authorization') {
-      auth = value;
-      break;
-    }
-  }
+  const auth = pickAuthorizationHeader(headers);
   if (auth === undefined || auth === '') return 'no-auth';
   return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
+}
+
+function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined {
+  if (headers === undefined) return undefined;
+  let last: string | undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      last = value;
+    }
+  }
+  return last;
 }

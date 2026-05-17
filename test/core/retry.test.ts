@@ -353,6 +353,37 @@ describe('executeWithRetry', () => {
     }
   });
 
+  it('B023 (PR review): defensive cap fires when maxRetryDelay is Infinity', async () => {
+    // `resolveConfig` rejects Infinity up front, but a direct caller (e.g.
+    // a test building a RetryConfig literal) can still bypass that gate.
+    // The defensive ceiling in `getRetryDelay` must clamp anyway, otherwise
+    // a hostile Retry-After re-opens the unbounded-wait DoS that B023 closed.
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(Math, 'random').mockReturnValue(0);
+      const err = new RateLimitError('rate limited', 2_147_483_647);
+      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+
+      const setSpy = vi.spyOn(globalThis, 'setTimeout');
+      const promise = executeWithRetry(operation, {
+        retries: 1,
+        retryDelay: 100,
+        maxRetryDelay: Number.POSITIVE_INFINITY,
+      });
+      // Advance past the hard-ceiling (60s) so the retry sleep resolves.
+      await vi.advanceTimersByTimeAsync(60_000);
+      await promise;
+
+      // Sleep duration must be the documented hard-ceiling, NOT the
+      // attacker-supplied 2_147_483_647 seconds.
+      const slept = setSpy.mock.calls[0]?.[1];
+      expect(typeof slept).toBe('number');
+      expect(slept).toBeLessThanOrEqual(60_000);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('falls back to exponential backoff when RateLimitError has no retryAfter', async () => {
     vi.useFakeTimers();
     try {

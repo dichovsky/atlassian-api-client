@@ -165,6 +165,33 @@ describe('createBatchMiddleware', () => {
     expect(r1).not.toBe(r2);
   });
 
+  it('B024 (PR review): when a stale lowercase `authorization` is present, the LATER `Authorization` wins', async () => {
+    // Mirrors the cache regression: OAuth middlewares spread caller headers
+    // first then add `Authorization: <fresh>`. First-match iteration hashed
+    // the stale caller value and coalesced two distinct identities. The
+    // last-occurrence rule must keep them partitioned.
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(
+        makeOpts({
+          headers: { authorization: 'Bearer STALE', Authorization: 'Bearer freshA' },
+        }),
+        next,
+      ),
+      mw(
+        makeOpts({
+          headers: { authorization: 'Bearer STALE', Authorization: 'Bearer freshB' },
+        }),
+        next,
+      ),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(r1).not.toBe(r2);
+  });
+
   it('B024: still coalesces concurrent requests that share the SAME Authorization header', async () => {
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
     const mw = createBatchMiddleware();

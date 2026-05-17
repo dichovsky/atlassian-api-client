@@ -56,6 +56,40 @@ describe('buildUrl', () => {
     ).toThrow(ValidationError);
   });
 
+  it('B021 (PR review): renderOriginForError falls back to `<unparseable>` for malformed absolute URLs', () => {
+    // `http://` alone (scheme but no host) is rejected by `new URL`. The
+    // downgrade-error renderer must still produce a logging-safe message
+    // instead of throwing inside the error path.
+    let captured: Error | undefined;
+    try {
+      buildUrl(base, 'http://', undefined, ['example.atlassian.net']);
+    } catch (err) {
+      captured = err as Error;
+    }
+    expect(captured?.message).toMatch(/http:\/\/<unparseable>/);
+  });
+
+  it('B021 (PR review): the downgrade rejection echoes only scheme+host, not userinfo or query', () => {
+    // A userinfo segment or query string smuggled into `path` must not be
+    // echoed verbatim into the thrown error — those errors get caught and
+    // logged, and a leaked `?token=…` ends up indexed in log sinks.
+    let captured: Error | undefined;
+    try {
+      buildUrl(base, 'http://attacker:secret@example.atlassian.net/x?token=t0pSecret', undefined, [
+        'example.atlassian.net',
+      ]);
+    } catch (err) {
+      captured = err as Error;
+    }
+    expect(captured).toBeInstanceOf(Error);
+    expect(captured?.message).toMatch(
+      /Refusing to send request to http:\/\/example\.atlassian\.net:/,
+    );
+    expect(captured?.message).not.toContain('secret');
+    expect(captured?.message).not.toContain('t0pSecret');
+    expect(captured?.message).not.toContain('attacker');
+  });
+
   it('B021: rejects an absolute http:// URL when allowedHosts is in force (downgrade attack)', () => {
     // Even with the host on the allowlist, falling back to http would put
     // the auth header on plaintext transport — refuse outright.
@@ -66,14 +100,24 @@ describe('buildUrl', () => {
     ).toThrow(/http:\/\/ URLs would downgrade/);
   });
 
-  it('B021: matches allowedHosts hostname-only (URL with explicit port still matches bare host)', () => {
+  it('B021 (PR review): hostname-only match — an absolute URL with an explicit port matches a bare-host entry', () => {
+    // Port-bearing allowedHosts entries are rejected at validation time,
+    // but URLs themselves may carry an explicit port (e.g. an upstream
+    // resource pasted in `https://host:443/...`). The request-side check
+    // compares `url.hostname`, which is port-less, so the bare-host entry
+    // still authorises the request.
     const absolute = 'https://example.atlassian.net:443/rest/api/3/x';
     expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).not.toThrow();
   });
 
-  it('B021: matches allowedHosts hostname-only (bare URL still matches entry with explicit port)', () => {
-    const absolute = 'https://example.atlassian.net/rest/api/3/x';
-    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net:443'])).not.toThrow();
+  it('B021 (PR review): rejects an absolute URL whose hostname is not on the allowlist (port has no bearing)', () => {
+    // Even with the legitimate host as a *port-bearing* substring, the
+    // request-side check is hostname-only — `evil.example.com` is not on
+    // the list, so the call is refused.
+    const absolute = 'https://evil.example.com/rest/api/3/x';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      /host is not on the allowedHosts list/,
+    );
   });
 
   it('appends query parameters and skips undefined values', () => {

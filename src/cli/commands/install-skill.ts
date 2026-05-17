@@ -324,6 +324,23 @@ export function runInstall(
  */
 function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
   if (fs.realpath === undefined) return target;
+
+  // PR review hardening: if `options.target` itself is a pre-existing
+  // symlink, refuse — adopting the link's destination as `targetRealpath`
+  // would silently relocate the entire install (and all subsequent
+  // `assertDestUnderTarget` checks would happily clear writes inside the
+  // attacker-chosen destination because that destination IS the trusted
+  // root). Symlinked PARENT components are still tolerated and re-anchored
+  // below: that's the normal `/var → /private/var` case on macOS.
+  if (fs.exists(target) && fs.isSymlink?.(target) === true) {
+    throw new InstallSkillError(
+      `Refusing to install into ${target}: the target itself is a symbolic link. ` +
+        `A symlinked install target would let writes escape the configured path. ` +
+        `Remove the symlink (or point --path at a real directory) and try again.`,
+      2,
+    );
+  }
+
   let probe = target;
   const tail: string[] = [];
   for (let i = 0; i < 32; i++) {

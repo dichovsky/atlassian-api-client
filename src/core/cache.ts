@@ -127,17 +127,28 @@ function buildCacheKey(opts: RequestOptions): string {
  * practice, short enough that the in-memory cache key stays compact and the
  * raw credential never lands inside any debug dump of it. Returns the stable
  * sentinel `'no-auth'` when no Authorization header is present.
+ *
+ * PR review hardening: when multiple Authorization-like keys are present
+ * (e.g. a caller passes `authorization: 'old'` and middleware later spreads
+ * in `Authorization: 'new'`), the LAST occurrence in iteration order wins —
+ * matching what `fetch` itself does when a plain-object headers map carries
+ * duplicate keys (last-write-wins after the implicit lowercase merge). This
+ * prevents a stale caller-supplied header from defeating the auth partition
+ * when the real injected token would otherwise land at a different position.
  */
 function authScope(opts: RequestOptions): string {
-  const headers = opts.headers;
-  if (headers === undefined) return 'no-auth';
-  let auth: string | undefined;
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === 'authorization') {
-      auth = value;
-      break;
-    }
-  }
+  const auth = pickAuthorizationHeader(opts.headers);
   if (auth === undefined || auth === '') return 'no-auth';
   return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
+}
+
+function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined {
+  if (headers === undefined) return undefined;
+  let last: string | undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      last = value;
+    }
+  }
+  return last;
 }

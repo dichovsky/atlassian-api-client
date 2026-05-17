@@ -239,17 +239,19 @@ describe('resolveConfig', () => {
       ).toThrow(/baseUrl host .* is not present in allowedHosts/);
     });
 
-    it('matches allowedHosts entries hostname-only (port-insensitive)', () => {
-      // baseUrl carries no explicit port; an allowedHosts entry with :443
-      // must still match. The reverse (entry without port, URL with :443)
-      // is covered by buildUrl's normalisation.
+    it('rejects port-bearing allowedHosts entries (PR review of B034)', () => {
+      // Silently stripping the port would let an entry of `host:443`
+      // authorize requests to `host:8443` — a port-scoped allowlist
+      // would broaden into a host-wide one. Reject the ambiguous form
+      // up front with a targeted error message so the user understands
+      // why ports are rejected.
       expect(() =>
         resolveConfig({
           ...validBasicConfig,
           baseUrl: 'https://internal.example.com',
           allowedHosts: ['internal.example.com:443'],
         }),
-      ).not.toThrow();
+      ).toThrow(/must not include a port/);
     });
 
     it('rejects baseUrl outside the default Atlassian suffix allowlist', () => {
@@ -364,8 +366,18 @@ describe('resolveConfig', () => {
         ValidationError,
       );
       expect(() => resolveConfig({ ...validBasicConfig, maxRetryDelay: 0 })).toThrow(
-        'maxRetryDelay must be a positive number',
+        'maxRetryDelay must be a finite positive number',
       );
+    });
+
+    it('throws ValidationError when maxRetryDelay is Infinity (B023 regression)', () => {
+      // PR review of B023: the Retry-After clamp degenerates with Infinity
+      // (`Math.min(x, Infinity)` is `x`), re-opening the unbounded-wait DoS.
+      // Reject non-finite values at config-resolution so the clamp always
+      // bites.
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, maxRetryDelay: Number.POSITIVE_INFINITY }),
+      ).toThrow(/finite positive number/);
     });
 
     it('throws ValidationError when maxRetryDelay is negative', () => {

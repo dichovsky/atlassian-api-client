@@ -131,9 +131,15 @@ export interface ClientConfig {
    * `baseUrl` itself must end in a known Atlassian suffix
    * (`.atlassian.net`, `.atlassian.com`, `.jira-dev.com`, `.jira.com`).
    *
-   * Pass an explicit list for self-hosted, proxy, or test setups. The values
-   * are bare hosts (no scheme, no path) matched case-insensitively against
-   * the resolved URL host.
+   * Pass an explicit list for self-hosted, proxy, or test setups. Entries
+   * are **bare hostnames** — no scheme, no path, and **no port** — matched
+   * case-insensitively against the URL's `hostname` (not `host`). Port-
+   * bearing entries are rejected at config-resolution time so an entry like
+   * `'host:443'` cannot silently authorize `host:8443`; see
+   * `validateAllowedHosts` and PR review of [[B034]].
+   *
+   * The `baseUrl` host MUST also appear in this list when it is supplied,
+   * otherwise the client could not call its own configured endpoint.
    */
   readonly allowedHosts?: readonly string[];
   /** Injectable transport (for testing or custom HTTP layers). */
@@ -173,7 +179,9 @@ export interface ResolvedConfig {
   /**
    * Resolved set of hosts the transport is allowed to send the configured
    * `Authorization` header to. Always populated — when the user did not
-   * provide `ClientConfig.allowedHosts`, this is just `[baseUrl.host]`.
+   * provide `ClientConfig.allowedHosts`, this is just `[baseUrl.hostname]`.
+   * Entries are bare hostnames (no port); port-bearing entries are rejected
+   * at validation time. See `ClientConfig.allowedHosts` for the rationale.
    */
   readonly allowedHosts: readonly string[];
   /** Injectable fetch implementation; defaults to global `fetch`. */

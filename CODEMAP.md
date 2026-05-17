@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "bbe9caf9e5250710f2325fe4f53df97381ca7346b68c24f49f321a8e0400e6ca",
+  "sourceHash": "d8a2d4cfc70e59b3acdd751478cc8a2d3dfce8ade81653da6fdb379f2a3f9ebb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -781,7 +781,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 203,
+      "line": 211,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -790,7 +790,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 218,
+      "line": 226,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -919,7 +919,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 192,
+      "line": 200,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -1300,7 +1300,7 @@
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
-      "line": 67,
+      "line": 69,
       "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
       "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
     },
@@ -1533,27 +1533,27 @@
         {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 358,
+          "line": 375,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 388,
+          "line": 405,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 395,
+          "line": 412,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 407,
+          "line": 424,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -1561,7 +1561,7 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 446,
+          "line": 463,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
@@ -1809,25 +1809,25 @@
         {
           "name": "printTable",
           "kind": "function",
-          "line": 82,
+          "line": 90,
           "signature": "function printTable(data: unknown): void"
         },
         {
           "name": "printMinimal",
           "kind": "function",
-          "line": 143,
+          "line": 151,
           "signature": "function printMinimal(data: unknown): void"
         },
         {
           "name": "extractId",
           "kind": "function",
-          "line": 160,
+          "line": 168,
           "signature": "function extractId(obj: unknown): string"
         },
         {
           "name": "printError",
           "kind": "function",
-          "line": 171,
+          "line": 179,
           "exported": true,
           "signature": "export function printError(message: string): void",
           "jsdoc": "Print an error message to stderr (sanitised for TTY safety — B032)."
@@ -3450,9 +3450,15 @@
         {
           "name": "authIdentity",
           "kind": "function",
-          "line": 79,
+          "line": 87,
           "signature": "function authIdentity(headers: RequestOptions['headers']): string",
           "jsdoc": "Hash the request's Authorization header into a short identifier so the dedupe key partitions on auth identity without storing the raw credential. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough to make accidental collisions vanish in practice, narrow enough to keep the dedupe key compact. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
+        },
+        {
+          "name": "pickAuthorizationHeader",
+          "kind": "function",
+          "line": 93,
+          "signature": "function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined"
         }
       ],
       "imports": [
@@ -3501,9 +3507,15 @@
         {
           "name": "authScope",
           "kind": "function",
-          "line": 131,
+          "line": 139,
           "signature": "function authScope(opts: RequestOptions): string",
           "jsdoc": "Derive a stable, fixed-length identifier for the auth identity attached to a request. Returns the first 16 hex chars (64 bits) of the SHA-256 of the Authorization header — long enough to make accidental collisions vanish in practice, short enough that the in-memory cache key stays compact and the raw credential never lands inside any debug dump of it. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
+        },
+        {
+          "name": "pickAuthorizationHeader",
+          "kind": "function",
+          "line": 145,
+          "signature": "function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined"
         }
       ],
       "imports": [
@@ -3562,14 +3574,14 @@
         {
           "name": "normalizeAllowedHost",
           "kind": "function",
-          "line": 50,
+          "line": 54,
           "signature": "function normalizeAllowedHost(entry: string): string",
-          "jsdoc": "Strip any explicit port from a host entry so the comparison is hostname-only. Mirrors {@link buildUrl}'s normalisation on the request side so users don't have to think about port matching."
+          "jsdoc": "Lower-case an `allowedHosts` entry for hostname comparison. Port-bearing entries are rejected up front by {@link validateAllowedHosts} (PR review: silently stripping the port would let an allowlist of `host:443` authorize `host:8443`, broadening a port-scoped policy into a host-wide one), so this normalisation is a plain lowercase. {@link buildUrl}'s request-side check compares `url.hostname` (also port-less) for the same reason."
         },
         {
           "name": "resolveConfig",
           "kind": "function",
-          "line": 67,
+          "line": 69,
           "exported": true,
           "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
           "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
@@ -3577,26 +3589,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 88,
+          "line": 90,
           "signature": "function validateConfig(config: ClientConfig): void"
         },
         {
           "name": "isInvalidAllowedHostChar",
           "kind": "function",
-          "line": 170,
+          "line": 181,
           "signature": "function isInvalidAllowedHostChar(code: number): boolean",
-          "jsdoc": "Reject characters that don't belong in a bare hostname / port grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), and the structural URL chars `/ ? # @ \\`. Stops a typo or smuggled control byte from creating a surprising \"match by similarity\" later in `buildUrl`."
+          "jsdoc": "Reject characters that don't belong in a bare hostname grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural URL chars `/ ? # @ \\`, and `:` (so port-bearing entries are rejected explicitly instead of silently broadening — see PR review of [[B034]]). Stops a typo or smuggled control byte from creating a surprising \"match by similarity\" later in `buildUrl`."
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 183,
+          "line": 195,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 204,
+          "line": 227,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -4714,7 +4726,7 @@
         {
           "name": "buildUrl",
           "kind": "function",
-          "line": 38,
+          "line": 39,
           "exported": true,
           "signature": "export function buildUrl( baseUrl: string, path: string, query?: Readonly<Record<string, string | number | boolean | und…",
           "jsdoc": "Resolve a request path against the configured base URL and apply query parameters."
@@ -4722,38 +4734,45 @@
         {
           "name": "assertHostAllowed",
           "kind": "function",
-          "line": 72,
+          "line": 76,
           "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
         },
         {
           "name": "normalizeAllowedHost",
           "kind": "function",
-          "line": 89,
+          "line": 93,
           "signature": "function normalizeAllowedHost(entry: string): string",
-          "jsdoc": "Lower-case and strip any explicit port from an `allowedHosts` entry so the comparison stays hostname-only. Users who configured `allowedHosts: ['example.atlassian.net:443']` still get a match for the implicit-port URL `https://example.atlassian.net/...`."
+          "jsdoc": "Lower-case an `allowedHosts` entry for case-insensitive comparison. Port-bearing entries are rejected up front by `validateAllowedHosts` (config-resolution side) so this normalisation is a plain lowercase — see PR review hardening of [[B034]]."
+        },
+        {
+          "name": "renderOriginForError",
+          "kind": "function",
+          "line": 108,
+          "signature": "function renderOriginForError(path: string): string",
+          "jsdoc": "Render a logging-safe `scheme://host` view of an absolute URL string. Used by the http-downgrade validation error so a userinfo segment (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path` does not get echoed verbatim into log sinks when the thrown error is caught and serialised."
         },
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 95,
+          "line": 117,
           "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 97,
+          "line": 119,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 101,
+          "line": 123,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 122,
+          "line": 144,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -4761,14 +4780,14 @@
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 143,
+          "line": 165,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 170,
+          "line": 192,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4776,7 +4795,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 198,
+          "line": 220,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4784,7 +4803,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 210,
+          "line": 232,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
@@ -4921,21 +4940,34 @@
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
+          "name": "RETRY_DELAY_HARD_CEILING",
+          "kind": "variable",
+          "line": 154,
+          "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
+          "jsdoc": "Hard ceiling applied when `maxRetryDelay` is non-finite. `resolveConfig` rejects non-finite values up front (PR review of [[B023]]) — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. unit tests that build a config literal directly). Without it, `Math.min(x, Infinity)` degenerates to `x`, re-opening the unbounded-Retry-After DoS."
+        },
+        {
+          "name": "effectiveMaxDelay",
+          "kind": "function",
+          "line": 156,
+          "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
+        },
+        {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 147,
+          "line": 162,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 169,
+          "line": 185,
           "signature": "async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>"
         },
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 194,
+          "line": 210,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -5114,7 +5146,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 160,
+          "line": 166,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -5122,7 +5154,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 192,
+          "line": 200,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -5130,7 +5162,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 203,
+          "line": 211,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -5138,7 +5170,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 218,
+          "line": 226,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."
@@ -6863,7 +6895,7 @@
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 177,
+          "line": 185,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],

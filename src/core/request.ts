@@ -23,12 +23,13 @@ import { ValidationError } from './errors.js';
  * responsible for the leading slash. Query values of `undefined` are dropped
  * so optional flags do not emit empty `?foo=` pairs.
  *
- * Host comparison is **hostname-only** and case-insensitive: the port and
- * userinfo are ignored, so `example.atlassian.net:443` matches an
- * `allowedHosts` entry of `example.atlassian.net` (and vice versa). The
- * trade-off is intentional — Atlassian's cloud surface always uses the
- * implicit 443 / 80 ports, and authoring `allowedHosts` with explicit ports
- * was a recurring source of confusion in the original implementation.
+ * Host comparison is **hostname-only** and case-insensitive: the absolute
+ * URL's `hostname` (no port, no userinfo) is matched against each entry in
+ * `allowedHosts`. Port-bearing entries are REJECTED at config-resolution
+ * time (PR review of [[B034]]) so an entry like `host:443` cannot silently
+ * authorize `host:8443` — Atlassian Cloud always uses the implicit 443, and
+ * forcing the policy to be port-less avoids broadening a port-scoped
+ * allowlist into a host-wide one.
  *
  * @param allowedHosts - When provided, absolute paths must resolve to one of
  *   these hosts (case-insensitive, hostname-only). When omitted, no host
@@ -46,8 +47,11 @@ export function buildUrl(
   const isAbsolute = isHttps || isHttp;
 
   if (isHttp && allowedHosts !== undefined) {
+    // PR review: render only scheme + host so a userinfo / query string /
+    // bearer token smuggled into `path` does not leak into logs aggregators
+    // when the validation error is caught and logged.
     throw new ValidationError(
-      `Refusing to send request to ${path}: absolute http:// URLs would downgrade ` +
+      `Refusing to send request to ${renderOriginForError(path)}: absolute http:// URLs would downgrade ` +
         `the auth header to plaintext transport. Use https:// or a relative path.`,
     );
   }
@@ -81,15 +85,33 @@ function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): v
 }
 
 /**
- * Lower-case and strip any explicit port from an `allowedHosts` entry so the
- * comparison stays hostname-only. Users who configured `allowedHosts:
- * ['example.atlassian.net:443']` still get a match for the implicit-port
- * URL `https://example.atlassian.net/...`.
+ * Lower-case an `allowedHosts` entry for case-insensitive comparison.
+ * Port-bearing entries are rejected up front by `validateAllowedHosts`
+ * (config-resolution side) so this normalisation is a plain lowercase —
+ * see PR review hardening of [[B034]].
  */
 function normalizeAllowedHost(entry: string): string {
-  const lower = entry.toLowerCase();
-  const colon = lower.indexOf(':');
-  return colon >= 0 ? lower.slice(0, colon) : lower;
+  return entry.toLowerCase();
+}
+
+/**
+ * Render a logging-safe `scheme://host` view of an absolute URL string.
+ * Used by the http-downgrade validation error so a userinfo segment
+ * (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path`
+ * does not get echoed verbatim into log sinks when the thrown error is
+ * caught and serialised.
+ *
+ * Only ever called with an `http://` path (the https branch above doesn't
+ * reach this code path), so the malformed-input fallback uses the literal
+ * `http://` prefix.
+ */
+function renderOriginForError(path: string): string {
+  try {
+    const parsed = new URL(path);
+    return `${parsed.protocol}//${parsed.hostname}`;
+  } catch {
+    return 'http://<unparseable>';
+  }
 }
 
 const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);

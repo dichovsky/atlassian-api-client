@@ -292,6 +292,40 @@ describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(b).toBe(a);
   });
+
+  it('B022 (PR review): when caller passes a stale lowercase `authorization`, the LATER-spread `Authorization` wins', async () => {
+    // OAuth refresh / multi-tenant middlewares typically do
+    // `{ ...caller.headers, Authorization: '<fresh>' }`. The first-match
+    // implementation hashed the stale caller value and made two distinct
+    // identities collide in the cache. We now take the LAST occurrence so
+    // the trusted injected token partitions correctly.
+    let counter = 0;
+    const next = vi.fn(
+      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ n: ++counter }),
+    );
+    const mw = createCacheMiddleware();
+
+    // Tenant A's request: stale lowercase first, fresh canonical second.
+    const a = await mw(
+      makeOpts({
+        headers: { authorization: 'Bearer STALE', Authorization: 'Bearer freshA' },
+      }),
+      next,
+    );
+    // Tenant B's request: same stale value (collision under first-match!),
+    // different fresh token. Must NOT serve A's cached response.
+    const b = await mw(
+      makeOpts({
+        headers: { authorization: 'Bearer STALE', Authorization: 'Bearer freshB' },
+      }),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(a.data).toEqual({ n: 1 });
+    expect(b.data).toEqual({ n: 2 });
+  });
 });
 
 describe('createCacheMiddleware option validation', () => {

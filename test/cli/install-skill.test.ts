@@ -810,6 +810,39 @@ describe('runInstall — B030 symlink guard', () => {
       ),
     ).not.toThrow();
   });
+
+  it('B030 (PR review): refuses when the install target itself is a symbolic link', async () => {
+    // resolveTargetRealpath would otherwise adopt the link's destination as
+    // the trusted root, so every subsequent containment check would happily
+    // clear writes inside the attacker-chosen directory. Refusing the
+    // symlinked target keeps the canonical install root anchored to the
+    // path the user actually configured.
+    const realDir = join(tmpRoot, 'real-elsewhere');
+    mkdirSync(realDir, { recursive: true });
+    const target = join(tmpRoot, 'symlinked-target');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(realDir, target);
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/target itself is a symbolic link/);
+
+    // --force must NOT bypass — adopting the symlink under --force would
+    // be a footgun for the exact attack the guard prevents.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: true,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/target itself is a symbolic link/);
+  });
 });
 
 // ─── helpers ────────────────────────────────────────────────────────────────

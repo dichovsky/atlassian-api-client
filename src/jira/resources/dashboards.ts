@@ -168,6 +168,14 @@ export class DashboardsResource {
 
       if (page.values.length === 0) return;
       if (page.total !== undefined && startAt + maxResults >= page.total) return;
+      // PR review: short-page termination. When the server returns fewer
+      // dashboards than the caller-supplied `maxResults` AND omits `total`,
+      // the existing `total` check above never fires and we'd keep paging
+      // until `maxPages` (up to 10,000 wasted requests). Compare against the
+      // caller's `maxResults` — NOT `page.maxResults` (see [[B037]]) — so a
+      // hostile or buggy server cannot drive a short-page false-positive by
+      // echoing back a `maxResults` value that doesn't match what was sent.
+      if (page.values.length < maxResults) return;
 
       startAt += maxResults;
     }

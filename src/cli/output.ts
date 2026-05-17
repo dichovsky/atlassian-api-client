@@ -76,7 +76,15 @@ export function printOutput(data: unknown, format: OutputFormat): void {
 }
 
 function printJson(data: unknown): void {
-  process.stdout.write(JSON.stringify(data, null, 2) + '\n');
+  // PR review: `JSON.stringify` only escapes C0 controls (0x00–0x1F),
+  // backslash and double quote. DEL (0x7F) and C1 bytes (0x80–0x9F) are
+  // emitted RAW, so `--format json` on a TTY would still render
+  // server-controlled terminal escapes from issue/page bodies, defeating the
+  // B027/B032 mitigation that already protects table/minimal output. Route
+  // the serialised string through `sanitizeForTerminal` when stdout is a
+  // TTY so DEL and C1 are escaped as `\xNN` like every other output path.
+  const serialised = JSON.stringify(data, null, 2);
+  process.stdout.write(sanitizeForTerminal(serialised, stdoutIsTty()) + '\n');
 }
 
 function printTable(data: unknown): void {

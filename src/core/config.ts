@@ -43,14 +43,16 @@ function hostMatchesDefaultAllowlist(hostname: string): boolean {
 }
 
 /**
- * Strip any explicit port from a host entry so the comparison is
- * hostname-only. Mirrors {@link buildUrl}'s normalisation on the request
- * side so users don't have to think about port matching.
+ * Lower-case an `allowedHosts` entry for hostname comparison. Port-bearing
+ * entries are rejected up front by {@link validateAllowedHosts} (PR review:
+ * silently stripping the port would let an allowlist of `host:443`
+ * authorize `host:8443`, broadening a port-scoped policy into a host-wide
+ * one), so this normalisation is a plain lowercase. {@link buildUrl}'s
+ * request-side check compares `url.hostname` (also port-less) for the same
+ * reason.
  */
 function normalizeAllowedHost(entry: string): string {
-  const lower = entry.toLowerCase();
-  const colon = lower.indexOf(':');
-  return colon >= 0 ? lower.slice(0, colon) : lower;
+  return entry.toLowerCase();
 }
 
 /**
@@ -155,17 +157,26 @@ function validateConfig(config: ClientConfig): void {
   }
 
   if (config.maxRetryDelay !== undefined) {
-    if (typeof config.maxRetryDelay !== 'number' || config.maxRetryDelay <= 0) {
-      throw new ValidationError('maxRetryDelay must be a positive number');
+    // Must be finite: the retry loop clamps server-supplied Retry-After against
+    // this ceiling (B023). With `Infinity`, the clamp degenerates and a hostile
+    // `Retry-After: 9999999999` parks the calling process for years again.
+    if (
+      typeof config.maxRetryDelay !== 'number' ||
+      !Number.isFinite(config.maxRetryDelay) ||
+      config.maxRetryDelay <= 0
+    ) {
+      throw new ValidationError('maxRetryDelay must be a finite positive number');
     }
   }
 }
 
 /**
- * Reject characters that don't belong in a bare hostname / port grammar:
- * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), and the
- * structural URL chars `/ ? # @ \`. Stops a typo or smuggled control byte
- * from creating a surprising "match by similarity" later in `buildUrl`.
+ * Reject characters that don't belong in a bare hostname grammar:
+ * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural
+ * URL chars `/ ? # @ \`, and `:` (so port-bearing entries are rejected
+ * explicitly instead of silently broadening — see PR review of [[B034]]).
+ * Stops a typo or smuggled control byte from creating a surprising
+ * "match by similarity" later in `buildUrl`.
  */
 function isInvalidAllowedHostChar(code: number): boolean {
   if (code <= 0x20) return true;
@@ -173,6 +184,7 @@ function isInvalidAllowedHostChar(code: number): boolean {
   if (code >= 0x80 && code <= 0x9f) return true;
   return (
     code === 0x2f /* / */ ||
+    code === 0x3a /* : */ ||
     code === 0x3f /* ? */ ||
     code === 0x23 /* # */ ||
     code === 0x40 /* @ */ ||
@@ -192,7 +204,18 @@ function validateAllowedHosts(hosts: readonly string[]): void {
       throw new ValidationError('allowedHosts entries must be non-empty strings');
     }
     for (let i = 0; i < host.length; i++) {
-      if (isInvalidAllowedHostChar(host.charCodeAt(i))) {
+      const code = host.charCodeAt(i);
+      if (code === 0x3a /* : */) {
+        // Give a targeted error so the user understands WHY ports are
+        // rejected (rather than the generic "invalid char" message). The
+        // policy is documented on `ClientConfig.allowedHosts`.
+        throw new ValidationError(
+          `allowedHosts entry must not include a port: ${JSON.stringify(host)}. ` +
+            `Atlassian Cloud always uses the implicit 443; for non-default ports, ` +
+            `route via the host's normal name and rely on DNS / a proxy.`,
+        );
+      }
+      if (isInvalidAllowedHostChar(code)) {
         throw new ValidationError(
           `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${JSON.stringify(host)}`,
         );

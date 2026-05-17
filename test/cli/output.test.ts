@@ -480,4 +480,49 @@ describe('printOutput — B027 TTY sanitisation', () => {
       }
     }
   });
+
+  it('PR review of B027/B032: sanitises DEL/C1 bytes in JSON output when stdout is a TTY', () => {
+    // `JSON.stringify` only escapes C0 (0x00-0x1F), backslash, and quote.
+    // DEL (0x7F) and C1 bytes (0x80-0x9F) are emitted RAW, so `--format
+    // json` on a TTY would still render server-controlled terminal escapes,
+    // defeating the mitigation that protects table/minimal output.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      const csi = String.fromCharCode(0x9b); // C1 CSI — not escaped by JSON.stringify
+      const del = String.fromCharCode(0x7f); // DEL — not escaped by JSON.stringify
+      const data = { summary: `before${csi}pwned${del}end` };
+      printOutput(data, 'json');
+      const all = (stdoutWrite.mock.calls as unknown[][]).map((c) => c[0] as string).join('');
+      expect(all).not.toContain(csi);
+      expect(all).not.toContain(del);
+      expect(all).toContain('\\x9B');
+      expect(all).toContain('\\x7F');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('PR review of B027/B032: JSON output passes through unchanged when stdout is NOT a TTY (log fidelity)', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: false, configurable: true });
+    try {
+      const data = { summary: 'abc' };
+      printOutput(data, 'json');
+      const written = (stdoutWrite.mock.calls as unknown[][])[0]?.[0] as string;
+      // When piped to a file / another process, preserve the raw bytes so
+      // logs stay faithful to the wire content.
+      expect(written).toBe(JSON.stringify(data, null, 2) + '\n');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
 });
