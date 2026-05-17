@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "fd014041f9abb39a497aac912e34e217ec06409df8cb67159f11b749a71b061f",
+  "sourceHash": "bbe9caf9e5250710f2325fe4f53df97381ca7346b68c24f49f321a8e0400e6ca",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -146,7 +146,7 @@
       "name": "CacheOptions",
       "kind": "interface",
       "file": "src/core/cache.ts",
-      "line": 5,
+      "line": 6,
       "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
       "jsdoc": "Options for the response caching middleware.",
       "typeOnly": true
@@ -781,7 +781,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 186,
+      "line": 203,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -790,7 +790,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 201,
+      "line": 218,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -919,7 +919,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 175,
+      "line": 192,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -1236,7 +1236,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 13,
+      "line": 14,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -1244,7 +1244,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 39,
+      "line": 40,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -1300,7 +1300,7 @@
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
-      "line": 20,
+      "line": 67,
       "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
       "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
     },
@@ -1412,59 +1412,59 @@
         {
           "name": "SKILL_NAME",
           "kind": "variable",
-          "line": 7,
+          "line": 17,
           "exported": true,
           "signature": "export const SKILL_NAME = 'atlassian-api-client-cli';"
         },
         {
           "name": "InstallSkillOptions",
           "kind": "interface",
-          "line": 9,
+          "line": 19,
           "exported": true,
           "signature": "export interface InstallSkillOptions { readonly target: string; readonly force: boolean; readonly dryRun: boolean; reado…"
         },
         {
           "name": "InstallSkillResult",
           "kind": "interface",
-          "line": 16,
+          "line": 26,
           "exported": true,
           "signature": "export interface InstallSkillResult { readonly action: 'copied' | 'noop-same-version' | 'printed' | 'dry-run'; readonly …"
         },
         {
           "name": "InstallSkillError",
           "kind": "class",
-          "line": 24,
+          "line": 34,
           "exported": true,
           "signature": "export class InstallSkillError extends Error",
           "members": [
             {
               "name": "exitCode",
               "kind": "property",
-              "line": 25
+              "line": 35
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 36
             }
           ]
         },
         {
           "name": "FilesystemDeps",
           "kind": "interface",
-          "line": 33,
+          "line": 43,
           "signature": "interface FilesystemDeps { readonly readFile: (path: string) => string; readonly writeFile: (path: string, content: stri…"
         },
         {
           "name": "realFs",
           "kind": "variable",
-          "line": 42,
+          "line": 71,
           "signature": "const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => writeFile…"
         },
         {
           "name": "resolveSkillSource",
           "kind": "function",
-          "line": 52,
+          "line": 101,
           "exported": true,
           "signature": "export function resolveSkillSource(moduleUrl: string): string",
           "jsdoc": "Resolve the bundled skill source directory relative to this module."
@@ -1472,7 +1472,7 @@
         {
           "name": "resolvePackageVersion",
           "kind": "function",
-          "line": 59,
+          "line": 108,
           "exported": true,
           "signature": "export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string",
           "jsdoc": "Resolve the package version by reading the nearest package.json."
@@ -1480,7 +1480,7 @@
         {
           "name": "resolveInstallTarget",
           "kind": "function",
-          "line": 79,
+          "line": 128,
           "exported": true,
           "signature": "export function resolveInstallTarget( options: Record<string, string | boolean | undefined>, env: NodeJS.ProcessEnv, cwd…",
           "jsdoc": "Resolve the install target based on flag combination."
@@ -1488,21 +1488,21 @@
         {
           "name": "expandTilde",
           "kind": "function",
-          "line": 98,
+          "line": 147,
           "signature": "function expandTilde(input: string, home: string): string",
           "jsdoc": "Expand a leading `~` or `~/` in a path to the resolved home directory."
         },
         {
           "name": "listFilesRecursive",
           "kind": "function",
-          "line": 105,
+          "line": 154,
           "signature": "function listFilesRecursive(root: string, fs: FilesystemDeps): string[]",
           "jsdoc": "List every file path under a directory, recursively, relative to the root."
         },
         {
           "name": "stampVersion",
           "kind": "function",
-          "line": 123,
+          "line": 172,
           "exported": true,
           "signature": "export function stampVersion(content: string, version: string): string",
           "jsdoc": "Stamp the destination SKILL.md frontmatter `version:` with the given value."
@@ -1510,7 +1510,7 @@
         {
           "name": "readSkillVersion",
           "kind": "function",
-          "line": 137,
+          "line": 186,
           "exported": true,
           "signature": "export function readSkillVersion(content: string): string | null",
           "jsdoc": "Read the version field from a SKILL.md frontmatter string."
@@ -1518,28 +1518,42 @@
         {
           "name": "runInstall",
           "kind": "function",
-          "line": 145,
+          "line": 194,
           "exported": true,
           "signature": "export function runInstall( source: string, version: string, options: InstallSkillOptions, fs: FilesystemDeps = realFs, …",
           "jsdoc": "Perform the install. Pure with respect to the injected filesystem."
         },
         {
+          "name": "resolveTargetRealpath",
+          "kind": "function",
+          "line": 325,
+          "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
+          "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
+        },
+        {
+          "name": "assertDestUnderTarget",
+          "kind": "function",
+          "line": 358,
+          "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
+          "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
+        },
+        {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 224,
+          "line": 388,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 231,
+          "line": 395,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 243,
+          "line": 407,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -1547,7 +1561,7 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 282,
+          "line": 446,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
@@ -1753,9 +1767,35 @@
       "path": "src/cli/output.ts",
       "symbols": [
         {
+          "name": "isTerminalControl",
+          "kind": "function",
+          "line": 17,
+          "signature": "function isTerminalControl(code: number): boolean",
+          "jsdoc": "Replace terminal-hijacking control bytes with their `\\xNN` literal so server-controlled content (issue summaries, comment bodies, error messages, etc.) cannot inject escape sequences that re-paint the operator's terminal (B027, B032)."
+        },
+        {
+          "name": "sanitizeForTerminal",
+          "kind": "function",
+          "line": 25,
+          "exported": true,
+          "signature": "export function sanitizeForTerminal(value: string, isTty: boolean): string"
+        },
+        {
+          "name": "stdoutIsTty",
+          "kind": "function",
+          "line": 55,
+          "signature": "function stdoutIsTty(): boolean"
+        },
+        {
+          "name": "stderrIsTty",
+          "kind": "function",
+          "line": 59,
+          "signature": "function stderrIsTty(): boolean"
+        },
+        {
           "name": "printOutput",
           "kind": "function",
-          "line": 4,
+          "line": 64,
           "exported": true,
           "signature": "export function printOutput(data: unknown, format: OutputFormat): void",
           "jsdoc": "Format and print data to stdout based on the selected format."
@@ -1763,34 +1803,34 @@
         {
           "name": "printJson",
           "kind": "function",
-          "line": 18,
+          "line": 78,
           "signature": "function printJson(data: unknown): void"
         },
         {
           "name": "printTable",
           "kind": "function",
-          "line": 22,
+          "line": 82,
           "signature": "function printTable(data: unknown): void"
         },
         {
           "name": "printMinimal",
           "kind": "function",
-          "line": 70,
+          "line": 143,
           "signature": "function printMinimal(data: unknown): void"
         },
         {
           "name": "extractId",
           "kind": "function",
-          "line": 86,
+          "line": 160,
           "signature": "function extractId(obj: unknown): string"
         },
         {
           "name": "printError",
           "kind": "function",
-          "line": 97,
+          "line": 171,
           "exported": true,
           "signature": "export function printError(message: string): void",
-          "jsdoc": "Print an error message to stderr."
+          "jsdoc": "Print an error message to stderr (sanitised for TTY safety — B032)."
         }
       ],
       "imports": [
@@ -3389,7 +3429,7 @@
         {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -3397,19 +3437,27 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 33,
+          "line": 34,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 55,
+          "line": 61,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
-          "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded because it is injected by the transport from the configured auth provider, not by callers — two dedupe candidates that differ only in the transport-injected Authorization should still collapse into one. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
+          "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
+        },
+        {
+          "name": "authIdentity",
+          "kind": "function",
+          "line": 79,
+          "signature": "function authIdentity(headers: RequestOptions['headers']): string",
+          "jsdoc": "Hash the request's Authorization header into a short identifier so the dedupe key partitions on auth identity without storing the raw credential. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough to make accidental collisions vanish in practice, narrow enough to keep the dedupe key compact. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
         }
       ],
       "imports": [
-        "./types.js"
+        "./types.js",
+        "node:crypto"
       ]
     },
     {
@@ -3418,7 +3466,7 @@
         {
           "name": "CacheOptions",
           "kind": "interface",
-          "line": 5,
+          "line": 6,
           "exported": true,
           "signature": "export interface CacheOptions { readonly maxSize?: number; readonly ttl?: number; readonly methods?: readonly HttpMethod…",
           "jsdoc": "Options for the response caching middleware."
@@ -3426,13 +3474,13 @@
         {
           "name": "CacheEntry",
           "kind": "interface",
-          "line": 27,
+          "line": 28,
           "signature": "interface CacheEntry { readonly response: ApiResponse<unknown>; readonly expiresAt: number; }"
         },
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 39,
+          "line": 40,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -3440,20 +3488,28 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 96,
+          "line": 97,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 104,
+          "line": 105,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
+        },
+        {
+          "name": "authScope",
+          "kind": "function",
+          "line": 131,
+          "signature": "function authScope(opts: RequestOptions): string",
+          "jsdoc": "Derive a stable, fixed-length identifier for the auth identity attached to a request. Returns the first 16 hex chars (64 bits) of the SHA-256 of the Authorization header — long enough to make accidental collisions vanish in practice, short enough that the in-memory cache key stays compact and the raw credential never lands inside any debug dump of it. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
         }
       ],
       "imports": [
         "./errors.js",
-        "./types.js"
+        "./types.js",
+        "node:crypto"
       ]
     },
     {
@@ -3484,9 +3540,36 @@
           "signature": "const DEFAULT_MAX_RETRY_DELAY = 30_000;"
         },
         {
+          "name": "DEFAULT_ATLASSIAN_HOST_SUFFIXES",
+          "kind": "variable",
+          "line": 14,
+          "signature": "const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [ '.atlassian.net', '.atlassian.com', '.jira-dev.com', '.jira…",
+          "jsdoc": "Built-in host suffixes accepted as Atlassian-managed targets. The check is a suffix-with-leading-dot match so `evil.example.atlassian.net.attacker.com` cannot bypass the allowlist by appending a legitimate suffix as a substring."
+        },
+        {
+          "name": "resolveAllowedHosts",
+          "kind": "function",
+          "line": 30,
+          "signature": "function resolveAllowedHosts( baseUrlHostname: string, configured: readonly string[] | undefined, ): readonly string[]",
+          "jsdoc": "Resolve the set of hosts that may receive the configured `Authorization` header. Returns the explicit allowlist when provided; otherwise returns just the `baseUrl` host so absolute paths can only target the configured tenant."
+        },
+        {
+          "name": "hostMatchesDefaultAllowlist",
+          "kind": "function",
+          "line": 40,
+          "signature": "function hostMatchesDefaultAllowlist(hostname: string): boolean"
+        },
+        {
+          "name": "normalizeAllowedHost",
+          "kind": "function",
+          "line": 50,
+          "signature": "function normalizeAllowedHost(entry: string): string",
+          "jsdoc": "Strip any explicit port from a host entry so the comparison is hostname-only. Mirrors {@link buildUrl}'s normalisation on the request side so users don't have to think about port matching."
+        },
+        {
           "name": "resolveConfig",
           "kind": "function",
-          "line": 20,
+          "line": 67,
           "exported": true,
           "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
           "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
@@ -3494,13 +3577,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 38,
+          "line": 88,
           "signature": "function validateConfig(config: ClientConfig): void"
+        },
+        {
+          "name": "isInvalidAllowedHostChar",
+          "kind": "function",
+          "line": 170,
+          "signature": "function isInvalidAllowedHostChar(code: number): boolean",
+          "jsdoc": "Reject characters that don't belong in a bare hostname / port grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), and the structural URL chars `/ ? # @ \\`. Stops a typo or smuggled control byte from creating a surprising \"match by similarity\" later in `buildUrl`."
+        },
+        {
+          "name": "validateAllowedHosts",
+          "kind": "function",
+          "line": 183,
+          "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 89,
+          "line": 204,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -3748,15 +3844,53 @@
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
         },
         {
+          "name": "MAX_ERROR_MESSAGE_LENGTH",
+          "kind": "variable",
+          "line": 204,
+          "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
+          "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
+        },
+        {
+          "name": "SEPARATOR",
+          "kind": "variable",
+          "line": 205,
+          "signature": "const SEPARATOR = '; ';"
+        },
+        {
+          "name": "CappedString",
+          "kind": "interface",
+          "line": 207,
+          "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
+        },
+        {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 199,
+          "line": 212,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
+        },
+        {
+          "name": "extractErrorMessageRaw",
+          "kind": "function",
+          "line": 218,
+          "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
+        },
+        {
+          "name": "joinWithCap",
+          "kind": "function",
+          "line": 246,
+          "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
+          "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
+        },
+        {
+          "name": "capLength",
+          "kind": "function",
+          "line": 281,
+          "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 222,
+          "line": 288,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -4580,41 +4714,61 @@
         {
           "name": "buildUrl",
           "kind": "function",
-          "line": 14,
+          "line": 38,
           "exported": true,
           "signature": "export function buildUrl( baseUrl: string, path: string, query?: Readonly<Record<string, string | number | boolean | und…",
           "jsdoc": "Resolve a request path against the configured base URL and apply query parameters."
         },
         {
+          "name": "assertHostAllowed",
+          "kind": "function",
+          "line": 72,
+          "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
+        },
+        {
+          "name": "normalizeAllowedHost",
+          "kind": "function",
+          "line": 89,
+          "signature": "function normalizeAllowedHost(entry: string): string",
+          "jsdoc": "Lower-case and strip any explicit port from an `allowedHosts` entry so the comparison stays hostname-only. Users who configured `allowedHosts: ['example.atlassian.net:443']` still get a match for the implicit-port URL `https://example.atlassian.net/...`."
+        },
+        {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 35,
+          "line": 95,
           "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 37,
+          "line": 97,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 41,
+          "line": 101,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 62,
+          "line": 122,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
         },
         {
+          "name": "FORBIDDEN_CALLER_HEADERS",
+          "kind": "variable",
+          "line": 143,
+          "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
+          "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
+        },
+        {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 89,
+          "line": 170,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4622,7 +4776,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 117,
+          "line": 198,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4630,7 +4784,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 129,
+          "line": 210,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
@@ -4775,13 +4929,13 @@
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 167,
+          "line": 169,
           "signature": "async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>"
         },
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 192,
+          "line": 194,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -4960,7 +5114,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 149,
+          "line": 160,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -4968,7 +5122,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 175,
+          "line": 192,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -4976,7 +5130,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 186,
+          "line": 203,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -4984,7 +5138,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 201,
+          "line": 218,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."
@@ -6702,9 +6856,15 @@
             {
               "name": "listAll",
               "kind": "method",
-              "line": 124
+              "line": 133
             }
           ]
+        },
+        {
+          "name": "DEFAULT_MAX_PAGES",
+          "kind": "variable",
+          "line": 177,
+          "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
       "imports": [

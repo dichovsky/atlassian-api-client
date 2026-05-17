@@ -1,4 +1,4 @@
-import type { Transport } from '../../core/types.js';
+import type { Transport, Logger } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
@@ -120,21 +120,58 @@ export class DashboardsResource {
     });
   }
 
-  /** Iterate over all dashboards across all result pages. */
-  async *listAll(params?: Omit<ListDashboardsParams, 'startAt'>): AsyncGenerator<Dashboard> {
+  /**
+   * Iterate over all dashboards across all result pages.
+   *
+   * Safety guards (B033): `maxPages` (default {@link DEFAULT_MAX_PAGES})
+   * bounds the iteration so a hostile server cannot loop the client forever
+   * by returning full pages with `total: undefined`. A single `logger.warn`
+   * fires once the page count crosses 80% of the cap. The existing
+   * empty-page and total-reached checks remain as the normal-path exit
+   * conditions.
+   */
+  async *listAll(
+    params?: Omit<ListDashboardsParams, 'startAt'>,
+    options?: { readonly maxPages?: number; readonly logger?: Logger },
+  ): AsyncGenerator<Dashboard> {
     let startAt = 0;
     const maxResults = params?.maxResults ?? 50;
     validatePageSize(maxResults, 'maxResults');
+
+    const maxPages = options?.maxPages ?? DEFAULT_MAX_PAGES;
+    if (!Number.isFinite(maxPages) || !Number.isInteger(maxPages) || maxPages <= 0) {
+      throw new RangeError(`maxPages must be a positive integer, got: ${maxPages}`);
+    }
+    // PR review: when `maxPages` is intentionally tiny (1 or 2), the 80%
+    // threshold collapses to "first page", which produces a noisy warning on
+    // every normal call. Disable the warning entirely below maxPages=3 so it
+    // remains useful only for the "you're approaching a real cap" case.
+    const warnThreshold = maxPages < 3 ? Number.POSITIVE_INFINITY : Math.ceil(maxPages * 0.8);
+    const logger = options?.logger;
+
+    let pageCount = 0;
+    let warned = false;
+
     while (true) {
       const page = await this.list({ ...params, startAt, maxResults });
       for (const item of page.values) yield item;
-      if (
-        page.values.length === 0 ||
-        (page.total !== undefined && startAt + maxResults >= page.total)
-      ) {
-        break;
+
+      pageCount += 1;
+      if (!warned && pageCount >= warnThreshold) {
+        logger?.warn('DashboardsResource.listAll: nearing maxPages limit', {
+          pageCount,
+          maxPages,
+        });
+        warned = true;
       }
+      if (pageCount >= maxPages) return;
+
+      if (page.values.length === 0) return;
+      if (page.total !== undefined && startAt + maxResults >= page.total) return;
+
       startAt += maxResults;
     }
   }
 }
+
+const DEFAULT_MAX_PAGES = 10_000;

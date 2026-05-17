@@ -326,6 +326,33 @@ describe('executeWithRetry', () => {
     }
   });
 
+  it('B023: caps unbounded server-controlled Retry-After at maxRetryDelay', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(Math, 'random').mockReturnValue(0); // no extra jitter
+      // A hostile or buggy 429 with Retry-After: 2147483647 (~317 years)
+      const err = new RateLimitError('rate limited', 2_147_483_647);
+      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+
+      const setSpy = vi.spyOn(globalThis, 'setTimeout');
+      const promise = executeWithRetry(operation, {
+        retries: 1,
+        retryDelay: 100,
+        maxRetryDelay: 30_000, // 30s ceiling
+      });
+      await vi.advanceTimersByTimeAsync(30_000);
+      await promise;
+
+      // Must be clamped to maxRetryDelay even though server asked for billions of seconds
+      expect(setSpy.mock.calls[0]?.[1]).toBe(30_000);
+      // And the raw value remains accessible on the error for callers that
+      // want to honour a longer wait explicitly.
+      expect(err.retryAfter).toBe(2_147_483_647);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('falls back to exponential backoff when RateLimitError has no retryAfter', async () => {
     vi.useFakeTimers();
     try {

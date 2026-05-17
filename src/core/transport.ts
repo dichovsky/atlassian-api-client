@@ -92,7 +92,12 @@ export class HttpTransport implements Transport {
   }
 
   private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
-    const url = buildUrl(this.config.baseUrl, options.path, options.query);
+    const url = buildUrl(
+      this.config.baseUrl,
+      options.path,
+      options.query,
+      this.config.allowedHosts,
+    );
     const sanitizedPath = sanitizePathForLogging(options.path);
     // Log only method + path to avoid query parameters (which may contain cursors or
     // filter values) landing in persistent log aggregators.

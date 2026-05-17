@@ -151,11 +151,13 @@ function getRetryDelay(
   maxRetryDelay: number,
 ): number {
   if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-    // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
-    // of clients hitting the same 429 wall don't resume in lockstep. The
-    // server-advertised floor is always preserved. When maxRetryDelay leaves
-    // headroom above that floor, cap only the added jitter to stay within it.
-    const base = error.retryAfter * 1000;
+    // B023: cap the server-advertised wait against maxRetryDelay so a hostile
+    // or misconfigured endpoint returning `Retry-After: 9999999999` cannot
+    // park the calling process for years. The full server-advertised value
+    // remains available on the thrown `RateLimitError.retryAfter` so callers
+    // that want to honour a longer wait can opt in explicitly.
+    const requested = error.retryAfter * 1000;
+    const base = Math.min(requested, maxRetryDelay);
     const jitter = Math.random() * retryDelay;
     const maxAdditionalDelay = Math.max(0, maxRetryDelay - base);
     return base + Math.min(jitter, maxAdditionalDelay);

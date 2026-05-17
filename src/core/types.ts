@@ -125,6 +125,17 @@ export interface ClientConfig {
   readonly retryDelay?: number;
   /** Maximum delay in ms between retries. Default: 30000. */
   readonly maxRetryDelay?: number;
+  /**
+   * Hosts the transport is allowed to send the configured `Authorization`
+   * header to. When omitted, only the `baseUrl` host is allowed and the
+   * `baseUrl` itself must end in a known Atlassian suffix
+   * (`.atlassian.net`, `.atlassian.com`, `.jira-dev.com`, `.jira.com`).
+   *
+   * Pass an explicit list for self-hosted, proxy, or test setups. The values
+   * are bare hosts (no scheme, no path) matched case-insensitively against
+   * the resolved URL host.
+   */
+  readonly allowedHosts?: readonly string[];
   /** Injectable transport (for testing or custom HTTP layers). */
   readonly transport?: Transport;
   /**
@@ -159,6 +170,12 @@ export interface ResolvedConfig {
   readonly retryDelay: number;
   /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /**
+   * Resolved set of hosts the transport is allowed to send the configured
+   * `Authorization` header to. Always populated — when the user did not
+   * provide `ClientConfig.allowedHosts`, this is just `[baseUrl.host]`.
+   */
+  readonly allowedHosts: readonly string[];
   /** Injectable fetch implementation; defaults to global `fetch`. */
   readonly fetch?: typeof fetch;
   /** Optional logger for observability. */

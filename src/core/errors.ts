@@ -196,27 +196,93 @@ export function createHttpError(
   }
 }
 
+/**
+ * Hard cap on the size of the assembled error message. Bounds the heap impact
+ * of a hostile error response that returns thousands of `errorMessages` (B032)
+ * and ensures the message remains usable in a single terminal scroll.
+ */
+const MAX_ERROR_MESSAGE_LENGTH = 1024;
+const SEPARATOR = '; ';
+
+interface CappedString {
+  readonly value: string;
+  readonly truncated: boolean;
+}
+
 function extractErrorMessage(body: unknown): string | undefined {
+  const raw = extractErrorMessageRaw(body);
+  if (raw === undefined) return undefined;
+  return raw.truncated ? raw.value.slice(0, MAX_ERROR_MESSAGE_LENGTH - 1) + '…' : raw.value;
+}
+
+function extractErrorMessageRaw(body: unknown): CappedString | undefined {
   if (body === null || body === undefined) return undefined;
-  if (typeof body === 'string') return body;
+  if (typeof body === 'string') return capLength(body);
   if (!isPlainObject(body)) return undefined;
 
   // Jira error format: { errorMessages: string[], errors: Record<string, string> }
   if (Array.isArray(body.errorMessages)) {
-    const stringMessages = body.errorMessages.filter(
-      (message): message is string => typeof message === 'string',
-    );
-    if (stringMessages.length > 0) {
-      return stringMessages.join('; ');
-    }
+    const joined = joinWithCap(body.errorMessages);
+    if (joined !== undefined) return joined;
   }
 
   // Generic: { message: string }
   if (typeof body.message === 'string') {
-    return body.message;
+    return capLength(body.message);
   }
 
   return undefined;
+}
+
+/**
+ * Join string entries with `'; '` while enforcing a running length cap, so a
+ * hostile response with thousands of `errorMessages` cannot allocate a
+ * multi-megabyte intermediate before truncation (PR-review hardening of B032).
+ * The returned `truncated` flag drives the outer `extractErrorMessage`
+ * ellipsis so callers can still see at a glance that content was elided.
+ *
+ * Non-string entries are filtered. Returns `undefined` when no strings remain.
+ */
+function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
+  let out = '';
+  let first = true;
+  let truncated = false;
+  let dropped = false;
+  for (const m of messages) {
+    if (typeof m !== 'string') continue;
+    if (first) {
+      if (m.length > MAX_ERROR_MESSAGE_LENGTH) {
+        out = m.slice(0, MAX_ERROR_MESSAGE_LENGTH);
+        truncated = true;
+      } else {
+        out = m;
+      }
+      first = false;
+    } else {
+      // Stop once the running total would exceed the cap.
+      if (out.length >= MAX_ERROR_MESSAGE_LENGTH) {
+        dropped = true;
+        break;
+      }
+      const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
+      const chunk = SEPARATOR + m;
+      if (chunk.length > remaining) {
+        out += chunk.slice(0, remaining);
+        truncated = true;
+      } else {
+        out += chunk;
+      }
+    }
+  }
+  if (first) return undefined;
+  return { value: out, truncated: truncated || dropped };
+}
+
+function capLength(value: string): CappedString {
+  if (value.length > MAX_ERROR_MESSAGE_LENGTH) {
+    return { value: value.slice(0, MAX_ERROR_MESSAGE_LENGTH), truncated: true };
+  }
+  return { value, truncated: false };
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
