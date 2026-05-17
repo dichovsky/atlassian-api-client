@@ -56,6 +56,28 @@ describe('buildUrl', () => {
     ).toThrow(ValidationError);
   });
 
+  it('B021 (PR review of round 3): rejects userinfo-confusion attack via relative @path', () => {
+    // CRITICAL — with a host-only baseUrl, a relative path starting with
+    // `@` concatenates to `https://allowed.atlassian.net@evil.example/x`.
+    // `new URL` parses the prefix as USERINFO and the real host as
+    // `evil.example`. The old `isAbsolute && allowedHosts !== undefined`
+    // gate skipped the allowlist check because `isAbsolute` was false for
+    // the relative path, so credentials would ship to the attacker.
+    // Allowlist enforcement now runs on the FINAL url.hostname regardless
+    // of `isAbsolute`.
+    const hostOnlyBase = 'https://allowed.atlassian.net';
+    expect(() =>
+      buildUrl(hostOnlyBase, '@evil.example/steal', undefined, ['allowed.atlassian.net']),
+    ).toThrow(/host is not on the allowedHosts list/);
+  });
+
+  it('B021 (PR review of round 3): allowlist still allows the legitimate baseUrl host for relative paths', () => {
+    // Regression: make sure the new "always check" rule doesn't break the
+    // normal relative-path flow. `/space` resolves to the configured host
+    // which is on the allowlist.
+    expect(() => buildUrl(base, '/space', undefined, ['example.atlassian.net'])).not.toThrow();
+  });
+
   it('B021 (PR review): renderOriginForError falls back to `<unparseable>` for malformed absolute URLs', () => {
     // `http://` alone (scheme but no host) is rejected by `new URL`. The
     // downgrade-error renderer must still produce a logging-safe message

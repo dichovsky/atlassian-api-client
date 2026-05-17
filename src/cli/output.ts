@@ -83,7 +83,15 @@ function printJson(data: unknown): void {
   // B027/B032 mitigation that already protects table/minimal output. Route
   // the serialised string through `sanitizeForTerminal` when stdout is a
   // TTY so DEL and C1 are escaped as `\xNN` like every other output path.
-  const serialised = JSON.stringify(data, null, 2);
+  //
+  // PR review (round 3): `JSON.stringify` can return `undefined` for
+  // top-level values of type `undefined`, function, or symbol. Without a
+  // guard, `sanitizeForTerminal(undefined, …).length` would throw before
+  // anything reaches stdout, replacing a graceful "undefined\n" with a
+  // crash. Fall back to the literal `"undefined"` rendering so callers
+  // get the same behaviour as the table/minimal formatters.
+  const raw = JSON.stringify(data, null, 2);
+  const serialised = raw === undefined ? 'undefined' : raw;
   process.stdout.write(sanitizeForTerminal(serialised, stdoutIsTty()) + '\n');
 }
 

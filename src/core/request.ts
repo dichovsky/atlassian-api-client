@@ -58,7 +58,18 @@ export function buildUrl(
 
   const url = isAbsolute ? new URL(path) : new URL(`${baseUrl}${path}`);
 
-  if (isAbsolute && allowedHosts !== undefined) {
+  // PR review (round 3): allowedHosts MUST be enforced on the FINAL
+  // constructed URL — NOT just for absolute paths. A relative `path`
+  // like `@evil.example/steal` concatenates to
+  // `https://allowed.atlassian.net@evil.example/steal`, and `new URL`
+  // parses the prefix as USERINFO and the actual host as `evil.example`.
+  // The old `isAbsolute && allowedHosts !== undefined` gate skipped the
+  // allowlist for that case, sending the `Authorization` header to the
+  // attacker-controlled host. Always assert on the final hostname.
+  //
+  // The hostname check below also catches the absolute-https case, so
+  // the explicit `isAbsolute` branch above is no longer needed.
+  if (allowedHosts !== undefined) {
     assertHostAllowed(url.hostname, allowedHosts);
   }
 

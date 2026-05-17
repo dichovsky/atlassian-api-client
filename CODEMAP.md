@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "d8a2d4cfc70e59b3acdd751478cc8a2d3dfce8ade81653da6fdb379f2a3f9ebb",
+  "sourceHash": "0a9b695384e49056c906acb3ad47c073602c201cc1054d674ad4f6a08cba9f2d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1236,7 +1236,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 14,
+      "line": 27,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -1244,7 +1244,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 40,
+      "line": 54,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -1412,59 +1412,66 @@
         {
           "name": "SKILL_NAME",
           "kind": "variable",
-          "line": 17,
+          "line": 20,
           "exported": true,
           "signature": "export const SKILL_NAME = 'atlassian-api-client-cli';"
         },
         {
           "name": "InstallSkillOptions",
           "kind": "interface",
-          "line": 19,
+          "line": 22,
           "exported": true,
           "signature": "export interface InstallSkillOptions { readonly target: string; readonly force: boolean; readonly dryRun: boolean; reado…"
         },
         {
           "name": "InstallSkillResult",
           "kind": "interface",
-          "line": 26,
+          "line": 29,
           "exported": true,
           "signature": "export interface InstallSkillResult { readonly action: 'copied' | 'noop-same-version' | 'printed' | 'dry-run'; readonly …"
         },
         {
           "name": "InstallSkillError",
           "kind": "class",
-          "line": 34,
+          "line": 37,
           "exported": true,
           "signature": "export class InstallSkillError extends Error",
           "members": [
             {
               "name": "exitCode",
               "kind": "property",
-              "line": 35
+              "line": 38
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 36
+              "line": 39
             }
           ]
         },
         {
           "name": "FilesystemDeps",
           "kind": "interface",
-          "line": 43,
+          "line": 46,
           "signature": "interface FilesystemDeps { readonly readFile: (path: string) => string; readonly writeFile: (path: string, content: stri…"
+        },
+        {
+          "name": "writeFileNoFollow",
+          "kind": "function",
+          "line": 92,
+          "signature": "function writeFileNoFollow(path: string, content: string): void",
+          "jsdoc": "Open `path` for writing in a way that REFUSES to follow a final-component symlink, closing the TOCTOU window between the pre-write `assertDestUnderTarget` check and the actual write (PR review of round 3)."
         },
         {
           "name": "realFs",
           "kind": "variable",
-          "line": 71,
+          "line": 125,
           "signature": "const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => writeFile…"
         },
         {
           "name": "resolveSkillSource",
           "kind": "function",
-          "line": 101,
+          "line": 155,
           "exported": true,
           "signature": "export function resolveSkillSource(moduleUrl: string): string",
           "jsdoc": "Resolve the bundled skill source directory relative to this module."
@@ -1472,7 +1479,7 @@
         {
           "name": "resolvePackageVersion",
           "kind": "function",
-          "line": 108,
+          "line": 162,
           "exported": true,
           "signature": "export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string",
           "jsdoc": "Resolve the package version by reading the nearest package.json."
@@ -1480,7 +1487,7 @@
         {
           "name": "resolveInstallTarget",
           "kind": "function",
-          "line": 128,
+          "line": 182,
           "exported": true,
           "signature": "export function resolveInstallTarget( options: Record<string, string | boolean | undefined>, env: NodeJS.ProcessEnv, cwd…",
           "jsdoc": "Resolve the install target based on flag combination."
@@ -1488,21 +1495,21 @@
         {
           "name": "expandTilde",
           "kind": "function",
-          "line": 147,
+          "line": 201,
           "signature": "function expandTilde(input: string, home: string): string",
           "jsdoc": "Expand a leading `~` or `~/` in a path to the resolved home directory."
         },
         {
           "name": "listFilesRecursive",
           "kind": "function",
-          "line": 154,
+          "line": 208,
           "signature": "function listFilesRecursive(root: string, fs: FilesystemDeps): string[]",
           "jsdoc": "List every file path under a directory, recursively, relative to the root."
         },
         {
           "name": "stampVersion",
           "kind": "function",
-          "line": 172,
+          "line": 226,
           "exported": true,
           "signature": "export function stampVersion(content: string, version: string): string",
           "jsdoc": "Stamp the destination SKILL.md frontmatter `version:` with the given value."
@@ -1510,7 +1517,7 @@
         {
           "name": "readSkillVersion",
           "kind": "function",
-          "line": 186,
+          "line": 240,
           "exported": true,
           "signature": "export function readSkillVersion(content: string): string | null",
           "jsdoc": "Read the version field from a SKILL.md frontmatter string."
@@ -1518,7 +1525,7 @@
         {
           "name": "runInstall",
           "kind": "function",
-          "line": 194,
+          "line": 268,
           "exported": true,
           "signature": "export function runInstall( source: string, version: string, options: InstallSkillOptions, fs: FilesystemDeps = realFs, …",
           "jsdoc": "Perform the install. Pure with respect to the injected filesystem."
@@ -1526,34 +1533,34 @@
         {
           "name": "resolveTargetRealpath",
           "kind": "function",
-          "line": 325,
+          "line": 413,
           "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
           "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
         },
         {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 375,
+          "line": 463,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 405,
+          "line": 493,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 412,
+          "line": 500,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 424,
+          "line": 512,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -1561,7 +1568,7 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 463,
+          "line": 551,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
@@ -1671,27 +1678,34 @@
         {
           "name": "buildClientConfig",
           "kind": "function",
-          "line": 28,
+          "line": 29,
           "exported": true,
           "signature": "export function buildClientConfig(globals: GlobalOptions): ClientConfig",
           "jsdoc": "Build a ClientConfig from resolved global options."
         },
         {
+          "name": "resolveAllowedHosts",
+          "kind": "function",
+          "line": 47,
+          "signature": "function resolveAllowedHosts(flag: string | boolean | undefined): readonly string[] | undefined",
+          "jsdoc": "Parse `--allowed-hosts host1,host2[,...]` (or `ATLASSIAN_ALLOWED_HOSTS`) into an array. Returns `undefined` when neither is set so the default Atlassian suffix allowlist applies. Empty / whitespace-only entries are dropped; further validation (bare hostname, no port, etc.) is the job of `resolveConfig`. PR review (round 3)."
+        },
+        {
           "name": "resolveValue",
           "kind": "function",
-          "line": 49,
+          "line": 58,
           "signature": "function resolveValue(flag: string | boolean | undefined, envKey: string): string"
         },
         {
           "name": "resolveAuthType",
           "kind": "function",
-          "line": 60,
+          "line": 69,
           "signature": "function resolveAuthType(flag: string | boolean | undefined): AuthType"
         },
         {
           "name": "resolveFormat",
           "kind": "function",
-          "line": 71,
+          "line": 80,
           "signature": "function resolveFormat(flag: string | boolean | undefined): OutputFormat"
         }
       ],
@@ -1712,25 +1726,25 @@
         {
           "name": "INSTALL_SKILL_HELP",
           "kind": "variable",
-          "line": 30,
+          "line": 35,
           "signature": "const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill\n\nUSAGE:\n  atlas install-skill [o…"
         },
         {
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
-          "line": 55,
+          "line": 60,
           "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages         list, get, create, …"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 71,
+          "line": 76,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 90,
+          "line": 95,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -1809,25 +1823,25 @@
         {
           "name": "printTable",
           "kind": "function",
-          "line": 90,
+          "line": 98,
           "signature": "function printTable(data: unknown): void"
         },
         {
           "name": "printMinimal",
           "kind": "function",
-          "line": 151,
+          "line": 159,
           "signature": "function printMinimal(data: unknown): void"
         },
         {
           "name": "extractId",
           "kind": "function",
-          "line": 168,
+          "line": 176,
           "signature": "function extractId(obj: unknown): string"
         },
         {
           "name": "printError",
           "kind": "function",
-          "line": 179,
+          "line": 187,
           "exported": true,
           "signature": "export function printError(message: string): void",
           "jsdoc": "Print an error message to stderr (sanitised for TTY safety — B032)."
@@ -1849,7 +1863,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 43,
+          "line": 49,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -1887,7 +1901,7 @@
         {
           "name": "ParsedCommand",
           "kind": "interface",
-          "line": 13,
+          "line": 20,
           "exported": true,
           "signature": "export interface ParsedCommand { readonly api: string; readonly resource: string; readonly action: string; readonly posi…"
         }
@@ -3429,7 +3443,7 @@
         {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 14,
+          "line": 27,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -3437,27 +3451,27 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 34,
+          "line": 47,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 61,
+          "line": 74,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         },
         {
           "name": "authIdentity",
           "kind": "function",
-          "line": 87,
+          "line": 100,
           "signature": "function authIdentity(headers: RequestOptions['headers']): string",
           "jsdoc": "Hash the request's Authorization header into a short identifier so the dedupe key partitions on auth identity without storing the raw credential. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough to make accidental collisions vanish in practice, narrow enough to keep the dedupe key compact. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
         },
         {
           "name": "pickAuthorizationHeader",
           "kind": "function",
-          "line": 93,
+          "line": 106,
           "signature": "function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined"
         }
       ],
@@ -3486,7 +3500,7 @@
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 40,
+          "line": 54,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -3494,27 +3508,27 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 97,
+          "line": 111,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 105,
+          "line": 119,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         },
         {
           "name": "authScope",
           "kind": "function",
-          "line": 139,
+          "line": 153,
           "signature": "function authScope(opts: RequestOptions): string",
           "jsdoc": "Derive a stable, fixed-length identifier for the auth identity attached to a request. Returns the first 16 hex chars (64 bits) of the SHA-256 of the Authorization header — long enough to make accidental collisions vanish in practice, short enough that the in-memory cache key stays compact and the raw credential never lands inside any debug dump of it. Returns the stable sentinel `'no-auth'` when no Authorization header is present."
         },
         {
           "name": "pickAuthorizationHeader",
           "kind": "function",
-          "line": 145,
+          "line": 159,
           "signature": "function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined"
         }
       ],
@@ -4734,45 +4748,45 @@
         {
           "name": "assertHostAllowed",
           "kind": "function",
-          "line": 76,
+          "line": 87,
           "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
         },
         {
           "name": "normalizeAllowedHost",
           "kind": "function",
-          "line": 93,
+          "line": 104,
           "signature": "function normalizeAllowedHost(entry: string): string",
           "jsdoc": "Lower-case an `allowedHosts` entry for case-insensitive comparison. Port-bearing entries are rejected up front by `validateAllowedHosts` (config-resolution side) so this normalisation is a plain lowercase — see PR review hardening of [[B034]]."
         },
         {
           "name": "renderOriginForError",
           "kind": "function",
-          "line": 108,
+          "line": 119,
           "signature": "function renderOriginForError(path: string): string",
           "jsdoc": "Render a logging-safe `scheme://host` view of an absolute URL string. Used by the http-downgrade validation error so a userinfo segment (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path` does not get echoed verbatim into log sinks when the thrown error is caught and serialised."
         },
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 117,
+          "line": 128,
           "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 119,
+          "line": 130,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 123,
+          "line": 134,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 144,
+          "line": 155,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -4780,14 +4794,14 @@
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 165,
+          "line": 176,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 192,
+          "line": 203,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4795,7 +4809,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 220,
+          "line": 231,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4803,7 +4817,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 232,
+          "line": 243,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
@@ -5055,14 +5069,21 @@
             {
               "name": "request",
               "kind": "method",
-              "line": 69
+              "line": 81
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 94
+              "line": 106
             }
           ]
+        },
+        {
+          "name": "assertOverrideBaseUrl",
+          "kind": "function",
+          "line": 186,
+          "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
+          "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
       ],
       "imports": [

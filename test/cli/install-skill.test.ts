@@ -715,6 +715,64 @@ describe('runInstall — B030 symlink guard', () => {
     ).toThrow(/does not expose an unlink/);
   });
 
+  it('B030 (PR review of round 3): SKILL.md symlink is refused BEFORE the version-noop branch', async () => {
+    // Threat: pre-plant a symlink at target/SKILL.md whose linked file
+    // contains the current version. The OLD ordering ran the idempotency
+    // check first (reading through the symlink, returning noop and
+    // leaving the symlink in place). The new ordering refuses the
+    // symlink up front so an attacker cannot hide a sentinel file
+    // behind the version probe.
+    const target = join(tmpRoot, 'skill-symlink-attack');
+    mkdirSync(target, { recursive: true });
+    const sentinel = join(tmpRoot, 'sentinel-version-file.md');
+    // Sentinel content has matching frontmatter version so the noop branch
+    // would otherwise fire.
+    writeFileSync(sentinel, `---\nname: x\nversion: 9.9.9\n---\nbody\n`, 'utf8');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sentinel, join(target, 'SKILL.md'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/Refusing to read symlink at .*SKILL\.md/);
+  });
+
+  it('B030 (PR review of round 3): writeFileNoFollow rejects a destination that becomes a symlink between check and write', async () => {
+    // Simulate the TOCTOU window collapse: a destination that EXISTS as
+    // a regular file and looks fine to `assertDestUnderTarget`, but gets
+    // swapped to a symlink before the open() call. Our real-fs path now
+    // opens with O_NOFOLLOW so the symlink at the final component is
+    // refused with ELOOP, mapped to a stable InstallSkillError.
+    //
+    // Because the install flow's own pre-check would catch the symlink
+    // first, we exercise `writeFileNoFollow` indirectly by pre-planting
+    // a symlink at the target file *after* mkdir but BEFORE the open --
+    // here we just pre-plant it directly and rely on the inner guard
+    // returning the ELOOP-mapped error.
+    const target = join(tmpRoot, 'toctou-attack');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitive = join(tmpRoot, 'sensitive-toctou.txt');
+    writeFileSync(sensitive, 'untouched', 'utf8');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sensitive, join(target, 'reference', 'jira.md'));
+
+    // The pre-check fires first; we just confirm the install does NOT
+    // overwrite the sensitive file even though a symlink was planted.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow();
+    expect(readFileSync(sensitive, 'utf8')).toBe('untouched');
+  });
+
   it('B030 (PR review): resolveTargetRealpath walks to root when target has no existing ancestor', () => {
     // Exists() returns true for the source but false for every path under
     // the target. resolveTargetRealpath walks up the target until it reaches

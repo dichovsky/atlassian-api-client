@@ -17,6 +17,10 @@ GLOBAL OPTIONS:
   --email, -e      Email for basic auth (or ATLASSIAN_EMAIL); not used for bearer
   --token, -t      API token (basic) or bearer token (or ATLASSIAN_API_TOKEN)
   --format, -f     Output format: json (default), table, minimal
+  --allowed-hosts  Comma-separated list of allowed hostnames for self-hosted
+                   or proxied deployments (or ATLASSIAN_ALLOWED_HOSTS). When
+                   omitted, only the default *.atlassian.{net,com} suffix
+                   allowlist applies. Entries are bare hostnames (no port).
   --help, -h       Show help
   --version        Show version
 
@@ -24,6 +28,7 @@ EXAMPLES:
   atlas confluence pages list --base-url https://myco.atlassian.net -e user@co.com -t TOKEN
   atlas jira issues get PROJ-123 --auth-type bearer --token OAUTH_TOKEN
   atlas jira search --jql "project = PROJ"
+  atlas confluence spaces list --base-url https://jira.internal.example --allowed-hosts jira.internal.example
   atlas install-skill --local
 `;
 

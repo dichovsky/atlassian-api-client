@@ -216,6 +216,37 @@ describe('HttpTransport', () => {
       expect(message).toContain('0.8.0');
     });
 
+    it('PR review of round 3: deprecated 2-arg overload rejects a baseUrl override outside allowedHosts', () => {
+      // Without this guard, a caller could pass a foreign host as the
+      // second arg and the transport would happily send relative-path
+      // requests there with the configured Authorization header.
+      // `buildUrl`'s allowedHosts check is the second line of defence,
+      // but the override deserves a clean construction-time error.
+      expect(
+        () =>
+          new HttpTransport(
+            { ...defaultConfig, baseUrl: INSTANCE_URL },
+            'https://evil.example/wiki/api/v2',
+          ),
+      ).toThrow(/not on the resolved allowedHosts list/);
+    });
+
+    it('PR review of round 3: deprecated 2-arg overload rejects non-HTTPS baseUrl override', () => {
+      expect(
+        () =>
+          new HttpTransport(
+            { ...defaultConfig, baseUrl: INSTANCE_URL },
+            'http://test.atlassian.net/wiki/api/v2',
+          ),
+      ).toThrow(/must use HTTPS/);
+    });
+
+    it('PR review of round 3: deprecated 2-arg overload rejects an unparseable baseUrl override', () => {
+      expect(
+        () => new HttpTransport({ ...defaultConfig, baseUrl: INSTANCE_URL }, 'not-a-url'),
+      ).toThrow(/is not a valid URL/);
+    });
+
     it('1-arg constructor does not emit the deprecation warn', () => {
       const logger = {
         debug: vi.fn(),

@@ -34,7 +34,21 @@ interface CacheEntry {
  * Creates a middleware that caches API responses in memory.
  *
  * Only responses for the configured HTTP methods (default: GET) are cached.
- * Each unique combination of method + path + query parameters is a separate cache key.
+ *
+ * Cache key composition (B022 + PR review of round 3):
+ * - an auth-identity scope derived from the in-flight `Authorization`
+ *   header (or the sentinel `'no-auth'`), so a shared transport never
+ *   serves Tenant A's cached body to Tenant B;
+ * - the request method;
+ * - the request path;
+ * - the query parameters (sorted, `undefined` values dropped).
+ *
+ * Headers OTHER than `Authorization` do NOT contribute to the cache key —
+ * a value variant like `Accept-Language: fr` will hit a cache entry stored
+ * by an `en` caller. If your endpoint varies by such a header, install a
+ * custom middleware that normalises it into the path or query before this
+ * middleware runs.
+ *
  * Expired entries are lazily removed on the next request for the same key.
  */
 export function createCacheMiddleware(options?: CacheOptions): Middleware {

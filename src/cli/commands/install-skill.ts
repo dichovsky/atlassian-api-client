@@ -1,6 +1,5 @@
 import {
   readFileSync,
-  writeFileSync,
   mkdirSync,
   statSync,
   lstatSync,
@@ -8,6 +7,10 @@ import {
   unlinkSync,
   readdirSync,
   existsSync,
+  openSync,
+  writeSync,
+  closeSync,
+  constants as fsConstants,
 } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,9 +71,60 @@ interface FilesystemDeps {
   readonly realpath?: (path: string) => string;
 }
 
+/**
+ * Open `path` for writing in a way that REFUSES to follow a final-component
+ * symlink, closing the TOCTOU window between the pre-write
+ * `assertDestUnderTarget` check and the actual write (PR review of round 3).
+ *
+ * `O_NOFOLLOW` is honoured on every POSIX platform we ship to; on Windows
+ * the flag is silently ignored by libuv and the OS-level NTFS reparse-point
+ * handling provides the analogous safety. The combination
+ * `WRONLY | CREAT | TRUNC | NOFOLLOW` matches the high-level
+ * `writeFileSync(path, content)` semantics for a non-symlink destination
+ * and turns into ELOOP when a symlink is present — at which point we map
+ * to the existing `InstallSkillError` shape so callers see a stable error.
+ *
+ * The residual TOCTOU window is now restricted to PARENT directory swaps
+ * (an attacker would need to swap an entire ancestor directory between
+ * the containment check and this open). That class is much harder to
+ * exploit and is documented on `runInstall`.
+ */
+function writeFileNoFollow(path: string, content: string): void {
+  // O_NOFOLLOW = refuse if the LAST component is a symlink.
+  // O_TRUNC ensures we overwrite atomically when the file already exists
+  //         (matches `writeFileSync` semantics for non-symlink targets).
+  const flags =
+    fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_TRUNC | fsConstants.O_NOFOLLOW;
+  let fd: number;
+  try {
+    fd = openSync(path, flags, 0o644);
+  } catch (err) {
+    /* c8 ignore start — only reachable via a genuine race-condition swap
+       between the pre-check (`assertDestUnderTarget`) and this open call,
+       which is the precise TOCTOU window this branch exists to close. The
+       happy path never hits it because the pre-check catches a symlink
+       (and unlinks under --force) before we reach openSync. */
+    const code = (err as { code?: unknown }).code;
+    if (code === 'ELOOP') {
+      throw new InstallSkillError(
+        `Refusing to follow symlink at ${path} during write (TOCTOU guard). ` +
+          `Remove the symlink and re-run.`,
+        2,
+      );
+    }
+    throw err;
+    /* c8 ignore stop */
+  }
+  try {
+    writeSync(fd, content, 0, 'utf8');
+  } finally {
+    closeSync(fd);
+  }
+}
+
 const realFs: FilesystemDeps = {
   readFile: (path) => readFileSync(path, 'utf8'),
-  writeFile: (path, content) => writeFileSync(path, content, 'utf8'),
+  writeFile: (path, content) => writeFileNoFollow(path, content),
   mkdir: (path) => mkdirSync(path, { recursive: true }),
   exists: (path) => existsSync(path),
   readDir: (path) => readdirSync(path),
@@ -190,7 +244,27 @@ export function readSkillVersion(content: string): string | null {
   return versionMatch ? (versionMatch[1] as string).trim() : null;
 }
 
-/** Perform the install. Pure with respect to the injected filesystem. */
+/**
+ * Perform the install. Pure with respect to the injected filesystem.
+ *
+ * Security model (B030 + PR review of round 3):
+ * - The install target itself MUST NOT be a symlink (refused up front by
+ *   `resolveTargetRealpath`).
+ * - Every destination file path is canonicalised and compared against
+ *   `targetRealpath` (`assertDestUnderTarget`) so a symlinked parent
+ *   component cannot redirect the write outside the install root.
+ * - The actual write uses `O_NOFOLLOW` (`writeFileNoFollow`) so a TOCTOU
+ *   swap of the FINAL path to a symlink between the check and the write
+ *   is rejected with ELOOP rather than followed.
+ *
+ * Residual risk: a local attacker with write access to a PARENT directory
+ * can theoretically swap an entire ancestor in the install path between
+ * `assertDestUnderTarget` and the open call. Closing this would require
+ * `openat()` with `O_DIRECTORY | O_NOFOLLOW` on each path component, which
+ * Node's high-level `fs` does not currently expose. For the install-skill
+ * threat model (the user's own `~/.claude/skills/` directory), this is
+ * considered out of scope.
+ */
 export function runInstall(
   source: string,
   version: string,
@@ -216,8 +290,30 @@ export function runInstall(
     };
   }
 
-  // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
+  // PR review (round 3): the B030 symlink/containment checks MUST run
+  // BEFORE the idempotency noop branch. If `target/SKILL.md` is a
+  // pre-planted symlink whose target file happens to contain the current
+  // version string, the noop branch would return early — leaving the
+  // hostile symlink in place. Resolving the target's canonical root up
+  // front also rejects a symlinked install target outright (see
+  // `resolveTargetRealpath`), which is the strongest guard we have.
+  const targetRealpath = resolveTargetRealpath(options.target, fs);
   const destSkillPath = join(options.target, 'SKILL.md');
+  if (!options.dryRun && fs.exists(destSkillPath)) {
+    // A pre-planted symlink at SKILL.md is rejected here even when the
+    // file behind it would have matched the version, so the noop branch
+    // never sees an attacker-controlled file.
+    if (fs.isSymlink?.(destSkillPath) === true && !options.force) {
+      throw new InstallSkillError(
+        `Refusing to read symlink at ${destSkillPath} for the idempotency check. ` +
+          `A pre-planted symlink would let an attacker hide a sentinel file behind ` +
+          `the version probe. Remove the symlink and re-run (or pass --force).`,
+        2,
+      );
+    }
+  }
+
+  // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
   if (!options.dryRun && fs.exists(destSkillPath)) {
     const existing = fs.readFile(destSkillPath);
     const existingVersion = readSkillVersion(existing);
@@ -247,14 +343,6 @@ export function runInstall(
       version,
     };
   }
-
-  // B030 containment: resolve the target once up front so every write can be
-  // checked against the same canonical root, even if a parent component of
-  // `options.target` was itself a symlink to something else. `options.target`
-  // may not exist yet at this point, so we resolve the deepest existing
-  // ancestor and rebuild the canonical path from there (matching the same
-  // strategy `assertDestUnderTarget` uses on the file side).
-  const targetRealpath = resolveTargetRealpath(options.target, fs);
 
   for (const rel of files) {
     const src = join(source, rel);

@@ -53,7 +53,19 @@ export class HttpTransport implements Transport {
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   constructor(config: ResolvedConfig, baseUrl: string);
   constructor(config: ResolvedConfig, baseUrl?: string) {
-    this.config = baseUrl !== undefined ? { ...config, baseUrl } : config;
+    if (baseUrl !== undefined) {
+      // PR review (round 3): the deprecated overload lets a caller swap
+      // out the validated `config.baseUrl` with an unchecked host. Every
+      // relative-path request would then attach `Authorization` to that
+      // host — `buildUrl`'s allowedHosts assertion does fire on the
+      // resolved URL (since round-3 hardening), but for a clean error
+      // message we validate the override up front against the SAME
+      // allowedHosts that `resolveConfig` already resolved.
+      assertOverrideBaseUrl(baseUrl, config.allowedHosts);
+      this.config = { ...config, baseUrl };
+    } else {
+      this.config = config;
+    }
     this.authProvider = createAuthProvider(this.config.auth);
     this.requestHandler = createMiddlewareChain(this.config.middleware ?? [], (opts) =>
       this.executeFetch(opts),
@@ -162,4 +174,32 @@ export class HttpTransport implements Transport {
 
     return buildApiResponse(response, data, rateLimit);
   }
+}
+
+/**
+ * Validate a baseUrl override (deprecated constructor overload) against
+ * the same `allowedHosts` policy `resolveConfig` already applied to
+ * `config.baseUrl`. Without this, an override could silently relocate
+ * every relative-path request to a foreign host with the configured
+ * `Authorization` header attached. PR review of round 3.
+ */
+function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    throw new ValidationError(`HttpTransport baseUrl override is not a valid URL: ${baseUrl}`);
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new ValidationError(`HttpTransport baseUrl override must use HTTPS: ${baseUrl}`);
+  }
+  const target = parsed.hostname.toLowerCase();
+  for (const allowed of allowedHosts) {
+    if (allowed.toLowerCase() === target) return;
+  }
+  throw new ValidationError(
+    `HttpTransport baseUrl override host "${parsed.hostname}" is not on the ` +
+      `resolved allowedHosts list [${allowedHosts.join(', ')}]. ` +
+      `Sending Authorization to an unlisted host would leak credentials.`,
+  );
 }

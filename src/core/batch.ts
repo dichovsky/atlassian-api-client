@@ -8,8 +8,21 @@ import type { Middleware, RequestOptions, ApiResponse } from './types.js';
  * HTTP call is made and all callers receive the same resolved (or rejected) response.
  * Once the shared promise settles, subsequent identical requests start a new call.
  *
- * The identity of a request is determined by its method, path, query parameters,
- * and serialised body.
+ * Identity composition (B024 + PR review of round 3):
+ * - an auth-identity scope derived from the `Authorization` header (the
+ *   sentinel `'no-auth'` when absent), so requests carrying different
+ *   tokens never coalesce — the loser would otherwise receive the
+ *   winner's authenticated response;
+ * - the request method;
+ * - the request path;
+ * - the query parameters (sorted, `undefined` values dropped);
+ * - the JSON-serialised body;
+ * - all non-`Authorization` headers (lower-cased and sorted, so callers
+ *   adding `X-Atlassian-Token` or `Accept-Language` stay partitioned).
+ *
+ * The raw `Authorization` value is intentionally NOT included in the
+ * non-auth headers slice — the hashed scope above already captures it
+ * without storing the credential in the dedupe key.
  */
 export function createBatchMiddleware(): Middleware {
   const inflight = new Map<string, Promise<ApiResponse<unknown>>>();

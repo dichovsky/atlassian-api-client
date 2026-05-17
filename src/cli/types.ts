@@ -8,6 +8,13 @@ export interface GlobalOptions {
   readonly email: string;
   readonly token: string;
   readonly format: OutputFormat;
+  /**
+   * Optional opt-in for self-hosted / proxy deployments. Comma-separated
+   * list of bare hostnames; surfaces as `ClientConfig.allowedHosts` so
+   * users outside the default Atlassian suffix allowlist can still call
+   * their tenant. PR review (round 3).
+   */
+  readonly allowedHosts?: readonly string[];
 }
 
 export interface ParsedCommand {

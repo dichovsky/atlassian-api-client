@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { printOutput, printError, sanitizeForTerminal } from '../../src/cli/output.js';
 
+// Control bytes constructed via String.fromCharCode so the test source
+// itself stays terminal-safe (PR review of round 3): if a diff or tool
+// dump prints this file to a TTY, the literal ESC/BEL bytes would be
+// interpreted by the terminal BEFORE the sanitiser under test runs.
+const ESC = String.fromCharCode(0x1b);
+const BEL = String.fromCharCode(0x07);
+
 describe('printOutput', () => {
   // Typed as a spy returning boolean, which matches mockReturnValue(true)
   let stdoutWrite: MockInstance<(...args: unknown[]) => boolean>;
@@ -39,6 +46,22 @@ describe('printOutput', () => {
 
       // Assert
       expect(stdoutWrite).toHaveBeenCalledWith(JSON.stringify(data, null, 2) + '\n');
+    });
+
+    it('PR review of round 3: prints the literal "undefined" for top-level undefined', () => {
+      // `JSON.stringify(undefined)` returns `undefined`. Without a guard,
+      // the sanitiser would read `.length` on it and crash. Falling back
+      // to the literal string matches what `JSON.stringify(undefined)`
+      // would print in a Node REPL and avoids a runtime exception.
+      printOutput(undefined, 'json');
+      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
+    });
+
+    it('PR review of round 3: prints the literal "undefined" for a top-level function', () => {
+      // Same problem class as `undefined`: `JSON.stringify(() => 1)`
+      // returns `undefined`.
+      printOutput(() => 1, 'json');
+      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
     });
   });
 
@@ -306,7 +329,7 @@ describe('printError', () => {
     const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY');
     Object.defineProperty(process.stderr, 'isTTY', { value: true, configurable: true });
     try {
-      const hostile = ']0;pwnedsystem update required';
+      const hostile = `${ESC}]0;pwned${BEL}system update required`;
 
       // Act
       printError(hostile);
@@ -314,8 +337,8 @@ describe('printError', () => {
       // Assert: the OSC escape bytes are rendered as escaped literals,
       // not as raw control bytes
       const calls = stderrWrite.mock.calls.map((c) => c[0] as string);
-      expect(calls[0]).not.toContain('');
-      expect(calls[0]).not.toContain('');
+      expect(calls[0]).not.toContain(`${ESC}`);
+      expect(calls[0]).not.toContain(`${BEL}`);
       expect(calls[0]).toContain('\\x1B');
       expect(calls[0]).toContain('\\x07');
     } finally {
@@ -332,7 +355,7 @@ describe('printError', () => {
     const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY');
     Object.defineProperty(process.stderr, 'isTTY', { value: false, configurable: true });
     try {
-      const hostile = ']0;pwned';
+      const hostile = `${ESC}]0;pwned${BEL}`;
 
       // Act
       printError(hostile);
@@ -368,7 +391,7 @@ describe('printOutput — B027 alignment with control-byte keys (PR review)', ()
     try {
       // Key is one literal control byte (sanitises to "\x1B", 4 visible chars)
       // and a value with three control bytes (sanitises to ~12 visible chars).
-      printOutput({ '': '' }, 'table');
+      printOutput({ [ESC]: `${ESC}${ESC}${ESC}` }, 'table');
       const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
       // Two spaces are the column gap. The key column must be padded to at
       // least the sanitised key length (4) so the key string is not shorter
@@ -392,7 +415,7 @@ describe('printOutput — B027 alignment with control-byte keys (PR review)', ()
       // Header key is one literal ESC; sanitises to 4 chars. Row value is a
       // single short string. The separator row uses the column width — must
       // not be shorter than the sanitised header.
-      printOutput([{ '': 'v' }], 'table');
+      printOutput([{ [ESC]: 'v' }], 'table');
       const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
       const header = calls[0] as string;
       const separator = calls[1] as string;
@@ -411,7 +434,7 @@ describe('printOutput — B027 alignment with control-byte keys (PR review)', ()
 
 describe('sanitizeForTerminal (B027/B032)', () => {
   it('replaces ESC, BEL, and other C0 controls with \\xNN literals when TTY', () => {
-    const input = ']0;titleok';
+    const input = `${ESC}]0;title${BEL}ok`;
     expect(sanitizeForTerminal(input, true)).toBe('\\x1B]0;title\\x07ok');
   });
 
@@ -425,7 +448,7 @@ describe('sanitizeForTerminal (B027/B032)', () => {
   });
 
   it('preserves all bytes when isTty is false', () => {
-    const input = ']0;title';
+    const input = `${ESC}]0;title${BEL}`;
     expect(sanitizeForTerminal(input, false)).toBe(input);
   });
 
@@ -451,9 +474,9 @@ describe('printOutput — B027 TTY sanitisation', () => {
     const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
     try {
-      printOutput([{ id: '1', summary: ']0;pwnedevil' }], 'table');
+      printOutput([{ id: '1', summary: `${ESC}]0;pwned${BEL}evil` }], 'table');
       const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
-      expect(all).not.toContain('');
+      expect(all).not.toContain(`${ESC}`);
       expect(all).toContain('\\x1B');
     } finally {
       if (ttyDescriptor) {
@@ -468,9 +491,9 @@ describe('printOutput — B027 TTY sanitisation', () => {
     const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
     try {
-      printOutput([{ id: '[2J[H1' }], 'minimal');
+      printOutput([{ id: `${ESC}[2J${ESC}[H1` }], 'minimal');
       const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
-      expect(all).not.toContain('');
+      expect(all).not.toContain(`${ESC}`);
       expect(all).toContain('\\x1B');
     } finally {
       if (ttyDescriptor) {
