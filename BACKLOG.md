@@ -444,8 +444,8 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Acceptance criteria:**
   - [ ] `resolveRef` validates the resolved name with `isValidIdentifier` and throws `Error('Invalid $ref target name: …')` otherwise.
   - [ ] Every `$ref` value is also checked to start with `#/components/schemas/` (or a documented prefix) to avoid out-of-spec references.
-  - [ ] Property names emitted via `JSON.stringify(propName)` are also rejected when they contain non-ASCII characters that could break out via Unicode line terminators (``, ``).
-  - [ ] Enum string values in `escapeStringLiteral` additionally escape `\n`, `\r`, ``, `` so they cannot break out of the single-quoted literal.
+  - [ ] Property names emitted via `JSON.stringify(propName)` are also rejected when they contain non-ASCII characters that could break out via Unicode line terminators (`, `).
+  - [ ] Enum string values in `escapeStringLiteral` additionally escape `\n`, `\r`, `, ` so they cannot break out of the single-quoted literal.
   - [ ] Unit test: spec with `$ref: '#/components/schemas/Foo; eval(1)//'` throws before emitting source.
   - [ ] Unit test: spec with enum value `"a\nb"` produces a syntactically valid TS string literal.
   - [ ] Fuzz test: 100 random refs / enum values either round-trip or throw, never emit broken source.
