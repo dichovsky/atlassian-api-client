@@ -18,12 +18,13 @@ Resource-by-resource flag matrices live in `reference/confluence.md` and `refere
 
 Always read auth from environment variables. **Never** pass `--token` or `--email` on the command line: they get logged to shell history, agent transcripts, and CI logs.
 
-| Env var               | Purpose                                       |
-| --------------------- | --------------------------------------------- |
-| `ATLASSIAN_BASE_URL`  | Tenant URL, e.g. `https://myco.atlassian.net` |
-| `ATLASSIAN_AUTH_TYPE` | `basic` (default) or `bearer`                 |
-| `ATLASSIAN_EMAIL`     | Email for basic auth; ignored for bearer      |
-| `ATLASSIAN_API_TOKEN` | API token (basic) or bearer token             |
+| Env var                   | Purpose                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `ATLASSIAN_BASE_URL`      | Tenant URL, e.g. `https://myco.atlassian.net`                                                                 |
+| `ATLASSIAN_AUTH_TYPE`     | `basic` (default) or `bearer`                                                                                 |
+| `ATLASSIAN_EMAIL`         | Email for basic auth; ignored for bearer                                                                      |
+| `ATLASSIAN_API_TOKEN`     | API token (basic) or bearer token                                                                             |
+| `ATLASSIAN_ALLOWED_HOSTS` | _Optional._ Comma-separated hostnames for self-hosted / proxied deployments. Equivalent to `--allowed-hosts`. |
 
 **Pre-flight check** before the first call in a session:
 
@@ -32,6 +33,20 @@ printenv ATLASSIAN_BASE_URL ATLASSIAN_API_TOKEN >/dev/null || echo "missing auth
 ```
 
 If `ATLASSIAN_BASE_URL`, `ATLASSIAN_API_TOKEN`, or (for basic auth) `ATLASSIAN_EMAIL` is unset, **stop and ask the user**. Do not retry, do not invent a tenant URL, do not paste a token the user mentioned in chat into a flag.
+
+### Self-hosted / non-Atlassian baseUrl
+
+By default the CLI only accepts `baseUrl` hostnames ending in `.atlassian.net`, `.atlassian.com`, `.jira-dev.com`, or `.jira.com` — this is a security boundary that prevents the configured `Authorization` header from being sent to an unrelated host. Calls with a non-Atlassian baseUrl will fail with `ValidationError: ... not on the default Atlassian host allowlist`.
+
+If the user is on a self-hosted Jira / Confluence or routes through a proxy, opt in with `--allowed-hosts` (or `ATLASSIAN_ALLOWED_HOSTS`). Entries are bare hostnames — no scheme, no port:
+
+```sh
+atlas confluence spaces list \
+  --base-url https://jira.internal.example \
+  --allowed-hosts jira.internal.example
+```
+
+The list must include the `baseUrl` host itself; multiple comma-separated entries are permitted for cross-host setups.
 
 ## Command shape
 
