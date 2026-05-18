@@ -89,7 +89,3 @@
 - `B035 [ ] P2 | Expand log-path credential redaction`
   - files: `src/core/request.ts`, `test/core/request.test.ts` | deps: none
   - do: broaden sensitive marker coverage, handle encoded delimiters, and share one keyword list across redactors.
-
-- `B037 [ ] P1 | Offset/search pagination server-value hardening`
-  - files: `src/core/pagination.ts`, `test/core/pagination.test.ts` | deps: none
-  - do: stop trusting server `maxResults` for cursor advancement, add forward-progress guards, and mirror fixes in `paginateSearch`.

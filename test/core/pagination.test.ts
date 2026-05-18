@@ -499,6 +499,233 @@ describe('paginateSearch', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Server-value hardening (B037): advancement and termination must use the
+// caller's requested pageSize, never the server-echoed maxResults.
+// ---------------------------------------------------------------------------
+describe('paginateOffset server-value hardening', () => {
+  it('advances by requested pageSize when server clamps maxResults lower', async () => {
+    // Caller asked for pageSize=100, server clamps to maxResults=50.
+    // Old behaviour: startAt += response.maxResults (50) → next request
+    // sends startAt=50, but the previous request already consumed 100 rows of
+    // server intent, so rows 50..99 would be re-fetched (overlap). New
+    // behaviour: advance by the requested pageSize so the second request
+    // resumes after the previously returned page.
+    const transport = new MockTransport();
+    const page1: OffsetPaginatedResponse<number> = {
+      values: Array.from({ length: 50 }, (_, i) => i),
+      startAt: 0,
+      maxResults: 50, // server clamped
+      total: 60,
+    };
+    const page2: OffsetPaginatedResponse<number> = {
+      values: Array.from({ length: 10 }, (_, i) => 50 + i),
+      startAt: 50,
+      maxResults: 50,
+      total: 60,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateOffset<number>(transport, '/items', {}, 100));
+
+    expect(items).toEqual(Array.from({ length: 60 }, (_, i) => i));
+    // Caller intent (pageSize=100) drives advancement; we should still see
+    // startAt move forward by the row count actually delivered (page length).
+    expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 50, maxResults: 100 });
+  });
+
+  it('does not skip rows when server echoes a larger maxResults than requested', async () => {
+    // Caller asked for pageSize=2, server returns 2 rows but maxResults=10.
+    // Old behaviour: startAt += 10 → page 2 starts at 10, skipping rows 2..9.
+    // New behaviour: advance by actual page length / requested pageSize.
+    const transport = new MockTransport();
+    const page1: OffsetPaginatedResponse<number> = {
+      values: [0, 1],
+      startAt: 0,
+      maxResults: 10,
+      total: 4,
+    };
+    const page2: OffsetPaginatedResponse<number> = {
+      values: [2, 3],
+      startAt: 2,
+      maxResults: 10,
+      total: 4,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateOffset<number>(transport, '/items', {}, 2));
+
+    expect(items).toEqual([0, 1, 2, 3]);
+    expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 2, maxResults: 2 });
+  });
+
+  it('uses requested pageSize for short-page termination, not server maxResults', async () => {
+    // values.length (2) < requested pageSize (5) → must terminate.
+    // Server-echoed maxResults (10) is irrelevant for control flow.
+    const transport = new MockTransport();
+    const page: OffsetPaginatedResponse<string> = {
+      values: ['a', 'b'],
+      startAt: 0,
+      maxResults: 10, // larger than requested pageSize
+    };
+    transport.respondWith(page);
+
+    const items = await collect(paginateOffset<string>(transport, '/items', {}, 5));
+    expect(items).toEqual(['a', 'b']);
+    expect(transport.calls).toHaveLength(1);
+  });
+
+  it('falls back to pageSize for short-page detection when server omits maxResults', async () => {
+    // Some Jira endpoints omit `maxResults` from the response entirely. The
+    // implementation must fall back to the caller's requested pageSize.
+    const transport = new MockTransport();
+    const page = {
+      values: ['a', 'b'],
+      startAt: 0,
+      // maxResults intentionally omitted
+    } as unknown as OffsetPaginatedResponse<string>;
+    transport.respondWith(page);
+
+    const items = await collect(paginateOffset<string>(transport, '/items', {}, 5));
+    expect(items).toEqual(['a', 'b']);
+    expect(transport.calls).toHaveLength(1);
+  });
+
+  it('throws PaginationError on a non-final page with empty values (forward-progress guard)', async () => {
+    // Server reports total=10 but returns an empty page mid-iteration.
+    // Without the guard, advancement by pageSize (0 rows added but pageSize
+    // bump) could still loop or — worse — terminate silently and lose
+    // visibility into a malformed server response. Surface it as an error.
+    const transport = new MockTransport();
+    const page1: OffsetPaginatedResponse<number> = {
+      values: [1, 2],
+      startAt: 0,
+      maxResults: 2,
+      total: 10,
+    };
+    const page2: OffsetPaginatedResponse<number> = {
+      values: [], // server lied: total says more, but nothing came back
+      startAt: 2,
+      maxResults: 2,
+      total: 10,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const gen = paginateOffset<number>(transport, '/items', {}, 2);
+    const items: number[] = [];
+    await expect(async () => {
+      for await (const item of gen) {
+        items.push(item);
+      }
+    }).rejects.toBeInstanceOf(PaginationError);
+
+    expect(items).toEqual([1, 2]);
+    expect(transport.calls).toHaveLength(2);
+  });
+});
+
+describe('paginateSearch server-value hardening', () => {
+  it('advances by requested pageSize when server clamps maxResults lower', async () => {
+    const transport = new MockTransport();
+    const page1: SearchPaginatedResponse<number> = {
+      issues: Array.from({ length: 50 }, (_, i) => i),
+      startAt: 0,
+      maxResults: 50, // clamped
+      total: 60,
+    };
+    const page2: SearchPaginatedResponse<number> = {
+      issues: Array.from({ length: 10 }, (_, i) => 50 + i),
+      startAt: 50,
+      maxResults: 50,
+      total: 60,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateSearch<number>(transport, '/search', { jql: 'x' }, 100));
+
+    expect(items).toEqual(Array.from({ length: 60 }, (_, i) => i));
+    expect(transport.calls[1]!.options.body).toMatchObject({ startAt: 50, maxResults: 100 });
+  });
+
+  it('does not skip rows when server echoes a larger maxResults than requested', async () => {
+    const transport = new MockTransport();
+    const page1: SearchPaginatedResponse<number> = {
+      issues: [0, 1],
+      startAt: 0,
+      maxResults: 10,
+      total: 4,
+    };
+    const page2: SearchPaginatedResponse<number> = {
+      issues: [2, 3],
+      startAt: 2,
+      maxResults: 10,
+      total: 4,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateSearch<number>(transport, '/search', { jql: 'x' }, 2));
+
+    expect(items).toEqual([0, 1, 2, 3]);
+    expect(transport.calls[1]!.options.body).toMatchObject({ startAt: 2, maxResults: 2 });
+  });
+
+  it('uses requested pageSize for short-page termination, not server maxResults', async () => {
+    const transport = new MockTransport();
+    const page: SearchPaginatedResponse<string> = {
+      issues: ['a', 'b'],
+      startAt: 0,
+      maxResults: 10,
+    };
+    transport.respondWith(page);
+
+    const items = await collect(paginateSearch<string>(transport, '/search', {}, 5));
+    expect(items).toEqual(['a', 'b']);
+    expect(transport.calls).toHaveLength(1);
+  });
+
+  it('falls back to pageSize for short-page detection when server omits maxResults', async () => {
+    const transport = new MockTransport();
+    const page = {
+      issues: ['a', 'b'],
+      startAt: 0,
+      // maxResults intentionally omitted
+    } as unknown as SearchPaginatedResponse<string>;
+    transport.respondWith(page);
+
+    const items = await collect(paginateSearch<string>(transport, '/search', {}, 5));
+    expect(items).toEqual(['a', 'b']);
+    expect(transport.calls).toHaveLength(1);
+  });
+
+  it('throws PaginationError on a non-final page with empty issues (forward-progress guard)', async () => {
+    const transport = new MockTransport();
+    const page1: SearchPaginatedResponse<number> = {
+      issues: [1, 2],
+      startAt: 0,
+      maxResults: 2,
+      total: 10,
+    };
+    const page2: SearchPaginatedResponse<number> = {
+      issues: [],
+      startAt: 2,
+      maxResults: 2,
+      total: 10,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const gen = paginateSearch<number>(transport, '/search', {}, 2);
+    const items: number[] = [];
+    await expect(async () => {
+      for await (const item of gen) {
+        items.push(item);
+      }
+    }).rejects.toBeInstanceOf(PaginationError);
+
+    expect(items).toEqual([1, 2]);
+    expect(transport.calls).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Safety guards: cursor non-advance + maxPages cap
 // ---------------------------------------------------------------------------
 describe('pagination safety guards', () => {
