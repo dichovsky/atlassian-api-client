@@ -313,8 +313,9 @@ interface OffsetPaginatedResponse<T> {
 }
 ```
 
-- Next page: `startAt += maxResults`
-- Done: `isLast === true` OR `startAt >= total` OR empty results OR a short page (`values.length < maxResults`). The short-page fallback uses the server's response-level `maxResults` (not the caller-requested page size) so servers that clamp the page size terminate cleanly even when `isLast` / `total` are omitted
+- Next page: `startAt += values.length` (rows actually delivered — never the server-echoed `maxResults`, which Jira may clamp or inflate)
+- Done: `isLast === true` OR `startAt + values.length >= total` OR `values.length < min(pageSize, serverMaxResults)` (short-page fallback). The short-page check combines caller intent (`pageSize`) with the server's response-level `maxResults` so servers that clamp the page size still terminate cleanly when `isLast` / `total` are omitted, without false-terminating on clamped-but-full pages
+- Forward-progress guard: throws `PaginationError` if the server returns an empty page mid-iteration while `total` (or `isLast === false`) still indicates more data, surfacing upstream truncation instead of silently returning a partial result set
 
 **Async iterators:**
 

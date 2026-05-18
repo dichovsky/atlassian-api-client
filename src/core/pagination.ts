@@ -236,6 +236,17 @@ export async function* paginateCursor<T>(
  *
  * Stops cleanly once {@link PaginateOptions.maxPages} pages have been fetched
  * (default 10000), emitting a single `warn` at the 80% threshold.
+ *
+ * **Server-value hardening:** advancement uses `values.length` (rows actually
+ * delivered), never the server-echoed `maxResults`. Jira may clamp `maxResults`
+ * below the requested `pageSize`, or echo a different value entirely; trusting
+ * it for cursor advancement would skip or duplicate rows. The server's
+ * `maxResults` is retained only as a short-page hint for early termination.
+ *
+ * **Forward-progress guard:** throws {@link PaginationError} if the server
+ * returns an empty page while still signalling more data (`isLast === false`
+ * or `total > startAt`). Without this, callers silently receive truncated
+ * datasets when the upstream API misbehaves.
  */
 export async function* paginateOffset<T>(
   transport: Transport,
@@ -271,7 +282,7 @@ export async function* paginateOffset<T>(
     };
 
     const response = await transport.request<OffsetPaginatedResponse<T>>(requestOptions);
-    const { values, isLast, total, maxResults } = response.data;
+    const { values, isLast, total, maxResults: serverMaxResults } = response.data;
 
     for (const item of values) {
       yield item;
@@ -289,17 +300,35 @@ export async function* paginateOffset<T>(
     );
     if (pageCount >= maxPages) return;
 
-    if (isLast === true || values.length === 0) {
+    if (values.length === 0) {
+      // Empty page mid-iteration. If the server explicitly says more data
+      // exists, that's a forward-progress failure — abort to surface the
+      // truncated dataset rather than silently returning partial results.
+      const moreExpected = isLast === false || (total !== undefined && startAt < total);
+      if (moreExpected) {
+        throw new PaginationError(
+          `paginateOffset: server returned empty page mid-iteration (startAt=${startAt}, total=${total}); aborting to prevent silent data loss`,
+        );
+      }
       done = true;
-    } else if (total !== undefined && startAt + maxResults >= total) {
+    } else if (isLast === true) {
       done = true;
-    } else if (values.length < maxResults) {
-      // Short page — the server returned fewer rows than its own maxResults
-      // for this page, so there is no further data even if the response
-      // omitted `isLast` and `total`. Avoids an unnecessary trailing request.
+    } else if (total !== undefined && startAt + values.length >= total) {
+      done = true;
+    } else if (values.length < Math.min(pageSize, serverMaxResults ?? pageSize)) {
+      // Short page — the page is shorter than both the caller's intent and
+      // the server's own capacity, so there is no further data even if the
+      // response omitted `isLast` and `total`. Using `min(pageSize,
+      // serverMaxResults)` avoids two failure modes: (1) terminating early
+      // when the server clamps `maxResults` below `pageSize` and returns a
+      // full clamped page, and (2) trusting a misleadingly large
+      // server-echoed `maxResults` when the caller-requested size was met.
       done = true;
     } else {
-      startAt += maxResults;
+      // Advance by the row count actually delivered. Never trust the
+      // server-echoed `maxResults` here — Jira may clamp it, causing skips
+      // or duplicates if used as the stride.
+      startAt += values.length;
     }
   }
 }
@@ -310,6 +339,13 @@ export async function* paginateOffset<T>(
  *
  * Stops cleanly once {@link PaginateOptions.maxPages} pages have been fetched
  * (default 10000), emitting a single `warn` at the 80% threshold.
+ *
+ * **Server-value hardening:** advancement uses `issues.length` (rows actually
+ * delivered), never the server-echoed `maxResults`. See {@link paginateOffset}
+ * for details — the same reasoning applies to search responses.
+ *
+ * **Forward-progress guard:** throws {@link PaginationError} if the server
+ * returns an empty page while `total` indicates more issues remain.
  */
 export async function* paginateSearch<T>(
   transport: Transport,
@@ -343,7 +379,7 @@ export async function* paginateSearch<T>(
     };
 
     const response = await transport.request<SearchPaginatedResponse<T>>(requestOptions);
-    const { issues, total, maxResults } = response.data;
+    const { issues, total, maxResults: serverMaxResults } = response.data;
 
     for (const item of issues) {
       yield item;
@@ -362,16 +398,25 @@ export async function* paginateSearch<T>(
     if (pageCount >= maxPages) return;
 
     if (issues.length === 0) {
+      // Empty page mid-iteration. If `total` says more remain, abort to
+      // prevent silently returning a truncated result set.
+      const moreExpected = total !== undefined && startAt < total;
+      if (moreExpected) {
+        throw new PaginationError(
+          `paginateSearch: server returned empty page mid-iteration (startAt=${startAt}, total=${total}); aborting to prevent silent data loss`,
+        );
+      }
       done = true;
-    } else if (total !== undefined && startAt + maxResults >= total) {
+    } else if (total !== undefined && startAt + issues.length >= total) {
       done = true;
-    } else if (issues.length < maxResults) {
-      // Short page — the server returned fewer rows than its own maxResults
-      // for this page, so there is no further data even if the response
-      // omitted `total`.
+    } else if (issues.length < Math.min(pageSize, serverMaxResults ?? pageSize)) {
+      // Short page — see paginateOffset for the rationale behind the
+      // min(pageSize, serverMaxResults) guard.
       done = true;
     } else {
-      startAt += maxResults;
+      // Advance by the row count actually delivered (never trust the
+      // server-echoed `maxResults`).
+      startAt += issues.length;
     }
   }
 }

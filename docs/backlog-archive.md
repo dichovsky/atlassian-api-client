@@ -81,3 +81,7 @@
 - `B036 [x] P0 | OAuth tokenEndpoint host allowlist`
   - shipped: branch `fix/b036-oauth-token-endpoint-allowlist` (2026-05-18)
   - result: OAuth refresh now validates token endpoint hosts against Atlassian defaults or explicit overrides before any HTTP call.
+
+- `B037 [x] P1 | Offset/search pagination server-value hardening`
+  - shipped: branch `fix/b037-pagination-server-value-hardening` (2026-05-18)
+  - result: `paginateOffset` / `paginateSearch` no longer trust the server-echoed `maxResults` for cursor advancement; advancement uses delivered row count, short-page detection uses `min(pageSize, serverMaxResults)`, and an empty mid-iteration page with `total`/`isLast` indicating more data now throws `PaginationError` instead of silently truncating.
