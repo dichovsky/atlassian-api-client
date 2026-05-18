@@ -1,22 +1,16 @@
 import type { ClientConfig, ResolvedConfig } from './types.js';
 import { ValidationError } from './errors.js';
+import {
+  DEFAULT_ATLASSIAN_API_HOST_SUFFIXES,
+  hostMatchesSuffix,
+  hostMatchesExact,
+  isInvalidBareHostChar,
+} from './atlassian-hosts.js';
 
 const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_RETRIES = 3;
 const DEFAULT_RETRY_DELAY = 1_000;
 const DEFAULT_MAX_RETRY_DELAY = 30_000;
-
-/**
- * Built-in host suffixes accepted as Atlassian-managed targets. The check is a
- * suffix-with-leading-dot match so `evil.example.atlassian.net.attacker.com`
- * cannot bypass the allowlist by appending a legitimate suffix as a substring.
- */
-const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [
-  '.atlassian.net',
-  '.atlassian.com',
-  '.jira-dev.com',
-  '.jira.com',
-];
 
 /**
  * Resolve the set of hosts that may receive the configured `Authorization`
@@ -25,7 +19,11 @@ const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [
  *
  * Defence-in-depth pair to {@link buildUrl}'s origin check: even if a caller
  * smuggles an absolute URL into `RequestOptions.path`, the transport refuses
- * to send credentials anywhere outside this list.
+ * to send credentials anywhere outside this list. The OAuth side has its own
+ * separate allowlist (see `OAuthRefreshConfig.allowedTokenEndpointHosts` —
+ * B036) because the credential model differs: this guards
+ * `Authorization: Basic/Bearer` for the tenant API surface, while the OAuth
+ * one guards `refresh_token` + `client_secret` for the central auth endpoint.
  */
 function resolveAllowedHosts(
   baseUrlHostname: string,
@@ -35,24 +33,6 @@ function resolveAllowedHosts(
     return [...configured];
   }
   return [baseUrlHostname];
-}
-
-function hostMatchesDefaultAllowlist(hostname: string): boolean {
-  const lower = hostname.toLowerCase();
-  return DEFAULT_ATLASSIAN_HOST_SUFFIXES.some((suffix) => lower.endsWith(suffix));
-}
-
-/**
- * Lower-case an `allowedHosts` entry for hostname comparison. Port-bearing
- * entries are rejected up front by {@link validateAllowedHosts} (PR review:
- * silently stripping the port would let an allowlist of `host:443`
- * authorize `host:8443`, broadening a port-scoped policy into a host-wide
- * one), so this normalisation is a plain lowercase. {@link buildUrl}'s
- * request-side check compares `url.hostname` (also port-less) for the same
- * reason.
- */
-function normalizeAllowedHost(entry: string): string {
-  return entry.toLowerCase();
 }
 
 /**
@@ -127,21 +107,17 @@ function validateConfig(config: ClientConfig): void {
     // set, but `baseUrl` itself points outside it — would silently leak
     // credentials on the very first request. Reject up front so the conflict
     // surfaces during construction rather than during a confused 4xx loop.
-    const baseUrlHostname = parsedUrl.hostname.toLowerCase();
-    const allowed = config.allowedHosts.some(
-      (entry) => normalizeAllowedHost(entry) === baseUrlHostname,
-    );
-    if (!allowed) {
+    if (!hostMatchesExact(parsedUrl.hostname, config.allowedHosts)) {
       throw new ValidationError(
         `baseUrl host "${parsedUrl.hostname}" is not present in allowedHosts ` +
           `[${config.allowedHosts.join(', ')}]. ` +
           `allowedHosts must include the baseUrl host so the client can actually call it.`,
       );
     }
-  } else if (!hostMatchesDefaultAllowlist(parsedUrl.hostname)) {
+  } else if (!hostMatchesSuffix(parsedUrl.hostname, DEFAULT_ATLASSIAN_API_HOST_SUFFIXES)) {
     throw new ValidationError(
       `baseUrl host "${parsedUrl.hostname}" is not on the default Atlassian host allowlist ` +
-        `(${DEFAULT_ATLASSIAN_HOST_SUFFIXES.join(', ')}). ` +
+        `(${DEFAULT_ATLASSIAN_API_HOST_SUFFIXES.join(', ')}). ` +
         `Pass ClientConfig.allowedHosts to opt in for self-hosted or proxy setups.`,
     );
   }
@@ -188,28 +164,6 @@ function validateConfig(config: ClientConfig): void {
   }
 }
 
-/**
- * Reject characters that don't belong in a bare hostname grammar:
- * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural
- * URL chars `/ ? # @ \`, and `:` (so port-bearing entries are rejected
- * explicitly instead of silently broadening — see PR review of [[B034]]).
- * Stops a typo or smuggled control byte from creating a surprising
- * "match by similarity" later in `buildUrl`.
- */
-function isInvalidAllowedHostChar(code: number): boolean {
-  if (code <= 0x20) return true;
-  if (code === 0x7f) return true;
-  if (code >= 0x80 && code <= 0x9f) return true;
-  return (
-    code === 0x2f /* / */ ||
-    code === 0x3a /* : */ ||
-    code === 0x3f /* ? */ ||
-    code === 0x23 /* # */ ||
-    code === 0x40 /* @ */ ||
-    code === 0x5c /* backslash */
-  );
-}
-
 function validateAllowedHosts(hosts: readonly string[]): void {
   if (!Array.isArray(hosts)) {
     throw new ValidationError('allowedHosts must be an array of host strings');
@@ -227,13 +181,15 @@ function validateAllowedHosts(hosts: readonly string[]): void {
         // Give a targeted error so the user understands WHY ports are
         // rejected (rather than the generic "invalid char" message). The
         // policy is documented on `ClientConfig.allowedHosts`.
+        // `isInvalidBareHostChar` ALSO rejects `:`, but we check it first
+        // for the specific error message.
         throw new ValidationError(
           `allowedHosts entry must not include a port: ${renderHostForError(host)}. ` +
             `Atlassian Cloud always uses the implicit 443; for non-default ports, ` +
             `route via the host's normal name and rely on DNS / a proxy.`,
         );
       }
-      if (isInvalidAllowedHostChar(code)) {
+      if (isInvalidBareHostChar(code)) {
         throw new ValidationError(
           `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${renderHostForError(host)}`,
         );

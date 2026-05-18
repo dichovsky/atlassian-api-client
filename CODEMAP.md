@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "ee0f83391d95ff777d90dd5392c0cac4c53fb4af515f165f4da37df17854e30a",
+  "sourceHash": "80d95f01ee75e5fc4b26a3f369360a99dfdc4e9adc2f09c8696d8660729dbcf6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -815,7 +815,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 49,
+      "line": 80,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -823,7 +823,7 @@
       "name": "OAuthRefreshConfig",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 17,
+      "line": 25,
       "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
       "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware.",
       "typeOnly": true
@@ -832,7 +832,7 @@
       "name": "OAuthTokens",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 5,
+      "line": 13,
       "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
       "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint.",
       "typeOnly": true
@@ -1260,7 +1260,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 69,
+      "line": 104,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -1276,8 +1276,8 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 119,
-      "signature": "export async function fetchRefreshedTokens( config: Pick<OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoin…",
+      "line": 164,
+      "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
     {
@@ -1300,7 +1300,7 @@
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
-      "line": 69,
+      "line": 49,
       "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
       "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
     },
@@ -3376,6 +3376,58 @@
       ]
     },
     {
+      "path": "src/core/atlassian-hosts.ts",
+      "symbols": [
+        {
+          "name": "DEFAULT_ATLASSIAN_API_HOST_SUFFIXES",
+          "kind": "variable",
+          "line": 26,
+          "exported": true,
+          "signature": "export const DEFAULT_ATLASSIAN_API_HOST_SUFFIXES: readonly string[] = [ '.atlassian.net', '.atlassian.com', '.jira-dev.c…",
+          "jsdoc": "Built-in suffixes accepted as Atlassian-managed API host targets for `ClientConfig.baseUrl` defence-in-depth (B034). Suffix-with-leading-dot."
+        },
+        {
+          "name": "DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS",
+          "kind": "variable",
+          "line": 46,
+          "exported": true,
+          "signature": "export const DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS: readonly string[] = ['auth.atlassian.com'];",
+          "jsdoc": "Built-in hosts accepted as OAuth 2.0 token endpoints for `OAuthRefreshConfig.tokenEndpoint` (B036). EXACT match only — the documented Atlassian OAuth 2.0 3LO endpoint host is `auth.atlassian.com` and the library's default `tokenEndpoint` is `https://auth.atlassian.com/oauth/token`."
+        },
+        {
+          "name": "normalizeHostForCompare",
+          "kind": "function",
+          "line": 60,
+          "signature": "function normalizeHostForCompare(hostname: string): string",
+          "jsdoc": "Normalise a hostname for allowlist comparison: lowercase and strip a single trailing FQDN dot. `new URL()` preserves trailing dots on Node (`https://auth.atlassian.com.` → `hostname === 'auth.atlassian.com.'`), but a trailing dot resolves to the same DNS target as the dotless form. Without this normalisation a legitimate FQDN URL would be falsely rejected even though it points at the same host the allowlist names."
+        },
+        {
+          "name": "hostMatchesSuffix",
+          "kind": "function",
+          "line": 77,
+          "exported": true,
+          "signature": "export function hostMatchesSuffix(hostname: string, suffixes: readonly string[]): boolean",
+          "jsdoc": "Suffix-match a hostname against a list of leading-dot suffixes (`.atlassian.net`). Case-insensitive; trailing FQDN dot is normalised away."
+        },
+        {
+          "name": "hostMatchesExact",
+          "kind": "function",
+          "line": 93,
+          "exported": true,
+          "signature": "export function hostMatchesExact(hostname: string, allowlist: readonly string[]): boolean",
+          "jsdoc": "Exact-match a hostname against a list of bare host strings. Case-insensitive; trailing FQDN dot is normalised away. Inputs are expected to be port-less (validation enforces this for user-supplied lists — see `validateAllowedHosts` in config.ts and `validateAllowedTokenEndpointHosts` in oauth.ts)."
+        },
+        {
+          "name": "isInvalidBareHostChar",
+          "kind": "function",
+          "line": 115,
+          "exported": true,
+          "signature": "export function isInvalidBareHostChar(code: number): boolean",
+          "jsdoc": "Reject characters that don't belong in a bare hostname grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural URL chars `/ ? # @ \\ : [ ]` (so port-bearing entries and IPv6-bracket forms are rejected explicitly instead of silently — both would broaden the allowlist surprisingly)."
+        }
+      ]
+    },
+    {
       "path": "src/core/auth.ts",
       "symbols": [
         {
@@ -3552,58 +3604,38 @@
         {
           "name": "DEFAULT_TIMEOUT",
           "kind": "variable",
-          "line": 4,
+          "line": 10,
           "signature": "const DEFAULT_TIMEOUT = 30_000;"
         },
         {
           "name": "DEFAULT_RETRIES",
           "kind": "variable",
-          "line": 5,
+          "line": 11,
           "signature": "const DEFAULT_RETRIES = 3;"
         },
         {
           "name": "DEFAULT_RETRY_DELAY",
           "kind": "variable",
-          "line": 6,
+          "line": 12,
           "signature": "const DEFAULT_RETRY_DELAY = 1_000;"
         },
         {
           "name": "DEFAULT_MAX_RETRY_DELAY",
           "kind": "variable",
-          "line": 7,
+          "line": 13,
           "signature": "const DEFAULT_MAX_RETRY_DELAY = 30_000;"
-        },
-        {
-          "name": "DEFAULT_ATLASSIAN_HOST_SUFFIXES",
-          "kind": "variable",
-          "line": 14,
-          "signature": "const DEFAULT_ATLASSIAN_HOST_SUFFIXES: readonly string[] = [ '.atlassian.net', '.atlassian.com', '.jira-dev.com', '.jira…",
-          "jsdoc": "Built-in host suffixes accepted as Atlassian-managed targets. The check is a suffix-with-leading-dot match so `evil.example.atlassian.net.attacker.com` cannot bypass the allowlist by appending a legitimate suffix as a substring."
         },
         {
           "name": "resolveAllowedHosts",
           "kind": "function",
-          "line": 30,
+          "line": 28,
           "signature": "function resolveAllowedHosts( baseUrlHostname: string, configured: readonly string[] | undefined, ): readonly string[]",
           "jsdoc": "Resolve the set of hosts that may receive the configured `Authorization` header. Returns the explicit allowlist when provided; otherwise returns just the `baseUrl` host so absolute paths can only target the configured tenant."
         },
         {
-          "name": "hostMatchesDefaultAllowlist",
-          "kind": "function",
-          "line": 40,
-          "signature": "function hostMatchesDefaultAllowlist(hostname: string): boolean"
-        },
-        {
-          "name": "normalizeAllowedHost",
-          "kind": "function",
-          "line": 54,
-          "signature": "function normalizeAllowedHost(entry: string): string",
-          "jsdoc": "Lower-case an `allowedHosts` entry for hostname comparison. Port-bearing entries are rejected up front by {@link validateAllowedHosts} (PR review: silently stripping the port would let an allowlist of `host:443` authorize `host:8443`, broadening a port-scoped policy into a host-wide one), so this normalisation is a plain lowercase. {@link buildUrl}'s request-side check compares `url.hostname` (also port-less) for the same reason."
-        },
-        {
           "name": "resolveConfig",
           "kind": "function",
-          "line": 69,
+          "line": 49,
           "exported": true,
           "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
           "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
@@ -3611,37 +3643,31 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 90,
+          "line": 70,
           "signature": "function validateConfig(config: ClientConfig): void"
-        },
-        {
-          "name": "isInvalidAllowedHostChar",
-          "kind": "function",
-          "line": 199,
-          "signature": "function isInvalidAllowedHostChar(code: number): boolean",
-          "jsdoc": "Reject characters that don't belong in a bare hostname grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural URL chars `/ ? # @ \\`, and `:` (so port-bearing entries are rejected explicitly instead of silently broadening — see PR review of [[B034]]). Stops a typo or smuggled control byte from creating a surprising \"match by similarity\" later in `buildUrl`."
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 213,
+          "line": 167,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 257,
+          "line": 213,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 273,
+          "line": 229,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
       "imports": [
+        "./atlassian-hosts.js",
         "./errors.js",
         "./types.js"
       ]
@@ -4396,9 +4422,16 @@
       "path": "src/core/oauth.ts",
       "symbols": [
         {
+          "name": "DEFAULT_OAUTH_TOKEN_ENDPOINT",
+          "kind": "variable",
+          "line": 10,
+          "signature": "const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';",
+          "jsdoc": "Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud."
+        },
+        {
           "name": "OAuthTokens",
           "kind": "interface",
-          "line": 5,
+          "line": 13,
           "exported": true,
           "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
           "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint."
@@ -4406,7 +4439,7 @@
         {
           "name": "OAuthRefreshConfig",
           "kind": "interface",
-          "line": 17,
+          "line": 25,
           "exported": true,
           "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
           "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware."
@@ -4414,7 +4447,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 49,
+          "line": 80,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -4422,19 +4455,19 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 51
+              "line": 82
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 53
+              "line": 84
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 69,
+          "line": 104,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
@@ -4442,26 +4475,41 @@
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 105,
+          "line": 145,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 119,
+          "line": 164,
           "exported": true,
-          "signature": "export async function fetchRefreshedTokens( config: Pick<OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoin…",
+          "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
+        },
+        {
+          "name": "validateTokenEndpoint",
+          "kind": "function",
+          "line": 262,
+          "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
+          "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
+        },
+        {
+          "name": "validateAllowedTokenEndpointHosts",
+          "kind": "function",
+          "line": 303,
+          "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
+          "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 195,
+          "line": 341,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
       ],
       "imports": [
+        "./atlassian-hosts.js",
         "./errors.js",
         "./types.js"
       ]
@@ -4755,7 +4803,7 @@
         {
           "name": "buildUrl",
           "kind": "function",
-          "line": 39,
+          "line": 40,
           "exported": true,
           "signature": "export function buildUrl( baseUrl: string, path: string, query?: Readonly<Record<string, string | number | boolean | und…",
           "jsdoc": "Resolve a request path against the configured base URL and apply query parameters."
@@ -4763,52 +4811,45 @@
         {
           "name": "assertHostAllowed",
           "kind": "function",
-          "line": 98,
+          "line": 99,
           "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
         },
         {
           "name": "assertDefaultPort",
           "kind": "function",
-          "line": 118,
+          "line": 116,
           "signature": "function assertDefaultPort(url: URL): void",
           "jsdoc": "Refuse non-default ports on the resolved URL. `URL.port` is the empty string for the scheme's default port (443 for https, 80 for http), and a non-empty value otherwise. Since `allowedHosts` entries forbid ports by design (PR review of round 3), the only way to authorize a non- default port would be to weaken the allowlist to \"any port on this host\" — which is exactly the broadening this guard prevents (PR review of round 4)."
         },
         {
-          "name": "normalizeAllowedHost",
-          "kind": "function",
-          "line": 134,
-          "signature": "function normalizeAllowedHost(entry: string): string",
-          "jsdoc": "Lower-case an `allowedHosts` entry for case-insensitive comparison. Port-bearing entries are rejected up front by `validateAllowedHosts` (config-resolution side) so this normalisation is a plain lowercase — see PR review hardening of [[B034]]."
-        },
-        {
           "name": "renderOriginForError",
           "kind": "function",
-          "line": 149,
+          "line": 137,
           "signature": "function renderOriginForError(path: string): string",
           "jsdoc": "Render a logging-safe `scheme://host` view of an absolute URL string. Used by the http-downgrade validation error so a userinfo segment (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path` does not get echoed verbatim into log sinks when the thrown error is caught and serialised."
         },
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 158,
+          "line": 146,
           "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 160,
+          "line": 148,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 164,
+          "line": 152,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 185,
+          "line": 173,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -4816,14 +4857,14 @@
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 206,
+          "line": 194,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 233,
+          "line": 221,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4831,7 +4872,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 261,
+          "line": 249,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4839,13 +4880,14 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 273,
+          "line": 261,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
         }
       ],
       "imports": [
+        "./atlassian-hosts.js",
         "./errors.js",
         "./types.js"
       ]
