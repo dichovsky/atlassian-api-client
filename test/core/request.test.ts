@@ -14,14 +14,155 @@ describe('buildUrl', () => {
     expect(buildUrl(base, '/pages/123')).toBe(`${base}/pages/123`);
   });
 
-  it('uses the absolute path verbatim when starting with https://', () => {
+  it('uses the absolute path verbatim when starting with https:// (no allowedHosts)', () => {
     const absolute = 'https://other.example.com/api/v3/issue/AC-1';
     expect(buildUrl(base, absolute)).toBe(absolute);
   });
 
-  it('uses the absolute path verbatim when starting with http://', () => {
+  it('uses the absolute path verbatim when starting with http:// (no allowedHosts)', () => {
     const absolute = 'http://localhost:3000/api/v2/space';
     expect(buildUrl(base, absolute)).toBe(absolute);
+  });
+
+  it('B021: throws ValidationError when absolute path host is not on allowedHosts', () => {
+    const absolute = 'https://evil.example/steal';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      ValidationError,
+    );
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      /not on the allowedHosts/,
+    );
+  });
+
+  it('B021: accepts absolute path when its host matches allowedHosts (case-insensitive)', () => {
+    // `new URL` normalises the host to lowercase, so we assert the lowercased form.
+    const absolute = 'https://Example.Atlassian.Net/rest/api/3/issue/AC-1';
+    expect(buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toBe(
+      'https://example.atlassian.net/rest/api/3/issue/AC-1',
+    );
+  });
+
+  it('B021: relative paths are unaffected by allowedHosts', () => {
+    expect(buildUrl(base, '/pages/1', undefined, ['example.atlassian.net'])).toBe(
+      `${base}/pages/1`,
+    );
+  });
+
+  it('B021: refuses a sneaky host that contains the allowed suffix only as a substring', () => {
+    expect(() =>
+      buildUrl(base, 'https://evil.example.atlassian.net.attacker.example/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(ValidationError);
+  });
+
+  it('B021 (PR review of round 3): rejects userinfo-confusion attack via relative @path', () => {
+    // CRITICAL — with a host-only baseUrl, a relative path starting with
+    // `@` concatenates to `https://allowed.atlassian.net@evil.example/x`.
+    // `new URL` parses the prefix as USERINFO and the real host as
+    // `evil.example`. The old `isAbsolute && allowedHosts !== undefined`
+    // gate skipped the allowlist check because `isAbsolute` was false for
+    // the relative path, so credentials would ship to the attacker.
+    // Allowlist enforcement now runs on the FINAL url.hostname regardless
+    // of `isAbsolute`.
+    const hostOnlyBase = 'https://allowed.atlassian.net';
+    expect(() =>
+      buildUrl(hostOnlyBase, '@evil.example/steal', undefined, ['allowed.atlassian.net']),
+    ).toThrow(/host is not on the allowedHosts list/);
+  });
+
+  it('B021 (PR review of round 3): allowlist still allows the legitimate baseUrl host for relative paths', () => {
+    // Regression: make sure the new "always check" rule doesn't break the
+    // normal relative-path flow. `/space` resolves to the configured host
+    // which is on the allowlist.
+    expect(() => buildUrl(base, '/space', undefined, ['example.atlassian.net'])).not.toThrow();
+  });
+
+  it('B021 (PR review of round 4): rejects an absolute URL with a non-default port', () => {
+    // Hostname-only matching means `https://allowed:8443/x` was treated
+    // identically to `https://allowed/x`. Because `allowedHosts` entries
+    // forbid ports by design, callers had no way to restrict the port,
+    // so any service running on a non-default port of an allowed host
+    // could receive credentials. Round-4: reject non-default ports.
+    expect(() =>
+      buildUrl(base, 'https://example.atlassian.net:8443/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(/only default ports/);
+  });
+
+  it('B021 (PR review of round 4): default port (443) is still accepted for absolute URLs', () => {
+    // URL normalises `:443` away for https, so `url.port === ''` and the
+    // guard does not fire. Regression check.
+    expect(() =>
+      buildUrl(base, 'https://example.atlassian.net:443/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).not.toThrow();
+  });
+
+  it('B021 (PR review): renderOriginForError falls back to `<unparseable>` for malformed absolute URLs', () => {
+    // `http://` alone (scheme but no host) is rejected by `new URL`. The
+    // downgrade-error renderer must still produce a logging-safe message
+    // instead of throwing inside the error path.
+    let captured: Error | undefined;
+    try {
+      buildUrl(base, 'http://', undefined, ['example.atlassian.net']);
+    } catch (err) {
+      captured = err as Error;
+    }
+    expect(captured?.message).toMatch(/http:\/\/<unparseable>/);
+  });
+
+  it('B021 (PR review): the downgrade rejection echoes only scheme+host, not userinfo or query', () => {
+    // A userinfo segment or query string smuggled into `path` must not be
+    // echoed verbatim into the thrown error — those errors get caught and
+    // logged, and a leaked `?token=…` ends up indexed in log sinks.
+    let captured: Error | undefined;
+    try {
+      buildUrl(base, 'http://attacker:secret@example.atlassian.net/x?token=t0pSecret', undefined, [
+        'example.atlassian.net',
+      ]);
+    } catch (err) {
+      captured = err as Error;
+    }
+    expect(captured).toBeInstanceOf(Error);
+    expect(captured?.message).toMatch(
+      /Refusing to send request to http:\/\/example\.atlassian\.net:/,
+    );
+    expect(captured?.message).not.toContain('secret');
+    expect(captured?.message).not.toContain('t0pSecret');
+    expect(captured?.message).not.toContain('attacker');
+  });
+
+  it('B021: rejects an absolute http:// URL when allowedHosts is in force (downgrade attack)', () => {
+    // Even with the host on the allowlist, falling back to http would put
+    // the auth header on plaintext transport — refuse outright.
+    expect(() =>
+      buildUrl(base, 'http://example.atlassian.net/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(/http:\/\/ URLs would downgrade/);
+  });
+
+  it('B021 (PR review): hostname-only match — an absolute URL with an explicit port matches a bare-host entry', () => {
+    // Port-bearing allowedHosts entries are rejected at validation time,
+    // but URLs themselves may carry an explicit port (e.g. an upstream
+    // resource pasted in `https://host:443/...`). The request-side check
+    // compares `url.hostname`, which is port-less, so the bare-host entry
+    // still authorises the request.
+    const absolute = 'https://example.atlassian.net:443/rest/api/3/x';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).not.toThrow();
+  });
+
+  it('B021 (PR review): rejects an absolute URL whose hostname is not on the allowlist (port has no bearing)', () => {
+    // Even with the legitimate host as a *port-bearing* substring, the
+    // request-side check is hostname-only — `evil.example.com` is not on
+    // the list, so the call is refused.
+    const absolute = 'https://evil.example.com/rest/api/3/x';
+    expect(() => buildUrl(base, absolute, undefined, ['example.atlassian.net'])).toThrow(
+      /host is not on the allowedHosts list/,
+    );
   });
 
   it('appends query parameters and skips undefined values', () => {
@@ -108,6 +249,45 @@ describe('buildHeaders', () => {
   it('omits Content-Type when withJsonBody is false', () => {
     const headers = buildHeaders(undefined, { Authorization: 'x' }, false);
     expect('Content-Type' in headers).toBe(false);
+  });
+
+  it('B029: strips caller-supplied Cookie (case-insensitive)', () => {
+    const headers = buildHeaders(
+      { Cookie: 'cloud.session.token=injected', cookie: 'evil2' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Cookie' in headers).toBe(false);
+    expect('cookie' in headers).toBe(false);
+  });
+
+  it('B029: strips Proxy-Authorization', () => {
+    const headers = buildHeaders(
+      { 'Proxy-Authorization': 'Basic injected', 'X-Trace': '1' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Proxy-Authorization' in headers).toBe(false);
+    expect(headers['X-Trace']).toBe('1');
+  });
+
+  it('B029: strips Set-Cookie and X-Atlassian-WebSudo', () => {
+    const headers = buildHeaders(
+      { 'Set-Cookie': 'x=y', 'X-Atlassian-WebSudo': 'true' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect('Set-Cookie' in headers).toBe(false);
+    expect('X-Atlassian-WebSudo' in headers).toBe(false);
+  });
+
+  it('B029: legitimate X-Atlassian-Token: no-check passes through (attachment upload)', () => {
+    const headers = buildHeaders(
+      { 'X-Atlassian-Token': 'no-check' },
+      { Authorization: 'Bearer real' },
+      false,
+    );
+    expect(headers['X-Atlassian-Token']).toBe('no-check');
   });
 });
 

@@ -7,6 +7,12 @@ const GLOBAL_OPTIONS = {
   email: { type: 'string' as const, short: 'e' },
   token: { type: 'string' as const, short: 't' },
   format: { type: 'string' as const, short: 'f' },
+  // PR review (round 3): self-hosted CLI users need an opt-in for hosts
+  // outside the default `*.atlassian.{net,com}` / `*.jira.{com,-dev.com}`
+  // suffix allowlist enforced by `resolveConfig`. The flag accepts a
+  // comma-separated list of bare hostnames (no port — same policy as
+  // `ClientConfig.allowedHosts`).
+  'allowed-hosts': { type: 'string' as const },
   help: { type: 'boolean' as const, short: 'h' },
   version: { type: 'boolean' as const },
   // Resource-specific options

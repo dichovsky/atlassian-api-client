@@ -209,14 +209,247 @@ describe('resolveConfig', () => {
     });
   });
 
+  describe('allowedHosts (B034)', () => {
+    it('defaults to [baseUrl host] when not provided', () => {
+      const result = resolveConfig(validBasicConfig);
+      expect(result.allowedHosts).toEqual(['mycompany.atlassian.net']);
+    });
+
+    it('passes through an explicit allowedHosts list', () => {
+      const result = resolveConfig({
+        ...validBasicConfig,
+        baseUrl: 'https://internal-proxy.example.com',
+        allowedHosts: ['internal-proxy.example.com', 'mycompany.atlassian.net'],
+      });
+      expect(result.allowedHosts).toEqual([
+        'internal-proxy.example.com',
+        'mycompany.atlassian.net',
+      ]);
+    });
+
+    it('rejects an allowedHosts list that does NOT include the baseUrl host', () => {
+      // The reviewer flagged this contradictory config (allowedHosts claims
+      // the credential-safe set, but baseUrl is outside it). Reject up front.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://mycompany.atlassian.net',
+          allowedHosts: ['totally-different.example'],
+        }),
+      ).toThrow(/baseUrl host .* is not present in allowedHosts/);
+    });
+
+    it('PR review of round 4: invalid-host ValidationError escapes embedded `"` and `\\` safely', () => {
+      // Covers the `renderHostForError` fall-through where a host contains
+      // a literal `"` or `\` — those must be backslash-escaped so the
+      // rendering is unambiguous when read alongside the surrounding
+      // double quotes in the error message.
+      let captured: Error | undefined;
+      try {
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['has"quote and\\backslash.example'],
+        });
+      } catch (err) {
+        captured = err as Error;
+      }
+      // Expect the literal escaped forms in the message body.
+      expect(captured?.message).toMatch(/has\\"quote and\\\\backslash\.example/);
+    });
+
+    it('PR review of round 4: invalid-host ValidationError escapes DEL/C1 instead of echoing raw control bytes', () => {
+      // The validation branch is reached SPECIFICALLY because the entry
+      // contains a forbidden byte. `JSON.stringify` would leave DEL (0x7F)
+      // and C1 (0x80–0x9F) raw, putting terminal-control bytes into the
+      // thrown error message itself. Use the safe `\uNNNN` rendering.
+      const c1 = String.fromCharCode(0x9b);
+      const del = String.fromCharCode(0x7f);
+      let captured: Error | undefined;
+      try {
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: [`evil${c1}host${del}.example`],
+        });
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured).toBeInstanceOf(ValidationError);
+      // The raw bytes must NOT appear in the rendered message.
+      expect(captured?.message).not.toContain(c1);
+      expect(captured?.message).not.toContain(del);
+      // And the safe escaped forms MUST appear so the operator can still
+      // diagnose which byte was rejected.
+      expect(captured?.message).toContain('\\u009b');
+      expect(captured?.message).toContain('\\u007f');
+    });
+
+    it('rejects baseUrl with a non-default port (PR review of round 4)', () => {
+      // `buildUrl` rejects any resolved URL with a non-empty `URL.port`, so a
+      // baseUrl like `https://host:8443` validates here but then breaks every
+      // relative-path request. Mirror the policy at config-resolution time
+      // so the mismatch surfaces at construction.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com:8443',
+          allowedHosts: ['internal.example.com'],
+        }),
+      ).toThrow(/must not include a non-default port/);
+    });
+
+    it('accepts baseUrl with the explicit default https port :443', () => {
+      // `URL.port` is normalised to the empty string for the scheme's default
+      // port, so `https://host:443` is indistinguishable from `https://host`
+      // and must be accepted. Without this assertion a regression that
+      // string-checked the raw href would be invisible.
+      const result = resolveConfig({
+        ...validBasicConfig,
+        baseUrl: 'https://mycompany.atlassian.net:443',
+      });
+      expect(result.baseUrl).toBe('https://mycompany.atlassian.net:443');
+    });
+
+    it('rejects port-bearing allowedHosts entries (PR review of B034)', () => {
+      // Silently stripping the port would let an entry of `host:443`
+      // authorize requests to `host:8443` — a port-scoped allowlist
+      // would broaden into a host-wide one. Reject the ambiguous form
+      // up front with a targeted error message so the user understands
+      // why ports are rejected.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['internal.example.com:443'],
+        }),
+      ).toThrow(/must not include a port/);
+    });
+
+    it('rejects baseUrl outside the default Atlassian suffix allowlist', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'https://evil.example' })).toThrow(
+        ValidationError,
+      );
+      expect(() => resolveConfig({ ...validBasicConfig, baseUrl: 'https://evil.example' })).toThrow(
+        /not on the default Atlassian host allowlist/,
+      );
+    });
+
+    it('rejects sneaky look-alike host (suffix substring without dot boundary)', () => {
+      // 'example.atlassian.net' would match a substring check, but the suffix
+      // check requires the leading dot — this must be rejected.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://evil.example-atlassian.net',
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('accepts known Atlassian suffixes', () => {
+      for (const host of [
+        'https://x.atlassian.net',
+        'https://x.atlassian.com',
+        'https://x.jira-dev.com',
+        'https://x.jira.com',
+      ]) {
+        expect(() => resolveConfig({ ...validBasicConfig, baseUrl: host })).not.toThrow();
+      }
+    });
+
+    it('allows non-Atlassian baseUrl when allowedHosts is provided explicitly', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['internal.example.com'],
+        }),
+      ).not.toThrow();
+    });
+
+    it('throws when allowedHosts is empty', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://x.atlassian.net',
+          allowedHosts: [],
+        }),
+      ).toThrow(/allowedHosts must contain at least one host/);
+    });
+
+    it('throws when an allowedHosts entry contains a slash (host only, no path)', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://x.atlassian.net',
+          allowedHosts: ['x.atlassian.net/path'],
+        }),
+      ).toThrow(/bare host/);
+    });
+
+    it('throws when allowedHosts is not an array', () => {
+      const config = {
+        ...validBasicConfig,
+        allowedHosts: 'not-an-array',
+      } as unknown as Parameters<typeof resolveConfig>[0];
+      expect(() => resolveConfig(config)).toThrow(/must be an array of host strings/);
+    });
+
+    it('throws when an allowedHosts entry is an empty string', () => {
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          allowedHosts: [''],
+        }),
+      ).toThrow(/non-empty strings/);
+    });
+
+    it('throws when an allowedHosts entry contains a control byte (PR review)', () => {
+      // Synthesise the hostile inputs via String.fromCharCode so the test
+      // file's raw bytes stay vanilla ASCII (avoids accidental cleanup
+      // when prettier / EOL filters touch this file).
+      const base = 'mycompany.atlassian.net';
+      const hostile = [
+        base + String.fromCharCode(0x09) + 'tab', // C0 (tab)
+        base + String.fromCharCode(0x07), // C0 (BEL)
+        base + String.fromCharCode(0x7f), // DEL
+        base + String.fromCharCode(0x80), // C1 lower bound
+        base + String.fromCharCode(0x9f), // C1 upper bound
+      ];
+      for (const h of hostile) {
+        expect(() => resolveConfig({ ...validBasicConfig, allowedHosts: [h] })).toThrow(
+          /bare host/,
+        );
+      }
+    });
+
+    it('throws when an allowedHosts entry is not a string', () => {
+      const config = {
+        ...validBasicConfig,
+        allowedHosts: [123 as unknown as string],
+      };
+      expect(() => resolveConfig(config)).toThrow(/non-empty strings/);
+    });
+  });
+
   describe('maxRetryDelay validation', () => {
     it('throws ValidationError when maxRetryDelay is 0', () => {
       expect(() => resolveConfig({ ...validBasicConfig, maxRetryDelay: 0 })).toThrow(
         ValidationError,
       );
       expect(() => resolveConfig({ ...validBasicConfig, maxRetryDelay: 0 })).toThrow(
-        'maxRetryDelay must be a positive number',
+        'maxRetryDelay must be a finite positive number',
       );
+    });
+
+    it('throws ValidationError when maxRetryDelay is Infinity (B023 regression)', () => {
+      // PR review of B023: the Retry-After clamp degenerates with Infinity
+      // (`Math.min(x, Infinity)` is `x`), re-opening the unbounded-wait DoS.
+      // Reject non-finite values at config-resolution so the clamp always
+      // bites.
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, maxRetryDelay: Number.POSITIVE_INFINITY }),
+      ).toThrow(/finite positive number/);
     });
 
     it('throws ValidationError when maxRetryDelay is negative', () => {

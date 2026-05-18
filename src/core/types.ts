@@ -26,6 +26,22 @@ export interface RequestOptions {
    * 204 responses always return `undefined` regardless of `responseType`.
    */
   readonly responseType?: 'json' | 'arrayBuffer' | 'stream';
+  /**
+   * Non-secret stable identifier for the configured authentication identity,
+   * injected by {@link HttpTransport} BEFORE the middleware chain runs so
+   * cache/batch middleware can partition by tenant without ever observing
+   * the raw `Authorization` value (PR review of round 4).
+   *
+   * The value is a short hex prefix of the SHA-256 of the auth provider's
+   * `Authorization` header — long enough to make accidental collisions vanish
+   * in practice, short enough to keep dedupe keys compact, and one-way so a
+   * user-installed logging/metrics middleware that persists `RequestOptions`
+   * never accidentally writes the credential to a log sink.
+   *
+   * Callers MUST NOT set this manually; `HttpTransport` overwrites any
+   * caller-supplied value before middleware execution.
+   */
+  readonly authIdentity?: string;
 }
 
 /** Parsed API response. */
@@ -125,6 +141,23 @@ export interface ClientConfig {
   readonly retryDelay?: number;
   /** Maximum delay in ms between retries. Default: 30000. */
   readonly maxRetryDelay?: number;
+  /**
+   * Hosts the transport is allowed to send the configured `Authorization`
+   * header to. When omitted, only the `baseUrl` host is allowed and the
+   * `baseUrl` itself must end in a known Atlassian suffix
+   * (`.atlassian.net`, `.atlassian.com`, `.jira-dev.com`, `.jira.com`).
+   *
+   * Pass an explicit list for self-hosted, proxy, or test setups. Entries
+   * are **bare hostnames** — no scheme, no path, and **no port** — matched
+   * case-insensitively against the URL's `hostname` (not `host`). Port-
+   * bearing entries are rejected at config-resolution time so an entry like
+   * `'host:443'` cannot silently authorize `host:8443`; see
+   * `validateAllowedHosts` and PR review of [[B034]].
+   *
+   * The `baseUrl` host MUST also appear in this list when it is supplied,
+   * otherwise the client could not call its own configured endpoint.
+   */
+  readonly allowedHosts?: readonly string[];
   /** Injectable transport (for testing or custom HTTP layers). */
   readonly transport?: Transport;
   /**
@@ -159,6 +192,14 @@ export interface ResolvedConfig {
   readonly retryDelay: number;
   /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /**
+   * Resolved set of hosts the transport is allowed to send the configured
+   * `Authorization` header to. Always populated — when the user did not
+   * provide `ClientConfig.allowedHosts`, this is just `[baseUrl.hostname]`.
+   * Entries are bare hostnames (no port); port-bearing entries are rejected
+   * at validation time. See `ClientConfig.allowedHosts` for the rationale.
+   */
+  readonly allowedHosts: readonly string[];
   /** Injectable fetch implementation; defaults to global `fetch`. */
   readonly fetch?: typeof fetch;
   /** Optional logger for observability. */

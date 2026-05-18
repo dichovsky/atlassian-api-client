@@ -273,6 +273,67 @@ describe('resolveGlobalOptions', () => {
     expect(result.authType).toBe('bearer');
   });
 
+  it('PR review of round 3: parses --allowed-hosts flag as a comma-separated list', () => {
+    const options = {
+      'base-url': 'https://internal.example.com',
+      email: 'user@example.com',
+      token: 'token',
+      'allowed-hosts': 'internal.example.com, secondary.example.com',
+    };
+
+    const result = resolveGlobalOptions(options);
+    expect(result.allowedHosts).toEqual(['internal.example.com', 'secondary.example.com']);
+  });
+
+  it('PR review of round 3: --allowed-hosts falls back to ATLASSIAN_ALLOWED_HOSTS env', () => {
+    vi.stubEnv('ATLASSIAN_ALLOWED_HOSTS', 'jira.internal.example,confluence.internal.example');
+    const options = {
+      'base-url': 'https://jira.internal.example',
+      email: 'user@example.com',
+      token: 'token',
+    };
+    const result = resolveGlobalOptions(options);
+    expect(result.allowedHosts).toEqual(['jira.internal.example', 'confluence.internal.example']);
+  });
+
+  it('PR review of round 3: allowedHosts is undefined when neither flag nor env is set', () => {
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      email: 'user@example.com',
+      token: 'token',
+    };
+    const result = resolveGlobalOptions(options);
+    expect(result.allowedHosts).toBeUndefined();
+  });
+
+  it('PR review of round 3: allowedHosts is undefined when --allowed-hosts is only commas/whitespace', () => {
+    // Defends the empty-after-filter branch — without this, a slip-up
+    // like `--allowed-hosts=", , "` would surface as an empty array and
+    // `resolveConfig` would reject the bare-empty list. Treating it as
+    // "unset" gives the user the default Atlassian suffix allowlist
+    // instead of a confusing validation error.
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      email: 'user@example.com',
+      token: 'token',
+      'allowed-hosts': ' , , ',
+    };
+    const result = resolveGlobalOptions(options);
+    expect(result.allowedHosts).toBeUndefined();
+  });
+
+  it('PR review of round 3: buildClientConfig forwards allowedHosts into ClientConfig', () => {
+    const config = buildClientConfig({
+      baseUrl: 'https://jira.internal.example',
+      authType: 'basic',
+      email: 'user@example.com',
+      token: 'token',
+      format: 'json',
+      allowedHosts: ['jira.internal.example'],
+    });
+    expect(config.allowedHosts).toEqual(['jira.internal.example']);
+  });
+
   it('ignores boolean flag values for string options', () => {
     // Arrange - boolean value for base-url should be ignored, fall back to env
     vi.stubEnv('ATLASSIAN_BASE_URL', 'https://env.atlassian.net');

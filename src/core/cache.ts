@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
 
@@ -33,7 +34,25 @@ interface CacheEntry {
  * Creates a middleware that caches API responses in memory.
  *
  * Only responses for the configured HTTP methods (default: GET) are cached.
- * Each unique combination of method + path + query parameters is a separate cache key.
+ *
+ * Cache key composition (B022 + PR review of round 3, round 4 → round 5):
+ * - an auth-identity scope. When `HttpTransport` runs the chain, it injects
+ *   a precomputed `RequestOptions.authIdentity` hash so the cache partitions
+ *   per tenant WITHOUT observing the raw credential. For callers that build
+ *   `RequestOptions` manually with an `Authorization` header (legacy path),
+ *   the header value is hashed here as a fallback. Either way the cache key
+ *   never stores the raw token. Falls back to the sentinel `'no-auth'` when
+ *   neither is present.
+ * - the request method;
+ * - the request path;
+ * - the query parameters (sorted, `undefined` values dropped).
+ *
+ * Headers OTHER than `Authorization` do NOT contribute to the cache key —
+ * a value variant like `Accept-Language: fr` will hit a cache entry stored
+ * by an `en` caller. If your endpoint varies by such a header, install a
+ * custom middleware that normalises it into the path or query before this
+ * middleware runs.
+ *
  * Expired entries are lazily removed on the next request for the same key.
  */
 export function createCacheMiddleware(options?: CacheOptions): Middleware {
@@ -110,5 +129,50 @@ function buildCacheKey(opts: RequestOptions): string {
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';
-  return `${opts.method}:${opts.path}${queryStr}`;
+  // B022: scope the cache key to the caller's auth identity so a shared
+  // transport never serves Tenant A's cached body to Tenant B. The auth
+  // identifier prefers an explicit `headers.Authorization` (set by upstream
+  // middleware like createOAuthRefreshMiddleware) and falls back to a
+  // shared-tenant marker when no Authorization header is on the in-flight
+  // options (single-tenant deployments).
+  return `${authScope(opts)}|${opts.method}:${opts.path}${queryStr}`;
+}
+
+/**
+ * Derive the stable identifier the cache key partitions on.
+ *
+ * Preferred source (PR review of round 4 → round 5): the precomputed
+ * `RequestOptions.authIdentity` hash that `HttpTransport` injects before the
+ * middleware chain runs. Using this means the cache never observes the raw
+ * `Authorization` value — even when a user-installed logging middleware
+ * dumps the whole options object.
+ *
+ * Fallback: hash the in-flight `Authorization` header. This keeps manually
+ * constructed `RequestOptions` (legacy callers, tests) partitioned correctly
+ * even when no transport pre-injection happened. When multiple Authorization-
+ * like keys are present in the headers map (e.g. a caller passes
+ * `authorization: 'old'` and middleware later spreads in `Authorization:
+ * 'new'`), the LAST occurrence wins — matching `fetch` semantics for
+ * duplicate-key plain-object headers maps.
+ *
+ * Returns the stable sentinel `'no-auth'` when neither source is present.
+ */
+function authScope(opts: RequestOptions): string {
+  if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
+    return opts.authIdentity;
+  }
+  const auth = pickAuthorizationHeader(opts.headers);
+  if (auth === undefined || auth === '') return 'no-auth';
+  return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
+}
+
+function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined {
+  if (headers === undefined) return undefined;
+  let last: string | undefined;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      last = value;
+    }
+  }
+  return last;
 }

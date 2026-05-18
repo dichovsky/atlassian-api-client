@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
-import { printOutput, printError } from '../../src/cli/output.js';
+import { printOutput, printError, sanitizeForTerminal } from '../../src/cli/output.js';
+
+// Control bytes constructed via String.fromCharCode so the test source
+// itself stays terminal-safe (PR review of round 3): if a diff or tool
+// dump prints this file to a TTY, the literal ESC/BEL bytes would be
+// interpreted by the terminal BEFORE the sanitiser under test runs.
+const ESC = String.fromCharCode(0x1b);
+const BEL = String.fromCharCode(0x07);
 
 describe('printOutput', () => {
   // Typed as a spy returning boolean, which matches mockReturnValue(true)
@@ -39,6 +46,22 @@ describe('printOutput', () => {
 
       // Assert
       expect(stdoutWrite).toHaveBeenCalledWith(JSON.stringify(data, null, 2) + '\n');
+    });
+
+    it('PR review of round 3: prints the literal "undefined" for top-level undefined', () => {
+      // `JSON.stringify(undefined)` returns `undefined`. Without a guard,
+      // the sanitiser would read `.length` on it and crash. Falling back
+      // to the literal string matches what `JSON.stringify(undefined)`
+      // would print in a Node REPL and avoids a runtime exception.
+      printOutput(undefined, 'json');
+      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
+    });
+
+    it('PR review of round 3: prints the literal "undefined" for a top-level function', () => {
+      // Same problem class as `undefined`: `JSON.stringify(() => 1)`
+      // returns `undefined`.
+      printOutput(() => 1, 'json');
+      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
     });
   });
 
@@ -299,5 +322,256 @@ describe('printError', () => {
 
     // Assert
     expect(stdoutWrite).not.toHaveBeenCalled();
+  });
+
+  it('B032: sanitises terminal-control bytes from the message when stderr is a TTY', () => {
+    // Arrange: force stderr to TTY mode
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY');
+    Object.defineProperty(process.stderr, 'isTTY', { value: true, configurable: true });
+    try {
+      const hostile = `${ESC}]0;pwned${BEL}system update required`;
+
+      // Act
+      printError(hostile);
+
+      // Assert: the OSC escape bytes are rendered as escaped literals,
+      // not as raw control bytes
+      const calls = stderrWrite.mock.calls.map((c) => c[0] as string);
+      expect(calls[0]).not.toContain(`${ESC}`);
+      expect(calls[0]).not.toContain(`${BEL}`);
+      expect(calls[0]).toContain('\\x1B');
+      expect(calls[0]).toContain('\\x07');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stderr, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stderr as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('B032: preserves raw bytes when stderr is NOT a TTY (piped to file)', () => {
+    // Arrange: force stderr to non-TTY mode
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY');
+    Object.defineProperty(process.stderr, 'isTTY', { value: false, configurable: true });
+    try {
+      const hostile = `${ESC}]0;pwned${BEL}`;
+
+      // Act
+      printError(hostile);
+
+      // Assert
+      expect(stderrWrite).toHaveBeenCalledWith(`Error: ${hostile}\n`);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stderr, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stderr as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+});
+
+describe('printOutput — B027 alignment with control-byte keys (PR review)', () => {
+  let stdoutWrite: MockInstance<(...args: unknown[]) => boolean>;
+
+  beforeEach(() => {
+    stdoutWrite = vi
+      .spyOn(process.stdout, 'write')
+      .mockReturnValue(true) as unknown as MockInstance<(...args: unknown[]) => boolean>;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('object branch: column width tracks the SANITISED key length (no overflow)', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      // Key is one literal control byte (sanitises to "\x1B", 4 visible chars)
+      // and a value with three control bytes (sanitises to ~12 visible chars).
+      printOutput({ [ESC]: `${ESC}${ESC}${ESC}` }, 'table');
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      // Two spaces are the column gap. The key column must be padded to at
+      // least the sanitised key length (4) so the key string is not shorter
+      // than its column.
+      const line = calls[0] as string;
+      const [keyCol] = line.split('  ');
+      expect((keyCol as string).length).toBeGreaterThanOrEqual(4);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('array branch: column width tracks the SANITISED header length', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      // Header key is one literal ESC; sanitises to 4 chars. Row value is a
+      // single short string. The separator row uses the column width — must
+      // not be shorter than the sanitised header.
+      printOutput([{ [ESC]: 'v' }], 'table');
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      const header = calls[0] as string;
+      const separator = calls[1] as string;
+      // Separator dashes match the column width — must cover the sanitised
+      // header without overflowing into the column gap.
+      expect(separator.length).toBeGreaterThanOrEqual(header.length);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+});
+
+describe('sanitizeForTerminal (B027/B032)', () => {
+  it('replaces ESC, BEL, and other C0 controls with \\xNN literals when TTY', () => {
+    const input = `${ESC}]0;title${BEL}ok`;
+    expect(sanitizeForTerminal(input, true)).toBe('\\x1B]0;title\\x07ok');
+  });
+
+  it('preserves tab and newline (legitimate text bytes)', () => {
+    expect(sanitizeForTerminal('a\tb\nc', true)).toBe('a\tb\nc');
+  });
+
+  it('replaces DEL (0x7F) and C1 controls (0x80–0x9F)', () => {
+    const input = String.fromCharCode(0x7f, 0x80, 0x9f);
+    expect(sanitizeForTerminal(input, true)).toBe('\\x7F\\x80\\x9F');
+  });
+
+  it('preserves all bytes when isTty is false', () => {
+    const input = `${ESC}]0;title${BEL}`;
+    expect(sanitizeForTerminal(input, false)).toBe(input);
+  });
+
+  it('preserves printable ASCII and Unicode', () => {
+    expect(sanitizeForTerminal('Hello — 世界 ✓', true)).toBe('Hello — 世界 ✓');
+  });
+});
+
+describe('printOutput — B027 TTY sanitisation', () => {
+  let stdoutWrite: MockInstance<(...args: unknown[]) => boolean>;
+
+  beforeEach(() => {
+    stdoutWrite = vi
+      .spyOn(process.stdout, 'write')
+      .mockReturnValue(true) as unknown as MockInstance<(...args: unknown[]) => boolean>;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('sanitises control bytes in table rows when stdout is a TTY', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      printOutput([{ id: '1', summary: `${ESC}]0;pwned${BEL}evil` }], 'table');
+      const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(all).not.toContain(`${ESC}`);
+      expect(all).toContain('\\x1B');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('sanitises control bytes in minimal format when stdout is a TTY', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      printOutput([{ id: `${ESC}[2J${ESC}[H1` }], 'minimal');
+      const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(all).not.toContain(`${ESC}`);
+      expect(all).toContain('\\x1B');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('PR review of B027/B032: sanitises DEL/C1 bytes in JSON output when stdout is a TTY', () => {
+    // `JSON.stringify` only escapes C0 (0x00-0x1F), backslash, and quote.
+    // DEL (0x7F) and C1 bytes (0x80-0x9F) are emitted RAW, so `--format
+    // json` on a TTY would still render server-controlled terminal escapes,
+    // defeating the mitigation that protects table/minimal output.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      const csi = String.fromCharCode(0x9b); // C1 CSI — not escaped by JSON.stringify
+      const del = String.fromCharCode(0x7f); // DEL — not escaped by JSON.stringify
+      const data = { summary: `before${csi}pwned${del}end` };
+      printOutput(data, 'json');
+      const all = (stdoutWrite.mock.calls as unknown[][]).map((c) => c[0] as string).join('');
+      expect(all).not.toContain(csi);
+      expect(all).not.toContain(del);
+      // Round-4 PR review: the escape form is the JSON-valid `\u00NN`,
+      // not the terminal-friendly `\xNN`, so the captured stdout still
+      // parses as JSON. JSON unicode escapes are case-insensitive in
+      // the spec; we emit lowercase hex digits.
+      expect(all).toContain('\\u009b');
+      expect(all).toContain('\\u007f');
+      const parsed = JSON.parse(all.trim()) as { summary: string };
+      expect(parsed.summary).toBe(`before${csi}pwned${del}end`);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('PR review of round 4: TTY JSON output with no control bytes returns the input unchanged (fast path)', () => {
+    // Exercises sanitizeForJson's `firstControl === -1` early return:
+    // a normal JSON payload with no DEL/C1 bytes flows through without
+    // any per-character rewrite work.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      const data = { id: 'PROJ-1', summary: 'plain ascii summary' };
+      printOutput(data, 'json');
+      const written = (stdoutWrite.mock.calls as unknown[][])[0]?.[0] as string;
+      expect(written).toBe(JSON.stringify(data, null, 2) + '\n');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('PR review of B027/B032: JSON output passes through unchanged when stdout is NOT a TTY (log fidelity)', () => {
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: false, configurable: true });
+    try {
+      const data = { summary: 'abc' };
+      printOutput(data, 'json');
+      const written = (stdoutWrite.mock.calls as unknown[][])[0]?.[0] as string;
+      // When piped to a file / another process, preserve the raw bytes so
+      // logs stay faithful to the wire content.
+      expect(written).toBe(JSON.stringify(data, null, 2) + '\n');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
   });
 });

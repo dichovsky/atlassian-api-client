@@ -31,6 +31,10 @@ const defaultConfig: ResolvedConfig = {
   retries: 1,
   retryDelay: 100,
   maxRetryDelay: 1_000,
+  // B021/B034 — populated by resolveConfig in production. Tests that target
+  // the transport directly need to set it explicitly so absolute-path URL
+  // construction passes the origin check against the same host as baseUrl.
+  allowedHosts: ['test.atlassian.net'],
 };
 
 // ---------------------------------------------------------------------------
@@ -210,6 +214,70 @@ describe('HttpTransport', () => {
       const [message] = logger.warn.mock.calls[0] as [string];
       expect(message).toContain('deprecated');
       expect(message).toContain('0.8.0');
+    });
+
+    it('PR review of round 3: deprecated 2-arg overload rejects a baseUrl override outside allowedHosts', () => {
+      // Without this guard, a caller could pass a foreign host as the
+      // second arg and the transport would happily send relative-path
+      // requests there with the configured Authorization header.
+      // `buildUrl`'s allowedHosts check is the second line of defence,
+      // but the override deserves a clean construction-time error.
+      expect(
+        () =>
+          new HttpTransport(
+            { ...defaultConfig, baseUrl: INSTANCE_URL },
+            'https://evil.example/wiki/api/v2',
+          ),
+      ).toThrow(/not on the resolved allowedHosts list/);
+    });
+
+    it('PR review of round 3: deprecated 2-arg overload rejects non-HTTPS baseUrl override', () => {
+      expect(
+        () =>
+          new HttpTransport(
+            { ...defaultConfig, baseUrl: INSTANCE_URL },
+            'http://test.atlassian.net/wiki/api/v2',
+          ),
+      ).toThrow(/must use HTTPS/);
+    });
+
+    it('PR review of round 3: deprecated 2-arg overload rejects an unparseable baseUrl override', () => {
+      expect(
+        () => new HttpTransport({ ...defaultConfig, baseUrl: INSTANCE_URL }, 'not-a-url'),
+      ).toThrow(/is not a valid URL/);
+    });
+
+    it('PR review of round 4: override-URL ValidationError never echoes userinfo / query / token', () => {
+      // The override may carry secrets if the caller pastes a URL with
+      // basic-auth userinfo or a query-token. Those bytes must not land
+      // in the thrown error message (which is commonly logged).
+      let captured: Error | undefined;
+      try {
+        new HttpTransport(
+          { ...defaultConfig, baseUrl: INSTANCE_URL },
+          'https://attacker:secret@evil.example/x?token=t0pSecret',
+        );
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured).toBeInstanceOf(Error);
+      expect(captured?.message).not.toContain('secret');
+      expect(captured?.message).not.toContain('t0pSecret');
+      expect(captured?.message).not.toContain('attacker');
+    });
+
+    it('PR review of round 4: unparseable override uses <unparseable> placeholder, not the raw input', () => {
+      let captured: Error | undefined;
+      try {
+        new HttpTransport(
+          { ...defaultConfig, baseUrl: INSTANCE_URL },
+          'definitely-not-a-url-with-a-secret-token-inside',
+        );
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured?.message).toContain('<unparseable>');
+      expect(captured?.message).not.toContain('secret-token');
     });
 
     it('1-arg constructor does not emit the deprecation warn', () => {
@@ -695,10 +763,10 @@ describe('HttpTransport', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('preserves Retry-After floor when it exceeds maxRetryDelay', async () => {
-      vi.spyOn(Math, 'random').mockReturnValue(1);
+    it('B023: caps Retry-After at maxRetryDelay (does NOT honour an unbounded server floor)', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0); // no jitter
 
-      const retryAfterSeconds = 10;
+      const retryAfterSeconds = 10; // server requests 10s
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
@@ -707,7 +775,9 @@ describe('HttpTransport', () => {
         .mockResolvedValueOnce(makeResponse(200, { ok: true }));
       vi.stubGlobal('fetch', fetchMock);
 
-      // maxRetryDelay smaller than retryAfter*1000 — result must cap there
+      // maxRetryDelay smaller than retryAfter*1000 — retry must fire at the
+      // cap (5s), not honour the full server-advertised floor (10s). Without
+      // this clamp, a hostile server could pin the client for years (B023).
       const transport = makeTransport({
         ...defaultConfig,
         retries: 1,
@@ -719,10 +789,12 @@ describe('HttpTransport', () => {
       void resultPromise.catch((_e: unknown) => undefined);
       await vi.advanceTimersByTimeAsync(0);
 
-      // Retry does not fire before the full server-advertised floor.
-      await vi.advanceTimersByTimeAsync(9_999);
+      // Retry must NOT fire before the cap is reached.
+      await vi.advanceTimersByTimeAsync(4_999);
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
+      // Retry fires once the cap (5_000 ms) elapses — well before the
+      // server-advertised 10s floor would have allowed it.
       await vi.advanceTimersByTimeAsync(1);
       await vi.runAllTimersAsync();
 
@@ -1138,6 +1210,117 @@ describe('HttpTransport', () => {
   });
 
   describe('middleware', () => {
+    it('PR review of round 4 → round 5: middleware sees a hashed authIdentity, NOT the raw Authorization header', async () => {
+      // Round-4 originally pre-injected the raw `Authorization` header into
+      // `options.headers` so cache/batch could partition by tenant. The
+      // round-5 review flagged this as a credential leak: a user-installed
+      // logging middleware could persist the token without ever opting in.
+      // The new contract: middleware sees a non-secret `authIdentity` hash
+      // and NEVER the raw header.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let seenAuth: string | undefined;
+      let seenIdentity: string | undefined;
+      const probeMiddleware = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          seenAuth = opts.headers?.['Authorization'];
+          seenIdentity = opts.authIdentity;
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [probeMiddleware],
+      });
+      await transport.request({ method: 'GET', path: '/pages' });
+
+      // The raw credential MUST NOT be visible to user middleware. This is
+      // the regression guard for the round-5 review.
+      expect(seenAuth).toBeUndefined();
+      // The non-secret partition identity MUST be visible so cache/batch
+      // still work for the default basic/bearer config without manual
+      // headers.Authorization plumbing.
+      expect(seenIdentity).toBeDefined();
+      expect(seenIdentity as string).toMatch(/^auth:[0-9a-f]{16}$/);
+      // The raw token MUST NOT appear anywhere in the identity — a hash
+      // prefix is opaque to a downstream consumer.
+      expect(seenIdentity as string).not.toContain('Basic');
+    });
+
+    it('PR review of round 4 → round 5: caller-supplied authIdentity is overwritten by the transport', async () => {
+      // `RequestOptions.authIdentity` is transport-internal. A caller
+      // attempting to forge an identity (e.g. to coalesce into another
+      // tenant's cached body) MUST have their value silently overwritten
+      // before the middleware chain runs.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let seenIdentity: string | undefined;
+      const probeMiddleware = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          seenIdentity = opts.authIdentity;
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [probeMiddleware],
+      });
+      await transport.request({
+        method: 'GET',
+        path: '/pages',
+        authIdentity: 'auth:deadbeefdeadbeef',
+      });
+
+      expect(seenIdentity).toBeDefined();
+      expect(seenIdentity).not.toBe('auth:deadbeefdeadbeef');
+      expect(seenIdentity as string).toMatch(/^auth:[0-9a-f]{16}$/);
+    });
+
+    it('PR review of round 4: two transports sharing a cache middleware partition by auth identity even without a header in RequestOptions', async () => {
+      // This is the bug class B022/B024 was supposed to close but only
+      // worked when the user manually passed `headers.Authorization`.
+      // Auth pre-injection makes it work for the default basic/bearer
+      // config too.
+      const fetchMock = vi
+        .fn()
+        // First request (tenant A): returns nA=1
+        .mockResolvedValueOnce(makeResponse(200, { nA: 1 }))
+        // Second request (tenant B): MUST be a fresh fetch, not a cache hit
+        .mockResolvedValueOnce(makeResponse(200, { nB: 1 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { createCacheMiddleware } = await import('../../src/core/cache.js');
+      const sharedCache = createCacheMiddleware();
+
+      const transportA = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        auth: { type: 'basic', email: 'a@example.com', apiToken: 'tokenA' },
+        middleware: [sharedCache],
+      });
+      const transportB = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        auth: { type: 'basic', email: 'b@example.com', apiToken: 'tokenB' },
+        middleware: [sharedCache],
+      });
+
+      const resA = await transportA.request<{ nA: number }>({ method: 'GET', path: '/pages' });
+      const resB = await transportB.request<{ nB: number }>({ method: 'GET', path: '/pages' });
+
+      // Without auth pre-injection, the second call would have hit the
+      // cache (both fell into `no-auth`) and returned tenant A's response.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(resA.data).toEqual({ nA: 1 });
+      expect(resB.data).toEqual({ nB: 1 });
+    });
+
     it('runs middleware and calls next() to proceed with the request', async () => {
       // Arrange
       const payload = { id: '42' };

@@ -1,5 +1,18 @@
-import { readFileSync, writeFileSync, mkdirSync, statSync, readdirSync, existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import {
+  readFileSync,
+  mkdirSync,
+  statSync,
+  lstatSync,
+  realpathSync,
+  unlinkSync,
+  readdirSync,
+  existsSync,
+  openSync,
+  writeSync,
+  closeSync,
+  constants as fsConstants,
+} from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import type { ParsedCommand } from '../types.js';
@@ -37,15 +50,148 @@ interface FilesystemDeps {
   readonly exists: (path: string) => boolean;
   readonly readDir: (path: string) => readonly string[];
   readonly isDirectory: (path: string) => boolean;
+  /**
+   * Return `true` when the path exists AND is a symbolic link. Used by
+   * {@link runInstall} to refuse to follow attacker-planted symlinks during
+   * file writes (B030).
+   *
+   * Optional for backwards compatibility with custom fs adapters; when
+   * absent, the symlink guard is treated as a no-op and the install behaves
+   * as it did before B030.
+   */
+  readonly isSymlink?: (path: string) => boolean;
+  /** Remove a path; used to unlink a refused symlink before the destination write. */
+  readonly unlink?: (path: string) => void;
+  /**
+   * Resolve a path to its canonical absolute form (following symlinks in the
+   * parent chain). Used to verify that each destination resolves inside the
+   * install target, defending against symlinked-parent-directory escape
+   * (raised in PR review of B030). Optional for backwards compatibility.
+   */
+  readonly realpath?: (path: string) => string;
+}
+
+/**
+ * Open `path` for writing in a way that REFUSES to follow a final-component
+ * symlink, closing the TOCTOU window between the pre-write
+ * `assertDestUnderTarget` check and the actual write (PR review of round 3).
+ *
+ * **Platform guarantee (PR review of round 4 → round 5):**
+ *
+ * - **POSIX (Linux/macOS/etc.):** `O_NOFOLLOW` is honoured by the kernel
+ *   `open(2)` call. A symlink swapped in at the final-component position
+ *   between the pre-check and this open turns into `ELOOP`, which is
+ *   mapped to `InstallSkillError` below. The final-component TOCTOU window
+ *   is effectively closed.
+ *
+ * - **Windows:** `O_NOFOLLOW` is NOT a Win32 concept and is silently
+ *   ignored by libuv's mapping of `openSync` flags. The kernel's
+ *   `CreateFileW` call has no out-of-the-box equivalent that refuses to
+ *   traverse a reparse point at the leaf. The defence-in-depth chain on
+ *   Windows therefore relies on:
+ *     1. `assertDestUnderTarget` confirming the canonical parent stays
+ *        inside the install root (catches symlinked PARENT directories);
+ *     2. the `fs.isSymlink?.(dest)` pre-check in `runInstall`
+ *        (catches a leaf symlink pre-planted before the install starts);
+ *     3. opening with `O_TRUNC` so a regular file is overwritten in
+ *        place rather than redirected via a symlink follow.
+ *
+ *   A local attacker who can win a sub-millisecond race between the
+ *   `isSymlink` pre-check and this open call could still cause the write
+ *   to follow a leaf reparse point on Windows. Closing that window
+ *   completely would require a `CreateFileW` wrapper with
+ *   `FILE_FLAG_OPEN_REPARSE_POINT` via a native add-on, which is out of
+ *   scope for the install-skill threat model (the user's own
+ *   `~/.claude/skills/` directory). Documenting the limitation here so
+ *   the comment does not overstate the guarantee.
+ *
+ * The residual POSIX TOCTOU window is restricted to PARENT directory swaps
+ * (an attacker would need to swap an entire ancestor directory between
+ * the containment check and this open). That class is much harder to
+ * exploit and is documented on `runInstall`.
+ */
+function writeFileNoFollow(path: string, content: string): void {
+  // O_NOFOLLOW = refuse if the LAST component is a symlink (POSIX-only;
+  //              silently ignored on Windows — see function doc-comment).
+  // O_TRUNC ensures we overwrite atomically when the file already exists
+  //         (matches `writeFileSync` semantics for non-symlink targets).
+  const flags =
+    fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_TRUNC | fsConstants.O_NOFOLLOW;
+  let fd: number;
+  try {
+    fd = openSync(path, flags, 0o644);
+  } catch (err) {
+    /* c8 ignore start — only reachable via a genuine race-condition swap
+       between the pre-check (`assertDestUnderTarget`) and this open call,
+       which is the precise TOCTOU window this branch exists to close. The
+       happy path never hits it because the pre-check catches a symlink
+       (and unlinks under --force) before we reach openSync. */
+    const code = (err as { code?: unknown }).code;
+    if (code === 'ELOOP') {
+      throw new InstallSkillError(
+        `Refusing to follow symlink at ${path} during write (TOCTOU guard). ` +
+          `Remove the symlink and re-run.`,
+        2,
+      );
+    }
+    throw err;
+    /* c8 ignore stop */
+  }
+  try {
+    // PR review (round 4): `writeSync` is NOT guaranteed to flush the
+    // whole buffer in one call (the return value is the number of bytes
+    // actually written). On short writes — possible for very large
+    // files or when the underlying file is a pipe/socket — the
+    // un-written tail would be silently dropped, leaving the installed
+    // skill file truncated. Loop until the byte count matches.
+    const buffer = Buffer.from(content, 'utf8');
+    let offset = 0;
+    while (offset < buffer.length) {
+      const written = writeSync(fd, buffer, offset, buffer.length - offset);
+      /* c8 ignore start — defensive: a 0-byte write would otherwise spin
+         forever. Not reachable through any documented Node fs behaviour;
+         this protects against a misbehaving custom filesystem driver. */
+      if (written <= 0) {
+        throw new InstallSkillError(
+          `writeSync stalled at offset ${offset}/${buffer.length} for ${path}.`,
+          1,
+        );
+      }
+      /* c8 ignore stop */
+      offset += written;
+    }
+  } finally {
+    closeSync(fd);
+  }
 }
 
 const realFs: FilesystemDeps = {
   readFile: (path) => readFileSync(path, 'utf8'),
-  writeFile: (path, content) => writeFileSync(path, content, 'utf8'),
+  writeFile: (path, content) => writeFileNoFollow(path, content),
   mkdir: (path) => mkdirSync(path, { recursive: true }),
   exists: (path) => existsSync(path),
   readDir: (path) => readdirSync(path),
   isDirectory: (path) => statSync(path).isDirectory(),
+  isSymlink: (path) => {
+    try {
+      return lstatSync(path).isSymbolicLink();
+    } catch {
+      return false;
+    }
+  },
+  unlink: (path) => unlinkSync(path),
+  realpath: (path) => {
+    try {
+      return realpathSync(path);
+    } catch {
+      // Path may not exist or be unreadable (e.g. EACCES on the parent
+      // chain). Callers always pass an existing path in the happy flow, so
+      // this branch is defensive — return the input unchanged so containment
+      // checks fall back to a literal comparison.
+      /* c8 ignore next */
+      return path;
+    }
+  },
 };
 
 /** Resolve the bundled skill source directory relative to this module. */
@@ -141,7 +287,27 @@ export function readSkillVersion(content: string): string | null {
   return versionMatch ? (versionMatch[1] as string).trim() : null;
 }
 
-/** Perform the install. Pure with respect to the injected filesystem. */
+/**
+ * Perform the install. Pure with respect to the injected filesystem.
+ *
+ * Security model (B030 + PR review of round 3):
+ * - The install target itself MUST NOT be a symlink (refused up front by
+ *   `resolveTargetRealpath`).
+ * - Every destination file path is canonicalised and compared against
+ *   `targetRealpath` (`assertDestUnderTarget`) so a symlinked parent
+ *   component cannot redirect the write outside the install root.
+ * - The actual write uses `O_NOFOLLOW` (`writeFileNoFollow`) so a TOCTOU
+ *   swap of the FINAL path to a symlink between the check and the write
+ *   is rejected with ELOOP rather than followed.
+ *
+ * Residual risk: a local attacker with write access to a PARENT directory
+ * can theoretically swap an entire ancestor in the install path between
+ * `assertDestUnderTarget` and the open call. Closing this would require
+ * `openat()` with `O_DIRECTORY | O_NOFOLLOW` on each path component, which
+ * Node's high-level `fs` does not currently expose. For the install-skill
+ * threat model (the user's own `~/.claude/skills/` directory), this is
+ * considered out of scope.
+ */
 export function runInstall(
   source: string,
   version: string,
@@ -167,8 +333,50 @@ export function runInstall(
     };
   }
 
-  // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
+  // PR review (round 3): the B030 symlink/containment checks MUST run
+  // BEFORE the idempotency noop branch. If `target/SKILL.md` is a
+  // pre-planted symlink whose target file happens to contain the current
+  // version string, the noop branch would return early — leaving the
+  // hostile symlink in place. Resolving the target's canonical root up
+  // front also rejects a symlinked install target outright (see
+  // `resolveTargetRealpath`), which is the strongest guard we have.
+  const targetRealpath = resolveTargetRealpath(options.target, fs);
   const destSkillPath = join(options.target, 'SKILL.md');
+
+  // PR review (round 4): the SKILL.md symlink guard MUST fire regardless
+  // of `--force`. Under --force the OLD code fell through to readFile,
+  // which followed the link — if the target file's content happened to
+  // carry the current version, the idempotency branch returned noop and
+  // left the hostile symlink in place. B030 says --force never follows a
+  // symlink; with the adapter's unlink available we remove the link in
+  // place and continue to the install loop (which then writes a regular
+  // file). Without unlink, we hard-error so the symlink is never
+  // dereferenced.
+  if (!options.dryRun && fs.exists(destSkillPath) && fs.isSymlink?.(destSkillPath) === true) {
+    if (!options.force) {
+      throw new InstallSkillError(
+        `Refusing to read symlink at ${destSkillPath} for the idempotency check. ` +
+          `A pre-planted symlink would let an attacker hide a sentinel file behind ` +
+          `the version probe. Remove the symlink and re-run (or pass --force).`,
+        2,
+      );
+    }
+    if (fs.unlink === undefined) {
+      throw new InstallSkillError(
+        `Refusing to follow symlink at ${destSkillPath}: --force was set but the ` +
+          `filesystem adapter does not expose unlink(). Reading through the symlink ` +
+          `would defeat the B030 guard.`,
+        2,
+      );
+    }
+    const unlinkFn = fs.unlink;
+    writeWithPermissionGuard(destSkillPath, () => {
+      unlinkFn(destSkillPath);
+    });
+  }
+
+  // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
+  // After the symlink-strip above, this branch is only reached for a regular file.
   if (!options.dryRun && fs.exists(destSkillPath)) {
     const existing = fs.readFile(destSkillPath);
     const existingVersion = readSkillVersion(existing);
@@ -205,6 +413,42 @@ export function runInstall(
     writeWithPermissionGuard(dest, () => {
       fs.mkdir(dirname(dest));
     });
+
+    // B030: refuse to follow a pre-planted symlink at the destination.
+    // Without --force this is a hard error; with --force we unlink the
+    // symlink itself and write a new regular file, never following the link.
+    // Crucially, --force is only honoured when the adapter actually provides
+    // `unlink` — silently falling through would still write THROUGH the
+    // symlink, which is what we're trying to prevent. (Raised in PR review.)
+    if (fs.isSymlink?.(dest) === true) {
+      if (!options.force) {
+        throw new InstallSkillError(
+          `Refusing to overwrite symlink at ${dest}. ` +
+            `A pre-planted symlink would cause the install to write into the symlink's target. ` +
+            `Remove the symlink (or re-run with --force, which unlinks before writing) and try again.`,
+          2,
+        );
+      }
+      if (fs.unlink === undefined) {
+        throw new InstallSkillError(
+          `Refusing to overwrite symlink at ${dest}: --force was set but the configured ` +
+            `filesystem adapter does not expose an unlink(). Writing through the symlink ` +
+            `would still hit the symlink's target.`,
+          2,
+        );
+      }
+      const unlinkFn = fs.unlink;
+      writeWithPermissionGuard(dest, () => {
+        unlinkFn(dest);
+      });
+    }
+
+    // B030 containment: after any unlink-and-replace, verify the resolved
+    // destination (and its parent) still live inside the install target.
+    // Catches symlinked parent directories that would write outside the
+    // intended root even when `dest` itself is not a symlink. (PR review.)
+    assertDestUnderTarget(dest, targetRealpath, fs);
+
     const content = fs.readFile(src);
     const stamped = rel === 'SKILL.md' ? stampVersion(content, version) : content;
     writeWithPermissionGuard(dest, () => {
@@ -219,6 +463,94 @@ export function runInstall(
     files,
     version,
   };
+}
+
+/**
+ * Resolve the install target's canonical path. The target itself may not
+ * exist yet (we're about to `mkdir -p` it), so we walk up to the deepest
+ * existing ancestor, `realpath` THAT, then append the still-non-existent
+ * tail. The result is the canonical form `assertDestUnderTarget` compares
+ * against — without this normalisation, hosts like macOS (where `/var` is a
+ * symlink to `/private/var`) produce a spurious mismatch.
+ */
+function resolveTargetRealpath(target: string, fs: FilesystemDeps): string {
+  if (fs.realpath === undefined) return target;
+
+  // PR review hardening: if `options.target` itself is a pre-existing
+  // symlink, refuse — adopting the link's destination as `targetRealpath`
+  // would silently relocate the entire install (and all subsequent
+  // `assertDestUnderTarget` checks would happily clear writes inside the
+  // attacker-chosen destination because that destination IS the trusted
+  // root). Symlinked PARENT components are still tolerated and re-anchored
+  // below: that's the normal `/var → /private/var` case on macOS.
+  if (fs.exists(target) && fs.isSymlink?.(target) === true) {
+    throw new InstallSkillError(
+      `Refusing to install into ${target}: the target itself is a symbolic link. ` +
+        `A symlinked install target would let writes escape the configured path. ` +
+        `Remove the symlink (or point --path at a real directory) and try again.`,
+      2,
+    );
+  }
+
+  let probe = target;
+  const tail: string[] = [];
+  for (let i = 0; i < 32; i++) {
+    if (fs.exists(probe)) {
+      const resolved = fs.realpath(probe);
+      return tail.length === 0 ? resolved : join(resolved, ...tail.reverse());
+    }
+    const parent = dirname(probe);
+    if (parent === probe) break;
+    tail.push(probe.slice(parent.length + (parent.endsWith(sep) ? 0 : 1)));
+    probe = parent;
+  }
+  return target;
+}
+
+/**
+ * Verify that `dest` resolves inside `targetRealpath` after symlinks in its
+ * parent chain are followed. We resolve the deepest existing ancestor (the
+ * file itself usually does not exist yet at write time) and require that
+ * canonical ancestor to be `targetRealpath` itself or a descendant.
+ *
+ * Defends against the "symlinked parent directory" escape raised in PR
+ * review of B030: even if `dest` is not a symlink, a parent component being
+ * a symlink would land the write outside `options.target`.
+ *
+ * The comparison is done on the realpath of an existing ancestor (which may
+ * differ from the raw `dest` path on platforms like macOS where `/var` is a
+ * symlink to `/private/var`), so we deliberately do NOT do a separate
+ * string-level `..` check against the raw path — that would produce false
+ * positives when the host OS rewrites the prefix.
+ */
+function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void {
+  if (fs.realpath === undefined) return;
+  let resolvedParent: string | undefined;
+  let probe = dirname(dest);
+  // Walk up until we find an existing directory (so realpath can follow it).
+  for (let i = 0; i < 32; i++) {
+    if (fs.exists(probe)) {
+      resolvedParent = fs.realpath(probe);
+      break;
+    }
+    const next = dirname(probe);
+    if (next === probe) break;
+    probe = next;
+  }
+  if (resolvedParent === undefined) return;
+
+  // `realpathSync` and our `resolveTargetRealpath` both strip trailing
+  // separators on every platform we ship to (POSIX + Windows), so a single
+  // appended sep yields a deterministic prefix for the containment check.
+  const targetWithSep = targetRealpath + sep;
+  if (resolvedParent !== targetRealpath && !resolvedParent.startsWith(targetWithSep)) {
+    throw new InstallSkillError(
+      `Refusing to write ${dest}: resolved parent ${resolvedParent} is outside the install ` +
+        `target ${targetRealpath}. A symlinked parent directory would let the install escape ` +
+        `the configured target.`,
+      2,
+    );
+  }
 }
 
 function isPermissionError(err: unknown): boolean {

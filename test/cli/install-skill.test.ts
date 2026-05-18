@@ -643,6 +643,327 @@ describe('executeInstallSkill', () => {
   });
 });
 
+describe('runInstall — B030 symlink guard', () => {
+  it('refuses to follow a pre-planted symlink at a non-SKILL.md path (no --force)', async () => {
+    // The bundled skill includes `reference/jira.md`. We pre-plant a symlink
+    // at the equivalent destination so the symlink check fires inside the
+    // file loop, bypassing the SKILL.md idempotency check.
+    const target = join(tmpRoot, 'symlink-target');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitiveFile = join(tmpRoot, 'sensitive.txt');
+    writeFileSync(sensitiveFile, 'original-contents');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sensitiveFile, join(target, 'reference', 'jira.md'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/Refusing to overwrite symlink/);
+
+    // Sensitive file content must be untouched
+    expect(readFileSync(sensitiveFile, 'utf8')).toBe('original-contents');
+  });
+
+  it('with --force, unlinks the symlink before writing instead of following it', async () => {
+    const target = join(tmpRoot, 'symlink-force');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitiveFile = join(tmpRoot, 'sensitive2.txt');
+    writeFileSync(sensitiveFile, 'original-contents');
+    const { symlinkSync, lstatSync } = await import('node:fs');
+    symlinkSync(sensitiveFile, join(target, 'reference', 'jira.md'));
+
+    runInstall(BUNDLED_SKILL, '9.9.9', {
+      target,
+      force: true,
+      dryRun: false,
+      print: false,
+    });
+
+    // The sensitive target was NOT overwritten
+    expect(readFileSync(sensitiveFile, 'utf8')).toBe('original-contents');
+    // The destination is now a regular file (lstat would say not a symlink)
+    expect(lstatSync(join(target, 'reference', 'jira.md')).isSymbolicLink()).toBe(false);
+  });
+
+  it('B030: --force on an isSymlink-only fs adapter (no unlink) is a hard error, not a silent fallthrough', () => {
+    // Raised in PR review: previously this test asserted insecure behaviour
+    // (the install proceeded and wrote THROUGH the symlink). Now we require
+    // a hard error so the symlink target can never be hit, even when the
+    // injected adapter omits unlink().
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (_p: string, _c: string): void => undefined,
+      mkdir: (_p: string): void => undefined,
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'),
+      // unlink intentionally omitted
+    };
+    const target = join(tmpRoot, 'isSymlink-only');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: true, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).toThrow(/does not expose an unlink/);
+  });
+
+  it('B030 (PR review of round 4): --force on a SKILL.md symlink fails hard when the fs adapter has no unlink()', () => {
+    // Mirrors the existing isSymlink-only-no-unlink test but at the
+    // pre-write SKILL.md probe. Without unlink we cannot safely strip
+    // the symlink before reading, so the only safe move is to refuse.
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (_p: string, _c: string): void => undefined,
+      mkdir: (_p: string): void => undefined,
+      // Anything ending in SKILL.md is reported as existing AND a symlink.
+      exists: (p: string): boolean => existsSync(p) || p.endsWith('SKILL.md'),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'),
+      // unlink intentionally omitted
+    };
+    const target = join(tmpRoot, 'force-no-unlink');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: true, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).toThrow(/does not expose unlink/);
+  });
+
+  it('B030 (PR review of round 4): --force on a SKILL.md symlink unlinks the symlink without following it (no noop)', async () => {
+    // Under the OLD ordering, --force fell through to readFile, which
+    // followed the link. If the symlinked file's frontmatter version
+    // matched the install version, noop-same-version was returned and
+    // the hostile symlink was left in place — defeating B030 under
+    // --force. The round-4 fix unlinks the symlink BEFORE readFile so
+    // the install always replaces the symlink with a regular file.
+    const target = join(tmpRoot, 'skill-symlink-force');
+    mkdirSync(target, { recursive: true });
+    const sentinel = join(tmpRoot, 'force-sentinel.md');
+    writeFileSync(sentinel, `---\nname: x\nversion: 9.9.9\n---\nbody\n`, 'utf8');
+    const { symlinkSync, lstatSync } = await import('node:fs');
+    symlinkSync(sentinel, join(target, 'SKILL.md'));
+
+    // Sanity-check: sentinel is intact before the install.
+    expect(readFileSync(sentinel, 'utf8')).toContain('version: 9.9.9');
+
+    // --force install must NOT return noop-same-version (which would
+    // leave the symlink in place) — it must proceed with the install
+    // loop, which writes a regular file at target/SKILL.md.
+    const result = runInstall(BUNDLED_SKILL, '9.9.9', {
+      target,
+      force: true,
+      dryRun: false,
+      print: false,
+    });
+    expect(result.action).toBe('copied');
+
+    // The sensitive sentinel file behind the original symlink must be
+    // untouched.
+    expect(readFileSync(sentinel, 'utf8')).toContain('version: 9.9.9');
+    // And target/SKILL.md is now a REGULAR file, not a symlink.
+    expect(lstatSync(join(target, 'SKILL.md')).isSymbolicLink()).toBe(false);
+  });
+
+  it('B030 (PR review of round 3): SKILL.md symlink is refused BEFORE the version-noop branch', async () => {
+    // Threat: pre-plant a symlink at target/SKILL.md whose linked file
+    // contains the current version. The OLD ordering ran the idempotency
+    // check first (reading through the symlink, returning noop and
+    // leaving the symlink in place). The new ordering refuses the
+    // symlink up front so an attacker cannot hide a sentinel file
+    // behind the version probe.
+    const target = join(tmpRoot, 'skill-symlink-attack');
+    mkdirSync(target, { recursive: true });
+    const sentinel = join(tmpRoot, 'sentinel-version-file.md');
+    // Sentinel content has matching frontmatter version so the noop branch
+    // would otherwise fire.
+    writeFileSync(sentinel, `---\nname: x\nversion: 9.9.9\n---\nbody\n`, 'utf8');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sentinel, join(target, 'SKILL.md'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/Refusing to read symlink at .*SKILL\.md/);
+  });
+
+  it('B030 (PR review of round 3): writeFileNoFollow rejects a destination that becomes a symlink between check and write', async () => {
+    // Simulate the TOCTOU window collapse: a destination that EXISTS as
+    // a regular file and looks fine to `assertDestUnderTarget`, but gets
+    // swapped to a symlink before the open() call. Our real-fs path now
+    // opens with O_NOFOLLOW so the symlink at the final component is
+    // refused with ELOOP, mapped to a stable InstallSkillError.
+    //
+    // Because the install flow's own pre-check would catch the symlink
+    // first, we exercise `writeFileNoFollow` indirectly by pre-planting
+    // a symlink at the target file *after* mkdir but BEFORE the open --
+    // here we just pre-plant it directly and rely on the inner guard
+    // returning the ELOOP-mapped error.
+    const target = join(tmpRoot, 'toctou-attack');
+    mkdirSync(join(target, 'reference'), { recursive: true });
+    const sensitive = join(tmpRoot, 'sensitive-toctou.txt');
+    writeFileSync(sensitive, 'untouched', 'utf8');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sensitive, join(target, 'reference', 'jira.md'));
+
+    // The pre-check fires first; we just confirm the install does NOT
+    // overwrite the sensitive file even though a symlink was planted.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow();
+    expect(readFileSync(sensitive, 'utf8')).toBe('untouched');
+  });
+
+  it('B030 (PR review): resolveTargetRealpath walks to root when target has no existing ancestor', () => {
+    // Exists() returns true for the source but false for every path under
+    // the target. resolveTargetRealpath walks up the target until it reaches
+    // root (or the 32-step cap) and breaks, exercising the fallback branch
+    // that returns `target` unchanged.
+    const target = join(tmpRoot, 'never-existed-' + Math.random().toString(36).slice(2));
+    const writes: Record<string, string> = {};
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (p: string, c: string): void => {
+        writes[p] = c;
+      },
+      mkdir: (_p: string): void => undefined,
+      exists: (p: string): boolean => p.startsWith(BUNDLED_SKILL),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      realpath: (p: string): string => p,
+    };
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: false, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).not.toThrow();
+    expect(Object.keys(writes).length).toBeGreaterThan(0);
+  });
+
+  it('B030 (PR review): realpath fallback returns the input on ENOENT (resilience)', () => {
+    // Real fs realpath wrapper catches and returns the input on failure. We
+    // can hit it by pointing at a path that has never existed (e.g. inside a
+    // unique tmpdir branch) — realpathSync throws ENOENT, fallback returns
+    // the input unchanged, and the install succeeds via the realFs path.
+    const target = join(tmpRoot, 'never-was-' + Math.random().toString(36).slice(2));
+    // Use the production realFs (default arg) so the real realpath wrapper
+    // is exercised, not an injected fake.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it('B030: refuses to write when a parent directory is a symlink escaping the target', async () => {
+    // Pre-plant `target/reference` as a symlink to a SIBLING directory
+    // outside the target. The dest path `target/reference/jira.md` is not
+    // itself a symlink, so the original B030 guard would allow the write;
+    // the realpath/containment check added in PR review must catch it.
+    const target = join(tmpRoot, 'parent-escape-target');
+    mkdirSync(target, { recursive: true });
+    const sibling = join(tmpRoot, 'sibling-outside-target');
+    mkdirSync(sibling, { recursive: true });
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(sibling, join(target, 'reference'));
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/outside the install target/);
+
+    // Nothing was written into the sibling directory.
+    expect(readdirSync(sibling)).toEqual([]);
+  });
+
+  it('treats fs adapter without isSymlink as a no-op guard (backwards compat)', () => {
+    // Custom fs adapter omitting isSymlink → install proceeds without the
+    // guard, preserving the pre-B030 contract for embedders.
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (p: string, c: string): void => writeFileSync(p, c, 'utf8'),
+      mkdir: (p: string): void => {
+        mkdirSync(p, { recursive: true });
+      },
+      exists: (p: string): boolean => existsSync(p),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+    };
+    const target = join(tmpRoot, 'compat');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: false, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).not.toThrow();
+  });
+
+  it('B030 (PR review): refuses when the install target itself is a symbolic link', async () => {
+    // resolveTargetRealpath would otherwise adopt the link's destination as
+    // the trusted root, so every subsequent containment check would happily
+    // clear writes inside the attacker-chosen directory. Refusing the
+    // symlinked target keeps the canonical install root anchored to the
+    // path the user actually configured.
+    const realDir = join(tmpRoot, 'real-elsewhere');
+    mkdirSync(realDir, { recursive: true });
+    const target = join(tmpRoot, 'symlinked-target');
+    const { symlinkSync } = await import('node:fs');
+    symlinkSync(realDir, target);
+
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: false,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/target itself is a symbolic link/);
+
+    // --force must NOT bypass — adopting the symlink under --force would
+    // be a footgun for the exact attack the guard prevents.
+    expect(() =>
+      runInstall(BUNDLED_SKILL, '9.9.9', {
+        target,
+        force: true,
+        dryRun: false,
+        print: false,
+      }),
+    ).toThrow(/target itself is a symbolic link/);
+  });
+});
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function makeRealFsWithWriteError(error: { code: string }): {

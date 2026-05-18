@@ -252,24 +252,27 @@ describe('DashboardsResource', () => {
 
   describe('listAll()', () => {
     it('paginates across multiple responses and yields all dashboards', async () => {
-      // Arrange
+      // Arrange — pages are sized at the caller's `maxResults` (PR review
+      // of B033: short-page termination uses the CALLER-supplied page size,
+      // not the server's echo, so a page of N items with `maxResults: N`
+      // continues iteration; a partial page terminates).
       transport
         .respondWith({
           dashboards: [makeDashboard('1', 'Dashboard 1')],
           startAt: 0,
-          maxResults: 50,
-          total: 51,
+          maxResults: 1,
+          total: 2,
         })
         .respondWith({
           dashboards: [makeDashboard('2', 'Dashboard 2')],
-          startAt: 50,
-          maxResults: 50,
-          total: 51,
+          startAt: 1,
+          maxResults: 1,
+          total: 2,
         });
 
       // Act
       const items: { id: string }[] = [];
-      for await (const dashboard of dashboards.listAll()) {
+      for await (const dashboard of dashboards.listAll({ maxResults: 1 })) {
         items.push(dashboard);
       }
 
@@ -278,6 +281,27 @@ describe('DashboardsResource', () => {
       expect(items[0]?.id).toBe('1');
       expect(items[1]?.id).toBe('2');
       expect(transport.calls).toHaveLength(2);
+    });
+
+    it('PR review of B033: short-page termination ends iteration when server returns < maxResults rows and omits total', async () => {
+      // A normal "last page" — server returned 3 rows for a page size of 50
+      // and didn't bother setting `total`. The new short-page check must
+      // recognise this and exit; previously the loop would have run all the
+      // way to `maxPages` (up to 10k wasted requests).
+      transport.respondWith({
+        dashboards: [makeDashboard('1', 'D1'), makeDashboard('2', 'D2'), makeDashboard('3', 'D3')],
+        startAt: 0,
+        maxResults: 50,
+        // total deliberately omitted
+      });
+
+      const items: { id: string }[] = [];
+      for await (const dashboard of dashboards.listAll()) {
+        items.push(dashboard);
+      }
+
+      expect(items).toHaveLength(3);
+      expect(transport.calls).toHaveLength(1);
     });
 
     it('stops when total is reached', async () => {
@@ -318,6 +342,101 @@ describe('DashboardsResource', () => {
       // Assert
       expect(items).toHaveLength(0);
       expect(transport.calls).toHaveLength(1);
+    });
+
+    it('B033: caps iteration at maxPages when server returns total: undefined forever', async () => {
+      // Hostile server: every response carries a FULL page (matching the
+      // caller-supplied `maxResults: 1`) with no `total`, which would loop
+      // forever under the old implementation. The short-page check does
+      // NOT fire here because `values.length === maxResults`, so the
+      // maxPages cap is the only thing standing between the client and an
+      // infinite request stream — exactly the case B033 was built for.
+      for (let i = 0; i < 20; i++) {
+        transport.respondWith({
+          dashboards: [makeDashboard(String(i), `Dashboard ${i}`)],
+          startAt: i,
+          maxResults: 1,
+          // total deliberately omitted
+        });
+      }
+
+      const items: { id: string }[] = [];
+      // Pass maxPages: 5 so the test terminates promptly instead of running
+      // for 10 000 pages (the default cap that protects production).
+      for await (const dashboard of dashboards.listAll({ maxResults: 1 }, { maxPages: 5 })) {
+        items.push(dashboard);
+      }
+
+      // Must terminate after exactly 5 page fetches (one item each)
+      expect(items).toHaveLength(5);
+      expect(transport.calls).toHaveLength(5);
+    });
+
+    it('B033: throws RangeError when maxPages is not a positive integer', async () => {
+      transport.respondWith(makeRawListResponse([]));
+      const iterator = dashboards.listAll(undefined, { maxPages: 0 });
+      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+    });
+
+    it('B033: throws RangeError when maxPages is fractional', async () => {
+      transport.respondWith(makeRawListResponse([]));
+      const iterator = dashboards.listAll(undefined, { maxPages: 1.5 });
+      await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
+    });
+
+    it('B033 (PR review): does NOT emit a warn() when maxPages is intentionally small (1 or 2)', async () => {
+      transport.respondWith({
+        dashboards: [makeDashboard('1', 'D1')],
+        startAt: 0,
+        maxResults: 1,
+      });
+
+      const warnings: string[] = [];
+      const noop = (): void => undefined;
+      const logger = {
+        debug: noop,
+        info: noop,
+        warn: (msg: string): void => {
+          warnings.push(msg);
+        },
+        error: noop,
+      };
+
+      for await (const _ of dashboards.listAll(undefined, { maxPages: 1, logger })) {
+        // consume
+      }
+
+      expect(warnings).toEqual([]);
+    });
+
+    it('B033: emits a warn() once the page count crosses 80% of maxPages', async () => {
+      // Full pages (caller `maxResults: 1`, server returns 1 row) keep
+      // iteration going past the 80% threshold so the warn() fires; the
+      // short-page check would otherwise terminate before the threshold.
+      for (let i = 0; i < 10; i++) {
+        transport.respondWith({
+          dashboards: [makeDashboard(String(i), `D${i}`)],
+          startAt: i,
+          maxResults: 1,
+        });
+      }
+
+      const warnings: string[] = [];
+      const noop = (): void => undefined;
+      const logger = {
+        debug: noop,
+        info: noop,
+        warn: (msg: string): void => {
+          warnings.push(msg);
+        },
+        error: noop,
+      };
+
+      for await (const _ of dashboards.listAll({ maxResults: 1 }, { maxPages: 5, logger })) {
+        // consume
+      }
+
+      expect(warnings.some((m) => m.includes('nearing maxPages'))).toBe(true);
     });
 
     it('passes params to the underlying list call', async () => {

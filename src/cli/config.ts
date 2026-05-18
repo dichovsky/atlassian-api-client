@@ -10,6 +10,7 @@ export function resolveGlobalOptions(
   const email = resolveValue(options['email'], 'ATLASSIAN_EMAIL');
   const token = resolveValue(options['token'], 'ATLASSIAN_API_TOKEN');
   const format = resolveFormat(options['format']);
+  const allowedHosts = resolveAllowedHosts(options['allowed-hosts']);
 
   if (!baseUrl) {
     throw new Error('Missing --base-url or ATLASSIAN_BASE_URL environment variable');
@@ -21,29 +22,37 @@ export function resolveGlobalOptions(
     throw new Error('Missing --token or ATLASSIAN_API_TOKEN environment variable');
   }
 
-  return { baseUrl, authType, email, token, format };
+  return { baseUrl, authType, email, token, format, allowedHosts };
 }
 
 /** Build a ClientConfig from resolved global options. */
 export function buildClientConfig(globals: GlobalOptions): ClientConfig {
-  if (globals.authType === 'bearer') {
-    return {
-      baseUrl: globals.baseUrl,
-      auth: {
-        type: 'bearer',
-        token: globals.token,
-      },
-    };
-  }
+  const auth =
+    globals.authType === 'bearer'
+      ? { type: 'bearer' as const, token: globals.token }
+      : { type: 'basic' as const, email: globals.email, apiToken: globals.token };
 
-  return {
-    baseUrl: globals.baseUrl,
-    auth: {
-      type: 'basic',
-      email: globals.email,
-      apiToken: globals.token,
-    },
-  };
+  return globals.allowedHosts !== undefined
+    ? { baseUrl: globals.baseUrl, auth, allowedHosts: globals.allowedHosts }
+    : { baseUrl: globals.baseUrl, auth };
+}
+
+/**
+ * Parse `--allowed-hosts host1,host2[,...]` (or `ATLASSIAN_ALLOWED_HOSTS`)
+ * into an array. Returns `undefined` when neither is set so the default
+ * Atlassian suffix allowlist applies. Empty / whitespace-only entries are
+ * dropped; further validation (bare hostname, no port, etc.) is the job
+ * of `resolveConfig`. PR review (round 3).
+ */
+function resolveAllowedHosts(flag: string | boolean | undefined): readonly string[] | undefined {
+  const raw =
+    typeof flag === 'string' && flag.length > 0 ? flag : process.env['ATLASSIAN_ALLOWED_HOSTS'];
+  if (raw === undefined || raw.length === 0) return undefined;
+  const parts = raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  return parts.length === 0 ? undefined : parts;
 }
 
 function resolveValue(flag: string | boolean | undefined, envKey: string): string {

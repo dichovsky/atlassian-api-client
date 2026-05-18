@@ -119,6 +119,20 @@ const client = new JiraClient({
 });
 ```
 
+### Self-hosted / non-Atlassian baseUrl
+
+By default, only baseUrls whose host ends in `.atlassian.{net,com}`, `.jira-dev.com`, or `.jira.com` are accepted — the transport refuses to send the configured `Authorization` header to any other host. For self-hosted Jira / Confluence or a reverse proxy in front of Atlassian, pass `allowedHosts` (bare hostnames, no port) to opt in:
+
+```typescript
+const client = new JiraClient({
+  baseUrl: 'https://jira.internal.example',
+  auth: { type: 'bearer', token: process.env.PAT! },
+  allowedHosts: ['jira.internal.example'],
+});
+```
+
+The list must include the `baseUrl` host itself; resource paths that resolve to a host outside the list throw `ValidationError` before any HTTP call is made.
+
 ## Pagination
 
 ### Async Iteration
@@ -345,6 +359,16 @@ export ATLASSIAN_API_TOKEN=your-token
 
 # Or pass inline
 atlas --base-url https://... --email user@... --token ...
+```
+
+### Self-hosted / non-Atlassian baseUrl
+
+For security, the CLI's default host allowlist only accepts `*.atlassian.{net,com}`, `*.jira-dev.com`, and `*.jira.com` — calls outside that suffix list fail with `ValidationError`. Self-hosted or proxied deployments must opt in with `--allowed-hosts` (or the `ATLASSIAN_ALLOWED_HOSTS` env var). Entries are bare hostnames (no scheme, no port) and must include the `baseUrl` host itself:
+
+```bash
+atlas confluence spaces list \
+  --base-url https://jira.internal.example \
+  --allowed-hosts jira.internal.example
 ```
 
 ### Examples

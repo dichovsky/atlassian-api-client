@@ -144,24 +144,42 @@ function shouldRetry(error: unknown, attempt: number, retries: number): boolean 
   return false;
 }
 
+/**
+ * Hard ceiling applied when `maxRetryDelay` is non-finite. `resolveConfig`
+ * rejects non-finite values up front (PR review of [[B023]]) — this constant
+ * is defence-in-depth for callers that bypass `resolveConfig` (e.g. unit
+ * tests that build a config literal directly). Without it, `Math.min(x,
+ * Infinity)` degenerates to `x`, re-opening the unbounded-Retry-After DoS.
+ */
+const RETRY_DELAY_HARD_CEILING = 60_000;
+
+function effectiveMaxDelay(maxRetryDelay: number): number {
+  return Number.isFinite(maxRetryDelay) && maxRetryDelay > 0
+    ? maxRetryDelay
+    : RETRY_DELAY_HARD_CEILING;
+}
+
 function getRetryDelay(
   error: unknown,
   attempt: number,
   retryDelay: number,
   maxRetryDelay: number,
 ): number {
+  const ceiling = effectiveMaxDelay(maxRetryDelay);
   if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-    // Add 0..retryDelay jitter on top of the server-advertised delay so a herd
-    // of clients hitting the same 429 wall don't resume in lockstep. The
-    // server-advertised floor is always preserved. When maxRetryDelay leaves
-    // headroom above that floor, cap only the added jitter to stay within it.
-    const base = error.retryAfter * 1000;
+    // B023: cap the server-advertised wait against `ceiling` so a hostile
+    // or misconfigured endpoint returning `Retry-After: 9999999999` cannot
+    // park the calling process for years. The full server-advertised value
+    // remains available on the thrown `RateLimitError.retryAfter` so callers
+    // that want to honour a longer wait can opt in explicitly.
+    const requested = error.retryAfter * 1000;
+    const base = Math.min(requested, ceiling);
     const jitter = Math.random() * retryDelay;
-    const maxAdditionalDelay = Math.max(0, maxRetryDelay - base);
+    const maxAdditionalDelay = Math.max(0, ceiling - base);
     return base + Math.min(jitter, maxAdditionalDelay);
   }
 
-  return calculateDelay(attempt, retryDelay, maxRetryDelay);
+  return calculateDelay(attempt, retryDelay, ceiling);
 }
 
 async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
