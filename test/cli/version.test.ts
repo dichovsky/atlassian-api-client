@@ -82,6 +82,69 @@ describe('resolvePackageVersion', () => {
     expect(() => resolvePackageVersion(url)).toThrow(VersionResolutionError);
   });
 
+  it('wraps fs.readFile failures in VersionResolutionError (PR #24)', () => {
+    // Simulates the race window where `exists` reports true but the file is
+    // removed (or becomes unreadable) before the subsequent read — and any
+    // other read failure. Without wrapping, the raw fs error would escape
+    // the domain error contract that callers depend on.
+    const fakeFs: VersionFsDeps = {
+      exists: () => true,
+      readFile: () => {
+        throw new Error('EACCES: permission denied');
+      },
+    };
+    expect(() => resolvePackageVersion('file:///a.js', fakeFs)).toThrow(VersionResolutionError);
+    expect(() => resolvePackageVersion('file:///a.js', fakeFs)).toThrow(
+      /Failed to read package\.json/,
+    );
+  });
+
+  it('wraps non-Error thrown by fs.readFile in VersionResolutionError', () => {
+    const fakeFs: VersionFsDeps = {
+      exists: () => true,
+      readFile: () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw 'plain string failure';
+      },
+    };
+    expect(() => resolvePackageVersion('file:///a.js', fakeFs)).toThrow(VersionResolutionError);
+    expect(() => resolvePackageVersion('file:///a.js', fakeFs)).toThrow(/plain string failure/);
+  });
+
+  it('wraps malformed JSON in VersionResolutionError', () => {
+    const dir = mkdtempSync(join(tmpRoot, 'badjson-'));
+    writeFileSync(join(dir, 'package.json'), '{ this is not valid json');
+    const fakeModule = join(dir, 'mod.js');
+    writeFileSync(fakeModule, '');
+    const url = new URL(`file://${fakeModule}`).href;
+    expect(() => resolvePackageVersion(url)).toThrow(VersionResolutionError);
+    expect(() => resolvePackageVersion(url)).toThrow(/Failed to parse package\.json/);
+  });
+
+  it('rejects null JSON payload with VersionResolutionError', () => {
+    const dir = mkdtempSync(join(tmpRoot, 'nulljson-'));
+    writeFileSync(join(dir, 'package.json'), 'null');
+    const fakeModule = join(dir, 'mod.js');
+    writeFileSync(fakeModule, '');
+    const url = new URL(`file://${fakeModule}`).href;
+    expect(() => resolvePackageVersion(url)).toThrow(VersionResolutionError);
+    expect(() => resolvePackageVersion(url)).toThrow(/is not a JSON object/);
+  });
+
+  it('rejects non-object JSON payload (array) with VersionResolutionError', () => {
+    // `typeof []` is `'object'`, but accessing `.version` on it would yield
+    // undefined and look like the "missing version" case. We want the more
+    // accurate "not a JSON object" diagnostic so a hand-edited corrupted
+    // package.json fails fast with the right message.
+    const dir = mkdtempSync(join(tmpRoot, 'arrayjson-'));
+    writeFileSync(join(dir, 'package.json'), '"just-a-string"');
+    const fakeModule = join(dir, 'mod.js');
+    writeFileSync(fakeModule, '');
+    const url = new URL(`file://${fakeModule}`).href;
+    expect(() => resolvePackageVersion(url)).toThrow(VersionResolutionError);
+    expect(() => resolvePackageVersion(url)).toThrow(/is not a JSON object/);
+  });
+
   it('terminates the walk at the filesystem root', () => {
     // A hermetic fs that says nothing exists ensures the walk reaches the
     // root (`dirname('/') === '/'`) and breaks instead of looping forever.

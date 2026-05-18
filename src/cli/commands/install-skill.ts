@@ -16,10 +16,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import type { ParsedCommand } from '../types.js';
-import {
-  resolvePackageVersion as resolveVersionFromPackage,
-  VersionResolutionError,
-} from '../version.js';
+import { resolvePackageVersion as resolveVersionFromPackage } from '../version.js';
 
 export const SKILL_NAME = 'atlassian-api-client-cli';
 
@@ -221,10 +218,14 @@ export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = re
       readFile: fs.readFile,
     });
   } catch (err) {
-    if (err instanceof VersionResolutionError) {
-      throw new InstallSkillError(err.message, 1);
-    }
-    throw err;
+    // `resolveVersionFromPackage` normalises every failure mode into a
+    // `VersionResolutionError`, so we can wrap unconditionally and preserve
+    // the installer's exit-code-1 contract for setup failures. The
+    // `instanceof Error` check is a defensive fallback against a future
+    // shared-helper change that surfaces a non-Error rejection.
+    /* c8 ignore next — defensive ternary fallback. */
+    const message = err instanceof Error ? err.message : String(err);
+    throw new InstallSkillError(message, 1);
   }
 }
 

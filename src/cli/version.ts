@@ -51,15 +51,49 @@ export function resolvePackageVersion(moduleUrl: string, fs: VersionFsDeps = rea
   for (let i = 0; i < MAX_WALK_DEPTH; i++) {
     const candidate = join(dir, 'package.json');
     if (fs.exists(candidate)) {
-      const pkg = JSON.parse(fs.readFile(candidate)) as { version?: unknown };
-      if (typeof pkg.version === 'string' && pkg.version.length > 0) {
-        return pkg.version;
-      }
-      throw new VersionResolutionError(`package.json at ${candidate} has no version field`);
+      return readVersionFrom(candidate, fs);
     }
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
   throw new VersionResolutionError(`Could not locate package.json starting from ${start}`);
+}
+
+/**
+ * Read and validate a single `package.json` candidate. Every failure mode
+ * — read errors, malformed JSON, non-object payloads, and missing/invalid
+ * `version` fields — is normalised to {@link VersionResolutionError} so
+ * callers can rely on a single domain error type. PR #24 review (Copilot).
+ */
+function readVersionFrom(candidate: string, fs: VersionFsDeps): string {
+  let raw: string;
+  try {
+    raw = fs.readFile(candidate);
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    throw new VersionResolutionError(`Failed to read package.json at ${candidate}: ${cause}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    /* c8 ignore start — `JSON.parse` always throws `SyntaxError` (an `Error`
+       subclass); the `String(err)` fallback is defensive against custom
+       engines or polyfills surfacing a non-Error rejection. */
+    const cause = err instanceof Error ? err.message : String(err);
+    throw new VersionResolutionError(`Failed to parse package.json at ${candidate}: ${cause}`);
+    /* c8 ignore stop */
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    throw new VersionResolutionError(`package.json at ${candidate} is not a JSON object`);
+  }
+
+  const version = (parsed as { version?: unknown }).version;
+  if (typeof version !== 'string' || version.length === 0) {
+    throw new VersionResolutionError(`package.json at ${candidate} has no version field`);
+  }
+  return version;
 }

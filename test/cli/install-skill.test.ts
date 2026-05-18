@@ -592,16 +592,29 @@ describe('executeInstallSkill', () => {
   });
 
   it('catches a non-InstallSkillError Error and returns 1 with err.message', () => {
-    // Covers the `err instanceof Error` true branch of the catch in executeInstallSkill.
+    // Covers the `err instanceof Error` true branch of the catch in
+    // executeInstallSkill (the second `const message = err.message ...`
+    // line, hit when the thrown error escapes BOTH the InstallSkillError
+    // wrapper inside `resolvePackageVersion` AND the install body — e.g.
+    // a `TypeError` raised by a downstream fs operation after version
+    // resolution succeeded. PR #24: post-shared-helper refactor needs the
+    // failure to happen after version lookup, since version errors are now
+    // normalised to InstallSkillError by the wrapper.
+    // The fake source dir contains exactly one file so listFilesRecursive
+    // advances past the empty-dir guard, then readFile on the source file
+    // throws a TypeError that escapes runInstall as a non-InstallSkillError.
     const fakeFs = {
-      readFile: (): string => {
-        throw new TypeError('bad json');
+      readFile: (path: string): string => {
+        if (path.endsWith('package.json')) {
+          return JSON.stringify({ name: 'x', version: '1.2.3' });
+        }
+        throw new TypeError('bad read');
       },
       writeFile: (_: string, __: string): void => undefined,
       mkdir: (_: string): void => undefined,
       exists: (): boolean => true,
-      readDir: (): readonly string[] => [],
-      isDirectory: (): boolean => true,
+      readDir: (path: string): readonly string[] => (path.endsWith('skill') ? ['SKILL.md'] : []),
+      isDirectory: (path: string): boolean => path.endsWith('skill'),
     };
     const io = makeIo();
     const code = executeInstallSkill(
@@ -614,20 +627,29 @@ describe('executeInstallSkill', () => {
       fakeFs,
     );
     expect(code).toBe(1);
-    expect(io.stderr.some((l) => l.includes('bad json'))).toBe(true);
+    expect(io.stderr.some((l) => l.includes('bad read'))).toBe(true);
   });
 
   it('catches non-Error throws and returns 1', () => {
+    // Covers the `String(err)` fallback in executeInstallSkill's catch.
+    // Same constraint as above: the version-resolution path now normalises
+    // every readFile failure into an InstallSkillError, so the non-Error
+    // throw must originate from a downstream fs call (here: from the
+    // post-version readFile path inside `runInstall`).
     const io = makeIo();
     const fakeFs = {
-      readFile: (): string => {
+      readFile: (path: string): string => {
+        if (path.endsWith('package.json')) {
+          return JSON.stringify({ name: 'x', version: '1.2.3' });
+        }
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'plain string thrown';
       },
       writeFile: (_: string, __: string): void => undefined,
       mkdir: (_: string): void => undefined,
       exists: (): boolean => true,
-      readDir: (): readonly string[] => [],
-      isDirectory: (): boolean => true,
+      readDir: (path: string): readonly string[] => (path.endsWith('skill') ? ['SKILL.md'] : []),
+      isDirectory: (path: string): boolean => path.endsWith('skill'),
     };
     const code = executeInstallSkill(
       cmd({ path: join(tmpRoot, 'x') }),
