@@ -76,3 +76,6 @@
 - [x] 🔴 🐛 CLI: B032 Terminal escape injection (error output)
   - **Impl:** Branch `fix/ctf-phase8-p0p1` (2026-05-16); `printError` sanitizes TTY stderr and caps assembled server error messages.
   - **Rat:** Stop ANSI escape injection in the error path.
+- [x] 🟡 🐛 CLI: B031 Real version from `package.json`
+  - **Impl:** Branch `feat/b031-real-cli-version` (2026-05-18); new `src/cli/version.ts` exports shared `resolvePackageVersion(moduleUrl, fs?)` + `VersionResolutionError`; `src/cli/index.ts` drops the hardcoded `VERSION='0.1.0'` and exports a testable `runCli(argv, stdout, stderr, resolveVersion?)`; bin shim guarded by `import.meta.url`-vs-`realpath(argv[1])` so tests can import without triggering `main()`; `install-skill.ts` keeps its `resolvePackageVersion` export as a thin `InstallSkillError`-wrapping adapter over the shared helper; new `test/cli/version.test.ts` + `test/cli/index.test.ts` cover the resolver and `--version` wiring end-to-end without subprocess spawning.
+  - **Rat:** CLI was printing `atlas v0.1.0` while the package shipped at `0.7.0` — `--version` was misleading users and skill installers reporting drift. Centralising the lookup eliminates the second source of truth and prevents the same drift from re-emerging on the next release.

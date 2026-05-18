@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "f9d864d739bb3ccb60a2f6b4dd791826fafe7caebbf983cca1c61efe913c5086",
+  "sourceHash": "cf7beeec95f36c626ec587594b530f43dd1477125b8b0b53e2445b958ab8d06c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1412,66 +1412,66 @@
         {
           "name": "SKILL_NAME",
           "kind": "variable",
-          "line": 20,
+          "line": 24,
           "exported": true,
           "signature": "export const SKILL_NAME = 'atlassian-api-client-cli';"
         },
         {
           "name": "InstallSkillOptions",
           "kind": "interface",
-          "line": 22,
+          "line": 26,
           "exported": true,
           "signature": "export interface InstallSkillOptions { readonly target: string; readonly force: boolean; readonly dryRun: boolean; reado…"
         },
         {
           "name": "InstallSkillResult",
           "kind": "interface",
-          "line": 29,
+          "line": 33,
           "exported": true,
           "signature": "export interface InstallSkillResult { readonly action: 'copied' | 'noop-same-version' | 'printed' | 'dry-run'; readonly …"
         },
         {
           "name": "InstallSkillError",
           "kind": "class",
-          "line": 37,
+          "line": 41,
           "exported": true,
           "signature": "export class InstallSkillError extends Error",
           "members": [
             {
               "name": "exitCode",
               "kind": "property",
-              "line": 38
+              "line": 42
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 39
+              "line": 43
             }
           ]
         },
         {
           "name": "FilesystemDeps",
           "kind": "interface",
-          "line": 46,
+          "line": 50,
           "signature": "interface FilesystemDeps { readonly readFile: (path: string) => string; readonly writeFile: (path: string, content: stri…"
         },
         {
           "name": "writeFileNoFollow",
           "kind": "function",
-          "line": 113,
+          "line": 117,
           "signature": "function writeFileNoFollow(path: string, content: string): void",
           "jsdoc": "Open `path` for writing in a way that REFUSES to follow a final-component symlink, closing the TOCTOU window between the pre-write `assertDestUnderTarget` check and the actual write (PR review of round 3)."
         },
         {
           "name": "realFs",
           "kind": "variable",
-          "line": 168,
+          "line": 172,
           "signature": "const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => writeFile…"
         },
         {
           "name": "resolveSkillSource",
           "kind": "function",
-          "line": 198,
+          "line": 202,
           "exported": true,
           "signature": "export function resolveSkillSource(moduleUrl: string): string",
           "jsdoc": "Resolve the bundled skill source directory relative to this module."
@@ -1479,15 +1479,15 @@
         {
           "name": "resolvePackageVersion",
           "kind": "function",
-          "line": 205,
+          "line": 217,
           "exported": true,
           "signature": "export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string",
-          "jsdoc": "Resolve the package version by reading the nearest package.json."
+          "jsdoc": "Resolve the package version by delegating to the shared CLI helper and mapping any failure to an {@link InstallSkillError} so the installer's exit-code contract (1 = setup error) is preserved."
         },
         {
           "name": "resolveInstallTarget",
           "kind": "function",
-          "line": 225,
+          "line": 232,
           "exported": true,
           "signature": "export function resolveInstallTarget( options: Record<string, string | boolean | undefined>, env: NodeJS.ProcessEnv, cwd…",
           "jsdoc": "Resolve the install target based on flag combination."
@@ -1495,21 +1495,21 @@
         {
           "name": "expandTilde",
           "kind": "function",
-          "line": 244,
+          "line": 251,
           "signature": "function expandTilde(input: string, home: string): string",
           "jsdoc": "Expand a leading `~` or `~/` in a path to the resolved home directory."
         },
         {
           "name": "listFilesRecursive",
           "kind": "function",
-          "line": 251,
+          "line": 258,
           "signature": "function listFilesRecursive(root: string, fs: FilesystemDeps): string[]",
           "jsdoc": "List every file path under a directory, recursively, relative to the root."
         },
         {
           "name": "stampVersion",
           "kind": "function",
-          "line": 269,
+          "line": 276,
           "exported": true,
           "signature": "export function stampVersion(content: string, version: string): string",
           "jsdoc": "Stamp the destination SKILL.md frontmatter `version:` with the given value."
@@ -1517,7 +1517,7 @@
         {
           "name": "readSkillVersion",
           "kind": "function",
-          "line": 283,
+          "line": 290,
           "exported": true,
           "signature": "export function readSkillVersion(content: string): string | null",
           "jsdoc": "Read the version field from a SKILL.md frontmatter string."
@@ -1525,7 +1525,7 @@
         {
           "name": "runInstall",
           "kind": "function",
-          "line": 311,
+          "line": 318,
           "exported": true,
           "signature": "export function runInstall( source: string, version: string, options: InstallSkillOptions, fs: FilesystemDeps = realFs, …",
           "jsdoc": "Perform the install. Pure with respect to the injected filesystem."
@@ -1533,34 +1533,34 @@
         {
           "name": "resolveTargetRealpath",
           "kind": "function",
-          "line": 476,
+          "line": 483,
           "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
           "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
         },
         {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 526,
+          "line": 533,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 556,
+          "line": 563,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 563,
+          "line": 570,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 575,
+          "line": 582,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -1568,12 +1568,13 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 614,
+          "line": 621,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
       "imports": [
         "../types.js",
+        "../version.js",
         "node:fs",
         "node:os",
         "node:path",
@@ -1755,16 +1756,47 @@
       "path": "src/cli/index.ts",
       "symbols": [
         {
-          "name": "VERSION",
-          "kind": "variable",
-          "line": 11,
-          "signature": "const VERSION = '0.1.0';"
+          "name": "CliWriter",
+          "kind": "type",
+          "line": 15,
+          "exported": true,
+          "signature": "export type CliWriter = (line: string) => void;",
+          "jsdoc": "Stream-style writer used by {@link runCli} for stdout/stderr injection."
+        },
+        {
+          "name": "VersionResolver",
+          "kind": "type",
+          "line": 18,
+          "exported": true,
+          "signature": "export type VersionResolver = () => string;",
+          "jsdoc": "Resolver injection point for {@link runCli}; default reads the bundled package.json."
+        },
+        {
+          "name": "defaultVersionResolver",
+          "kind": "function",
+          "line": 20,
+          "signature": "const defaultVersionResolver: VersionResolver = () =>"
+        },
+        {
+          "name": "runCli",
+          "kind": "function",
+          "line": 27,
+          "exported": true,
+          "signature": "export async function runCli( argv: readonly string[], stdout: CliWriter, stderr: CliWriter, resolveVersion: VersionReso…",
+          "jsdoc": "Execute the CLI. Extracted from the bin entry so tests can drive it with captured stdout/stderr and a stubbed version resolver — no subprocess spawning required."
         },
         {
           "name": "main",
           "kind": "function",
-          "line": 13,
+          "line": 72,
           "signature": "async function main(): Promise<void>"
+        },
+        {
+          "name": "isEntryPoint",
+          "kind": "function",
+          "line": 92,
+          "signature": "function isEntryPoint(): boolean",
+          "jsdoc": "Standard ESM \"is this module the entry point?\" check. When `node` is invoked with this file as `process.argv[1]`, `main()` runs and the CLI behaves as a bin. When the module is imported by a test (or any other consumer), `main()` is skipped so tests can drive {@link runCli} directly."
         }
       ],
       "imports": [
@@ -1774,7 +1806,10 @@
         "./config.js",
         "./help.js",
         "./output.js",
-        "./router.js"
+        "./router.js",
+        "./version.js",
+        "node:fs",
+        "node:url"
       ]
     },
     {
@@ -1913,6 +1948,60 @@
           "exported": true,
           "signature": "export interface ParsedCommand { readonly api: string; readonly resource: string; readonly action: string; readonly posi…"
         }
+      ]
+    },
+    {
+      "path": "src/cli/version.ts",
+      "symbols": [
+        {
+          "name": "VersionFsDeps",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface VersionFsDeps { readonly exists: (path: string) => boolean; readonly readFile: (path: string) => string…",
+          "jsdoc": "Filesystem surface used by {@link resolvePackageVersion}. Kept minimal so unit tests can stub the lookup deterministically without touching disk."
+        },
+        {
+          "name": "realFs",
+          "kind": "variable",
+          "line": 14,
+          "signature": "const realFs: VersionFsDeps = { exists: (path) => existsSync(path), readFile: (path) => readFileSync(path, 'utf8'), };"
+        },
+        {
+          "name": "VersionResolutionError",
+          "kind": "class",
+          "line": 24,
+          "exported": true,
+          "signature": "export class VersionResolutionError extends Error",
+          "jsdoc": "Raised when the package version cannot be resolved. Carries a plain Error shape so the caller can wrap it in a domain-specific error (e.g. {@link InstallSkillError}) without losing the underlying reason.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 25
+            }
+          ]
+        },
+        {
+          "name": "MAX_WALK_DEPTH",
+          "kind": "variable",
+          "line": 32,
+          "signature": "const MAX_WALK_DEPTH = 6;",
+          "jsdoc": "Maximum ancestor directories searched before giving up."
+        },
+        {
+          "name": "resolvePackageVersion",
+          "kind": "function",
+          "line": 48,
+          "exported": true,
+          "signature": "export function resolvePackageVersion(moduleUrl: string, fs: VersionFsDeps = realFs): string",
+          "jsdoc": "Resolve the package version by walking up from a module's URL until a `package.json` with a non-empty `version` string is found."
+        }
+      ],
+      "imports": [
+        "node:fs",
+        "node:path",
+        "node:url"
       ]
     },
     {

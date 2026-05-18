@@ -16,6 +16,10 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import type { ParsedCommand } from '../types.js';
+import {
+  resolvePackageVersion as resolveVersionFromPackage,
+  VersionResolutionError,
+} from '../version.js';
 
 export const SKILL_NAME = 'atlassian-api-client-cli';
 
@@ -201,24 +205,27 @@ export function resolveSkillSource(moduleUrl: string): string {
   return resolve(dirname(fileURLToPath(moduleUrl)), '..', '..', '..', 'skill');
 }
 
-/** Resolve the package version by reading the nearest package.json. */
+/**
+ * Resolve the package version by delegating to the shared CLI helper and
+ * mapping any failure to an {@link InstallSkillError} so the installer's
+ * exit-code contract (1 = setup error) is preserved.
+ *
+ * The shared resolver (and its tests) live in `src/cli/version.ts`; this
+ * function is a thin adapter retained so the installer keeps a single
+ * file-local error type for its callers.
+ */
 export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string {
-  const start = dirname(fileURLToPath(moduleUrl));
-  let dir = start;
-  for (let i = 0; i < 6; i++) {
-    const candidate = join(dir, 'package.json');
-    if (fs.exists(candidate)) {
-      const pkg = JSON.parse(fs.readFile(candidate)) as { version?: string };
-      if (typeof pkg.version === 'string' && pkg.version.length > 0) {
-        return pkg.version;
-      }
-      throw new InstallSkillError(`package.json at ${candidate} has no version field`, 1);
+  try {
+    return resolveVersionFromPackage(moduleUrl, {
+      exists: fs.exists,
+      readFile: fs.readFile,
+    });
+  } catch (err) {
+    if (err instanceof VersionResolutionError) {
+      throw new InstallSkillError(err.message, 1);
     }
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+    throw err;
   }
-  throw new InstallSkillError(`Could not locate package.json starting from ${start}`, 1);
 }
 
 /** Resolve the install target based on flag combination. */
