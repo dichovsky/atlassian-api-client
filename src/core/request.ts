@@ -1,5 +1,6 @@
 import type { RequestOptions } from './types.js';
 import { ValidationError } from './errors.js';
+import { hostMatchesExact } from './atlassian-hosts.js';
 
 /**
  * Resolve a request path against the configured base URL and apply query
@@ -96,10 +97,7 @@ export function buildUrl(
 }
 
 function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void {
-  const target = hostname.toLowerCase();
-  for (const allowed of allowedHosts) {
-    if (normalizeAllowedHost(allowed) === target) return;
-  }
+  if (hostMatchesExact(hostname, allowedHosts)) return;
   throw new ValidationError(
     `Refusing to send request to ${hostname}: host is not on the allowedHosts list. ` +
       `Attaching the configured Authorization header to a foreign host would leak credentials.`,
@@ -123,16 +121,6 @@ function assertDefaultPort(url: URL): void {
       `port may route to a different service running on the same host; ` +
       `re-host the endpoint or proxy via a default-port name.`,
   );
-}
-
-/**
- * Lower-case an `allowedHosts` entry for case-insensitive comparison.
- * Port-bearing entries are rejected up front by `validateAllowedHosts`
- * (config-resolution side) so this normalisation is a plain lowercase —
- * see PR review hardening of [[B034]].
- */
-function normalizeAllowedHost(entry: string): string {
-  return entry.toLowerCase();
 }
 
 /**
