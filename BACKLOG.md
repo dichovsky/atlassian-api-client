@@ -72,7 +72,7 @@
 
 > Deepening opportunities surfaced via `/improve-codebase-architecture` (2026-05-18). Each needs a grilling pass before implementation.
 
-- [ ] 🟡 ♻️ Arch: B037 Declarative endpoint registry (resource pass-through collapse)
+- [ ] 🟡 ♻️ Arch: B046 Declarative endpoint registry (resource pass-through collapse)
   - problem: ~30 resource modules in `src/{confluence,jira}/resources/*.ts` are pass-through adapters — interface complexity ≈ implementation complexity. Deletion test: inlining concentrates no complexity.
   - solution: define each endpoint as data (method + path template + types + pagination flavor); single `EndpointInvoker` turns declarations into typed calls.
   - benefits: path encoding, query serialization, pagination wiring enforced in one place; new endpoint = one declaration; collapses 30 near-duplicate test files.
@@ -80,10 +80,10 @@
   - deps: none
 - [ ] 🟢 ♻️ Arch: B038 Table-driven CLI dispatch
   - problem: `src/cli/commands/{jira,confluence}.ts` contain ~41 `switch (action)` branches each — second hand-maintained registry of "what resources/actions exist," parallel to resource modules. Adding an action requires edits in 3 places.
-  - solution: registry-of-handlers per resource keyed by action name; router enumerates available commands for help text. Collapses fully if B037 lands (CLI consumes same declarations).
+  - solution: registry-of-handlers per resource keyed by action name; router enumerates available commands for help text. Collapses fully if B046 lands (CLI consumes same declarations).
   - benefits: single source of truth for exposed actions; `atlas --help` auto-generated; one dispatch test replaces N per-case tests.
   - files: `src/cli/router.ts`, `src/cli/commands/jira.ts`, `src/cli/commands/confluence.ts`, `src/cli/help.ts`
-  - deps: B037 (optional — bigger win together)
+  - deps: B046 (optional — bigger win together)
 - [ ] 🟢 ♻️ Arch: B039 Extract shared client builder
   - problem: `ConfluenceClient` and `JiraClient` constructors do identical 4-step wiring (resolveConfig → build baseUrl → build HttpTransport → instantiate N resources). Clients own no state, no methods. Also: when `config.transport` is omitted, `resolveConfig` runs twice (idempotent but invites drift).
   - solution: extract `buildClient(apiPaths, resourceFactories, config)` module owning config resolution + transport construction. Client classes become thin facades over it.
