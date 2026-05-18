@@ -4,7 +4,12 @@ import {
   fetchRefreshedTokens,
   OAuthError,
 } from '../../src/core/oauth.js';
-import { AuthenticationError, HttpError, NetworkError } from '../../src/core/errors.js';
+import {
+  AuthenticationError,
+  HttpError,
+  NetworkError,
+  ValidationError,
+} from '../../src/core/errors.js';
 import type { RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
@@ -305,7 +310,7 @@ describe('fetchRefreshedTokens', () => {
     expect(body['client_secret']).toBe('csec');
   });
 
-  it('uses custom tokenEndpoint when provided', async () => {
+  it('uses custom tokenEndpoint when provided (opt-in via allowedTokenEndpointHosts)', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
@@ -318,6 +323,8 @@ describe('fetchRefreshedTokens', () => {
         clientId: 'cid',
         clientSecret: 'csec',
         tokenEndpoint: 'https://custom.example.com/token',
+        // B036: non-Atlassian token endpoints must opt in explicitly.
+        allowedTokenEndpointHosts: ['custom.example.com'],
       },
       'ref',
     );
@@ -586,5 +593,269 @@ describe('fetchRefreshedTokens', () => {
     expect(customFetch).toHaveBeenCalledOnce();
     expect(globalFetch).not.toHaveBeenCalled();
     expect(tokens.accessToken).toBe('via-custom');
+  });
+});
+
+describe('B036: tokenEndpoint host allowlist', () => {
+  const validBaseConfig = {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+    clientId: 'client-id',
+    clientSecret: 'client-secret',
+  };
+
+  describe('createOAuthRefreshMiddleware — construction-time validation', () => {
+    it('accepts the default tokenEndpoint (auth.atlassian.com) with no allowlist', () => {
+      // Default `tokenEndpoint` is `https://auth.atlassian.com/oauth/token`.
+      // No `tokenEndpoint` override, no `allowedTokenEndpointHosts` — must pass.
+      expect(() => createOAuthRefreshMiddleware(validBaseConfig)).not.toThrow();
+    });
+
+    it('accepts an explicit tokenEndpoint on the default Atlassian auth host', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com/oauth/token',
+        }),
+      ).not.toThrow();
+    });
+
+    it('rejects a tokenEndpoint pointing at a non-Atlassian host (no opt-in)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://evil.example/token',
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejection message names the rejected host AND the opt-in field', () => {
+      let captured: Error | undefined;
+      try {
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://evil.example/token',
+        });
+      } catch (e) {
+        captured = e as Error;
+      }
+      expect(captured).toBeInstanceOf(ValidationError);
+      expect(captured?.message).toContain('evil.example');
+      expect(captured?.message).toContain('auth.atlassian.com');
+      expect(captured?.message).toContain('allowedTokenEndpointHosts');
+    });
+
+    it('rejection happens BEFORE any HTTP call is made', async () => {
+      const fetchSpy = vi.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://evil.example/token',
+        }),
+      ).toThrow(ValidationError);
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('still rejects non-HTTPS tokenEndpoint (existing behaviour preserved)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'http://auth.atlassian.com/oauth/token',
+        }),
+      ).toThrow(/HTTPS/);
+    });
+
+    it('opt-in: allowedTokenEndpointHosts authorises a self-hosted IdP', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internal.example'],
+        }),
+      ).not.toThrow();
+    });
+
+    it('opt-in list REPLACES (not augments) the default — auth.atlassian.com is now rejected', () => {
+      // Mirrors `ClientConfig.allowedHosts` semantics: an explicit list is
+      // the complete authoritative set, NOT an extension of the defaults.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internal.example'],
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-array allowedTokenEndpointHosts (type guard)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com/oauth/token',
+          // Deliberate type violation — guards against runtime callers that
+          // bypass TypeScript (e.g. JS consumers, dynamic config loaders).
+          allowedTokenEndpointHosts: 'auth.atlassian.com' as unknown as readonly string[],
+        }),
+      ).toThrow(/must be an array/);
+    });
+
+    it('rejects empty allowedTokenEndpointHosts array', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com/oauth/token',
+          allowedTokenEndpointHosts: [],
+        }),
+      ).toThrow(/at least one host/);
+    });
+
+    it('rejects allowedTokenEndpointHosts entries that carry a port', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internal.example:8443'],
+        }),
+      ).toThrow(/port/);
+    });
+
+    it('rejects allowedTokenEndpointHosts entries with whitespace or slashes', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internal.example/oauth'],
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects allowedTokenEndpointHosts entries with leading whitespace', () => {
+      // Hits the low-ASCII control-char branch (code <= 0x20).
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: [' idp.internal.example'],
+        }),
+      ).toThrow(/bare host/);
+    });
+
+    it('rejects allowedTokenEndpointHosts entries containing DEL or C1 control bytes', () => {
+      // Hits the 0x7F (DEL) and 0x80-0x9F (C1) branches that the
+      // generic whitespace test does not reach.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internalexample'],
+        }),
+      ).toThrow(/bare host/);
+
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['idp.internalexample'],
+        }),
+      ).toThrow(/bare host/);
+    });
+
+    it('rejects non-empty-string entries in allowedTokenEndpointHosts', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: [''],
+        }),
+      ).toThrow(/non-empty/);
+    });
+
+    it('rejects a sneaky suffix-confusable host (auth.atlassian.com.evil.example)', () => {
+      // Defence-in-depth: the allowlist must use exact-host comparison so
+      // a substring-confusable host cannot bypass via DNS shenanigans.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://auth.atlassian.com.evil.example/oauth/token',
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects an invalid tokenEndpoint URL', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'not a url',
+        }),
+      ).toThrow(ValidationError);
+    });
+  });
+
+  describe('fetchRefreshedTokens — defence-in-depth lazy check', () => {
+    it('rejects a non-allowlisted tokenEndpoint without making an HTTP call', async () => {
+      const fetchSpy = vi.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      await expect(
+        fetchRefreshedTokens(
+          {
+            clientId: 'c',
+            clientSecret: 's',
+            tokenEndpoint: 'https://evil.example/token',
+          },
+          'refresh-token',
+        ),
+      ).rejects.toBeInstanceOf(ValidationError);
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('honours explicit allowedTokenEndpointHosts passed directly', async () => {
+      const customFetch = vi.fn().mockResolvedValue(
+        fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'new-access', refresh_token: 'new-refresh' },
+        }),
+      );
+
+      const tokens = await fetchRefreshedTokens(
+        {
+          clientId: 'c',
+          clientSecret: 's',
+          tokenEndpoint: 'https://idp.internal.example/token',
+          allowedTokenEndpointHosts: ['idp.internal.example'],
+          fetch: customFetch as unknown as typeof fetch,
+        },
+        'refresh-token',
+      );
+
+      expect(customFetch).toHaveBeenCalledOnce();
+      expect(tokens.accessToken).toBe('new-access');
+    });
+
+    it('default tokenEndpoint passes the lazy check (no allowlist needed)', async () => {
+      const customFetch = vi.fn().mockResolvedValue(
+        fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'a', refresh_token: 'r' },
+        }),
+      );
+
+      await expect(
+        fetchRefreshedTokens(
+          {
+            clientId: 'c',
+            clientSecret: 's',
+            fetch: customFetch as unknown as typeof fetch,
+          },
+          'refresh-token',
+        ),
+      ).resolves.toBeDefined();
+
+      expect(customFetch).toHaveBeenCalledOnce();
+    });
   });
 });
