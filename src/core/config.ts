@@ -4,6 +4,7 @@ import {
   DEFAULT_ATLASSIAN_API_HOST_SUFFIXES,
   hostMatchesSuffix,
   hostMatchesExact,
+  isInvalidBareHostChar,
 } from './atlassian-hosts.js';
 
 const DEFAULT_TIMEOUT = 30_000;
@@ -163,28 +164,6 @@ function validateConfig(config: ClientConfig): void {
   }
 }
 
-/**
- * Reject characters that don't belong in a bare hostname grammar:
- * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural
- * URL chars `/ ? # @ \`, and `:` (so port-bearing entries are rejected
- * explicitly instead of silently broadening — see PR review of [[B034]]).
- * Stops a typo or smuggled control byte from creating a surprising
- * "match by similarity" later in `buildUrl`.
- */
-function isInvalidAllowedHostChar(code: number): boolean {
-  if (code <= 0x20) return true;
-  if (code === 0x7f) return true;
-  if (code >= 0x80 && code <= 0x9f) return true;
-  return (
-    code === 0x2f /* / */ ||
-    code === 0x3a /* : */ ||
-    code === 0x3f /* ? */ ||
-    code === 0x23 /* # */ ||
-    code === 0x40 /* @ */ ||
-    code === 0x5c /* backslash */
-  );
-}
-
 function validateAllowedHosts(hosts: readonly string[]): void {
   if (!Array.isArray(hosts)) {
     throw new ValidationError('allowedHosts must be an array of host strings');
@@ -202,13 +181,15 @@ function validateAllowedHosts(hosts: readonly string[]): void {
         // Give a targeted error so the user understands WHY ports are
         // rejected (rather than the generic "invalid char" message). The
         // policy is documented on `ClientConfig.allowedHosts`.
+        // `isInvalidBareHostChar` ALSO rejects `:`, but we check it first
+        // for the specific error message.
         throw new ValidationError(
           `allowedHosts entry must not include a port: ${renderHostForError(host)}. ` +
             `Atlassian Cloud always uses the implicit 443; for non-default ports, ` +
             `route via the host's normal name and rely on DNS / a proxy.`,
         );
       }
-      if (isInvalidAllowedHostChar(code)) {
+      if (isInvalidBareHostChar(code)) {
         throw new ValidationError(
           `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${renderHostForError(host)}`,
         );

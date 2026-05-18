@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "196b87542db25e37319c861cf63aa329cc405ccd9ad4c281bd0934b4b8483b38",
+  "sourceHash": "80d95f01ee75e5fc4b26a3f369360a99dfdc4e9adc2f09c8696d8660729dbcf6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -815,7 +815,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 76,
+      "line": 80,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -823,7 +823,7 @@
       "name": "OAuthRefreshConfig",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 21,
+      "line": 25,
       "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
       "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware.",
       "typeOnly": true
@@ -832,7 +832,7 @@
       "name": "OAuthTokens",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 9,
+      "line": 13,
       "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
       "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint.",
       "typeOnly": true
@@ -1260,7 +1260,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 100,
+      "line": 104,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -1276,7 +1276,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 160,
+      "line": 164,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -1300,7 +1300,7 @@
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
-      "line": 48,
+      "line": 49,
       "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
       "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
     },
@@ -3416,6 +3416,14 @@
           "exported": true,
           "signature": "export function hostMatchesExact(hostname: string, allowlist: readonly string[]): boolean",
           "jsdoc": "Exact-match a hostname against a list of bare host strings. Case-insensitive; trailing FQDN dot is normalised away. Inputs are expected to be port-less (validation enforces this for user-supplied lists — see `validateAllowedHosts` in config.ts and `validateAllowedTokenEndpointHosts` in oauth.ts)."
+        },
+        {
+          "name": "isInvalidBareHostChar",
+          "kind": "function",
+          "line": 115,
+          "exported": true,
+          "signature": "export function isInvalidBareHostChar(code: number): boolean",
+          "jsdoc": "Reject characters that don't belong in a bare hostname grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural URL chars `/ ? # @ \\ : [ ]` (so port-bearing entries and IPv6-bracket forms are rejected explicitly instead of silently — both would broaden the allowlist surprisingly)."
         }
       ]
     },
@@ -3596,38 +3604,38 @@
         {
           "name": "DEFAULT_TIMEOUT",
           "kind": "variable",
-          "line": 9,
+          "line": 10,
           "signature": "const DEFAULT_TIMEOUT = 30_000;"
         },
         {
           "name": "DEFAULT_RETRIES",
           "kind": "variable",
-          "line": 10,
+          "line": 11,
           "signature": "const DEFAULT_RETRIES = 3;"
         },
         {
           "name": "DEFAULT_RETRY_DELAY",
           "kind": "variable",
-          "line": 11,
+          "line": 12,
           "signature": "const DEFAULT_RETRY_DELAY = 1_000;"
         },
         {
           "name": "DEFAULT_MAX_RETRY_DELAY",
           "kind": "variable",
-          "line": 12,
+          "line": 13,
           "signature": "const DEFAULT_MAX_RETRY_DELAY = 30_000;"
         },
         {
           "name": "resolveAllowedHosts",
           "kind": "function",
-          "line": 27,
+          "line": 28,
           "signature": "function resolveAllowedHosts( baseUrlHostname: string, configured: readonly string[] | undefined, ): readonly string[]",
           "jsdoc": "Resolve the set of hosts that may receive the configured `Authorization` header. Returns the explicit allowlist when provided; otherwise returns just the `baseUrl` host so absolute paths can only target the configured tenant."
         },
         {
           "name": "resolveConfig",
           "kind": "function",
-          "line": 48,
+          "line": 49,
           "exported": true,
           "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
           "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
@@ -3635,33 +3643,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 69,
+          "line": 70,
           "signature": "function validateConfig(config: ClientConfig): void"
-        },
-        {
-          "name": "isInvalidAllowedHostChar",
-          "kind": "function",
-          "line": 174,
-          "signature": "function isInvalidAllowedHostChar(code: number): boolean",
-          "jsdoc": "Reject characters that don't belong in a bare hostname grammar: C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural URL chars `/ ? # @ \\`, and `:` (so port-bearing entries are rejected explicitly instead of silently broadening — see PR review of [[B034]]). Stops a typo or smuggled control byte from creating a surprising \"match by similarity\" later in `buildUrl`."
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 188,
+          "line": 167,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 232,
+          "line": 213,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 248,
+          "line": 229,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -4423,14 +4424,14 @@
         {
           "name": "DEFAULT_OAUTH_TOKEN_ENDPOINT",
           "kind": "variable",
-          "line": 6,
+          "line": 10,
           "signature": "const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';",
           "jsdoc": "Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud."
         },
         {
           "name": "OAuthTokens",
           "kind": "interface",
-          "line": 9,
+          "line": 13,
           "exported": true,
           "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
           "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint."
@@ -4438,7 +4439,7 @@
         {
           "name": "OAuthRefreshConfig",
           "kind": "interface",
-          "line": 21,
+          "line": 25,
           "exported": true,
           "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
           "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware."
@@ -4446,7 +4447,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 76,
+          "line": 80,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -4454,19 +4455,19 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 78
+              "line": 82
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 80
+              "line": 84
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 100,
+          "line": 104,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
@@ -4474,13 +4475,13 @@
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 141,
+          "line": 145,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 160,
+          "line": 164,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -4488,23 +4489,16 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 245,
+          "line": 262,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
-          "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the resolved endpoint string. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars)"
+          "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 287,
+          "line": 303,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
-          "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Mirrors the `validateAllowedHosts` rules in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars) to keep the two allowlist surfaces consistent for users. Kept inline (rather than imported) because pulling config-layer validation into the auth module would invert the dependency direction — see the cross-reference in atlassian-hosts.ts."
-        },
-        {
-          "name": "isInvalidHostChar",
-          "kind": "function",
-          "line": 323,
-          "signature": "function isInvalidHostChar(code: number): boolean",
-          "jsdoc": "Same character policy as the transport's `validateAllowedHosts` — kept inline (rather than imported from config.ts) to avoid the auth module depending on config-layer internals."
+          "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",

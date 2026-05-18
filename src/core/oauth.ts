@@ -1,6 +1,10 @@
 import type { Middleware, RequestOptions } from './types.js';
 import { AuthenticationError, HttpError, ValidationError } from './errors.js';
-import { DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS, hostMatchesExact } from './atlassian-hosts.js';
+import {
+  DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS,
+  hostMatchesExact,
+  isInvalidBareHostChar,
+} from './atlassian-hosts.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
 const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';
@@ -227,20 +231,33 @@ export async function fetchRefreshedTokens(
 
 /**
  * Validate a `tokenEndpoint` URL against the host allowlist and return the
- * resolved endpoint string. Throws `ValidationError` on:
+ * normalised endpoint string for downstream `fetch` calls. Throws
+ * `ValidationError` on:
  *   - malformed URL
  *   - non-HTTPS scheme
  *   - host not on the allowlist
  *   - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing,
- *     whitespace, slashes, control chars)
+ *     whitespace, slashes, control chars, IPv6 brackets)
  *
- * SECURITY (B036): This is the single source of truth for "is this URL a
- * legitimate OAuth token endpoint?" — called BOTH at middleware construction
- * (fail fast) AND inside `fetchRefreshedTokens` (defence-in-depth for direct
- * callers). Mirrors the design of `ClientConfig.allowedHosts` /
- * `hostMatchesExact` (B034) but for a separate credential-bearing channel
- * because the OAuth refresh path bypasses the transport's allowlist by
- * design.
+ * SECURITY: This is the single source of truth for "is this URL a legitimate
+ * OAuth token endpoint?" — called BOTH at middleware construction (fail
+ * fast) AND inside `fetchRefreshedTokens` (defence-in-depth for direct
+ * callers). The OAuth refresh path bypasses the transport's
+ * `ClientConfig.allowedHosts` by design (different code path), so this
+ * function is the SEPARATE allowlist for the credential-bearing OAuth
+ * channel.
+ *
+ * Returns `URL.href` (normalised form: lowercased scheme/host, default-port
+ * stripped) rather than the raw input string. This guarantees downstream
+ * `fetch` receives the already-validated URL — if the raw string ever
+ * escapes to logs, the canonical form is what was actually used.
+ *
+ * Match semantics differ from `ClientConfig.allowedHosts`: this validator
+ * always uses EXACT matching for both the default and the user-supplied
+ * list. `allowedHosts` uses SUFFIX matching for the built-in Atlassian API
+ * suffixes (tenant subdomains) but exact for the user-supplied list. The
+ * OAuth allowlist is tighter by design because the credential at risk
+ * (refresh_token + client_secret) is higher-value.
  */
 function validateTokenEndpoint(
   configured: string | undefined,
@@ -268,21 +285,20 @@ function validateTokenEndpoint(
       `tokenEndpoint host "${parsed.hostname}" is not on the allowed token-endpoint host list ` +
         `[${effectiveAllowlist.join(', ')}]. ` +
         `Set OAuthRefreshConfig.allowedTokenEndpointHosts to opt in for self-hosted IdPs or ` +
-        `proxied auth endpoints. See B036 — this protects refresh_token + client_secret from ` +
+        `proxied auth endpoints. This guard protects refresh_token + client_secret from ` +
         `leaking to a misconfigured or attacker-controlled host.`,
     );
   }
 
-  return endpoint;
+  return parsed.href;
 }
 
 /**
- * Validate user-supplied `allowedTokenEndpointHosts`. Mirrors the
- * `validateAllowedHosts` rules in config.ts (non-empty array, non-empty
- * strings, no port, no whitespace/slashes/control chars) to keep the two
- * allowlist surfaces consistent for users. Kept inline (rather than imported)
- * because pulling config-layer validation into the auth module would invert
- * the dependency direction — see the cross-reference in atlassian-hosts.ts.
+ * Validate user-supplied `allowedTokenEndpointHosts`. Same rules as
+ * `validateAllowedHosts` in config.ts (non-empty array, non-empty strings,
+ * no port, no whitespace/slashes/control chars/IPv6 brackets). The shared
+ * character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so
+ * both validators stay in sync.
  */
 function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[] {
   if (!Array.isArray(hosts)) {
@@ -298,13 +314,15 @@ function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly s
     for (let i = 0; i < host.length; i++) {
       const code = host.charCodeAt(i);
       if (code === 0x3a /* : */) {
+        // Targeted error first — `isInvalidBareHostChar` also rejects `:`,
+        // but the user gets a clearer message via this branch.
         throw new ValidationError(
           `allowedTokenEndpointHosts entry must not include a port: "${host}". ` +
             `Atlassian's OAuth token endpoint uses the implicit 443; ` +
             `self-hosted IdPs should route via the host's normal name.`,
         );
       }
-      if (isInvalidHostChar(code)) {
+      if (isInvalidBareHostChar(code)) {
         throw new ValidationError(
           `allowedTokenEndpointHosts entry must be a bare host ` +
             `(no whitespace, slashes, or control chars): "${host}"`,
@@ -313,24 +331,6 @@ function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly s
     }
   }
   return hosts;
-}
-
-/**
- * Same character policy as the transport's `validateAllowedHosts` — kept
- * inline (rather than imported from config.ts) to avoid the auth module
- * depending on config-layer internals.
- */
-function isInvalidHostChar(code: number): boolean {
-  if (code <= 0x20) return true;
-  if (code === 0x7f) return true;
-  if (code >= 0x80 && code <= 0x9f) return true;
-  return (
-    code === 0x2f /* / */ ||
-    code === 0x3f /* ? */ ||
-    code === 0x23 /* # */ ||
-    code === 0x40 /* @ */ ||
-    code === 0x5c /* backslash */
-  );
 }
 
 /**

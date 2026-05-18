@@ -94,3 +94,36 @@ export function hostMatchesExact(hostname: string, allowlist: readonly string[])
   const normalized = normalizeHostForCompare(hostname);
   return allowlist.some((entry) => normalizeHostForCompare(entry) === normalized);
 }
+
+/**
+ * Reject characters that don't belong in a bare hostname grammar:
+ * C0 (0x00–0x1F), space (0x20), DEL (0x7F), C1 (0x80–0x9F), the structural
+ * URL chars `/ ? # @ \ : [ ]` (so port-bearing entries and IPv6-bracket
+ * forms are rejected explicitly instead of silently — both would broaden
+ * the allowlist surprisingly).
+ *
+ * Single source of truth shared by `validateAllowedHosts` (config.ts) and
+ * `validateAllowedTokenEndpointHosts` (oauth.ts) so the two surfaces don't
+ * drift on which characters are accepted. Adding a char here updates both
+ * validators atomically.
+ *
+ * Note: `:` is included here even though both validators check it
+ * separately with a targeted error message — this is defence-in-depth so a
+ * future caller of `isInvalidBareHostChar` (without the separate colon
+ * pre-check) still rejects ports.
+ */
+export function isInvalidBareHostChar(code: number): boolean {
+  if (code <= 0x20) return true;
+  if (code === 0x7f) return true;
+  if (code >= 0x80 && code <= 0x9f) return true;
+  return (
+    code === 0x2f /* / */ ||
+    code === 0x3a /* : */ ||
+    code === 0x3f /* ? */ ||
+    code === 0x23 /* # */ ||
+    code === 0x40 /* @ */ ||
+    code === 0x5b /* [ */ ||
+    code === 0x5c /* backslash */ ||
+    code === 0x5d /* ] */
+  );
+}

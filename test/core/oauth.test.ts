@@ -743,22 +743,41 @@ describe('B036: tokenEndpoint host allowlist', () => {
       ).toThrow(/bare host/);
     });
 
-    it('rejects allowedTokenEndpointHosts entries containing DEL or C1 control bytes', () => {
-      // Hits the 0x7F (DEL) and 0x80-0x9F (C1) branches that the
-      // generic whitespace test does not reach.
+    it('rejects allowedTokenEndpointHosts entries containing DEL (0x7F) control byte', () => {
+      // Use String.fromCharCode so the control character is visible in source.
+      // Embedded raw bytes are invisible in most editors / code review tools
+      // and cause readers to think the test does not exercise what it claims.
+      const del = String.fromCharCode(0x7f);
       expect(() =>
         createOAuthRefreshMiddleware({
           ...validBaseConfig,
           tokenEndpoint: 'https://idp.internal.example/oauth/token',
-          allowedTokenEndpointHosts: ['idp.internalexample'],
+          allowedTokenEndpointHosts: [`idp.internal${del}example`],
         }),
       ).toThrow(/bare host/);
+    });
 
+    it('rejects allowedTokenEndpointHosts entries containing C1 (0x80-0x9F) control bytes', () => {
+      // 0x85 = NEL (Next Line). Covers the C1 branch in isInvalidBareHostChar.
+      const c1 = String.fromCharCode(0x85);
       expect(() =>
         createOAuthRefreshMiddleware({
           ...validBaseConfig,
           tokenEndpoint: 'https://idp.internal.example/oauth/token',
-          allowedTokenEndpointHosts: ['idp.internalexample'],
+          allowedTokenEndpointHosts: [`idp.internal${c1}example`],
+        }),
+      ).toThrow(/bare host/);
+    });
+
+    it('rejects allowedTokenEndpointHosts entries with IPv6 brackets', () => {
+      // `[` and `]` are now in isInvalidBareHostChar - IPv6 bracket entries
+      // can never match `URL.hostname` (which strips brackets), so silently
+      // accepting them creates user confusion. Reject up front.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...validBaseConfig,
+          tokenEndpoint: 'https://idp.internal.example/oauth/token',
+          allowedTokenEndpointHosts: ['[::1]'],
         }),
       ).toThrow(/bare host/);
     });
@@ -856,6 +875,33 @@ describe('B036: tokenEndpoint host allowlist', () => {
       ).resolves.toBeDefined();
 
       expect(customFetch).toHaveBeenCalledOnce();
+    });
+
+    it('passes the URL-normalised endpoint (parsed.href) to fetch, not the raw input', async () => {
+      // SECURITY: validateTokenEndpoint returns `parsed.href`, the canonical
+      // form produced by `new URL()`. This guarantees `fetch` receives the
+      // already-validated URL — case-folded scheme/host, default-port
+      // stripped — even if the raw configured string is irregular.
+      const customFetch = vi.fn().mockResolvedValue(
+        fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'a', refresh_token: 'r' },
+        }),
+      );
+
+      await fetchRefreshedTokens(
+        {
+          clientId: 'c',
+          clientSecret: 's',
+          // Mixed-case scheme + uppercase host — `new URL()` lowercases both.
+          tokenEndpoint: 'HTTPS://Auth.Atlassian.Com/oauth/token',
+          fetch: customFetch as unknown as typeof fetch,
+        },
+        'refresh-token',
+      );
+
+      const [actualUrl] = customFetch.mock.calls[0] as [string, RequestInit];
+      expect(actualUrl).toBe('https://auth.atlassian.com/oauth/token');
     });
   });
 });
