@@ -43,9 +43,6 @@
 
 ## 🖥️ CLI
 
-- [ ] 🟡 🐛 CLI: B031 Real version from `package.json`
-  - files: `src/cli/index.ts`, `src/cli/commands/install-skill.ts`, `test/cli/version.test.ts`
-  - deps: none
 - [ ] 🟢 📦 CLI: B019 `atlas scopes validate` command
   - files: `src/cli/commands/scopes.ts`, `src/cli/router.ts`, `src/core/scopes.ts`
   - deps: none
