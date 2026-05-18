@@ -35,10 +35,14 @@ interface CacheEntry {
  *
  * Only responses for the configured HTTP methods (default: GET) are cached.
  *
- * Cache key composition (B022 + PR review of round 3):
- * - an auth-identity scope derived from the in-flight `Authorization`
- *   header (or the sentinel `'no-auth'`), so a shared transport never
- *   serves Tenant A's cached body to Tenant B;
+ * Cache key composition (B022 + PR review of round 3, round 4 → round 5):
+ * - an auth-identity scope. When `HttpTransport` runs the chain, it injects
+ *   a precomputed `RequestOptions.authIdentity` hash so the cache partitions
+ *   per tenant WITHOUT observing the raw credential. For callers that build
+ *   `RequestOptions` manually with an `Authorization` header (legacy path),
+ *   the header value is hashed here as a fallback. Either way the cache key
+ *   never stores the raw token. Falls back to the sentinel `'no-auth'` when
+ *   neither is present.
  * - the request method;
  * - the request path;
  * - the query parameters (sorted, `undefined` values dropped).
@@ -135,22 +139,28 @@ function buildCacheKey(opts: RequestOptions): string {
 }
 
 /**
- * Derive a stable, fixed-length identifier for the auth identity attached to
- * a request. Returns the first 16 hex chars (64 bits) of the SHA-256 of the
- * Authorization header — long enough to make accidental collisions vanish in
- * practice, short enough that the in-memory cache key stays compact and the
- * raw credential never lands inside any debug dump of it. Returns the stable
- * sentinel `'no-auth'` when no Authorization header is present.
+ * Derive the stable identifier the cache key partitions on.
  *
- * PR review hardening: when multiple Authorization-like keys are present
- * (e.g. a caller passes `authorization: 'old'` and middleware later spreads
- * in `Authorization: 'new'`), the LAST occurrence in iteration order wins —
- * matching what `fetch` itself does when a plain-object headers map carries
- * duplicate keys (last-write-wins after the implicit lowercase merge). This
- * prevents a stale caller-supplied header from defeating the auth partition
- * when the real injected token would otherwise land at a different position.
+ * Preferred source (PR review of round 4 → round 5): the precomputed
+ * `RequestOptions.authIdentity` hash that `HttpTransport` injects before the
+ * middleware chain runs. Using this means the cache never observes the raw
+ * `Authorization` value — even when a user-installed logging middleware
+ * dumps the whole options object.
+ *
+ * Fallback: hash the in-flight `Authorization` header. This keeps manually
+ * constructed `RequestOptions` (legacy callers, tests) partitioned correctly
+ * even when no transport pre-injection happened. When multiple Authorization-
+ * like keys are present in the headers map (e.g. a caller passes
+ * `authorization: 'old'` and middleware later spreads in `Authorization:
+ * 'new'`), the LAST occurrence wins — matching `fetch` semantics for
+ * duplicate-key plain-object headers maps.
+ *
+ * Returns the stable sentinel `'no-auth'` when neither source is present.
  */
 function authScope(opts: RequestOptions): string {
+  if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
+    return opts.authIdentity;
+  }
   const auth = pickAuthorizationHeader(opts.headers);
   if (auth === undefined || auth === '') return 'no-auth';
   return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;

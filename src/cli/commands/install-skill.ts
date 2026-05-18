@@ -76,21 +76,43 @@ interface FilesystemDeps {
  * symlink, closing the TOCTOU window between the pre-write
  * `assertDestUnderTarget` check and the actual write (PR review of round 3).
  *
- * `O_NOFOLLOW` is honoured on every POSIX platform we ship to; on Windows
- * the flag is silently ignored by libuv and the OS-level NTFS reparse-point
- * handling provides the analogous safety. The combination
- * `WRONLY | CREAT | TRUNC | NOFOLLOW` matches the high-level
- * `writeFileSync(path, content)` semantics for a non-symlink destination
- * and turns into ELOOP when a symlink is present — at which point we map
- * to the existing `InstallSkillError` shape so callers see a stable error.
+ * **Platform guarantee (PR review of round 4 → round 5):**
  *
- * The residual TOCTOU window is now restricted to PARENT directory swaps
+ * - **POSIX (Linux/macOS/etc.):** `O_NOFOLLOW` is honoured by the kernel
+ *   `open(2)` call. A symlink swapped in at the final-component position
+ *   between the pre-check and this open turns into `ELOOP`, which is
+ *   mapped to `InstallSkillError` below. The final-component TOCTOU window
+ *   is effectively closed.
+ *
+ * - **Windows:** `O_NOFOLLOW` is NOT a Win32 concept and is silently
+ *   ignored by libuv's mapping of `openSync` flags. The kernel's
+ *   `CreateFileW` call has no out-of-the-box equivalent that refuses to
+ *   traverse a reparse point at the leaf. The defence-in-depth chain on
+ *   Windows therefore relies on:
+ *     1. `assertDestUnderTarget` confirming the canonical parent stays
+ *        inside the install root (catches symlinked PARENT directories);
+ *     2. the `fs.isSymlink?.(dest)` pre-check in `runInstall`
+ *        (catches a leaf symlink pre-planted before the install starts);
+ *     3. opening with `O_TRUNC` so a regular file is overwritten in
+ *        place rather than redirected via a symlink follow.
+ *
+ *   A local attacker who can win a sub-millisecond race between the
+ *   `isSymlink` pre-check and this open call could still cause the write
+ *   to follow a leaf reparse point on Windows. Closing that window
+ *   completely would require a `CreateFileW` wrapper with
+ *   `FILE_FLAG_OPEN_REPARSE_POINT` via a native add-on, which is out of
+ *   scope for the install-skill threat model (the user's own
+ *   `~/.claude/skills/` directory). Documenting the limitation here so
+ *   the comment does not overstate the guarantee.
+ *
+ * The residual POSIX TOCTOU window is restricted to PARENT directory swaps
  * (an attacker would need to swap an entire ancestor directory between
  * the containment check and this open). That class is much harder to
  * exploit and is documented on `runInstall`.
  */
 function writeFileNoFollow(path: string, content: string): void {
-  // O_NOFOLLOW = refuse if the LAST component is a symlink.
+  // O_NOFOLLOW = refuse if the LAST component is a symlink (POSIX-only;
+  //              silently ignored on Windows — see function doc-comment).
   // O_TRUNC ensures we overwrite atomically when the file already exists
   //         (matches `writeFileSync` semantics for non-symlink targets).
   const flags =

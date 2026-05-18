@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
@@ -35,6 +36,14 @@ import { buildApiResponse, parseResponseBody, safeParseBody } from './response.j
 export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly authProvider: AuthProvider;
+  /**
+   * Hashed identity for the configured auth provider, computed once at
+   * construction. Injected into `RequestOptions.authIdentity` before the
+   * middleware chain runs so cache/batch middleware can partition by tenant
+   * without ever observing the raw credential. Empty when the auth provider
+   * yields no `Authorization` header (defensive; built-in providers always do).
+   */
+  private readonly authIdentity: string;
   private readonly requestHandler: (options: RequestOptions) => Promise<ApiResponse<unknown>>;
 
   /**
@@ -67,6 +76,7 @@ export class HttpTransport implements Transport {
       this.config = config;
     }
     this.authProvider = createAuthProvider(this.config.auth);
+    this.authIdentity = computeAuthIdentity(this.authProvider);
     this.requestHandler = createMiddlewareChain(this.config.middleware ?? [], (opts) =>
       this.executeFetch(opts),
     );
@@ -79,20 +89,17 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
-    // PR review (round 4): pre-inject the configured auth provider's
-    // `Authorization` header into options.headers BEFORE the middleware
-    // chain runs, so cache / batch dedupe middlewares always see the
-    // tenant identity and partition correctly — even when middleware
-    // order would otherwise put them OUTSIDE an auth-injecting
-    // middleware. Without this, two `ConfluenceClient` instances that
-    // share a single `createCacheMiddleware()` instance would both fall
-    // into the `no-auth` cache scope and serve each other's responses.
+    // PR review (round 4 → round 5): expose only a non-secret hashed
+    // identity to the middleware chain, NOT the raw `Authorization`
+    // header. Cache and batch middleware need a stable identity to
+    // partition by tenant (so two transports sharing a single cache
+    // middleware never serve Tenant A's body to Tenant B), but they do
+    // not need — and must never accidentally persist — the credential
+    // itself. A user-installed logging/metrics middleware can serialise
+    // the whole `RequestOptions` object without ever leaking the token.
     //
-    // `buildHeaders` (called inside executeFetch) still strips
-    // caller-supplied `Authorization` and re-adds the auth provider's
-    // value, so the credential path is unchanged on the wire. The chain
-    // sees the raw header value but middleware in the chain is user-
-    // installed and already trusted with full request shape access.
+    // `executeFetch` still merges the auth provider's headers via
+    // `buildHeaders`, so the credential path on the wire is unchanged.
     const augmentedOptions = this.injectAuthIdentity(options);
 
     const response = await executeWithRetry(
@@ -120,33 +127,34 @@ export class HttpTransport implements Transport {
   }
 
   /**
-   * Merge the auth provider's `Authorization` header into `options.headers`
-   * so downstream middleware (notably cache / batch) can derive a stable
-   * auth scope. Caller-supplied headers win the FORBIDDEN-stripping pass
-   * later in `buildHeaders`, so the actual wire-value is unchanged — this
-   * is purely about making the identity visible to the middleware chain.
+   * Attach the precomputed `authIdentity` hash to `options` so downstream
+   * middleware (notably cache / batch) can derive a stable per-tenant scope
+   * WITHOUT ever observing the raw `Authorization` value (PR review of
+   * round 4 → round 5). Always overwrites any caller-supplied value to
+   * enforce the "callers MUST NOT set this manually" contract documented
+   * on {@link RequestOptions.authIdentity}.
    *
-   * Returns `options` unchanged when the auth provider yields no
-   * `Authorization` header (currently impossible for the built-in
-   * providers, but defensive against future provider shapes).
+   * Returns `options` unchanged when the auth provider yielded no
+   * `Authorization` header at construction time (currently impossible for
+   * the built-in providers, but defensive against future provider shapes).
    */
   private injectAuthIdentity(options: RequestOptions): RequestOptions {
-    const providerHeaders = this.authProvider.getHeaders();
-    const providerAuth = providerHeaders['Authorization'];
     /* c8 ignore start — defensive guard against a future auth provider
        that does not produce an Authorization header. The built-in
        providers (basic, bearer) always do, so this branch is unreachable
        through any documented configuration. */
-    if (typeof providerAuth !== 'string' || providerAuth === '') {
-      return options;
+    if (this.authIdentity === '') {
+      // Strip any caller-supplied authIdentity so user code cannot forge
+      // a partition identity. We still return a new object so middleware
+      // never observes a mutated reference.
+      if (options.authIdentity === undefined) return options;
+      const { authIdentity: _stripped, ...rest } = options;
+      return rest;
     }
     /* c8 ignore stop */
     return {
       ...options,
-      headers: {
-        ...options.headers,
-        Authorization: providerAuth,
-      },
+      authIdentity: this.authIdentity,
     };
   }
 
@@ -221,6 +229,29 @@ export class HttpTransport implements Transport {
 
     return buildApiResponse(response, data, rateLimit);
   }
+}
+
+/**
+ * Hash the auth provider's `Authorization` header value into the short stable
+ * identifier exposed as {@link RequestOptions.authIdentity}. Uses the first
+ * 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions
+ * to vanish in practice, narrow enough to keep cache/batch keys compact, and
+ * one-way so a logging/metrics middleware that persists `RequestOptions`
+ * never accidentally writes the credential to a log sink.
+ *
+ * Returns the empty string when the provider yields no `Authorization`
+ * header — caller checks for this to skip injection entirely.
+ */
+function computeAuthIdentity(authProvider: AuthProvider): string {
+  const providerAuth = authProvider.getHeaders()['Authorization'];
+  /* c8 ignore start — defensive guard against a future auth provider
+     that does not produce an Authorization header. The built-in
+     providers (basic, bearer) always do. */
+  if (typeof providerAuth !== 'string' || providerAuth === '') {
+    return '';
+  }
+  /* c8 ignore stop */
+  return `auth:${createHash('sha256').update(providerAuth).digest('hex').slice(0, 16)}`;
 }
 
 /**

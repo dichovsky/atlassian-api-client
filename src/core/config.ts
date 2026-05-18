@@ -103,6 +103,24 @@ function validateConfig(config: ClientConfig): void {
     throw new ValidationError(`baseUrl must use HTTPS: ${config.baseUrl}`);
   }
 
+  // PR review (round 4): `buildUrl` rejects any resolved URL whose `URL.port`
+  // is non-empty (port-bearing entries are also rejected from `allowedHosts`).
+  // Without mirroring that policy here, a config like
+  // `https://host.atlassian.net:8443` validates successfully and then breaks
+  // EVERY relative-path request later with the same error. Surface the
+  // mismatch at construction so the failure mode is obvious instead of a
+  // confused first-request crash. `URL.port` is the empty string for the
+  // scheme's default port (443 for https), so this only fires on
+  // non-default ports.
+  if (parsedUrl.port !== '') {
+    throw new ValidationError(
+      `baseUrl must not include a non-default port: ${parsedUrl.protocol}//${parsedUrl.hostname}:${parsedUrl.port}. ` +
+        `Atlassian Cloud uses the implicit 443; allowedHosts entries are forbidden from carrying ports ` +
+        `for the same reason. Route via the host's normal name and rely on DNS / a proxy if a non-default ` +
+        `port is required.`,
+    );
+  }
+
   if (config.allowedHosts !== undefined) {
     validateAllowedHosts(config.allowedHosts);
     // A contradictory config — `allowedHosts` claims to be the credential-safe

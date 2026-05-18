@@ -26,6 +26,22 @@ export interface RequestOptions {
    * 204 responses always return `undefined` regardless of `responseType`.
    */
   readonly responseType?: 'json' | 'arrayBuffer' | 'stream';
+  /**
+   * Non-secret stable identifier for the configured authentication identity,
+   * injected by {@link HttpTransport} BEFORE the middleware chain runs so
+   * cache/batch middleware can partition by tenant without ever observing
+   * the raw `Authorization` value (PR review of round 4).
+   *
+   * The value is a short hex prefix of the SHA-256 of the auth provider's
+   * `Authorization` header — long enough to make accidental collisions vanish
+   * in practice, short enough to keep dedupe keys compact, and one-way so a
+   * user-installed logging/metrics middleware that persists `RequestOptions`
+   * never accidentally writes the credential to a log sink.
+   *
+   * Callers MUST NOT set this manually; `HttpTransport` overwrites any
+   * caller-supplied value before middleware execution.
+   */
+  readonly authIdentity?: string;
 }
 
 /** Parsed API response. */

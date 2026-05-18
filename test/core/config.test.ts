@@ -285,6 +285,32 @@ describe('resolveConfig', () => {
       expect(captured?.message).toContain('\\u007f');
     });
 
+    it('rejects baseUrl with a non-default port (PR review of round 4)', () => {
+      // `buildUrl` rejects any resolved URL with a non-empty `URL.port`, so a
+      // baseUrl like `https://host:8443` validates here but then breaks every
+      // relative-path request. Mirror the policy at config-resolution time
+      // so the mismatch surfaces at construction.
+      expect(() =>
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com:8443',
+          allowedHosts: ['internal.example.com'],
+        }),
+      ).toThrow(/must not include a non-default port/);
+    });
+
+    it('accepts baseUrl with the explicit default https port :443', () => {
+      // `URL.port` is normalised to the empty string for the scheme's default
+      // port, so `https://host:443` is indistinguishable from `https://host`
+      // and must be accepted. Without this assertion a regression that
+      // string-checked the raw href would be invisible.
+      const result = resolveConfig({
+        ...validBasicConfig,
+        baseUrl: 'https://mycompany.atlassian.net:443',
+      });
+      expect(result.baseUrl).toBe('https://mycompany.atlassian.net:443');
+    });
+
     it('rejects port-bearing allowedHosts entries (PR review of B034)', () => {
       // Silently stripping the port would let an entry of `host:443`
       // authorize requests to `host:8443` — a port-scoped allowlist

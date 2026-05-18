@@ -1210,17 +1210,22 @@ describe('HttpTransport', () => {
   });
 
   describe('middleware', () => {
-    it('PR review of round 4: auth provider Authorization is injected into options.headers BEFORE the chain runs', async () => {
-      // Without this, a cache or batch middleware placed earlier in the
-      // chain than the auth provider falls into the `no-auth` scope and
-      // serves entries across different auth configs.
+    it('PR review of round 4 → round 5: middleware sees a hashed authIdentity, NOT the raw Authorization header', async () => {
+      // Round-4 originally pre-injected the raw `Authorization` header into
+      // `options.headers` so cache/batch could partition by tenant. The
+      // round-5 review flagged this as a credential leak: a user-installed
+      // logging middleware could persist the token without ever opting in.
+      // The new contract: middleware sees a non-secret `authIdentity` hash
+      // and NEVER the raw header.
       const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
       vi.stubGlobal('fetch', fetchMock);
 
       let seenAuth: string | undefined;
+      let seenIdentity: string | undefined;
       const probeMiddleware = vi.fn(
         (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
           seenAuth = opts.headers?.['Authorization'];
+          seenIdentity = opts.authIdentity;
           return next(opts);
         },
       );
@@ -1232,10 +1237,49 @@ describe('HttpTransport', () => {
       });
       await transport.request({ method: 'GET', path: '/pages' });
 
-      expect(seenAuth).toBeDefined();
-      // basic auth produces `Basic <base64>` — check the prefix to avoid
-      // pinning to a specific base64 encoding of the fixture credentials.
-      expect(seenAuth as string).toMatch(/^Basic /);
+      // The raw credential MUST NOT be visible to user middleware. This is
+      // the regression guard for the round-5 review.
+      expect(seenAuth).toBeUndefined();
+      // The non-secret partition identity MUST be visible so cache/batch
+      // still work for the default basic/bearer config without manual
+      // headers.Authorization plumbing.
+      expect(seenIdentity).toBeDefined();
+      expect(seenIdentity as string).toMatch(/^auth:[0-9a-f]{16}$/);
+      // The raw token MUST NOT appear anywhere in the identity — a hash
+      // prefix is opaque to a downstream consumer.
+      expect(seenIdentity as string).not.toContain('Basic');
+    });
+
+    it('PR review of round 4 → round 5: caller-supplied authIdentity is overwritten by the transport', async () => {
+      // `RequestOptions.authIdentity` is transport-internal. A caller
+      // attempting to forge an identity (e.g. to coalesce into another
+      // tenant's cached body) MUST have their value silently overwritten
+      // before the middleware chain runs.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let seenIdentity: string | undefined;
+      const probeMiddleware = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          seenIdentity = opts.authIdentity;
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [probeMiddleware],
+      });
+      await transport.request({
+        method: 'GET',
+        path: '/pages',
+        authIdentity: 'auth:deadbeefdeadbeef',
+      });
+
+      expect(seenIdentity).toBeDefined();
+      expect(seenIdentity).not.toBe('auth:deadbeefdeadbeef');
+      expect(seenIdentity as string).toMatch(/^auth:[0-9a-f]{16}$/);
     });
 
     it('PR review of round 4: two transports sharing a cache middleware partition by auth identity even without a header in RequestOptions', async () => {

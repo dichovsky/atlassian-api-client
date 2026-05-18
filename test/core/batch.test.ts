@@ -165,6 +165,51 @@ describe('createBatchMiddleware', () => {
     expect(r1).not.toBe(r2);
   });
 
+  it('PR review of round 4 → round 5: partitions on `opts.authIdentity` even without an Authorization header', async () => {
+    // The transport now injects a hashed `authIdentity` on `RequestOptions`
+    // instead of the raw `Authorization` header. The dedupe key MUST
+    // partition on that field so the credential never leaks into the
+    // middleware chain or anywhere a key fragment might be logged.
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ authIdentity: 'auth:aaaaaaaaaaaaaaaa' }), next),
+      mw(makeOpts({ authIdentity: 'auth:bbbbbbbbbbbbbbbb' }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(r1).not.toBe(r2);
+  });
+
+  it('PR review of round 4 → round 5: prefers `opts.authIdentity` over `headers.Authorization`', async () => {
+    // Two concurrent requests with the SAME authIdentity but DIFFERENT
+    // Authorization headers MUST coalesce — the pre-injected identity is
+    // the trusted source.
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(
+        makeOpts({
+          authIdentity: 'auth:cccccccccccccccc',
+          headers: { Authorization: 'Bearer alpha' },
+        }),
+        next,
+      ),
+      mw(
+        makeOpts({
+          authIdentity: 'auth:cccccccccccccccc',
+          headers: { Authorization: 'Bearer beta' },
+        }),
+        next,
+      ),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+  });
+
   it('B024 (PR review): when a stale lowercase `authorization` is present, the LATER `Authorization` wins', async () => {
     // Mirrors the cache regression: OAuth middlewares spread caller headers
     // first then add `Authorization: <fresh>`. First-match iteration hashed

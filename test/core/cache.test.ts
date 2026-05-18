@@ -293,6 +293,61 @@ describe('createCacheMiddleware — B022 auth-scoped cache key', () => {
     expect(b).toBe(a);
   });
 
+  it('PR review of round 4 → round 5: partitions on `opts.authIdentity` even when no Authorization header is present', async () => {
+    // The transport now injects a hashed `authIdentity` on `RequestOptions`
+    // instead of a raw `Authorization` header. The cache MUST partition on
+    // that field so a user-installed middleware never has to observe the
+    // credential to get correct tenancy.
+    let counter = 0;
+    const next = vi.fn(
+      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ n: ++counter }),
+    );
+    const mw = createCacheMiddleware();
+
+    // Tenant A — note: no `headers.Authorization` at all, only the hash.
+    const a = await mw(makeOpts({ authIdentity: 'auth:0000000000000001' }), next);
+    // Tenant B with a different identity hash — must NOT hit the cache.
+    const b = await mw(makeOpts({ authIdentity: 'auth:0000000000000002' }), next);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(a.data).toEqual({ n: 1 });
+    expect(b.data).toEqual({ n: 2 });
+  });
+
+  it('PR review of round 4 → round 5: prefers `opts.authIdentity` over `headers.Authorization`', async () => {
+    // The two sources can disagree only in malformed setups (or in a test
+    // exercising the precedence rule). The pre-injected identity is the
+    // trusted one — using the header as a fallback only when the identity
+    // is absent. Two requests with the SAME authIdentity but DIFFERENT
+    // Authorization headers MUST coalesce in the cache.
+    let counter = 0;
+    const next = vi.fn(
+      async (_opts: RequestOptions): Promise<ApiResponse<unknown>> =>
+        makeResponse({ n: ++counter }),
+    );
+    const mw = createCacheMiddleware();
+
+    const a = await mw(
+      makeOpts({
+        authIdentity: 'auth:1111111111111111',
+        headers: { Authorization: 'Bearer alpha' },
+      }),
+      next,
+    );
+    const b = await mw(
+      makeOpts({
+        authIdentity: 'auth:1111111111111111',
+        headers: { Authorization: 'Bearer beta' },
+      }),
+      next,
+    );
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(a.data).toEqual({ n: 1 });
+    expect(b.data).toEqual({ n: 1 });
+  });
+
   it('B022 (PR review): when caller passes a stale lowercase `authorization`, the LATER-spread `Authorization` wins', async () => {
     // OAuth refresh / multi-tenant middlewares typically do
     // `{ ...caller.headers, Authorization: '<fresh>' }`. The first-match
