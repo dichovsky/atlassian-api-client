@@ -214,6 +214,78 @@ describe('sanitizePathForLogging', () => {
     expect(result).not.toContain('?');
     expect(result).not.toContain('#');
   });
+
+  describe('B035: expanded sensitive-marker coverage', () => {
+    it('redacts segments following expanded sensitive names (password, apikey, bearer, jwt, jsessionid)', () => {
+      expect(sanitizePathForLogging('/x/password/SUPERSECRET/y')).toContain('/***/y');
+      expect(sanitizePathForLogging('/x/apikey/AAA-BBB/y')).toContain('/***/y');
+      expect(sanitizePathForLogging('/x/bearer/eyJraw/y')).toContain('/***/y');
+      expect(sanitizePathForLogging('/x/jwt/SOMETOKEN/y')).toContain('/***/y');
+      expect(sanitizePathForLogging('/x/jsessionid/ABC123/y')).toContain('/***/y');
+    });
+
+    it('redacts name= markers for expanded list anywhere in segment', () => {
+      expect(sanitizePathForLogging('/x/password=topsecret/y')).toContain('password=***');
+      expect(sanitizePathForLogging('/x/access_token=AAA/y')).toContain('access_token=***');
+      expect(sanitizePathForLogging('/x/refresh_token=RRR/y')).toContain('refresh_token=***');
+      expect(sanitizePathForLogging('/x/client_secret=ZZZ/y')).toContain('client_secret=***');
+      expect(sanitizePathForLogging('/x/signature=SIG/y')).toContain('signature=***');
+    });
+
+    it('redacts matrix params (;jsessionid=ABC) inside a segment', () => {
+      // Java servlet-style URL rewriting; matrix params live inside the
+      // segment, not the query, so they survive the query-strip step.
+      const result = sanitizePathForLogging('/rest/api/3/issue/AC-1;jsessionid=ABC123DEF');
+      expect(result).not.toContain('ABC123DEF');
+      expect(result).toContain('jsessionid=***');
+    });
+
+    it('marker redaction is case-insensitive on the marker name', () => {
+      expect(sanitizePathForLogging('/x/PASSWORD=top')).toContain('PASSWORD=***');
+      expect(sanitizePathForLogging('/x/Access_Token=top')).toContain('Access_Token=***');
+    });
+
+    it('redacts JWT-shape values (eyJ…) embedded directly in path segments', () => {
+      // No marker present — the only signal is the JWT compact-serialization
+      // shape. Three base64url segments joined by dots, starting with `eyJ`.
+      const jwt =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.AbCdEfGhIjKlMnOpQrStUvWxYz0123456789';
+      const result = sanitizePathForLogging(`/api/callback/${jwt}/done`);
+      expect(result).not.toContain(jwt);
+      expect(result).toContain('***.jwt.***');
+    });
+
+    it('strips user:pass@host userinfo in the fallback branch', () => {
+      // Force fallback with an unparseable URL containing userinfo. The
+      // happy path drops userinfo via URL.pathname; this protects the
+      // fallback so a logged broken URL with creds is still scrubbed.
+      const result = sanitizePathForLogging('http://[user:pass@example/x?q=1');
+      expect(result).not.toContain('user:pass');
+      expect(result).not.toContain('user');
+      expect(result).not.toContain('pass');
+    });
+
+    it('does NOT redact legitimate paths that contain excluded names as substrings (false-positive guard)', () => {
+      // `code` is deliberately NOT a marker — Jira issue keys + many legit
+      // paths use it. Should pass through unchanged.
+      expect(sanitizePathForLogging('/rest/api/3/issue/AC-1')).toBe('/rest/api/3/issue/AC-1');
+      expect(sanitizePathForLogging('/wiki/api/v2/pages/123')).toBe('/wiki/api/v2/pages/123');
+      // Substring of a sensitive name (`keystone` contains `key`) — segment
+      // name match is whole-segment, so the next segment is not redacted.
+      expect(sanitizePathForLogging('/x/keystone/value/y')).toBe('/x/keystone/value/y');
+    });
+
+    it('redacts multiple markers in the same segment in one pass', () => {
+      // Defensive — the global regex should rewrite every occurrence.
+      const result = sanitizePathForLogging('/x/token=AAA;sid=BBB;password=CCC/y');
+      expect(result).not.toContain('AAA');
+      expect(result).not.toContain('BBB');
+      expect(result).not.toContain('CCC');
+      expect(result).toContain('token=***');
+      expect(result).toContain('sid=***');
+      expect(result).toContain('password=***');
+    });
+  });
 });
 
 describe('buildHeaders', () => {

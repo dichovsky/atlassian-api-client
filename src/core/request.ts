@@ -143,10 +143,66 @@ function renderOriginForError(path: string): string {
   }
 }
 
-const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);
+/**
+ * B035: Names that indicate the *next* path segment carries a credential
+ * (e.g. `/auth/AAAA-real-token-BBBB/refresh`). Match is whole-segment,
+ * case-insensitive, so `/code/SPACE-1` (Jira issue key) stays untouched
+ * because `code` is deliberately excluded.
+ */
+const SENSITIVE_SEGMENT_NAMES: ReadonlySet<string> = new Set([
+  'token',
+  'key',
+  'secret',
+  'auth',
+  'password',
+  'pwd',
+  'apikey',
+  'api_key',
+  'access_token',
+  'refresh_token',
+  'bearer',
+  'jwt',
+  'assertion',
+  'client_secret',
+  'signature',
+  'sig',
+  'jsessionid',
+  'sid',
+  'session',
+]);
+
+/**
+ * B035: Marker names redacted in `name=VALUE` form anywhere inside a path
+ * segment. Covers query-style markers smuggled into the path AND matrix
+ * params (`;jsessionid=ABC`) since the regex matches `name=` regardless of
+ * preceding separator.
+ */
+const SENSITIVE_MARKER_REGEX =
+  /(token|key|secret|auth|password|pwd|apikey|api_key|access_token|refresh_token|bearer|jwt|assertion|client_secret|signature|sig|jsessionid|sid|session)=([^/&;?#]+)/gi;
+
+/**
+ * B035: JWT compact-serialization shape — three base64url segments joined by
+ * dots, starting with `eyJ` (base64 of `{"`, the canonical JWT header start).
+ * Catches bearer JWTs accidentally embedded in path even when no `name=`
+ * marker is present. False-positive risk is vanishingly small because Atlassian
+ * opaque IDs are not base64-shaped and never start with `eyJ`.
+ */
+const JWT_SHAPE_REGEX = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
+
+/**
+ * B035: `user:pass@host` userinfo embedded in an absolute URL. The happy
+ * path resolves via `new URL(...).pathname` which already drops userinfo;
+ * this regex protects the fallback branch used when URL parsing throws on
+ * malformed input, so a logged broken URL containing creds is still scrubbed.
+ */
+const USERINFO_REGEX = /\/\/[^/@\s]+@/g;
 
 function redactSensitiveMarkers(value: string): string {
-  return value.replace(/(token|key|secret|auth)=([^/&]+)/gi, '$1=***');
+  return value.replace(SENSITIVE_MARKER_REGEX, '$1=***');
+}
+
+function redactJwtShapes(value: string): string {
+  return value.replace(JWT_SHAPE_REGEX, '***.jwt.***');
 }
 
 function redactSensitiveSegments(pathname: string): string {
@@ -157,7 +213,7 @@ function redactSensitiveSegments(pathname: string): string {
       if (previousSegment !== undefined && SENSITIVE_SEGMENT_NAMES.has(previousSegment)) {
         return '***';
       }
-      return redactSensitiveMarkers(segment);
+      return redactJwtShapes(redactSensitiveMarkers(segment));
     })
     .join('/');
 }
@@ -166,16 +222,23 @@ function redactSensitiveSegments(pathname: string): string {
  * Produce a logging-safe rendering of `path`.
  *
  * Strips query strings (which often carry filter values or cursors), replaces
- * the segment after `token`/`key`/`secret`/`auth` with `***`, and rewrites
- * `token=…`-style markers anywhere in the path. Falls back to a best-effort
- * pathname when the input does not parse as a URL so logging never throws.
+ * the segment after a sensitive name (e.g. `token`, `password`, `jsessionid`)
+ * with `***`, rewrites `name=…`-style markers anywhere in the path or matrix
+ * params (`;jsessionid=…`), redacts JWT compact-serialization values
+ * (`eyJ…`), and strips `user:pass@host` userinfo from the fallback branch.
+ *
+ * Falls back to a best-effort pathname when the input does not parse as a URL
+ * so logging never throws.
+ *
+ * @see [[B035]] for the full marker list and rationale.
  */
 export function sanitizePathForLogging(path: string): string {
   try {
     const parsedUrl = new URL(path, 'http://localhost');
     return redactSensitiveSegments(parsedUrl.pathname);
   } catch {
-    return redactSensitiveSegments(path.replace(/[?#].*$/, ''));
+    const noUserinfo = path.replace(USERINFO_REGEX, '//');
+    return redactSensitiveSegments(noUserinfo.replace(/[?#].*$/, ''));
   }
 }
 
