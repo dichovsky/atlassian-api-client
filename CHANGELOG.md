@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking
+
+- **oauth (B036)** — `createOAuthRefreshMiddleware` (and direct `fetchRefreshedTokens` callers) now throws `ValidationError` at construction time when `OAuthRefreshConfig.tokenEndpoint` resolves to a host other than `auth.atlassian.com`. Integrations that previously passed a custom `tokenEndpoint` (self-hosted IdP, proxied auth, staging) must opt in by also setting `OAuthRefreshConfig.allowedTokenEndpointHosts: readonly string[]` — the list REPLACES the default, mirroring `ClientConfig.allowedHosts` semantics. Migration: pass `allowedTokenEndpointHosts: ['<your-host>']` alongside the existing `tokenEndpoint`. The error message names the field, so existing code fails fast with an actionable diagnostic rather than silently leaking credentials. See `### Security` below for full rationale.
+
 ### Security
 
 - **oauth (B036)** — `OAuthRefreshConfig.tokenEndpoint` is now validated against a host allowlist at `createOAuthRefreshMiddleware` construction time (and re-asserted inside `fetchRefreshedTokens` for direct callers). The default allowlist is `['auth.atlassian.com']` — the documented Atlassian Cloud OAuth 2.0 3LO token endpoint host, matching the default `tokenEndpoint`. Self-hosted IdPs, proxied auth, and staging endpoints must opt in via the new `OAuthRefreshConfig.allowedTokenEndpointHosts?: readonly string[]` field, which REPLACES (not augments) the default — mirroring `ClientConfig.allowedHosts` semantics. A misconfigured `tokenEndpoint` (typo, poisoned env var, social-engineered config PR) now throws `ValidationError` fail-fast at startup instead of POSTing `client_id` + `client_secret` + `refresh_token` to an attacker host on the very first 401. Defence-in-depth pair to the existing transport-side allowlist (B034); the OAuth refresh path is on a separate code path that bypasses `ClientConfig.allowedHosts` by design.
