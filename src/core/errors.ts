@@ -164,6 +164,56 @@ export class PaginationError extends AtlassianError {
 }
 
 /**
+ * Response-too-large error (B026).
+ *
+ * Thrown by the transport when a buffered response body exceeds the
+ * configured {@link ClientConfig.maxResponseBytes}. Detection happens in two
+ * places, both before the body is fully materialised in memory:
+ * - a fast-fail on `content-length` when the header is present and exceeds
+ *   the cap (no body bytes are read);
+ * - a running stream-read tally that aborts mid-read when the byte total
+ *   crosses the cap (handles chunked transfers, missing headers, and
+ *   servers that lie about `content-length`).
+ *
+ * Applies to buffered response modes (`'json'`, `'arrayBuffer'`) on the
+ * success path AND to the error path (`safeParseBody`), so a hostile or
+ * misconfigured upstream that returns a multi-gigabyte 5xx body cannot
+ * exhaust the Node heap. `responseType: 'stream'` is exempt — the caller
+ * owns drain/abort, and applying the cap would defeat the purpose of
+ * streaming.
+ *
+ * The {@link status} field carries the HTTP status of the response whose
+ * body exceeded the cap. The transport always populates it (on both the
+ * success and error paths) so callers can classify the originating
+ * response — most usefully on the error path, where the alternative would
+ * have been an `HttpError` with that status. It is typed as optional
+ * because direct constructor callers may omit it.
+ */
+export class ResponseTooLargeError extends AtlassianError {
+  /** Configured cap in bytes that was exceeded. */
+  readonly limitBytes: number;
+  /**
+   * HTTP status of the response whose body exceeded the cap. The transport
+   * always sets this (success and error paths alike) by capturing
+   * `response.status` before reading any bytes. Typed as optional only so
+   * direct constructor callers (rare) may omit it.
+   */
+  readonly status?: number;
+
+  constructor(limitBytes: number, status?: number, options?: ErrorOptions) {
+    const statusFragment = status !== undefined ? ` for HTTP ${status} response` : '';
+    super(
+      `Response body exceeded maxResponseBytes (${limitBytes} bytes)${statusFragment}`,
+      'RESPONSE_TOO_LARGE_ERROR',
+      options,
+    );
+    this.name = 'ResponseTooLargeError';
+    this.limitBytes = limitBytes;
+    this.status = status;
+  }
+}
+
+/**
  * Create the appropriate {@link HttpError} subclass from an HTTP status code.
  *
  * Maps status codes to specific error classes: 401 → {@link AuthenticationError},

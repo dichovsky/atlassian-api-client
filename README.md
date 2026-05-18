@@ -208,6 +208,30 @@ const client = new JiraClient({
 
 Retries use exponential backoff with jitter. Retryable: 429, 500, 502, 503, 504, and network errors.
 
+## Response Body Size Cap
+
+`ClientConfig.maxResponseBytes` (default: unset, no cap) bounds the size of any single buffered response body the transport will materialise. When a body exceeds the cap, the request throws `ResponseTooLargeError` (`code: 'RESPONSE_TOO_LARGE_ERROR'`) instead of loading it into memory.
+
+```typescript
+import { ConfluenceClient, ResponseTooLargeError } from 'atlassian-api-client';
+
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email: '...', apiToken: '...' },
+  maxResponseBytes: 50 * 1024 * 1024, // 50 MB cap
+});
+
+try {
+  await client.pages.getPage('123');
+} catch (error) {
+  if (error instanceof ResponseTooLargeError) {
+    console.error(`Response exceeded ${error.limitBytes} bytes (status: ${error.status ?? 'n/a'})`);
+  }
+}
+```
+
+Enforcement applies to `responseType: 'json'` and `'arrayBuffer'` AND to the error-response body parsed for error-message extraction — so a misconfigured upstream returning a multi-gigabyte 5xx body cannot exhaust the Node heap on a single request. `responseType: 'stream'` is exempt by design: the caller owns drain/abort of the `ReadableStream`. Detection combines a `Content-Length` fast-fail with a running stream-read tally that cancels the body mid-read on overflow.
+
 ## Middleware
 
 `HttpTransport` accepts an optional middleware chain for cross-cutting concerns.

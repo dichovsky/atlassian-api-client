@@ -26,6 +26,7 @@ export {
   NetworkError,
   ValidationError,
   PaginationError,
+  ResponseTooLargeError,
   createHttpError,
 } from './errors.js';
 

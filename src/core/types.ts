@@ -142,6 +142,33 @@ export interface ClientConfig {
   /** Maximum delay in ms between retries. Default: 30000. */
   readonly maxRetryDelay?: number;
   /**
+   * Maximum buffered response body size in bytes (B026). When set, the
+   * transport refuses to materialise any single response body larger than
+   * this value and throws {@link ResponseTooLargeError} instead.
+   *
+   * Enforcement applies to buffered modes (`responseType: 'json'` and
+   * `'arrayBuffer'`) on the success path AND to the error-response body
+   * parsed for error-message extraction — so a hostile upstream returning
+   * a multi-gigabyte 5xx body cannot exhaust the Node heap on a single
+   * request. `responseType: 'stream'` is exempt by design: the caller
+   * owns drain/abort of the `ReadableStream`, and applying the cap would
+   * defeat the purpose of streaming.
+   *
+   * Detection is twofold: a fast-fail on the `content-length` header when
+   * it is present and exceeds the cap (no body bytes are read), plus a
+   * running stream-read tally that aborts mid-read when the byte total
+   * crosses the cap (handles chunked transfers, missing headers, and
+   * servers that lie about `content-length`).
+   *
+   * When omitted, no cap is applied — the default preserves prior
+   * behaviour for callers that already download large attachments via
+   * `arrayBuffer`. Recommended for any client that consumes responses
+   * from a third-party or untrusted proxy.
+   *
+   * Must be a finite positive integer when supplied.
+   */
+  readonly maxResponseBytes?: number;
+  /**
    * Hosts the transport is allowed to send the configured `Authorization`
    * header to. When omitted, only the `baseUrl` host is allowed and the
    * `baseUrl` itself must end in a known Atlassian suffix
@@ -192,6 +219,11 @@ export interface ResolvedConfig {
   readonly retryDelay: number;
   /** Maximum delay in ms between retries. */
   readonly maxRetryDelay: number;
+  /**
+   * Maximum buffered response body size in bytes. `undefined` means no cap.
+   * See {@link ClientConfig.maxResponseBytes} for the contract.
+   */
+  readonly maxResponseBytes?: number;
   /**
    * Resolved set of hosts the transport is allowed to send the configured
    * `Authorization` header to. Always populated — when the user did not

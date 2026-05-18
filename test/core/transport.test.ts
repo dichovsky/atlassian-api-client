@@ -8,6 +8,7 @@ import {
   TimeoutError,
   NetworkError,
   ValidationError,
+  ResponseTooLargeError,
 } from '../../src/core/errors.js';
 import { OAuthError } from '../../src/core/oauth.js';
 import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
@@ -1830,6 +1831,100 @@ describe('HttpTransport', () => {
       await expect(runRequest(transport, { method: 'GET', path: '/pages' })).rejects.toBeInstanceOf(
         TimeoutError,
       );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // B026 — maxResponseBytes end-to-end propagation
+  // -------------------------------------------------------------------------
+  describe('maxResponseBytes (B026)', () => {
+    it('returns the response unchanged when the body is under the cap', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, { id: 'small' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const cappedConfig: ResolvedConfig = { ...defaultConfig, maxResponseBytes: 1_048_576 };
+      const transport = makeTransport(cappedConfig);
+
+      const response = await runRequest<ApiResponse<{ id: string }>>(transport, {
+        method: 'GET',
+        path: '/pages/small',
+      });
+
+      expect(response.data).toEqual({ id: 'small' });
+    });
+
+    it('throws ResponseTooLargeError when a 2xx body exceeds the cap', async () => {
+      // 32-byte body, 8-byte cap — stream tally overflows mid-read.
+      const bodyBytes = new Uint8Array(32);
+      const raw = new Response(bodyBytes, {
+        status: 200,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      const fetchMock = vi.fn().mockResolvedValue(raw);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const cappedConfig: ResolvedConfig = {
+        ...defaultConfig,
+        maxResponseBytes: 8,
+        retries: 0, // non-retryable; surface the throw immediately
+      };
+      const transport = makeTransport(cappedConfig);
+
+      await expect(
+        runRequest(transport, {
+          method: 'GET',
+          path: '/attachments/big',
+          responseType: 'arrayBuffer',
+        }),
+      ).rejects.toBeInstanceOf(ResponseTooLargeError);
+    });
+
+    it('throws ResponseTooLargeError on the error path when a 5xx body exceeds the cap', async () => {
+      // Hostile 502 with a 1KB body — caller capped at 16 bytes. The error
+      // path's safeParseBody must let the overflow propagate INSTEAD of the
+      // would-be HttpError.
+      const raw = new Response(new Uint8Array(1024), { status: 502 });
+      const fetchMock = vi.fn().mockResolvedValue(raw);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const cappedConfig: ResolvedConfig = {
+        ...defaultConfig,
+        maxResponseBytes: 16,
+        retries: 0,
+      };
+      const transport = makeTransport(cappedConfig);
+
+      const promise = runRequest(transport, { method: 'GET', path: '/pages/oops' });
+      await expect(promise).rejects.toBeInstanceOf(ResponseTooLargeError);
+      await promise.catch((error: unknown) => {
+        // Status of the upstream 5xx is preserved on the error so the
+        // caller can still classify it as a server-side failure.
+        expect((error as ResponseTooLargeError).status).toBe(502);
+        expect((error as ResponseTooLargeError).limitBytes).toBe(16);
+      });
+    });
+
+    it('does not cap a "stream" response (caller owns drain)', async () => {
+      // 4MB body with a 64-byte cap — stream mode is exempt by design.
+      const bodyBytes = new Uint8Array(4 * 1024 * 1024);
+      const raw = new Response(bodyBytes, {
+        status: 200,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      const fetchMock = vi.fn().mockResolvedValue(raw);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const cappedConfig: ResolvedConfig = { ...defaultConfig, maxResponseBytes: 64 };
+      const transport = makeTransport(cappedConfig);
+
+      const response = await runRequest<ApiResponse<ReadableStream<Uint8Array> | null>>(transport, {
+        method: 'GET',
+        path: '/attachments/huge',
+        responseType: 'stream',
+      });
+
+      expect(response.data).toBe(raw.body);
+      expect(raw.bodyUsed).toBe(false);
     });
   });
 });
