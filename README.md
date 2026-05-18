@@ -277,6 +277,24 @@ createOAuthRefreshMiddleware({
 
 This is a separate allowlist from `ClientConfig.allowedHosts` because the OAuth refresh code path calls `fetch` directly and bypasses the transport-side check by design.
 
+**Herd protection (stability):** when many concurrent requests hit a 401 at the same time, the middleware already deduplicates the token exchange to a single in-flight refresh. Two additional knobs flatten the surrounding failure modes:
+
+```typescript
+createOAuthRefreshMiddleware({
+  accessToken: '...',
+  refreshToken: '...',
+  clientId: '...',
+  clientSecret: '...',
+  retryJitterMs: 100, // default — spread post-refresh retries over 0..100ms
+  failureCooldownMs: 1000, // default — replay a refresh failure for 1s instead of re-firing
+});
+```
+
+- `retryJitterMs` (default `100`, `0` disables) staggers each waiter's retry after the shared refresh resolves, so N concurrent requests don't dispatch N simultaneous retried API calls and stampede a just-recovered backend or re-trigger upstream rate-limits.
+- `failureCooldownMs` (default `1000`, `0` disables) caches the most recent **refresh failure** for the configured duration. Subsequent 401s during the window replay the cached error (preserving the original `OAuthError` for debugging) without firing a new token-endpoint call — so an auth-server outage no longer becomes an unbounded refresh loop.
+
+Both are validated as non-negative finite numbers at construction; the jitter sleep honours `RequestOptions.signal` so an aborted caller doesn't pay the delay.
+
 ### Atlassian Connect JWT
 
 ```typescript
@@ -517,7 +535,7 @@ const client = new ConfluenceClient({
 
 ### OAuth 2.0 with token persistence
 
-`createOAuthRefreshMiddleware` injects the access token on every request and refreshes automatically on a 401. A shared in-flight refresh promise prevents stampedes. Use `onTokenRefreshed` to persist new tokens so worker restarts don't lose them.
+`createOAuthRefreshMiddleware` injects the access token on every request and refreshes automatically on a 401. A shared in-flight refresh promise prevents token-endpoint stampedes; the `retryJitterMs` and `failureCooldownMs` knobs (see the [OAuth 2.0 Token Refresh](#oauth-20-token-refresh) section) extend that protection to the post-refresh retry burst and the auth-server-outage loop. Use `onTokenRefreshed` to persist new tokens so worker restarts don't lose them.
 
 ```typescript
 import { JiraClient, createOAuthRefreshMiddleware } from 'atlassian-api-client';

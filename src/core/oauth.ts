@@ -5,6 +5,7 @@ import {
   hostMatchesExact,
   isInvalidBareHostChar,
 } from './atlassian-hosts.js';
+import { sleepWithAbort } from './retry.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
 const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';
@@ -66,6 +67,44 @@ export interface OAuthRefreshConfig {
   readonly fetch?: typeof fetch;
   /** Invoked after a successful token refresh so callers can persist the new tokens. */
   readonly onTokenRefreshed?: (tokens: OAuthTokens) => void | Promise<void>;
+  /**
+   * Upper bound, in milliseconds, of a random jitter applied to each waiter's
+   * post-refresh retry dispatch. Defaults to `100`. `0` disables jitter and
+   * restores the prior behaviour of dispatching all waiters in the same tick.
+   *
+   * STABILITY (B016): When N concurrent requests share one in-flight refresh,
+   * the refresh dedup prevents N token-endpoint calls but still produces N
+   * retried API calls firing simultaneously the moment the refresh resolves.
+   * That post-refresh stampede can re-trigger upstream rate-limits or push a
+   * just-recovered backend back over capacity. Spreading retries across
+   * `[0, retryJitterMs)` flattens the burst at sub-perceptible cost.
+   *
+   * Must be a non-negative finite number; otherwise `ValidationError` is
+   * thrown at middleware construction time.
+   */
+  readonly retryJitterMs?: number;
+  /**
+   * Duration, in milliseconds, during which a settled refresh **failure** is
+   * cached and replayed without firing a new token-endpoint call. Defaults to
+   * `1000`. `0` disables the cooldown and restores the prior behaviour of
+   * firing a fresh refresh on every 401.
+   *
+   * STABILITY (B016): Without a cooldown, an auth-server outage produces an
+   * unbounded loop — every incoming request hits 401, fires a new refresh,
+   * the refresh fails, the next request hits 401 again, repeat. The cooldown
+   * gates retries so failure is bounded to roughly one refresh attempt per
+   * `failureCooldownMs`. Concurrent waiters at the time of failure all share
+   * the same in-flight rejection (no fanout regardless of this setting); the
+   * cooldown protects against the *next* wave of 401s after the failure has
+   * settled.
+   *
+   * The replayed error is the original refresh failure (e.g. the underlying
+   * `OAuthError`), preserving the root cause for debugging.
+   *
+   * Must be a non-negative finite number; otherwise `ValidationError` is
+   * thrown at middleware construction time.
+   */
+  readonly failureCooldownMs?: number;
 }
 
 /**
@@ -107,11 +146,22 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
   // lazily inside that function (defence-in-depth).
   validateTokenEndpoint(config.tokenEndpoint, config.allowedTokenEndpointHosts);
 
+  const retryJitterMs = resolveNonNegFiniteNumber(config.retryJitterMs, 100, 'retryJitterMs');
+  const failureCooldownMs = resolveNonNegFiniteNumber(
+    config.failureCooldownMs,
+    1000,
+    'failureCooldownMs',
+  );
+
   let currentTokens: OAuthTokens = {
     accessToken: config.accessToken,
     refreshToken: config.refreshToken,
   };
   let refreshPromise: Promise<OAuthTokens> | null = null;
+  // Tracks the most recent settled-failure of the token refresh. Cleared on
+  // any successful refresh OR after the cooldown elapses. Read on each 401
+  // BEFORE deciding whether to spawn a new refresh.
+  let lastFailure: { readonly error: unknown; readonly at: number } | null = null;
 
   return async (options: RequestOptions, next) => {
     const authedOptions = injectBearerToken(options, currentTokens.accessToken);
@@ -121,7 +171,22 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
     } catch (error) {
       if (!(error instanceof AuthenticationError)) throw error;
 
-      // Deduplicate concurrent refresh calls — only one token exchange runs at a time.
+      // Cooldown gate: replay the cached refresh error without firing a new
+      // token exchange. Suppresses the post-failure storm when an outage
+      // would otherwise drive one refresh attempt per incoming request.
+      if (failureCooldownMs > 0 && lastFailure !== null) {
+        if (Date.now() - lastFailure.at < failureCooldownMs) {
+          throw lastFailure.error;
+        }
+        lastFailure = null;
+      }
+
+      // Deduplicate concurrent refresh calls — only one token exchange runs
+      // at a time. Concurrent waiters share both the success token AND any
+      // rejection (the .catch records lastFailure once before re-throwing to
+      // every awaiter). When the cooldown is disabled (failureCooldownMs ===
+      // 0) the .catch skips the assignment so we don't retain an error that
+      // will never be consulted.
       if (refreshPromise === null) {
         refreshPromise = fetchRefreshedTokens(config, currentTokens.refreshToken)
           .then(async (tokens) => {
@@ -129,7 +194,14 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
             if (config.onTokenRefreshed !== undefined) {
               await config.onTokenRefreshed(tokens);
             }
+            lastFailure = null;
             return tokens;
+          })
+          .catch((err: unknown) => {
+            if (failureCooldownMs > 0) {
+              lastFailure = { error: err, at: Date.now() };
+            }
+            throw err;
           })
           .finally(() => {
             refreshPromise = null;
@@ -137,9 +209,40 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
       }
 
       const newTokens = await refreshPromise;
+
+      // Stagger post-refresh retries to avoid stampeding the API the moment
+      // the shared refresh resolves. `sleepWithAbort` is shared with the
+      // retry loop (`src/core/retry.ts`) so abort semantics — listener
+      // cleanup, `signal.reason` normalisation — stay consistent across the
+      // codebase. Skipped entirely when the computed delay is 0 (jitter
+      // disabled via `retryJitterMs: 0`, or the rare `Math.random() === 0`
+      // draw) so we don't schedule a no-op `setTimeout(_, 0)`.
+      const jitterMs = Math.random() * retryJitterMs;
+      if (jitterMs > 0) {
+        await sleepWithAbort(jitterMs, options.signal);
+      }
+
       return next(injectBearerToken(options, newTokens.accessToken));
     }
   };
+}
+
+/**
+ * Validate a non-negative finite number field on `OAuthRefreshConfig`. Used
+ * for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and
+ * documented to disable the feature; negatives, `NaN`, `Infinity`, and
+ * non-number runtime values produce `ValidationError`.
+ */
+function resolveNonNegFiniteNumber(
+  value: number | undefined,
+  dflt: number,
+  fieldName: string,
+): number {
+  if (value === undefined) return dflt;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new ValidationError(`${fieldName} must be a non-negative finite number`);
+  }
+  return value;
 }
 
 function injectBearerToken(options: RequestOptions, token: string): RequestOptions {

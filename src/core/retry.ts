@@ -182,7 +182,15 @@ function getRetryDelay(
   return calculateDelay(attempt, retryDelay, ceiling);
 }
 
-async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
+/**
+ * Sleep for `delayMs` milliseconds, rejecting with the signal's normalised
+ * abort reason if `signal` fires before the timer. Exported so other
+ * middleware (e.g. OAuth refresh jitter) can share a single abort-aware
+ * sleep implementation rather than duplicating timer + listener cleanup.
+ * Listener is registered with `{ once: true }` AND explicitly removed on
+ * the resolve path so it never outlives the sleep.
+ */
+export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
   if (signal === undefined) {
     await sleep(delayMs);
     return;

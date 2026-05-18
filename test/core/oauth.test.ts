@@ -905,3 +905,474 @@ describe('B036: tokenEndpoint host allowlist', () => {
     });
   });
 });
+
+describe('B016: OAuth refresh herd protection', () => {
+  const baseConfig = {
+    accessToken: 'access-1',
+    refreshToken: 'refresh-1',
+    clientId: 'cid',
+    clientSecret: 'csec',
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  describe('retry jitter (post-success stagger)', () => {
+    it('staggers concurrent retries within retryJitterMs after a shared refresh', async () => {
+      vi.useFakeTimers();
+      // Deterministic jitter values: waiter A gets 20ms, waiter B gets 80ms.
+      const randomSpy = vi.spyOn(Math, 'random');
+      randomSpy.mockReturnValueOnce(0.2).mockReturnValueOnce(0.8);
+
+      const retryDispatchAt: number[] = [];
+      let nextCallSeq = 0;
+      const initialFailures = new Set<number>();
+
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        const seq = ++nextCallSeq;
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        // First call from each middleware invocation throws 401 (using the
+        // initial token); retry call uses the refreshed token.
+        if (authHeader === 'Bearer access-1' && initialFailures.size < 2) {
+          initialFailures.add(seq);
+          throw new AuthenticationError();
+        }
+        retryDispatchAt.push(Date.now());
+        return makeResponse({ retried: true });
+      });
+
+      global.fetch = vi.fn().mockResolvedValue(
+        fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'access-2', refresh_token: 'refresh-2' },
+        }),
+      ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: 100 });
+
+      const promiseA = mw(makeOpts(), next);
+      const promiseB = mw(makeOpts(), next);
+
+      // Advance enough for both jitter sleeps to fire (max jitter = 100).
+      await vi.advanceTimersByTimeAsync(100);
+
+      await Promise.all([promiseA, promiseB]);
+
+      expect(retryDispatchAt).toHaveLength(2);
+      const [first, second] = retryDispatchAt.sort((a, b) => a - b) as [number, number];
+      const delta = second - first;
+      // 0.2 * 100 = 20ms, 0.8 * 100 = 80ms → expected spread ≈ 60ms.
+      expect(delta).toBeGreaterThanOrEqual(50);
+      expect(delta).toBeLessThanOrEqual(100);
+    });
+
+    it('retryJitterMs: 0 disables jitter — retries dispatch in the same tick', async () => {
+      vi.useFakeTimers();
+      let nextCallSeq = 0;
+      const retryDispatchAt: number[] = [];
+
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        nextCallSeq++;
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        if (authHeader === 'Bearer access-1' && nextCallSeq <= 2) {
+          throw new AuthenticationError();
+        }
+        retryDispatchAt.push(Date.now());
+        return makeResponse(null);
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          fakeFetchResponse({ ok: true, json: { access_token: 'access-2', refresh_token: 'r' } }),
+        ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: 0 });
+
+      await Promise.all([mw(makeOpts(), next), mw(makeOpts(), next)]);
+
+      expect(retryDispatchAt).toHaveLength(2);
+      // Both retries land in the same fake-time millisecond.
+      expect(retryDispatchAt[0]).toBe(retryDispatchAt[1]);
+    });
+
+    it('honours options.signal during the jitter sleep — aborts pending retry', async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, 'random').mockReturnValue(0.99); // ~99ms jitter
+
+      const controller = new AbortController();
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        throw new AuthenticationError();
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          fakeFetchResponse({ ok: true, json: { access_token: 'a', refresh_token: 'r' } }),
+        ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: 100 });
+
+      const pending = mw(makeOpts({ signal: controller.signal }), next);
+
+      // Let refresh resolve and the jitter sleep begin.
+      await vi.advanceTimersByTimeAsync(10);
+
+      const abortReason = new Error('caller cancelled');
+      controller.abort(abortReason);
+
+      await expect(pending).rejects.toBe(abortReason);
+      // next() called once (initial 401) but never re-dispatched.
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('completes the jitter sleep normally when the signal is provided but never aborts', async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+      const controller = new AbortController();
+      let nextSeq = 0;
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        nextSeq++;
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        if (authHeader === 'Bearer access-1') throw new AuthenticationError();
+        return makeResponse({ retried: true });
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          fakeFetchResponse({ ok: true, json: { access_token: 'access-2', refresh_token: 'r' } }),
+        ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: 100 });
+
+      const pending = mw(makeOpts({ signal: controller.signal }), next);
+
+      // Advance past the jitter sleep without aborting → timer fires,
+      // listener gets removed, retry proceeds.
+      await vi.advanceTimersByTimeAsync(60);
+
+      const result = await pending;
+      expect(result.data).toEqual({ retried: true });
+      expect(nextSeq).toBe(2);
+    });
+
+    it('rejects synchronously when signal is already aborted before the jitter sleep', async () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+      const controller = new AbortController();
+      const preAbort = new Error('pre-aborted');
+      // Abort BEFORE the request starts.
+      controller.abort(preAbort);
+
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        throw new AuthenticationError();
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          fakeFetchResponse({ ok: true, json: { access_token: 'a', refresh_token: 'r' } }),
+        ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: 100 });
+
+      // The refresh still completes; jitter sleep sees aborted signal and rejects.
+      await expect(mw(makeOpts({ signal: controller.signal }), next)).rejects.toBe(preAbort);
+    });
+  });
+
+  describe('failure cooldown (post-failure storm protection)', () => {
+    it('shares one in-flight refresh rejection across concurrent waiters', async () => {
+      let fetchCalls = 0;
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        return fakeFetchResponse({ ok: false, status: 500, text: 'server boom' });
+      }) as unknown as typeof fetch;
+
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        throw new AuthenticationError();
+      });
+
+      const mw = createOAuthRefreshMiddleware({
+        ...baseConfig,
+        retryJitterMs: 0,
+        failureCooldownMs: 1000,
+      });
+
+      const settled = await Promise.allSettled([mw(makeOpts(), next), mw(makeOpts(), next)]);
+
+      expect(fetchCalls).toBe(1);
+      expect(settled[0]?.status).toBe('rejected');
+      expect(settled[1]?.status).toBe('rejected');
+      const errA = (settled[0] as PromiseRejectedResult).reason as Error;
+      const errB = (settled[1] as PromiseRejectedResult).reason as Error;
+      // Same error reference — both waiters reject with the SAME thrown
+      // OAuthError instance from the single in-flight refresh.
+      expect(errA).toBe(errB);
+      expect(errA).toBeInstanceOf(OAuthError);
+    });
+
+    it('replays the cached refresh error during the cooldown window without re-fetching', async () => {
+      vi.useFakeTimers();
+      let fetchCalls = 0;
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        return fakeFetchResponse({ ok: false, status: 500, text: 'server boom' });
+      }) as unknown as typeof fetch;
+
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        throw new AuthenticationError();
+      });
+
+      const mw = createOAuthRefreshMiddleware({
+        ...baseConfig,
+        retryJitterMs: 0,
+        failureCooldownMs: 1000,
+      });
+
+      // First 401 → refresh fails.
+      let firstErr: unknown;
+      try {
+        await mw(makeOpts(), next);
+      } catch (e) {
+        firstErr = e;
+      }
+      expect(firstErr).toBeInstanceOf(OAuthError);
+      expect(fetchCalls).toBe(1);
+
+      // Advance clock by less than the cooldown.
+      await vi.advanceTimersByTimeAsync(500);
+
+      // Second 401 within cooldown → replays cached error, NO new fetch.
+      let secondErr: unknown;
+      try {
+        await mw(makeOpts(), next);
+      } catch (e) {
+        secondErr = e;
+      }
+      expect(secondErr).toBe(firstErr);
+      expect(fetchCalls).toBe(1);
+    });
+
+    it('expires the cooldown — next 401 after cooldown fires a new refresh', async () => {
+      vi.useFakeTimers();
+      let fetchCalls = 0;
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        if (fetchCalls === 1) {
+          return fakeFetchResponse({ ok: false, status: 500, text: 'boom' });
+        }
+        return fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'new', refresh_token: 'new-r' },
+        });
+      }) as unknown as typeof fetch;
+
+      let nextSeq = 0;
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        nextSeq++;
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        // 401 for original token; success for refreshed.
+        if (authHeader === 'Bearer access-1') throw new AuthenticationError();
+        return makeResponse({ ok: true });
+      });
+
+      const mw = createOAuthRefreshMiddleware({
+        ...baseConfig,
+        retryJitterMs: 0,
+        failureCooldownMs: 1000,
+      });
+
+      await mw(makeOpts(), next).catch(() => undefined);
+      expect(fetchCalls).toBe(1);
+
+      // Past cooldown → new refresh attempt fires.
+      await vi.advanceTimersByTimeAsync(1500);
+
+      const result = await mw(makeOpts(), next);
+      expect(result.data).toEqual({ ok: true });
+      expect(fetchCalls).toBe(2);
+      expect(nextSeq).toBeGreaterThanOrEqual(3);
+    });
+
+    it('failureCooldownMs: 0 disables cooldown — every 401 fires a fresh refresh', async () => {
+      let fetchCalls = 0;
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        return fakeFetchResponse({ ok: false, status: 500, text: 'boom' });
+      }) as unknown as typeof fetch;
+
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        throw new AuthenticationError();
+      });
+
+      const mw = createOAuthRefreshMiddleware({
+        ...baseConfig,
+        retryJitterMs: 0,
+        failureCooldownMs: 0,
+      });
+
+      await mw(makeOpts(), next).catch(() => undefined);
+      await mw(makeOpts(), next).catch(() => undefined);
+
+      // No cooldown gating → two independent refresh attempts.
+      expect(fetchCalls).toBe(2);
+    });
+
+    it('clears cached failure after a successful refresh — does not gate future 401s', async () => {
+      vi.useFakeTimers();
+      let fetchCalls = 0;
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        if (fetchCalls === 1) {
+          return fakeFetchResponse({ ok: false, status: 500, text: 'boom' });
+        }
+        return fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'new', refresh_token: 'new-r' },
+        });
+      }) as unknown as typeof fetch;
+
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        if (authHeader === 'Bearer access-1') throw new AuthenticationError();
+        return makeResponse(null);
+      });
+
+      const mw = createOAuthRefreshMiddleware({
+        ...baseConfig,
+        retryJitterMs: 0,
+        failureCooldownMs: 1000,
+      });
+
+      // First refresh fails.
+      await mw(makeOpts(), next).catch(() => undefined);
+      expect(fetchCalls).toBe(1);
+
+      // After cooldown, a successful refresh clears lastFailure.
+      await vi.advanceTimersByTimeAsync(1500);
+      await mw(makeOpts(), next);
+      expect(fetchCalls).toBe(2);
+
+      // Immediately after success (no cooldown wait), another 401 must NOT
+      // be gated by the (now-cleared) cached failure. Since the token has
+      // been refreshed, a stale 401 on it would still trigger a new
+      // refresh attempt — proving the gate is cleared.
+      let nextSeq2 = 0;
+      const nextAgain = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        nextSeq2++;
+        const authHeader = (opts.headers as Record<string, string>)['Authorization'];
+        if (authHeader === 'Bearer new' && nextSeq2 === 1) throw new AuthenticationError();
+        return makeResponse(null);
+      });
+      await mw(makeOpts(), nextAgain).catch(() => undefined);
+      expect(fetchCalls).toBe(3);
+    });
+  });
+
+  describe('config validation', () => {
+    it('rejects negative retryJitterMs', () => {
+      expect(() => createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: -1 })).toThrow(
+        ValidationError,
+      );
+    });
+
+    it('rejects non-finite retryJitterMs (NaN)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: Number.NaN }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-finite retryJitterMs (Infinity)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          retryJitterMs: Number.POSITIVE_INFINITY,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-number retryJitterMs (runtime type guard)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          // Deliberate type violation — protects JS callers and dynamic config loaders.
+          retryJitterMs: '100' as unknown as number,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects negative failureCooldownMs', () => {
+      expect(() => createOAuthRefreshMiddleware({ ...baseConfig, failureCooldownMs: -1 })).toThrow(
+        ValidationError,
+      );
+    });
+
+    it('rejects non-finite failureCooldownMs (NaN)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({ ...baseConfig, failureCooldownMs: Number.NaN }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-finite failureCooldownMs (Infinity)', () => {
+      // Parity with `retryJitterMs` — `resolveNonNegFiniteNumber` applies the
+      // same rule to both fields, so the test surface mirrors retryJitterMs.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          failureCooldownMs: Number.POSITIVE_INFINITY,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-number failureCooldownMs (runtime type guard)', () => {
+      // Parity with `retryJitterMs` — guards JS callers / dynamic config
+      // loaders that bypass TypeScript.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          failureCooldownMs: '1000' as unknown as number,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('accepts retryJitterMs and failureCooldownMs of 0 (disabled)', () => {
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          retryJitterMs: 0,
+          failureCooldownMs: 0,
+        }),
+      ).not.toThrow();
+    });
+
+    it('error message names the offending field for retryJitterMs', () => {
+      let captured: Error | undefined;
+      try {
+        createOAuthRefreshMiddleware({ ...baseConfig, retryJitterMs: -5 });
+      } catch (e) {
+        captured = e as Error;
+      }
+      expect(captured?.message).toContain('retryJitterMs');
+    });
+
+    it('error message names the offending field for failureCooldownMs', () => {
+      let captured: Error | undefined;
+      try {
+        createOAuthRefreshMiddleware({ ...baseConfig, failureCooldownMs: -5 });
+      } catch (e) {
+        captured = e as Error;
+      }
+      expect(captured?.message).toContain('failureCooldownMs');
+    });
+  });
+});

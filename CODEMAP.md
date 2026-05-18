@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "2d2085e478307c9d76a37535abff1337f0714b5c7819bccefb08aa55f9b3c4ec",
+  "sourceHash": "9b9ed2a8534429be9a6087945f3b9c97eed6171bf9244b51d6fe79cd9e322e33",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -815,7 +815,7 @@
       "name": "OAuthError",
       "kind": "class",
       "file": "src/core/oauth.ts",
-      "line": 80,
+      "line": 119,
       "signature": "export class OAuthError extends HttpError",
       "jsdoc": "Thrown when the token refresh request itself fails."
     },
@@ -823,7 +823,7 @@
       "name": "OAuthRefreshConfig",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 25,
+      "line": 26,
       "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
       "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware.",
       "typeOnly": true
@@ -832,7 +832,7 @@
       "name": "OAuthTokens",
       "kind": "interface",
       "file": "src/core/oauth.ts",
-      "line": 13,
+      "line": 14,
       "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
       "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint.",
       "typeOnly": true
@@ -1260,7 +1260,7 @@
       "name": "createOAuthRefreshMiddleware",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 104,
+      "line": 143,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
@@ -1276,7 +1276,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 164,
+      "line": 267,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -4453,14 +4453,14 @@
         {
           "name": "DEFAULT_OAUTH_TOKEN_ENDPOINT",
           "kind": "variable",
-          "line": 10,
+          "line": 11,
           "signature": "const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';",
           "jsdoc": "Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud."
         },
         {
           "name": "OAuthTokens",
           "kind": "interface",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export interface OAuthTokens { readonly accessToken: string; readonly refreshToken: string; readonly expiresIn?: number;…",
           "jsdoc": "Tokens returned by the OAuth 2.0 token endpoint."
@@ -4468,7 +4468,7 @@
         {
           "name": "OAuthRefreshConfig",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface OAuthRefreshConfig { readonly accessToken: string; readonly refreshToken: string; readonly clientId: st…",
           "jsdoc": "Configuration for the OAuth 2.0 token refresh middleware."
@@ -4476,7 +4476,7 @@
         {
           "name": "OAuthError",
           "kind": "class",
-          "line": 80,
+          "line": 119,
           "exported": true,
           "signature": "export class OAuthError extends HttpError",
           "jsdoc": "Thrown when the token refresh request itself fails.",
@@ -4484,33 +4484,40 @@
             {
               "name": "refreshStatus",
               "kind": "property",
-              "line": 82
+              "line": 121
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 84
+              "line": 123
             }
           ]
         },
         {
           "name": "createOAuthRefreshMiddleware",
           "kind": "function",
-          "line": 104,
+          "line": 143,
           "exported": true,
           "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
           "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
         },
         {
+          "name": "resolveNonNegFiniteNumber",
+          "kind": "function",
+          "line": 236,
+          "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
+          "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
+        },
+        {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 145,
+          "line": 248,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 164,
+          "line": 267,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -4518,21 +4525,21 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 262,
+          "line": 365,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 303,
+          "line": 406,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 341,
+          "line": 444,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
@@ -4540,6 +4547,7 @@
       "imports": [
         "./atlassian-hosts.js",
         "./errors.js",
+        "./retry.js",
         "./types.js"
       ]
     },
@@ -5097,13 +5105,15 @@
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 185,
-          "signature": "async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>"
+          "line": 193,
+          "exported": true,
+          "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
+          "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
         },
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 210,
+          "line": 218,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
