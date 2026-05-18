@@ -661,7 +661,9 @@ The items are grouped into **phases**. Each phase should be completed before the
 - **Files:** `src/core/request.ts`, `test/core/request.test.ts`
 - **Dependencies:** None
 
-### [ ] B036: OAuth `tokenEndpoint` has no host allowlist → refresh-token / client-secret leak via misconfigured endpoint
+### [x] B036: OAuth `tokenEndpoint` has no host allowlist → refresh-token / client-secret leak via misconfigured endpoint
+
+> Shipped in branch `fix/b036-oauth-token-endpoint-allowlist` (2026-05-18). New shared module `src/core/atlassian-hosts.ts` exposes `DEFAULT_ATLASSIAN_API_HOST_SUFFIXES` (for [[B034]]), `DEFAULT_ATLASSIAN_OAUTH_TOKEN_HOSTS` (new — `['auth.atlassian.com']`), and two match primitives (`hostMatchesSuffix`, `hostMatchesExact`) consumed by both `config.ts` and `oauth.ts`. `OAuthRefreshConfig` gains `allowedTokenEndpointHosts?: readonly string[]` (replaces — does not augment — the default list, mirroring `ClientConfig.allowedHosts` semantics). `createOAuthRefreshMiddleware` validates the token endpoint at construction (fail-fast); `fetchRefreshedTokens` re-asserts before any HTTP call (defence-in-depth for direct callers). Cross-reference comments in code link the two allowlist surfaces ([[B034]] / B036) so future maintainers don't relax one without the other.
 
 - **Priority:** P0 — Critical
 - **Severity:** High — direct credential disclosure (refresh_token + client_id + client_secret) to attacker-controlled host

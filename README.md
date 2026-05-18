@@ -237,6 +237,22 @@ const client = new ConfluenceClient({
 
 Automatically injects `Authorization: Bearer` and silently refreshes on 401 responses.
 
+**Token endpoint allowlist (security):** `tokenEndpoint` defaults to `https://auth.atlassian.com/oauth/token`, and only that host is accepted by default. The validation happens at `createOAuthRefreshMiddleware` construction time — a misconfigured endpoint (typo, poisoned env var) throws `ValidationError` before any HTTP traffic, instead of POSTing `client_id` + `client_secret` + `refresh_token` to an attacker host on the first 401. For self-hosted IdPs, proxied auth, or staging endpoints, opt in explicitly:
+
+```typescript
+createOAuthRefreshMiddleware({
+  accessToken: '...',
+  refreshToken: '...',
+  clientId: '...',
+  clientSecret: '...',
+  tokenEndpoint: 'https://idp.internal.example/oauth/token',
+  // REPLACES the default — mirrors ClientConfig.allowedHosts semantics.
+  allowedTokenEndpointHosts: ['idp.internal.example'],
+});
+```
+
+This is a separate allowlist from `ClientConfig.allowedHosts` because the OAuth refresh code path calls `fetch` directly and bypasses the transport-side check by design.
+
 ### Atlassian Connect JWT
 
 ```typescript

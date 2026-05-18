@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Security
+
+- **oauth (B036)** — `OAuthRefreshConfig.tokenEndpoint` is now validated against a host allowlist at `createOAuthRefreshMiddleware` construction time (and re-asserted inside `fetchRefreshedTokens` for direct callers). The default allowlist is `['auth.atlassian.com']` — the documented Atlassian Cloud OAuth 2.0 3LO token endpoint host, matching the default `tokenEndpoint`. Self-hosted IdPs, proxied auth, and staging endpoints must opt in via the new `OAuthRefreshConfig.allowedTokenEndpointHosts?: readonly string[]` field, which REPLACES (not augments) the default — mirroring `ClientConfig.allowedHosts` semantics. A misconfigured `tokenEndpoint` (typo, poisoned env var, social-engineered config PR) now throws `ValidationError` fail-fast at startup instead of POSTing `client_id` + `client_secret` + `refresh_token` to an attacker host on the very first 401. Defence-in-depth pair to the existing transport-side allowlist (B034); the OAuth refresh path is on a separate code path that bypasses `ClientConfig.allowedHosts` by design.
+
 ### Added
 
 - **retry** — `executeWithRetry<T>(operation, config, signal?)` exported from `src/core/index.ts` runs any async operation under the same retry semantics as `HttpTransport` (exponential backoff with jitter, server-advertised `retry-after` honoured for `RateLimitError`, abort-aware between-attempts sleep). Useful for custom `Transport` implementations that want to reuse the retry policy. `RetryConfig` interface also exported.
