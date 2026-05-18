@@ -25,9 +25,6 @@
 - [ ] 🟡 ♻️ Core: B028 OAuth error-body redaction hardening
   - files: `src/core/oauth.ts`, `test/core/oauth.test.ts`
   - deps: none
-- [ ] 🟡 ♻️ Core: B035 Expand log-path credential redaction
-  - files: `src/core/request.ts`, `test/core/request.test.ts`
-  - deps: none
 - [ ] 🟢 📦 Core: B017 Proactive rate-limit (token bucket)
   - files: `src/core/rate-limiter.ts`, `src/core/config.ts`, `src/core/transport.ts`, `test/core/rate-limiter.test.ts`
   - deps: B010

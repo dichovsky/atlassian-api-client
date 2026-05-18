@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "9b9ed2a8534429be9a6087945f3b9c97eed6171bf9244b51d6fe79cd9e322e33",
+  "sourceHash": "f9d864d739bb3ccb60a2f6b4dd791826fafe7caebbf983cca1c61efe913c5086",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4868,25 +4868,53 @@
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 146,
-          "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
+          "line": 152,
+          "signature": "const SENSITIVE_SEGMENT_NAMES: ReadonlySet<string> = new Set([ 'token', 'key', 'secret', 'auth', 'password', 'pwd', 'api…",
+          "jsdoc": "B035: Names that indicate the *next* path segment carries a credential (e.g. `/auth/AAAA-real-token-BBBB/refresh`). Match is whole-segment, case-insensitive, so `/code/SPACE-1` (Jira issue key) stays untouched because `code` is deliberately excluded."
+        },
+        {
+          "name": "SENSITIVE_MARKER_REGEX",
+          "kind": "variable",
+          "line": 180,
+          "signature": "const SENSITIVE_MARKER_REGEX = /(token|key|secret|auth|password|pwd|apikey|api_key|access_token|refresh_token|bearer|jwt…",
+          "jsdoc": "B035: Marker names redacted in `name=VALUE` form anywhere inside a path segment. Covers query-style markers smuggled into the path AND matrix params (`;jsessionid=ABC`) since the regex matches `name=` regardless of preceding separator."
+        },
+        {
+          "name": "JWT_SHAPE_REGEX",
+          "kind": "variable",
+          "line": 190,
+          "signature": "const JWT_SHAPE_REGEX = /eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+/g;",
+          "jsdoc": "B035: JWT compact-serialization shape — three base64url segments joined by dots, starting with `eyJ` (base64 of `{\"`, the canonical JWT header start). Catches bearer JWTs accidentally embedded in path even when no `name=` marker is present. False-positive risk is vanishingly small because Atlassian opaque IDs are not base64-shaped and never start with `eyJ`."
+        },
+        {
+          "name": "USERINFO_REGEX",
+          "kind": "variable",
+          "line": 198,
+          "signature": "const USERINFO_REGEX = /\\/\\/[^/@\\s]+@/g;",
+          "jsdoc": "B035: `user:pass@host` userinfo embedded in an absolute URL. The happy path resolves via `new URL(...).pathname` which already drops userinfo; this regex protects the fallback branch used when URL parsing throws on malformed input, so a logged broken URL containing creds is still scrubbed."
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 148,
+          "line": 200,
           "signature": "function redactSensitiveMarkers(value: string): string"
+        },
+        {
+          "name": "redactJwtShapes",
+          "kind": "function",
+          "line": 204,
+          "signature": "function redactJwtShapes(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 152,
+          "line": 208,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 173,
+          "line": 235,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -4894,14 +4922,14 @@
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 194,
+          "line": 257,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 221,
+          "line": 284,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4909,7 +4937,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 249,
+          "line": 312,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4917,7 +4945,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 261,
+          "line": 324,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."

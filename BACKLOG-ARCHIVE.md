@@ -55,6 +55,9 @@
 - [x] 🔴 🐛 Core: B037 Offset/search pagination server-value hardening
   - **Impl:** Branch `fix/b037-pagination-server-value-hardening` (2026-05-18); `paginateOffset`/`paginateSearch` no longer trust server-echoed `maxResults`; advancement uses delivered row count; short-page detection uses `min(pageSize, serverMaxResults)`; empty mid-iteration page with `total`/`isLast` showing more data now throws `PaginationError`.
   - **Rat:** Stop silent truncation and infinite loops from server lies.
+- [x] 🟡 ♻️ Core: B035 Expand log-path credential redaction
+  - **Impl:** Branch `feat/b035-log-path-credential-redaction` (2026-05-18); `sanitizePathForLogging` expanded marker list (password, pwd, apikey, api_key, access_token, refresh_token, bearer, jwt, assertion, client_secret, signature, sig, jsessionid, sid, session); added JWT compact-serialization shape redaction (`eyJ…` → `***.jwt.***`); userinfo `user:pass@host` stripped in fallback branch; matrix-param coverage (`;jsessionid=…`) inherited from expanded `name=` regex.
+  - **Rat:** Shrink the credential-in-debug-log attack surface without changing public API; close userinfo gap in the URL-parse-failure fallback; catch raw JWTs that bypass marker-based redaction.
 
 ## 🧩 Jira
 
