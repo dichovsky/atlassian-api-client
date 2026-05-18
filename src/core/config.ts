@@ -60,6 +60,7 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
     retries: config.retries ?? DEFAULT_RETRIES,
     retryDelay: config.retryDelay ?? DEFAULT_RETRY_DELAY,
     maxRetryDelay: config.maxRetryDelay ?? DEFAULT_MAX_RETRY_DELAY,
+    maxResponseBytes: config.maxResponseBytes,
     allowedHosts,
     fetch: config.fetch,
     logger: config.logger,
@@ -160,6 +161,21 @@ function validateConfig(config: ClientConfig): void {
       config.maxRetryDelay <= 0
     ) {
       throw new ValidationError('maxRetryDelay must be a finite positive number');
+    }
+  }
+
+  if (config.maxResponseBytes !== undefined) {
+    // B026: must be a finite positive integer. Floats / Infinity / NaN /
+    // zero would make the cap either unenforceable or trivially trip on
+    // the first byte; reject up front rather than letting the response
+    // pipeline behave inconsistently.
+    if (
+      typeof config.maxResponseBytes !== 'number' ||
+      !Number.isFinite(config.maxResponseBytes) ||
+      !Number.isInteger(config.maxResponseBytes) ||
+      config.maxResponseBytes <= 0
+    ) {
+      throw new ValidationError('maxResponseBytes must be a finite positive integer');
     }
   }
 }

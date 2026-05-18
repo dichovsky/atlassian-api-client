@@ -463,4 +463,60 @@ describe('resolveConfig', () => {
       expect(() => resolveConfig(config)).toThrow(ValidationError);
     });
   });
+
+  describe('maxResponseBytes validation (B026)', () => {
+    it('defaults to undefined when not supplied (no cap)', () => {
+      const result = resolveConfig(validBasicConfig);
+      expect(result.maxResponseBytes).toBeUndefined();
+    });
+
+    it('passes a finite positive integer through unchanged', () => {
+      const result = resolveConfig({ ...validBasicConfig, maxResponseBytes: 1_048_576 });
+      expect(result.maxResponseBytes).toBe(1_048_576);
+    });
+
+    it('throws ValidationError when maxResponseBytes is 0', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, maxResponseBytes: 0 })).toThrow(
+        ValidationError,
+      );
+      expect(() => resolveConfig({ ...validBasicConfig, maxResponseBytes: 0 })).toThrow(
+        'maxResponseBytes must be a finite positive integer',
+      );
+    });
+
+    it('throws ValidationError when maxResponseBytes is negative', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, maxResponseBytes: -1 })).toThrow(
+        /finite positive integer/,
+      );
+    });
+
+    it('throws ValidationError when maxResponseBytes is a non-integer float', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, maxResponseBytes: 1024.5 })).toThrow(
+        /finite positive integer/,
+      );
+    });
+
+    it('throws ValidationError when maxResponseBytes is Infinity', () => {
+      // Mirrors the maxRetryDelay rationale — an unbounded cap is functionally
+      // identical to "no cap" but uses a different code path; reject so the
+      // user must pick exactly one.
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, maxResponseBytes: Number.POSITIVE_INFINITY }),
+      ).toThrow(/finite positive integer/);
+    });
+
+    it('throws ValidationError when maxResponseBytes is NaN', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, maxResponseBytes: Number.NaN })).toThrow(
+        /finite positive integer/,
+      );
+    });
+
+    it('throws ValidationError when maxResponseBytes is not a number', () => {
+      const config = {
+        ...validBasicConfig,
+        maxResponseBytes: '1024',
+      } as unknown as ClientConfig;
+      expect(() => resolveConfig(config)).toThrow(ValidationError);
+    });
+  });
 });

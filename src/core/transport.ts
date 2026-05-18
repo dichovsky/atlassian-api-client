@@ -202,13 +202,22 @@ export class HttpTransport implements Transport {
     }
 
     if (!response.ok) {
-      const errBody = await safeParseBody(response);
+      // B026: cap the error-path body too. A hostile / misconfigured upstream
+      // returning a multi-GB 5xx body would otherwise OOM us before we could
+      // even classify the failure. `safeParseBody` lets `ResponseTooLargeError`
+      // propagate (replacing the would-be `HttpError`); the error carries the
+      // original status so the caller can still see the upstream classification.
+      const errBody = await safeParseBody(response, this.config.maxResponseBytes);
       const retryAfterMs = getRetryAfterMs(response.headers);
       const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
       throw createHttpError(response.status, errBody, retryAfterSeconds);
     }
 
-    const data: unknown = await parseResponseBody(response, options.responseType);
+    const data: unknown = await parseResponseBody(
+      response,
+      options.responseType,
+      this.config.maxResponseBytes,
+    );
 
     this.config.logger?.debug('HTTP response', {
       method: options.method,

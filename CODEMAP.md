@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "c830690f1b9201cbfd82dffec1b211669bfaaad33be185b111c9564387a880aa",
+  "sourceHash": "dcb4458dd8b90fda6279b68950e165124681681bbda1adc3181669a22729f955",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -781,7 +781,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 227,
+      "line": 259,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -790,7 +790,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 242,
+      "line": 274,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -919,7 +919,7 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 216,
+      "line": 248,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
       "typeOnly": true
@@ -996,7 +996,7 @@
       "name": "SerializableApiResponse",
       "kind": "interface",
       "file": "src/core/response.ts",
-      "line": 4,
+      "line": 5,
       "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
       "jsdoc": "JSON-serialisable projection of {@link ApiResponse}.",
       "typeOnly": true
@@ -1316,7 +1316,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 22,
+      "line": 23,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     }
@@ -3643,26 +3643,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 70,
+          "line": 71,
           "signature": "function validateConfig(config: ClientConfig): void"
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 167,
+          "line": 183,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 213,
+          "line": 229,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 229,
+          "line": 245,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -3903,9 +3903,34 @@
           ]
         },
         {
+          "name": "ResponseTooLargeError",
+          "kind": "class",
+          "line": 191,
+          "exported": true,
+          "signature": "export class ResponseTooLargeError extends AtlassianError",
+          "jsdoc": "Response-too-large error (B026).",
+          "members": [
+            {
+              "name": "limitBytes",
+              "kind": "property",
+              "line": 193
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "line": 199
+            },
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 201
+            }
+          ]
+        },
+        {
           "name": "createHttpError",
           "kind": "function",
-          "line": 178,
+          "line": 226,
           "exported": true,
           "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, ): HttpError",
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
@@ -3913,51 +3938,51 @@
         {
           "name": "MAX_ERROR_MESSAGE_LENGTH",
           "kind": "variable",
-          "line": 204,
+          "line": 252,
           "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
           "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
         },
         {
           "name": "SEPARATOR",
           "kind": "variable",
-          "line": 205,
+          "line": 253,
           "signature": "const SEPARATOR = '; ';"
         },
         {
           "name": "CappedString",
           "kind": "interface",
-          "line": 207,
+          "line": 255,
           "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
         },
         {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 212,
+          "line": 260,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
         },
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 218,
+          "line": 266,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 246,
+          "line": 294,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 281,
+          "line": 329,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 288,
+          "line": 336,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -4105,6 +4130,10 @@
             {
               "exported": "PaginationError",
               "original": "PaginationError"
+            },
+            {
+              "exported": "ResponseTooLargeError",
+              "original": "ResponseTooLargeError"
             },
             {
               "exported": "createHttpError",
@@ -4898,7 +4927,7 @@
         {
           "name": "SerializableApiResponse",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface SerializableApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Record<string…",
           "jsdoc": "JSON-serialisable projection of {@link ApiResponse}."
@@ -4906,7 +4935,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -4914,29 +4943,51 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 43,
+          "line": 50,
           "exported": true,
-          "signature": "export async function safeParseBody(response: Response): Promise<unknown>",
+          "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 60,
+          "line": 81,
           "exported": true,
-          "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], ): Promise<un…",
+          "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
         },
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 87,
+          "line": 121,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
+        },
+        {
+          "name": "readBodyWithCap",
+          "kind": "function",
+          "line": 150,
+          "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
+          "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
+        },
+        {
+          "name": "readBodyAsText",
+          "kind": "function",
+          "line": 220,
+          "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
+          "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
+        },
+        {
+          "name": "parseContentLength",
+          "kind": "function",
+          "line": 235,
+          "signature": "function parseContentLength(value: string | null): number | undefined",
+          "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
       ],
       "imports": [
+        "./errors.js",
         "./types.js"
       ]
     },
@@ -5155,14 +5206,14 @@
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 245,
+          "line": 254,
           "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 264,
+          "line": 273,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
@@ -5249,7 +5300,7 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 182,
+          "line": 209,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
@@ -5257,7 +5308,7 @@
         {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 216,
+          "line": 248,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -5265,7 +5316,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 227,
+          "line": 259,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -5273,7 +5324,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 242,
+          "line": 274,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."

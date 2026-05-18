@@ -10,6 +10,7 @@ import {
   NetworkError,
   ValidationError,
   PaginationError,
+  ResponseTooLargeError,
   createHttpError,
 } from '../../src/core/errors.js';
 
@@ -28,6 +29,7 @@ describe('src/core/index.ts barrel re-exports', () => {
     expect(CoreIndex.NetworkError).toBe(NetworkError);
     expect(CoreIndex.ValidationError).toBe(ValidationError);
     expect(CoreIndex.PaginationError).toBe(PaginationError);
+    expect(CoreIndex.ResponseTooLargeError).toBe(ResponseTooLargeError);
     expect(CoreIndex.createHttpError).toBe(createHttpError);
   });
 
@@ -319,6 +321,40 @@ describe('PaginationError', () => {
   it('forwards ErrorOptions.cause', () => {
     const cause = new Error('underlying');
     const err = new PaginationError('wrapped', { cause });
+    expect(err.cause).toBe(cause);
+  });
+});
+
+describe('ResponseTooLargeError', () => {
+  it('sets name, code, limitBytes, and message with the cap byte count', () => {
+    const err = new ResponseTooLargeError(1024);
+    expect(err.name).toBe('ResponseTooLargeError');
+    expect(err.code).toBe('RESPONSE_TOO_LARGE_ERROR');
+    expect(err.limitBytes).toBe(1024);
+    expect(err.message).toContain('1024 bytes');
+    expect(err.status).toBeUndefined();
+  });
+
+  it('captures the originating HTTP status when provided', () => {
+    const err = new ResponseTooLargeError(2048, 502);
+    expect(err.status).toBe(502);
+    expect(err.message).toContain('HTTP 502');
+  });
+
+  it('instanceof chain: Error → AtlassianError → ResponseTooLargeError', () => {
+    const err = new ResponseTooLargeError(1, 500);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(AtlassianError);
+    expect(err).toBeInstanceOf(ResponseTooLargeError);
+    // Not an HttpError — the contract is that this preempts the would-be
+    // HttpError on the error path, but it isn't one itself (no body field,
+    // no retry semantics).
+    expect(err).not.toBeInstanceOf(HttpError);
+  });
+
+  it('forwards ErrorOptions.cause', () => {
+    const cause = new Error('underlying');
+    const err = new ResponseTooLargeError(64, undefined, { cause });
     expect(err.cause).toBe(cause);
   });
 });

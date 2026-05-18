@@ -1,4 +1,5 @@
 import type { ApiResponse, RateLimitInfo, RequestOptions } from './types.js';
+import { ResponseTooLargeError } from './errors.js';
 
 /** JSON-serialisable projection of {@link ApiResponse}. */
 export interface SerializableApiResponse<T> {
@@ -39,10 +40,24 @@ export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> 
  * Used on the error path where the body may be empty, HTML, or otherwise
  * non-JSON. Returns `undefined` for any failure so callers can still surface
  * the HTTP status without an unrelated parse error eclipsing it.
+ *
+ * When `maxBytes` is supplied (B026), the read is capped at that many bytes
+ * via {@link readBodyWithCap}. A cap overflow throws {@link ResponseTooLargeError}
+ * — this error is NOT swallowed by the try/catch, because the whole point is
+ * to surface DoS-shaped responses instead of silently proceeding. Plain JSON
+ * parse failures still return `undefined` as before.
  */
-export async function safeParseBody(response: Response): Promise<unknown> {
+export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown> {
+  let text: string;
   try {
-    return (await response.json()) as unknown;
+    text = await readBodyAsText(response, maxBytes);
+  } catch (error) {
+    if (error instanceof ResponseTooLargeError) throw error;
+    return undefined;
+  }
+  if (text === '') return undefined;
+  try {
+    return JSON.parse(text) as unknown;
   } catch {
     return undefined;
   }
@@ -55,22 +70,41 @@ export async function safeParseBody(response: Response): Promise<unknown> {
  * 204 responses always yield `undefined` regardless of mode — there is no
  * body to parse. For `'stream'` the raw `ReadableStream` is handed to the
  * caller without consumption so large downloads do not buffer in memory; the
- * caller must drain or cancel the stream.
+ * caller must drain or cancel the stream — the cap is intentionally NOT
+ * applied to streams (B026).
+ *
+ * When `maxBytes` is supplied, buffered modes (`'json'`, `'arrayBuffer'`,
+ * undefined) read through {@link readBodyWithCap}, which enforces both a
+ * `content-length` fast-fail and a running stream-read tally; overflow
+ * throws {@link ResponseTooLargeError}.
  */
 export async function parseResponseBody(
   response: Response,
   responseType: RequestOptions['responseType'],
+  maxBytes?: number,
 ): Promise<unknown> {
   if (response.status === 204) return undefined;
 
   switch (responseType) {
-    case 'arrayBuffer':
-      return await response.arrayBuffer();
+    case 'arrayBuffer': {
+      const bytes = await readBodyWithCap(response, maxBytes);
+      // `new Uint8Array(n)` allocates a fresh ArrayBuffer of exactly `n`
+      // bytes when we built it ourselves; for the `maxBytes === undefined`
+      // fallback path we wrap an existing ArrayBuffer that's already the
+      // correct size. Return that backing buffer directly so the contract
+      // matches `response.arrayBuffer()`.
+      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    }
     case 'stream':
       return response.body;
     case 'json':
-    case undefined:
-      return await response.json();
+    case undefined: {
+      const text = await readBodyAsText(response, maxBytes);
+      // `Response.json()` rejects on empty body with a SyntaxError; preserve
+      // that behaviour so the transport still surfaces a parse failure for
+      // an empty 2xx that claimed JSON.
+      return JSON.parse(text) as unknown;
+    }
   }
 }
 
@@ -95,4 +129,122 @@ export function buildApiResponse(
     headers: response.headers,
     rateLimit,
   };
+}
+
+/**
+ * Read the response body as bytes under an optional size cap (B026).
+ *
+ * Cap enforcement is two-stage:
+ * 1. If `Content-Length` is present and exceeds `maxBytes`, throw
+ *    immediately without touching the body — protects against multi-GB
+ *    responses where streaming the body just to count bytes would still
+ *    waste socket time and memory pressure.
+ * 2. Otherwise drain the body via `response.body.getReader()`, summing
+ *    chunk sizes and cancelling (`reader.cancel()`) the moment the running
+ *    tally exceeds `maxBytes`. Handles chunked transfers, missing headers,
+ *    and servers that lie about `content-length`.
+ *
+ * When `maxBytes` is `undefined`, falls back to `response.arrayBuffer()` —
+ * preserves prior behaviour for callers who never set the cap.
+ */
+async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array> {
+  if (maxBytes === undefined) {
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  // Status is captured eagerly so a hostile error-path body that overflows
+  // still tells the caller it came from (say) a 502 — see the
+  // ResponseTooLargeError JSDoc.
+  const status = response.status;
+
+  // Stage 1: cheap header pre-check.
+  const declared = parseContentLength(response.headers.get('content-length'));
+  if (declared !== undefined && declared > maxBytes) {
+    throw new ResponseTooLargeError(maxBytes, status);
+  }
+
+  const body = response.body;
+  /* c8 ignore start — fetch always populates `body` for non-204 responses;
+     defensive fallback in case a custom transport substitutes a degenerate
+     Response shape. */
+  if (body === null) {
+    const buf = new Uint8Array(await response.arrayBuffer());
+    if (buf.byteLength > maxBytes) {
+      throw new ResponseTooLargeError(maxBytes, status);
+    }
+    return buf;
+  }
+  /* c8 ignore stop */
+
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      /* c8 ignore next — fetch never yields `{ done: false, value: undefined }`
+         in practice; defensive against a custom ReadableStream implementation
+         that violates the spec. */
+      if (value === undefined) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        // Release the socket promptly instead of keeping it open while the
+        // server pushes bytes we will never read.
+        await reader.cancel();
+        throw new ResponseTooLargeError(maxBytes, status);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  // Concatenate once at the end — cheaper than growing a single buffer per
+  // chunk, and bounded by `maxBytes` in the worst case.
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
+/**
+ * Read the response body as a UTF-8 string under an optional size cap.
+ *
+ * Decodes via {@link TextDecoder} after the capped byte read so multi-byte
+ * sequences split across chunks are reassembled correctly.
+ */
+async function readBodyAsText(response: Response, maxBytes?: number): Promise<string> {
+  if (maxBytes === undefined) {
+    return await response.text();
+  }
+  const bytes = await readBodyWithCap(response, maxBytes);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+/**
+ * Parse a `Content-Length` header value into a non-negative finite integer.
+ *
+ * Returns `undefined` for missing, malformed, or non-finite headers — the
+ * header is advisory, so anything we can't interpret cleanly falls through
+ * to the stream-tally enforcement path.
+ */
+function parseContentLength(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  const trimmed = value.trim();
+  if (trimmed === '') return undefined;
+  // Reject anything that isn't a bare unsigned decimal integer — RFC 9110
+  // §8.6 forbids the leading sign / whitespace / multiple values.
+  if (!/^\d+$/.test(trimmed)) return undefined;
+  const n = Number(trimmed);
+  /* c8 ignore next — the bare-decimal regex above guarantees a non-negative
+     integer; this branch is defence-in-depth against JS Number coercion
+     edge cases (e.g. precision loss on values past Number.MAX_SAFE_INTEGER
+     still keeps `isFinite`+`isInteger` true, but a future regex tweak that
+     widens the input could re-open this gap). */
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) return undefined;
+  return n;
 }
