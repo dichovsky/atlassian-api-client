@@ -71,6 +71,17 @@ export function buildUrl(
   // the explicit `isAbsolute` branch above is no longer needed.
   if (allowedHosts !== undefined) {
     assertHostAllowed(url.hostname, allowedHosts);
+    // PR review (round 4): even with a hostname match, refuse non-default
+    // ports. `allowedHosts` entries are forbidden from carrying ports
+    // (config.ts validation), so callers have no way to authorise a
+    // specific non-default port. Without this guard,
+    // `https://allowed.example:8443/...` is treated identically to
+    // `https://allowed.example/...` — and the `:8443` endpoint may be a
+    // completely different service (admin console, debug listener, etc.)
+    // running on the same host. `URL.port` is empty for default-scheme
+    // ports (443 for https, 80 for http), so the comparison is simply
+    // "is `url.port` empty?".
+    assertDefaultPort(url);
   }
 
   if (query) {
@@ -92,6 +103,25 @@ function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): v
   throw new ValidationError(
     `Refusing to send request to ${hostname}: host is not on the allowedHosts list. ` +
       `Attaching the configured Authorization header to a foreign host would leak credentials.`,
+  );
+}
+
+/**
+ * Refuse non-default ports on the resolved URL. `URL.port` is the empty
+ * string for the scheme's default port (443 for https, 80 for http), and
+ * a non-empty value otherwise. Since `allowedHosts` entries forbid ports
+ * by design (PR review of round 3), the only way to authorize a non-
+ * default port would be to weaken the allowlist to "any port on this
+ * host" — which is exactly the broadening this guard prevents (PR
+ * review of round 4).
+ */
+function assertDefaultPort(url: URL): void {
+  if (url.port === '') return;
+  throw new ValidationError(
+    `Refusing to send request to ${url.hostname}:${url.port}: only default ports ` +
+      `(443 for https) are accepted when allowedHosts is enforced. A non-default ` +
+      `port may route to a different service running on the same host; ` +
+      `re-host the endpoint or proxy via a default-port name.`,
   );
 }
 

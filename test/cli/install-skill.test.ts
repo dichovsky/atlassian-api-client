@@ -715,6 +715,67 @@ describe('runInstall — B030 symlink guard', () => {
     ).toThrow(/does not expose an unlink/);
   });
 
+  it('B030 (PR review of round 4): --force on a SKILL.md symlink fails hard when the fs adapter has no unlink()', () => {
+    // Mirrors the existing isSymlink-only-no-unlink test but at the
+    // pre-write SKILL.md probe. Without unlink we cannot safely strip
+    // the symlink before reading, so the only safe move is to refuse.
+    const fakeFs = {
+      readFile: (p: string): string => readFileSync(p, 'utf8'),
+      writeFile: (_p: string, _c: string): void => undefined,
+      mkdir: (_p: string): void => undefined,
+      // Anything ending in SKILL.md is reported as existing AND a symlink.
+      exists: (p: string): boolean => existsSync(p) || p.endsWith('SKILL.md'),
+      readDir: (p: string): readonly string[] => readdirSync(p),
+      isDirectory: (p: string): boolean => statSync(p).isDirectory(),
+      isSymlink: (p: string): boolean => p.endsWith('SKILL.md'),
+      // unlink intentionally omitted
+    };
+    const target = join(tmpRoot, 'force-no-unlink');
+    expect(() =>
+      runInstall(
+        BUNDLED_SKILL,
+        '9.9.9',
+        { target, force: true, dryRun: false, print: false },
+        fakeFs,
+      ),
+    ).toThrow(/does not expose unlink/);
+  });
+
+  it('B030 (PR review of round 4): --force on a SKILL.md symlink unlinks the symlink without following it (no noop)', async () => {
+    // Under the OLD ordering, --force fell through to readFile, which
+    // followed the link. If the symlinked file's frontmatter version
+    // matched the install version, noop-same-version was returned and
+    // the hostile symlink was left in place — defeating B030 under
+    // --force. The round-4 fix unlinks the symlink BEFORE readFile so
+    // the install always replaces the symlink with a regular file.
+    const target = join(tmpRoot, 'skill-symlink-force');
+    mkdirSync(target, { recursive: true });
+    const sentinel = join(tmpRoot, 'force-sentinel.md');
+    writeFileSync(sentinel, `---\nname: x\nversion: 9.9.9\n---\nbody\n`, 'utf8');
+    const { symlinkSync, lstatSync } = await import('node:fs');
+    symlinkSync(sentinel, join(target, 'SKILL.md'));
+
+    // Sanity-check: sentinel is intact before the install.
+    expect(readFileSync(sentinel, 'utf8')).toContain('version: 9.9.9');
+
+    // --force install must NOT return noop-same-version (which would
+    // leave the symlink in place) — it must proceed with the install
+    // loop, which writes a regular file at target/SKILL.md.
+    const result = runInstall(BUNDLED_SKILL, '9.9.9', {
+      target,
+      force: true,
+      dryRun: false,
+      print: false,
+    });
+    expect(result.action).toBe('copied');
+
+    // The sensitive sentinel file behind the original symlink must be
+    // untouched.
+    expect(readFileSync(sentinel, 'utf8')).toContain('version: 9.9.9');
+    // And target/SKILL.md is now a REGULAR file, not a symlink.
+    expect(lstatSync(join(target, 'SKILL.md')).isSymbolicLink()).toBe(false);
+  });
+
   it('B030 (PR review of round 3): SKILL.md symlink is refused BEFORE the version-noop branch', async () => {
     // Threat: pre-plant a symlink at target/SKILL.md whose linked file
     // contains the current version. The OLD ordering ran the idempotency

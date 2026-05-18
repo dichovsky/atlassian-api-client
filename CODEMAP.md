@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "0a9b695384e49056c906acb3ad47c073602c201cc1054d674ad4f6a08cba9f2d",
+  "sourceHash": "c6af5d9a8a59638972aa28a3441a87e2a57faa4fbf8259cf67fbc3b45ee7e74b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1465,13 +1465,13 @@
         {
           "name": "realFs",
           "kind": "variable",
-          "line": 125,
+          "line": 146,
           "signature": "const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => writeFile…"
         },
         {
           "name": "resolveSkillSource",
           "kind": "function",
-          "line": 155,
+          "line": 176,
           "exported": true,
           "signature": "export function resolveSkillSource(moduleUrl: string): string",
           "jsdoc": "Resolve the bundled skill source directory relative to this module."
@@ -1479,7 +1479,7 @@
         {
           "name": "resolvePackageVersion",
           "kind": "function",
-          "line": 162,
+          "line": 183,
           "exported": true,
           "signature": "export function resolvePackageVersion(moduleUrl: string, fs: FilesystemDeps = realFs): string",
           "jsdoc": "Resolve the package version by reading the nearest package.json."
@@ -1487,7 +1487,7 @@
         {
           "name": "resolveInstallTarget",
           "kind": "function",
-          "line": 182,
+          "line": 203,
           "exported": true,
           "signature": "export function resolveInstallTarget( options: Record<string, string | boolean | undefined>, env: NodeJS.ProcessEnv, cwd…",
           "jsdoc": "Resolve the install target based on flag combination."
@@ -1495,21 +1495,21 @@
         {
           "name": "expandTilde",
           "kind": "function",
-          "line": 201,
+          "line": 222,
           "signature": "function expandTilde(input: string, home: string): string",
           "jsdoc": "Expand a leading `~` or `~/` in a path to the resolved home directory."
         },
         {
           "name": "listFilesRecursive",
           "kind": "function",
-          "line": 208,
+          "line": 229,
           "signature": "function listFilesRecursive(root: string, fs: FilesystemDeps): string[]",
           "jsdoc": "List every file path under a directory, recursively, relative to the root."
         },
         {
           "name": "stampVersion",
           "kind": "function",
-          "line": 226,
+          "line": 247,
           "exported": true,
           "signature": "export function stampVersion(content: string, version: string): string",
           "jsdoc": "Stamp the destination SKILL.md frontmatter `version:` with the given value."
@@ -1517,7 +1517,7 @@
         {
           "name": "readSkillVersion",
           "kind": "function",
-          "line": 240,
+          "line": 261,
           "exported": true,
           "signature": "export function readSkillVersion(content: string): string | null",
           "jsdoc": "Read the version field from a SKILL.md frontmatter string."
@@ -1525,7 +1525,7 @@
         {
           "name": "runInstall",
           "kind": "function",
-          "line": 268,
+          "line": 289,
           "exported": true,
           "signature": "export function runInstall( source: string, version: string, options: InstallSkillOptions, fs: FilesystemDeps = realFs, …",
           "jsdoc": "Perform the install. Pure with respect to the injected filesystem."
@@ -1533,34 +1533,34 @@
         {
           "name": "resolveTargetRealpath",
           "kind": "function",
-          "line": 413,
+          "line": 454,
           "signature": "function resolveTargetRealpath(target: string, fs: FilesystemDeps): string",
           "jsdoc": "Resolve the install target's canonical path. The target itself may not exist yet (we're about to `mkdir -p` it), so we walk up to the deepest existing ancestor, `realpath` THAT, then append the still-non-existent tail. The result is the canonical form `assertDestUnderTarget` compares against — without this normalisation, hosts like macOS (where `/var` is a symlink to `/private/var`) produce a spurious mismatch."
         },
         {
           "name": "assertDestUnderTarget",
           "kind": "function",
-          "line": 463,
+          "line": 504,
           "signature": "function assertDestUnderTarget(dest: string, targetRealpath: string, fs: FilesystemDeps): void",
           "jsdoc": "Verify that `dest` resolves inside `targetRealpath` after symlinks in its parent chain are followed. We resolve the deepest existing ancestor (the file itself usually does not exist yet at write time) and require that canonical ancestor to be `targetRealpath` itself or a descendant."
         },
         {
           "name": "isPermissionError",
           "kind": "function",
-          "line": 493,
+          "line": 534,
           "signature": "function isPermissionError(err: unknown): boolean"
         },
         {
           "name": "writeWithPermissionGuard",
           "kind": "function",
-          "line": 500,
+          "line": 541,
           "signature": "function writeWithPermissionGuard(dest: string, op: () => void): void",
           "jsdoc": "Run a filesystem write op, mapping EACCES/EPERM to InstallSkillError exit code 3."
         },
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 512,
+          "line": 553,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -1568,7 +1568,7 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 551,
+          "line": 592,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
@@ -1726,25 +1726,25 @@
         {
           "name": "INSTALL_SKILL_HELP",
           "kind": "variable",
-          "line": 35,
+          "line": 36,
           "signature": "const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill\n\nUSAGE:\n  atlas install-skill [o…"
         },
         {
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
-          "line": 60,
+          "line": 61,
           "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages         list, get, create, …"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 76,
+          "line": 77,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 95,
+          "line": 96,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -1821,27 +1821,35 @@
           "signature": "function printJson(data: unknown): void"
         },
         {
+          "name": "sanitizeForJson",
+          "kind": "function",
+          "line": 111,
+          "exported": true,
+          "signature": "export function sanitizeForJson(value: string, isTty: boolean): string",
+          "jsdoc": "TTY-safe sanitiser that preserves JSON validity. Escapes the same terminal-control byte ranges as `sanitizeForTerminal` (DEL, C1) but emits them as the JSON-valid `\\u00NN` form instead of the human- friendly `\\xNN` form. The standard C0 range below 0x20 is already `\\uNNNN`-escaped by `JSON.stringify` itself, so it never reaches this function in a non-string position — but we still escape it defensively in case the input is a non-JSON string (e.g. the \"undefined\" fallback). When stdout is NOT a TTY, the input is returned unchanged for log fidelity."
+        },
+        {
           "name": "printTable",
           "kind": "function",
-          "line": 98,
+          "line": 135,
           "signature": "function printTable(data: unknown): void"
         },
         {
           "name": "printMinimal",
           "kind": "function",
-          "line": 159,
+          "line": 196,
           "signature": "function printMinimal(data: unknown): void"
         },
         {
           "name": "extractId",
           "kind": "function",
-          "line": 176,
+          "line": 213,
           "signature": "function extractId(obj: unknown): string"
         },
         {
           "name": "printError",
           "kind": "function",
-          "line": 187,
+          "line": 224,
           "exported": true,
           "signature": "export function printError(message: string): void",
           "jsdoc": "Print an error message to stderr (sanitised for TTY safety — B032)."
@@ -3620,9 +3628,16 @@
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
+          "name": "renderHostForError",
+          "kind": "function",
+          "line": 239,
+          "signature": "function renderHostForError(host: string): string",
+          "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
+        },
+        {
           "name": "validateAuth",
           "kind": "function",
-          "line": 227,
+          "line": 255,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -4748,45 +4763,52 @@
         {
           "name": "assertHostAllowed",
           "kind": "function",
-          "line": 87,
+          "line": 98,
           "signature": "function assertHostAllowed(hostname: string, allowedHosts: readonly string[]): void"
+        },
+        {
+          "name": "assertDefaultPort",
+          "kind": "function",
+          "line": 118,
+          "signature": "function assertDefaultPort(url: URL): void",
+          "jsdoc": "Refuse non-default ports on the resolved URL. `URL.port` is the empty string for the scheme's default port (443 for https, 80 for http), and a non-empty value otherwise. Since `allowedHosts` entries forbid ports by design (PR review of round 3), the only way to authorize a non- default port would be to weaken the allowlist to \"any port on this host\" — which is exactly the broadening this guard prevents (PR review of round 4)."
         },
         {
           "name": "normalizeAllowedHost",
           "kind": "function",
-          "line": 104,
+          "line": 134,
           "signature": "function normalizeAllowedHost(entry: string): string",
           "jsdoc": "Lower-case an `allowedHosts` entry for case-insensitive comparison. Port-bearing entries are rejected up front by `validateAllowedHosts` (config-resolution side) so this normalisation is a plain lowercase — see PR review hardening of [[B034]]."
         },
         {
           "name": "renderOriginForError",
           "kind": "function",
-          "line": 119,
+          "line": 149,
           "signature": "function renderOriginForError(path: string): string",
           "jsdoc": "Render a logging-safe `scheme://host` view of an absolute URL string. Used by the http-downgrade validation error so a userinfo segment (`http://user:pw@…`) or query string (`?token=…`) smuggled into `path` does not get echoed verbatim into log sinks when the thrown error is caught and serialised."
         },
         {
           "name": "SENSITIVE_SEGMENT_NAMES",
           "kind": "variable",
-          "line": 128,
+          "line": 158,
           "signature": "const SENSITIVE_SEGMENT_NAMES = new Set(['token', 'key', 'secret', 'auth']);"
         },
         {
           "name": "redactSensitiveMarkers",
           "kind": "function",
-          "line": 130,
+          "line": 160,
           "signature": "function redactSensitiveMarkers(value: string): string"
         },
         {
           "name": "redactSensitiveSegments",
           "kind": "function",
-          "line": 134,
+          "line": 164,
           "signature": "function redactSensitiveSegments(pathname: string): string"
         },
         {
           "name": "sanitizePathForLogging",
           "kind": "function",
-          "line": 155,
+          "line": 185,
           "exported": true,
           "signature": "export function sanitizePathForLogging(path: string): string",
           "jsdoc": "Produce a logging-safe rendering of `path`."
@@ -4794,14 +4816,14 @@
         {
           "name": "FORBIDDEN_CALLER_HEADERS",
           "kind": "variable",
-          "line": 176,
+          "line": 206,
           "signature": "const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([ 'authorization', 'proxy-authorization', 'cookie', 'set-c…",
           "jsdoc": "Header names (lower-cased) that callers MUST NOT supply via `RequestOptions.headers`. The transport authenticates exclusively via `config.auth`; any header in this list could either override that identity or smuggle a different one (B029):"
         },
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 203,
+          "line": 233,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -4809,7 +4831,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 231,
+          "line": 261,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | string | undefined; readonly withJsonBody: boolean; }",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -4817,7 +4839,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 243,
+          "line": 273,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body."
@@ -5072,16 +5094,21 @@
               "line": 81
             },
             {
+              "name": "injectAuthIdentity",
+              "kind": "method",
+              "line": 133
+            },
+            {
               "name": "executeFetch",
               "kind": "method",
-              "line": 106
+              "line": 153
             }
           ]
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 186,
+          "line": 233,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

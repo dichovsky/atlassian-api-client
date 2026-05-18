@@ -443,7 +443,7 @@ describe('sanitizeForTerminal (B027/B032)', () => {
   });
 
   it('replaces DEL (0x7F) and C1 controls (0x80–0x9F)', () => {
-    const input = '';
+    const input = String.fromCharCode(0x7f, 0x80, 0x9f);
     expect(sanitizeForTerminal(input, true)).toBe('\\x7F\\x80\\x9F');
   });
 
@@ -519,8 +519,34 @@ describe('printOutput — B027 TTY sanitisation', () => {
       const all = (stdoutWrite.mock.calls as unknown[][]).map((c) => c[0] as string).join('');
       expect(all).not.toContain(csi);
       expect(all).not.toContain(del);
-      expect(all).toContain('\\x9B');
-      expect(all).toContain('\\x7F');
+      // Round-4 PR review: the escape form is the JSON-valid `\u00NN`,
+      // not the terminal-friendly `\xNN`, so the captured stdout still
+      // parses as JSON. JSON unicode escapes are case-insensitive in
+      // the spec; we emit lowercase hex digits.
+      expect(all).toContain('\\u009b');
+      expect(all).toContain('\\u007f');
+      const parsed = JSON.parse(all.trim()) as { summary: string };
+      expect(parsed.summary).toBe(`before${csi}pwned${del}end`);
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('PR review of round 4: TTY JSON output with no control bytes returns the input unchanged (fast path)', () => {
+    // Exercises sanitizeForJson's `firstControl === -1` early return:
+    // a normal JSON payload with no DEL/C1 bytes flows through without
+    // any per-character rewrite work.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      const data = { id: 'PROJ-1', summary: 'plain ascii summary' };
+      printOutput(data, 'json');
+      const written = (stdoutWrite.mock.calls as unknown[][])[0]?.[0] as string;
+      expect(written).toBe(JSON.stringify(data, null, 2) + '\n');
     } finally {
       if (ttyDescriptor) {
         Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);

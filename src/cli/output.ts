@@ -76,23 +76,60 @@ export function printOutput(data: unknown, format: OutputFormat): void {
 }
 
 function printJson(data: unknown): void {
-  // PR review: `JSON.stringify` only escapes C0 controls (0x00–0x1F),
-  // backslash and double quote. DEL (0x7F) and C1 bytes (0x80–0x9F) are
-  // emitted RAW, so `--format json` on a TTY would still render
-  // server-controlled terminal escapes from issue/page bodies, defeating the
-  // B027/B032 mitigation that already protects table/minimal output. Route
-  // the serialised string through `sanitizeForTerminal` when stdout is a
-  // TTY so DEL and C1 are escaped as `\xNN` like every other output path.
+  // `JSON.stringify` only escapes C0 controls (0x00–0x1F), backslash and
+  // double quote. DEL (0x7F) and C1 bytes (0x80–0x9F) are emitted RAW,
+  // so `--format json` on a TTY would still render server-controlled
+  // terminal escapes from issue/page bodies, defeating the B027/B032
+  // mitigation that already protects table/minimal output.
+  //
+  // PR review (round 4): `sanitizeForTerminal` emits `\xNN` for those
+  // bytes — which is unambiguous in a terminal but produces INVALID
+  // JSON (`\x` is not a recognised JSON escape sequence). For the JSON
+  // output path we instead use `sanitizeForJson`, which emits the
+  // JSON-valid `\u00NN` form so a downstream `JSON.parse` of the
+  // captured stdout still works.
   //
   // PR review (round 3): `JSON.stringify` can return `undefined` for
-  // top-level values of type `undefined`, function, or symbol. Without a
-  // guard, `sanitizeForTerminal(undefined, …).length` would throw before
-  // anything reaches stdout, replacing a graceful "undefined\n" with a
-  // crash. Fall back to the literal `"undefined"` rendering so callers
-  // get the same behaviour as the table/minimal formatters.
+  // top-level values of type `undefined`, function, or symbol. Fall back
+  // to the literal `"undefined"` rendering so the call never crashes.
   const raw = JSON.stringify(data, null, 2);
   const serialised = raw === undefined ? 'undefined' : raw;
-  process.stdout.write(sanitizeForTerminal(serialised, stdoutIsTty()) + '\n');
+  process.stdout.write(sanitizeForJson(serialised, stdoutIsTty()) + '\n');
+}
+
+/**
+ * TTY-safe sanitiser that preserves JSON validity. Escapes the same
+ * terminal-control byte ranges as `sanitizeForTerminal` (DEL, C1) but
+ * emits them as the JSON-valid `\u00NN` form instead of the human-
+ * friendly `\xNN` form. The standard C0 range below 0x20 is already
+ * `\uNNNN`-escaped by `JSON.stringify` itself, so it never reaches
+ * this function in a non-string position — but we still escape it
+ * defensively in case the input is a non-JSON string (e.g. the
+ * "undefined" fallback). When stdout is NOT a TTY, the input is
+ * returned unchanged for log fidelity.
+ */
+export function sanitizeForJson(value: string, isTty: boolean): string {
+  if (!isTty) return value;
+
+  let firstControl = -1;
+  for (let i = 0; i < value.length; i++) {
+    if (isTerminalControl(value.charCodeAt(i))) {
+      firstControl = i;
+      break;
+    }
+  }
+  if (firstControl === -1) return value;
+
+  const chunks: string[] = [value.slice(0, firstControl)];
+  for (let i = firstControl; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (isTerminalControl(code)) {
+      chunks.push('\\u' + code.toString(16).padStart(4, '0'));
+    } else {
+      chunks.push(value[i] as string);
+    }
+  }
+  return chunks.join('');
 }
 
 function printTable(data: unknown): void {

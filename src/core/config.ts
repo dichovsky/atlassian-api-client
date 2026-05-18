@@ -210,18 +210,46 @@ function validateAllowedHosts(hosts: readonly string[]): void {
         // rejected (rather than the generic "invalid char" message). The
         // policy is documented on `ClientConfig.allowedHosts`.
         throw new ValidationError(
-          `allowedHosts entry must not include a port: ${JSON.stringify(host)}. ` +
+          `allowedHosts entry must not include a port: ${renderHostForError(host)}. ` +
             `Atlassian Cloud always uses the implicit 443; for non-default ports, ` +
             `route via the host's normal name and rely on DNS / a proxy.`,
         );
       }
       if (isInvalidAllowedHostChar(code)) {
         throw new ValidationError(
-          `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${JSON.stringify(host)}`,
+          `allowedHosts entry must be a bare host (no whitespace, slashes, or control chars), got: ${renderHostForError(host)}`,
         );
       }
     }
   }
+}
+
+/**
+ * Render a rejected `allowedHosts` entry safely for inclusion in a
+ * `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F),
+ * backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw.
+ * This validation branch is reached SPECIFICALLY when one of those bytes
+ * is present, so without explicit escaping the error message would
+ * carry the raw terminal control byte itself (PR review of round 4).
+ *
+ * We escape any byte outside `[0x20, 0x7E]` (printable ASCII) as
+ * `\uNNNN` — the same shape `JSON.stringify` uses for C0 — and wrap the
+ * result in double quotes so the rendering is unambiguous to the reader.
+ */
+function renderHostForError(host: string): string {
+  let out = '"';
+  for (const ch of host) {
+    const code = ch.charCodeAt(0);
+    if (code < 0x20 || code === 0x7f || (code >= 0x80 && code <= 0x9f)) {
+      out += '\\u' + code.toString(16).padStart(4, '0');
+    } else if (ch === '"' || ch === '\\') {
+      out += '\\' + ch;
+    } else {
+      out += ch;
+    }
+  }
+  out += '"';
+  return out;
 }
 
 function validateAuth(auth: ClientConfig['auth']): void {

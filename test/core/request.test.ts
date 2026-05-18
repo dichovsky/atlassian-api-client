@@ -78,6 +78,29 @@ describe('buildUrl', () => {
     expect(() => buildUrl(base, '/space', undefined, ['example.atlassian.net'])).not.toThrow();
   });
 
+  it('B021 (PR review of round 4): rejects an absolute URL with a non-default port', () => {
+    // Hostname-only matching means `https://allowed:8443/x` was treated
+    // identically to `https://allowed/x`. Because `allowedHosts` entries
+    // forbid ports by design, callers had no way to restrict the port,
+    // so any service running on a non-default port of an allowed host
+    // could receive credentials. Round-4: reject non-default ports.
+    expect(() =>
+      buildUrl(base, 'https://example.atlassian.net:8443/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).toThrow(/only default ports/);
+  });
+
+  it('B021 (PR review of round 4): default port (443) is still accepted for absolute URLs', () => {
+    // URL normalises `:443` away for https, so `url.port === ''` and the
+    // guard does not fire. Regression check.
+    expect(() =>
+      buildUrl(base, 'https://example.atlassian.net:443/rest/api/3/x', undefined, [
+        'example.atlassian.net',
+      ]),
+    ).not.toThrow();
+  });
+
   it('B021 (PR review): renderOriginForError falls back to `<unparseable>` for malformed absolute URLs', () => {
     // `http://` alone (scheme but no host) is rejected by `new URL`. The
     // downgrade-error renderer must still produce a logging-safe message

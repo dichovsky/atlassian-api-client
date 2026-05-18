@@ -239,6 +239,52 @@ describe('resolveConfig', () => {
       ).toThrow(/baseUrl host .* is not present in allowedHosts/);
     });
 
+    it('PR review of round 4: invalid-host ValidationError escapes embedded `"` and `\\` safely', () => {
+      // Covers the `renderHostForError` fall-through where a host contains
+      // a literal `"` or `\` — those must be backslash-escaped so the
+      // rendering is unambiguous when read alongside the surrounding
+      // double quotes in the error message.
+      let captured: Error | undefined;
+      try {
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: ['has"quote and\\backslash.example'],
+        });
+      } catch (err) {
+        captured = err as Error;
+      }
+      // Expect the literal escaped forms in the message body.
+      expect(captured?.message).toMatch(/has\\"quote and\\\\backslash\.example/);
+    });
+
+    it('PR review of round 4: invalid-host ValidationError escapes DEL/C1 instead of echoing raw control bytes', () => {
+      // The validation branch is reached SPECIFICALLY because the entry
+      // contains a forbidden byte. `JSON.stringify` would leave DEL (0x7F)
+      // and C1 (0x80–0x9F) raw, putting terminal-control bytes into the
+      // thrown error message itself. Use the safe `\uNNNN` rendering.
+      const c1 = String.fromCharCode(0x9b);
+      const del = String.fromCharCode(0x7f);
+      let captured: Error | undefined;
+      try {
+        resolveConfig({
+          ...validBasicConfig,
+          baseUrl: 'https://internal.example.com',
+          allowedHosts: [`evil${c1}host${del}.example`],
+        });
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured).toBeInstanceOf(ValidationError);
+      // The raw bytes must NOT appear in the rendered message.
+      expect(captured?.message).not.toContain(c1);
+      expect(captured?.message).not.toContain(del);
+      // And the safe escaped forms MUST appear so the operator can still
+      // diagnose which byte was rejected.
+      expect(captured?.message).toContain('\\u009b');
+      expect(captured?.message).toContain('\\u007f');
+    });
+
     it('rejects port-bearing allowedHosts entries (PR review of B034)', () => {
       // Silently stripping the port would let an entry of `host:443`
       // authorize requests to `host:8443` — a port-scoped allowlist

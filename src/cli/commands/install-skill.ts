@@ -116,7 +116,28 @@ function writeFileNoFollow(path: string, content: string): void {
     /* c8 ignore stop */
   }
   try {
-    writeSync(fd, content, 0, 'utf8');
+    // PR review (round 4): `writeSync` is NOT guaranteed to flush the
+    // whole buffer in one call (the return value is the number of bytes
+    // actually written). On short writes — possible for very large
+    // files or when the underlying file is a pipe/socket — the
+    // un-written tail would be silently dropped, leaving the installed
+    // skill file truncated. Loop until the byte count matches.
+    const buffer = Buffer.from(content, 'utf8');
+    let offset = 0;
+    while (offset < buffer.length) {
+      const written = writeSync(fd, buffer, offset, buffer.length - offset);
+      /* c8 ignore start — defensive: a 0-byte write would otherwise spin
+         forever. Not reachable through any documented Node fs behaviour;
+         this protects against a misbehaving custom filesystem driver. */
+      if (written <= 0) {
+        throw new InstallSkillError(
+          `writeSync stalled at offset ${offset}/${buffer.length} for ${path}.`,
+          1,
+        );
+      }
+      /* c8 ignore stop */
+      offset += written;
+    }
   } finally {
     closeSync(fd);
   }
@@ -299,11 +320,18 @@ export function runInstall(
   // `resolveTargetRealpath`), which is the strongest guard we have.
   const targetRealpath = resolveTargetRealpath(options.target, fs);
   const destSkillPath = join(options.target, 'SKILL.md');
-  if (!options.dryRun && fs.exists(destSkillPath)) {
-    // A pre-planted symlink at SKILL.md is rejected here even when the
-    // file behind it would have matched the version, so the noop branch
-    // never sees an attacker-controlled file.
-    if (fs.isSymlink?.(destSkillPath) === true && !options.force) {
+
+  // PR review (round 4): the SKILL.md symlink guard MUST fire regardless
+  // of `--force`. Under --force the OLD code fell through to readFile,
+  // which followed the link — if the target file's content happened to
+  // carry the current version, the idempotency branch returned noop and
+  // left the hostile symlink in place. B030 says --force never follows a
+  // symlink; with the adapter's unlink available we remove the link in
+  // place and continue to the install loop (which then writes a regular
+  // file). Without unlink, we hard-error so the symlink is never
+  // dereferenced.
+  if (!options.dryRun && fs.exists(destSkillPath) && fs.isSymlink?.(destSkillPath) === true) {
+    if (!options.force) {
       throw new InstallSkillError(
         `Refusing to read symlink at ${destSkillPath} for the idempotency check. ` +
           `A pre-planted symlink would let an attacker hide a sentinel file behind ` +
@@ -311,9 +339,22 @@ export function runInstall(
         2,
       );
     }
+    if (fs.unlink === undefined) {
+      throw new InstallSkillError(
+        `Refusing to follow symlink at ${destSkillPath}: --force was set but the ` +
+          `filesystem adapter does not expose unlink(). Reading through the symlink ` +
+          `would defeat the B030 guard.`,
+        2,
+      );
+    }
+    const unlinkFn = fs.unlink;
+    writeWithPermissionGuard(destSkillPath, () => {
+      unlinkFn(destSkillPath);
+    });
   }
 
   // Idempotency: if SKILL.md exists at target with the same stamped version, no-op.
+  // After the symlink-strip above, this branch is only reached for a regular file.
   if (!options.dryRun && fs.exists(destSkillPath)) {
     const existing = fs.readFile(destSkillPath);
     const existingVersion = readSkillVersion(existing);

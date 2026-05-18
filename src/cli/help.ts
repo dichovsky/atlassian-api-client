@@ -19,8 +19,9 @@ GLOBAL OPTIONS:
   --format, -f     Output format: json (default), table, minimal
   --allowed-hosts  Comma-separated list of allowed hostnames for self-hosted
                    or proxied deployments (or ATLASSIAN_ALLOWED_HOSTS). When
-                   omitted, only the default *.atlassian.{net,com} suffix
-                   allowlist applies. Entries are bare hostnames (no port).
+                   omitted, only the default Atlassian suffix allowlist
+                   applies: *.atlassian.net, *.atlassian.com, *.jira-dev.com,
+                   *.jira.com. Entries are bare hostnames (no port).
   --help, -h       Show help
   --version        Show version
 

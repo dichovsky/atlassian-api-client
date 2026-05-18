@@ -247,6 +247,39 @@ describe('HttpTransport', () => {
       ).toThrow(/is not a valid URL/);
     });
 
+    it('PR review of round 4: override-URL ValidationError never echoes userinfo / query / token', () => {
+      // The override may carry secrets if the caller pastes a URL with
+      // basic-auth userinfo or a query-token. Those bytes must not land
+      // in the thrown error message (which is commonly logged).
+      let captured: Error | undefined;
+      try {
+        new HttpTransport(
+          { ...defaultConfig, baseUrl: INSTANCE_URL },
+          'https://attacker:secret@evil.example/x?token=t0pSecret',
+        );
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured).toBeInstanceOf(Error);
+      expect(captured?.message).not.toContain('secret');
+      expect(captured?.message).not.toContain('t0pSecret');
+      expect(captured?.message).not.toContain('attacker');
+    });
+
+    it('PR review of round 4: unparseable override uses <unparseable> placeholder, not the raw input', () => {
+      let captured: Error | undefined;
+      try {
+        new HttpTransport(
+          { ...defaultConfig, baseUrl: INSTANCE_URL },
+          'definitely-not-a-url-with-a-secret-token-inside',
+        );
+      } catch (err) {
+        captured = err as Error;
+      }
+      expect(captured?.message).toContain('<unparseable>');
+      expect(captured?.message).not.toContain('secret-token');
+    });
+
     it('1-arg constructor does not emit the deprecation warn', () => {
       const logger = {
         debug: vi.fn(),
@@ -1177,6 +1210,73 @@ describe('HttpTransport', () => {
   });
 
   describe('middleware', () => {
+    it('PR review of round 4: auth provider Authorization is injected into options.headers BEFORE the chain runs', async () => {
+      // Without this, a cache or batch middleware placed earlier in the
+      // chain than the auth provider falls into the `no-auth` scope and
+      // serves entries across different auth configs.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let seenAuth: string | undefined;
+      const probeMiddleware = vi.fn(
+        (opts: RequestOptions, next: (o: RequestOptions) => Promise<ApiResponse<unknown>>) => {
+          seenAuth = opts.headers?.['Authorization'];
+          return next(opts);
+        },
+      );
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        middleware: [probeMiddleware],
+      });
+      await transport.request({ method: 'GET', path: '/pages' });
+
+      expect(seenAuth).toBeDefined();
+      // basic auth produces `Basic <base64>` — check the prefix to avoid
+      // pinning to a specific base64 encoding of the fixture credentials.
+      expect(seenAuth as string).toMatch(/^Basic /);
+    });
+
+    it('PR review of round 4: two transports sharing a cache middleware partition by auth identity even without a header in RequestOptions', async () => {
+      // This is the bug class B022/B024 was supposed to close but only
+      // worked when the user manually passed `headers.Authorization`.
+      // Auth pre-injection makes it work for the default basic/bearer
+      // config too.
+      const fetchMock = vi
+        .fn()
+        // First request (tenant A): returns nA=1
+        .mockResolvedValueOnce(makeResponse(200, { nA: 1 }))
+        // Second request (tenant B): MUST be a fresh fetch, not a cache hit
+        .mockResolvedValueOnce(makeResponse(200, { nB: 1 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { createCacheMiddleware } = await import('../../src/core/cache.js');
+      const sharedCache = createCacheMiddleware();
+
+      const transportA = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        auth: { type: 'basic', email: 'a@example.com', apiToken: 'tokenA' },
+        middleware: [sharedCache],
+      });
+      const transportB = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        auth: { type: 'basic', email: 'b@example.com', apiToken: 'tokenB' },
+        middleware: [sharedCache],
+      });
+
+      const resA = await transportA.request<{ nA: number }>({ method: 'GET', path: '/pages' });
+      const resB = await transportB.request<{ nB: number }>({ method: 'GET', path: '/pages' });
+
+      // Without auth pre-injection, the second call would have hit the
+      // cache (both fell into `no-auth`) and returned tenant A's response.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(resA.data).toEqual({ nA: 1 });
+      expect(resB.data).toEqual({ nB: 1 });
+    });
+
     it('runs middleware and calls next() to proceed with the request', async () => {
       // Arrange
       const payload = { id: '42' };

@@ -79,10 +79,26 @@ export class HttpTransport implements Transport {
   }
 
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
+    // PR review (round 4): pre-inject the configured auth provider's
+    // `Authorization` header into options.headers BEFORE the middleware
+    // chain runs, so cache / batch dedupe middlewares always see the
+    // tenant identity and partition correctly — even when middleware
+    // order would otherwise put them OUTSIDE an auth-injecting
+    // middleware. Without this, two `ConfluenceClient` instances that
+    // share a single `createCacheMiddleware()` instance would both fall
+    // into the `no-auth` cache scope and serve each other's responses.
+    //
+    // `buildHeaders` (called inside executeFetch) still strips
+    // caller-supplied `Authorization` and re-adds the auth provider's
+    // value, so the credential path is unchanged on the wire. The chain
+    // sees the raw header value but middleware in the chain is user-
+    // installed and already trusted with full request shape access.
+    const augmentedOptions = this.injectAuthIdentity(options);
+
     const response = await executeWithRetry(
-      () => this.requestHandler(options),
+      () => this.requestHandler(augmentedOptions),
       this.config,
-      options.signal,
+      augmentedOptions.signal,
     );
 
     // Validate middleware/transport output shape before exposing it as ApiResponse<T>.
@@ -101,6 +117,37 @@ export class HttpTransport implements Transport {
     }
 
     return response as ApiResponse<T>;
+  }
+
+  /**
+   * Merge the auth provider's `Authorization` header into `options.headers`
+   * so downstream middleware (notably cache / batch) can derive a stable
+   * auth scope. Caller-supplied headers win the FORBIDDEN-stripping pass
+   * later in `buildHeaders`, so the actual wire-value is unchanged — this
+   * is purely about making the identity visible to the middleware chain.
+   *
+   * Returns `options` unchanged when the auth provider yields no
+   * `Authorization` header (currently impossible for the built-in
+   * providers, but defensive against future provider shapes).
+   */
+  private injectAuthIdentity(options: RequestOptions): RequestOptions {
+    const providerHeaders = this.authProvider.getHeaders();
+    const providerAuth = providerHeaders['Authorization'];
+    /* c8 ignore start — defensive guard against a future auth provider
+       that does not produce an Authorization header. The built-in
+       providers (basic, bearer) always do, so this branch is unreachable
+       through any documented configuration. */
+    if (typeof providerAuth !== 'string' || providerAuth === '') {
+      return options;
+    }
+    /* c8 ignore stop */
+    return {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: providerAuth,
+      },
+    };
   }
 
   private async executeFetch(options: RequestOptions): Promise<ApiResponse<unknown>> {
@@ -184,14 +231,20 @@ export class HttpTransport implements Transport {
  * `Authorization` header attached. PR review of round 3.
  */
 function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void {
+  // PR review (round 4): never echo the raw `baseUrl` into a thrown
+  // ValidationError — a pasted override may carry userinfo / query /
+  // bearer-token segments, and these errors are commonly logged. Render
+  // only `scheme://host` (or a `<unparseable>` placeholder when the
+  // input doesn't parse) so log aggregators never index the secret.
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);
   } catch {
-    throw new ValidationError(`HttpTransport baseUrl override is not a valid URL: ${baseUrl}`);
+    throw new ValidationError(`HttpTransport baseUrl override is not a valid URL: <unparseable>`);
   }
+  const safeOrigin = `${parsed.protocol}//${parsed.hostname}`;
   if (parsed.protocol !== 'https:') {
-    throw new ValidationError(`HttpTransport baseUrl override must use HTTPS: ${baseUrl}`);
+    throw new ValidationError(`HttpTransport baseUrl override must use HTTPS: ${safeOrigin}`);
   }
   const target = parsed.hostname.toLowerCase();
   for (const allowed of allowedHosts) {
