@@ -50,10 +50,6 @@
   - files: `src/core/connect-jwt.ts`, `src/core/index.ts` | deps: none
   - do: add RS256 signing + middleware alongside HS256, export it, and document when each mode should be used.
 
-- `B016 [ ] P2 | OAuth concurrent refresh retry queue`
-  - files: `src/core/oauth.ts`, `test/core/oauth.test.ts` | deps: none
-  - do: replace herd-prone refresh retries with one in-flight refresh plus bounded staggered retries for waiters.
-
 - `B017 [ ] P3 | Proactive rate-limit awareness`
   - files: `src/core/rate-limiter.ts`, `src/core/config.ts`, `src/core/transport.ts`, `test/core/rate-limiter.test.ts` | deps: B010
   - do: add token-bucket pre-waiting from rate-limit headers while preserving current reactive fallback.

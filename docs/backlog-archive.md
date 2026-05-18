@@ -31,6 +31,11 @@
 - `B009 [x] P1 | Add LRU eviction to cache middleware`
   - result: cache eviction now protects recently used entries instead of using FIFO behavior.
 
+## Phase 6 — Security & advanced
+
+- `B016 [x] P2 | OAuth concurrent refresh retry queue`
+  - result: `createOAuthRefreshMiddleware` now jitter-staggers post-refresh retries via `retryJitterMs` (default 100ms) and caches settled refresh failures for `failureCooldownMs` (default 1000ms) so the post-success retry burst and the auth-outage refresh loop are both bounded. The pre-existing single in-flight refresh dedup is preserved. Both knobs accept `0` to disable; jitter sleep honours `RequestOptions.signal`.
+
 ## Phase 7 — Automation
 
 - `B020 [x] P3 | Add pagination cursor validation`
