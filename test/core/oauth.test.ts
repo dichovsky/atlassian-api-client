@@ -1032,7 +1032,7 @@ describe('B016: OAuth refresh herd protection', () => {
       expect(next).toHaveBeenCalledTimes(1);
     });
 
-    it('completes the jitter sleep normally when an unabortable signal is provided', async () => {
+    it('completes the jitter sleep normally when the signal is provided but never aborts', async () => {
       vi.useFakeTimers();
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
@@ -1320,6 +1320,28 @@ describe('B016: OAuth refresh herd protection', () => {
     it('rejects non-finite failureCooldownMs (NaN)', () => {
       expect(() =>
         createOAuthRefreshMiddleware({ ...baseConfig, failureCooldownMs: Number.NaN }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-finite failureCooldownMs (Infinity)', () => {
+      // Parity with `retryJitterMs` — `resolveNonNegFiniteNumber` applies the
+      // same rule to both fields, so the test surface mirrors retryJitterMs.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          failureCooldownMs: Number.POSITIVE_INFINITY,
+        }),
+      ).toThrow(ValidationError);
+    });
+
+    it('rejects non-number failureCooldownMs (runtime type guard)', () => {
+      // Parity with `retryJitterMs` — guards JS callers / dynamic config
+      // loaders that bypass TypeScript.
+      expect(() =>
+        createOAuthRefreshMiddleware({
+          ...baseConfig,
+          failureCooldownMs: '1000' as unknown as number,
+        }),
       ).toThrow(ValidationError);
     });
 

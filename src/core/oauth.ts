@@ -5,6 +5,7 @@ import {
   hostMatchesExact,
   isInvalidBareHostChar,
 } from './atlassian-hosts.js';
+import { sleepWithAbort } from './retry.js';
 
 /** Default OAuth 2.0 3LO token endpoint URL for Atlassian Cloud. */
 const DEFAULT_OAUTH_TOKEN_ENDPOINT = 'https://auth.atlassian.com/oauth/token';
@@ -183,7 +184,9 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
       // Deduplicate concurrent refresh calls — only one token exchange runs
       // at a time. Concurrent waiters share both the success token AND any
       // rejection (the .catch records lastFailure once before re-throwing to
-      // every awaiter).
+      // every awaiter). When the cooldown is disabled (failureCooldownMs ===
+      // 0) the .catch skips the assignment so we don't retain an error that
+      // will never be consulted.
       if (refreshPromise === null) {
         refreshPromise = fetchRefreshedTokens(config, currentTokens.refreshToken)
           .then(async (tokens) => {
@@ -195,7 +198,9 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
             return tokens;
           })
           .catch((err: unknown) => {
-            lastFailure = { error: err, at: Date.now() };
+            if (failureCooldownMs > 0) {
+              lastFailure = { error: err, at: Date.now() };
+            }
             throw err;
           })
           .finally(() => {
@@ -206,51 +211,20 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
       const newTokens = await refreshPromise;
 
       // Stagger post-refresh retries to avoid stampeding the API the moment
-      // the shared refresh resolves. Honours `options.signal` so an aborted
-      // caller does not pay the full jitter delay before bailing. `sleep`
-      // short-circuits when the delay computes to 0 (e.g. retryJitterMs = 0
-      // or the rare `Math.random() === 0` draw).
-      await sleep(Math.random() * retryJitterMs, options.signal);
+      // the shared refresh resolves. `sleepWithAbort` is shared with the
+      // retry loop (`src/core/retry.ts`) so abort semantics — listener
+      // cleanup, `signal.reason` normalisation — stay consistent across the
+      // codebase. Skipped entirely when the computed delay is 0 (jitter
+      // disabled via `retryJitterMs: 0`, or the rare `Math.random() === 0`
+      // draw) so we don't schedule a no-op `setTimeout(_, 0)`.
+      const jitterMs = Math.random() * retryJitterMs;
+      if (jitterMs > 0) {
+        await sleepWithAbort(jitterMs, options.signal);
+      }
 
       return next(injectBearerToken(options, newTokens.accessToken));
     }
   };
-}
-
-/**
- * Promise-based `setTimeout` that honours an optional `AbortSignal`.
- * - Resolves after `ms` milliseconds.
- * - Rejects with `signal.reason` if the signal aborts before the timer fires.
- * - Rejects synchronously when called with an already-aborted signal.
- * - Resolves immediately when `ms <= 0`.
- *
- * The abort listener is registered with `{ once: true }` AND explicitly
- * removed on the resolve path so the listener never outlives the sleep.
- */
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted === true) {
-      reject(signal.reason as Error);
-      return;
-    }
-    if (ms <= 0) {
-      resolve();
-      return;
-    }
-    if (signal === undefined) {
-      setTimeout(resolve, ms);
-      return;
-    }
-    const onAbort = (): void => {
-      clearTimeout(timer);
-      reject(signal.reason as Error);
-    };
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
-      resolve();
-    }, ms);
-    signal.addEventListener('abort', onAbort, { once: true });
-  });
 }
 
 /**
