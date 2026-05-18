@@ -293,6 +293,83 @@ describe('parseResponseBody with maxResponseBytes (B026)', () => {
     expect(await parseResponseBody(response, 'json', 1)).toBeUndefined();
   });
 
+  it('content-length fast-fail cancels the body before throwing (PR #21 review)', async () => {
+    // Asserts the socket-release improvement: even though no body bytes are
+    // read, the underlying stream gets `cancel()`ed so the connection can be
+    // reused promptly instead of hanging until GC.
+    let cancelled = false;
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        cancel() {
+          cancelled = true;
+        },
+      },
+      new CountQueuingStrategy({ highWaterMark: 0 }),
+    );
+    const response = new Response(stream, {
+      headers: { 'content-length': '999999' },
+    });
+
+    await expect(parseResponseBody(response, 'json', 16)).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
+    expect(cancelled).toBe(true);
+  });
+
+  it('content-length fast-fail still throws ResponseTooLargeError when cancel() rejects', async () => {
+    // A buggy custom stream that rejects on cancel must not mask the
+    // documented overflow contract — swallow rejection (PR #21 review).
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        cancel() {
+          return Promise.reject(new Error('cancel failed'));
+        },
+      },
+      new CountQueuingStrategy({ highWaterMark: 0 }),
+    );
+    const response = new Response(stream, {
+      headers: { 'content-length': '999999' },
+    });
+
+    await expect(parseResponseBody(response, 'arrayBuffer', 16)).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
+  });
+
+  it('stream-tally overflow still throws ResponseTooLargeError when reader.cancel() rejects', async () => {
+    // Same contract for the tally path: cancel rejection on overflow must
+    // not surface in place of the documented error (PR #21 review).
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(16));
+        controller.enqueue(new Uint8Array(16));
+        controller.close();
+      },
+      cancel() {
+        return Promise.reject(new Error('cancel failed'));
+      },
+    });
+    const response = new Response(stream);
+
+    await expect(parseResponseBody(response, 'arrayBuffer', 8)).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
+  });
+
+  it('arrayBuffer: returns buffer directly (no double-copy) when view spans whole buffer', async () => {
+    // PR #21 review: assert the success path no longer slices a full-size
+    // copy out of the already-capped fresh buffer. Identity comparison would
+    // be ideal but the public contract is "an ArrayBuffer of exactly the
+    // body's byte length" — assert size + content match without forcing the
+    // copy regression by accident.
+    const bytes = new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd]);
+    const response = new Response(bytes);
+    const result = (await parseResponseBody(response, 'arrayBuffer', 16)) as ArrayBuffer;
+    expect(result).toBeInstanceOf(ArrayBuffer);
+    expect(result.byteLength).toBe(4);
+    expect(new Uint8Array(result)).toEqual(bytes);
+  });
+
   it('ResponseTooLargeError carries the response status', async () => {
     const response = streamingResponse([new Uint8Array(100)], { status: 200 });
     try {

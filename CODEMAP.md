@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "dcb4458dd8b90fda6279b68950e165124681681bbda1adc3181669a22729f955",
+  "sourceHash": "2d2085e478307c9d76a37535abff1337f0714b5c7819bccefb08aa55f9b3c4ec",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3905,7 +3905,7 @@
         {
           "name": "ResponseTooLargeError",
           "kind": "class",
-          "line": 191,
+          "line": 192,
           "exported": true,
           "signature": "export class ResponseTooLargeError extends AtlassianError",
           "jsdoc": "Response-too-large error (B026).",
@@ -3913,24 +3913,24 @@
             {
               "name": "limitBytes",
               "kind": "property",
-              "line": 193
+              "line": 194
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 199
+              "line": 201
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 201
+              "line": 203
             }
           ]
         },
         {
           "name": "createHttpError",
           "kind": "function",
-          "line": 226,
+          "line": 228,
           "exported": true,
           "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, ): HttpError",
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
@@ -3938,51 +3938,51 @@
         {
           "name": "MAX_ERROR_MESSAGE_LENGTH",
           "kind": "variable",
-          "line": 252,
+          "line": 254,
           "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
           "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
         },
         {
           "name": "SEPARATOR",
           "kind": "variable",
-          "line": 253,
+          "line": 255,
           "signature": "const SEPARATOR = '; ';"
         },
         {
           "name": "CappedString",
           "kind": "interface",
-          "line": 255,
+          "line": 257,
           "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
         },
         {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 260,
+          "line": 262,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
         },
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 266,
+          "line": 268,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 294,
+          "line": 296,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 329,
+          "line": 331,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 336,
+          "line": 338,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -4959,7 +4959,7 @@
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 121,
+          "line": 128,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -4967,21 +4967,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 150,
+          "line": 157,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 220,
+          "line": 240,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
+          "name": "cancelBodyQuietly",
+          "kind": "function",
+          "line": 254,
+          "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
+          "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
+        },
+        {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 235,
+          "line": 272,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }

@@ -88,12 +88,19 @@ export async function parseResponseBody(
   switch (responseType) {
     case 'arrayBuffer': {
       const bytes = await readBodyWithCap(response, maxBytes);
-      // `new Uint8Array(n)` allocates a fresh ArrayBuffer of exactly `n`
-      // bytes when we built it ourselves; for the `maxBytes === undefined`
-      // fallback path we wrap an existing ArrayBuffer that's already the
-      // correct size. Return that backing buffer directly so the contract
-      // matches `response.arrayBuffer()`.
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      // `readBodyWithCap` always returns a `Uint8Array` whose backing buffer
+      // is exactly the right size (capped fresh allocation, or the result of
+      // `response.arrayBuffer()` wrapped without offset). When the view spans
+      // the whole buffer, return the buffer directly — slicing would force a
+      // full-size copy and undermine the memory-safety goal (PR #21 review).
+      /* c8 ignore next 3 — the else branch + slice is a defensive fallback
+         for any future change that yields a narrowed view; no current code
+         path reaches it, but we keep it for forward-compatibility with the
+         `response.arrayBuffer()` contract. */
+      if (bytes.byteOffset !== 0 || bytes.byteLength !== bytes.buffer.byteLength) {
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      }
+      return bytes.buffer;
     }
     case 'stream':
       return response.body;
@@ -160,6 +167,12 @@ async function readBodyWithCap(response: Response, maxBytes?: number): Promise<U
   // Stage 1: cheap header pre-check.
   const declared = parseContentLength(response.headers.get('content-length'));
   if (declared !== undefined && declared > maxBytes) {
+    // Best-effort cancel of the still-undrained body so the underlying socket
+    // can be released for connection reuse instead of being held open until
+    // the runtime garbage-collects the dangling stream (PR #21 review).
+    // Swallow rejections: a buggy stream that fails to cancel must not mask
+    // the ResponseTooLargeError contract.
+    await cancelBodyQuietly(response.body);
     throw new ResponseTooLargeError(maxBytes, status);
   }
 
@@ -190,8 +203,15 @@ async function readBodyWithCap(response: Response, maxBytes?: number): Promise<U
       total += value.byteLength;
       if (total > maxBytes) {
         // Release the socket promptly instead of keeping it open while the
-        // server pushes bytes we will never read.
-        await reader.cancel();
+        // server pushes bytes we will never read. `cancel()` rejections from
+        // buggy custom streams must not mask the ResponseTooLargeError
+        // contract — swallow them quietly (PR #21 review).
+        try {
+          await reader.cancel();
+        } catch {
+          /* best-effort: surfacing this rejection would replace the
+             documented overflow signal with an unrelated stream error. */
+        }
         throw new ResponseTooLargeError(maxBytes, status);
       }
       chunks.push(value);
@@ -223,6 +243,23 @@ async function readBodyAsText(response: Response, maxBytes?: number): Promise<st
   }
   const bytes = await readBodyWithCap(response, maxBytes);
   return new TextDecoder('utf-8').decode(bytes);
+}
+
+/**
+ * Best-effort `ReadableStream.cancel()` that never throws. Used by the
+ * content-length fast-fail path to release the socket before throwing
+ * `ResponseTooLargeError`; rejections from buggy custom streams must not
+ * mask the documented overflow contract (PR #21 review).
+ */
+async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void> {
+  /* c8 ignore next — fetch populates `body` for any non-204 response that
+     has a `content-length` header; defensive guard for custom transports. */
+  if (body === null) return;
+  try {
+    await body.cancel();
+  } catch {
+    /* swallow: best-effort socket release. */
+  }
 }
 
 /**

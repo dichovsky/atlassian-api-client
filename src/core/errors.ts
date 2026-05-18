@@ -182,19 +182,21 @@ export class PaginationError extends AtlassianError {
  * owns drain/abort, and applying the cap would defeat the purpose of
  * streaming.
  *
- * The optional {@link status} field carries the HTTP status that produced
- * the oversized body (when known), so callers handling the error path can
- * still see whether the upstream returned 2xx or 4xx/5xx; it is left
- * `undefined` for the success-path overflow case where the response was
- * 2xx by definition.
+ * The {@link status} field carries the HTTP status of the response whose
+ * body exceeded the cap. The transport always populates it (on both the
+ * success and error paths) so callers can classify the originating
+ * response — most usefully on the error path, where the alternative would
+ * have been an `HttpError` with that status. It is typed as optional
+ * because direct constructor callers may omit it.
  */
 export class ResponseTooLargeError extends AtlassianError {
   /** Configured cap in bytes that was exceeded. */
   readonly limitBytes: number;
   /**
-   * HTTP status of the response whose body exceeded the cap, when known.
-   * Set on the error path (so callers can still inspect the upstream
-   * status); left `undefined` on the success path.
+   * HTTP status of the response whose body exceeded the cap. The transport
+   * always sets this (success and error paths alike) by capturing
+   * `response.status` before reading any bytes. Typed as optional only so
+   * direct constructor callers (rare) may omit it.
    */
   readonly status?: number;
 
