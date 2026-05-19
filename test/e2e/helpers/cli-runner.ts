@@ -10,6 +10,7 @@
  */
 import { vi, type MockInstance } from 'vitest';
 import { runCli } from '../../../src/cli/index.js';
+import { printError } from '../../../src/cli/output.js';
 
 export interface RunOptions {
   /**
@@ -104,7 +105,7 @@ export async function runAtlas(args: readonly string[], opts: RunOptions = {}): 
     );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`Error: ${message}\n`);
+    printError(message);
     code = 1;
   } finally {
     stdoutCapture.spy.mockRestore();
