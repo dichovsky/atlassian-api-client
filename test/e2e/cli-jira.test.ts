@@ -19,6 +19,7 @@ interface MatrixRow {
   expectCall: { method: string; pathname: string };
   expectStdout?: readonly string[];
   expectBody?: (body: unknown) => void;
+  expectQuery?: (query: Record<string, string>) => void;
 }
 
 const HAPPY_EXIT = 0;
@@ -138,6 +139,9 @@ const matrix: readonly MatrixRow[] = [
     routes: [{ method: 'GET', path: `${P}/user`, body: F.user }],
     expectCall: { method: 'GET', pathname: `${P}/user` },
     expectStdout: ['"accountId": "acct-001"'],
+    expectQuery: (query) => {
+      expect(query.accountId).toBe('acct-001');
+    },
   },
   {
     name: 'users me',
@@ -152,6 +156,9 @@ const matrix: readonly MatrixRow[] = [
     routes: [{ method: 'GET', path: `${P}/user/search`, body: F.userList }],
     expectCall: { method: 'GET', pathname: `${P}/user/search` },
     expectStdout: ['"accountId": "acct-001"'],
+    expectQuery: (query) => {
+      expect(query.query).toBe('cli');
+    },
   },
 
   // ─── issue-types ──────────────────────────────────────────────────────
@@ -217,6 +224,7 @@ describe('atlas jira — full action matrix', () => {
     expect(call.headers['authorization']).toMatch(/^Basic /);
 
     if (row.expectBody) row.expectBody(call.body);
+    if (row.expectQuery) row.expectQuery(call.query);
 
     for (const needle of row.expectStdout ?? []) {
       expect(result.stdout).toContain(needle);

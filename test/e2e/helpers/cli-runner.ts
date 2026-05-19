@@ -13,9 +13,9 @@ import { runCli } from '../../../src/cli/index.js';
 
 export interface RunOptions {
   /**
-   * Environment overrides applied before runCli executes. Keys missing
-   * here fall back to the current `process.env`; pass `undefined` to
-   * explicitly unset a key for the duration of the call.
+   * Environment overrides merged on top of the deterministic E2E baseline
+   * (`DEFAULT_ENV`) before `runCli` executes. Pass `undefined` to explicitly
+   * unset a key for the duration of the call.
    */
   env?: Record<string, string | undefined>;
   /** Override for `--version` resolution; defaults to `'0.0.0-test'`. */
@@ -28,11 +28,12 @@ export interface RunResult {
   code: number;
 }
 
-const DEFAULT_ENV: Record<string, string> = {
+const DEFAULT_ENV: Record<string, string | undefined> = {
   ATLASSIAN_BASE_URL: 'https://test.atlassian.net',
   ATLASSIAN_EMAIL: 'cli-e2e@example.com',
   ATLASSIAN_API_TOKEN: 'test-token',
   ATLASSIAN_AUTH_TYPE: 'basic',
+  ATLASSIAN_ALLOWED_HOSTS: undefined,
 };
 
 function applyEnv(overrides: Record<string, string | undefined>): () => void {

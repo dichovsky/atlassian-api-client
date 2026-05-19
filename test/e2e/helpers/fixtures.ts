@@ -137,6 +137,7 @@ export const jiraFixtures = {
     key: 'PROJ',
     name: 'E2E Project',
     projectTypeKey: 'software',
+    self: 'https://test.atlassian.net/rest/api/3/project/10100',
   },
   projectList: [
     {
@@ -144,6 +145,7 @@ export const jiraFixtures = {
       key: 'PROJ',
       name: 'E2E Project',
       projectTypeKey: 'software',
+      self: 'https://test.atlassian.net/rest/api/3/project/10100',
     },
   ],
   searchResult: {
@@ -164,6 +166,7 @@ export const jiraFixtures = {
     displayName: 'CLI E2E User',
     emailAddress: 'cli-e2e@example.com',
     active: true,
+    self: 'https://test.atlassian.net/rest/api/3/user?accountId=acct-001',
   },
   userList: [
     {
@@ -171,6 +174,7 @@ export const jiraFixtures = {
       displayName: 'CLI E2E User',
       emailAddress: 'cli-e2e@example.com',
       active: true,
+      self: 'https://test.atlassian.net/rest/api/3/user?accountId=acct-001',
     },
   ],
   issueType: {
@@ -178,19 +182,43 @@ export const jiraFixtures = {
     name: 'Task',
     description: 'A task',
     subtask: false,
+    self: 'https://test.atlassian.net/rest/api/3/issuetype/10000',
   },
   issueTypeList: [
-    { id: '10000', name: 'Task', description: 'A task', subtask: false },
-    { id: '10001', name: 'Bug', description: 'A bug', subtask: false },
+    {
+      id: '10000',
+      name: 'Task',
+      description: 'A task',
+      subtask: false,
+      self: 'https://test.atlassian.net/rest/api/3/issuetype/10000',
+    },
+    {
+      id: '10001',
+      name: 'Bug',
+      description: 'A bug',
+      subtask: false,
+      self: 'https://test.atlassian.net/rest/api/3/issuetype/10001',
+    },
   ],
   priority: {
     id: '3',
     name: 'Medium',
     description: 'Medium priority',
+    self: 'https://test.atlassian.net/rest/api/3/priority/3',
   },
   priorityList: [
-    { id: '1', name: 'High', description: 'High priority' },
-    { id: '3', name: 'Medium', description: 'Medium priority' },
+    {
+      id: '1',
+      name: 'High',
+      description: 'High priority',
+      self: 'https://test.atlassian.net/rest/api/3/priority/1',
+    },
+    {
+      id: '3',
+      name: 'Medium',
+      description: 'Medium priority',
+      self: 'https://test.atlassian.net/rest/api/3/priority/3',
+    },
   ],
   statusList: [
     { id: '1', name: 'To Do', statusCategory: { key: 'new' } },

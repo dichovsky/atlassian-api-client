@@ -22,6 +22,8 @@ interface MatrixRow {
   expectStdout?: readonly string[];
   /** Optional assertion on the captured request body. */
   expectBody?: (body: unknown) => void;
+  /** Optional assertion on the captured request querystring. */
+  expectQuery?: (query: Record<string, string>) => void;
 }
 
 const HAPPY_EXIT = 0;
@@ -38,6 +40,9 @@ const matrix: readonly MatrixRow[] = [
     routes: [{ method: 'GET', path: `${P}/pages`, body: F.pageList }],
     expectCall: { method: 'GET', pathname: `${P}/pages` },
     expectStdout: ['E2E Test Page'],
+    expectQuery: (query) => {
+      expect(query.limit).toBe('10');
+    },
   },
   {
     name: 'pages get',
@@ -347,6 +352,7 @@ describe('atlas confluence — full action matrix', () => {
     expect(call.headers['authorization']).toMatch(/^Basic /);
 
     if (row.expectBody) row.expectBody(call.body);
+    if (row.expectQuery) row.expectQuery(call.query);
 
     for (const needle of row.expectStdout ?? []) {
       expect(result.stdout).toContain(needle);
