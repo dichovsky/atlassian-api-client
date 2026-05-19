@@ -1,0 +1,207 @@
+/**
+ * Canonical response payloads for E2E fetch-mock routes.
+ *
+ * Each fixture is the minimal Atlassian-shaped JSON the corresponding
+ * resource method returns. Tests stay focused on flow rather than shape —
+ * if the SDK adds a new required field, update the fixture once.
+ */
+
+export const confluenceFixtures = {
+  page: {
+    id: '12345',
+    type: 'page',
+    status: 'current',
+    title: 'E2E Test Page',
+    spaceId: '654321',
+    version: { number: 1, createdAt: '2026-01-01T00:00:00Z' },
+  },
+  pageList: {
+    results: [
+      {
+        id: '12345',
+        type: 'page',
+        status: 'current',
+        title: 'E2E Test Page',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  space: {
+    id: '654321',
+    key: 'E2E',
+    name: 'E2E Test Space',
+    type: 'global',
+    status: 'current',
+  },
+  spaceList: {
+    results: [
+      {
+        id: '654321',
+        key: 'E2E',
+        name: 'E2E Test Space',
+        type: 'global',
+        status: 'current',
+      },
+    ],
+    _links: { next: null },
+  },
+  blogPost: {
+    id: '99999',
+    type: 'blogpost',
+    status: 'current',
+    title: 'E2E Blog Post',
+    spaceId: '654321',
+    version: { number: 1, createdAt: '2026-01-01T00:00:00Z' },
+  },
+  blogPostList: {
+    results: [
+      {
+        id: '99999',
+        type: 'blogpost',
+        status: 'current',
+        title: 'E2E Blog Post',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  footerComment: {
+    id: '77777',
+    status: 'current',
+    title: '',
+    pageId: '12345',
+    version: { number: 1 },
+  },
+  inlineComment: {
+    id: '88888',
+    status: 'current',
+    title: '',
+    pageId: '12345',
+    version: { number: 1 },
+  },
+  footerCommentList: {
+    results: [{ id: '77777', status: 'current', pageId: '12345', version: { number: 1 } }],
+    _links: { next: null },
+  },
+  inlineCommentList: {
+    results: [{ id: '88888', status: 'current', pageId: '12345', version: { number: 1 } }],
+    _links: { next: null },
+  },
+  attachment: {
+    id: 'att-1',
+    status: 'current',
+    title: 'attachment.png',
+    pageId: '12345',
+    mediaType: 'image/png',
+    fileSize: 1024,
+  },
+  attachmentList: {
+    results: [
+      {
+        id: 'att-1',
+        status: 'current',
+        title: 'attachment.png',
+        pageId: '12345',
+        mediaType: 'image/png',
+        fileSize: 1024,
+      },
+    ],
+    _links: { next: null },
+  },
+  labelList: {
+    results: [{ id: 'lbl-1', name: 'production', prefix: 'global' }],
+    _links: { next: null },
+  },
+};
+
+export const jiraFixtures = {
+  issue: {
+    id: '10001',
+    key: 'PROJ-1',
+    self: 'https://test.atlassian.net/rest/api/3/issue/10001',
+    fields: {
+      summary: 'E2E test issue',
+      issuetype: { id: '10000', name: 'Task' },
+      project: { id: '10100', key: 'PROJ' },
+      status: { id: '1', name: 'To Do' },
+    },
+  },
+  issueCreated: {
+    id: '10001',
+    key: 'PROJ-1',
+    self: 'https://test.atlassian.net/rest/api/3/issue/10001',
+  },
+  project: {
+    id: '10100',
+    key: 'PROJ',
+    name: 'E2E Project',
+    projectTypeKey: 'software',
+  },
+  projectList: [
+    {
+      id: '10100',
+      key: 'PROJ',
+      name: 'E2E Project',
+      projectTypeKey: 'software',
+    },
+  ],
+  searchResult: {
+    issues: [
+      {
+        id: '10001',
+        key: 'PROJ-1',
+        fields: { summary: 'E2E test issue' },
+      },
+    ],
+    total: 1,
+    startAt: 0,
+    maxResults: 50,
+    isLast: true,
+  },
+  user: {
+    accountId: 'acct-001',
+    displayName: 'CLI E2E User',
+    emailAddress: 'cli-e2e@example.com',
+    active: true,
+  },
+  userList: [
+    {
+      accountId: 'acct-001',
+      displayName: 'CLI E2E User',
+      emailAddress: 'cli-e2e@example.com',
+      active: true,
+    },
+  ],
+  issueType: {
+    id: '10000',
+    name: 'Task',
+    description: 'A task',
+    subtask: false,
+  },
+  issueTypeList: [
+    { id: '10000', name: 'Task', description: 'A task', subtask: false },
+    { id: '10001', name: 'Bug', description: 'A bug', subtask: false },
+  ],
+  priority: {
+    id: '3',
+    name: 'Medium',
+    description: 'Medium priority',
+  },
+  priorityList: [
+    { id: '1', name: 'High', description: 'High priority' },
+    { id: '3', name: 'Medium', description: 'Medium priority' },
+  ],
+  statusList: [
+    { id: '1', name: 'To Do', statusCategory: { key: 'new' } },
+    { id: '3', name: 'Done', statusCategory: { key: 'done' } },
+  ],
+  transitionList: {
+    transitions: [{ id: '11', name: 'Start Progress', to: { id: '3', name: 'In Progress' } }],
+  },
+};
+
+/** Confluence v2 path prefix under the instance URL. */
+export const CONFLUENCE_PREFIX = '/wiki/api/v2';
+/** Jira v3 REST path prefix under the instance URL. */
+export const JIRA_PREFIX = '/rest/api/3';

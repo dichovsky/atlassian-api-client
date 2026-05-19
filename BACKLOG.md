@@ -52,9 +52,6 @@
 - [ ] 🔴 🧪 QA: B012 Mock-server transport tests
   - files: `test/mock-server/*`
   - deps: B006 archived
-- [ ] 🔴 🧪 QA: B013 CLI E2E tests
-  - files: `test/e2e/cli.test.ts`, `test/e2e/helpers/*`
-  - deps: none
 - [ ] 🟡 🧪 QA: B014 Property-based tests
   - files: `test/property/*`
   - deps: B006 archived
