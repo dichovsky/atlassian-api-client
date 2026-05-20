@@ -312,4 +312,221 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/inline-comments/..%2Fadmin`);
     });
   });
+
+  // ── Comment Content Properties ────────────────────────────────────────────
+
+  const makeProperty = (id: string) => ({
+    id,
+    key: 'reviewed',
+    value: { yes: true },
+    version: { number: 1 },
+  });
+
+  describe('listProperties()', () => {
+    it('calls GET /comments/{commentId}/properties with no query when params omitted', async () => {
+      // Arrange
+      const payload = { results: [makeProperty('p1')], _links: {} };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await comments.listProperties('c-1');
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/comments/c-1/properties`,
+        query: {},
+      });
+    });
+
+    it('forwards key/sort/cursor/limit query params when provided', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+
+      // Act
+      await comments.listProperties('c-1', {
+        key: 'reviewed',
+        sort: '-key',
+        cursor: 'tok',
+        limit: 50,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({
+        key: 'reviewed',
+        sort: '-key',
+        cursor: 'tok',
+        limit: 50,
+      });
+    });
+
+    it('rejects invalid limit before issuing a request', async () => {
+      await expect(comments.listProperties('c-1', { limit: 0 })).rejects.toThrow(RangeError);
+      expect(transport.lastCall).toBeUndefined();
+    });
+  });
+
+  describe('listPropertiesAll()', () => {
+    it('yields properties across paginated responses', async () => {
+      // Arrange
+      transport.respondWith({
+        results: [makeProperty('p1')],
+        _links: { next: '/wiki/api/v2/comments/c-1/properties?cursor=next' },
+      });
+      transport.respondWith({ results: [makeProperty('p2')], _links: {} });
+
+      // Act
+      const collected: { id: string }[] = [];
+      for await (const p of comments.listPropertiesAll('c-1')) {
+        collected.push(p);
+      }
+
+      // Assert
+      expect(collected.map((p) => p.id)).toEqual(['p1', 'p2']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('forwards filter params on every page', async () => {
+      // Arrange
+      transport.respondWith({ results: [makeProperty('p1')], _links: {} });
+
+      // Act
+      const iter = comments.listPropertiesAll('c-1', { key: 'k', sort: '-key', limit: 5 });
+      await iter.next();
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ key: 'k', sort: '-key', limit: 5 });
+    });
+
+    it('rejects invalid limit before issuing a request', async () => {
+      const iter = comments.listPropertiesAll('c-1', { limit: -1 });
+      await expect(iter.next()).rejects.toThrow(RangeError);
+      expect(transport.lastCall).toBeUndefined();
+    });
+  });
+
+  describe('createProperty()', () => {
+    it('calls POST /comments/{commentId}/properties with the body', async () => {
+      // Arrange
+      const created = makeProperty('p-new');
+      transport.respondWith(created);
+      const data = { key: 'reviewed', value: { yes: true } };
+
+      // Act
+      const result = await comments.createProperty('c-1', data);
+
+      // Assert
+      expect(result).toEqual(created);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/comments/c-1/properties`,
+        body: data,
+      });
+    });
+  });
+
+  describe('getProperty()', () => {
+    it('calls GET /comments/{commentId}/properties/{propertyId}', async () => {
+      // Arrange
+      const property = makeProperty('p-42');
+      transport.respondWith(property);
+
+      // Act
+      const result = await comments.getProperty('c-1', 'p-42');
+
+      // Assert
+      expect(result).toEqual(property);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/comments/c-1/properties/p-42`,
+      });
+    });
+
+    it('encodes both commentId and propertyId', async () => {
+      transport.respondWith(makeProperty('p'));
+      await comments.getProperty('a/b', 'c/d');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/comments/a%2Fb/properties/c%2Fd`);
+    });
+  });
+
+  describe('updateProperty()', () => {
+    it('calls PUT /comments/{commentId}/properties/{propertyId} with the body', async () => {
+      // Arrange
+      const updated = makeProperty('p-1');
+      transport.respondWith(updated);
+      const data = {
+        key: 'reviewed',
+        value: { yes: false },
+        version: { number: 2 },
+      };
+
+      // Act
+      const result = await comments.updateProperty('c-1', 'p-1', data);
+
+      // Assert
+      expect(result).toEqual(updated);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/comments/c-1/properties/p-1`,
+        body: data,
+      });
+    });
+  });
+
+  describe('deleteProperty()', () => {
+    it('calls DELETE /comments/{commentId}/properties/{propertyId} and resolves void', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      const result = await comments.deleteProperty('c-1', 'p-1');
+
+      // Assert
+      expect(result).toBeUndefined();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/comments/c-1/properties/p-1`,
+      });
+    });
+
+    it('propagates transport errors verbatim', async () => {
+      transport.respondWithError(new Error('boom'));
+      await expect(comments.deleteProperty('c-1', 'p-1')).rejects.toThrow('boom');
+    });
+  });
+
+  describe('property path encoding', () => {
+    it('encodes commentId in listProperties()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await comments.listProperties('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/comments/..%2Fadmin/properties`);
+    });
+
+    it('encodes commentId in createProperty()', async () => {
+      transport.respondWith(makeProperty('p'));
+      await comments.createProperty('../admin', { key: 'k', value: 1 });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/comments/..%2Fadmin/properties`);
+    });
+
+    it('encodes both segments in updateProperty()', async () => {
+      transport.respondWith(makeProperty('p'));
+      await comments.updateProperty('../admin', 'pid/with/slash', {
+        key: 'k',
+        value: 1,
+        version: { number: 2 },
+      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/comments/..%2Fadmin/properties/pid%2Fwith%2Fslash`,
+      );
+    });
+
+    it('encodes both segments in deleteProperty()', async () => {
+      transport.respondWith(undefined);
+      await comments.deleteProperty('../admin', '../other');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/comments/..%2Fadmin/properties/..%2Fother`,
+      );
+    });
+  });
 });

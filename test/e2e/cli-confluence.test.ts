@@ -292,6 +292,129 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"deleted": true'],
   },
 
+  // ─── comments content properties ──────────────────────────────────────
+  {
+    name: 'comments list-properties',
+    argv: ['confluence', 'comments', 'list-properties', '77777'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/comments/77777/properties`,
+        body: F.commentPropertyList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/comments/77777/properties` },
+    expectStdout: ['"id": "cp-1"', '"key": "reviewed"'],
+  },
+  {
+    name: 'comments list-properties with filters',
+    argv: [
+      'confluence',
+      'comments',
+      'list-properties',
+      '77777',
+      '--key',
+      'reviewed',
+      '--sort=-key',
+      '--limit',
+      '50',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/comments/77777/properties`,
+        body: F.commentPropertyList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/comments/77777/properties` },
+    expectQuery: (query) => {
+      expect(query).toMatchObject({ key: 'reviewed', sort: '-key', limit: '50' });
+    },
+  },
+  {
+    name: 'comments create-property',
+    argv: [
+      'confluence',
+      'comments',
+      'create-property',
+      '77777',
+      '--key',
+      'reviewed',
+      '--value',
+      '{"yes":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/comments/77777/properties`,
+        status: 201,
+        body: F.commentProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/comments/77777/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'reviewed', value: { yes: true } });
+    },
+  },
+  {
+    name: 'comments get-property',
+    argv: ['confluence', 'comments', 'get-property', '77777', '--property-id', 'cp-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/comments/77777/properties/cp-1`,
+        body: F.commentProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/comments/77777/properties/cp-1` },
+    expectStdout: ['"id": "cp-1"'],
+  },
+  {
+    name: 'comments update-property',
+    argv: [
+      'confluence',
+      'comments',
+      'update-property',
+      '77777',
+      '--property-id',
+      'cp-1',
+      '--key',
+      'reviewed',
+      '--value',
+      '{"yes":false}',
+      '--version-number',
+      '2',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/comments/77777/properties/cp-1`,
+        body: F.commentProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/comments/77777/properties/cp-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'reviewed',
+        value: { yes: false },
+        version: { number: 2 },
+      });
+    },
+  },
+  {
+    name: 'comments delete-property',
+    argv: ['confluence', 'comments', 'delete-property', '77777', '--property-id', 'cp-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/comments/77777/properties/cp-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/comments/77777/properties/cp-1` },
+    expectStdout: ['"deleted": true'],
+  },
+
   // ─── attachments ──────────────────────────────────────────────────────
   {
     name: 'attachments list',
