@@ -218,15 +218,15 @@ atlas jira sprints swap 42 --with 99
 
 Manage Agile epics. Supports get, partial update (POST patch semantics), issue assignment, ranking, and epic-less issue queries.
 
-| Action          | Positionals     | Required flags | Optional flags                                     |
-| --------------- | --------------- | -------------- | -------------------------------------------------- |
-| `get`           | `<epicIdOrKey>` | —              | —                                                  |
-| `update`        | `<epicIdOrKey>` | —              | `--name`, `--summary`, `--color`, `--done`         |
-| `issues`        | `<epicIdOrKey>` | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
-| `move-issues`   | `<epicIdOrKey>` | `--issues`     | —                                                  |
-| `rank`          | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                        |
-| `issues-none`   | —               | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
-| `remove-issues` | —               | `--issues`     | —                                                  |
+| Action          | Positionals     | Required flags          | Optional flags                                     |
+| --------------- | --------------- | ----------------------- | -------------------------------------------------- |
+| `get`           | `<epicIdOrKey>` | —                       | —                                                  |
+| `update`        | `<epicIdOrKey>` | —                       | `--name`, `--summary`, `--color`, `--done`         |
+| `issues`        | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `move-issues`   | `<epicIdOrKey>` | `--issues`              | —                                                  |
+| `rank`          | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                                   |
+| `issues-none`   | —               | —                       | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `remove-issues` | —               | `--issues`              | —                                                  |
 
 **Notes:**
 

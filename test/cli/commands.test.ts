@@ -3642,7 +3642,12 @@ describe('executeJiraCommand', () => {
 
     it('epic issues-none calls client.epic.getIssuesWithoutEpic', async () => {
       // Arrange
-      const payload = { values: [{ id: '1', key: 'PROJ-1', self: '', fields: {} }], startAt: 0, maxResults: 50, total: 1 };
+      const payload = {
+        values: [{ id: '1', key: 'PROJ-1', self: '', fields: {} }],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+      };
       jiraEpicMock.getIssuesWithoutEpic.mockResolvedValue(payload);
 
       // Act
