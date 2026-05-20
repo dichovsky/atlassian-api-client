@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "19c01a18fefc546b1d8f3dee9f65c42565e7c8c713733ef78de2bdad9dc3fb30",
+  "sourceHash": "60fc8b300f11184b9f7350088ebd64c69ac32b05ebe0b113e5839664f3bf091d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -178,6 +178,15 @@
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
     {
+      "name": "ConfluenceContentType",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 535,
+      "signature": "export type ConfluenceContentType = | 'page' | 'blogpost' | 'attachment' | 'footer-comment' | 'inline-comment';",
+      "jsdoc": "Built-in v2 Confluence content types. Comment content is split into `inline-comment` and `footer-comment` (distinct from v1, which represented both as the single `comment` type). Custom content types are server-defined strings that fall outside this union — see {@link ConvertContentIdsToTypesResponse}.",
+      "typeOnly": true
+    },
+    {
       "name": "ConfluenceListLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -240,6 +249,24 @@
       "line": 479,
       "signature": "export interface ContentVersion { readonly number: number; readonly message?: string; readonly minorEdit?: boolean; read…",
       "jsdoc": "Confluence Content Version.",
+      "typeOnly": true
+    },
+    {
+      "name": "ConvertContentIdsToTypesData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 549,
+      "signature": "export interface ConvertContentIdsToTypesData { readonly contentIds: readonly (string | number)[]; }",
+      "jsdoc": "Request body for `POST /content/convert-ids-to-types`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ConvertContentIdsToTypesResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 561,
+      "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
+      "jsdoc": "Response shape for `POST /content/convert-ids-to-types`.",
       "typeOnly": true
     },
     {
@@ -1029,15 +1056,6 @@
       "typeOnly": true
     },
     {
-      "name": "SpaceRoleMode",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 562,
-      "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
-      "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`.",
-      "typeOnly": true
-    },
-    {
       "name": "Sprint",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
@@ -1422,39 +1440,46 @@
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
-          "name": "executeSpaceRoleMode",
+          "name": "executeContent",
           "kind": "function",
           "line": 287,
-          "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+          "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "parseContentIds",
+          "kind": "function",
+          "line": 306,
+          "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
+          "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 299,
+          "line": 335,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 304,
+          "line": 340,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 309,
+          "line": 345,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 313,
+          "line": 349,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 322,
+          "line": 358,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1964,7 +1989,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 51,
+          "line": 52,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2151,7 +2176,7 @@
               "line": 43
             },
             {
-              "name": "spaceRoleMode",
+              "name": "content",
               "kind": "property",
               "line": 45
             },
@@ -2174,10 +2199,10 @@
         "./resources/classification-levels.js",
         "./resources/comments.js",
         "./resources/content-properties.js",
+        "./resources/content.js",
         "./resources/custom-content.js",
         "./resources/labels.js",
         "./resources/pages.js",
-        "./resources/space-role-mode.js",
         "./resources/spaces.js",
         "./resources/tasks.js",
         "./resources/versions.js",
@@ -2277,6 +2302,17 @@
         },
         {
           "kind": "named",
+          "from": "./resources/content.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "ContentResource",
+              "original": "ContentResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/custom-content.js",
           "typeOnly": false,
           "names": [
@@ -2305,17 +2341,6 @@
             {
               "exported": "PagesResource",
               "original": "PagesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/space-role-mode.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SpaceRoleModeResource",
-              "original": "SpaceRoleModeResource"
             }
           ]
         },
@@ -2561,8 +2586,16 @@
               "original": "ListClassificationLevelsResponse"
             },
             {
-              "exported": "SpaceRoleMode",
-              "original": "SpaceRoleMode"
+              "exported": "ConfluenceContentType",
+              "original": "ConfluenceContentType"
+            },
+            {
+              "exported": "ConvertContentIdsToTypesData",
+              "original": "ConvertContentIdsToTypesData"
+            },
+            {
+              "exported": "ConvertContentIdsToTypesResponse",
+              "original": "ConvertContentIdsToTypesResponse"
             }
           ]
         }
@@ -2920,6 +2953,35 @@
       ]
     },
     {
+      "path": "src/confluence/resources/content.ts",
+      "symbols": [
+        {
+          "name": "ContentResource",
+          "kind": "class",
+          "line": 17,
+          "exported": true,
+          "signature": "export class ContentResource",
+          "jsdoc": "Resource for the Confluence v2 content API.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 18
+            },
+            {
+              "name": "convertIdsToTypes",
+              "kind": "method",
+              "line": 32
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
       "path": "src/confluence/resources/custom-content.ts",
       "symbols": [
         {
@@ -3196,35 +3258,6 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/types.js",
-        "../types.js"
-      ]
-    },
-    {
-      "path": "src/confluence/resources/space-role-mode.ts",
-      "symbols": [
-        {
-          "name": "SpaceRoleModeResource",
-          "kind": "class",
-          "line": 17,
-          "exported": true,
-          "signature": "export class SpaceRoleModeResource",
-          "jsdoc": "Resource for the Confluence v2 space-role-mode API.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 18
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 24
-            }
-          ]
-        }
-      ],
-      "imports": [
         "../../core/types.js",
         "../types.js"
       ]
@@ -3797,9 +3830,33 @@
           "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}."
         },
         {
+          "name": "ConfluenceContentType",
+          "kind": "type",
+          "line": 535,
+          "exported": true,
+          "signature": "export type ConfluenceContentType = | 'page' | 'blogpost' | 'attachment' | 'footer-comment' | 'inline-comment';",
+          "jsdoc": "Built-in v2 Confluence content types. Comment content is split into `inline-comment` and `footer-comment` (distinct from v1, which represented both as the single `comment` type). Custom content types are server-defined strings that fall outside this union — see {@link ConvertContentIdsToTypesResponse}."
+        },
+        {
+          "name": "ConvertContentIdsToTypesData",
+          "kind": "interface",
+          "line": 549,
+          "exported": true,
+          "signature": "export interface ConvertContentIdsToTypesData { readonly contentIds: readonly (string | number)[]; }",
+          "jsdoc": "Request body for `POST /content/convert-ids-to-types`."
+        },
+        {
+          "name": "ConvertContentIdsToTypesResponse",
+          "kind": "interface",
+          "line": 561,
+          "exported": true,
+          "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
+          "jsdoc": "Response shape for `POST /content/convert-ids-to-types`."
+        },
+        {
           "name": "AdminKey",
           "kind": "interface",
-          "line": 530,
+          "line": 568,
           "exported": true,
           "signature": "export interface AdminKey { readonly createdAt?: string; readonly expireAt?: string; readonly durationInHours?: number; …",
           "jsdoc": "Confluence Admin Key."
@@ -3807,18 +3864,10 @@
         {
           "name": "CreateAdminKeyData",
           "kind": "interface",
-          "line": 545,
+          "line": 583,
           "exported": true,
           "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
           "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
-        },
-        {
-          "name": "SpaceRoleMode",
-          "kind": "interface",
-          "line": 562,
-          "exported": true,
-          "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
-          "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`."
         }
       ]
     },
@@ -6023,8 +6072,16 @@
               "original": "ListClassificationLevelsResponse"
             },
             {
-              "exported": "SpaceRoleMode",
-              "original": "SpaceRoleMode"
+              "exported": "ConfluenceContentType",
+              "original": "ConfluenceContentType"
+            },
+            {
+              "exported": "ConvertContentIdsToTypesData",
+              "original": "ConvertContentIdsToTypesData"
+            },
+            {
+              "exported": "ConvertContentIdsToTypesResponse",
+              "original": "ConvertContentIdsToTypesResponse"
             }
           ]
         },

@@ -15,6 +15,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `admin-key`             | `get`, `create`, `delete`                                               |
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property` |
 | `classification-levels` | `list`                                                                  |
+| `content`               | `convert-ids-to-types`                                                  |
 | `space-role-mode`       | `get`                                                                   |
 
 ## `pages`
@@ -143,6 +144,36 @@ Lists the data-classification levels defined for the Confluence Cloud organizati
 
 ```sh
 atlas confluence classification-levels list
+```
+
+## `content`
+
+Helpers that operate on raw v2 content identifiers without binding to one of the typed resources.
+
+| Action                 | Positional | Required flags | Optional flags |
+| ---------------------- | ---------- | -------------- | -------------- |
+| `convert-ids-to-types` | —          | `--ids`        | —              |
+
+`POST /wiki/api/v2/content/convert-ids-to-types` maps a batch of content ids
+into their associated v2 content types. Useful when migrating from v1 (which
+collapsed inline + footer comments under the single `comment` type) — v2
+returns `inline-comment` / `footer-comment` distinctly, plus `page`,
+`blogpost`, `attachment`, or a custom content type string. Ids the caller
+cannot view or that do not exist appear in `results` with a `null` value.
+
+- `--ids` accepts either a comma-separated list (`--ids 12345,67890`) or a
+  JSON array (`--ids '["12345",67890]'`). JSON wins when the value parses as
+  an array; otherwise the value is split on commas. The Confluence server
+  caps each request at 100 ids and rejects oversize requests with a 400.
+- Ids may be strings or numbers per the OpenAPI spec; this CLI preserves
+  whatever form you pass — numeric ids are not silently coerced.
+
+```sh
+# Convert a small comma-separated batch
+atlas confluence content convert-ids-to-types --ids 12345,67890,11111
+
+# JSON form (mixed string / number)
+atlas confluence content convert-ids-to-types --ids '["12345",67890]'
 ```
 
 ## `space-role-mode`

@@ -104,6 +104,9 @@ export type {
   ListVersionsParams,
   ClassificationLevel,
   ListClassificationLevelsResponse,
+  ConfluenceContentType,
+  ConvertContentIdsToTypesData,
+  ConvertContentIdsToTypesResponse,
   SpaceRoleMode,
 } from './confluence/index.js';
 

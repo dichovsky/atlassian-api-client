@@ -373,6 +373,39 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"deleted": true'],
   },
 
+  // ─── content ──────────────────────────────────────────────────────────
+  {
+    name: 'content convert-ids-to-types (comma-separated)',
+    argv: ['confluence', 'content', 'convert-ids-to-types', '--ids', '12345,67890,11111'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/content/convert-ids-to-types`,
+        body: F.contentIdTypes,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/content/convert-ids-to-types` },
+    expectBody: (body) => {
+      expect(body).toEqual({ contentIds: ['12345', '67890', '11111'] });
+    },
+    expectStdout: ['"12345": "page"', '"67890": "inline-comment"'],
+  },
+  {
+    name: 'content convert-ids-to-types (JSON mixed-type ids)',
+    argv: ['confluence', 'content', 'convert-ids-to-types', '--ids', '["12345",67890]'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/content/convert-ids-to-types`,
+        body: F.contentIdTypes,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/content/convert-ids-to-types` },
+    expectBody: (body) => {
+      expect(body).toEqual({ contentIds: ['12345', 67890] });
+    },
+  },
+
   // ─── classification-levels ────────────────────────────────────────────
   {
     name: 'classification-levels list',

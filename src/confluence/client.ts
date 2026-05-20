@@ -15,6 +15,7 @@ import { VersionsResource } from './resources/versions.js';
 import { AdminKeyResource } from './resources/admin-key.js';
 import { AppResource } from './resources/app.js';
 import { ClassificationLevelsResource } from './resources/classification-levels.js';
+import { ContentResource } from './resources/content.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
@@ -41,6 +42,8 @@ export class ConfluenceClient {
   readonly app: AppResource;
   /** Classification levels resource. */
   readonly classificationLevels: ClassificationLevelsResource;
+  /** Content resource (v1 → v2 id-to-type conversion). */
+  readonly content: ContentResource;
   /** Space role mode resource. */
   readonly spaceRoleMode: SpaceRoleModeResource;
 
@@ -63,6 +66,7 @@ export class ConfluenceClient {
     this.adminKey = new AdminKeyResource(transport, baseUrl);
     this.app = new AppResource(transport, baseUrl);
     this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
+    this.content = new ContentResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
   }
 }

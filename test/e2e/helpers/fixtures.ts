@@ -118,6 +118,13 @@ export const confluenceFixtures = {
     expireAt: '2026-05-20T13:00:00.000Z',
     durationInHours: 1,
   },
+  contentIdTypes: {
+    results: {
+      '12345': 'page',
+      '67890': 'inline-comment',
+      '11111': 'footer-comment',
+    },
+  },
   spaceRoleMode: {
     mode: 'ROLES' as const,
   },

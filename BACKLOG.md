@@ -239,9 +239,6 @@
 - [ ] 🔴 🧩 API: B090 Confluence: expose PUT /comments/{comment-id}/properties/{property-id}
   - files: `src/confluence/resources/comments.ts`, `test/confluence/comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B091 Confluence: expose POST /content/convert-ids-to-types
-  - files: `src/confluence/resources/content.ts`, `test/confluence/content.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🟡 🖥️ API: B092 Confluence: add CLI + skill for GET /custom-content
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
