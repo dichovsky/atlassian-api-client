@@ -191,6 +191,230 @@ describe('LabelsResource', () => {
     });
   });
 
+  // ── list (tenant-wide GET /labels) ────────────────────────────────────────
+
+  describe('list()', () => {
+    it('calls GET /labels with no params and no query keys', async () => {
+      // Arrange
+      const payload = { results: [makeLabel('l1')], _links: {} };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await labels.list();
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/labels`,
+      });
+      // No params → empty query bag (no `label-id=` / `prefix=` leakage).
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('passes scalar string filters straight through', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.list({
+        'label-id': '1,2,3',
+        prefix: 'global,team',
+        sort: '-name',
+        limit: 50,
+        cursor: 'next-page',
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'label-id': '1,2,3',
+        prefix: 'global,team',
+        sort: '-name',
+        limit: 50,
+        cursor: 'next-page',
+      });
+    });
+
+    it('joins array filters with commas', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.list({ 'label-id': [1, '2', 3], prefix: ['global', 'team'] });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'label-id': '1,2,3',
+        prefix: 'global,team',
+      });
+    });
+
+    it('treats empty array filters as unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.list({ 'label-id': [], prefix: [] });
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── listAll (paginated GET /labels) ───────────────────────────────────────
+
+  describe('listAll()', () => {
+    it('iterates across pages and yields every label', async () => {
+      transport
+        .respondWith({
+          results: [makeLabel('a'), makeLabel('b')],
+          _links: { next: '/wiki/api/v2/labels?cursor=p2' },
+        })
+        .respondWith({ results: [makeLabel('c')], _links: {} });
+
+      const ids: string[] = [];
+      for await (const lbl of labels.listAll()) {
+        ids.push(lbl.id);
+      }
+
+      expect(ids).toEqual(['a', 'b', 'c']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('flattens array filters into the first request', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      for await (const _ of labels.listAll({ prefix: ['my', 'global'], limit: 10 })) {
+        /* consume */
+      }
+
+      expect(transport.calls[0]?.options.query).toEqual({
+        prefix: 'my,global',
+        limit: 10,
+      });
+    });
+  });
+
+  // ── listAttachments ───────────────────────────────────────────────────────
+
+  describe('listAttachments()', () => {
+    it('calls GET /labels/{id}/attachments with no params', async () => {
+      const payload = { results: [{ id: 'att-1', status: 'current', title: 'a.png' }], _links: {} };
+      transport.respondWith(payload);
+
+      const result = await labels.listAttachments('lbl-1');
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/labels/lbl-1/attachments`,
+      });
+    });
+
+    it('includes sort, limit and cursor when provided', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.listAttachments('lbl-1', {
+        sort: '-modified-date',
+        limit: 5,
+        cursor: 'tok',
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        sort: '-modified-date',
+        limit: 5,
+        cursor: 'tok',
+      });
+    });
+  });
+
+  // ── listBlogPosts ─────────────────────────────────────────────────────────
+
+  describe('listBlogPosts()', () => {
+    it('calls GET /labels/{id}/blogposts with no params', async () => {
+      const payload = {
+        results: [{ id: 'bp-1', status: 'current', title: 'Hi', spaceId: 's-1' }],
+        _links: {},
+      };
+      transport.respondWith(payload);
+
+      const result = await labels.listBlogPosts('lbl-1');
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/labels/lbl-1/blogposts`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('flattens space-id arrays and forwards filters', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.listBlogPosts('lbl-1', {
+        'space-id': [100, '200'],
+        'body-format': 'atlas_doc_format',
+        sort: '-id',
+        limit: 10,
+        cursor: 'c1',
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'space-id': '100,200',
+        'body-format': 'atlas_doc_format',
+        sort: '-id',
+        limit: 10,
+        cursor: 'c1',
+      });
+    });
+
+    it('passes scalar space-id through unchanged', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.listBlogPosts('lbl-1', { 'space-id': '100,200' });
+
+      expect(transport.lastCall?.options.query).toEqual({ 'space-id': '100,200' });
+    });
+  });
+
+  // ── listPages ─────────────────────────────────────────────────────────────
+
+  describe('listPages()', () => {
+    it('calls GET /labels/{id}/pages with no params', async () => {
+      const payload = {
+        results: [{ id: 'pg-1', status: 'current', title: 'Hi', spaceId: 's-1' }],
+        _links: {},
+      };
+      transport.respondWith(payload);
+
+      const result = await labels.listPages('lbl-1');
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/labels/lbl-1/pages`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('flattens space-id arrays and forwards filters', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.listPages('lbl-1', {
+        'space-id': ['100'],
+        'body-format': 'storage',
+        sort: '-title',
+        limit: 25,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'space-id': '100',
+        'body-format': 'storage',
+        sort: '-title',
+        limit: 25,
+      });
+    });
+
+    it('treats empty space-id arrays as unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await labels.listPages('lbl-1', { 'space-id': [] });
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
   // ── path encoding ─────────────────────────────────────────────────────────
 
   describe('path encoding', () => {
@@ -210,6 +434,24 @@ describe('LabelsResource', () => {
       transport.respondWith({ results: [], _links: {} });
       await labels.listForBlogPost('../admin');
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/..%2Fadmin/labels`);
+    });
+
+    it('encodes labelId in listAttachments()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listAttachments('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels/..%2Fadmin/attachments`);
+    });
+
+    it('encodes labelId in listBlogPosts()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listBlogPosts('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels/..%2Fadmin/blogposts`);
+    });
+
+    it('encodes labelId in listPages()', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await labels.listPages('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/labels/..%2Fadmin/pages`);
     });
   });
 });

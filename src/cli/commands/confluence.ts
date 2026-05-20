@@ -1,7 +1,14 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { ConfluenceClient } from '../../confluence/client.js';
 import { buildClientConfig } from '../config.js';
-import type { ContentSortOrder, DataPolicySpaceSortOrder } from '../../confluence/types.js';
+import type {
+  AttachmentSortOrder,
+  BlogPostSortOrder,
+  ContentSortOrder,
+  DataPolicySpaceSortOrder,
+  LabelSortOrder,
+  PageSortOrder,
+} from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
 export async function executeConfluenceCommand(
@@ -278,14 +285,70 @@ async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Pr
 }
 
 async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
-      return client.labels.listForPage(requireOpt(cmd.options['page-id'], '--page-id'), {
-        limit: asPositiveInt(cmd.options['limit'], '--limit'),
+      return client.labels.listForPage(requireOpt(opts['page-id'], '--page-id'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
       });
+    case 'list-all': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      return client.labels.list({
+        'label-id': parseCsvList(asString(opts['label-id'])),
+        prefix: parseCsvList(asString(opts['prefix'])),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    case 'attachments': {
+      const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      return client.labels.listAttachments(requireArg(cmd.positionalArgs[0], 'label ID'), {
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    case 'blog-posts': {
+      const sort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.labels.listBlogPosts(requireArg(cmd.positionalArgs[0], 'label ID'), {
+        'space-id': parseCsvList(asString(opts['space-id'])),
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    case 'pages': {
+      const sort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.labels.listPages(requireArg(cmd.positionalArgs[0], 'label ID'), {
+        'space-id': parseCsvList(asString(opts['space-id'])),
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
     default:
-      throw new Error(`Unknown labels action: ${cmd.action}. Actions: list`);
+      throw new Error(
+        `Unknown labels action: ${cmd.action}. Actions: list, list-all, attachments, blog-posts, pages`,
+      );
   }
+}
+
+/**
+ * Pass an optional comma-separated CLI flag through to the resource layer
+ * untouched. The resource layer accepts the raw string and ships it as a
+ * single query value, so we only need to drop empties (treat as unset)
+ * without splitting into an array.
+ */
+function parseCsvList(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
 }
 
 async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
@@ -732,6 +795,44 @@ const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [
   'name',
   '-name',
 ];
+
+const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'id',
+  '-id',
+  'name',
+  '-name',
+];
+
+const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
+];
+
+const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [
+  'id',
+  '-id',
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
+];
+
+const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [
+  'id',
+  '-id',
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
+  'title',
+  '-title',
+];
+
+const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;

@@ -11,7 +11,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
 | `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                               |
 | `attachments`           | `list`, `get`, `delete`                                                                                                                                                                                                                                                     |
-| `labels`                | `list`                                                                                                                                                                                                                                                                      |
+| `labels`                | `list`, `list-all`, `attachments`, `blog-posts`, `pages`                                                                                                                                                                                                                    |
 | `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                   |
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                     |
 | `classification-levels` | `list`                                                                                                                                                                                                                                                                      |
@@ -81,9 +81,23 @@ Upload is not exposed via the CLI; use the SDK's `attachments.upload()` with a `
 
 ## `labels`
 
-| Action | Positional | Optional flags                     |
-| ------ | ---------- | ---------------------------------- |
-| `list` | —          | `--page-id`, `--limit`, `--cursor` |
+| Action        | Positional  | Required flags | Optional flags                                                 |
+| ------------- | ----------- | -------------- | -------------------------------------------------------------- |
+| `list`        | —           | `--page-id`    | `--limit`, `--cursor`                                          |
+| `list-all`    | —           | —              | `--label-id`, `--prefix`, `--sort`, `--limit`, `--cursor`      |
+| `attachments` | `<labelId>` | —              | `--sort`, `--limit`, `--cursor`                                |
+| `blog-posts`  | `<labelId>` | —              | `--space-id`, `--body-format`, `--sort`, `--limit`, `--cursor` |
+| `pages`       | `<labelId>` | —              | `--space-id`, `--body-format`, `--sort`, `--limit`, `--cursor` |
+
+- `list-all` hits the tenant-wide `GET /labels`. `--label-id` and `--prefix` accept comma-separated values (the wire format expects a single CSV string).
+- `attachments`, `blog-posts`, `pages` walk the inverse relations: given a label id, return the content tagged with it. They share `--limit` / `--cursor` cursor pagination.
+- `--sort` enums per action:
+  - `list-all`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`
+  - `attachments`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
+  - `blog-posts`: `id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`
+  - `pages`: same as `blog-posts` plus `title` / `-title`
+- `--body-format` (pages / blog-posts) accepts `storage` or `atlas_doc_format`.
+- `--space-id` (pages / blog-posts) accepts a comma-separated list to filter results to specific spaces.
 
 ## `admin-key`
 
