@@ -4,17 +4,17 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 
 ## Resource × action matrix
 
-| Resource      | Actions                                                                            |
-| ------------- | ---------------------------------------------------------------------------------- |
-| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions`                   |
-| `projects`    | `list`, `get`                                                                      |
-| `search`      | (no sub-action; uses `--jql`)                                                      |
-| `users`       | `get`, `me`, `search`                                                              |
-| `issue-types` | `list`, `get`                                                                      |
-| `priorities`  | `list`, `get`                                                                      |
-| `statuses`    | `list`                                                                             |
-| `boards`      | `list-sprints`, `sprint-issues`                                                    |
-| `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues` |
+| Resource      | Actions                                                                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions`                                                                                                 |
+| `projects`    | `list`, `get`                                                                                                                                                    |
+| `search`      | (no sub-action; uses `--jql`)                                                                                                                                    |
+| `users`       | `get`, `me`, `search`                                                                                                                                            |
+| `issue-types` | `list`, `get`                                                                                                                                                    |
+| `priorities`  | `list`, `get`                                                                                                                                                    |
+| `statuses`    | `list`                                                                                                                                                           |
+| `boards`      | `list-sprints`, `sprint-issues`                                                                                                                                  |
+| `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap` |
 
 ## `issues`
 
@@ -131,15 +131,20 @@ atlas jira boards sprint-issues 1 10 --jql "status = 'In Progress'" --fields sum
 
 Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial patch, issue assignment.
 
-| Action           | Positionals  | Required flags         | Optional flags                                              |
-| ---------------- | ------------ | ---------------------- | ----------------------------------------------------------- |
-| `get`            | `<sprintId>` | —                      | —                                                           |
-| `create`         | —            | `--name`, `--board-id` | `--start-date`, `--end-date`, `--goal`                      |
-| `update`         | `<sprintId>` | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
-| `delete`         | `<sprintId>` | —                      | —                                                           |
-| `get-issues`     | `<sprintId>` | —                      | `--jql`, `--fields`, `--start-at`, `--max-results`          |
-| `partial-update` | `<sprintId>` | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
-| `move-issues`    | `<sprintId>` | `--issues`             | —                                                           |
+| Action            | Positionals                | Required flags         | Optional flags                                              |
+| ----------------- | -------------------------- | ---------------------- | ----------------------------------------------------------- |
+| `get`             | `<sprintId>`               | —                      | —                                                           |
+| `create`          | —                          | `--name`, `--board-id` | `--start-date`, `--end-date`, `--goal`                      |
+| `update`          | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
+| `delete`          | `<sprintId>`               | —                      | —                                                           |
+| `get-issues`      | `<sprintId>`               | —                      | `--jql`, `--fields`, `--start-at`, `--max-results`          |
+| `partial-update`  | `<sprintId>`               | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
+| `move-issues`     | `<sprintId>`               | `--issues`             | —                                                           |
+| `list-properties` | `<sprintId>`               | —                      | —                                                           |
+| `get-property`    | `<sprintId> <propertyKey>` | —                      | —                                                           |
+| `set-property`    | `<sprintId> <propertyKey>` | `--value`              | —                                                           |
+| `delete-property` | `<sprintId> <propertyKey>` | —                      | —                                                           |
+| `swap`            | `<sprintId>`               | `--with`               | —                                                           |
 
 **Notes:**
 
@@ -150,6 +155,19 @@ Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial pa
 - `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
 - `sprintId` and `--board-id` are numeric IDs (not names).
 - Dates are ISO 8601: `--start-date 2026-06-01T00:00:00.000Z`.
+
+**Properties notes (list-properties, get-property, set-property, delete-property):**
+
+- `--value` accepts **any valid JSON**: objects, arrays, strings, numbers, booleans, and `null`. Examples: `--value '{"beta":true}'`, `--value '"hello"'`, `--value '42'`, `--value 'null'`.
+- `propertyKey` is URL-encoded automatically — keys with spaces or special characters are safe to pass as-is.
+- `get-property` response: `{ key: string, value: unknown }` — the caller must narrow `value` to the expected shape.
+- Sprint properties are arbitrary key-value metadata; they do not affect sprint state or issue assignments.
+
+**Swap notes (swap):**
+
+- `--with` is the numeric ID of the sprint to swap rank with.
+- Swapping a sprint with itself is rejected client-side before any network call.
+- Swap operates on sprint **rank** (backlog ordering), not sprint state or dates.
 
 ```sh
 # Get sprint details
@@ -175,6 +193,24 @@ atlas jira sprints update 42 --name "Sprint 5" --state active --start-date 2026-
 
 # Delete a sprint
 atlas jira sprints delete 42
+
+# List all property keys for sprint 42
+atlas jira sprints list-properties 42
+
+# Get a specific property value
+atlas jira sprints get-property 42 my-flag
+
+# Set a property to a JSON object value
+atlas jira sprints set-property 42 feature-flags --value '{"betaEnabled":true,"threshold":5}'
+
+# Set a property to a scalar string
+atlas jira sprints set-property 42 label --value '"in-progress"'
+
+# Delete a property
+atlas jira sprints delete-property 42 my-flag
+
+# Swap the rank of sprint 42 with sprint 99
+atlas jira sprints swap 42 --with 99
 ```
 
 ## Errors specific to Jira

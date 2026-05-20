@@ -105,7 +105,7 @@ RESOURCES:
   priorities    list, get
   statuses      list
   boards        list-sprints, sprint-issues
-  sprints       get, create, update, delete, get-issues, partial-update, move-issues
+  sprints       get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
 
 EXAMPLES:
   atlas jira issues get PROJ-123

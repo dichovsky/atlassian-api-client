@@ -1,8 +1,23 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 import type { BoardIssue } from './boards.js';
+
+export interface SprintPropertyKey {
+  readonly self: string;
+  readonly key: string;
+}
+
+export interface SprintPropertyKeys {
+  readonly keys: readonly SprintPropertyKey[];
+}
+
+export interface SprintProperty {
+  readonly key: string;
+  readonly value: unknown;
+}
 
 export interface Sprint {
   readonly id: number;
@@ -124,6 +139,80 @@ export class SprintsResource {
       method: 'POST',
       path: `${this.baseUrl}/sprint/${sprintId}/issue`,
       body: { issues },
+    });
+  }
+
+  /** List property keys for a sprint (B319). */
+  async listProperties(sprintId: number): Promise<SprintPropertyKeys> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    const response = await this.transport.request<SprintPropertyKeys>({
+      method: 'GET',
+      path: `${this.baseUrl}/sprint/${sprintId}/properties`,
+    });
+    return response.data;
+  }
+
+  /** Get a sprint property (B321). */
+  async getProperty(sprintId: number, propertyKey: string): Promise<SprintProperty> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    const response = await this.transport.request<SprintProperty>({
+      method: 'GET',
+      path: `${this.baseUrl}/sprint/${sprintId}/properties/${encodePathSegment(propertyKey)}`,
+    });
+    return response.data;
+  }
+
+  /** Set/overwrite a sprint property (B322). Body is arbitrary JSON. */
+  async setProperty(sprintId: number, propertyKey: string, value: unknown): Promise<void> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/sprint/${sprintId}/properties/${encodePathSegment(propertyKey)}`,
+      body: value,
+    });
+  }
+
+  /** Delete a sprint property (B320). */
+  async deleteProperty(sprintId: number, propertyKey: string): Promise<void> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/sprint/${sprintId}/properties/${encodePathSegment(propertyKey)}`,
+    });
+  }
+
+  /** Swap rank of two sprints (B323). Reject self-swap. */
+  async swap(sprintId: number, sprintToSwapWith: number): Promise<void> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (!Number.isInteger(sprintToSwapWith) || sprintToSwapWith <= 0) {
+      throw new ValidationError('sprintToSwapWith must be a positive integer');
+    }
+    if (sprintId === sprintToSwapWith) {
+      throw new ValidationError('cannot swap a sprint with itself');
+    }
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/sprint/${sprintId}/swap`,
+      body: { sprintToSwapWith },
     });
   }
 
