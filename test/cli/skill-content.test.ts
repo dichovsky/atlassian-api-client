@@ -85,6 +85,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'comments',
           'attachments',
           'labels',
+          'admin-key',
           'classification-levels',
         ]).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
@@ -124,6 +125,7 @@ describe('Resource coverage drift check', () => {
     'comments',
     'attachments',
     'labels',
+    'admin-key',
     'classification-levels',
   ]) {
     it(`Confluence resource '${resource}' is documented in reference/confluence.md`, () => {

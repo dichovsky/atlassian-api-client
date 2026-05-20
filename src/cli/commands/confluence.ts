@@ -22,6 +22,8 @@ export async function executeConfluenceCommand(
       return executeAttachments(client, cmd);
     case 'labels':
       return executeLabels(client, cmd);
+    case 'admin-key':
+      return executeAdminKey(client, cmd);
     case 'classification-levels':
       return executeClassificationLevels(client, cmd);
     default:
@@ -191,6 +193,27 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
       return { deleted: true };
     default:
       throw new Error(`Unknown attachments action: ${cmd.action}. Actions: list, get, delete`);
+  }
+}
+
+async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.adminKey.get();
+    case 'create': {
+      const durationRaw = opts['duration-hours'];
+      const durationInHours = asPositiveInt(durationRaw, '--duration-hours');
+      return client.adminKey.create(
+        durationInHours !== undefined ? { durationInHours } : undefined,
+      );
+    }
+    case 'delete':
+      await client.adminKey.delete();
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown admin-key action: ${cmd.action}. Actions: get, create, delete`);
   }
 }
 

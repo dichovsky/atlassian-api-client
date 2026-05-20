@@ -113,6 +113,11 @@ export const confluenceFixtures = {
     results: [{ id: 'lbl-1', name: 'production', prefix: 'global' }],
     _links: { next: null },
   },
+  adminKey: {
+    createdAt: '2026-05-20T12:00:00.000Z',
+    expireAt: '2026-05-20T13:00:00.000Z',
+    durationInHours: 1,
+  },
 };
 
 export const jiraFixtures = {

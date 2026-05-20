@@ -67,6 +67,7 @@ RESOURCES:
   comments               list, get, create, delete
   attachments            list, get, delete
   labels                 list
+  admin-key              get, create, delete
   classification-levels  list
 
 EXAMPLES:

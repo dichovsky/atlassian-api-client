@@ -12,6 +12,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `comments`              | `list`, `get`, `create`, `delete`           |
 | `attachments`           | `list`, `get`, `delete`                     |
 | `labels`                | `list`                                      |
+| `admin-key`             | `get`, `create`, `delete`                   |
 | `classification-levels` | `list`                                      |
 
 ## `pages`
@@ -65,6 +66,33 @@ Upload is not exposed via the CLI; use the SDK's `attachments.upload()` with a `
 | Action | Positional | Optional flags                     |
 | ------ | ---------- | ---------------------------------- |
 | `list` | —          | `--page-id`, `--limit`, `--cursor` |
+
+## `admin-key`
+
+The admin key is a tenant-scoped, time-bound credential that lets an organisation admin perform privileged operations (e.g. permanently delete pages or spaces) without per-request elevation. Only one key may be active at a time — `create` rotates an existing key.
+
+| Action   | Positional | Optional flags     |
+| -------- | ---------- | ------------------ |
+| `get`    | —          | —                  |
+| `create` | —          | `--duration-hours` |
+| `delete` | —          | —                  |
+
+- `--duration-hours` must be a positive integer; the Confluence server currently accepts 1-24 (default 1). Omit the flag to use the server default.
+- `delete` is idempotent; calling it when no key exists returns success.
+
+```sh
+# Inspect the active admin key (if any)
+atlas confluence admin-key get
+
+# Enable an admin key for the server default duration
+atlas confluence admin-key create
+
+# Rotate / enable with an explicit duration (hours)
+atlas confluence admin-key create --duration-hours 4
+
+# Revoke
+atlas confluence admin-key delete
+```
 
 ## `classification-levels`
 

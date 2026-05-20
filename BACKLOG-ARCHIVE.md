@@ -61,6 +61,15 @@
 
 ## 🧩 Confluence
 
+- [x] 🔴 🧩 Confluence: B047 expose DELETE /admin-key
+  - **Impl:** Branch `feat/api-admin-key`; new `AdminKeyResource.delete()` in `src/confluence/resources/admin-key.ts`, wired on `ConfluenceClient.adminKey`. CLI: `atlas confluence admin-key delete`.
+  - **Rat:** Admin-key revocation lets tenant admins close the privileged window without waiting for auto-expiry.
+- [x] 🔴 🧩 Confluence: B048 expose GET /admin-key
+  - **Impl:** Branch `feat/api-admin-key`; new `AdminKeyResource.get()` returning the `AdminKey` shape (`createdAt`, `expireAt`, `durationInHours`). CLI: `atlas confluence admin-key get`.
+  - **Rat:** Lets admins inspect whether an admin key is active and when it will expire before invoking privileged operations.
+- [x] 🔴 🧩 Confluence: B049 expose POST /admin-key
+  - **Impl:** Branch `feat/api-admin-key`; new `AdminKeyResource.create(data?)` supporting optional `durationInHours` (server validates 1-24). CLI: `atlas confluence admin-key create [--duration-hours <N>]`.
+  - **Rat:** Enables programmatic enable / rotate of the admin key for privileged automation flows.
 - [x] 🔴 🧩 Confluence: B085 expose GET /classification-levels
   - **Impl:** Branch `feat/api-classification-levels` (2026-05-20); new `ClassificationLevelsResource` (`src/confluence/resources/classification-levels.ts`) exposes `list()` mapped to `GET /wiki/api/v2/classification-levels`, returning the bare `ClassificationLevel[]` array per the OpenAPI spec. Wired as `ConfluenceClient.classificationLevels`; new `ClassificationLevel` + `ListClassificationLevelsResponse` types exported from `src/confluence/types.ts` and re-exported through `src/confluence/index.ts` + `src/index.ts`. CLI dispatch added in `src/cli/commands/confluence.ts` (`case 'classification-levels' → executeClassificationLevels` with `list` action); help text and reference doc (`skill/reference/confluence.md`) updated. Coverage: 100% on the new resource + dispatch arms; unit test (`test/confluence/classification-levels.test.ts`) asserts exact GET path with no query/body; CLI command test covers the dispatch arm and unknown-action error; E2E matrix gains a `classification-levels list` row exercising the full `runCli` → `HttpTransport` pipeline.
   - **Rat:** Pilot for the bulk API-coverage backlog. Lists the org-wide data-classification levels needed to drive the per-content classification-level endpoints (B073/B118/B171/B198/B224) without each caller hand-rolling the lookup.

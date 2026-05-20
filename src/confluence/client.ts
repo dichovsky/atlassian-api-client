@@ -13,6 +13,7 @@ import { WhiteboardsResource } from './resources/whiteboards.js';
 import { TasksResource } from './resources/tasks.js';
 import { VersionsResource } from './resources/versions.js';
 import { ClassificationLevelsResource } from './resources/classification-levels.js';
+import { AdminKeyResource } from './resources/admin-key.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
 export class ConfluenceClient {
@@ -34,6 +35,8 @@ export class ConfluenceClient {
   readonly versions: VersionsResource;
   /** Classification levels resource. */
   readonly classificationLevels: ClassificationLevelsResource;
+  /** Admin key resource. */
+  readonly adminKey: AdminKeyResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -52,5 +55,6 @@ export class ConfluenceClient {
     this.tasks = new TasksResource(transport, baseUrl);
     this.versions = new VersionsResource(transport, baseUrl);
     this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
+    this.adminKey = new AdminKeyResource(transport, baseUrl);
   }
 }

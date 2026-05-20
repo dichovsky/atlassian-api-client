@@ -37,6 +37,7 @@ const GLOBAL_OPTIONS = {
   expand: { type: 'string' as const },
   'version-number': { type: 'string' as const },
   'comment-type': { type: 'string' as const },
+  'duration-hours': { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },

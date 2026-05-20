@@ -131,15 +131,6 @@
 
 > Auto-generated from `npm run api:mapping`. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 
-- [ ] 🔴 🧩 API: B047 Confluence: expose DELETE /admin-key
-  - files: `src/confluence/resources/admin-key.ts`, `test/confluence/admin-key.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B048 Confluence: expose GET /admin-key
-  - files: `src/confluence/resources/admin-key.ts`, `test/confluence/admin-key.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B049 Confluence: expose POST /admin-key
-  - files: `src/confluence/resources/admin-key.ts`, `test/confluence/admin-key.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B050 Confluence: expose GET /app/properties
   - files: `src/confluence/resources/app.ts`, `test/confluence/app.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

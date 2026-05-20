@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "d023f4659ed73239da0b0733558da035119cdc547f040063c651fc9a414b5c14",
+  "sourceHash": "a4e52a030e01d24e8ee40232d6f65542528de8e1eac0dbc01e10a9fd79dba178",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -173,7 +173,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 18,
+      "line": 19,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -1354,73 +1354,79 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 32,
+          "line": 34,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 81,
+          "line": 83,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 95,
+          "line": 97,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 137,
+          "line": 139,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 181,
+          "line": 183,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeAdminKey",
+          "kind": "function",
+          "line": 199,
+          "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 197,
+          "line": 220,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 208,
+          "line": 231,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 220,
+          "line": 243,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 225,
+          "line": 248,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 230,
+          "line": 253,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 234,
+          "line": 257,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 243,
+          "line": 266,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1763,13 +1769,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 79,
+          "line": 80,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 98,
+          "line": 99,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -1930,7 +1936,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2041,7 +2047,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 18,
+          "line": 19,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2049,67 +2055,72 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 19
+              "line": 20
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 20
+              "line": 21
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 21
+              "line": 22
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 22
+              "line": 23
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 23
+              "line": 24
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 24
+              "line": 25
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 26
+              "line": 27
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 28
+              "line": 29
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 36
+              "line": 37
+            },
+            {
+              "name": "adminKey",
+              "kind": "property",
+              "line": 39
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 38
+              "line": 41
             }
           ]
         }
@@ -2118,6 +2129,7 @@
         "../core/config.js",
         "../core/transport.js",
         "../core/types.js",
+        "./resources/admin-key.js",
         "./resources/attachments.js",
         "./resources/blog-posts.js",
         "./resources/classification-levels.js",
@@ -2476,6 +2488,45 @@
             }
           ]
         }
+      ]
+    },
+    {
+      "path": "src/confluence/resources/admin-key.ts",
+      "symbols": [
+        {
+          "name": "AdminKeyResource",
+          "kind": "class",
+          "line": 15,
+          "exported": true,
+          "signature": "export class AdminKeyResource",
+          "jsdoc": "Confluence Admin Key resource.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 16
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 22
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 38
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 48
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js",
+        "../types.js"
       ]
     },
     {
@@ -3562,6 +3613,22 @@
           "exported": true,
           "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
           "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}."
+        },
+        {
+          "name": "AdminKey",
+          "kind": "interface",
+          "line": 497,
+          "exported": true,
+          "signature": "export interface AdminKey { readonly createdAt?: string; readonly expireAt?: string; readonly durationInHours?: number; …",
+          "jsdoc": "Confluence Admin Key."
+        },
+        {
+          "name": "CreateAdminKeyData",
+          "kind": "interface",
+          "line": 512,
+          "exported": true,
+          "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
+          "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
         }
       ]
     },
