@@ -150,6 +150,32 @@ describe('parseResponseBody', () => {
     const result = await parseResponseBody(response, 'stream');
     expect(result).toBe(response.body);
   });
+
+  // ── Empty / whitespace 2xx body tolerance (B217 review fix) ─────────────
+  // Some Atlassian endpoints (e.g. POST /user/access/invite-by-email)
+  // document a 200 response with `"content": {}` and return a truly empty
+  // body. The json branch must tolerate this instead of letting
+  // `JSON.parse('')` propagate a `SyntaxError`. Real malformed JSON still
+  // throws — see the regression guard below.
+  it('json: empty 2xx body returns undefined (no SyntaxError)', async () => {
+    const response = new Response('', { status: 200 });
+    expect(await parseResponseBody(response, 'json')).toBeUndefined();
+  });
+
+  it('json: empty body with responseType undefined returns undefined', async () => {
+    const response = new Response('', { status: 200 });
+    expect(await parseResponseBody(response, undefined)).toBeUndefined();
+  });
+
+  it('json: whitespace-only 2xx body returns undefined', async () => {
+    const response = new Response('   \n\t  ', { status: 200 });
+    expect(await parseResponseBody(response, 'json')).toBeUndefined();
+  });
+
+  it('json: malformed JSON still throws SyntaxError (regression guard)', async () => {
+    const response = new Response('{not-json', { status: 200 });
+    await expect(parseResponseBody(response, 'json')).rejects.toBeInstanceOf(SyntaxError);
+  });
 });
 
 describe('buildApiResponse', () => {

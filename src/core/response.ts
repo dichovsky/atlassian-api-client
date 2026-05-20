@@ -107,9 +107,13 @@ export async function parseResponseBody(
     case 'json':
     case undefined: {
       const text = await readBodyAsText(response, maxBytes);
-      // `Response.json()` rejects on empty body with a SyntaxError; preserve
-      // that behaviour so the transport still surfaces a parse failure for
-      // an empty 2xx that claimed JSON.
+      // Treat zero-length or whitespace-only 2xx bodies as `undefined` rather
+      // than letting `JSON.parse('')` throw a `SyntaxError`. Several Atlassian
+      // endpoints (e.g. `POST /user/access/invite-by-email`) document a 200
+      // response with `"content": {}` — no media type at all — and return a
+      // truly empty body in practice. Malformed JSON still throws below so
+      // genuine server contract violations stay visible.
+      if (text === '' || text.trim() === '') return undefined;
       return JSON.parse(text) as unknown;
     }
   }

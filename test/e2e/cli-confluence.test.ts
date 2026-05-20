@@ -564,12 +564,13 @@ const matrix: readonly MatrixRow[] = [
     routes: [
       {
         // The endpoint is asynchronous server-side and the OpenAPI spec
-        // documents `200` with `"content": {}`. Confluence returns an empty
-        // JSON object so the SDK's default JSON parse path stays happy.
+        // documents `200` with `"content": {}` (no media type). Confluence
+        // returns a truly empty body; the transport's json parser tolerates
+        // this and yields `undefined` instead of throwing `SyntaxError`.
         method: 'POST',
         path: `${P}/user/access/invite-by-email`,
         status: 200,
-        body: {},
+        body: '',
       },
     ],
     expectCall: { method: 'POST', pathname: `${P}/user/access/invite-by-email` },
