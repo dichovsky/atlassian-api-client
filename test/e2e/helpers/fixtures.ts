@@ -125,6 +125,21 @@ export const confluenceFixtures = {
       '11111': 'footer-comment',
     },
   },
+  dataPolicyMetadata: {
+    anyContentBlocked: true,
+  },
+  dataPolicySpacesList: {
+    results: [
+      {
+        id: '654321',
+        key: 'ENG',
+        name: 'Engineering',
+        dataPolicy: { anyContentBlocked: false },
+        _links: { webui: '/wiki/spaces/ENG' },
+      },
+    ],
+    _links: { next: null },
+  },
   spacePermissionList: {
     results: [
       {

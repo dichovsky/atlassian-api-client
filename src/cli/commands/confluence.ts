@@ -1,7 +1,7 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { ConfluenceClient } from '../../confluence/client.js';
 import { buildClientConfig } from '../config.js';
-import type { ContentSortOrder } from '../../confluence/types.js';
+import type { ContentSortOrder, DataPolicySpaceSortOrder } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
 export async function executeConfluenceCommand(
@@ -31,6 +31,8 @@ export async function executeConfluenceCommand(
       return executeClassificationLevels(client, cmd);
     case 'content':
       return executeContent(client, cmd);
+    case 'data-policies':
+      return executeDataPolicies(client, cmd);
     case 'databases':
       return executeDatabases(client, cmd);
     case 'space-permissions':
@@ -384,6 +386,43 @@ function parseContentIds(raw: string): readonly (string | number)[] {
   return parts;
 }
 
+async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-metadata':
+      return client.dataPolicies.getMetadata();
+    case 'list-spaces': {
+      const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
+      return client.dataPolicies.listSpaces({
+        ids: parseCsvList(asString(opts['ids'])),
+        keys: parseCsvList(asString(opts['keys'])),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown data-policies action: ${cmd.action}. Actions: get-metadata, list-spaces`,
+      );
+  }
+}
+
+/**
+ * Split a comma-separated CLI flag into a trimmed, non-empty array. Returns
+ * `undefined` when the input is unset so optional query params drop out
+ * cleanly via spread-omit on the call site.
+ */
+function parseCsvList(raw: string | undefined): readonly string[] | undefined {
+  if (raw === undefined) return undefined;
+  const items = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return items.length > 0 ? items : undefined;
+}
+
 async function executeSpacePermissions(
   client: ConfluenceClient,
   cmd: ParsedCommand,
@@ -647,6 +686,15 @@ const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [
 ];
 
 const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;
+
+const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [
+  'id',
+  '-id',
+  'key',
+  '-key',
+  'name',
+  '-name',
+];
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;

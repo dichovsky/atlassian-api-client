@@ -16,6 +16,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                     |
 | `classification-levels` | `list`                                                                                                                                                                                                                                                                      |
 | `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                      |
+| `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                               |
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
@@ -187,6 +188,47 @@ atlas confluence content convert-ids-to-types --ids 12345,67890,11111
 
 # JSON form (mixed string / number)
 atlas confluence content convert-ids-to-types --ids '["12345",67890]'
+```
+
+## `data-policies`
+
+| Action         | Positional | Required flags | Optional flags                                     |
+| -------------- | ---------- | -------------- | -------------------------------------------------- |
+| `get-metadata` | —          | —              | —                                                  |
+| `list-spaces`  | —          | —              | `--ids`, `--keys`, `--sort`, `--limit`, `--cursor` |
+
+Surfaces the Confluence v2 data-policies API. Both endpoints are **app-only**
+(Forge / Connect) — user-token callers receive `403 Forbidden`, and the site
+must have the data-policies entitlement enabled. The metadata endpoint also
+requires the `read:configuration:confluence` OAuth scope (or `READ` Connect
+app scope); the spaces endpoint additionally needs `read:space:confluence`.
+
+- `get-metadata` → `GET /wiki/api/v2/data-policies/metadata` returns
+  `{ anyContentBlocked?: boolean }` describing the workspace as a whole.
+- `list-spaces` → `GET /wiki/api/v2/data-policies/spaces` returns the standard
+  `{ results, _links }` cursor-paginated wrapper with `DataPolicySpace`
+  entries (`id`, `key`, `name`, `dataPolicy.anyContentBlocked`, etc.). The
+  server caps `--limit` at 1-250 (default 25); only spaces the app can view
+  are returned.
+- `--ids` and `--keys` accept comma-separated lists (e.g. `--ids 1,2,3` or
+  `--keys ENG,OPS`). Whitespace per entry is trimmed; empty entries are
+  dropped; an effectively-empty value is omitted from the query rather than
+  sent as a blank filter. The server caps each list at 250 entries.
+- `--sort` accepts `id`, `-id`, `key`, `-key`, `name`, `-name` (prefix `-`
+  flips direction). Unknown values are rejected client-side.
+
+```sh
+# Workspace-wide flag indicating whether any content is blocked
+atlas confluence data-policies get-metadata
+
+# First page of spaces with data policies (server default 25 per page)
+atlas confluence data-policies list-spaces
+
+# Filter to specific space keys, sort by descending key, larger page
+atlas confluence data-policies list-spaces --keys ENG,OPS --sort -key --limit 50
+
+# Filter by IDs
+atlas confluence data-policies list-spaces --ids 100,200,300
 ```
 
 ## `space-permissions`

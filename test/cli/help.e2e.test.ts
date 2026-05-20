@@ -65,6 +65,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   app: 'executeApp',
   'classification-levels': 'executeClassificationLevels',
   content: 'executeContent',
+  'data-policies': 'executeDataPolicies',
   databases: 'executeDatabases',
   'space-permissions': 'executeSpacePermissions',
   'space-role-mode': 'executeSpaceRoleMode',
