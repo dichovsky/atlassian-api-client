@@ -24,6 +24,8 @@ export async function executeConfluenceCommand(
       return executeLabels(client, cmd);
     case 'admin-key':
       return executeAdminKey(client, cmd);
+    case 'app':
+      return executeApp(client, cmd);
     case 'classification-levels':
       return executeClassificationLevels(client, cmd);
     default:
@@ -225,6 +227,46 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       });
     default:
       throw new Error(`Unknown labels action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-properties':
+      return client.app.listProperties({
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    case 'get-property':
+      return client.app.getProperty(requireArg(cmd.positionalArgs[0], 'property key'));
+    case 'upsert-property': {
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
+      const rawValue = requireOpt(opts['value'], '--value');
+      return client.app.upsertProperty(propertyKey, { value: parseJsonValue(rawValue) });
+    }
+    case 'delete-property':
+      await client.app.deleteProperty(requireArg(cmd.positionalArgs[0], 'property key'));
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown app action: ${cmd.action}. Actions: list-properties, get-property, upsert-property, delete-property`,
+      );
+  }
+}
+
+/**
+ * Parse `--value` from the CLI as JSON when possible, falling back to the raw
+ * string. Confluence app properties accept arbitrary JSON values, so callers
+ * should typically pass JSON (e.g. `--value '{"enabled":true}'`); a bare
+ * unquoted string like `--value hello` is preserved as the string `"hello"`.
+ */
+function parseJsonValue(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
   }
 }
 

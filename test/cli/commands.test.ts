@@ -65,6 +65,12 @@ const confluenceAdminKeyMock = {
   create: vi.fn(),
   delete: vi.fn(),
 };
+const confluenceAppMock = {
+  listProperties: vi.fn(),
+  getProperty: vi.fn(),
+  upsertProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
 const confluenceClassificationLevelsMock = {
   list: vi.fn(),
 };
@@ -79,6 +85,7 @@ vi.mock('../../src/confluence/client.js', () => {
       attachments: confluenceAttachmentsMock,
       labels: confluenceLabelsMock,
       adminKey: confluenceAdminKeyMock,
+      app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
     };
   });
@@ -935,6 +942,130 @@ describe('executeConfluenceCommand', () => {
     it('admin-key unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('admin-key', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown admin-key action',
+      );
+    });
+  });
+
+  // ── app ───────────────────────────────────────────────────────────────────
+
+  describe('app resource', () => {
+    it('app list-properties calls client.app.listProperties', async () => {
+      // Arrange
+      confluenceAppMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+
+      // Act
+      await executeConfluenceCommand(cmd('app', 'list-properties'), GLOBALS);
+
+      // Assert
+      expect(confluenceAppMock.listProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: undefined, cursor: undefined }),
+      );
+    });
+
+    it('app list-properties passes limit and cursor', async () => {
+      // Arrange
+      confluenceAppMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('app', 'list-properties', [], { limit: '10', cursor: 'tok' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceAppMock.listProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: 10, cursor: 'tok' }),
+      );
+    });
+
+    it('app list-properties throws when --limit is invalid', async () => {
+      const parsed = cmd('app', 'list-properties', [], { limit: 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('app get-property calls client.app.getProperty with the key', async () => {
+      // Arrange
+      const property = { key: 'flag', value: true };
+      confluenceAppMock.getProperty.mockResolvedValue(property);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('app', 'get-property', ['flag']), GLOBALS);
+
+      // Assert
+      expect(confluenceAppMock.getProperty).toHaveBeenCalledWith('flag');
+      expect(result).toEqual(property);
+    });
+
+    it('app get-property throws when property key is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('app', 'get-property', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: property key');
+    });
+
+    it('app upsert-property parses JSON value and forwards it', async () => {
+      // Arrange
+      const property = { key: 'flag', value: { beta: true } };
+      confluenceAppMock.upsertProperty.mockResolvedValue(property);
+      const parsed = cmd('app', 'upsert-property', ['flag'], { value: '{"beta":true}' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceAppMock.upsertProperty).toHaveBeenCalledWith('flag', {
+        value: { beta: true },
+      });
+      expect(result).toEqual(property);
+    });
+
+    it('app upsert-property falls back to raw string when --value is not JSON', async () => {
+      // Arrange
+      confluenceAppMock.upsertProperty.mockResolvedValue({ key: 'flag', value: 'hello' });
+      const parsed = cmd('app', 'upsert-property', ['flag'], { value: 'hello' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceAppMock.upsertProperty).toHaveBeenCalledWith('flag', { value: 'hello' });
+    });
+
+    it('app upsert-property throws when property key is missing', async () => {
+      const parsed = cmd('app', 'upsert-property', [], { value: '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required argument: property key',
+      );
+    });
+
+    it('app upsert-property throws when --value is missing', async () => {
+      const parsed = cmd('app', 'upsert-property', ['flag'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('app delete-property calls client.app.deleteProperty and returns { deleted: true }', async () => {
+      // Arrange
+      confluenceAppMock.deleteProperty.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeConfluenceCommand(
+        cmd('app', 'delete-property', ['flag']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(confluenceAppMock.deleteProperty).toHaveBeenCalledWith('flag');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('app delete-property throws when property key is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('app', 'delete-property', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: property key');
+    });
+
+    it('app unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('app', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown app action',
       );
     });
   });

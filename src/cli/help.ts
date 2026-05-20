@@ -68,12 +68,15 @@ RESOURCES:
   attachments            list, get, delete
   labels                 list
   admin-key              get, create, delete
+  app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
   atlas confluence pages get 456
   atlas confluence spaces list
+  atlas confluence app list-properties --limit 25
+  atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence classification-levels list
 `;
 
