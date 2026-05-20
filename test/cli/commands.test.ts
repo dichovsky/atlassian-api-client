@@ -3495,6 +3495,24 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('Missing required option: --filter-id');
     });
 
+    it('boards create throws when --type is invalid', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], { name: 'Board', type: 'invalid', 'filter-id': '5' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--type must be one of: scrum, kanban, simple');
+    });
+
+    it('boards create throws when --type is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'create', [], { name: 'Board', 'filter-id': '5' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --type');
+    });
+
     // B239: boards delete
     it('boards delete calls client.boards.delete with boardId', async () => {
       jiraBoardsMock.delete.mockResolvedValue(undefined);
@@ -3697,6 +3715,30 @@ describe('executeJiraCommand', () => {
       expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
         42,
         expect.objectContaining({ released: true }),
+      );
+    });
+
+    it('boards list-versions accepts released as string "true"', async () => {
+      jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('boards', 'list-versions', ['42'], { released: 'true' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ released: true }),
+      );
+    });
+
+    it('boards list-versions accepts released as string "false"', async () => {
+      jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('boards', 'list-versions', ['42'], { released: 'false' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ released: false }),
       );
     });
 
