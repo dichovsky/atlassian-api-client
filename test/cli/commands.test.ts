@@ -171,6 +171,11 @@ const jiraSprintsMock = {
   getIssues: vi.fn(),
   partialUpdate: vi.fn(),
   moveIssues: vi.fn(),
+  listProperties: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  swap: vi.fn(),
 };
 
 vi.mock('../../src/jira/client.js', () => {
@@ -2689,6 +2694,189 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('sprints', 'move-issues', [], { issues: 'KEY-1' }), GLOBALS),
       ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    // ── list-properties ──────────────────────────────────────────────────────
+
+    it('sprints list-properties calls client.sprints.listProperties with sprintId', async () => {
+      // Arrange
+      const payload = { keys: [{ self: 'https://...', key: 'my-key' }] };
+      jiraSprintsMock.listProperties.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('sprints', 'list-properties', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.listProperties).toHaveBeenCalledWith(42);
+      expect(result).toEqual(payload);
+    });
+
+    it('sprints list-properties throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    // ── get-property ─────────────────────────────────────────────────────────
+
+    it('sprints get-property calls client.sprints.getProperty with sprintId and key', async () => {
+      // Arrange
+      const payload = { key: 'my-key', value: { active: true } };
+      jiraSprintsMock.getProperty.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('sprints', 'get-property', ['42', 'my-key']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraSprintsMock.getProperty).toHaveBeenCalledWith(42, 'my-key');
+      expect(result).toEqual(payload);
+    });
+
+    it('sprints get-property throws when sprintId is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'get-property', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: sprintId',
+      );
+    });
+
+    it('sprints get-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'get-property', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    // ── set-property ─────────────────────────────────────────────────────────
+
+    it('sprints set-property parses JSON --value and calls setProperty', async () => {
+      // Arrange
+      jiraSprintsMock.setProperty.mockResolvedValue(undefined);
+      const parsed = cmd('sprints', 'set-property', ['42', 'my-key'], {
+        value: '{"foo":1}',
+      });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.setProperty).toHaveBeenCalledWith(42, 'my-key', { foo: 1 });
+      expect(result).toEqual({ set: true });
+    });
+
+    it('sprints set-property parses scalar JSON values', async () => {
+      // Arrange
+      jiraSprintsMock.setProperty.mockResolvedValue(undefined);
+
+      // Act - number
+      await executeJiraCommand(
+        cmd('sprints', 'set-property', ['1', 'count'], { value: '99' }),
+        GLOBALS,
+      );
+      // Act - boolean
+      await executeJiraCommand(
+        cmd('sprints', 'set-property', ['1', 'flag'], { value: 'true' }),
+        GLOBALS,
+      );
+      // Act - null
+      await executeJiraCommand(
+        cmd('sprints', 'set-property', ['1', 'nothing'], { value: 'null' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraSprintsMock.setProperty).toHaveBeenCalledWith(1, 'count', 99);
+      expect(jiraSprintsMock.setProperty).toHaveBeenCalledWith(1, 'flag', true);
+      expect(jiraSprintsMock.setProperty).toHaveBeenCalledWith(1, 'nothing', null);
+    });
+
+    it('sprints set-property throws when --value is not valid JSON', async () => {
+      const parsed = cmd('sprints', 'set-property', ['42', 'my-key'], { value: 'not-json' });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--value must be valid JSON',
+      );
+    });
+
+    it('sprints set-property throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'set-property', [], { value: '{}' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints set-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'set-property', ['42'], { value: '{}' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('sprints set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'set-property', ['42', 'k'], {}), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    // ── delete-property ───────────────────────────────────────────────────────
+
+    it('sprints delete-property calls client.sprints.deleteProperty and returns { deleted: true }', async () => {
+      // Arrange
+      jiraSprintsMock.deleteProperty.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('sprints', 'delete-property', ['42', 'my-key']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraSprintsMock.deleteProperty).toHaveBeenCalledWith(42, 'my-key');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('sprints delete-property throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'delete-property', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints delete-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'delete-property', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    // ── swap ─────────────────────────────────────────────────────────────────
+
+    it('sprints swap calls client.sprints.swap with sprintId and --with', async () => {
+      // Arrange
+      jiraSprintsMock.swap.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('sprints', 'swap', ['42'], { with: '99' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraSprintsMock.swap).toHaveBeenCalledWith(42, 99);
+      expect(result).toEqual({ swapped: true });
+    });
+
+    it('sprints swap throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'swap', [], { with: '99' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints swap throws when --with is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'swap', ['42'], {}), GLOBALS)).rejects.toThrow(
+        '--with',
+      );
+    });
+
+    it('sprints swap throws when --with is non-integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'swap', ['42'], { with: 'abc' }), GLOBALS),
+      ).rejects.toThrow('--with must be a positive integer');
     });
 
     it('sprints unknown action throws', async () => {

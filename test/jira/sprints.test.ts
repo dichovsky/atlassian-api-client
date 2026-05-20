@@ -323,6 +323,292 @@ describe('SprintsResource', () => {
       await expect(sprints.getIssues(0)).rejects.toThrow('sprintId must be a positive integer');
     });
   });
+
+  // ── listProperties ────────────────────────────────────────────────────────
+
+  describe('listProperties()', () => {
+    it('calls GET /sprint/{sprintId}/properties', async () => {
+      // Arrange
+      const payload = {
+        keys: [{ self: `${BASE_URL}/sprint/42/properties/my-key`, key: 'my-key' }],
+      };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await sprints.listProperties(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/sprint/42/properties`,
+      });
+    });
+
+    it('returns empty keys array when no properties exist', async () => {
+      // Arrange
+      transport.respondWith({ keys: [] });
+
+      // Act
+      const result = await sprints.listProperties(1);
+
+      // Assert
+      expect(result).toEqual({ keys: [] });
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.listProperties(0)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.listProperties(-3)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+  });
+
+  // ── getProperty ───────────────────────────────────────────────────────────
+
+  describe('getProperty()', () => {
+    it('calls GET /sprint/{sprintId}/properties/{propertyKey}', async () => {
+      // Arrange
+      const payload = { key: 'my-key', value: { foo: 'bar' } };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await sprints.getProperty(42, 'my-key');
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/sprint/42/properties/my-key`,
+      });
+    });
+
+    it('URL-encodes propertyKey with spaces and slashes', async () => {
+      // Arrange
+      transport.respondWith({ key: 'my key/with space', value: null });
+
+      // Act
+      await sprints.getProperty(5, 'my key/with space');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/sprint/5/properties/my%20key%2Fwith%20space`,
+      );
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.getProperty(0, 'key')).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.getProperty(-1, 'key')).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for empty propertyKey', async () => {
+      await expect(sprints.getProperty(1, '')).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
+    });
+  });
+
+  // ── setProperty ───────────────────────────────────────────────────────────
+
+  describe('setProperty()', () => {
+    it('calls PUT /sprint/{sprintId}/properties/{propertyKey} with object value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 200);
+      const value = { enabled: true, threshold: 42 };
+
+      // Act
+      await sprints.setProperty(42, 'my-key', value);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/sprint/42/properties/my-key`,
+        body: value,
+      });
+    });
+
+    it('accepts array value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 201);
+      const value = [1, 2, 3];
+
+      // Act
+      await sprints.setProperty(7, 'tags', value);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/sprint/7/properties/tags`,
+        body: value,
+      });
+    });
+
+    it('accepts string value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 200);
+
+      // Act
+      await sprints.setProperty(3, 'label', 'hello');
+
+      // Assert
+      expect(transport.lastCall?.options.body).toBe('hello');
+    });
+
+    it('accepts number value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 200);
+
+      // Act
+      await sprints.setProperty(3, 'count', 99);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toBe(99);
+    });
+
+    it('accepts null value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 200);
+
+      // Act
+      await sprints.setProperty(3, 'nullable', null);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toBeNull();
+    });
+
+    it('accepts boolean value', async () => {
+      // Arrange
+      transport.respondWith(undefined, 200);
+
+      // Act
+      await sprints.setProperty(3, 'flag', false);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toBe(false);
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.setProperty(0, 'key', {})).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.setProperty(-1, 'key', {})).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for empty propertyKey', async () => {
+      await expect(sprints.setProperty(1, '', {})).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
+    });
+  });
+
+  // ── deleteProperty ────────────────────────────────────────────────────────
+
+  describe('deleteProperty()', () => {
+    it('calls DELETE /sprint/{sprintId}/properties/{propertyKey}', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      const result = await sprints.deleteProperty(42, 'my-key');
+
+      // Assert
+      expect(result).toBeUndefined();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/sprint/42/properties/my-key`,
+      });
+    });
+
+    it('does not send a body', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      await sprints.deleteProperty(1, 'x');
+
+      // Assert
+      expect(transport.lastCall?.options.body).toBeUndefined();
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.deleteProperty(0, 'key')).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.deleteProperty(-1, 'key')).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for empty propertyKey', async () => {
+      await expect(sprints.deleteProperty(1, '')).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
+    });
+  });
+
+  // ── swap ──────────────────────────────────────────────────────────────────
+
+  describe('swap()', () => {
+    it('calls POST /sprint/{sprintId}/swap with body { sprintToSwapWith }', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      const result = await sprints.swap(42, 99);
+
+      // Assert
+      expect(result).toBeUndefined();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/sprint/42/swap`,
+        body: { sprintToSwapWith: 99 },
+      });
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.swap(0, 1)).rejects.toThrow('sprintId must be a positive integer');
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.swap(-1, 1)).rejects.toThrow('sprintId must be a positive integer');
+    });
+
+    it('throws ValidationError for sprintToSwapWith = 0', async () => {
+      await expect(sprints.swap(1, 0)).rejects.toThrow(
+        'sprintToSwapWith must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintToSwapWith < 0', async () => {
+      await expect(sprints.swap(1, -5)).rejects.toThrow(
+        'sprintToSwapWith must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError when swapping a sprint with itself', async () => {
+      await expect(sprints.swap(42, 42)).rejects.toThrow('cannot swap a sprint with itself');
+    });
+  });
 });
 
 describe('SprintsResource sprintId validation', () => {

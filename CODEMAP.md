@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "2f3f901ac5c5c6ba39142b95f3e60c059c2f7d1690adcda422ea94e8231bc82b",
+  "sourceHash": "4cb3ad282b7eecdce31801c4789f8542b58b34523eed133ab6f8d5b7a07c0f1f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -450,7 +450,7 @@
       "name": "CreateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 19,
+      "line": 34,
       "signature": "export interface CreateSprintData { readonly name: string; readonly originBoardId: number; readonly startDate?: string; …",
       "typeOnly": true
     },
@@ -991,7 +991,7 @@
       "name": "ListSprintIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 35,
+      "line": 50,
       "signature": "export interface ListSprintIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string…",
       "typeOnly": true
     },
@@ -1284,7 +1284,7 @@
       "name": "Sprint",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 7,
+      "line": 22,
       "signature": "export interface Sprint { readonly id: number; readonly self: string; readonly state: 'active' | 'closed' | 'future'; re…",
       "typeOnly": true
     },
@@ -1441,7 +1441,7 @@
       "name": "UpdateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 27,
+      "line": 42,
       "signature": "export interface UpdateSprintData { readonly name?: string; readonly state?: 'active' | 'closed' | 'future'; readonly st…",
       "typeOnly": true
     },
@@ -2019,37 +2019,37 @@
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 271,
+          "line": 321,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 280,
+          "line": 330,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 285,
+          "line": 335,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 290,
+          "line": 340,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 294,
+          "line": 344,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 303,
+          "line": 353,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
@@ -9521,79 +9521,125 @@
       "path": "src/jira/resources/sprints.ts",
       "symbols": [
         {
+          "name": "SprintPropertyKey",
+          "kind": "interface",
+          "line": 8,
+          "exported": true,
+          "signature": "export interface SprintPropertyKey { readonly self: string; readonly key: string; }"
+        },
+        {
+          "name": "SprintPropertyKeys",
+          "kind": "interface",
+          "line": 13,
+          "exported": true,
+          "signature": "export interface SprintPropertyKeys { readonly keys: readonly SprintPropertyKey[]; }"
+        },
+        {
+          "name": "SprintProperty",
+          "kind": "interface",
+          "line": 17,
+          "exported": true,
+          "signature": "export interface SprintProperty { readonly key: string; readonly value: unknown; }"
+        },
+        {
           "name": "Sprint",
           "kind": "interface",
-          "line": 7,
+          "line": 22,
           "exported": true,
           "signature": "export interface Sprint { readonly id: number; readonly self: string; readonly state: 'active' | 'closed' | 'future'; re…"
         },
         {
           "name": "CreateSprintData",
           "kind": "interface",
-          "line": 19,
+          "line": 34,
           "exported": true,
           "signature": "export interface CreateSprintData { readonly name: string; readonly originBoardId: number; readonly startDate?: string; …"
         },
         {
           "name": "UpdateSprintData",
           "kind": "interface",
-          "line": 27,
+          "line": 42,
           "exported": true,
           "signature": "export interface UpdateSprintData { readonly name?: string; readonly state?: 'active' | 'closed' | 'future'; readonly st…"
         },
         {
           "name": "ListSprintIssuesParams",
           "kind": "interface",
-          "line": 35,
+          "line": 50,
           "exported": true,
           "signature": "export interface ListSprintIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string…"
         },
         {
           "name": "SprintsResource",
           "kind": "class",
-          "line": 42,
+          "line": 57,
           "exported": true,
           "signature": "export class SprintsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 43
+              "line": 58
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 49
+              "line": 64
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 61
+              "line": 76
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 71
+              "line": 86
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 84
+              "line": 99
             },
             {
               "name": "partialUpdate",
               "kind": "method",
-              "line": 95
+              "line": 110
             },
             {
               "name": "moveIssues",
               "kind": "method",
-              "line": 108
+              "line": 123
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 146
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 158
+            },
+            {
+              "name": "setProperty",
+              "kind": "method",
+              "line": 173
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 188
+            },
+            {
+              "name": "swap",
+              "kind": "method",
+              "line": 202
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 131
+              "line": 220
             }
           ]
         }
@@ -9601,6 +9647,7 @@
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
+        "../../core/path.js",
         "../../core/types.js",
         "./boards.js"
       ]

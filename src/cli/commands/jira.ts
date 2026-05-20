@@ -261,9 +261,59 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
       await client.sprints.moveIssues(sprintId, issues);
       return { moved: true };
     }
+    case 'list-properties': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.listProperties(sprintId);
+    }
+    case 'get-property': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      return client.sprints.getProperty(sprintId, propertyKey);
+    }
+    case 'set-property': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let value: unknown;
+      try {
+        value = JSON.parse(valueRaw);
+      } catch {
+        throw new Error('--value must be valid JSON');
+      }
+      await client.sprints.setProperty(sprintId, propertyKey, value);
+      return { set: true };
+    }
+    case 'delete-property': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      await client.sprints.deleteProperty(sprintId, propertyKey);
+      return { deleted: true };
+    }
+    case 'swap': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      const withRaw = requireOpt(opts['with'], '--with');
+      const sprintToSwapWith = parsePositiveIntArg(withRaw, '--with');
+      await client.sprints.swap(sprintId, sprintToSwapWith);
+      return { swapped: true };
+    }
     default:
       throw new Error(
-        `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, partial-update, move-issues`,
+        `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap`,
       );
   }
 }
