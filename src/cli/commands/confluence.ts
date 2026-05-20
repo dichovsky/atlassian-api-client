@@ -28,6 +28,8 @@ export async function executeConfluenceCommand(
       return executeApp(client, cmd);
     case 'classification-levels':
       return executeClassificationLevels(client, cmd);
+    case 'content':
+      return executeContent(client, cmd);
     case 'space-role-mode':
       return executeSpaceRoleMode(client, cmd);
     default:
@@ -282,6 +284,54 @@ async function executeClassificationLevels(
     default:
       throw new Error(`Unknown classification-levels action: ${cmd.action}. Actions: list`);
   }
+}
+
+async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'convert-ids-to-types': {
+      const idsRaw = requireOpt(cmd.options['ids'], '--ids');
+      const contentIds = parseContentIds(idsRaw);
+      return client.content.convertIdsToTypes({ contentIds });
+    }
+    default:
+      throw new Error(`Unknown content action: ${cmd.action}. Actions: convert-ids-to-types`);
+  }
+}
+
+/**
+ * Parse the `--ids` flag into a non-empty array of content ids. Accepts either
+ * a JSON array (`'["1","2",3]'`) or a comma-separated string (`"1,2,3"`).
+ * JSON wins when the raw value parses successfully; otherwise we fall back to
+ * splitting on commas. Numeric strings stay strings — the server accepts both
+ * forms and we don't want to silently coerce ids that happen to be all-digit.
+ */
+function parseContentIds(raw: string): readonly (string | number)[] {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[')) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      throw new Error(`--ids: invalid JSON array: ${raw}`);
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('--ids: expected a non-empty array of content ids');
+    }
+    for (const item of parsed) {
+      if (typeof item !== 'string' && typeof item !== 'number') {
+        throw new Error('--ids: array items must be strings or numbers');
+      }
+    }
+    return parsed as readonly (string | number)[];
+  }
+  const parts = trimmed
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (parts.length === 0) {
+    throw new Error('--ids: expected a non-empty list of content ids');
+  }
+  return parts;
 }
 
 async function executeSpaceRoleMode(

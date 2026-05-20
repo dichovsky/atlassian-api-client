@@ -70,6 +70,7 @@ RESOURCES:
   admin-key              get, create, delete
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
+  content                convert-ids-to-types
   space-role-mode        get
 
 EXAMPLES:
@@ -79,6 +80,7 @@ EXAMPLES:
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence classification-levels list
+  atlas confluence content convert-ids-to-types --ids 12345,67890
   atlas confluence space-role-mode get
 `;
 

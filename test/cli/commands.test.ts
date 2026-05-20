@@ -74,6 +74,9 @@ const confluenceAppMock = {
 const confluenceClassificationLevelsMock = {
   list: vi.fn(),
 };
+const confluenceContentMock = {
+  convertIdsToTypes: vi.fn(),
+};
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
 };
@@ -90,6 +93,7 @@ vi.mock('../../src/confluence/client.js', () => {
       adminKey: confluenceAdminKeyMock,
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
+      content: confluenceContentMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
     };
   });
@@ -1094,6 +1098,104 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('classification-levels', 'unknown'), GLOBALS),
       ).rejects.toThrow('Unknown classification-levels action');
+    });
+  });
+
+  // ── content ───────────────────────────────────────────────────────────────
+
+  describe('content resource', () => {
+    it('content convert-ids-to-types parses comma-separated --ids and forwards them', async () => {
+      // Arrange
+      const payload = { results: { '12345': 'page', '67890': 'inline-comment' } };
+      confluenceContentMock.convertIdsToTypes.mockResolvedValue(payload);
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '12345,67890' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceContentMock.convertIdsToTypes).toHaveBeenCalledWith({
+        contentIds: ['12345', '67890'],
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('content convert-ids-to-types trims whitespace and drops empty entries', async () => {
+      // Arrange
+      confluenceContentMock.convertIdsToTypes.mockResolvedValue({ results: {} });
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: ' 1 , ,2 ,3 ' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceContentMock.convertIdsToTypes).toHaveBeenCalledWith({
+        contentIds: ['1', '2', '3'],
+      });
+    });
+
+    it('content convert-ids-to-types accepts a JSON array of mixed string/number ids', async () => {
+      // Arrange
+      confluenceContentMock.convertIdsToTypes.mockResolvedValue({ results: {} });
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '["12345",67890]' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceContentMock.convertIdsToTypes).toHaveBeenCalledWith({
+        contentIds: ['12345', 67890],
+      });
+    });
+
+    it('content convert-ids-to-types throws when --ids is missing', async () => {
+      const parsed = cmd('content', 'convert-ids-to-types', [], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--ids');
+    });
+
+    it('content convert-ids-to-types throws when --ids is an empty string', async () => {
+      // Arrange
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: ' , , ' });
+      // Act + Assert
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids: expected a non-empty list of content ids',
+      );
+    });
+
+    it('content convert-ids-to-types throws on invalid JSON array literal', async () => {
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '[1,2,' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids: invalid JSON array',
+      );
+    });
+
+    it('content convert-ids-to-types throws when JSON array is empty', async () => {
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '[]' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids: expected a non-empty array',
+      );
+    });
+
+    it('content convert-ids-to-types throws when JSON array has non-string/number items', async () => {
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '[1,true]' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids: array items must be strings or numbers',
+      );
+    });
+
+    it('content convert-ids-to-types throws when JSON value is not an array', async () => {
+      // Arrange — starts with `[` to trigger the JSON branch, then parses as a non-array.
+      const parsed = cmd('content', 'convert-ids-to-types', [], { ids: '[]extra' });
+      // Act + Assert — JSON.parse rejects trailing garbage, so we hit the invalid JSON branch.
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--ids: invalid JSON array',
+      );
+    });
+
+    it('content unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('content', 'unknown'), GLOBALS)).rejects.toThrow(
+        'Unknown content action',
+      );
     });
   });
 
