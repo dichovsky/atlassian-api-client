@@ -19,6 +19,7 @@ import { ContentResource } from './resources/content.js';
 import { DataPoliciesResource } from './resources/data-policies.js';
 import { DatabasesResource } from './resources/databases.js';
 import { FooterCommentsResource } from './resources/footer-comments.js';
+import { InlineCommentsResource } from './resources/inline-comments.js';
 import { SpacePermissionsResource } from './resources/space-permissions.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
 import { SpaceRolesResource } from './resources/space-roles.js';
@@ -60,6 +61,13 @@ export class ConfluenceClient {
    * navigation (`/footer-comments`, `/footer-comments/{id}/{children,likes,operations,versions}`).
    */
   readonly footerComments: FooterCommentsResource;
+  /**
+   * Inline comments resource — tenant-wide list, children, likes, operations,
+   * and version history (`/wiki/api/v2/inline-comments/…`). Per-page list and
+   * the comment lifecycle (create / get / update / delete) live on
+   * {@link CommentsResource}.
+   */
+  readonly inlineComments: InlineCommentsResource;
   /** Available space permissions resource. */
   readonly spacePermissions: SpacePermissionsResource;
   /** Space role mode resource. */
@@ -94,6 +102,7 @@ export class ConfluenceClient {
     this.dataPolicies = new DataPoliciesResource(transport, baseUrl);
     this.databases = new DatabasesResource(transport, baseUrl);
     this.footerComments = new FooterCommentsResource(transport, baseUrl);
+    this.inlineComments = new InlineCommentsResource(transport, baseUrl);
     this.spacePermissions = new SpacePermissionsResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
     this.spaceRoles = new SpaceRolesResource(transport, baseUrl);

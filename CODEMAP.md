@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "50b176c756e5c9b42d029c27cdeef06daa24dfa7bad83297eb0ed9d1fc5fe766",
+  "sourceHash": "c2d74d6ae86dfe10b493544df5b6b4885b5f62142d974e9909fa1c3a57eae1ff",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -146,7 +146,7 @@
       "name": "BulkUsersRequest",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1098,
+      "line": 906,
       "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
       "jsdoc": "Request body for `POST /users-bulk`.",
       "typeOnly": true
@@ -155,7 +155,7 @@
       "name": "BulkUsersResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1108,
+      "line": 916,
       "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
       "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted.",
       "typeOnly": true
@@ -173,7 +173,7 @@
       "name": "CheckAccessByEmailResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1136,
+      "line": 944,
       "signature": "export interface CheckAccessByEmailResponse { readonly emailsWithoutAccess?: readonly string[]; readonly invalidEmails?:…",
       "jsdoc": "Response shape for `POST /user/access/check-access-by-email`.",
       "typeOnly": true
@@ -182,7 +182,7 @@
       "name": "CheckAccessOrInviteByEmailRequest",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1126,
+      "line": 934,
       "signature": "export interface CheckAccessOrInviteByEmailRequest { readonly emails: readonly string[]; }",
       "jsdoc": "Request body for `POST /user/access/check-access-by-email` and `POST /user/access/invite-by-email`.",
       "typeOnly": true
@@ -191,7 +191,7 @@
       "name": "ClassificationLevel",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 747,
+      "line": 685,
       "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
       "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations.",
       "typeOnly": true
@@ -206,19 +206,10 @@
       "typeOnly": true
     },
     {
-      "name": "CommentSortOrder",
-      "kind": "type",
-      "file": "src/confluence/types.ts",
-      "line": 245,
-      "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
-      "jsdoc": "Sort tokens accepted by the tenant-wide `GET /footer-comments` and the per-comment `GET /footer-comments/{id}/children` endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum.",
-      "typeOnly": true
-    },
-    {
       "name": "ConfluenceAccountStatus",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 1064,
+      "line": 872,
       "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
       "jsdoc": "Account status of a Confluence user.",
       "typeOnly": true
@@ -227,7 +218,7 @@
       "name": "ConfluenceAccountType",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 1067,
+      "line": 875,
       "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
       "jsdoc": "Account type of a Confluence user.",
       "typeOnly": true
@@ -236,7 +227,7 @@
       "name": "ConfluenceAttachmentSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 424,
+      "line": 362,
       "signature": "export type AttachmentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/attachments`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `AttachmentSortOrder` enum.",
       "typeOnly": true,
@@ -246,7 +237,7 @@
       "name": "ConfluenceBlogPostSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 442,
+      "line": 380,
       "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum.",
       "typeOnly": true,
@@ -256,7 +247,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 29,
+      "line": 28,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -264,7 +255,7 @@
       "name": "ConfluenceContentType",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 836,
+      "line": 774,
       "signature": "export type ConfluenceContentType = | 'page' | 'blogpost' | 'attachment' | 'footer-comment' | 'inline-comment';",
       "jsdoc": "Built-in v2 Confluence content types. Comment content is split into `inline-comment` and `footer-comment` (distinct from v1, which represented both as the single `comment` type). Custom content types are server-defined strings that fall outside this union — see {@link ConvertContentIdsToTypesResponse}.",
       "typeOnly": true
@@ -273,7 +264,7 @@
       "name": "ConfluenceListLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 392,
+      "line": 330,
       "signature": "export interface ListLabelsParams { readonly prefix?: string; readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for listing labels on a page or blog post.",
       "typeOnly": true,
@@ -283,7 +274,7 @@
       "name": "ConfluenceListTasksParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 694,
+      "line": 632,
       "signature": "export interface ListTasksParams { readonly 'body-format'?: BodyFormat; readonly includeBlankTasks?: boolean; readonly s…",
       "jsdoc": "Parameters for listing Confluence tasks.",
       "typeOnly": true,
@@ -293,7 +284,7 @@
       "name": "ConfluencePageSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 471,
+      "line": 409,
       "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
       "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum.",
       "typeOnly": true,
@@ -303,7 +294,7 @@
       "name": "ConfluenceTask",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 675,
+      "line": 613,
       "signature": "export interface ConfluenceTask { readonly id: string; readonly localId?: string; readonly spaceId?: string; readonly pa…",
       "jsdoc": "Confluence Task.",
       "typeOnly": true
@@ -312,7 +303,7 @@
       "name": "ConfluenceUser",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1079,
+      "line": 887,
       "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
       "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints.",
       "typeOnly": true
@@ -321,7 +312,7 @@
       "name": "ConfluenceUserIcon",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1073,
+      "line": 881,
       "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
       "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it.",
       "typeOnly": true
@@ -348,7 +339,7 @@
       "name": "ContentProperty",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 498,
+      "line": 436,
       "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
       "jsdoc": "Confluence Content Property.",
       "typeOnly": true
@@ -357,7 +348,7 @@
       "name": "ContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 1243,
+      "line": 1051,
       "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
       "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema.",
       "typeOnly": true
@@ -366,7 +357,7 @@
       "name": "ContentVersion",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 726,
+      "line": 664,
       "signature": "export interface ContentVersion { readonly number: number; readonly message?: string; readonly minorEdit?: boolean; read…",
       "jsdoc": "Confluence Content Version.",
       "typeOnly": true
@@ -375,7 +366,7 @@
       "name": "ConvertContentIdsToTypesData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 850,
+      "line": 788,
       "signature": "export interface ConvertContentIdsToTypesData { readonly contentIds: readonly (string | number)[]; }",
       "jsdoc": "Request body for `POST /content/convert-ids-to-types`.",
       "typeOnly": true
@@ -384,7 +375,7 @@
       "name": "ConvertContentIdsToTypesResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 862,
+      "line": 800,
       "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
       "jsdoc": "Response shape for `POST /content/convert-ids-to-types`.",
       "typeOnly": true
@@ -402,7 +393,7 @@
       "name": "CreateContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 515,
+      "line": 453,
       "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
       "jsdoc": "Request body for creating a content property on a page.",
       "typeOnly": true
@@ -411,7 +402,7 @@
       "name": "CreateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 622,
+      "line": 560,
       "signature": "export interface CreateCustomContentData { readonly type: string; readonly status?: 'current' | 'draft'; readonly spaceI…",
       "jsdoc": "Request body for creating a custom content item.",
       "typeOnly": true
@@ -428,7 +419,7 @@
       "name": "CreateDatabaseData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1177,
+      "line": 985,
       "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
       "jsdoc": "Request body for creating a database via `POST /databases`.",
       "typeOnly": true
@@ -437,7 +428,7 @@
       "name": "CreateDatabaseParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1184,
+      "line": 992,
       "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
       "jsdoc": "Query parameters for `POST /databases`.",
       "typeOnly": true
@@ -471,7 +462,7 @@
       "name": "CreateInlineCommentData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 369,
+      "line": 245,
       "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
       "jsdoc": "Request body for creating an inline comment.",
       "typeOnly": true
@@ -504,15 +495,6 @@
       "typeOnly": true
     },
     {
-      "name": "CreateSpaceRoleData",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 1003,
-      "signature": "export interface CreateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
-      "jsdoc": "Request body for `POST /space-roles`. All three fields are required by the server — there are no optional inputs on the create path. `spacePermissions` is a list of space-permission ids (e.g. `\"read/space\"`) obtained from `GET /space-permissions`.",
-      "typeOnly": true
-    },
-    {
       "name": "CreateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
@@ -524,7 +506,7 @@
       "name": "CreateWhiteboardData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 664,
+      "line": 602,
       "signature": "export interface CreateWhiteboardData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; r…",
       "jsdoc": "Request body for creating a whiteboard.",
       "typeOnly": true
@@ -551,7 +533,7 @@
       "name": "CustomContent",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 587,
+      "line": 525,
       "signature": "export interface CustomContent { readonly id: string; readonly type: string; readonly status: string; readonly title?: s…",
       "jsdoc": "Confluence Custom Content item.",
       "typeOnly": true
@@ -576,7 +558,7 @@
       "name": "DataPolicyMetadata",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 782,
+      "line": 720,
       "signature": "export interface DataPolicyMetadata { readonly anyContentBlocked?: boolean; }",
       "jsdoc": "Workspace-level data-policy metadata, returned by `GET /data-policies/metadata`. The OpenAPI spec exposes a single optional flag indicating whether any content in the workspace is blocked from the requesting client app.",
       "typeOnly": true
@@ -585,7 +567,7 @@
       "name": "DataPolicySpace",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 798,
+      "line": 736,
       "signature": "export interface DataPolicySpace { readonly id?: string; readonly key?: string; readonly name?: string; readonly descrip…",
       "jsdoc": "A space entry returned by `GET /data-policies/spaces`. All fields are declared optional in the OpenAPI spec; callers should treat missing properties as \"not surfaced for this caller\".",
       "typeOnly": true
@@ -594,7 +576,7 @@
       "name": "DataPolicySpaceFlags",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 788,
+      "line": 726,
       "signature": "export interface DataPolicySpaceFlags { readonly anyContentBlocked?: boolean; }",
       "jsdoc": "Per-space data-policy block returned inside {@link DataPolicySpace}.",
       "typeOnly": true
@@ -603,7 +585,7 @@
       "name": "DataPolicySpaceSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 812,
+      "line": 750,
       "signature": "export type DataPolicySpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | '-name';",
       "jsdoc": "Sort order tokens accepted by `/data-policies/spaces`. Mirrors the `SpaceSortOrder` enum in the OpenAPI spec — `-` prefix flips direction.",
       "typeOnly": true
@@ -612,7 +594,7 @@
       "name": "Database",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1154,
+      "line": 962,
       "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
       "jsdoc": "Confluence Database content.",
       "typeOnly": true
@@ -621,7 +603,7 @@
       "name": "DatabaseAncestor",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1190,
+      "line": 998,
       "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
       "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`.",
       "typeOnly": true
@@ -630,7 +612,7 @@
       "name": "DatabaseAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1207,
+      "line": 1015,
       "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
       "jsdoc": "Response shape for `GET /databases/{id}/ancestors`.",
       "typeOnly": true
@@ -639,7 +621,7 @@
       "name": "DatabaseChild",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1230,
+      "line": 1038,
       "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
       "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`.",
       "typeOnly": true
@@ -648,7 +630,7 @@
       "name": "DatabaseDescendant",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1212,
+      "line": 1020,
       "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
       "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`.",
       "typeOnly": true
@@ -657,7 +639,7 @@
       "name": "DatabaseOperation",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1263,
+      "line": 1071,
       "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`.",
       "typeOnly": true
@@ -666,7 +648,7 @@
       "name": "DatabaseOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1269,
+      "line": 1077,
       "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
       "jsdoc": "Response shape for `GET /databases/{id}/operations`.",
       "typeOnly": true
@@ -678,15 +660,6 @@
       "line": 164,
       "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
       "jsdoc": "Parameters for deleting a Confluence page.",
-      "typeOnly": true
-    },
-    {
-      "name": "DeleteSpaceRoleResponse",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 1056,
-      "signature": "export interface DeleteSpaceRoleResponse { readonly taskId?: string; }",
-      "jsdoc": "Response shape for `DELETE /space-roles/{id}`. The server returns 202 with a single `taskId` callers can poll to confirm the role's permission assignments have been torn down asynchronously.",
       "typeOnly": true
     },
     {
@@ -723,69 +696,6 @@
       "typeOnly": true
     },
     {
-      "name": "FooterCommentChild",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 289,
-      "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
-      "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentLike",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 305,
-      "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
-      "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentLikeCount",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 300,
-      "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
-      "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentOperation",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 316,
-      "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
-      "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentOperationsResponse",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 322,
-      "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
-      "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentVersionDetail",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 351,
-      "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
-      "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`.",
-      "typeOnly": true
-    },
-    {
-      "name": "FooterCommentVersionSummary",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 335,
-      "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
-      "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`.",
-      "typeOnly": true
-    },
-    {
       "name": "ForbiddenError",
       "kind": "class",
       "file": "src/core/errors.ts",
@@ -806,7 +716,7 @@
       "name": "GetCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 616,
+      "line": 554,
       "signature": "export interface GetCustomContentParams { readonly 'body-format'?: BodyFormat; readonly version?: number; }",
       "jsdoc": "Parameters for retrieving a single custom content item.",
       "typeOnly": true
@@ -815,18 +725,9 @@
       "name": "GetDatabaseParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1278,
+      "line": 1086,
       "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
       "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
-      "typeOnly": true
-    },
-    {
-      "name": "GetFooterCommentParams",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 270,
-      "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
-      "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip.",
       "typeOnly": true
     },
     {
@@ -851,7 +752,7 @@
       "name": "GetTaskParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 714,
+      "line": 652,
       "signature": "export interface GetTaskParams { readonly 'body-format'?: BodyFormat; }",
       "jsdoc": "Parameters for retrieving a single Confluence task.",
       "typeOnly": true
@@ -879,6 +780,51 @@
       "line": 78,
       "signature": "export interface InlineComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
       "jsdoc": "Confluence Inline Comment.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentLikeUser",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 306,
+      "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
+      "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentLikesCount",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 297,
+      "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
+      "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentOperation",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 311,
+      "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
+      "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 317,
+      "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
+      "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentSortOrder",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 264,
+      "signature": "export type InlineCommentSortOrder = 'created-date' | '-created-date';",
+      "jsdoc": "Sort tokens accepted by tenant-wide `GET /inline-comments`. The default direction is ascending; prefix with `-` for descending. Mirrors the `CommentSortOrder` enum in the OpenAPI spec.",
       "typeOnly": true
     },
     {
@@ -981,7 +927,7 @@
       "name": "LabelSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 402,
+      "line": 340,
       "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
       "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum.",
       "typeOnly": true
@@ -990,7 +936,7 @@
       "name": "ListAllLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 411,
+      "line": 349,
       "signature": "export interface ListAllLabelsParams { readonly 'label-id'?: string | readonly (string | number)[]; readonly prefix?: st…",
       "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both are comma-separated lists at the wire level). Callers may pass either a string (already comma-joined) or a non-empty array; the resource flattens arrays via `join(',')` before shipping.",
       "typeOnly": true
@@ -999,7 +945,7 @@
       "name": "ListAttachmentsByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 431,
+      "line": 369,
       "signature": "export interface ListAttachmentsByLabelParams { readonly sort?: AttachmentSortOrder; readonly limit?: number; readonly c…",
       "jsdoc": "Parameters for `GET /labels/{id}/attachments`.",
       "typeOnly": true
@@ -1008,7 +954,7 @@
       "name": "ListAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 384,
+      "line": 322,
       "signature": "export interface ListAttachmentsParams { readonly limit?: number; readonly cursor?: string; readonly mediaType?: string;…",
       "jsdoc": "Parameters for listing attachments on a page or blog post.",
       "typeOnly": true
@@ -1017,7 +963,7 @@
       "name": "ListBlogPostsByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 451,
+      "line": 389,
       "signature": "export interface ListBlogPostsByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'bod…",
       "jsdoc": "Parameters for `GET /labels/{id}/blogposts`.",
       "typeOnly": true
@@ -1051,7 +997,7 @@
       "name": "ListClassificationLevelsResponse",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 772,
+      "line": 710,
       "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
       "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}.",
       "typeOnly": true
@@ -1060,7 +1006,7 @@
       "name": "ListContentPropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 508,
+      "line": 446,
       "signature": "export interface ListContentPropertiesParams { readonly key?: string; readonly limit?: number; readonly cursor?: string;…",
       "jsdoc": "Parameters for listing content properties on a page.",
       "typeOnly": true
@@ -1069,7 +1015,7 @@
       "name": "ListCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 603,
+      "line": 541,
       "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly spaceId?: string; read…",
       "jsdoc": "Parameters for listing custom content items.",
       "typeOnly": true
@@ -1086,7 +1032,7 @@
       "name": "ListDataPolicySpacesParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 815,
+      "line": 753,
       "signature": "export interface ListDataPolicySpacesParams { readonly ids?: readonly string[]; readonly keys?: readonly string[]; reado…",
       "jsdoc": "Query parameters for `GET /data-policies/spaces`.",
       "typeOnly": true
@@ -1095,7 +1041,7 @@
       "name": "ListDatabaseAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1196,
+      "line": 1004,
       "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing database ancestors.",
       "typeOnly": true
@@ -1104,7 +1050,7 @@
       "name": "ListDatabaseChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1256,
+      "line": 1064,
       "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
       "jsdoc": "Parameters for listing direct children of a database.",
       "typeOnly": true
@@ -1113,7 +1059,7 @@
       "name": "ListDatabaseDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1223,
+      "line": 1031,
       "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
       "jsdoc": "Parameters for listing database descendants.",
       "typeOnly": true
@@ -1122,7 +1068,7 @@
       "name": "ListDatabasePropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1286,
+      "line": 1094,
       "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
       "jsdoc": "Parameters for listing content properties on a database.",
       "typeOnly": true
@@ -1144,33 +1090,6 @@
       "typeOnly": true
     },
     {
-      "name": "ListFooterCommentChildrenParams",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 281,
-      "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
-      "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`.",
-      "typeOnly": true
-    },
-    {
-      "name": "ListFooterCommentLikeUsersParams",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 310,
-      "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
-      "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`.",
-      "typeOnly": true
-    },
-    {
-      "name": "ListFooterCommentVersionsParams",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 327,
-      "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
-      "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`.",
-      "typeOnly": true
-    },
-    {
       "name": "ListFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1180,19 +1099,46 @@
       "typeOnly": true
     },
     {
-      "name": "ListFooterCommentsTenantParams",
+      "name": "ListInlineCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 258,
-      "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
-      "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list).",
+      "line": 275,
+      "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonl…",
+      "jsdoc": "Parameters for `GET /inline-comments/{id}/children`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListInlineCommentLikeUsersParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 282,
+      "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
+      "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListInlineCommentVersionsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 288,
+      "signature": "export interface ListInlineCommentVersionsParams { readonly limit?: number; readonly cursor?: string; }",
+      "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListInlineCommentsAllParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 267,
+      "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: BodyFormat; readonly sort?: InlineCommentSortOrd…",
+      "jsdoc": "Parameters for tenant-wide `GET /inline-comments`.",
       "typeOnly": true
     },
     {
       "name": "ListInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 362,
+      "line": 238,
       "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
       "jsdoc": "Parameters for listing inline comments on a page or blog post.",
       "typeOnly": true
@@ -1210,7 +1156,7 @@
       "name": "ListLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 392,
+      "line": 330,
       "signature": "export interface ListLabelsParams { readonly prefix?: string; readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for listing labels on a page or blog post.",
       "typeOnly": true
@@ -1219,7 +1165,7 @@
       "name": "ListPagesByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 482,
+      "line": 420,
       "signature": "export interface ListPagesByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'body-fo…",
       "jsdoc": "Parameters for `GET /labels/{id}/pages`.",
       "typeOnly": true
@@ -1246,18 +1192,9 @@
       "name": "ListSpacePermissionsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 885,
+      "line": 823,
       "signature": "export interface ListSpacePermissionsParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Query parameters for `GET /space-permissions`.",
-      "typeOnly": true
-    },
-    {
-      "name": "ListSpaceRolesParams",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 968,
-      "signature": "export interface ListSpaceRolesParams { readonly 'space-id'?: string; readonly 'role-type'?: SpaceRoleType; readonly 'pr…",
-      "jsdoc": "Query parameters for `GET /space-roles`. All filters are optional and apply server-side; the response is the standard `{ results, _links }` cursor envelope.",
       "typeOnly": true
     },
     {
@@ -1281,7 +1218,7 @@
       "name": "ListVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 735,
+      "line": 673,
       "signature": "export interface ListVersionsParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for listing content versions.",
       "typeOnly": true
@@ -1478,7 +1415,7 @@
       "name": "ResetDatabaseClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1325,
+      "line": 1133,
       "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
       "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`.",
       "typeOnly": true
@@ -1548,54 +1485,18 @@
       "name": "SpacePermission",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 873,
+      "line": 811,
       "signature": "export interface SpacePermission { readonly id: string; readonly displayName?: string; readonly description?: string; re…",
       "jsdoc": "A definition of an available space permission, as returned by `GET /space-permissions`. These describe the permissions the platform supports; per-space assignments live under `/spaces/{id}/permissions`.",
-      "typeOnly": true
-    },
-    {
-      "name": "SpaceRole",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 950,
-      "signature": "export interface SpaceRole { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; readonly descr…",
-      "jsdoc": "A Confluence space role definition, as returned by the v2 `/space-roles` endpoints. All fields are documented optional in the OpenAPI spec; callers should treat any missing property as \"not surfaced for this caller\".",
-      "typeOnly": true
-    },
-    {
-      "name": "SpaceRoleDetail",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 990,
-      "signature": "export interface SpaceRoleDetail extends SpaceRole { readonly _links?: { readonly base?: string; }; }",
-      "jsdoc": "Response shape for `GET /space-roles/{id}`. Mirrors {@link SpaceRole} with an additional optional `_links.base` Confluence site URL the server inlines on the singular read. The OpenAPI spec models this as an `allOf` composition; we flatten it here for callers that only need the `id` / `type` / `name` fields and ignore the link block.",
       "typeOnly": true
     },
     {
       "name": "SpaceRoleMode",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 927,
+      "line": 865,
       "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
       "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`.",
-      "typeOnly": true
-    },
-    {
-      "name": "SpaceRolePrincipalType",
-      "kind": "type",
-      "file": "src/confluence/types.ts",
-      "line": 943,
-      "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
-      "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class.",
-      "typeOnly": true
-    },
-    {
-      "name": "SpaceRoleType",
-      "kind": "type",
-      "file": "src/confluence/types.ts",
-      "line": 937,
-      "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
-      "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant.",
       "typeOnly": true
     },
     {
@@ -1672,7 +1573,7 @@
       "name": "UpdateContentPropertyData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 521,
+      "line": 459,
       "signature": "export interface UpdateContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { readonly…",
       "jsdoc": "Request body for updating a content property on a page.",
       "typeOnly": true
@@ -1681,7 +1582,7 @@
       "name": "UpdateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 636,
+      "line": 574,
       "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current' | 'dra…",
       "jsdoc": "Request body for updating a custom content item.",
       "typeOnly": true
@@ -1698,7 +1599,7 @@
       "name": "UpdateDatabaseClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1313,
+      "line": 1121,
       "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
       "jsdoc": "Request body for `PUT /databases/{id}/classification-level`.",
       "typeOnly": true
@@ -1707,7 +1608,7 @@
       "name": "UpdateDatabasePropertyData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1300,
+      "line": 1108,
       "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
       "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`.",
       "typeOnly": true
@@ -1756,24 +1657,6 @@
       "typeOnly": true
     },
     {
-      "name": "UpdateSpaceRoleData",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 1018,
-      "signature": "export interface UpdateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
-      "jsdoc": "Request body for `PUT /space-roles/{id}`. The same three required fields as {@link CreateSpaceRoleData}, plus two optional reassignment fields used when the role being modified currently has anonymous-access or guest assignments that need to migrate to another role.",
-      "typeOnly": true
-    },
-    {
-      "name": "UpdateSpaceRoleResponse",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 1042,
-      "signature": "export interface UpdateSpaceRoleResponse { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; …",
-      "jsdoc": "Response shape for `PUT /space-roles/{id}`. The server returns 202 along with the updated role metadata and a `taskId` to poll for the async permission-rewrite progress.",
-      "typeOnly": true
-    },
-    {
       "name": "UpdateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
@@ -1785,7 +1668,7 @@
       "name": "UpdateTaskData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 719,
+      "line": 657,
       "signature": "export interface UpdateTaskData { readonly status: 'incomplete' | 'complete'; }",
       "jsdoc": "Request body for updating a Confluence task.",
       "typeOnly": true
@@ -1808,15 +1691,6 @@
       "jsdoc": "Validation error for invalid config or parameters."
     },
     {
-      "name": "VersionSortOrder",
-      "kind": "type",
-      "file": "src/confluence/types.ts",
-      "line": 255,
-      "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
-      "jsdoc": "Sort tokens accepted by `GET /footer-comments/{id}/versions`. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable.",
-      "typeOnly": true
-    },
-    {
       "name": "Webhook",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
@@ -1828,7 +1702,7 @@
       "name": "Whiteboard",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 651,
+      "line": 589,
       "signature": "export interface Whiteboard { readonly id: string; readonly title?: string; readonly status?: string; readonly spaceId?:…",
       "jsdoc": "Confluence Whiteboard.",
       "typeOnly": true
@@ -1961,7 +1835,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 18,
+          "line": 15,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -1969,279 +1843,248 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 68,
+          "line": 63,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 117,
+          "line": 112,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 131,
+          "line": 126,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 173,
+          "line": 168,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 258,
+          "line": 253,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 274,
+          "line": 269,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 295,
+          "line": 290,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 357,
+          "line": 352,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 363,
+          "line": 358,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 395,
+          "line": 390,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 403,
+          "line": 398,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 415,
+          "line": 410,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 434,
+          "line": 429,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 463,
+          "line": 458,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 491,
+          "line": 486,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 500,
+          "line": 495,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 517,
+          "line": 512,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
-        },
-        {
-          "name": "executeSpaceRoles",
-          "kind": "function",
-          "line": 529,
-          "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
-        },
-        {
-          "name": "SPACE_ROLE_TYPES",
-          "kind": "variable",
-          "line": 581,
-          "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
-        },
-        {
-          "name": "SPACE_ROLE_PRINCIPAL_TYPES",
-          "kind": "variable",
-          "line": 583,
-          "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
-        },
-        {
-          "name": "parseSpacePermissions",
-          "kind": "function",
-          "line": 596,
-          "signature": "function parseSpacePermissions(raw: string): readonly string[]",
-          "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 607,
+          "line": 524,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 643,
+          "line": 560,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 645,
+          "line": 562,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 669,
+          "line": 586,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 680,
+          "line": 597,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 698,
+          "line": 615,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeFooterComments",
+          "name": "executeInlineComments",
           "kind": "function",
-          "line": 804,
-          "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+          "line": 721,
+          "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "INLINE_COMMENT_SORT_ORDERS",
+          "kind": "variable",
+          "line": 798,
+          "signature": "const INLINE_COMMENT_SORT_ORDERS: readonly InlineCommentSortOrder[] = [ 'created-date', '-created-date', ];"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 895,
+          "line": 803,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 900,
+          "line": 808,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 905,
+          "line": 813,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 909,
+          "line": 817,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 923,
+          "line": 831,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 939,
+          "line": 847,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 953,
+          "line": 861,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 966,
+          "line": 874,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
-        },
-        {
-          "name": "COMMENT_SORT_ORDERS",
-          "kind": "variable",
-          "line": 968,
-          "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
-        },
-        {
-          "name": "VERSION_SORT_ORDERS",
-          "kind": "variable",
-          "line": 975,
-          "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 977,
+          "line": 876,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 986,
+          "line": 885,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 995,
+          "line": 894,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1002,
+          "line": 901,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1011,
+          "line": 910,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1022,
+          "line": 921,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1024,
+          "line": 923,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -2639,13 +2482,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 126,
+          "line": 119,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 149,
+          "line": 142,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2806,7 +2649,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 112,
+          "line": 100,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2917,7 +2760,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 29,
+          "line": 28,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2925,122 +2768,117 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 30
+              "line": 29
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 31
+              "line": 30
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 32
+              "line": 31
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 33
+              "line": 32
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 34
+              "line": 33
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 35
+              "line": 34
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 37
+              "line": 36
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 39
+              "line": 38
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 41
+              "line": 40
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 43
+              "line": 42
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 45
+              "line": 44
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 47
+              "line": 46
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 49
+              "line": 48
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 51
+              "line": 50
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 53
+              "line": 52
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 55
+              "line": 54
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 57
+              "line": 56
             },
             {
-              "name": "footerComments",
+              "name": "inlineComments",
               "kind": "property",
-              "line": 62
+              "line": 63
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 64
+              "line": 65
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 66
-            },
-            {
-              "name": "spaceRoles",
-              "kind": "property",
-              "line": 68
+              "line": 67
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 70
+              "line": 69
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 72
+              "line": 71
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 74
+              "line": 73
             }
           ]
         }
@@ -3060,12 +2898,11 @@
         "./resources/custom-content.js",
         "./resources/data-policies.js",
         "./resources/databases.js",
-        "./resources/footer-comments.js",
+        "./resources/inline-comments.js",
         "./resources/labels.js",
         "./resources/pages.js",
         "./resources/space-permissions.js",
         "./resources/space-role-mode.js",
-        "./resources/space-roles.js",
         "./resources/spaces.js",
         "./resources/tasks.js",
         "./resources/users-bulk.js",
@@ -3211,12 +3048,12 @@
         },
         {
           "kind": "named",
-          "from": "./resources/footer-comments.js",
+          "from": "./resources/inline-comments.js",
           "typeOnly": false,
           "names": [
             {
-              "exported": "FooterCommentsResource",
-              "original": "FooterCommentsResource"
+              "exported": "InlineCommentsResource",
+              "original": "InlineCommentsResource"
             }
           ]
         },
@@ -3261,17 +3098,6 @@
             {
               "exported": "SpaceRoleModeResource",
               "original": "SpaceRoleModeResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/space-roles.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SpaceRolesResource",
-              "original": "SpaceRolesResource"
             }
           ]
         },
@@ -3675,60 +3501,40 @@
               "original": "ResetDatabaseClassificationLevelData"
             },
             {
-              "exported": "CommentSortOrder",
-              "original": "CommentSortOrder"
+              "exported": "InlineCommentSortOrder",
+              "original": "InlineCommentSortOrder"
             },
             {
-              "exported": "VersionSortOrder",
-              "original": "VersionSortOrder"
+              "exported": "ListInlineCommentsAllParams",
+              "original": "ListInlineCommentsAllParams"
             },
             {
-              "exported": "ListFooterCommentsTenantParams",
-              "original": "ListFooterCommentsTenantParams"
+              "exported": "ListInlineCommentChildrenParams",
+              "original": "ListInlineCommentChildrenParams"
             },
             {
-              "exported": "GetFooterCommentParams",
-              "original": "GetFooterCommentParams"
+              "exported": "ListInlineCommentLikeUsersParams",
+              "original": "ListInlineCommentLikeUsersParams"
             },
             {
-              "exported": "ListFooterCommentChildrenParams",
-              "original": "ListFooterCommentChildrenParams"
+              "exported": "ListInlineCommentVersionsParams",
+              "original": "ListInlineCommentVersionsParams"
             },
             {
-              "exported": "FooterCommentChild",
-              "original": "FooterCommentChild"
+              "exported": "InlineCommentLikesCount",
+              "original": "InlineCommentLikesCount"
             },
             {
-              "exported": "FooterCommentLikeCount",
-              "original": "FooterCommentLikeCount"
+              "exported": "InlineCommentLikeUser",
+              "original": "InlineCommentLikeUser"
             },
             {
-              "exported": "FooterCommentLike",
-              "original": "FooterCommentLike"
+              "exported": "InlineCommentOperation",
+              "original": "InlineCommentOperation"
             },
             {
-              "exported": "ListFooterCommentLikeUsersParams",
-              "original": "ListFooterCommentLikeUsersParams"
-            },
-            {
-              "exported": "FooterCommentOperation",
-              "original": "FooterCommentOperation"
-            },
-            {
-              "exported": "FooterCommentOperationsResponse",
-              "original": "FooterCommentOperationsResponse"
-            },
-            {
-              "exported": "ListFooterCommentVersionsParams",
-              "original": "ListFooterCommentVersionsParams"
-            },
-            {
-              "exported": "FooterCommentVersionSummary",
-              "original": "FooterCommentVersionSummary"
-            },
-            {
-              "exported": "FooterCommentVersionDetail",
-              "original": "FooterCommentVersionDetail"
+              "exported": "InlineCommentOperationsResponse",
+              "original": "InlineCommentOperationsResponse"
             },
             {
               "exported": "SpacePermission",
@@ -3741,42 +3547,6 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
-            },
-            {
-              "exported": "SpaceRole",
-              "original": "SpaceRole"
-            },
-            {
-              "exported": "SpaceRoleDetail",
-              "original": "SpaceRoleDetail"
-            },
-            {
-              "exported": "SpaceRoleType",
-              "original": "SpaceRoleType"
-            },
-            {
-              "exported": "SpaceRolePrincipalType",
-              "original": "SpaceRolePrincipalType"
-            },
-            {
-              "exported": "ListSpaceRolesParams",
-              "original": "ListSpaceRolesParams"
-            },
-            {
-              "exported": "CreateSpaceRoleData",
-              "original": "CreateSpaceRoleData"
-            },
-            {
-              "exported": "UpdateSpaceRoleData",
-              "original": "UpdateSpaceRoleData"
-            },
-            {
-              "exported": "UpdateSpaceRoleResponse",
-              "original": "UpdateSpaceRoleResponse"
-            },
-            {
-              "exported": "DeleteSpaceRoleResponse",
-              "original": "DeleteSpaceRoleResponse"
             },
             {
               "exported": "ConfluenceUser",
@@ -4450,92 +4220,6 @@
       ]
     },
     {
-      "path": "src/confluence/resources/footer-comments.ts",
-      "symbols": [
-        {
-          "name": "FooterCommentsResource",
-          "kind": "class",
-          "line": 36,
-          "exported": true,
-          "signature": "export class FooterCommentsResource",
-          "jsdoc": "Resource for the tenant-wide Confluence v2 footer-comments surface (`/wiki/api/v2/footer-comments` and its `{id}/…` sub-collections).",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 37
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 45
-            },
-            {
-              "name": "listAll",
-              "kind": "method",
-              "line": 64
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 78
-            },
-            {
-              "name": "listChildren",
-              "kind": "method",
-              "line": 109
-            },
-            {
-              "name": "listChildrenAll",
-              "kind": "method",
-              "line": 129
-            },
-            {
-              "name": "getLikeCount",
-              "kind": "method",
-              "line": 153
-            },
-            {
-              "name": "listLikeUsers",
-              "kind": "method",
-              "line": 162
-            },
-            {
-              "name": "listLikeUsersAll",
-              "kind": "method",
-              "line": 180
-            },
-            {
-              "name": "getOperations",
-              "kind": "method",
-              "line": 197
-            },
-            {
-              "name": "listVersions",
-              "kind": "method",
-              "line": 208
-            },
-            {
-              "name": "listVersionsAll",
-              "kind": "method",
-              "line": 230
-            },
-            {
-              "name": "getVersion",
-              "kind": "method",
-              "line": 247
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/pagination.js",
-        "../../core/path.js",
-        "../../core/types.js",
-        "../types.js"
-      ]
-    },
-    {
       "path": "src/confluence/resources/index.ts",
       "reExports": [
         {
@@ -4590,6 +4274,17 @@
             {
               "exported": "CustomContentResource",
               "original": "CustomContentResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./inline-comments.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "InlineCommentsResource",
+              "original": "InlineCommentsResource"
             }
           ]
         },
@@ -4659,6 +4354,88 @@
             }
           ]
         }
+      ]
+    },
+    {
+      "path": "src/confluence/resources/inline-comments.ts",
+      "symbols": [
+        {
+          "name": "InlineCommentsResource",
+          "kind": "class",
+          "line": 37,
+          "exported": true,
+          "signature": "export class InlineCommentsResource",
+          "jsdoc": "Resource for the tenant-wide Confluence v2 inline-comments surface.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 38
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 53
+            },
+            {
+              "name": "listAll",
+              "kind": "method",
+              "line": 72
+            },
+            {
+              "name": "listChildren",
+              "kind": "method",
+              "line": 86
+            },
+            {
+              "name": "listChildrenAll",
+              "kind": "method",
+              "line": 105
+            },
+            {
+              "name": "getLikesCount",
+              "kind": "method",
+              "line": 123
+            },
+            {
+              "name": "listLikeUsers",
+              "kind": "method",
+              "line": 132
+            },
+            {
+              "name": "listLikeUsersAll",
+              "kind": "method",
+              "line": 150
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 167
+            },
+            {
+              "name": "listVersions",
+              "kind": "method",
+              "line": 178
+            },
+            {
+              "name": "listVersionsAll",
+              "kind": "method",
+              "line": 196
+            },
+            {
+              "name": "getVersion",
+              "kind": "method",
+              "line": 217
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/errors.js",
+        "../../core/pagination.js",
+        "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
       ]
     },
     {
@@ -4885,62 +4662,6 @@
         }
       ],
       "imports": [
-        "../../core/types.js",
-        "../types.js"
-      ]
-    },
-    {
-      "path": "src/confluence/resources/space-roles.ts",
-      "symbols": [
-        {
-          "name": "SpaceRolesResource",
-          "kind": "class",
-          "line": 34,
-          "exported": true,
-          "signature": "export class SpaceRolesResource",
-          "jsdoc": "Resource for the Confluence v2 `space-roles` API.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 35
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 41
-            },
-            {
-              "name": "listAll",
-              "kind": "method",
-              "line": 61
-            },
-            {
-              "name": "create",
-              "kind": "method",
-              "line": 80
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 95
-            },
-            {
-              "name": "update",
-              "kind": "method",
-              "line": 112
-            },
-            {
-              "name": "delete",
-              "kind": "method",
-              "line": 127
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/pagination.js",
-        "../../core/path.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -5375,121 +5096,9 @@
           "jsdoc": "Request body for updating an existing comment."
         },
         {
-          "name": "CommentSortOrder",
-          "kind": "type",
-          "line": 245,
-          "exported": true,
-          "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
-          "jsdoc": "Sort tokens accepted by the tenant-wide `GET /footer-comments` and the per-comment `GET /footer-comments/{id}/children` endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum."
-        },
-        {
-          "name": "VersionSortOrder",
-          "kind": "type",
-          "line": 255,
-          "exported": true,
-          "signature": "export type VersionSortOrder = 'modified-date' | '-modified-date';",
-          "jsdoc": "Sort tokens accepted by `GET /footer-comments/{id}/versions`. Mirrors the OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable."
-        },
-        {
-          "name": "ListFooterCommentsTenantParams",
-          "kind": "interface",
-          "line": 258,
-          "exported": true,
-          "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
-          "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list)."
-        },
-        {
-          "name": "GetFooterCommentParams",
-          "kind": "interface",
-          "line": 270,
-          "exported": true,
-          "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
-          "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip."
-        },
-        {
-          "name": "ListFooterCommentChildrenParams",
-          "kind": "interface",
-          "line": 281,
-          "exported": true,
-          "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
-          "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`."
-        },
-        {
-          "name": "FooterCommentChild",
-          "kind": "interface",
-          "line": 289,
-          "exported": true,
-          "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
-          "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`."
-        },
-        {
-          "name": "FooterCommentLikeCount",
-          "kind": "interface",
-          "line": 300,
-          "exported": true,
-          "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
-          "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`."
-        },
-        {
-          "name": "FooterCommentLike",
-          "kind": "interface",
-          "line": 305,
-          "exported": true,
-          "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
-          "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`."
-        },
-        {
-          "name": "ListFooterCommentLikeUsersParams",
-          "kind": "interface",
-          "line": 310,
-          "exported": true,
-          "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
-          "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`."
-        },
-        {
-          "name": "FooterCommentOperation",
-          "kind": "interface",
-          "line": 316,
-          "exported": true,
-          "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
-          "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`."
-        },
-        {
-          "name": "FooterCommentOperationsResponse",
-          "kind": "interface",
-          "line": 322,
-          "exported": true,
-          "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
-          "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`."
-        },
-        {
-          "name": "ListFooterCommentVersionsParams",
-          "kind": "interface",
-          "line": 327,
-          "exported": true,
-          "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
-          "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`."
-        },
-        {
-          "name": "FooterCommentVersionSummary",
-          "kind": "interface",
-          "line": 335,
-          "exported": true,
-          "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
-          "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`."
-        },
-        {
-          "name": "FooterCommentVersionDetail",
-          "kind": "interface",
-          "line": 351,
-          "exported": true,
-          "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
-          "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`."
-        },
-        {
           "name": "ListInlineCommentsParams",
           "kind": "interface",
-          "line": 362,
+          "line": 238,
           "exported": true,
           "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
           "jsdoc": "Parameters for listing inline comments on a page or blog post."
@@ -5497,15 +5106,87 @@
         {
           "name": "CreateInlineCommentData",
           "kind": "interface",
-          "line": 369,
+          "line": 245,
           "exported": true,
           "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
           "jsdoc": "Request body for creating an inline comment."
         },
         {
+          "name": "InlineCommentSortOrder",
+          "kind": "type",
+          "line": 264,
+          "exported": true,
+          "signature": "export type InlineCommentSortOrder = 'created-date' | '-created-date';",
+          "jsdoc": "Sort tokens accepted by tenant-wide `GET /inline-comments`. The default direction is ascending; prefix with `-` for descending. Mirrors the `CommentSortOrder` enum in the OpenAPI spec."
+        },
+        {
+          "name": "ListInlineCommentsAllParams",
+          "kind": "interface",
+          "line": 267,
+          "exported": true,
+          "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: BodyFormat; readonly sort?: InlineCommentSortOrd…",
+          "jsdoc": "Parameters for tenant-wide `GET /inline-comments`."
+        },
+        {
+          "name": "ListInlineCommentChildrenParams",
+          "kind": "interface",
+          "line": 275,
+          "exported": true,
+          "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonl…",
+          "jsdoc": "Parameters for `GET /inline-comments/{id}/children`."
+        },
+        {
+          "name": "ListInlineCommentLikeUsersParams",
+          "kind": "interface",
+          "line": 282,
+          "exported": true,
+          "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
+          "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`."
+        },
+        {
+          "name": "ListInlineCommentVersionsParams",
+          "kind": "interface",
+          "line": 288,
+          "exported": true,
+          "signature": "export interface ListInlineCommentVersionsParams { readonly limit?: number; readonly cursor?: string; }",
+          "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`."
+        },
+        {
+          "name": "InlineCommentLikesCount",
+          "kind": "interface",
+          "line": 297,
+          "exported": true,
+          "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
+          "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim."
+        },
+        {
+          "name": "InlineCommentLikeUser",
+          "kind": "interface",
+          "line": 306,
+          "exported": true,
+          "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
+          "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible."
+        },
+        {
+          "name": "InlineCommentOperation",
+          "kind": "interface",
+          "line": 311,
+          "exported": true,
+          "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
+          "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`."
+        },
+        {
+          "name": "InlineCommentOperationsResponse",
+          "kind": "interface",
+          "line": 317,
+          "exported": true,
+          "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
+          "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`."
+        },
+        {
           "name": "ListAttachmentsParams",
           "kind": "interface",
-          "line": 384,
+          "line": 322,
           "exported": true,
           "signature": "export interface ListAttachmentsParams { readonly limit?: number; readonly cursor?: string; readonly mediaType?: string;…",
           "jsdoc": "Parameters for listing attachments on a page or blog post."
@@ -5513,7 +5194,7 @@
         {
           "name": "ListLabelsParams",
           "kind": "interface",
-          "line": 392,
+          "line": 330,
           "exported": true,
           "signature": "export interface ListLabelsParams { readonly prefix?: string; readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing labels on a page or blog post."
@@ -5521,7 +5202,7 @@
         {
           "name": "LabelSortOrder",
           "kind": "type",
-          "line": 402,
+          "line": 340,
           "exported": true,
           "signature": "export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';",
           "jsdoc": "Sort tokens accepted by `GET /labels`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum."
@@ -5529,7 +5210,7 @@
         {
           "name": "ListAllLabelsParams",
           "kind": "interface",
-          "line": 411,
+          "line": 349,
           "exported": true,
           "signature": "export interface ListAllLabelsParams { readonly 'label-id'?: string | readonly (string | number)[]; readonly prefix?: st…",
           "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both are comma-separated lists at the wire level). Callers may pass either a string (already comma-joined) or a non-empty array; the resource flattens arrays via `join(',')` before shipping."
@@ -5537,7 +5218,7 @@
         {
           "name": "AttachmentSortOrder",
           "kind": "type",
-          "line": 424,
+          "line": 362,
           "exported": true,
           "signature": "export type AttachmentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/attachments`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `AttachmentSortOrder` enum."
@@ -5545,7 +5226,7 @@
         {
           "name": "ListAttachmentsByLabelParams",
           "kind": "interface",
-          "line": 431,
+          "line": 369,
           "exported": true,
           "signature": "export interface ListAttachmentsByLabelParams { readonly sort?: AttachmentSortOrder; readonly limit?: number; readonly c…",
           "jsdoc": "Parameters for `GET /labels/{id}/attachments`."
@@ -5553,7 +5234,7 @@
         {
           "name": "BlogPostSortOrder",
           "kind": "type",
-          "line": 442,
+          "line": 380,
           "exported": true,
           "signature": "export type BlogPostSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/blogposts`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `BlogPostSortOrder` enum."
@@ -5561,7 +5242,7 @@
         {
           "name": "ListBlogPostsByLabelParams",
           "kind": "interface",
-          "line": 451,
+          "line": 389,
           "exported": true,
           "signature": "export interface ListBlogPostsByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'bod…",
           "jsdoc": "Parameters for `GET /labels/{id}/blogposts`."
@@ -5569,7 +5250,7 @@
         {
           "name": "PageSortOrder",
           "kind": "type",
-          "line": 471,
+          "line": 409,
           "exported": true,
           "signature": "export type PageSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-date' | 'ti…",
           "jsdoc": "Sort tokens accepted by `GET /labels/{id}/pages`. The default direction is ascending; prefix with `-` for descending. Matches the OpenAPI `PageSortOrder` enum."
@@ -5577,7 +5258,7 @@
         {
           "name": "ListPagesByLabelParams",
           "kind": "interface",
-          "line": 482,
+          "line": 420,
           "exported": true,
           "signature": "export interface ListPagesByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'body-fo…",
           "jsdoc": "Parameters for `GET /labels/{id}/pages`."
@@ -5585,7 +5266,7 @@
         {
           "name": "ContentProperty",
           "kind": "interface",
-          "line": 498,
+          "line": 436,
           "exported": true,
           "signature": "export interface ContentProperty { readonly id: string; readonly key: string; readonly value: unknown; readonly version?…",
           "jsdoc": "Confluence Content Property."
@@ -5593,7 +5274,7 @@
         {
           "name": "ListContentPropertiesParams",
           "kind": "interface",
-          "line": 508,
+          "line": 446,
           "exported": true,
           "signature": "export interface ListContentPropertiesParams { readonly key?: string; readonly limit?: number; readonly cursor?: string;…",
           "jsdoc": "Parameters for listing content properties on a page."
@@ -5601,7 +5282,7 @@
         {
           "name": "CreateContentPropertyData",
           "kind": "interface",
-          "line": 515,
+          "line": 453,
           "exported": true,
           "signature": "export interface CreateContentPropertyData { readonly key: string; readonly value: unknown; }",
           "jsdoc": "Request body for creating a content property on a page."
@@ -5609,7 +5290,7 @@
         {
           "name": "UpdateContentPropertyData",
           "kind": "interface",
-          "line": 521,
+          "line": 459,
           "exported": true,
           "signature": "export interface UpdateContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { readonly…",
           "jsdoc": "Request body for updating a content property on a page."
@@ -5617,7 +5298,7 @@
         {
           "name": "ListCommentPropertiesParams",
           "kind": "interface",
-          "line": 530,
+          "line": 468,
           "exported": true,
           "signature": "export interface ListCommentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?: …",
           "jsdoc": "Parameters for listing content properties attached to a comment."
@@ -5625,7 +5306,7 @@
         {
           "name": "UpdateCommentPropertyData",
           "kind": "interface",
-          "line": 545,
+          "line": 483,
           "exported": true,
           "signature": "export interface UpdateCommentPropertyData { readonly key: string; readonly value: unknown; readonly version: { readonly…",
           "jsdoc": "Request body for `PUT /comments/{comment-id}/properties/{property-id}`."
@@ -5633,7 +5314,7 @@
         {
           "name": "AppProperty",
           "kind": "interface",
-          "line": 558,
+          "line": 496,
           "exported": true,
           "signature": "export interface AppProperty { readonly key: string; readonly value: unknown; readonly id?: string; readonly version?: C…",
           "jsdoc": "Confluence app property. Returned by the v2 `/app/properties` endpoints. `value` is whatever JSON the app stored — could be a string, number, boolean, array, or arbitrary object."
@@ -5641,7 +5322,7 @@
         {
           "name": "ListAppPropertiesParams",
           "kind": "interface",
-          "line": 568,
+          "line": 506,
           "exported": true,
           "signature": "export interface ListAppPropertiesParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing app properties (cursor-paginated)."
@@ -5649,7 +5330,7 @@
         {
           "name": "UpsertAppPropertyData",
           "kind": "interface",
-          "line": 580,
+          "line": 518,
           "exported": true,
           "signature": "export interface UpsertAppPropertyData { readonly value: unknown; }",
           "jsdoc": "Body for creating or updating an app property."
@@ -5657,7 +5338,7 @@
         {
           "name": "CustomContent",
           "kind": "interface",
-          "line": 587,
+          "line": 525,
           "exported": true,
           "signature": "export interface CustomContent { readonly id: string; readonly type: string; readonly status: string; readonly title?: s…",
           "jsdoc": "Confluence Custom Content item."
@@ -5665,7 +5346,7 @@
         {
           "name": "ListCustomContentParams",
           "kind": "interface",
-          "line": 603,
+          "line": 541,
           "exported": true,
           "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly spaceId?: string; read…",
           "jsdoc": "Parameters for listing custom content items."
@@ -5673,7 +5354,7 @@
         {
           "name": "GetCustomContentParams",
           "kind": "interface",
-          "line": 616,
+          "line": 554,
           "exported": true,
           "signature": "export interface GetCustomContentParams { readonly 'body-format'?: BodyFormat; readonly version?: number; }",
           "jsdoc": "Parameters for retrieving a single custom content item."
@@ -5681,7 +5362,7 @@
         {
           "name": "CreateCustomContentData",
           "kind": "interface",
-          "line": 622,
+          "line": 560,
           "exported": true,
           "signature": "export interface CreateCustomContentData { readonly type: string; readonly status?: 'current' | 'draft'; readonly spaceI…",
           "jsdoc": "Request body for creating a custom content item."
@@ -5689,7 +5370,7 @@
         {
           "name": "UpdateCustomContentData",
           "kind": "interface",
-          "line": 636,
+          "line": 574,
           "exported": true,
           "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current' | 'dra…",
           "jsdoc": "Request body for updating a custom content item."
@@ -5697,7 +5378,7 @@
         {
           "name": "Whiteboard",
           "kind": "interface",
-          "line": 651,
+          "line": 589,
           "exported": true,
           "signature": "export interface Whiteboard { readonly id: string; readonly title?: string; readonly status?: string; readonly spaceId?:…",
           "jsdoc": "Confluence Whiteboard."
@@ -5705,7 +5386,7 @@
         {
           "name": "CreateWhiteboardData",
           "kind": "interface",
-          "line": 664,
+          "line": 602,
           "exported": true,
           "signature": "export interface CreateWhiteboardData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; r…",
           "jsdoc": "Request body for creating a whiteboard."
@@ -5713,7 +5394,7 @@
         {
           "name": "ConfluenceTask",
           "kind": "interface",
-          "line": 675,
+          "line": 613,
           "exported": true,
           "signature": "export interface ConfluenceTask { readonly id: string; readonly localId?: string; readonly spaceId?: string; readonly pa…",
           "jsdoc": "Confluence Task."
@@ -5721,7 +5402,7 @@
         {
           "name": "ListTasksParams",
           "kind": "interface",
-          "line": 694,
+          "line": 632,
           "exported": true,
           "signature": "export interface ListTasksParams { readonly 'body-format'?: BodyFormat; readonly includeBlankTasks?: boolean; readonly s…",
           "jsdoc": "Parameters for listing Confluence tasks."
@@ -5729,7 +5410,7 @@
         {
           "name": "GetTaskParams",
           "kind": "interface",
-          "line": 714,
+          "line": 652,
           "exported": true,
           "signature": "export interface GetTaskParams { readonly 'body-format'?: BodyFormat; }",
           "jsdoc": "Parameters for retrieving a single Confluence task."
@@ -5737,7 +5418,7 @@
         {
           "name": "UpdateTaskData",
           "kind": "interface",
-          "line": 719,
+          "line": 657,
           "exported": true,
           "signature": "export interface UpdateTaskData { readonly status: 'incomplete' | 'complete'; }",
           "jsdoc": "Request body for updating a Confluence task."
@@ -5745,7 +5426,7 @@
         {
           "name": "ContentVersion",
           "kind": "interface",
-          "line": 726,
+          "line": 664,
           "exported": true,
           "signature": "export interface ContentVersion { readonly number: number; readonly message?: string; readonly minorEdit?: boolean; read…",
           "jsdoc": "Confluence Content Version."
@@ -5753,7 +5434,7 @@
         {
           "name": "ListVersionsParams",
           "kind": "interface",
-          "line": 735,
+          "line": 673,
           "exported": true,
           "signature": "export interface ListVersionsParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing content versions."
@@ -5761,7 +5442,7 @@
         {
           "name": "ClassificationLevel",
           "kind": "interface",
-          "line": 747,
+          "line": 685,
           "exported": true,
           "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
           "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations."
@@ -5769,7 +5450,7 @@
         {
           "name": "ListClassificationLevelsResponse",
           "kind": "type",
-          "line": 772,
+          "line": 710,
           "exported": true,
           "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
           "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}."
@@ -5777,7 +5458,7 @@
         {
           "name": "DataPolicyMetadata",
           "kind": "interface",
-          "line": 782,
+          "line": 720,
           "exported": true,
           "signature": "export interface DataPolicyMetadata { readonly anyContentBlocked?: boolean; }",
           "jsdoc": "Workspace-level data-policy metadata, returned by `GET /data-policies/metadata`. The OpenAPI spec exposes a single optional flag indicating whether any content in the workspace is blocked from the requesting client app."
@@ -5785,7 +5466,7 @@
         {
           "name": "DataPolicySpaceFlags",
           "kind": "interface",
-          "line": 788,
+          "line": 726,
           "exported": true,
           "signature": "export interface DataPolicySpaceFlags { readonly anyContentBlocked?: boolean; }",
           "jsdoc": "Per-space data-policy block returned inside {@link DataPolicySpace}."
@@ -5793,7 +5474,7 @@
         {
           "name": "DataPolicySpace",
           "kind": "interface",
-          "line": 798,
+          "line": 736,
           "exported": true,
           "signature": "export interface DataPolicySpace { readonly id?: string; readonly key?: string; readonly name?: string; readonly descrip…",
           "jsdoc": "A space entry returned by `GET /data-policies/spaces`. All fields are declared optional in the OpenAPI spec; callers should treat missing properties as \"not surfaced for this caller\"."
@@ -5801,7 +5482,7 @@
         {
           "name": "DataPolicySpaceSortOrder",
           "kind": "type",
-          "line": 812,
+          "line": 750,
           "exported": true,
           "signature": "export type DataPolicySpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | '-name';",
           "jsdoc": "Sort order tokens accepted by `/data-policies/spaces`. Mirrors the `SpaceSortOrder` enum in the OpenAPI spec — `-` prefix flips direction."
@@ -5809,7 +5490,7 @@
         {
           "name": "ListDataPolicySpacesParams",
           "kind": "interface",
-          "line": 815,
+          "line": 753,
           "exported": true,
           "signature": "export interface ListDataPolicySpacesParams { readonly ids?: readonly string[]; readonly keys?: readonly string[]; reado…",
           "jsdoc": "Query parameters for `GET /data-policies/spaces`."
@@ -5817,7 +5498,7 @@
         {
           "name": "ConfluenceContentType",
           "kind": "type",
-          "line": 836,
+          "line": 774,
           "exported": true,
           "signature": "export type ConfluenceContentType = | 'page' | 'blogpost' | 'attachment' | 'footer-comment' | 'inline-comment';",
           "jsdoc": "Built-in v2 Confluence content types. Comment content is split into `inline-comment` and `footer-comment` (distinct from v1, which represented both as the single `comment` type). Custom content types are server-defined strings that fall outside this union — see {@link ConvertContentIdsToTypesResponse}."
@@ -5825,7 +5506,7 @@
         {
           "name": "ConvertContentIdsToTypesData",
           "kind": "interface",
-          "line": 850,
+          "line": 788,
           "exported": true,
           "signature": "export interface ConvertContentIdsToTypesData { readonly contentIds: readonly (string | number)[]; }",
           "jsdoc": "Request body for `POST /content/convert-ids-to-types`."
@@ -5833,7 +5514,7 @@
         {
           "name": "ConvertContentIdsToTypesResponse",
           "kind": "interface",
-          "line": 862,
+          "line": 800,
           "exported": true,
           "signature": "export interface ConvertContentIdsToTypesResponse { readonly results?: Readonly<Record<string, ConfluenceContentType | s…",
           "jsdoc": "Response shape for `POST /content/convert-ids-to-types`."
@@ -5841,7 +5522,7 @@
         {
           "name": "SpacePermission",
           "kind": "interface",
-          "line": 873,
+          "line": 811,
           "exported": true,
           "signature": "export interface SpacePermission { readonly id: string; readonly displayName?: string; readonly description?: string; re…",
           "jsdoc": "A definition of an available space permission, as returned by `GET /space-permissions`. These describe the permissions the platform supports; per-space assignments live under `/spaces/{id}/permissions`."
@@ -5849,7 +5530,7 @@
         {
           "name": "ListSpacePermissionsParams",
           "kind": "interface",
-          "line": 885,
+          "line": 823,
           "exported": true,
           "signature": "export interface ListSpacePermissionsParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Query parameters for `GET /space-permissions`."
@@ -5857,7 +5538,7 @@
         {
           "name": "AdminKey",
           "kind": "interface",
-          "line": 895,
+          "line": 833,
           "exported": true,
           "signature": "export interface AdminKey { readonly createdAt?: string; readonly expireAt?: string; readonly durationInHours?: number; …",
           "jsdoc": "Confluence Admin Key."
@@ -5865,7 +5546,7 @@
         {
           "name": "CreateAdminKeyData",
           "kind": "interface",
-          "line": 910,
+          "line": 848,
           "exported": true,
           "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
           "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
@@ -5873,87 +5554,15 @@
         {
           "name": "SpaceRoleMode",
           "kind": "interface",
-          "line": 927,
+          "line": 865,
           "exported": true,
           "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
           "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`."
         },
         {
-          "name": "SpaceRoleType",
-          "kind": "type",
-          "line": 937,
-          "exported": true,
-          "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
-          "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant."
-        },
-        {
-          "name": "SpaceRolePrincipalType",
-          "kind": "type",
-          "line": 943,
-          "exported": true,
-          "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
-          "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class."
-        },
-        {
-          "name": "SpaceRole",
-          "kind": "interface",
-          "line": 950,
-          "exported": true,
-          "signature": "export interface SpaceRole { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; readonly descr…",
-          "jsdoc": "A Confluence space role definition, as returned by the v2 `/space-roles` endpoints. All fields are documented optional in the OpenAPI spec; callers should treat any missing property as \"not surfaced for this caller\"."
-        },
-        {
-          "name": "ListSpaceRolesParams",
-          "kind": "interface",
-          "line": 968,
-          "exported": true,
-          "signature": "export interface ListSpaceRolesParams { readonly 'space-id'?: string; readonly 'role-type'?: SpaceRoleType; readonly 'pr…",
-          "jsdoc": "Query parameters for `GET /space-roles`. All filters are optional and apply server-side; the response is the standard `{ results, _links }` cursor envelope."
-        },
-        {
-          "name": "SpaceRoleDetail",
-          "kind": "interface",
-          "line": 990,
-          "exported": true,
-          "signature": "export interface SpaceRoleDetail extends SpaceRole { readonly _links?: { readonly base?: string; }; }",
-          "jsdoc": "Response shape for `GET /space-roles/{id}`. Mirrors {@link SpaceRole} with an additional optional `_links.base` Confluence site URL the server inlines on the singular read. The OpenAPI spec models this as an `allOf` composition; we flatten it here for callers that only need the `id` / `type` / `name` fields and ignore the link block."
-        },
-        {
-          "name": "CreateSpaceRoleData",
-          "kind": "interface",
-          "line": 1003,
-          "exported": true,
-          "signature": "export interface CreateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
-          "jsdoc": "Request body for `POST /space-roles`. All three fields are required by the server — there are no optional inputs on the create path. `spacePermissions` is a list of space-permission ids (e.g. `\"read/space\"`) obtained from `GET /space-permissions`."
-        },
-        {
-          "name": "UpdateSpaceRoleData",
-          "kind": "interface",
-          "line": 1018,
-          "exported": true,
-          "signature": "export interface UpdateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
-          "jsdoc": "Request body for `PUT /space-roles/{id}`. The same three required fields as {@link CreateSpaceRoleData}, plus two optional reassignment fields used when the role being modified currently has anonymous-access or guest assignments that need to migrate to another role."
-        },
-        {
-          "name": "UpdateSpaceRoleResponse",
-          "kind": "interface",
-          "line": 1042,
-          "exported": true,
-          "signature": "export interface UpdateSpaceRoleResponse { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; …",
-          "jsdoc": "Response shape for `PUT /space-roles/{id}`. The server returns 202 along with the updated role metadata and a `taskId` to poll for the async permission-rewrite progress."
-        },
-        {
-          "name": "DeleteSpaceRoleResponse",
-          "kind": "interface",
-          "line": 1056,
-          "exported": true,
-          "signature": "export interface DeleteSpaceRoleResponse { readonly taskId?: string; }",
-          "jsdoc": "Response shape for `DELETE /space-roles/{id}`. The server returns 202 with a single `taskId` callers can poll to confirm the role's permission assignments have been torn down asynchronously."
-        },
-        {
           "name": "ConfluenceAccountStatus",
           "kind": "type",
-          "line": 1064,
+          "line": 872,
           "exported": true,
           "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
           "jsdoc": "Account status of a Confluence user."
@@ -5961,7 +5570,7 @@
         {
           "name": "ConfluenceAccountType",
           "kind": "type",
-          "line": 1067,
+          "line": 875,
           "exported": true,
           "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
           "jsdoc": "Account type of a Confluence user."
@@ -5969,7 +5578,7 @@
         {
           "name": "ConfluenceUserIcon",
           "kind": "interface",
-          "line": 1073,
+          "line": 881,
           "exported": true,
           "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
           "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it."
@@ -5977,7 +5586,7 @@
         {
           "name": "ConfluenceUser",
           "kind": "interface",
-          "line": 1079,
+          "line": 887,
           "exported": true,
           "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
           "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints."
@@ -5985,7 +5594,7 @@
         {
           "name": "BulkUsersRequest",
           "kind": "interface",
-          "line": 1098,
+          "line": 906,
           "exported": true,
           "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
           "jsdoc": "Request body for `POST /users-bulk`."
@@ -5993,7 +5602,7 @@
         {
           "name": "BulkUsersResponse",
           "kind": "interface",
-          "line": 1108,
+          "line": 916,
           "exported": true,
           "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
           "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted."
@@ -6001,7 +5610,7 @@
         {
           "name": "CheckAccessOrInviteByEmailRequest",
           "kind": "interface",
-          "line": 1126,
+          "line": 934,
           "exported": true,
           "signature": "export interface CheckAccessOrInviteByEmailRequest { readonly emails: readonly string[]; }",
           "jsdoc": "Request body for `POST /user/access/check-access-by-email` and `POST /user/access/invite-by-email`."
@@ -6009,7 +5618,7 @@
         {
           "name": "CheckAccessByEmailResponse",
           "kind": "interface",
-          "line": 1136,
+          "line": 944,
           "exported": true,
           "signature": "export interface CheckAccessByEmailResponse { readonly emailsWithoutAccess?: readonly string[]; readonly invalidEmails?:…",
           "jsdoc": "Response shape for `POST /user/access/check-access-by-email`."
@@ -6017,7 +5626,7 @@
         {
           "name": "Database",
           "kind": "interface",
-          "line": 1154,
+          "line": 962,
           "exported": true,
           "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
           "jsdoc": "Confluence Database content."
@@ -6025,7 +5634,7 @@
         {
           "name": "CreateDatabaseData",
           "kind": "interface",
-          "line": 1177,
+          "line": 985,
           "exported": true,
           "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
           "jsdoc": "Request body for creating a database via `POST /databases`."
@@ -6033,7 +5642,7 @@
         {
           "name": "CreateDatabaseParams",
           "kind": "interface",
-          "line": 1184,
+          "line": 992,
           "exported": true,
           "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
           "jsdoc": "Query parameters for `POST /databases`."
@@ -6041,7 +5650,7 @@
         {
           "name": "DatabaseAncestor",
           "kind": "interface",
-          "line": 1190,
+          "line": 998,
           "exported": true,
           "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
           "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`."
@@ -6049,7 +5658,7 @@
         {
           "name": "ListDatabaseAncestorsParams",
           "kind": "interface",
-          "line": 1196,
+          "line": 1004,
           "exported": true,
           "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing database ancestors."
@@ -6057,7 +5666,7 @@
         {
           "name": "DatabaseAncestorsResponse",
           "kind": "interface",
-          "line": 1207,
+          "line": 1015,
           "exported": true,
           "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
           "jsdoc": "Response shape for `GET /databases/{id}/ancestors`."
@@ -6065,7 +5674,7 @@
         {
           "name": "DatabaseDescendant",
           "kind": "interface",
-          "line": 1212,
+          "line": 1020,
           "exported": true,
           "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
           "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`."
@@ -6073,7 +5682,7 @@
         {
           "name": "ListDatabaseDescendantsParams",
           "kind": "interface",
-          "line": 1223,
+          "line": 1031,
           "exported": true,
           "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
           "jsdoc": "Parameters for listing database descendants."
@@ -6081,7 +5690,7 @@
         {
           "name": "DatabaseChild",
           "kind": "interface",
-          "line": 1230,
+          "line": 1038,
           "exported": true,
           "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
           "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`."
@@ -6089,7 +5698,7 @@
         {
           "name": "ContentSortOrder",
           "kind": "type",
-          "line": 1243,
+          "line": 1051,
           "exported": true,
           "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
           "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema."
@@ -6097,7 +5706,7 @@
         {
           "name": "ListDatabaseChildrenParams",
           "kind": "interface",
-          "line": 1256,
+          "line": 1064,
           "exported": true,
           "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
           "jsdoc": "Parameters for listing direct children of a database."
@@ -6105,7 +5714,7 @@
         {
           "name": "DatabaseOperation",
           "kind": "interface",
-          "line": 1263,
+          "line": 1071,
           "exported": true,
           "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`."
@@ -6113,7 +5722,7 @@
         {
           "name": "DatabaseOperationsResponse",
           "kind": "interface",
-          "line": 1269,
+          "line": 1077,
           "exported": true,
           "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
           "jsdoc": "Response shape for `GET /databases/{id}/operations`."
@@ -6121,7 +5730,7 @@
         {
           "name": "GetDatabaseParams",
           "kind": "interface",
-          "line": 1278,
+          "line": 1086,
           "exported": true,
           "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
           "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
@@ -6129,7 +5738,7 @@
         {
           "name": "ListDatabasePropertiesParams",
           "kind": "interface",
-          "line": 1286,
+          "line": 1094,
           "exported": true,
           "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
           "jsdoc": "Parameters for listing content properties on a database."
@@ -6137,7 +5746,7 @@
         {
           "name": "UpdateDatabasePropertyData",
           "kind": "interface",
-          "line": 1300,
+          "line": 1108,
           "exported": true,
           "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
           "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`."
@@ -6145,7 +5754,7 @@
         {
           "name": "UpdateDatabaseClassificationLevelData",
           "kind": "interface",
-          "line": 1313,
+          "line": 1121,
           "exported": true,
           "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
           "jsdoc": "Request body for `PUT /databases/{id}/classification-level`."
@@ -6153,7 +5762,7 @@
         {
           "name": "ResetDatabaseClassificationLevelData",
           "kind": "interface",
-          "line": 1325,
+          "line": 1133,
           "exported": true,
           "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
           "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`."
@@ -8497,60 +8106,40 @@
               "original": "ResetDatabaseClassificationLevelData"
             },
             {
-              "exported": "CommentSortOrder",
-              "original": "CommentSortOrder"
+              "exported": "InlineCommentSortOrder",
+              "original": "InlineCommentSortOrder"
             },
             {
-              "exported": "VersionSortOrder",
-              "original": "VersionSortOrder"
+              "exported": "ListInlineCommentsAllParams",
+              "original": "ListInlineCommentsAllParams"
             },
             {
-              "exported": "ListFooterCommentsTenantParams",
-              "original": "ListFooterCommentsTenantParams"
+              "exported": "ListInlineCommentChildrenParams",
+              "original": "ListInlineCommentChildrenParams"
             },
             {
-              "exported": "GetFooterCommentParams",
-              "original": "GetFooterCommentParams"
+              "exported": "ListInlineCommentLikeUsersParams",
+              "original": "ListInlineCommentLikeUsersParams"
             },
             {
-              "exported": "ListFooterCommentChildrenParams",
-              "original": "ListFooterCommentChildrenParams"
+              "exported": "ListInlineCommentVersionsParams",
+              "original": "ListInlineCommentVersionsParams"
             },
             {
-              "exported": "FooterCommentChild",
-              "original": "FooterCommentChild"
+              "exported": "InlineCommentLikesCount",
+              "original": "InlineCommentLikesCount"
             },
             {
-              "exported": "FooterCommentLikeCount",
-              "original": "FooterCommentLikeCount"
+              "exported": "InlineCommentLikeUser",
+              "original": "InlineCommentLikeUser"
             },
             {
-              "exported": "FooterCommentLike",
-              "original": "FooterCommentLike"
+              "exported": "InlineCommentOperation",
+              "original": "InlineCommentOperation"
             },
             {
-              "exported": "ListFooterCommentLikeUsersParams",
-              "original": "ListFooterCommentLikeUsersParams"
-            },
-            {
-              "exported": "FooterCommentOperation",
-              "original": "FooterCommentOperation"
-            },
-            {
-              "exported": "FooterCommentOperationsResponse",
-              "original": "FooterCommentOperationsResponse"
-            },
-            {
-              "exported": "ListFooterCommentVersionsParams",
-              "original": "ListFooterCommentVersionsParams"
-            },
-            {
-              "exported": "FooterCommentVersionSummary",
-              "original": "FooterCommentVersionSummary"
-            },
-            {
-              "exported": "FooterCommentVersionDetail",
-              "original": "FooterCommentVersionDetail"
+              "exported": "InlineCommentOperationsResponse",
+              "original": "InlineCommentOperationsResponse"
             },
             {
               "exported": "SpacePermission",
@@ -8563,42 +8152,6 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
-            },
-            {
-              "exported": "SpaceRole",
-              "original": "SpaceRole"
-            },
-            {
-              "exported": "SpaceRoleDetail",
-              "original": "SpaceRoleDetail"
-            },
-            {
-              "exported": "SpaceRoleType",
-              "original": "SpaceRoleType"
-            },
-            {
-              "exported": "SpaceRolePrincipalType",
-              "original": "SpaceRolePrincipalType"
-            },
-            {
-              "exported": "ListSpaceRolesParams",
-              "original": "ListSpaceRolesParams"
-            },
-            {
-              "exported": "CreateSpaceRoleData",
-              "original": "CreateSpaceRoleData"
-            },
-            {
-              "exported": "UpdateSpaceRoleData",
-              "original": "UpdateSpaceRoleData"
-            },
-            {
-              "exported": "UpdateSpaceRoleResponse",
-              "original": "UpdateSpaceRoleResponse"
-            },
-            {
-              "exported": "DeleteSpaceRoleResponse",
-              "original": "DeleteSpaceRoleResponse"
             },
             {
               "exported": "ConfluenceUser",
