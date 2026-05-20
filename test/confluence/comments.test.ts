@@ -237,6 +237,32 @@ describe('CommentsResource', () => {
         body: data,
       });
     });
+
+    it('forwards resolved=true (resolve verb)', async () => {
+      transport.respondWith(makeInlineComment('i6'));
+      const data = {
+        version: { number: 3 },
+        body: { representation: 'storage' as const, value: '<p>resolve</p>' },
+        resolved: true,
+      };
+
+      await comments.updateInline('i6', data);
+
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
+
+    it('forwards resolved=false (unresolve verb)', async () => {
+      transport.respondWith(makeInlineComment('i7'));
+      const data = {
+        version: { number: 4 },
+        body: { representation: 'storage' as const, value: '<p>reopen</p>' },
+        resolved: false,
+      };
+
+      await comments.updateInline('i7', data);
+
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
   });
 
   describe('deleteInline()', () => {

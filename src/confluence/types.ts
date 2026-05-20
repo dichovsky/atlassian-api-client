@@ -381,11 +381,23 @@ export interface CreateInlineCommentData {
 }
 
 /**
- * Sort tokens accepted by tenant-wide `GET /inline-comments`. The default
- * direction is ascending; prefix with `-` for descending. Mirrors the
- * `CommentSortOrder` enum in the OpenAPI spec.
+ * Sort tokens accepted by the inline-comment list endpoints (tenant-wide list
+ * and the per-comment `/children` collection). Mirrors the `CommentSortOrder`
+ * enum in the OpenAPI spec — the default direction is ascending; prefix with
+ * `-` for descending.
  */
-export type InlineCommentSortOrder = 'created-date' | '-created-date';
+export type InlineCommentSortOrder =
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
+
+/**
+ * Sort tokens accepted by `GET /inline-comments/{id}/versions`. Mirrors the
+ * OpenAPI `VersionSortOrder` enum, which is narrower than the comment-list
+ * sort vocabulary (only modified-date direction is meaningful for versions).
+ */
+export type VersionSortOrder = 'modified-date' | '-modified-date';
 
 /** Parameters for tenant-wide `GET /inline-comments`. */
 export interface ListInlineCommentsAllParams {
@@ -398,6 +410,7 @@ export interface ListInlineCommentsAllParams {
 /** Parameters for `GET /inline-comments/{id}/children`. */
 export interface ListInlineCommentChildrenParams {
   readonly 'body-format'?: BodyFormat;
+  readonly sort?: InlineCommentSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -410,8 +423,20 @@ export interface ListInlineCommentLikeUsersParams {
 
 /** Parameters for `GET /inline-comments/{id}/versions`. */
 export interface ListInlineCommentVersionsParams {
+  readonly sort?: VersionSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
+}
+
+/**
+ * Request body for `PUT /inline-comments/{id}`. Extends the shared
+ * {@link UpdateCommentData} shape with an optional `resolved` flag — the
+ * inline-comment endpoint is the resolve / unresolve verb for an inline
+ * thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose
+ * this field and continue to use {@link UpdateCommentData}.
+ */
+export interface UpdateInlineCommentData extends UpdateCommentData {
+  readonly resolved?: boolean;
 }
 
 /**

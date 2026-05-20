@@ -90,6 +90,7 @@ export class InlineCommentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
@@ -109,6 +110,7 @@ export class InlineCommentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<InlineComment>(
       this.transport,
@@ -181,6 +183,7 @@ export class InlineCommentsResource {
   ): Promise<CursorPaginatedResponse<ContentVersion>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
@@ -199,6 +202,7 @@ export class InlineCommentsResource {
   ): AsyncGenerator<ContentVersion> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<ContentVersion>(
       this.transport,

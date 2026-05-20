@@ -55,6 +55,16 @@ describe('InlineCommentsResource', () => {
       });
     });
 
+    it('accepts the modified-date sort variants from CommentSortOrder', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.list({ sort: 'modified-date' });
+      expect(transport.lastCall?.options.query).toEqual({ sort: 'modified-date' });
+
+      transport.respondWith({ results: [], _links: {} });
+      await resource.list({ sort: '-modified-date' });
+      expect(transport.lastCall?.options.query).toEqual({ sort: '-modified-date' });
+    });
+
     it('throws RangeError when limit is invalid before any request', async () => {
       await expect(resource.list({ limit: 0 })).rejects.toThrow(RangeError);
       expect(transport.calls).toHaveLength(0);
@@ -126,17 +136,19 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('serializes body-format, cursor, limit into the query', async () => {
+    it('serializes body-format, sort, cursor, limit into the query', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       await resource.listChildren('88888', {
         'body-format': 'storage',
+        sort: 'modified-date',
         cursor: 'c1',
         limit: 10,
       });
 
       expect(transport.lastCall?.options.query).toEqual({
         'body-format': 'storage',
+        sort: 'modified-date',
         cursor: 'c1',
         limit: 10,
       });
@@ -167,12 +179,18 @@ describe('InlineCommentsResource', () => {
         .respondWith({ results: [{ id: 'r2' }], _links: {} });
 
       const ids: string[] = [];
-      for await (const c of resource.listChildrenAll('88888', { limit: 5 })) {
+      for await (const c of resource.listChildrenAll('88888', {
+        limit: 5,
+        sort: '-modified-date',
+      })) {
         ids.push(c.id);
       }
 
       expect(ids).toEqual(['r1', 'r2']);
-      expect(transport.calls[0]?.options.query).toMatchObject({ limit: 5 });
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        limit: 5,
+        sort: '-modified-date',
+      });
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
@@ -329,12 +347,16 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('serializes cursor + limit into the query', async () => {
+    it('serializes sort + cursor + limit into the query', async () => {
       transport.respondWith({ results: [{ number: 1 }], _links: {} });
 
-      await resource.listVersions('88888', { cursor: 'c1', limit: 5 });
+      await resource.listVersions('88888', { sort: '-modified-date', cursor: 'c1', limit: 5 });
 
-      expect(transport.lastCall?.options.query).toEqual({ cursor: 'c1', limit: 5 });
+      expect(transport.lastCall?.options.query).toEqual({
+        sort: '-modified-date',
+        cursor: 'c1',
+        limit: 5,
+      });
     });
 
     it('throws RangeError when limit is invalid', async () => {
@@ -352,12 +374,18 @@ describe('InlineCommentsResource', () => {
         .respondWith({ results: [{ number: 1 }], _links: {} });
 
       const numbers: number[] = [];
-      for await (const v of resource.listVersionsAll('88888', { limit: 5 })) {
+      for await (const v of resource.listVersionsAll('88888', {
+        limit: 5,
+        sort: 'modified-date',
+      })) {
         numbers.push(v.number);
       }
 
       expect(numbers).toEqual([2, 1]);
-      expect(transport.calls[0]?.options.query).toMatchObject({ limit: 5 });
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        limit: 5,
+        sort: 'modified-date',
+      });
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 

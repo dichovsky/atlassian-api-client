@@ -64,6 +64,11 @@ const GLOBAL_OPTIONS = {
   'include-versions': { type: 'boolean' as const },
   'include-version': { type: 'boolean' as const },
   'parent-id': { type: 'string' as const },
+  // inline-comments resolve / unresolve (PUT /inline-comments/{id}). Boolean
+  // flag-pair: `--resolved` marks the thread resolved, `--no-resolved` reopens
+  // it. Omitting both leaves the server-side state untouched.
+  resolved: { type: 'boolean' as const },
+  'no-resolved': { type: 'boolean' as const },
   // tasks-specific options
   'task-id': { type: 'string' as const },
   'include-blank-tasks': { type: 'boolean' as const },
