@@ -6,7 +6,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 
 | Resource      | Actions                                                                                                                                                          |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions`                                                                                                 |
+| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                        |
 | `projects`    | `list`, `get`                                                                                                                                                    |
 | `search`      | (no sub-action; uses `--jql`)                                                                                                                                    |
 | `users`       | `get`, `me`, `search`                                                                                                                                            |
@@ -19,6 +19,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `backlog`     | `move`                                                                                                                                                           |
 
 ## `issues`
+
+### Standard (v3 API)
 
 | Action        | Positional   | Required flags                     | Optional flags         |
 | ------------- | ------------ | ---------------------------------- | ---------------------- |
@@ -34,6 +36,44 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 - `--type` takes the issue type name (e.g. `Bug`, `Story`, `Task`). Names are case-sensitive and tenant-specific; list with `atlas jira issue-types list`.
 - `update` via the CLI is intentionally narrow — only `--summary` is wired. Use the SDK for description, assignee, custom fields, ADF body content.
 - Transition workflow: call `transitions` to list valid transitions for an issue's current status, then `transition` with the chosen `--transition-id`.
+
+### Agile (v1.0 API) — B265–B268
+
+These actions hit `/rest/agile/1.0/issue/…` and return agile-enriched shapes (sprint membership, estimation fields).
+
+| Action           | Positional   | Required flags | Optional flags                          |
+| ---------------- | ------------ | -------------- | --------------------------------------- |
+| `get-agile`      | `<issueKey>` | —              | —                                       |
+| `get-estimation` | `<issueKey>` | —              | `--board-id`                            |
+| `set-estimation` | `<issueKey>` | `--value`      | `--board-id`                            |
+| `rank`           | —            | `--issues`     | `--before`, `--after`, `--custom-field` |
+
+- `get-agile` returns the issue with agile fields (sprint, epic link, estimation) populated — a superset of `issues get` for boards context.
+- `get-estimation` / `set-estimation`: `--board-id` selects which board's estimation field configuration to use. Required when multiple boards with different field configs share the same project.
+- `--value` for `set-estimation` is a **string** (e.g. `--value 5`). Pass `--value null` to clear the estimate.
+- `rank --issues` is **comma-separated** issue keys or IDs (e.g. `--issues PROJ-1,PROJ-2`).
+- `--before` and `--after` are **mutually exclusive** — rank the issues immediately before or after the named reference issue.
+- `--custom-field` is the numeric ID of the rank custom field when the board uses a non-default rank field.
+
+```sh
+# Get agile view of an issue (includes sprint, estimation, epic)
+atlas jira issues get-agile PROJ-42
+
+# Get the estimation for an issue (board-specific estimation field)
+atlas jira issues get-estimation PROJ-42 --board-id 1
+
+# Set estimation to 5 story points on board 1
+atlas jira issues set-estimation PROJ-42 --value 5 --board-id 1
+
+# Clear the estimation
+atlas jira issues set-estimation PROJ-42 --value null
+
+# Rank PROJ-1 and PROJ-2 immediately before PROJ-3
+atlas jira issues rank --issues PROJ-1,PROJ-2 --before PROJ-3
+
+# Rank PROJ-1 immediately after PROJ-5
+atlas jira issues rank --issues PROJ-1 --after PROJ-5
+```
 
 ## `projects`
 

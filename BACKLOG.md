@@ -671,16 +671,16 @@
 - [x] 🔴 🧩 API: B264 Jira: expose POST /rest/agile/1.0/epic/none/issue
   - files: `src/jira/resources/epic.ts`, `test/jira/epic.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B265 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}
+- [x] 🔴 🧩 API: B265 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B266 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}/estimation
+- [x] 🔴 🧩 API: B266 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}/estimation
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B267 Jira: expose PUT /rest/agile/1.0/issue/{issueIdOrKey}/estimation
+- [x] 🔴 🧩 API: B267 Jira: expose PUT /rest/agile/1.0/issue/{issueIdOrKey}/estimation
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B268 Jira: expose PUT /rest/agile/1.0/issue/rank
+- [x] 🔴 🧩 API: B268 Jira: expose PUT /rest/agile/1.0/issue/rank
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [x] 🔴 🧩 API: B316 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}

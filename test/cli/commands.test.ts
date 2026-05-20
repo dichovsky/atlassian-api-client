@@ -156,6 +156,10 @@ const jiraIssuesMock = {
   delete: vi.fn(),
   getTransitions: vi.fn(),
   transition: vi.fn(),
+  getAgile: vi.fn(),
+  getEstimation: vi.fn(),
+  setEstimation: vi.fn(),
+  rank: vi.fn(),
 };
 const jiraProjectsMock = {
   list: vi.fn(),
@@ -2615,6 +2619,192 @@ describe('executeJiraCommand', () => {
     it('issues unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('issues', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issues action',
+      );
+    });
+
+    // ── get-agile ────────────────────────────────────────────────────────────
+
+    it('issues get-agile calls client.issues.getAgile with issue key', async () => {
+      // Arrange
+      const agileIssue = { id: '10001', key: 'PROJ-1', self: 'url', fields: {} };
+      jiraIssuesMock.getAgile.mockResolvedValue(agileIssue);
+
+      // Act
+      const result = await executeJiraCommand(cmd('issues', 'get-agile', ['PROJ-1']), GLOBALS);
+
+      // Assert
+      expect(jiraIssuesMock.getAgile).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual(agileIssue);
+    });
+
+    it('issues get-agile throws when issue key is missing', async () => {
+      await expect(executeJiraCommand(cmd('issues', 'get-agile', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: issue key',
+      );
+    });
+
+    // ── get-estimation ───────────────────────────────────────────────────────
+
+    it('issues get-estimation calls client.issues.getEstimation with issue key', async () => {
+      // Arrange
+      const estimation = { fieldId: 'story_points', value: '3' };
+      jiraIssuesMock.getEstimation.mockResolvedValue(estimation);
+
+      // Act
+      const result = await executeJiraCommand(cmd('issues', 'get-estimation', ['PROJ-1']), GLOBALS);
+
+      // Assert
+      expect(jiraIssuesMock.getEstimation).toHaveBeenCalledWith('PROJ-1', { boardId: undefined });
+      expect(result).toEqual(estimation);
+    });
+
+    it('issues get-estimation passes boardId when --board-id provided', async () => {
+      // Arrange
+      jiraIssuesMock.getEstimation.mockResolvedValue({ fieldId: 'story_points', value: '5' });
+
+      // Act
+      await executeJiraCommand(
+        cmd('issues', 'get-estimation', ['PROJ-1'], { 'board-id': '42' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.getEstimation).toHaveBeenCalledWith('PROJ-1', { boardId: 42 });
+    });
+
+    it('issues get-estimation throws when issue key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'get-estimation', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issue key');
+    });
+
+    // ── set-estimation ───────────────────────────────────────────────────────
+
+    it('issues set-estimation calls client.issues.setEstimation with value', async () => {
+      // Arrange
+      const estimation = { fieldId: 'story_points', value: '5' };
+      jiraIssuesMock.setEstimation.mockResolvedValue(estimation);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-estimation', ['PROJ-1'], { value: '5' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.setEstimation).toHaveBeenCalledWith(
+        'PROJ-1',
+        { value: '5' },
+        { boardId: undefined },
+      );
+      expect(result).toEqual(estimation);
+    });
+
+    it('issues set-estimation passes boardId when --board-id provided', async () => {
+      // Arrange
+      jiraIssuesMock.setEstimation.mockResolvedValue({ fieldId: 'story_points', value: '8' });
+
+      // Act
+      await executeJiraCommand(
+        cmd('issues', 'set-estimation', ['PROJ-1'], { value: '8', 'board-id': '10' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.setEstimation).toHaveBeenCalledWith(
+        'PROJ-1',
+        { value: '8' },
+        { boardId: 10 },
+      );
+    });
+
+    it('issues set-estimation passes null value when --value null provided', async () => {
+      // Arrange
+      jiraIssuesMock.setEstimation.mockResolvedValue({ fieldId: 'story_points', value: null });
+
+      // Act
+      await executeJiraCommand(
+        cmd('issues', 'set-estimation', ['PROJ-1'], { value: 'null' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.setEstimation).toHaveBeenCalledWith(
+        'PROJ-1',
+        { value: null },
+        { boardId: undefined },
+      );
+    });
+
+    it('issues set-estimation throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'set-estimation', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('issues set-estimation throws when issue key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'set-estimation', [], { value: '3' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issue key');
+    });
+
+    // ── rank ─────────────────────────────────────────────────────────────────
+
+    it('issues rank calls client.issues.rank and returns { ranked: true }', async () => {
+      // Arrange
+      jiraIssuesMock.rank.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('issues', 'rank', [], { issues: 'PROJ-1,PROJ-2', before: 'PROJ-3' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.rank).toHaveBeenCalledWith({
+        issues: ['PROJ-1', 'PROJ-2'],
+        rankBeforeIssue: 'PROJ-3',
+        rankAfterIssue: undefined,
+        rankCustomFieldId: undefined,
+      });
+      expect(result).toEqual({ ranked: true });
+    });
+
+    it('issues rank passes rankAfterIssue when --after provided', async () => {
+      // Arrange
+      jiraIssuesMock.rank.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('issues', 'rank', [], { issues: 'PROJ-1', after: 'PROJ-5' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.rank).toHaveBeenCalledWith(
+        expect.objectContaining({ rankAfterIssue: 'PROJ-5' }),
+      );
+    });
+
+    it('issues rank passes rankCustomFieldId when --custom-field provided', async () => {
+      // Arrange
+      jiraIssuesMock.rank.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('issues', 'rank', [], { issues: 'PROJ-1', 'custom-field': '10020' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraIssuesMock.rank).toHaveBeenCalledWith(
+        expect.objectContaining({ rankCustomFieldId: 10020 }),
+      );
+    });
+
+    it('issues rank throws when --issues is missing', async () => {
+      await expect(executeJiraCommand(cmd('issues', 'rank', []), GLOBALS)).rejects.toThrow(
+        '--issues',
       );
     });
   });

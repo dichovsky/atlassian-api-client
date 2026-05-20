@@ -73,9 +73,47 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return { transitioned: true };
     case 'transitions':
       return client.issues.getTransitions(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'get-agile':
+      return client.issues.getAgile(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'get-estimation': {
+      const boardId = asPositiveInt(opts['board-id'], '--board-id');
+      return client.issues.getEstimation(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        boardId,
+      });
+    }
+    case 'set-estimation': {
+      const boardId = asPositiveInt(opts['board-id'], '--board-id');
+      const rawValue = opts['value'];
+      // Pass --value null to clear the estimate; the literal string "null" is reserved.
+      const estimationValue = rawValue === 'null' ? null : requireOpt(rawValue, '--value');
+      return client.issues.setEstimation(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        { value: estimationValue },
+        { boardId },
+      );
+    }
+    case 'rank': {
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const rankIssues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const before = asString(opts['before']);
+      const after = asString(opts['after']);
+      const customFieldRaw = opts['custom-field'];
+      const rankCustomFieldId =
+        customFieldRaw !== undefined ? asPositiveInt(customFieldRaw, '--custom-field') : undefined;
+      await client.issues.rank({
+        issues: rankIssues,
+        rankBeforeIssue: before,
+        rankAfterIssue: after,
+        rankCustomFieldId,
+      });
+      return { ranked: true };
+    }
     default:
       throw new Error(
-        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions`,
+        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank`,
       );
   }
 }
