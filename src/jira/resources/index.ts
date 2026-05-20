@@ -17,3 +17,4 @@ export { FieldsResource } from './fields.js';
 export { WebhooksResource } from './webhooks.js';
 export { JqlResource } from './jql.js';
 export { BulkResource } from './bulk.js';
+export { EpicResource } from './epic.js';

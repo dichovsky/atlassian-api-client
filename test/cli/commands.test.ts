@@ -198,6 +198,15 @@ const jiraSprintsMock = {
   deleteProperty: vi.fn(),
   swap: vi.fn(),
 };
+const jiraEpicMock = {
+  get: vi.fn(),
+  partialUpdate: vi.fn(),
+  getIssues: vi.fn(),
+  moveIssues: vi.fn(),
+  rank: vi.fn(),
+  getIssuesWithoutEpic: vi.fn(),
+  removeIssuesFromEpic: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -211,6 +220,7 @@ vi.mock('../../src/jira/client.js', () => {
       statuses: jiraStatusesMock,
       boards: jiraBoardsMock,
       sprints: jiraSprintsMock,
+      epic: jiraEpicMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -3453,6 +3463,237 @@ describe('executeJiraCommand', () => {
     it('sprints unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('sprints', 'nope', ['1']), GLOBALS)).rejects.toThrow(
         'Unknown sprints action',
+      );
+    });
+  });
+
+  // ── epic ──────────────────────────────────────────────────────────────────
+
+  describe('epic resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('epic get calls client.epic.get with epicIdOrKey', async () => {
+      // Arrange
+      const epicData = { id: 42, name: 'My Epic', done: false };
+      jiraEpicMock.get.mockResolvedValue(epicData);
+
+      // Act
+      const result = await executeJiraCommand(cmd('epic', 'get', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.get).toHaveBeenCalledWith('42');
+      expect(result).toEqual(epicData);
+    });
+
+    it('epic get works with epic key', async () => {
+      // Arrange
+      jiraEpicMock.get.mockResolvedValue({ id: 42, name: 'Epic' });
+
+      // Act
+      await executeJiraCommand(cmd('epic', 'get', ['PROJ-42']), GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.get).toHaveBeenCalledWith('PROJ-42');
+    });
+
+    it('epic get throws when epicIdOrKey is missing', async () => {
+      await expect(executeJiraCommand(cmd('epic', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: epicIdOrKey',
+      );
+    });
+
+    it('epic update calls client.epic.partialUpdate with name', async () => {
+      // Arrange
+      jiraEpicMock.partialUpdate.mockResolvedValue({ id: 42, name: 'New Name' });
+      const parsed = cmd('epic', 'update', ['42'], { name: 'New Name' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.partialUpdate).toHaveBeenCalledWith(
+        '42',
+        expect.objectContaining({ name: 'New Name' }),
+      );
+      expect(result).toEqual({ id: 42, name: 'New Name' });
+    });
+
+    it('epic update sends summary and color', async () => {
+      // Arrange
+      jiraEpicMock.partialUpdate.mockResolvedValue({ id: 42, name: 'Epic' });
+      const parsed = cmd('epic', 'update', ['PROJ-42'], {
+        summary: 'Epic summary',
+        color: 'color_1',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.partialUpdate).toHaveBeenCalledWith(
+        'PROJ-42',
+        expect.objectContaining({ summary: 'Epic summary', color: { key: 'color_1' } }),
+      );
+    });
+
+    it('epic update sends done flag when --done is set', async () => {
+      // Arrange
+      jiraEpicMock.partialUpdate.mockResolvedValue({ id: 42, done: true });
+      const parsed = cmd('epic', 'update', ['42'], { done: true });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.partialUpdate).toHaveBeenCalledWith(
+        '42',
+        expect.objectContaining({ done: true }),
+      );
+    });
+
+    it('epic issues calls client.epic.getIssues', async () => {
+      // Arrange
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraEpicMock.getIssues.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('epic', 'issues', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.getIssues).toHaveBeenCalledWith('42', expect.any(Object));
+      expect(result).toEqual(payload);
+    });
+
+    it('epic issues passes jql and fields', async () => {
+      // Arrange
+      jiraEpicMock.getIssues.mockResolvedValue({ values: [] });
+      const parsed = cmd('epic', 'issues', ['42'], {
+        jql: 'status = Done',
+        fields: 'summary,status',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.getIssues).toHaveBeenCalledWith(
+        '42',
+        expect.objectContaining({ jql: 'status = Done', fields: ['summary', 'status'] }),
+      );
+    });
+
+    it('epic issues throws when epicIdOrKey is missing', async () => {
+      await expect(executeJiraCommand(cmd('epic', 'issues', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: epicIdOrKey',
+      );
+    });
+
+    it('epic move-issues calls client.epic.moveIssues and returns { moved: true }', async () => {
+      // Arrange
+      jiraEpicMock.moveIssues.mockResolvedValue(undefined);
+      const parsed = cmd('epic', 'move-issues', ['42'], { issues: 'PROJ-1,PROJ-2' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.moveIssues).toHaveBeenCalledWith('42', ['PROJ-1', 'PROJ-2']);
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('epic move-issues throws when --issues is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('epic', 'move-issues', ['42'], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --issues');
+    });
+
+    it('epic rank calls client.epic.rank with --before and returns { ranked: true }', async () => {
+      // Arrange
+      jiraEpicMock.rank.mockResolvedValue(undefined);
+      const parsed = cmd('epic', 'rank', ['42'], { before: '99' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.rank).toHaveBeenCalledWith(
+        '42',
+        expect.objectContaining({ rankBeforeEpic: '99' }),
+      );
+      expect(result).toEqual({ ranked: true });
+    });
+
+    it('epic rank calls client.epic.rank with --after', async () => {
+      // Arrange
+      jiraEpicMock.rank.mockResolvedValue(undefined);
+      const parsed = cmd('epic', 'rank', ['PROJ-42'], { after: 'PROJ-5' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.rank).toHaveBeenCalledWith(
+        'PROJ-42',
+        expect.objectContaining({ rankAfterEpic: 'PROJ-5' }),
+      );
+    });
+
+    it('epic issues-none calls client.epic.getIssuesWithoutEpic', async () => {
+      // Arrange
+      const payload = {
+        values: [{ id: '1', key: 'PROJ-1', self: '', fields: {} }],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+      };
+      jiraEpicMock.getIssuesWithoutEpic.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('epic', 'issues-none', []), GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.getIssuesWithoutEpic).toHaveBeenCalled();
+      expect(result).toEqual(payload);
+    });
+
+    it('epic issues-none passes pagination params', async () => {
+      // Arrange
+      jiraEpicMock.getIssuesWithoutEpic.mockResolvedValue({ values: [] });
+      const parsed = cmd('epic', 'issues-none', [], { 'start-at': '10', 'max-results': '25' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.getIssuesWithoutEpic).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 10, maxResults: 25 }),
+      );
+    });
+
+    it('epic remove-issues calls client.epic.removeIssuesFromEpic and returns { removed: true }', async () => {
+      // Arrange
+      jiraEpicMock.removeIssuesFromEpic.mockResolvedValue(undefined);
+      const parsed = cmd('epic', 'remove-issues', [], { issues: 'PROJ-10,PROJ-11' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraEpicMock.removeIssuesFromEpic).toHaveBeenCalledWith(['PROJ-10', 'PROJ-11']);
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('epic remove-issues throws when --issues is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('epic', 'remove-issues', [], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --issues');
+    });
+
+    it('epic unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('epic', 'nope', ['42']), GLOBALS)).rejects.toThrow(
+        'Unknown epic action',
       );
     });
   });
