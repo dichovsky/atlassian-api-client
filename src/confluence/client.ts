@@ -17,6 +17,7 @@ import { AppResource } from './resources/app.js';
 import { ClassificationLevelsResource } from './resources/classification-levels.js';
 import { ContentResource } from './resources/content.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
+import { UsersBulkResource } from './resources/users-bulk.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
 export class ConfluenceClient {
@@ -46,6 +47,8 @@ export class ConfluenceClient {
   readonly content: ContentResource;
   /** Space role mode resource. */
   readonly spaceRoleMode: SpaceRoleModeResource;
+  /** Users bulk lookup resource. */
+  readonly usersBulk: UsersBulkResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -68,5 +71,6 @@ export class ConfluenceClient {
     this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
     this.content = new ContentResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
+    this.usersBulk = new UsersBulkResource(transport, baseUrl);
   }
 }

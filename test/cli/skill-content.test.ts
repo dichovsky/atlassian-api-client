@@ -90,6 +90,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'classification-levels',
           'content',
           'space-role-mode',
+          'users-bulk',
         ]).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
         expect([
@@ -133,6 +134,7 @@ describe('Resource coverage drift check', () => {
     'classification-levels',
     'content',
     'space-role-mode',
+    'users-bulk',
   ]) {
     it(`Confluence resource '${resource}' is documented in reference/confluence.md`, () => {
       if (!confluenceResources.includes(resource)) {

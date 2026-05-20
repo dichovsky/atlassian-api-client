@@ -108,6 +108,12 @@ export type {
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
   SpaceRoleMode,
+  ConfluenceUser,
+  ConfluenceUserIcon,
+  ConfluenceAccountStatus,
+  ConfluenceAccountType,
+  BulkUsersRequest,
+  BulkUsersResponse,
 } from './confluence/index.js';
 
 // Jira

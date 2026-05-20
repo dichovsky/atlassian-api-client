@@ -406,6 +406,24 @@ const matrix: readonly MatrixRow[] = [
     },
   },
 
+  // ─── users-bulk ───────────────────────────────────────────────────────
+  {
+    name: 'users-bulk lookup',
+    argv: ['confluence', 'users-bulk', 'lookup', '--account-ids', 'acc-1,acc-2'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/users-bulk`,
+        body: F.bulkUsersResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/users-bulk` },
+    expectStdout: ['"accountId": "acc-1"', '"accountId": "acc-2"'],
+    expectBody: (body) => {
+      expect(body).toEqual({ accountIds: ['acc-1', 'acc-2'] });
+    },
+  },
+
   // ─── classification-levels ────────────────────────────────────────────
   {
     name: 'classification-levels list',
