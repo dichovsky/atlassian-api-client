@@ -20,6 +20,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
+| `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
 | `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                     |
 | `users`                 | `check-access-by-email`, `invite-by-email`                                                                                                                                                                                                                                  |
 | `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
@@ -275,6 +276,44 @@ Retrieves the tenant's space role mode (`GET /wiki/api/v2/space-role-mode`). Ava
 
 ```sh
 atlas confluence space-role-mode get
+```
+
+## `space-roles`
+
+Manages Confluence space roles (`/wiki/api/v2/space-roles`). Available on tenants with Role-Based Access Control. The list endpoint returns the standard `{ results, _links }` cursor-paginated wrapper; `create` returns the new role; `update` and `delete` return 202 with an async `taskId` callers can poll for the underlying permission-rewrite job.
+
+| Action   | Positional | Required flags                                   | Optional flags                                                                           |
+| -------- | ---------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `list`   | —          | —                                                | `--space-id`, `--role-type`, `--principal-id`, `--principal-type`, `--limit`, `--cursor` |
+| `get`    | `<roleId>` | —                                                | —                                                                                        |
+| `create` | —          | `--name`, `--description`, `--space-permissions` | —                                                                                        |
+| `update` | `<roleId>` | `--name`, `--description`, `--space-permissions` | `--anonymous-reassignment-role-id`, `--guest-reassignment-role-id`                       |
+| `delete` | `<roleId>` | —                                                | —                                                                                        |
+
+- `--role-type` accepts `SYSTEM` or `CUSTOM`. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` are tenant-created.
+- `--principal-type` accepts `USER`, `GROUP`, or `ACCESS_CLASS` and restricts the listing to roles available for the named principal class.
+- `--space-permissions` is a comma-separated list of space-permission ids (e.g. `read/space,write/space`). Retrieve valid ids from `atlas confluence space-permissions list`. The CLI trims whitespace per entry and rejects an all-empty payload before issuing the request.
+- `update` and `delete` return `{ "taskId": "..." }` (HTTP 202). The task tears down or rewrites per-space permission assignments asynchronously — poll the task to confirm completion before relying on the new permission state.
+- `--anonymous-reassignment-role-id` / `--guest-reassignment-role-id` on `update` migrate anonymous-access / guest assignments away from the role being modified. Leave unset to keep them in place.
+
+```sh
+# List custom roles (server default 25 per page)
+atlas confluence space-roles list --role-type=CUSTOM
+
+# Filter to roles available for a specific principal
+atlas confluence space-roles list --principal-id acc-123 --principal-type=USER
+
+# Fetch a single role
+atlas confluence space-roles get role-1
+
+# Create a custom role
+atlas confluence space-roles create --name "Editor" --description "Edit pages" --space-permissions read/space,write/space
+
+# Update a role (returns a taskId — poll until done)
+atlas confluence space-roles update role-1 --name "Editor v2" --description "Updated description" --space-permissions read/space,write/space
+
+# Delete a role (returns a taskId — poll until done)
+atlas confluence space-roles delete role-1
 ```
 
 ## `tasks`

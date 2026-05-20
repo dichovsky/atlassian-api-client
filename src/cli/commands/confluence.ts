@@ -8,6 +8,8 @@ import type {
   DataPolicySpaceSortOrder,
   LabelSortOrder,
   PageSortOrder,
+  SpaceRolePrincipalType,
+  SpaceRoleType,
 } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
@@ -46,6 +48,8 @@ export async function executeConfluenceCommand(
       return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
       return executeSpaceRoleMode(client, cmd);
+    case 'space-roles':
+      return executeSpaceRoles(client, cmd);
     case 'tasks':
       return executeTasks(client, cmd);
     case 'users':
@@ -516,6 +520,84 @@ async function executeSpaceRoleMode(
     default:
       throw new Error(`Unknown space-role-mode action: ${cmd.action}. Actions: get`);
   }
+}
+
+async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const roleType = asEnum(opts['role-type'], SPACE_ROLE_TYPES, 'role-type');
+      const principalType = asEnum(
+        opts['principal-type'],
+        SPACE_ROLE_PRINCIPAL_TYPES,
+        'principal-type',
+      );
+      return client.spaceRoles.list({
+        'space-id': asString(opts['space-id']),
+        ...(roleType !== undefined ? { 'role-type': roleType } : {}),
+        'principal-id': asString(opts['principal-id']),
+        ...(principalType !== undefined ? { 'principal-type': principalType } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    case 'get':
+      return client.spaceRoles.get(requireArg(cmd.positionalArgs[0], 'role ID'));
+    case 'create':
+      return client.spaceRoles.create({
+        name: requireOpt(opts['name'], '--name'),
+        description: requireOpt(opts['description'], '--description'),
+        spacePermissions: parseSpacePermissions(
+          requireOpt(opts['space-permissions'], '--space-permissions'),
+        ),
+      });
+    case 'update': {
+      const anonId = asString(opts['anonymous-reassignment-role-id']);
+      const guestId = asString(opts['guest-reassignment-role-id']);
+      return client.spaceRoles.update(requireArg(cmd.positionalArgs[0], 'role ID'), {
+        name: requireOpt(opts['name'], '--name'),
+        description: requireOpt(opts['description'], '--description'),
+        spacePermissions: parseSpacePermissions(
+          requireOpt(opts['space-permissions'], '--space-permissions'),
+        ),
+        ...(anonId !== undefined ? { anonymousReassignmentRoleId: anonId } : {}),
+        ...(guestId !== undefined ? { guestReassignmentRoleId: guestId } : {}),
+      });
+    }
+    case 'delete':
+      return client.spaceRoles.delete(requireArg(cmd.positionalArgs[0], 'role ID'));
+    default:
+      throw new Error(
+        `Unknown space-roles action: ${cmd.action}. Actions: list, get, create, update, delete`,
+      );
+  }
+}
+
+const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];
+
+const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [
+  'USER',
+  'GROUP',
+  'ACCESS_CLASS',
+];
+
+/**
+ * Split `--space-permissions` from the CLI into a non-empty array. Accepts a
+ * comma-separated list of permission ids (e.g. `read/space,write/space`);
+ * surrounding whitespace per entry is trimmed and empty entries are dropped.
+ * Rejects an all-empty payload with a clear error so callers fail fast before
+ * the HTTP round trip.
+ */
+function parseSpacePermissions(raw: string): readonly string[] {
+  const items = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (items.length === 0) {
+    throw new Error('--space-permissions must contain at least one non-empty permission id');
+  }
+  return items;
 }
 
 async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {

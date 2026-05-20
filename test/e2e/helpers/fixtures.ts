@@ -197,6 +197,43 @@ export const confluenceFixtures = {
   spaceRoleMode: {
     mode: 'ROLES' as const,
   },
+  spaceRole: {
+    id: 'role-1',
+    type: 'CUSTOM' as const,
+    name: 'E2E Editor',
+    description: 'Edit pages',
+    spacePermissions: ['read/space', 'write/space'],
+  },
+  spaceRoleDetail: {
+    id: 'role-1',
+    type: 'CUSTOM' as const,
+    name: 'E2E Editor',
+    description: 'Edit pages',
+    spacePermissions: ['read/space', 'write/space'],
+    _links: { base: 'https://test.atlassian.net/wiki' },
+  },
+  spaceRoleList: {
+    results: [
+      {
+        id: 'role-1',
+        type: 'CUSTOM' as const,
+        name: 'E2E Editor',
+        description: 'Edit pages',
+        spacePermissions: ['read/space', 'write/space'],
+      },
+    ],
+    _links: {},
+  },
+  spaceRoleUpdateResponse: {
+    id: 'role-1',
+    type: 'CUSTOM' as const,
+    name: 'E2E Editor v2',
+    description: 'Updated',
+    taskId: 'task-42',
+  },
+  spaceRoleDeleteResponse: {
+    taskId: 'task-43',
+  },
   checkAccessByEmail: {
     emailsWithoutAccess: ['outsider@example.com'],
     invalidEmails: ['not-an-email'],

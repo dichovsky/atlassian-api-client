@@ -84,6 +84,14 @@ const GLOBAL_OPTIONS = {
   before: { type: 'string' as const },
   after: { type: 'string' as const },
   'custom-field': { type: 'string' as const },
+  // space-roles-specific options
+  description: { type: 'string' as const },
+  'space-permissions': { type: 'string' as const },
+  'principal-id': { type: 'string' as const },
+  'principal-type': { type: 'string' as const },
+  'role-type': { type: 'string' as const },
+  'anonymous-reassignment-role-id': { type: 'string' as const },
+  'guest-reassignment-role-id': { type: 'string' as const },
   // boards-specific options
   'filter-id': { type: 'string' as const },
   feature: { type: 'string' as const },

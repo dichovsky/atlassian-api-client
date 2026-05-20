@@ -85,6 +85,15 @@ export type {
   SpacePermission,
   ListSpacePermissionsParams,
   SpaceRoleMode,
+  SpaceRole,
+  SpaceRoleDetail,
+  SpaceRoleType,
+  SpaceRolePrincipalType,
+  ListSpaceRolesParams,
+  CreateSpaceRoleData,
+  UpdateSpaceRoleData,
+  UpdateSpaceRoleResponse,
+  DeleteSpaceRoleResponse,
   ConfluenceUser,
   ConfluenceUserIcon,
   ConfluenceAccountStatus,
@@ -113,5 +122,6 @@ export { DataPoliciesResource } from './resources/data-policies.js';
 export { DatabasesResource } from './resources/databases.js';
 export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
+export { SpaceRolesResource } from './resources/space-roles.js';
 export { UsersResource } from './resources/users.js';
 export { UsersBulkResource } from './resources/users-bulk.js';
