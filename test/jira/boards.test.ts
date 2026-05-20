@@ -964,7 +964,14 @@ describe('BoardsResource', () => {
     it('calls GET /board/{boardId}/features', async () => {
       // Arrange
       const payload = {
-        features: [{ boardFeature: 'SIMPLE_ROADMAP', boardId: 42, state: 'ENABLED' as const, togglable: true }],
+        features: [
+          {
+            boardFeature: 'SIMPLE_ROADMAP',
+            boardId: 42,
+            state: 'ENABLED' as const,
+            togglable: true,
+          },
+        ],
       };
       transport.respondWith(payload);
 
@@ -1018,9 +1025,9 @@ describe('BoardsResource', () => {
     });
 
     it('throws ValidationError for empty feature name', async () => {
-      await expect(
-        boards.toggleFeature(42, { feature: '', state: 'ENABLED' }),
-      ).rejects.toThrow('feature must be a non-empty string');
+      await expect(boards.toggleFeature(42, { feature: '', state: 'ENABLED' })).rejects.toThrow(
+        'feature must be a non-empty string',
+      );
     });
 
     it('throws ValidationError for invalid state', async () => {
@@ -1087,9 +1094,7 @@ describe('BoardsResource', () => {
     });
 
     it('throws ValidationError for empty issues array', async () => {
-      await expect(boards.moveIssues(42, [])).rejects.toThrow(
-        'issues must be a non-empty array',
-      );
+      await expect(boards.moveIssues(42, [])).rejects.toThrow('issues must be a non-empty array');
     });
 
     it('throws ValidationError for issues entry with empty string', async () => {

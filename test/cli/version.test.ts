@@ -103,7 +103,6 @@ describe('resolvePackageVersion', () => {
     const fakeFs: VersionFsDeps = {
       exists: () => true,
       readFile: () => {
-         
         throw 'plain string failure';
       },
     };

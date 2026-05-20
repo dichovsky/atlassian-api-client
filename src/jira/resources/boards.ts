@@ -678,7 +678,6 @@ export class BoardsResource {
     return response.data;
   }
 
-
   /** Iterate over all boards across all result pages. */
   async *listAll(params?: Omit<ListBoardsParams, 'startAt'>): AsyncGenerator<Board> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');

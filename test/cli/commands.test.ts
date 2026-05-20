@@ -3434,11 +3434,23 @@ describe('executeJiraCommand', () => {
     it('boards list passes type, name, project, start-at, max-results', async () => {
       jiraBoardsMock.list.mockResolvedValue({ values: [] });
       await executeJiraCommand(
-        cmd('boards', 'list', [], { type: 'scrum', name: 'My Board', project: 'PROJ', 'start-at': '10', 'max-results': '10' }),
+        cmd('boards', 'list', [], {
+          type: 'scrum',
+          name: 'My Board',
+          project: 'PROJ',
+          'start-at': '10',
+          'max-results': '10',
+        }),
         GLOBALS,
       );
       expect(jiraBoardsMock.list).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'scrum', name: 'My Board', projectKeyOrId: 'PROJ', startAt: 10, maxResults: 10 }),
+        expect.objectContaining({
+          type: 'scrum',
+          name: 'My Board',
+          projectKeyOrId: 'PROJ',
+          startAt: 10,
+          maxResults: 10,
+        }),
       );
     });
 
@@ -3488,10 +3500,7 @@ describe('executeJiraCommand', () => {
 
     it('boards create throws when --filter-id is missing', async () => {
       await expect(
-        executeJiraCommand(
-          cmd('boards', 'create', [], { name: 'Board', type: 'scrum' }),
-          GLOBALS,
-        ),
+        executeJiraCommand(cmd('boards', 'create', [], { name: 'Board', type: 'scrum' }), GLOBALS),
       ).rejects.toThrow('Missing required option: --filter-id');
     });
 
@@ -3539,12 +3548,22 @@ describe('executeJiraCommand', () => {
     it('boards backlog passes jql, fields, start-at, max-results', async () => {
       jiraBoardsMock.getBacklog.mockResolvedValue({ values: [] });
       await executeJiraCommand(
-        cmd('boards', 'backlog', ['42'], { jql: 'status = Done', fields: 'summary,status', 'start-at': '5', 'max-results': '20' }),
+        cmd('boards', 'backlog', ['42'], {
+          jql: 'status = Done',
+          fields: 'summary,status',
+          'start-at': '5',
+          'max-results': '20',
+        }),
         GLOBALS,
       );
       expect(jiraBoardsMock.getBacklog).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ jql: 'status = Done', fields: ['summary', 'status'], startAt: 5, maxResults: 20 }),
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          startAt: 5,
+          maxResults: 20,
+        }),
       );
     });
 
@@ -3558,9 +3577,9 @@ describe('executeJiraCommand', () => {
     });
 
     it('boards configuration throws when boardId is missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('boards', 'configuration', []), GLOBALS),
-      ).rejects.toThrow('Missing required argument: boardId');
+      await expect(executeJiraCommand(cmd('boards', 'configuration', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: boardId',
+      );
     });
 
     // B243: boards list-epics
@@ -3591,8 +3610,14 @@ describe('executeJiraCommand', () => {
     it('boards issues-without-epic calls client.boards.getIssuesWithoutEpic with boardId', async () => {
       const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
       jiraBoardsMock.getIssuesWithoutEpic.mockResolvedValue(payload);
-      const result = await executeJiraCommand(cmd('boards', 'issues-without-epic', ['42']), GLOBALS);
-      expect(jiraBoardsMock.getIssuesWithoutEpic).toHaveBeenCalledWith(42, expect.objectContaining({}));
+      const result = await executeJiraCommand(
+        cmd('boards', 'issues-without-epic', ['42']),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getIssuesWithoutEpic).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({}),
+      );
       expect(result).toEqual(payload);
     });
 
@@ -3647,12 +3672,22 @@ describe('executeJiraCommand', () => {
     it('boards get-issues passes jql, fields, start-at, max-results', async () => {
       jiraBoardsMock.getIssues.mockResolvedValue({ values: [] });
       await executeJiraCommand(
-        cmd('boards', 'get-issues', ['42'], { jql: 'status = Done', fields: 'summary,status', 'start-at': '5', 'max-results': '20' }),
+        cmd('boards', 'get-issues', ['42'], {
+          jql: 'status = Done',
+          fields: 'summary,status',
+          'start-at': '5',
+          'max-results': '20',
+        }),
         GLOBALS,
       );
       expect(jiraBoardsMock.getIssues).toHaveBeenCalledWith(
         42,
-        expect.objectContaining({ jql: 'status = Done', fields: ['summary', 'status'], startAt: 5, maxResults: 20 }),
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          startAt: 5,
+          maxResults: 20,
+        }),
       );
     });
 
@@ -3708,10 +3743,7 @@ describe('executeJiraCommand', () => {
 
     it('boards list-versions passes released flag', async () => {
       jiraBoardsMock.listVersions.mockResolvedValue({ values: [] });
-      await executeJiraCommand(
-        cmd('boards', 'list-versions', ['42'], { released: true }),
-        GLOBALS,
-      );
+      await executeJiraCommand(cmd('boards', 'list-versions', ['42'], { released: true }), GLOBALS);
       expect(jiraBoardsMock.listVersions).toHaveBeenCalledWith(
         42,
         expect.objectContaining({ released: true }),
