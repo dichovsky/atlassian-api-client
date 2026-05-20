@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "ff795718444641aee493661a046eb9322d55120098500a7c92c559426c0316c2",
+  "sourceHash": "6756801dbed7e665d8e4cc9ab65f520e63a05a4af5698b42f9c9bb18b46e7815",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2085,97 +2085,97 @@
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 83,
+          "line": 121,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 96,
+          "line": 134,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 110,
+          "line": 148,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 126,
+          "line": 164,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 137,
+          "line": 175,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 148,
+          "line": 186,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 157,
+          "line": 195,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 236,
+          "line": 274,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 374,
+          "line": 412,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 446,
+          "line": 484,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 470,
+          "line": 508,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 479,
+          "line": 517,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 484,
+          "line": 522,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 489,
+          "line": 527,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 493,
+          "line": 531,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 502,
+          "line": 540,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
@@ -9835,51 +9835,122 @@
       "path": "src/jira/resources/issues.ts",
       "symbols": [
         {
+          "name": "AgileIssue",
+          "kind": "interface",
+          "line": 20,
+          "exported": true,
+          "signature": "export interface AgileIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
+          "jsdoc": "Agile view of a Jira issue as returned by /rest/agile/1.0/issue/{key}."
+        },
+        {
+          "name": "IssueEstimation",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface IssueEstimation { readonly fieldId: string; readonly value: string | null; }",
+          "jsdoc": "Estimation value returned by GET /rest/agile/1.0/issue/{key}/estimation."
+        },
+        {
+          "name": "GetEstimationParams",
+          "kind": "interface",
+          "line": 41,
+          "exported": true,
+          "signature": "export interface GetEstimationParams { readonly boardId?: number; }",
+          "jsdoc": "Params for GET /rest/agile/1.0/issue/{key}/estimation."
+        },
+        {
+          "name": "SetEstimationData",
+          "kind": "interface",
+          "line": 47,
+          "exported": true,
+          "signature": "export interface SetEstimationData { readonly value: string | null; }",
+          "jsdoc": "Request body for PUT /rest/agile/1.0/issue/{key}/estimation."
+        },
+        {
+          "name": "RankIssuesData",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface RankIssuesData { readonly issues: readonly string[]; readonly rankBeforeIssue?: string; readonly rankAf…",
+          "jsdoc": "Request body for PUT /rest/agile/1.0/issue/rank."
+        },
+        {
           "name": "IssuesResource",
           "kind": "class",
-          "line": 13,
+          "line": 64,
           "exported": true,
           "signature": "export class IssuesResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 14
+              "line": 65
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 20
+              "line": 72
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 35
+              "line": 87
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 45
+              "line": 97
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 54
+              "line": 106
             },
             {
               "name": "getTransitions",
               "kind": "method",
-              "line": 62
+              "line": 114
             },
             {
               "name": "transition",
               "kind": "method",
-              "line": 71
+              "line": 123
+            },
+            {
+              "name": "requireAgileBaseUrl",
+              "kind": "method",
+              "line": 133
+            },
+            {
+              "name": "buildBoardIdQuery",
+              "kind": "method",
+              "line": 140
+            },
+            {
+              "name": "getAgile",
+              "kind": "method",
+              "line": 157
+            },
+            {
+              "name": "getEstimation",
+              "kind": "method",
+              "line": 170
+            },
+            {
+              "name": "setEstimation",
+              "kind": "method",
+              "line": 188
+            },
+            {
+              "name": "rank",
+              "kind": "method",
+              "line": 208
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js",
         "../types.js"

@@ -109,7 +109,7 @@ EXAMPLES:
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 
 RESOURCES:
-  issues        get, create, update, delete, transition, transitions
+  issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
   projects      list, get
   search        search (via JQL)
   users         get, me, search
