@@ -177,8 +177,57 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
+    case 'list-properties': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listProperties(boardId);
+    }
+    case 'delete-property': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      await client.boards.deleteProperty(boardId, propertyKey);
+      return { deleted: true };
+    }
+    case 'get-property': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      return client.boards.getProperty(boardId, propertyKey);
+    }
+    case 'set-property': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let value: unknown;
+      try {
+        value = JSON.parse(valueRaw);
+      } catch {
+        throw new Error('--value must be valid JSON');
+      }
+      await client.boards.setProperty(boardId, propertyKey, value);
+      return { set: true };
+    }
+    case 'list-quickfilters': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listQuickFilters(boardId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'get-quickfilter': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const quickFilterId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'quickFilterId'),
+        'quickFilterId',
+      );
+      return client.boards.getQuickFilter(boardId, quickFilterId);
+    }
+    case 'get-reports': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getReports(boardId);
+    }
     default:
-      throw new Error(`Unknown boards action: ${cmd.action}. Actions: list-sprints, sprint-issues`);
+      throw new Error(
+        `Unknown boards action: ${cmd.action}. Actions: list-sprints, sprint-issues, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports`,
+      );
   }
 }
 

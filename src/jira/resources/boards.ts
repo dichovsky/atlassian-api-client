@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import type { Sprint } from './sprints.js';
@@ -44,6 +45,36 @@ export interface ListBoardSprintsParams {
   readonly maxResults?: number;
   readonly state?: string; // comma-separated: 'future', 'active', 'closed'
 }
+
+export interface BoardPropertyKey {
+  readonly self: string;
+  readonly key: string;
+}
+
+export interface BoardPropertyKeys {
+  readonly keys: readonly BoardPropertyKey[];
+}
+
+export interface BoardProperty {
+  readonly key: string;
+  readonly value: unknown;
+}
+
+export interface QuickFilter {
+  readonly id: number;
+  readonly boardId: number;
+  readonly name: string;
+  readonly jql: string;
+  readonly description?: string;
+  readonly position?: number;
+}
+
+export interface ListQuickFiltersParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+export type BoardReports = Record<string, unknown>;
 
 export class BoardsResource {
   constructor(
@@ -157,6 +188,111 @@ export class BoardsResource {
       method: 'GET',
       path: `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
       query,
+    });
+    return response.data;
+  }
+
+  /** List property keys for a board (B250). */
+  async listProperties(boardId: number): Promise<BoardPropertyKeys> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    const response = await this.transport.request<BoardPropertyKeys>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/properties`,
+    });
+    return response.data;
+  }
+
+  /** Delete a board property (B251). */
+  async deleteProperty(boardId: number, propertyKey: string): Promise<void> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/board/${boardId}/properties/${encodePathSegment(propertyKey)}`,
+    });
+  }
+
+  /** Get a board property (B252). */
+  async getProperty(boardId: number, propertyKey: string): Promise<BoardProperty> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    const response = await this.transport.request<BoardProperty>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/properties/${encodePathSegment(propertyKey)}`,
+    });
+    return response.data;
+  }
+
+  /** Set/overwrite a board property (B253). Body is arbitrary JSON. */
+  async setProperty(boardId: number, propertyKey: string, value: unknown): Promise<void> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/board/${boardId}/properties/${encodePathSegment(propertyKey)}`,
+      body: value,
+    });
+  }
+
+  /** List quick filters for a board (B254). */
+  async listQuickFilters(
+    boardId: number,
+    params?: ListQuickFiltersParams,
+  ): Promise<OffsetPaginatedResponse<QuickFilter>> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<OffsetPaginatedResponse<QuickFilter>>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/quickfilter`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Get a quick filter by ID (B255). */
+  async getQuickFilter(boardId: number, quickFilterId: number): Promise<QuickFilter> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (!Number.isInteger(quickFilterId) || quickFilterId <= 0) {
+      throw new ValidationError('quickFilterId must be a positive integer');
+    }
+    const response = await this.transport.request<QuickFilter>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/quickfilter/${quickFilterId}`,
+    });
+    return response.data;
+  }
+
+  /** Get reports for a board (B256). */
+  async getReports(boardId: number): Promise<BoardReports> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    const response = await this.transport.request<BoardReports>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/reports`,
     });
     return response.data;
   }

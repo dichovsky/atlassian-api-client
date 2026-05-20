@@ -13,7 +13,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issue-types` | `list`, `get`                                                                                                                                                    |
 | `priorities`  | `list`, `get`                                                                                                                                                    |
 | `statuses`    | `list`                                                                                                                                                           |
-| `boards`      | `list-sprints`, `sprint-issues`                                                                                                                                  |
+| `boards`      | `list-sprints`, `sprint-issues`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports`     |
 | `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap` |
 | `epic`        | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                 |
 
@@ -102,17 +102,28 @@ for await (const issue of paginateSearch(client, { jql: 'project = PROJ' })) {
 
 ## `boards`
 
-List sprints and sprint issues scoped to a specific Agile board.
+List sprints, sprint issues, properties, quick filters, and reports scoped to a specific Agile board.
 
-| Action          | Positionals            | Required | Optional flags                                     |
-| --------------- | ---------------------- | -------- | -------------------------------------------------- |
-| `list-sprints`  | `<boardId>`            | —        | `--state`, `--start-at`, `--max-results`           |
-| `sprint-issues` | `<boardId> <sprintId>` | —        | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| Action              | Positionals                    | Required flags | Optional flags                                     |
+| ------------------- | ------------------------------ | -------------- | -------------------------------------------------- |
+| `list-sprints`      | `<boardId>`                    | —              | `--state`, `--start-at`, `--max-results`           |
+| `sprint-issues`     | `<boardId> <sprintId>`         | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `list-properties`   | `<boardId>`                    | —              | —                                                  |
+| `delete-property`   | `<boardId> <propertyKey>`      | —              | —                                                  |
+| `get-property`      | `<boardId> <propertyKey>`      | —              | —                                                  |
+| `set-property`      | `<boardId> <propertyKey>`      | `--value`      | —                                                  |
+| `list-quickfilters` | `<boardId>`                    | —              | `--start-at`, `--max-results`                      |
+| `get-quickfilter`   | `<boardId> <quickFilterId>`    | —              | —                                                  |
+| `get-reports`       | `<boardId>`                    | —              | —                                                  |
 
 - `--state` accepts a comma-separated list of sprint states: `future`, `active`, `closed`. Example: `--state active,closed`.
 - `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
 - Both `boardId` and `sprintId` are numeric IDs (not names).
 - `--start-at` is the 0-based offset for pagination.
+- `--value` accepts **any valid JSON**: objects, arrays, strings, numbers, booleans, and `null`. Examples: `--value '{"beta":true}'`, `--value '"hello"'`, `--value '42'`, `--value 'null'`.
+- `propertyKey` is URL-encoded automatically — keys with spaces or special characters are safe to pass as-is.
+- `get-property` response: `{ key: string, value: unknown }` — the caller must narrow `value` to the expected shape.
+- Board properties are arbitrary key-value metadata stored on the board.
 
 ```sh
 # List all active sprints on board 1
@@ -126,6 +137,30 @@ atlas jira boards sprint-issues 1 10
 
 # List issues with JQL filter and field selection
 atlas jira boards sprint-issues 1 10 --jql "status = 'In Progress'" --fields summary,status,assignee
+
+# List all property keys for board 42
+atlas jira boards list-properties 42
+
+# Get a specific property value
+atlas jira boards get-property 42 my-flag
+
+# Set a property to a JSON object value
+atlas jira boards set-property 42 feature-flags --value '{"betaEnabled":true,"threshold":5}'
+
+# Set a property to a scalar string
+atlas jira boards set-property 42 label --value '"in-progress"'
+
+# Delete a property
+atlas jira boards delete-property 42 my-flag
+
+# List quick filters for board 42
+atlas jira boards list-quickfilters 42
+
+# Get a specific quick filter
+atlas jira boards get-quickfilter 42 7
+
+# Get reports for board 42
+atlas jira boards get-reports 42
 ```
 
 ## `sprints`
