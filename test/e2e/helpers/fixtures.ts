@@ -113,6 +113,49 @@ export const confluenceFixtures = {
     results: [{ id: 'lbl-1', name: 'production', prefix: 'global' }],
     _links: { next: null },
   },
+  labelTenantList: {
+    results: [
+      { id: 'lbl-100', name: 'release', prefix: 'global' },
+      { id: 'lbl-101', name: 'deprecated', prefix: 'team' },
+    ],
+    _links: { next: null },
+  },
+  attachmentsByLabel: {
+    results: [
+      {
+        id: 'att-200',
+        status: 'current',
+        title: 'release-notes.pdf',
+        pageId: '12345',
+        mediaType: 'application/pdf',
+      },
+    ],
+    _links: { next: null },
+  },
+  blogPostsByLabel: {
+    results: [
+      {
+        id: 'bp-300',
+        type: 'blogpost',
+        status: 'current',
+        title: 'Tagged Blog Post',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  pagesByLabel: {
+    results: [
+      {
+        id: 'pg-400',
+        type: 'page',
+        status: 'current',
+        title: 'Tagged Page',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
   adminKey: {
     createdAt: '2026-05-20T12:00:00.000Z',
     expireAt: '2026-05-20T13:00:00.000Z',

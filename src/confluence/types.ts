@@ -271,6 +271,105 @@ export interface ListLabelsParams {
   readonly cursor?: string;
 }
 
+/**
+ * Sort tokens accepted by `GET /labels`. The default direction is ascending;
+ * prefix with `-` for descending. Matches the OpenAPI `LabelSortOrder` enum.
+ */
+export type LabelSortOrder = 'created-date' | '-created-date' | 'id' | '-id' | 'name' | '-name';
+
+/**
+ * Parameters for `GET /labels`. The tenant-wide label listing supports
+ * filtering by id and prefix (both are comma-separated lists at the wire
+ * level). Callers may pass either a string (already comma-joined) or a
+ * non-empty array; the resource flattens arrays via `join(',')` before
+ * shipping.
+ */
+export interface ListAllLabelsParams {
+  readonly 'label-id'?: string | readonly (string | number)[];
+  readonly prefix?: string | readonly string[];
+  readonly sort?: LabelSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/**
+ * Sort tokens accepted by `GET /labels/{id}/attachments`. The default
+ * direction is ascending; prefix with `-` for descending. Matches the
+ * OpenAPI `AttachmentSortOrder` enum.
+ */
+export type AttachmentSortOrder =
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
+
+/** Parameters for `GET /labels/{id}/attachments`. */
+export interface ListAttachmentsByLabelParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/**
+ * Sort tokens accepted by `GET /labels/{id}/blogposts`. The default
+ * direction is ascending; prefix with `-` for descending. Matches the
+ * OpenAPI `BlogPostSortOrder` enum.
+ */
+export type BlogPostSortOrder =
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
+
+/** Parameters for `GET /labels/{id}/blogposts`. */
+export interface ListBlogPostsByLabelParams {
+  /**
+   * Filter by space id(s). The wire format is a comma-joined string; the
+   * array form is SDK-only — CLI callers always pass a pre-joined string
+   * via `--space-id`, so the array branch of `csvParam` is unreachable
+   * through the CLI dispatch path (covered by unit tests at the resource
+   * layer).
+   */
+  readonly 'space-id'?: string | readonly (string | number)[];
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: BlogPostSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/**
+ * Sort tokens accepted by `GET /labels/{id}/pages`. The default direction
+ * is ascending; prefix with `-` for descending. Matches the OpenAPI
+ * `PageSortOrder` enum.
+ */
+export type PageSortOrder =
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date'
+  | 'title'
+  | '-title';
+
+/** Parameters for `GET /labels/{id}/pages`. */
+export interface ListPagesByLabelParams {
+  /**
+   * Filter by space id(s). The wire format is a comma-joined string; the
+   * array form is SDK-only — CLI callers always pass a pre-joined string
+   * via `--space-id`, so the array branch of `csvParam` is unreachable
+   * through the CLI dispatch path (covered by unit tests at the resource
+   * layer).
+   */
+  readonly 'space-id'?: string | readonly (string | number)[];
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: PageSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
 /** Confluence Content Property. */
 export interface ContentProperty {
   readonly id: string;

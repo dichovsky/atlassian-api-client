@@ -66,7 +66,7 @@ RESOURCES:
   blog-posts             list, get, create, update, delete
   comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, get, delete
-  labels                 list
+  labels                 list, list-all, attachments, blog-posts, pages
   admin-key              get, create, delete
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
@@ -104,6 +104,10 @@ EXAMPLES:
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
+  atlas confluence labels list-all --prefix global --limit 50
+  atlas confluence labels attachments 12345 --sort -created-date
+  atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
+  atlas confluence labels pages 12345 --sort -modified-date
 `;
 
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3

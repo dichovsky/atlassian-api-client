@@ -53,6 +53,8 @@ const GLOBAL_OPTIONS = {
   'database-id': { type: 'string' as const },
   'property-id': { type: 'string' as const },
   'level-id': { type: 'string' as const },
+  'label-id': { type: 'string' as const },
+  prefix: { type: 'string' as const },
   'include-collaborators': { type: 'boolean' as const },
   'include-direct-children': { type: 'boolean' as const },
   'include-operations': { type: 'boolean' as const },

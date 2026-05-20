@@ -64,6 +64,10 @@ const confluenceAttachmentsMock = {
 };
 const confluenceLabelsMock = {
   listForPage: vi.fn(),
+  list: vi.fn(),
+  listAttachments: vi.fn(),
+  listBlogPosts: vi.fn(),
+  listPages: vi.fn(),
 };
 const confluenceAdminKeyMock = {
   get: vi.fn(),
@@ -1133,6 +1137,188 @@ describe('executeConfluenceCommand', () => {
     it('labels unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('labels', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown labels action',
+      );
+    });
+
+    // ── labels list-all ─────────────────────────────────────────────────────
+
+    it('labels list-all calls client.labels.list with no options', async () => {
+      confluenceLabelsMock.list.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('labels', 'list-all'), GLOBALS);
+      expect(confluenceLabelsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ 'label-id': undefined, prefix: undefined }),
+      );
+    });
+
+    it('labels list-all forwards filters / sort / pagination', async () => {
+      confluenceLabelsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-all', [], {
+        'label-id': '10,20',
+        prefix: 'global,team',
+        sort: '-name',
+        limit: '40',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.list).toHaveBeenCalledWith({
+        'label-id': '10,20',
+        prefix: 'global,team',
+        sort: '-name',
+        limit: 40,
+        cursor: 'tok',
+      });
+    });
+
+    it('labels list-all trims empty filter values to undefined', async () => {
+      confluenceLabelsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-all', [], { 'label-id': '  ', prefix: '' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ 'label-id': undefined, prefix: undefined }),
+      );
+    });
+
+    it('labels list-all rejects unknown --sort values', async () => {
+      const parsed = cmd('labels', 'list-all', [], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of',
+      );
+    });
+
+    // ── labels attachments ──────────────────────────────────────────────────
+
+    it('labels attachments calls listAttachments with label id', async () => {
+      confluenceLabelsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'attachments', ['lbl-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listAttachments).toHaveBeenCalledWith(
+        'lbl-1',
+        expect.any(Object),
+      );
+    });
+
+    it('labels attachments forwards sort and pagination flags', async () => {
+      confluenceLabelsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'attachments', ['lbl-1'], {
+        sort: '-created-date',
+        limit: '10',
+        cursor: 'c1',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listAttachments).toHaveBeenCalledWith('lbl-1', {
+        sort: '-created-date',
+        limit: 10,
+        cursor: 'c1',
+      });
+    });
+
+    it('labels attachments throws when label ID missing', async () => {
+      await expect(executeConfluenceCommand(cmd('labels', 'attachments'), GLOBALS)).rejects.toThrow(
+        'label ID',
+      );
+    });
+
+    it('labels attachments rejects invalid --sort', async () => {
+      const parsed = cmd('labels', 'attachments', ['lbl-1'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of',
+      );
+    });
+
+    // ── labels blog-posts ───────────────────────────────────────────────────
+
+    it('labels blog-posts forwards space-id and body-format', async () => {
+      confluenceLabelsMock.listBlogPosts.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'blog-posts', ['lbl-1'], {
+        'space-id': '100,200',
+        'body-format': 'atlas_doc_format',
+        sort: '-id',
+        limit: '15',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listBlogPosts).toHaveBeenCalledWith('lbl-1', {
+        'space-id': '100,200',
+        'body-format': 'atlas_doc_format',
+        sort: '-id',
+        limit: 15,
+        cursor: undefined,
+      });
+    });
+
+    it('labels blog-posts omits body-format / sort when flags absent', async () => {
+      confluenceLabelsMock.listBlogPosts.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'blog-posts', ['lbl-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const payload = confluenceLabelsMock.listBlogPosts.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(payload).not.toHaveProperty('body-format');
+      expect(payload).not.toHaveProperty('sort');
+    });
+
+    it('labels blog-posts rejects invalid --body-format', async () => {
+      const parsed = cmd('labels', 'blog-posts', ['lbl-1'], { 'body-format': 'raw' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-format must be one of',
+      );
+    });
+
+    it('labels blog-posts throws when label ID missing', async () => {
+      await expect(executeConfluenceCommand(cmd('labels', 'blog-posts'), GLOBALS)).rejects.toThrow(
+        'label ID',
+      );
+    });
+
+    // ── labels pages ────────────────────────────────────────────────────────
+
+    it('labels pages forwards space-id, sort, and limit', async () => {
+      confluenceLabelsMock.listPages.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'pages', ['lbl-1'], {
+        'space-id': '100',
+        sort: '-title',
+        limit: '25',
+        cursor: 'cur',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listPages).toHaveBeenCalledWith('lbl-1', {
+        'space-id': '100',
+        sort: '-title',
+        limit: 25,
+        cursor: 'cur',
+      });
+    });
+
+    it('labels pages forwards body-format when provided', async () => {
+      confluenceLabelsMock.listPages.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'pages', ['lbl-1'], { 'body-format': 'storage' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listPages).toHaveBeenCalledWith(
+        'lbl-1',
+        expect.objectContaining({ 'body-format': 'storage' }),
+      );
+    });
+
+    it('labels pages with no flags passes minimum payload', async () => {
+      confluenceLabelsMock.listPages.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'pages', ['lbl-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listPages).toHaveBeenCalledWith(
+        'lbl-1',
+        expect.objectContaining({ 'space-id': undefined }),
+      );
+    });
+
+    it('labels pages throws when label ID missing', async () => {
+      await expect(executeConfluenceCommand(cmd('labels', 'pages'), GLOBALS)).rejects.toThrow(
+        'label ID',
+      );
+    });
+
+    it('labels pages rejects invalid --sort', async () => {
+      const parsed = cmd('labels', 'pages', ['lbl-1'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of',
       );
     });
   });

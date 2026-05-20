@@ -452,6 +452,84 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/pages/12345/labels` },
     expectStdout: ['"name": "production"'],
   },
+  {
+    name: 'labels list-all (tenant-wide)',
+    argv: [
+      'confluence',
+      'labels',
+      'list-all',
+      '--prefix',
+      'global,team',
+      '--label-id',
+      '10,20',
+      '--sort=-name',
+      '--limit',
+      '50',
+    ],
+    routes: [{ method: 'GET', path: `${P}/labels`, body: F.labelTenantList }],
+    expectCall: { method: 'GET', pathname: `${P}/labels` },
+    expectStdout: ['"name": "release"'],
+    expectQuery: (query) => {
+      expect(query.prefix).toBe('global,team');
+      expect(query['label-id']).toBe('10,20');
+      expect(query.sort).toBe('-name');
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'labels attachments by label id',
+    argv: [
+      'confluence',
+      'labels',
+      'attachments',
+      'lbl-100',
+      '--sort=-modified-date',
+      '--limit',
+      '5',
+    ],
+    routes: [
+      { method: 'GET', path: `${P}/labels/lbl-100/attachments`, body: F.attachmentsByLabel },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/labels/lbl-100/attachments` },
+    expectStdout: ['"id": "att-200"'],
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-modified-date');
+      expect(query.limit).toBe('5');
+    },
+  },
+  {
+    name: 'labels blog-posts by label id',
+    argv: [
+      'confluence',
+      'labels',
+      'blog-posts',
+      'lbl-100',
+      '--space-id',
+      '654321,777',
+      '--body-format',
+      'atlas_doc_format',
+      '--sort=-id',
+    ],
+    routes: [{ method: 'GET', path: `${P}/labels/lbl-100/blogposts`, body: F.blogPostsByLabel }],
+    expectCall: { method: 'GET', pathname: `${P}/labels/lbl-100/blogposts` },
+    expectStdout: ['"id": "bp-300"'],
+    expectQuery: (query) => {
+      expect(query['space-id']).toBe('654321,777');
+      expect(query['body-format']).toBe('atlas_doc_format');
+      expect(query.sort).toBe('-id');
+    },
+  },
+  {
+    name: 'labels pages by label id',
+    argv: ['confluence', 'labels', 'pages', 'lbl-100', '--sort=-title', '--limit', '25'],
+    routes: [{ method: 'GET', path: `${P}/labels/lbl-100/pages`, body: F.pagesByLabel }],
+    expectCall: { method: 'GET', pathname: `${P}/labels/lbl-100/pages` },
+    expectStdout: ['"id": "pg-400"'],
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-title');
+      expect(query.limit).toBe('25');
+    },
+  },
 
   // ─── admin-key ────────────────────────────────────────────────────────
   {
