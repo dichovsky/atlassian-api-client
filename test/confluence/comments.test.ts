@@ -160,7 +160,7 @@ describe('CommentsResource', () => {
     it('includes params when provided', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
-      const params = { 'body-format': 'view' as const, limit: 5, cursor: 'c' };
+      const params = { 'body-format': 'storage' as const, limit: 5, cursor: 'c' };
 
       // Act
       await comments.listInline('page-1', params);

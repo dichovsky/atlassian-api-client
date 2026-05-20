@@ -360,7 +360,7 @@ export interface FooterCommentVersionDetail {
 
 /** Parameters for listing inline comments on a page or blog post. */
 export interface ListInlineCommentsParams {
-  readonly 'body-format'?: BodyFormat;
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -392,16 +392,9 @@ export type InlineCommentSortOrder =
   | 'modified-date'
   | '-modified-date';
 
-/**
- * Sort tokens accepted by `GET /inline-comments/{id}/versions`. Mirrors the
- * OpenAPI `VersionSortOrder` enum, which is narrower than the comment-list
- * sort vocabulary (only modified-date direction is meaningful for versions).
- */
-export type VersionSortOrder = 'modified-date' | '-modified-date';
-
 /** Parameters for tenant-wide `GET /inline-comments`. */
 export interface ListInlineCommentsAllParams {
-  readonly 'body-format'?: BodyFormat;
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: InlineCommentSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
@@ -409,7 +402,7 @@ export interface ListInlineCommentsAllParams {
 
 /** Parameters for `GET /inline-comments/{id}/children`. */
 export interface ListInlineCommentChildrenParams {
-  readonly 'body-format'?: BodyFormat;
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: InlineCommentSortOrder;
   readonly limit?: number;
   readonly cursor?: string;

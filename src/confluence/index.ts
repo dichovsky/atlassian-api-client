@@ -97,7 +97,6 @@ export type {
   FooterCommentVersionSummary,
   FooterCommentVersionDetail,
   InlineCommentSortOrder,
-  VersionSortOrder,
   ListInlineCommentsAllParams,
   ListInlineCommentChildrenParams,
   ListInlineCommentLikeUsersParams,
