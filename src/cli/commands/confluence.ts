@@ -295,8 +295,8 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'list-all': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
       return client.labels.list({
-        'label-id': parseCsvList(asString(opts['label-id'])),
-        prefix: parseCsvList(asString(opts['prefix'])),
+        'label-id': normalizeOptionalString(asString(opts['label-id'])),
+        prefix: normalizeOptionalString(asString(opts['prefix'])),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
@@ -314,7 +314,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listBlogPosts(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': parseCsvList(asString(opts['space-id'])),
+        'space-id': normalizeOptionalString(asString(opts['space-id'])),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -325,7 +325,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       const sort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
       const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.labels.listPages(requireArg(cmd.positionalArgs[0], 'label ID'), {
-        'space-id': parseCsvList(asString(opts['space-id'])),
+        'space-id': normalizeOptionalString(asString(opts['space-id'])),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -340,12 +340,13 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
 }
 
 /**
- * Pass an optional comma-separated CLI flag through to the resource layer
- * untouched. The resource layer accepts the raw string and ships it as a
- * single query value, so we only need to drop empties (treat as unset)
- * without splitting into an array.
+ * Normalize an optional CLI string flag: trim whitespace and collapse the
+ * empty case to `undefined`. The resource layer accepts the raw (possibly
+ * comma-separated) string and forwards it as a single query value, so we
+ * deliberately do not split — we only drop empties so callers can treat
+ * "unset" and "blank" identically.
  */
-function parseCsvList(value: string | undefined): string | undefined {
+function normalizeOptionalString(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   return trimmed.length === 0 ? undefined : trimmed;

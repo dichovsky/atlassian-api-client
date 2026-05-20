@@ -112,6 +112,18 @@ export class LabelsResource {
     return response.data;
   }
 
+  /** Iterate over every attachment tagged with a label, transparently following cursors. */
+  async *listAllAttachments(
+    labelId: string,
+    params?: Omit<ListAttachmentsByLabelParams, 'cursor'>,
+  ): AsyncGenerator<Attachment> {
+    yield* paginateCursor<Attachment>(
+      this.transport,
+      `${this.baseUrl}/labels/${encodePathSegment(labelId)}/attachments`,
+      params as Query,
+    );
+  }
+
   /** List blog posts tagged with a label (`GET /labels/{id}/blogposts`). */
   async listBlogPosts(
     labelId: string,
@@ -125,6 +137,18 @@ export class LabelsResource {
     return response.data;
   }
 
+  /** Iterate over every blog post tagged with a label, transparently following cursors. */
+  async *listAllBlogPosts(
+    labelId: string,
+    params?: Omit<ListBlogPostsByLabelParams, 'cursor'>,
+  ): AsyncGenerator<BlogPost> {
+    yield* paginateCursor<BlogPost>(
+      this.transport,
+      `${this.baseUrl}/labels/${encodePathSegment(labelId)}/blogposts`,
+      this.buildContentByLabelQuery(params),
+    );
+  }
+
   /** List pages tagged with a label (`GET /labels/{id}/pages`). */
   async listPages(
     labelId: string,
@@ -136,6 +160,18 @@ export class LabelsResource {
       query: this.buildContentByLabelQuery(params),
     });
     return response.data;
+  }
+
+  /** Iterate over every page tagged with a label, transparently following cursors. */
+  async *listAllPages(
+    labelId: string,
+    params?: Omit<ListPagesByLabelParams, 'cursor'>,
+  ): AsyncGenerator<Page> {
+    yield* paginateCursor<Page>(
+      this.transport,
+      `${this.baseUrl}/labels/${encodePathSegment(labelId)}/pages`,
+      this.buildContentByLabelQuery(params),
+    );
   }
 
   /** Iterate over all labels for a page. */

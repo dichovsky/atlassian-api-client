@@ -415,6 +415,86 @@ describe('LabelsResource', () => {
     });
   });
 
+  // ── listAllAttachments ────────────────────────────────────────────────────
+
+  describe('listAllAttachments()', () => {
+    it('iterates across pages and yields every attachment', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'a1' }, { id: 'a2' }],
+          _links: { next: '/wiki/api/v2/labels/lbl-1/attachments?cursor=p2' },
+        })
+        .respondWith({ results: [{ id: 'a3' }], _links: {} });
+
+      const ids: string[] = [];
+      for await (const att of labels.listAllAttachments('lbl-1')) {
+        ids.push((att as { id: string }).id);
+      }
+
+      expect(ids).toEqual(['a1', 'a2', 'a3']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/labels/lbl-1/attachments`);
+    });
+  });
+
+  // ── listAllBlogPosts ──────────────────────────────────────────────────────
+
+  describe('listAllBlogPosts()', () => {
+    it('iterates across pages and flattens filters into the first request', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'b1' }],
+          _links: { next: '/wiki/api/v2/labels/lbl-1/blogposts?cursor=p2' },
+        })
+        .respondWith({ results: [{ id: 'b2' }], _links: {} });
+
+      const ids: string[] = [];
+      for await (const bp of labels.listAllBlogPosts('lbl-1', {
+        'space-id': ['10', '20'],
+        'body-format': 'storage',
+        sort: '-modified-date',
+      })) {
+        ids.push((bp as { id: string }).id);
+      }
+
+      expect(ids).toEqual(['b1', 'b2']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.query).toEqual({
+        'space-id': '10,20',
+        'body-format': 'storage',
+        sort: '-modified-date',
+      });
+    });
+  });
+
+  // ── listAllPages ──────────────────────────────────────────────────────────
+
+  describe('listAllPages()', () => {
+    it('iterates across pages and flattens filters into the first request', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'p1' }],
+          _links: { next: '/wiki/api/v2/labels/lbl-1/pages?cursor=p2' },
+        })
+        .respondWith({ results: [{ id: 'p2' }], _links: {} });
+
+      const ids: string[] = [];
+      for await (const pg of labels.listAllPages('lbl-1', {
+        'space-id': ['100'],
+        sort: '-title',
+      })) {
+        ids.push((pg as { id: string }).id);
+      }
+
+      expect(ids).toEqual(['p1', 'p2']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.query).toEqual({
+        'space-id': '100',
+        sort: '-title',
+      });
+    });
+  });
+
   // ── path encoding ─────────────────────────────────────────────────────────
 
   describe('path encoding', () => {

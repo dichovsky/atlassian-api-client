@@ -325,6 +325,13 @@ export type BlogPostSortOrder =
 
 /** Parameters for `GET /labels/{id}/blogposts`. */
 export interface ListBlogPostsByLabelParams {
+  /**
+   * Filter by space id(s). The wire format is a comma-joined string; the
+   * array form is SDK-only — CLI callers always pass a pre-joined string
+   * via `--space-id`, so the array branch of `csvParam` is unreachable
+   * through the CLI dispatch path (covered by unit tests at the resource
+   * layer).
+   */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: BlogPostSortOrder;
@@ -349,6 +356,13 @@ export type PageSortOrder =
 
 /** Parameters for `GET /labels/{id}/pages`. */
 export interface ListPagesByLabelParams {
+  /**
+   * Filter by space id(s). The wire format is a comma-joined string; the
+   * array form is SDK-only — CLI callers always pass a pre-joined string
+   * via `--space-id`, so the array branch of `csvParam` is unreachable
+   * through the CLI dispatch path (covered by unit tests at the resource
+   * layer).
+   */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly sort?: PageSortOrder;
