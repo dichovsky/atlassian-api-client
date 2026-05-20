@@ -160,6 +160,57 @@ export const confluenceFixtures = {
     ],
     _links: { base: 'https://test.atlassian.net/wiki' },
   },
+  database: {
+    id: 'db-1',
+    type: 'database',
+    status: 'current',
+    title: 'E2E Inventory',
+    spaceId: '654321',
+    version: { number: 1 },
+  },
+  databaseAncestors: {
+    results: [
+      { id: 'ancestor-1', type: 'page' },
+      { id: 'ancestor-2', type: 'database' },
+    ],
+  },
+  databaseDescendants: {
+    results: [{ id: 'desc-1', type: 'page', title: 'Child', depth: 1 }],
+    _links: { next: null },
+  },
+  databaseChildren: {
+    results: [{ id: 'child-1', type: 'page', title: 'Direct Child' }],
+    _links: { next: null },
+  },
+  databaseOperations: {
+    operations: [
+      { operation: 'read', targetType: 'database' },
+      { operation: 'update', targetType: 'database' },
+    ],
+  },
+  databaseClassificationLevel: {
+    id: 'cl-1',
+    name: 'Public',
+    status: 'PUBLISHED',
+    color: 'GREEN',
+  },
+  databaseProperty: {
+    id: 'prop-1',
+    key: 'feature-flags',
+    value: { beta: true },
+    version: { number: 3 },
+  },
+  databasePropertyList: {
+    results: [
+      {
+        id: 'prop-1',
+        key: 'feature-flags',
+        value: { beta: true },
+        version: { number: 3 },
+      },
+    ],
+    _links: { next: null },
+  },
 };
 
 export const jiraFixtures = {

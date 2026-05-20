@@ -4,21 +4,22 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 
 ## Resource × action matrix
 
-| Resource                | Actions                                                                 |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `pages`                 | `list`, `get`, `create`, `update`, `delete`                             |
-| `spaces`                | `list`, `get`                                                           |
-| `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                             |
-| `comments`              | `list`, `get`, `create`, `delete`                                       |
-| `attachments`           | `list`, `get`, `delete`                                                 |
-| `labels`                | `list`                                                                  |
-| `admin-key`             | `get`, `create`, `delete`                                               |
-| `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property` |
-| `classification-levels` | `list`                                                                  |
-| `content`               | `convert-ids-to-types`                                                  |
-| `space-permissions`     | `list`                                                                  |
-| `space-role-mode`       | `get`                                                                   |
-| `users-bulk`            | `lookup`                                                                |
+| Resource                | Actions                                                                                                                                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`                 | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
+| `spaces`                | `list`, `get`                                                                                                                                                                                                                                                               |
+| `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
+| `comments`              | `list`, `get`, `create`, `delete`                                                                                                                                                                                                                                           |
+| `attachments`           | `list`, `get`, `delete`                                                                                                                                                                                                                                                     |
+| `labels`                | `list`                                                                                                                                                                                                                                                                      |
+| `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                   |
+| `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                     |
+| `classification-levels` | `list`                                                                                                                                                                                                                                                                      |
+| `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                      |
+| `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
+| `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
+| `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
+| `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
 
 ## `pages`
 
@@ -237,6 +238,68 @@ atlas confluence users-bulk lookup --account-ids acc-1,acc-2
 # Pipe into jq to project just displayName / accountId
 atlas confluence users-bulk lookup --account-ids acc-1,acc-2 \
   | jq '.results[] | { accountId, displayName }'
+```
+
+## `databases`
+
+Databases are first-class v2 content. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
+
+| Action                        | Positional     | Required flags                                          | Optional flags                                                                                         |
+| ----------------------------- | -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `create`                      | —              | `--space-id`                                            | `--title`, `--parent-id`, `--private`                                                                  |
+| `get`                         | `<databaseId>` | —                                                       | `--include-collaborators`, `--include-direct-children`, `--include-operations`, `--include-properties` |
+| `delete`                      | `<databaseId>` | —                                                       | —                                                                                                      |
+| `ancestors`                   | `<databaseId>` | —                                                       | `--limit`                                                                                              |
+| `descendants`                 | `<databaseId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                       |
+| `direct-children`             | `<databaseId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                        |
+| `operations`                  | `<databaseId>` | —                                                       | —                                                                                                      |
+| `get-classification-level`    | `<databaseId>` | —                                                       | —                                                                                                      |
+| `update-classification-level` | `<databaseId>` | `--level-id`                                            | —                                                                                                      |
+| `reset-classification-level`  | `<databaseId>` | —                                                       | —                                                                                                      |
+| `list-properties`             | `<databaseId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
+| `create-property`             | `<databaseId>` | `--key`, `--value`                                      | —                                                                                                      |
+| `get-property`                | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
+| `update-property`             | `<databaseId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `delete-property`             | `<databaseId>` | `--property-id`                                         | —                                                                                                      |
+
+- `--private` on `create` creates a database visible only to the creator.
+- `--depth` on `descendants` accepts 1–10 (server-validated; default 2).
+- `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
+- `--sort` on `list-properties` accepts `key` or `-key`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`.
+- `reset-classification-level` sends `{ status: "current" }` and falls back to the space default classification.
+- `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<databaseId>`.
+- `delete` trashes the database (recoverable from the space trash); there is no purge flag on this endpoint.
+
+```sh
+# Create a database in a space
+atlas confluence databases create --space-id 654321 --title "Inventory"
+
+# Create a private database
+atlas confluence databases create --space-id 654321 --title "Secret" --private
+
+# Read a database with everything inlined
+atlas confluence databases get db-1 --include-properties --include-operations
+
+# Walk the descendant tree
+atlas confluence databases descendants db-1 --depth 3 --limit 50
+
+# Sort direct children by most-recently modified
+atlas confluence databases direct-children db-1 --sort -modified-date
+
+# Classification level lifecycle
+atlas confluence databases get-classification-level db-1
+atlas confluence databases update-classification-level db-1 --level-id cl-restricted
+atlas confluence databases reset-classification-level db-1
+
+# Content properties
+atlas confluence databases list-properties db-1
+atlas confluence databases create-property db-1 --key feature-flags --value '{"beta":true}'
+atlas confluence databases get-property db-1 --property-id prop-1
+atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence databases delete-property db-1 --property-id prop-1
 ```
 
 ## Pagination

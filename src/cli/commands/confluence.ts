@@ -1,6 +1,7 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { ConfluenceClient } from '../../confluence/client.js';
 import { buildClientConfig } from '../config.js';
+import type { ContentSortOrder } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
 export async function executeConfluenceCommand(
@@ -30,6 +31,8 @@ export async function executeConfluenceCommand(
       return executeClassificationLevels(client, cmd);
     case 'content':
       return executeContent(client, cmd);
+    case 'databases':
+      return executeDatabases(client, cmd);
     case 'space-permissions':
       return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
@@ -385,6 +388,112 @@ async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): P
   }
 }
 
+async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const params = opts['private'] === true ? { private: true } : undefined;
+      return client.databases.create(
+        {
+          spaceId: requireOpt(opts['space-id'], '--space-id'),
+          title: asString(opts['title']),
+          parentId: asString(opts['parent-id']),
+        },
+        params,
+      );
+    }
+    case 'get':
+      return client.databases.get(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+        'include-direct-children': opts['include-direct-children'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+      });
+    case 'delete':
+      await client.databases.delete(requireArg(cmd.positionalArgs[0], 'database ID'));
+      return { deleted: true };
+    case 'ancestors':
+      return client.databases.listAncestors(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.databases.listDescendants(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        depth: asPositiveInt(opts['depth'], '--depth'),
+        cursor: asString(opts['cursor']),
+      });
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.databases.listDirectChildren(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ...(sort !== undefined ? { sort } : {}),
+      });
+    }
+    case 'operations':
+      return client.databases.getOperations(requireArg(cmd.positionalArgs[0], 'database ID'));
+    case 'get-classification-level':
+      return client.databases.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+      );
+    case 'update-classification-level':
+      await client.databases.updateClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        { id: requireOpt(opts['level-id'], '--level-id'), status: 'current' },
+      );
+      return { updated: true };
+    case 'reset-classification-level':
+      await client.databases.resetClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+      );
+      return { reset: true };
+    case 'list-properties':
+      return client.databases.listProperties(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.databases.createProperty(requireArg(cmd.positionalArgs[0], 'database ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.databases.getProperty(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.databases.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.databases.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'database ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown databases action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+      );
+  }
+}
+
 function requireArg(value: string | undefined, name: string): string {
   if (!value) throw new Error(`Missing required argument: ${name}`);
   return value;
@@ -407,6 +516,38 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   }
   return n;
 }
+
+/**
+ * Narrow a free-form CLI string to a typed enum, rejecting anything outside the
+ * allowlist with a user-facing error. Returns `undefined` when the flag is unset
+ * so callers can use spread-omit on optional query keys.
+ */
+function asEnum<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
+const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'id',
+  '-id',
+  'modified-date',
+  '-modified-date',
+  'child-position',
+  '-child-position',
+  'title',
+  '-title',
+];
+
+const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;
