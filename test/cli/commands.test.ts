@@ -214,6 +214,10 @@ const jiraEpicMock = {
   getIssuesWithoutEpic: vi.fn(),
   removeIssuesFromEpic: vi.fn(),
 };
+const jiraBacklogMock = {
+  moveIssuesToBoard: vi.fn(),
+  moveIssues: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -228,6 +232,7 @@ vi.mock('../../src/jira/client.js', () => {
       boards: jiraBoardsMock,
       sprints: jiraSprintsMock,
       epic: jiraEpicMock,
+      backlog: jiraBacklogMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -3932,6 +3937,69 @@ describe('executeJiraCommand', () => {
     it('epic unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('epic', 'nope', ['42']), GLOBALS)).rejects.toThrow(
         'Unknown epic action',
+      );
+    });
+  });
+
+  // ── backlog ───────────────────────────────────────────────────────────────
+
+  describe('backlog resource', () => {
+    it('backlog move with --board-id calls client.backlog.moveIssuesToBoard and returns { moved: true }', async () => {
+      // Arrange
+      jiraBacklogMock.moveIssuesToBoard.mockResolvedValue(undefined);
+      const parsed = cmd('backlog', 'move', [], { 'board-id': '1', issues: 'KEY-1,KEY-2' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraBacklogMock.moveIssuesToBoard).toHaveBeenCalledWith(1, ['KEY-1', 'KEY-2']);
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('backlog move without --board-id calls client.backlog.moveIssues and returns { moved: true }', async () => {
+      // Arrange
+      jiraBacklogMock.moveIssues.mockResolvedValue(undefined);
+      const parsed = cmd('backlog', 'move', [], { issues: 'KEY-3,KEY-4' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraBacklogMock.moveIssues).toHaveBeenCalledWith(['KEY-3', 'KEY-4']);
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('backlog move parses comma-separated --issues to array', async () => {
+      // Arrange
+      jiraBacklogMock.moveIssues.mockResolvedValue(undefined);
+      const parsed = cmd('backlog', 'move', [], { issues: 'A-1, B-2 , C-3' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraBacklogMock.moveIssues).toHaveBeenCalledWith(['A-1', 'B-2', 'C-3']);
+    });
+
+    it('backlog move throws when --issues is missing', async () => {
+      await expect(executeJiraCommand(cmd('backlog', 'move', [], {}), GLOBALS)).rejects.toThrow(
+        'Missing required option: --issues',
+      );
+    });
+
+    it('backlog move throws when --board-id is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('backlog', 'move', [], { 'board-id': 'abc', issues: 'KEY-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--board-id must be a positive integer');
+    });
+
+    it('backlog unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('backlog', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown backlog action',
       );
     });
   });

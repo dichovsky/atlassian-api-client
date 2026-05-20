@@ -30,6 +30,8 @@ export async function executeJiraCommand(
       return executeSprints(client, cmd);
     case 'epic':
       return executeEpic(client, cmd);
+    case 'backlog':
+      return executeBacklog(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -438,6 +440,30 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       throw new Error(
         `Unknown epic action: ${cmd.action}. Actions: get, update, issues, move-issues, rank, issues-none, remove-issues`,
       );
+  }
+}
+
+async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'move': {
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const boardIdStr = asString(opts['board-id']);
+      if (boardIdStr !== undefined) {
+        const boardId = parsePositiveIntArg(boardIdStr, '--board-id');
+        await client.backlog.moveIssuesToBoard(boardId, issues);
+      } else {
+        await client.backlog.moveIssues(issues);
+      }
+      return { moved: true };
+    }
+    default:
+      throw new Error(`Unknown backlog action: ${cmd.action}. Actions: move`);
   }
 }
 
