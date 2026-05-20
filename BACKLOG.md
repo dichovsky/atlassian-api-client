@@ -132,6 +132,7 @@
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
 > **Source-of-truth API specifications:**
+>
 > - Jira Software (Agile) REST API — https://developer.atlassian.com/cloud/jira/software/rest/intro/
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about

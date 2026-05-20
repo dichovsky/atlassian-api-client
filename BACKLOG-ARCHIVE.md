@@ -121,108 +121,108 @@
 
 ## Auto-archived from refresh on 2026-05-20
 
-- ✅ 🟡 🖥️ API: B337 Jira: add CLI + skill for GET /rest/api/3/attachment/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B389 Jira: add CLI + skill for GET /rest/api/3/dashboard  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B390 Jira: add CLI + skill for POST /rest/api/3/dashboard  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B399 Jira: add CLI + skill for DELETE /rest/api/3/dashboard/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B400 Jira: add CLI + skill for GET /rest/api/3/dashboard/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B401 Jira: add CLI + skill for PUT /rest/api/3/dashboard/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B412 Jira: add CLI + skill for POST /rest/api/3/field  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B413 Jira: add CLI + skill for PUT /rest/api/3/field/{fieldId}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B441 Jira: add CLI + skill for DELETE /rest/api/3/field/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B448 Jira: add CLI + skill for POST /rest/api/3/filter  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B449 Jira: add CLI + skill for DELETE /rest/api/3/filter/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B450 Jira: add CLI + skill for GET /rest/api/3/filter/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B451 Jira: add CLI + skill for PUT /rest/api/3/filter/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B477 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B482 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey}/comment  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B483 Jira: add CLI + skill for POST /rest/api/3/issue/{issueIdOrKey}/comment  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B484 Jira: add CLI + skill for DELETE /rest/api/3/issue/{issueIdOrKey}/comment/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B485 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey}/comment/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B486 Jira: add CLI + skill for PUT /rest/api/3/issue/{issueIdOrKey}/comment/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B597 Jira: add CLI + skill for GET /rest/api/3/label  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B832 Jira: add CLI + skill for DELETE /rest/api/3/webhook  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B240 Jira: add CLI + skill for GET /rest/agile/1.0/board/{boardId}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B313 Jira: add CLI + skill for POST /rest/agile/1.0/sprint  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B314 Jira: add CLI + skill for DELETE /rest/agile/1.0/sprint/{sprintId}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B315 Jira: add CLI + skill for GET /rest/agile/1.0/sprint/{sprintId}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B317 Jira: add CLI + skill for PUT /rest/agile/1.0/sprint/{sprintId}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B092 Confluence: add CLI + skill for GET /custom-content  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B093 Confluence: add CLI + skill for POST /custom-content  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B101 Confluence: add CLI + skill for DELETE /custom-content/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B102 Confluence: add CLI + skill for GET /custom-content/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B103 Confluence: add CLI + skill for PUT /custom-content/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B182 Confluence: add CLI + skill for GET /pages/{id}/versions  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B183 Confluence: add CLI + skill for GET /pages/{page-id}/properties  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B214 Confluence: add CLI + skill for GET /tasks  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B215 Confluence: add CLI + skill for GET /tasks/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B216 Confluence: add CLI + skill for PUT /tasks/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B220 Confluence: add CLI + skill for POST /whiteboards  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B221 Confluence: add CLI + skill for DELETE /whiteboards/{id}  _(fully covered: implemented + CLI exposed)_
-- ✅ 🟡 🖥️ API: B222 Confluence: add CLI + skill for GET /whiteboards/{id}  _(fully covered: implemented + CLI exposed)_
-- ⚠️ 🟡 🖥️ API: B893 Confluence: add CLI + skill for POST /pages/{pageId}/attachments  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B241 Jira: expose GET /rest/agile/1.0/board/{boardId}/backlog/approximate-count  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B247 Jira: expose GET /rest/agile/1.0/board/{boardId}/issue/approximate-count  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B269 Jira: expose POST /rest/agile/1.0/rest/builds/0.1/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B270 Jira: expose DELETE /rest/agile/1.0/rest/builds/0.1/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B271 Jira: expose DELETE /rest/agile/1.0/rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B272 Jira: expose GET /rest/agile/1.0/rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B273 Jira: expose POST /rest/agile/1.0/rest/deployments/0.1/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B274 Jira: expose DELETE /rest/agile/1.0/rest/deployments/0.1/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B275 Jira: expose DELETE /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B276 Jira: expose GET /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B277 Jira: expose GET /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}/gating-status  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B278 Jira: expose POST /rest/agile/1.0/rest/devinfo/0.10/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B279 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B280 Jira: expose GET /rest/agile/1.0/rest/devinfo/0.10/existsByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B281 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B282 Jira: expose GET /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B283 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B284 Jira: expose POST /rest/agile/1.0/rest/devopscomponents/1.0/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B285 Jira: expose DELETE /rest/agile/1.0/rest/devopscomponents/1.0/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B286 Jira: expose DELETE /rest/agile/1.0/rest/devopscomponents/1.0/devopscomponents/{componentId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B287 Jira: expose GET /rest/agile/1.0/rest/devopscomponents/1.0/devopscomponents/{componentId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B288 Jira: expose POST /rest/agile/1.0/rest/featureflags/0.1/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B289 Jira: expose DELETE /rest/agile/1.0/rest/featureflags/0.1/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B290 Jira: expose DELETE /rest/agile/1.0/rest/featureflags/0.1/flag/{featureFlagId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B291 Jira: expose GET /rest/agile/1.0/rest/featureflags/0.1/flag/{featureFlagId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B292 Jira: expose POST /rest/agile/1.0/rest/operations/1.0/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B293 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B294 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/incidents/{incidentId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B295 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/incidents/{incidentId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B296 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B297 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B298 Jira: expose POST /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B299 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/post-incident-reviews/{reviewId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B300 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/post-incident-reviews/{reviewId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B301 Jira: expose POST /rest/agile/1.0/rest/remotelinks/1.0/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B302 Jira: expose DELETE /rest/agile/1.0/rest/remotelinks/1.0/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B303 Jira: expose DELETE /rest/agile/1.0/rest/remotelinks/1.0/remotelink/{remoteLinkId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B304 Jira: expose GET /rest/agile/1.0/rest/remotelinks/1.0/remotelink/{remoteLinkId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B305 Jira: expose POST /rest/agile/1.0/rest/security/1.0/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B306 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/bulkByProperties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B307 Jira: expose GET /rest/agile/1.0/rest/security/1.0/linkedWorkspaces  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B308 Jira: expose GET /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/{workspaceId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B309 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B310 Jira: expose POST /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B311 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/vulnerability/{vulnerabilityId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B312 Jira: expose GET /rest/agile/1.0/rest/security/1.0/vulnerability/{vulnerabilityId}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B719 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B720 Jira: expose DELETE /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B721 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B722 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B723 Jira: expose DELETE /rest/api/3/rest/atlassian-connect/1/app/module/dynamic  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B724 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/app/module/dynamic  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B725 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/app/module/dynamic  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B726 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B727 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B728 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/migration/field  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B729 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/migration/properties/{entityType}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B730 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/migration/workflow/rule/search  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B731 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/service-registry  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B732 Jira: expose GET /rest/api/3/rest/forge/1/app/properties  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B733 Jira: expose DELETE /rest/api/3/rest/forge/1/app/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B734 Jira: expose GET /rest/api/3/rest/forge/1/app/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B735 Jira: expose PUT /rest/api/3/rest/forge/1/app/properties/{propertyKey}  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🔴 🧩 API: B736 Jira: expose POST /rest/api/3/rest/internal/api/latest/worklog/bulk  _(removed: endpoint no longer in current OpenAPI spec)_
-- ⚠️ 🟡 🖥️ API: B894 Jira: add CLI + skill for GET /rest/api/3/workflow  _(removed: endpoint no longer in current OpenAPI spec)_
+- ✅ 🟡 🖥️ API: B337 Jira: add CLI + skill for GET /rest/api/3/attachment/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B389 Jira: add CLI + skill for GET /rest/api/3/dashboard _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B390 Jira: add CLI + skill for POST /rest/api/3/dashboard _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B399 Jira: add CLI + skill for DELETE /rest/api/3/dashboard/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B400 Jira: add CLI + skill for GET /rest/api/3/dashboard/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B401 Jira: add CLI + skill for PUT /rest/api/3/dashboard/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B412 Jira: add CLI + skill for POST /rest/api/3/field _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B413 Jira: add CLI + skill for PUT /rest/api/3/field/{fieldId} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B441 Jira: add CLI + skill for DELETE /rest/api/3/field/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B448 Jira: add CLI + skill for POST /rest/api/3/filter _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B449 Jira: add CLI + skill for DELETE /rest/api/3/filter/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B450 Jira: add CLI + skill for GET /rest/api/3/filter/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B451 Jira: add CLI + skill for PUT /rest/api/3/filter/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B477 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B482 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey}/comment _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B483 Jira: add CLI + skill for POST /rest/api/3/issue/{issueIdOrKey}/comment _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B484 Jira: add CLI + skill for DELETE /rest/api/3/issue/{issueIdOrKey}/comment/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B485 Jira: add CLI + skill for GET /rest/api/3/issue/{issueIdOrKey}/comment/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B486 Jira: add CLI + skill for PUT /rest/api/3/issue/{issueIdOrKey}/comment/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B597 Jira: add CLI + skill for GET /rest/api/3/label _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B832 Jira: add CLI + skill for DELETE /rest/api/3/webhook _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B240 Jira: add CLI + skill for GET /rest/agile/1.0/board/{boardId} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B313 Jira: add CLI + skill for POST /rest/agile/1.0/sprint _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B314 Jira: add CLI + skill for DELETE /rest/agile/1.0/sprint/{sprintId} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B315 Jira: add CLI + skill for GET /rest/agile/1.0/sprint/{sprintId} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B317 Jira: add CLI + skill for PUT /rest/agile/1.0/sprint/{sprintId} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B092 Confluence: add CLI + skill for GET /custom-content _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B093 Confluence: add CLI + skill for POST /custom-content _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B101 Confluence: add CLI + skill for DELETE /custom-content/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B102 Confluence: add CLI + skill for GET /custom-content/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B103 Confluence: add CLI + skill for PUT /custom-content/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B182 Confluence: add CLI + skill for GET /pages/{id}/versions _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B183 Confluence: add CLI + skill for GET /pages/{page-id}/properties _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B214 Confluence: add CLI + skill for GET /tasks _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B215 Confluence: add CLI + skill for GET /tasks/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B216 Confluence: add CLI + skill for PUT /tasks/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B220 Confluence: add CLI + skill for POST /whiteboards _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B221 Confluence: add CLI + skill for DELETE /whiteboards/{id} _(fully covered: implemented + CLI exposed)_
+- ✅ 🟡 🖥️ API: B222 Confluence: add CLI + skill for GET /whiteboards/{id} _(fully covered: implemented + CLI exposed)_
+- ⚠️ 🟡 🖥️ API: B893 Confluence: add CLI + skill for POST /pages/{pageId}/attachments _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B241 Jira: expose GET /rest/agile/1.0/board/{boardId}/backlog/approximate-count _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B247 Jira: expose GET /rest/agile/1.0/board/{boardId}/issue/approximate-count _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B269 Jira: expose POST /rest/agile/1.0/rest/builds/0.1/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B270 Jira: expose DELETE /rest/agile/1.0/rest/builds/0.1/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B271 Jira: expose DELETE /rest/agile/1.0/rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B272 Jira: expose GET /rest/agile/1.0/rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B273 Jira: expose POST /rest/agile/1.0/rest/deployments/0.1/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B274 Jira: expose DELETE /rest/agile/1.0/rest/deployments/0.1/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B275 Jira: expose DELETE /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B276 Jira: expose GET /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B277 Jira: expose GET /rest/agile/1.0/rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}/gating-status _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B278 Jira: expose POST /rest/agile/1.0/rest/devinfo/0.10/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B279 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B280 Jira: expose GET /rest/agile/1.0/rest/devinfo/0.10/existsByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B281 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B282 Jira: expose GET /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B283 Jira: expose DELETE /rest/agile/1.0/rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B284 Jira: expose POST /rest/agile/1.0/rest/devopscomponents/1.0/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B285 Jira: expose DELETE /rest/agile/1.0/rest/devopscomponents/1.0/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B286 Jira: expose DELETE /rest/agile/1.0/rest/devopscomponents/1.0/devopscomponents/{componentId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B287 Jira: expose GET /rest/agile/1.0/rest/devopscomponents/1.0/devopscomponents/{componentId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B288 Jira: expose POST /rest/agile/1.0/rest/featureflags/0.1/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B289 Jira: expose DELETE /rest/agile/1.0/rest/featureflags/0.1/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B290 Jira: expose DELETE /rest/agile/1.0/rest/featureflags/0.1/flag/{featureFlagId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B291 Jira: expose GET /rest/agile/1.0/rest/featureflags/0.1/flag/{featureFlagId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B292 Jira: expose POST /rest/agile/1.0/rest/operations/1.0/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B293 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B294 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/incidents/{incidentId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B295 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/incidents/{incidentId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B296 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B297 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B298 Jira: expose POST /rest/agile/1.0/rest/operations/1.0/linkedWorkspaces/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B299 Jira: expose DELETE /rest/agile/1.0/rest/operations/1.0/post-incident-reviews/{reviewId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B300 Jira: expose GET /rest/agile/1.0/rest/operations/1.0/post-incident-reviews/{reviewId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B301 Jira: expose POST /rest/agile/1.0/rest/remotelinks/1.0/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B302 Jira: expose DELETE /rest/agile/1.0/rest/remotelinks/1.0/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B303 Jira: expose DELETE /rest/agile/1.0/rest/remotelinks/1.0/remotelink/{remoteLinkId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B304 Jira: expose GET /rest/agile/1.0/rest/remotelinks/1.0/remotelink/{remoteLinkId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B305 Jira: expose POST /rest/agile/1.0/rest/security/1.0/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B306 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/bulkByProperties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B307 Jira: expose GET /rest/agile/1.0/rest/security/1.0/linkedWorkspaces _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B308 Jira: expose GET /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/{workspaceId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B309 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B310 Jira: expose POST /rest/agile/1.0/rest/security/1.0/linkedWorkspaces/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B311 Jira: expose DELETE /rest/agile/1.0/rest/security/1.0/vulnerability/{vulnerabilityId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B312 Jira: expose GET /rest/agile/1.0/rest/security/1.0/vulnerability/{vulnerabilityId} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B719 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B720 Jira: expose DELETE /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B721 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B722 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B723 Jira: expose DELETE /rest/api/3/rest/atlassian-connect/1/app/module/dynamic _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B724 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/app/module/dynamic _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B725 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/app/module/dynamic _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B726 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B727 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B728 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/migration/field _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B729 Jira: expose PUT /rest/api/3/rest/atlassian-connect/1/migration/properties/{entityType} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B730 Jira: expose POST /rest/api/3/rest/atlassian-connect/1/migration/workflow/rule/search _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B731 Jira: expose GET /rest/api/3/rest/atlassian-connect/1/service-registry _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B732 Jira: expose GET /rest/api/3/rest/forge/1/app/properties _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B733 Jira: expose DELETE /rest/api/3/rest/forge/1/app/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B734 Jira: expose GET /rest/api/3/rest/forge/1/app/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B735 Jira: expose PUT /rest/api/3/rest/forge/1/app/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🔴 🧩 API: B736 Jira: expose POST /rest/api/3/rest/internal/api/latest/worklog/bulk _(removed: endpoint no longer in current OpenAPI spec)_
+- ⚠️ 🟡 🖥️ API: B894 Jira: add CLI + skill for GET /rest/api/3/workflow _(removed: endpoint no longer in current OpenAPI spec)_
