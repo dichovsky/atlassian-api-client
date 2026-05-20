@@ -59,6 +59,10 @@ const GLOBAL_OPTIONS = {
   'include-direct-children': { type: 'boolean' as const },
   'include-operations': { type: 'boolean' as const },
   'include-properties': { type: 'boolean' as const },
+  // footer-comments include-* flags
+  'include-likes': { type: 'boolean' as const },
+  'include-versions': { type: 'boolean' as const },
+  'include-version': { type: 'boolean' as const },
   'parent-id': { type: 'string' as const },
   // tasks-specific options
   'task-id': { type: 'string' as const },

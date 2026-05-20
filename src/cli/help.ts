@@ -73,6 +73,7 @@ RESOURCES:
   content                convert-ids-to-types
   data-policies          get-metadata, list-spaces
   databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
+  footer-comments        list, get, update, children, likes-count, likes-users, operations, versions, version
   space-permissions      list
   space-role-mode        get
   space-roles            list, get, create, update, delete
@@ -98,6 +99,12 @@ EXAMPLES:
   atlas confluence databases descendants 456 --depth 3 --limit 50
   atlas confluence databases list-properties 456
   atlas confluence databases update-classification-level 456 --level-id cl-1
+  atlas confluence footer-comments list --sort -created-date --limit 25
+  atlas confluence footer-comments get 77777 --include-likes --include-versions
+  atlas confluence footer-comments update 77777 --body "Updated" --version-number 2
+  atlas confluence footer-comments children 77777
+  atlas confluence footer-comments likes-count 77777
+  atlas confluence footer-comments versions 77777 --sort -modified-date
   atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
   atlas confluence space-roles list --role-type CUSTOM --limit 25

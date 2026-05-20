@@ -234,6 +234,130 @@ export interface UpdateCommentData {
   };
 }
 
+// --- Footer Comments (tenant + per-comment navigation) ---
+
+/**
+ * Sort tokens accepted by the tenant-wide `GET /footer-comments` and the
+ * per-comment `GET /footer-comments/{id}/children` endpoints. Default
+ * direction is ascending; prefix with `-` for descending. Mirrors the
+ * OpenAPI `CommentSortOrder` enum.
+ */
+export type CommentSortOrder =
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
+
+/**
+ * Sort tokens accepted by `GET /footer-comments/{id}/versions`. Mirrors the
+ * OpenAPI `VersionSortOrder` enum — only `modified-date` is sortable.
+ */
+export type VersionSortOrder = 'modified-date' | '-modified-date';
+
+/** Query parameters for `GET /footer-comments` (tenant-wide list). */
+export interface ListFooterCommentsTenantParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: CommentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*`
+ * flag asks the server to inline the corresponding sub-resource so callers
+ * can fetch the comment plus context in a single round-trip.
+ */
+export interface GetFooterCommentParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly version?: number;
+  readonly 'include-properties'?: boolean;
+  readonly 'include-operations'?: boolean;
+  readonly 'include-likes'?: boolean;
+  readonly 'include-versions'?: boolean;
+  readonly 'include-version'?: boolean;
+}
+
+/** Query parameters for `GET /footer-comments/{id}/children`. */
+export interface ListFooterCommentChildrenParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: CommentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Child (reply) entry returned by `GET /footer-comments/{id}/children`. */
+export interface FooterCommentChild {
+  readonly id: string;
+  readonly status?: string;
+  readonly title?: string;
+  readonly parentCommentId?: string;
+  readonly version?: ConfluenceVersion;
+  readonly body?: ContentBody;
+  readonly _links?: Record<string, string>;
+}
+
+/** Response shape for `GET /footer-comments/{id}/likes/count`. */
+export interface FooterCommentLikeCount {
+  readonly count: number;
+}
+
+/** Like entry returned by `GET /footer-comments/{id}/likes/users`. */
+export interface FooterCommentLike {
+  readonly accountId?: string;
+}
+
+/** Query parameters for `GET /footer-comments/{id}/likes/users`. */
+export interface ListFooterCommentLikeUsersParams {
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Permitted operation entry returned by `GET /footer-comments/{id}/operations`. */
+export interface FooterCommentOperation {
+  readonly operation?: string;
+  readonly targetType?: string;
+}
+
+/** Response shape for `GET /footer-comments/{id}/operations`. */
+export interface FooterCommentOperationsResponse {
+  readonly operations?: readonly FooterCommentOperation[];
+}
+
+/** Query parameters for `GET /footer-comments/{id}/versions`. */
+export interface ListFooterCommentVersionsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: VersionSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Version summary returned by `GET /footer-comments/{id}/versions`. */
+export interface FooterCommentVersionSummary {
+  readonly number?: number;
+  readonly message?: string;
+  readonly minorEdit?: boolean;
+  readonly authorId?: string;
+  readonly createdAt?: string;
+}
+
+/**
+ * Detailed version response shape for
+ * `GET /footer-comments/{id}/versions/{version-number}`.
+ *
+ * The OpenAPI spec returns a wider envelope than the summary entries —
+ * fields like `body` and `_links` may be present alongside the audit
+ * metadata, all marked optional.
+ */
+export interface FooterCommentVersionDetail {
+  readonly number?: number;
+  readonly authorId?: string;
+  readonly message?: string;
+  readonly createdAt?: string;
+  readonly minorEdit?: boolean;
+  readonly body?: ContentBody;
+  readonly _links?: Record<string, string>;
+}
+
 /** Parameters for listing inline comments on a page or blog post. */
 export interface ListInlineCommentsParams {
   readonly 'body-format'?: BodyFormat;

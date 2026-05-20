@@ -339,6 +339,46 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  footerCommentTenantList: {
+    results: [{ id: '77777', status: 'current', pageId: '12345', version: { number: 1 } }],
+    _links: { next: null },
+  },
+  footerCommentChildrenList: {
+    results: [
+      {
+        id: 'child-77778',
+        status: 'current',
+        parentCommentId: '77777',
+        version: { number: 1 },
+      },
+    ],
+    _links: { next: null },
+  },
+  footerCommentLikeCount: { count: 5 },
+  footerCommentLikeUsers: {
+    results: [{ accountId: 'acc-1' }, { accountId: 'acc-2' }],
+    _links: { next: null },
+  },
+  footerCommentOperations: {
+    operations: [
+      { operation: 'read', targetType: 'comment' },
+      { operation: 'update', targetType: 'comment' },
+    ],
+  },
+  footerCommentVersionsList: {
+    results: [
+      { number: 1, message: 'created', authorId: 'acc-1', createdAt: '2026-05-20T00:00:00Z' },
+      { number: 2, message: 'edited', authorId: 'acc-1', createdAt: '2026-05-21T00:00:00Z' },
+    ],
+    _links: { next: null },
+  },
+  footerCommentVersionDetail: {
+    number: 2,
+    authorId: 'acc-1',
+    message: 'edited',
+    createdAt: '2026-05-21T00:00:00Z',
+    minorEdit: false,
+  },
   commentProperty: {
     id: 'cp-1',
     key: 'reviewed',

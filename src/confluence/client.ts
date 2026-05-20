@@ -18,6 +18,7 @@ import { ClassificationLevelsResource } from './resources/classification-levels.
 import { ContentResource } from './resources/content.js';
 import { DataPoliciesResource } from './resources/data-policies.js';
 import { DatabasesResource } from './resources/databases.js';
+import { FooterCommentsResource } from './resources/footer-comments.js';
 import { SpacePermissionsResource } from './resources/space-permissions.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
 import { SpaceRolesResource } from './resources/space-roles.js';
@@ -54,6 +55,11 @@ export class ConfluenceClient {
   readonly dataPolicies: DataPoliciesResource;
   /** Databases resource (v2 `/databases` surface). */
   readonly databases: DatabasesResource;
+  /**
+   * Footer comments resource — tenant-wide listing plus per-comment
+   * navigation (`/footer-comments`, `/footer-comments/{id}/{children,likes,operations,versions}`).
+   */
+  readonly footerComments: FooterCommentsResource;
   /** Available space permissions resource. */
   readonly spacePermissions: SpacePermissionsResource;
   /** Space role mode resource. */
@@ -87,6 +93,7 @@ export class ConfluenceClient {
     this.content = new ContentResource(transport, baseUrl);
     this.dataPolicies = new DataPoliciesResource(transport, baseUrl);
     this.databases = new DatabasesResource(transport, baseUrl);
+    this.footerComments = new FooterCommentsResource(transport, baseUrl);
     this.spacePermissions = new SpacePermissionsResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
     this.spaceRoles = new SpaceRolesResource(transport, baseUrl);
