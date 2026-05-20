@@ -89,6 +89,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'app',
           'classification-levels',
           'content',
+          'space-permissions',
           'space-role-mode',
           'users-bulk',
         ]).toContain(parsed.resource);
@@ -133,6 +134,7 @@ describe('Resource coverage drift check', () => {
     'app',
     'classification-levels',
     'content',
+    'space-permissions',
     'space-role-mode',
     'users-bulk',
   ]) {

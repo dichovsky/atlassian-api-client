@@ -51,6 +51,8 @@ export type {
   ConfluenceContentType,
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
+  SpacePermission,
+  ListSpacePermissionsParams,
   SpaceRoleMode,
   ConfluenceUser,
   ConfluenceUserIcon,
@@ -74,5 +76,6 @@ export { VersionsResource } from './resources/versions.js';
 export { AppResource } from './resources/app.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';
 export { ContentResource } from './resources/content.js';
+export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
 export { UsersBulkResource } from './resources/users-bulk.js';

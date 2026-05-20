@@ -30,6 +30,8 @@ export async function executeConfluenceCommand(
       return executeClassificationLevels(client, cmd);
     case 'content':
       return executeContent(client, cmd);
+    case 'space-permissions':
+      return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
       return executeSpaceRoleMode(client, cmd);
     case 'users-bulk':
@@ -334,6 +336,23 @@ function parseContentIds(raw: string): readonly (string | number)[] {
     throw new Error('--ids: expected a non-empty list of content ids');
   }
   return parts;
+}
+
+async function executeSpacePermissions(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.spacePermissions.list({
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    default:
+      throw new Error(`Unknown space-permissions action: ${cmd.action}. Actions: list`);
+  }
 }
 
 async function executeSpaceRoleMode(

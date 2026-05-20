@@ -16,6 +16,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property` |
 | `classification-levels` | `list`                                                                  |
 | `content`               | `convert-ids-to-types`                                                  |
+| `space-permissions`     | `list`                                                                  |
 | `space-role-mode`       | `get`                                                                   |
 | `users-bulk`            | `lookup`                                                                |
 
@@ -175,6 +176,25 @@ atlas confluence content convert-ids-to-types --ids 12345,67890,11111
 
 # JSON form (mixed string / number)
 atlas confluence content convert-ids-to-types --ids '["12345",67890]'
+```
+
+## `space-permissions`
+
+| Action | Positional | Required flags | Optional flags        |
+| ------ | ---------- | -------------- | --------------------- |
+| `list` | —          | —              | `--limit`, `--cursor` |
+
+Lists the _available_ space-permission definitions for the Confluence Cloud organization (`GET /wiki/api/v2/space-permissions`). These describe the permissions the platform supports (`id`, `displayName`, `description`, `requiredPermissionIds`) — they are **not** per-space grants. Per-space assignments are exposed by the separate `/spaces/{id}/permissions` endpoint (not covered here). Requires the `read:space.permission:confluence` OAuth scope (or `READ` Connect app scope); available on tenants with Role-Based Access Control. Returns the standard `{ results, _links }` cursor-paginated wrapper; `--limit` accepts 1-250 (server default 25).
+
+```sh
+# First page (server default 25 per page)
+atlas confluence space-permissions list
+
+# Larger page
+atlas confluence space-permissions list --limit 100
+
+# Next page using the cursor from _links.next
+atlas confluence space-permissions list --cursor "<value-from-response>"
 ```
 
 ## `space-role-mode`

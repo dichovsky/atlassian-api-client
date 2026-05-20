@@ -16,6 +16,7 @@ import { AdminKeyResource } from './resources/admin-key.js';
 import { AppResource } from './resources/app.js';
 import { ClassificationLevelsResource } from './resources/classification-levels.js';
 import { ContentResource } from './resources/content.js';
+import { SpacePermissionsResource } from './resources/space-permissions.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
 import { UsersBulkResource } from './resources/users-bulk.js';
 
@@ -45,6 +46,8 @@ export class ConfluenceClient {
   readonly classificationLevels: ClassificationLevelsResource;
   /** Content resource (v1 → v2 id-to-type conversion). */
   readonly content: ContentResource;
+  /** Available space permissions resource. */
+  readonly spacePermissions: SpacePermissionsResource;
   /** Space role mode resource. */
   readonly spaceRoleMode: SpaceRoleModeResource;
   /** Users bulk lookup resource. */
@@ -70,6 +73,7 @@ export class ConfluenceClient {
     this.app = new AppResource(transport, baseUrl);
     this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
     this.content = new ContentResource(transport, baseUrl);
+    this.spacePermissions = new SpacePermissionsResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
     this.usersBulk = new UsersBulkResource(transport, baseUrl);
   }

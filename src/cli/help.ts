@@ -71,6 +71,7 @@ RESOURCES:
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
   content                convert-ids-to-types
+  space-permissions      list
   space-role-mode        get
   users-bulk             lookup
 
@@ -82,6 +83,7 @@ EXAMPLES:
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
+  atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
 `;

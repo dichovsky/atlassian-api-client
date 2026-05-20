@@ -77,6 +77,9 @@ const confluenceClassificationLevelsMock = {
 const confluenceContentMock = {
   convertIdsToTypes: vi.fn(),
 };
+const confluenceSpacePermissionsMock = {
+  list: vi.fn(),
+};
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
 };
@@ -97,6 +100,7 @@ vi.mock('../../src/confluence/client.js', () => {
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
       content: confluenceContentMock,
+      spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
       usersBulk: confluenceUsersBulkMock,
     };
@@ -1200,6 +1204,52 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('content', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown content action',
       );
+    });
+  });
+
+  // ── space-permissions ─────────────────────────────────────────────────────
+
+  describe('space-permissions resource', () => {
+    it('space-permissions list calls client.spacePermissions.list with empty params', async () => {
+      // Arrange
+      const payload = { results: [{ id: 'p1', displayName: 'Read' }], _links: {} };
+      confluenceSpacePermissionsMock.list.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('space-permissions', 'list'), GLOBALS);
+
+      // Assert
+      expect(confluenceSpacePermissionsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: undefined, cursor: undefined }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('space-permissions list passes limit and cursor', async () => {
+      // Arrange
+      confluenceSpacePermissionsMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('space-permissions', 'list', [], { limit: '10', cursor: 'tok' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceSpacePermissionsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: 10, cursor: 'tok' }),
+      );
+    });
+
+    it('space-permissions list throws when --limit is invalid', async () => {
+      const parsed = cmd('space-permissions', 'list', [], { limit: 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('space-permissions unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('space-permissions', 'unknown'), GLOBALS),
+      ).rejects.toThrow('Unknown space-permissions action');
     });
   });
 
