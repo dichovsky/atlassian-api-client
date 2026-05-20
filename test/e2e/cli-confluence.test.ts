@@ -783,6 +783,116 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"mode": "ROLES"'],
   },
 
+  // ─── space-roles ──────────────────────────────────────────────────────
+  {
+    name: 'space-roles list',
+    argv: ['confluence', 'space-roles', 'list'],
+    routes: [{ method: 'GET', path: `${P}/space-roles`, body: F.spaceRoleList }],
+    expectCall: { method: 'GET', pathname: `${P}/space-roles` },
+    expectStdout: ['"name": "E2E Editor"'],
+  },
+  {
+    name: 'space-roles list — filters',
+    argv: [
+      'confluence',
+      'space-roles',
+      'list',
+      '--role-type=CUSTOM',
+      '--principal-type=USER',
+      '--principal-id',
+      'acc-1',
+      '--limit',
+      '50',
+      '--cursor',
+      'next',
+    ],
+    routes: [{ method: 'GET', path: `${P}/space-roles`, body: F.spaceRoleList }],
+    expectCall: { method: 'GET', pathname: `${P}/space-roles` },
+    expectQuery: (query) => {
+      expect(query['role-type']).toBe('CUSTOM');
+      expect(query['principal-type']).toBe('USER');
+      expect(query['principal-id']).toBe('acc-1');
+      expect(query['limit']).toBe('50');
+      expect(query['cursor']).toBe('next');
+    },
+  },
+  {
+    name: 'space-roles get',
+    argv: ['confluence', 'space-roles', 'get', 'role-1'],
+    routes: [{ method: 'GET', path: `${P}/space-roles/role-1`, body: F.spaceRoleDetail }],
+    expectCall: { method: 'GET', pathname: `${P}/space-roles/role-1` },
+    expectStdout: ['"id": "role-1"', '"base"'],
+  },
+  {
+    name: 'space-roles create',
+    argv: [
+      'confluence',
+      'space-roles',
+      'create',
+      '--name',
+      'E2E Editor',
+      '--description',
+      'Edit pages',
+      '--space-permissions',
+      'read/space,write/space',
+    ],
+    routes: [{ method: 'POST', path: `${P}/space-roles`, status: 201, body: F.spaceRole }],
+    expectCall: { method: 'POST', pathname: `${P}/space-roles` },
+    expectBody: (body) => {
+      expect(body).toEqual({
+        name: 'E2E Editor',
+        description: 'Edit pages',
+        spacePermissions: ['read/space', 'write/space'],
+      });
+    },
+  },
+  {
+    name: 'space-roles update',
+    argv: [
+      'confluence',
+      'space-roles',
+      'update',
+      'role-1',
+      '--name',
+      'E2E Editor v2',
+      '--description',
+      'Updated',
+      '--space-permissions',
+      'read/space',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/space-roles/role-1`,
+        status: 202,
+        body: F.spaceRoleUpdateResponse,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/space-roles/role-1` },
+    expectStdout: ['"taskId": "task-42"'],
+    expectBody: (body) => {
+      expect(body).toEqual({
+        name: 'E2E Editor v2',
+        description: 'Updated',
+        spacePermissions: ['read/space'],
+      });
+    },
+  },
+  {
+    name: 'space-roles delete',
+    argv: ['confluence', 'space-roles', 'delete', 'role-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/space-roles/role-1`,
+        status: 202,
+        body: F.spaceRoleDeleteResponse,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/space-roles/role-1` },
+    expectStdout: ['"taskId": "task-43"'],
+  },
+
   // ─── tasks ────────────────────────────────────────────────────────────
   {
     name: 'tasks list',

@@ -96,6 +96,13 @@ const confluenceSpacePermissionsMock = {
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
 };
+const confluenceSpaceRolesMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
 const confluenceTasksMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -143,6 +150,7 @@ vi.mock('../../src/confluence/client.js', () => {
       databases: confluenceDatabasesMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
+      spaceRoles: confluenceSpaceRolesMock,
       tasks: confluenceTasksMock,
       users: confluenceUsersMock,
       usersBulk: confluenceUsersBulkMock,
@@ -1846,6 +1854,236 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('space-role-mode', 'list'), GLOBALS),
       ).rejects.toThrow('Unknown space-role-mode action');
+    });
+  });
+
+  // ── space-roles ───────────────────────────────────────────────────────────
+
+  describe('space-roles resource', () => {
+    it('space-roles list with no flags calls list with all-undefined params', async () => {
+      // Arrange
+      const payload = { results: [{ id: 'r1', name: 'Editor' }], _links: {} };
+      confluenceSpaceRolesMock.list.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('space-roles', 'list'), GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.list).toHaveBeenCalledWith({
+        'space-id': undefined,
+        'principal-id': undefined,
+        limit: undefined,
+        cursor: undefined,
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('space-roles list forwards every filter', async () => {
+      // Arrange
+      confluenceSpaceRolesMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('space-roles', 'list', [], {
+        'space-id': 'space-1',
+        'role-type': 'CUSTOM',
+        'principal-id': 'acc-1',
+        'principal-type': 'USER',
+        limit: '25',
+        cursor: 'tok',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.list).toHaveBeenCalledWith({
+        'space-id': 'space-1',
+        'role-type': 'CUSTOM',
+        'principal-id': 'acc-1',
+        'principal-type': 'USER',
+        limit: 25,
+        cursor: 'tok',
+      });
+    });
+
+    it('space-roles list rejects invalid --role-type', async () => {
+      const parsed = cmd('space-roles', 'list', [], { 'role-type': 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--role-type must be one of: SYSTEM, CUSTOM',
+      );
+    });
+
+    it('space-roles list rejects invalid --principal-type', async () => {
+      const parsed = cmd('space-roles', 'list', [], { 'principal-type': 'admin' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--principal-type must be one of: USER, GROUP, ACCESS_CLASS',
+      );
+    });
+
+    it('space-roles list rejects invalid --limit', async () => {
+      const parsed = cmd('space-roles', 'list', [], { limit: 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('space-roles get calls get with the positional id', async () => {
+      // Arrange
+      const payload = { id: 'r1', name: 'Editor', _links: {} };
+      confluenceSpaceRolesMock.get.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('space-roles', 'get', ['r1']), GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.get).toHaveBeenCalledWith('r1');
+      expect(result).toEqual(payload);
+    });
+
+    it('space-roles get throws when positional id is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('space-roles', 'get'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: role ID',
+      );
+    });
+
+    it('space-roles create calls create with parsed permissions', async () => {
+      // Arrange
+      const payload = { id: 'r-new', name: 'Editor' };
+      confluenceSpaceRolesMock.create.mockResolvedValue(payload);
+      const parsed = cmd('space-roles', 'create', [], {
+        name: 'Editor',
+        description: 'Edit pages',
+        'space-permissions': 'read/space, write/space ,  ',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.create).toHaveBeenCalledWith({
+        name: 'Editor',
+        description: 'Edit pages',
+        spacePermissions: ['read/space', 'write/space'],
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('space-roles create throws when --name is missing', async () => {
+      const parsed = cmd('space-roles', 'create', [], {
+        description: 'd',
+        'space-permissions': 'read/space',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('space-roles create throws when --description is missing', async () => {
+      const parsed = cmd('space-roles', 'create', [], {
+        name: 'n',
+        'space-permissions': 'read/space',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --description',
+      );
+    });
+
+    it('space-roles create throws when --space-permissions is missing', async () => {
+      const parsed = cmd('space-roles', 'create', [], { name: 'n', description: 'd' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --space-permissions',
+      );
+    });
+
+    it('space-roles create throws when --space-permissions is all empty after trim', async () => {
+      const parsed = cmd('space-roles', 'create', [], {
+        name: 'n',
+        description: 'd',
+        'space-permissions': '  , ,',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--space-permissions must contain at least one non-empty permission id',
+      );
+    });
+
+    it('space-roles update calls update with required and optional fields', async () => {
+      // Arrange
+      const payload = { id: 'r1', taskId: 't-1' };
+      confluenceSpaceRolesMock.update.mockResolvedValue(payload);
+      const parsed = cmd('space-roles', 'update', ['r1'], {
+        name: 'Editor v2',
+        description: 'Updated',
+        'space-permissions': 'read/space',
+        'anonymous-reassignment-role-id': 'anon-role',
+        'guest-reassignment-role-id': 'guest-role',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.update).toHaveBeenCalledWith('r1', {
+        name: 'Editor v2',
+        description: 'Updated',
+        spacePermissions: ['read/space'],
+        anonymousReassignmentRoleId: 'anon-role',
+        guestReassignmentRoleId: 'guest-role',
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('space-roles update omits reassignment ids when unset', async () => {
+      // Arrange
+      confluenceSpaceRolesMock.update.mockResolvedValue({ id: 'r1', taskId: 't-1' });
+      const parsed = cmd('space-roles', 'update', ['r1'], {
+        name: 'n',
+        description: 'd',
+        'space-permissions': 'read/space',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.update).toHaveBeenCalledWith('r1', {
+        name: 'n',
+        description: 'd',
+        spacePermissions: ['read/space'],
+      });
+    });
+
+    it('space-roles update throws when positional id is missing', async () => {
+      const parsed = cmd('space-roles', 'update', [], {
+        name: 'n',
+        description: 'd',
+        'space-permissions': 'read/space',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required argument: role ID',
+      );
+    });
+
+    it('space-roles delete calls delete and returns the task envelope', async () => {
+      // Arrange
+      const payload = { taskId: 'task-42' };
+      confluenceSpaceRolesMock.delete.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('space-roles', 'delete', ['r1']), GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRolesMock.delete).toHaveBeenCalledWith('r1');
+      expect(result).toEqual(payload);
+    });
+
+    it('space-roles delete throws when positional id is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('space-roles', 'delete'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: role ID',
+      );
+    });
+
+    it('space-roles unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('space-roles', 'bogus'), GLOBALS)).rejects.toThrow(
+        'Unknown space-roles action',
+      );
     });
   });
 
