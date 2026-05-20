@@ -76,6 +76,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'issue-types': 'executeIssueTypes',
   priorities: 'executePriorities',
   statuses: 'executeStatuses',
+  boards: 'executeBoards',
 };
 
 function actionsForResource(source: string, resource: string): string[] {

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BoardsResource } from '../../src/jira/resources/boards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import type { Sprint } from '../../src/jira/resources/sprints.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
 
@@ -23,6 +24,14 @@ const makeListResponse = <T>(values: T[]) => ({
   startAt: 0,
   maxResults: 50,
   total: values.length,
+});
+
+const makeSprint = (id: number, name: string): Sprint => ({
+  id,
+  self: `${BASE_URL}/sprint/${id}`,
+  state: 'active',
+  name,
+  originBoardId: 1,
 });
 
 describe('BoardsResource', () => {
@@ -350,6 +359,212 @@ describe('BoardsResource', () => {
       expect(query['type']).toBeUndefined();
       expect(query['name']).toBeUndefined();
       expect(query['projectKeyOrId']).toBeUndefined();
+    });
+  });
+
+  // ── listSprints ───────────────────────────────────────────────────────────
+
+  describe('listSprints()', () => {
+    it('calls GET /board/{boardId}/sprint with no params', async () => {
+      // Arrange
+      const payload = makeListResponse([makeSprint(10, 'Sprint 1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listSprints(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/sprint`,
+      });
+    });
+
+    it('passes startAt, maxResults, and state params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listSprints(42, { startAt: 5, maxResults: 10, state: 'active,closed' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 5,
+        maxResults: 10,
+        state: 'active,closed',
+      });
+    });
+
+    it('passes only state when startAt and maxResults are omitted', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listSprints(42, { state: 'future' });
+
+      // Assert
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['state']).toBe('future');
+      expect(query['startAt']).toBeUndefined();
+      expect(query['maxResults']).toBeUndefined();
+    });
+
+    it('does not include undefined query params when params is empty object', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listSprints(42, {});
+
+      // Assert
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['startAt']).toBeUndefined();
+      expect(query['maxResults']).toBeUndefined();
+      expect(query['state']).toBeUndefined();
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.listSprints(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for boardId = -1', async () => {
+      await expect(boards.listSprints(-1)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for non-integer boardId', async () => {
+      await expect(boards.listSprints(1.5)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listSprints(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: -1', async () => {
+      await expect(boards.listSprints(42, { maxResults: -1 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: Infinity', async () => {
+      await expect(boards.listSprints(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── getSprintIssues ───────────────────────────────────────────────────────
+
+  describe('getSprintIssues()', () => {
+    it('calls GET /board/{boardId}/sprint/{sprintId}/issue with no params', async () => {
+      // Arrange
+      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.getSprintIssues(42, 10);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/sprint/10/issue`,
+      });
+    });
+
+    it('passes startAt, maxResults, jql, and fields params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getSprintIssues(42, 10, {
+        startAt: 5,
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: ['summary', 'status'],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 5,
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: 'summary,status',
+      });
+    });
+
+    it('joins fields array with commas', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getSprintIssues(42, 10, { fields: ['assignee', 'priority', 'labels'] });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        fields: 'assignee,priority,labels',
+      });
+    });
+
+    it('does not include undefined query params when params is empty object', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getSprintIssues(42, 10, {});
+
+      // Assert
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['startAt']).toBeUndefined();
+      expect(query['maxResults']).toBeUndefined();
+      expect(query['jql']).toBeUndefined();
+      expect(query['fields']).toBeUndefined();
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getSprintIssues(0, 10)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for boardId = -1', async () => {
+      await expect(boards.getSprintIssues(-1, 10)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for non-integer boardId', async () => {
+      await expect(boards.getSprintIssues(1.5, 10)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(boards.getSprintIssues(42, 0)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId = -5', async () => {
+      await expect(boards.getSprintIssues(42, -5)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for non-integer sprintId', async () => {
+      await expect(boards.getSprintIssues(42, 2.7)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getSprintIssues(42, 10, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: -1', async () => {
+      await expect(boards.getSprintIssues(42, 10, { maxResults: -1 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: Infinity', async () => {
+      await expect(boards.getSprintIssues(42, 10, { maxResults: Infinity })).rejects.toThrow(
+        RangeError,
+      );
     });
   });
 });

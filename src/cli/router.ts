@@ -33,6 +33,8 @@ const GLOBAL_OPTIONS = {
   'transition-id': { type: 'string' as const },
   query: { type: 'string' as const },
   'max-results': { type: 'string' as const },
+  'start-at': { type: 'string' as const },
+  state: { type: 'string' as const },
   fields: { type: 'string' as const },
   expand: { type: 'string' as const },
   'version-number': { type: 'string' as const },

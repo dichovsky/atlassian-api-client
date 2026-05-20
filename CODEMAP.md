@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "3302f6dd33997d01e06e7a12a322b39029a4c6a9a924b03e6ccbe9162f1fe79c",
+  "sourceHash": "d1e17558fa877026153525dae53566db5c9462c3b5d4d0dc30e9a815678afe89",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -98,7 +98,7 @@
       "name": "Board",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 6,
+      "line": 7,
       "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…",
       "typeOnly": true
     },
@@ -106,7 +106,7 @@
       "name": "BoardIssue",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 27,
+      "line": 28,
       "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
       "typeOnly": true
     },
@@ -816,7 +816,7 @@
       "name": "ListBoardIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 34,
+      "line": 35,
       "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…",
       "typeOnly": true
     },
@@ -824,7 +824,7 @@
       "name": "ListBoardsParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 19,
+      "line": 20,
       "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…",
       "typeOnly": true
     },
@@ -1965,68 +1965,80 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 32,
+          "line": 34,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 75,
+          "line": 77,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 88,
+          "line": 90,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 102,
+          "line": 104,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 118,
+          "line": 120,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 129,
+          "line": 131,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 140,
+          "line": 142,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeBoards",
+          "kind": "function",
+          "line": 151,
+          "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 149,
+          "line": 181,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 154,
+          "line": 186,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 159,
+          "line": 191,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 163,
+          "line": 195,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
+        },
+        {
+          "name": "parsePositiveIntArg",
+          "kind": "function",
+          "line": 204,
+          "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
       "imports": [
@@ -2115,7 +2127,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 116,
+          "line": 117,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2276,7 +2288,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 66,
+          "line": 68,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -8368,62 +8380,79 @@
         {
           "name": "Board",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…"
         },
         {
           "name": "ListBoardsParams",
           "kind": "interface",
-          "line": 19,
+          "line": 20,
           "exported": true,
           "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…"
         },
         {
           "name": "BoardIssue",
           "kind": "interface",
-          "line": 27,
+          "line": 28,
           "exported": true,
           "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…"
         },
         {
           "name": "ListBoardIssuesParams",
           "kind": "interface",
-          "line": 34,
+          "line": 35,
           "exported": true,
           "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…"
         },
         {
+          "name": "ListBoardSprintsParams",
+          "kind": "interface",
+          "line": 42,
+          "exported": true,
+          "signature": "export interface ListBoardSprintsParams { readonly startAt?: number; readonly maxResults?: number; readonly state?: stri…"
+        },
+        {
           "name": "BoardsResource",
           "kind": "class",
-          "line": 41,
+          "line": 48,
           "exported": true,
           "signature": "export class BoardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 42
+              "line": 49
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 48
+              "line": 55
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 68
+              "line": 75
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 80
+              "line": 87
+            },
+            {
+              "name": "listSprints",
+              "kind": "method",
+              "line": 112
+            },
+            {
+              "name": "getSprintIssues",
+              "kind": "method",
+              "line": 136
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 105
+              "line": 165
             }
           ]
         }
@@ -8431,7 +8460,8 @@
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
-        "../../core/types.js"
+        "../../core/types.js",
+        "./sprints.js"
       ]
     },
     {

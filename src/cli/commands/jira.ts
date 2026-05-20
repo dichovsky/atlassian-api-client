@@ -24,6 +24,8 @@ export async function executeJiraCommand(
       return executePriorities(client, cmd);
     case 'statuses':
       return executeStatuses(client, cmd);
+    case 'boards':
+      return executeBoards(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -146,6 +148,36 @@ async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<
   }
 }
 
+async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-sprints': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listSprints(boardId, {
+        state: asString(opts['state']),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'sprint-issues': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'sprintId'),
+        'sprintId',
+      );
+      return client.boards.getSprintIssues(boardId, sprintId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    default:
+      throw new Error(`Unknown boards action: ${cmd.action}. Actions: list-sprints, sprint-issues`);
+  }
+}
+
 function requireArg(value: string | undefined, name: string): string {
   if (!value) throw new Error(`Missing required argument: ${name}`);
   return value;
@@ -162,6 +194,14 @@ function asString(value: string | boolean | undefined): string | undefined {
 
 function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined {
   if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
+}
+
+function parsePositiveIntArg(value: string, name: string): number {
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
