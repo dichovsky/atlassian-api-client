@@ -97,6 +97,10 @@ const confluenceTasksMock = {
   get: vi.fn(),
   update: vi.fn(),
 };
+const confluenceUsersMock = {
+  checkAccessByEmail: vi.fn(),
+  inviteByEmail: vi.fn(),
+};
 const confluenceUsersBulkMock = {
   lookup: vi.fn(),
 };
@@ -136,6 +140,7 @@ vi.mock('../../src/confluence/client.js', () => {
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
       tasks: confluenceTasksMock,
+      users: confluenceUsersMock,
       usersBulk: confluenceUsersBulkMock,
     };
   });
@@ -1786,6 +1791,96 @@ describe('executeConfluenceCommand', () => {
     it('tasks unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('tasks', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown tasks action',
+      );
+    });
+  });
+
+  // ── users ─────────────────────────────────────────────────────────────────
+
+  describe('users resource', () => {
+    it('users check-access-by-email calls client.users.checkAccessByEmail with parsed emails', async () => {
+      // Arrange
+      const payload = {
+        emailsWithoutAccess: ['outsider@example.com'],
+        invalidEmails: [],
+      };
+      confluenceUsersMock.checkAccessByEmail.mockResolvedValue(payload);
+      const parsed = cmd('users', 'check-access-by-email', [], {
+        emails: 'member@example.com,outsider@example.com',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceUsersMock.checkAccessByEmail).toHaveBeenCalledWith({
+        emails: ['member@example.com', 'outsider@example.com'],
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('users check-access-by-email trims whitespace and drops empty entries', async () => {
+      // Arrange
+      confluenceUsersMock.checkAccessByEmail.mockResolvedValue({});
+      const parsed = cmd('users', 'check-access-by-email', [], {
+        emails: ' a@example.com , ,b@example.com ,',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceUsersMock.checkAccessByEmail).toHaveBeenCalledWith({
+        emails: ['a@example.com', 'b@example.com'],
+      });
+    });
+
+    it('users check-access-by-email throws when --emails is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('users', 'check-access-by-email', [], {}), GLOBALS),
+      ).rejects.toThrow('--emails');
+    });
+
+    it('users check-access-by-email throws when --emails is all empty after trimming', async () => {
+      const parsed = cmd('users', 'check-access-by-email', [], { emails: ' , , ' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--emails must contain at least one non-empty email address',
+      );
+    });
+
+    it('users invite-by-email calls client.users.inviteByEmail and returns { invited: true }', async () => {
+      // Arrange — endpoint returns 200 with no useful body.
+      confluenceUsersMock.inviteByEmail.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'invite-by-email', [], {
+        emails: 'new1@example.com,new2@example.com',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceUsersMock.inviteByEmail).toHaveBeenCalledWith({
+        emails: ['new1@example.com', 'new2@example.com'],
+      });
+      expect(result).toEqual({ invited: true });
+    });
+
+    it('users invite-by-email throws when --emails is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('users', 'invite-by-email', [], {}), GLOBALS),
+      ).rejects.toThrow('--emails');
+    });
+
+    it('users invite-by-email throws when --emails is all empty after trimming', async () => {
+      const parsed = cmd('users', 'invite-by-email', [], { emails: ' , , ' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--emails must contain at least one non-empty email address',
+      );
+    });
+
+    it('users unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('users', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown users action',
       );
     });
   });

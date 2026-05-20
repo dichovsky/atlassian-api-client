@@ -529,6 +529,57 @@ const matrix: readonly MatrixRow[] = [
     },
   },
 
+  // ─── users ────────────────────────────────────────────────────────────
+  {
+    name: 'users check-access-by-email',
+    argv: [
+      'confluence',
+      'users',
+      'check-access-by-email',
+      '--emails',
+      'member@example.com,outsider@example.com',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/user/access/check-access-by-email`,
+        body: F.checkAccessByEmail,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/user/access/check-access-by-email` },
+    expectBody: (body) => {
+      expect(body).toEqual({ emails: ['member@example.com', 'outsider@example.com'] });
+    },
+    expectStdout: ['"emailsWithoutAccess"', '"outsider@example.com"'],
+  },
+  {
+    name: 'users invite-by-email',
+    argv: [
+      'confluence',
+      'users',
+      'invite-by-email',
+      '--emails',
+      'new1@example.com,new2@example.com',
+    ],
+    routes: [
+      {
+        // The endpoint is asynchronous server-side and the OpenAPI spec
+        // documents `200` with `"content": {}` (no media type). Confluence
+        // returns a truly empty body; the transport's json parser tolerates
+        // this and yields `undefined` instead of throwing `SyntaxError`.
+        method: 'POST',
+        path: `${P}/user/access/invite-by-email`,
+        status: 200,
+        body: '',
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/user/access/invite-by-email` },
+    expectBody: (body) => {
+      expect(body).toEqual({ emails: ['new1@example.com', 'new2@example.com'] });
+    },
+    expectStdout: ['"invited": true'],
+  },
+
   // ─── users-bulk ───────────────────────────────────────────────────────
   {
     name: 'users-bulk lookup',

@@ -21,6 +21,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
 | `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                     |
+| `users`                 | `check-access-by-email`, `invite-by-email`                                                                                                                                                                                                                                  |
 | `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
 
 ## `pages`
@@ -303,6 +304,42 @@ atlas confluence tasks update task-1 --status complete
 
 # Reopen a task
 atlas confluence tasks update task-1 --status incomplete
+```
+
+## `users`
+
+Single-user access controls. Bulk account-ID resolution lives under the
+separate `users-bulk` resource below.
+
+| Action                  | Positional | Required flags | Optional flags |
+| ----------------------- | ---------- | -------------- | -------------- |
+| `check-access-by-email` | —          | `--emails`     | —              |
+| `invite-by-email`       | —          | `--emails`     | —              |
+
+- `check-access-by-email` (`POST /wiki/api/v2/user/access/check-access-by-email`)
+  returns the subset of the input that does **not** have site access plus any
+  syntactically invalid entries: `{ emailsWithoutAccess?, invalidEmails? }`.
+  Either bucket may be omitted when empty. Requires the `Can use` Confluence
+  global permission (and the `read:configuration:confluence` OAuth scope for
+  app-authenticated callers).
+- `invite-by-email` (`POST /wiki/api/v2/user/access/invite-by-email`) is
+  asynchronous — a successful 200 means the invitations were accepted for
+  processing, not that the accounts are provisioned. Invalid emails are
+  silently dropped server-side and already-provisioned emails are no-ops.
+  The CLI prints `{ "invited": true }` on success.
+- `--emails` is a comma-separated list (`--emails a@example.com,b@example.com`).
+  Surrounding whitespace per entry is trimmed; empty entries are dropped. The
+  CLI rejects an empty effective list before issuing the request. Confluence
+  caps the batch at 1-100 server-side.
+
+```sh
+# Find emails from a batch that do not currently have site access
+atlas confluence users check-access-by-email \
+  --emails member@example.com,outsider@example.com,not-an-email
+
+# Invite a batch of new users (asynchronous on the server)
+atlas confluence users invite-by-email \
+  --emails new1@example.com,new2@example.com
 ```
 
 ## `users-bulk`

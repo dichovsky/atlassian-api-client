@@ -760,6 +760,33 @@ export interface BulkUsersResponse {
   };
 }
 
+// --- Users (single-user access) ---
+
+/**
+ * Request body for `POST /user/access/check-access-by-email` and
+ * `POST /user/access/invite-by-email`.
+ *
+ * The OpenAPI spec marks `emails` as required and enforces 1-100 entries
+ * server-side. The resource additionally rejects an empty array client-side
+ * so callers fail fast without burning an HTTP round trip.
+ */
+export interface CheckAccessOrInviteByEmailRequest {
+  readonly emails: readonly string[];
+}
+
+/**
+ * Response shape for `POST /user/access/check-access-by-email`.
+ *
+ * Both arrays are documented as optional by the OpenAPI spec — Confluence
+ * may omit a key entirely when the corresponding bucket is empty.
+ */
+export interface CheckAccessByEmailResponse {
+  /** Emails from the input that do not have access to the site. */
+  readonly emailsWithoutAccess?: readonly string[];
+  /** Emails from the input that were syntactically invalid. */
+  readonly invalidEmails?: readonly string[];
+}
+
 // --- Databases ---
 
 /**

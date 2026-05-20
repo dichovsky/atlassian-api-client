@@ -94,6 +94,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'space-permissions',
           'space-role-mode',
           'tasks',
+          'users',
           'users-bulk',
         ]).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
@@ -144,6 +145,7 @@ describe('Resource coverage drift check', () => {
     'space-permissions',
     'space-role-mode',
     'tasks',
+    'users',
     'users-bulk',
   ]) {
     it(`Confluence resource '${resource}' is documented in reference/confluence.md`, () => {

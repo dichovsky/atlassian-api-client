@@ -83,6 +83,8 @@ export type {
   ConfluenceAccountType,
   BulkUsersRequest,
   BulkUsersResponse,
+  CheckAccessOrInviteByEmailRequest,
+  CheckAccessByEmailResponse,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -103,4 +105,5 @@ export { DataPoliciesResource } from './resources/data-policies.js';
 export { DatabasesResource } from './resources/databases.js';
 export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
+export { UsersResource } from './resources/users.js';
 export { UsersBulkResource } from './resources/users-bulk.js';
