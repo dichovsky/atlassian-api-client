@@ -211,6 +211,35 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  task: {
+    id: 'task-1',
+    status: 'incomplete' as const,
+    spaceId: '654321',
+    pageId: '12345',
+    createdBy: 'acc-creator',
+    assignedTo: 'acc-assignee',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-02T00:00:00Z',
+  },
+  taskCompleted: {
+    id: 'task-1',
+    status: 'complete' as const,
+    spaceId: '654321',
+    pageId: '12345',
+    completedBy: 'acc-assignee',
+    completedAt: '2026-01-03T00:00:00Z',
+  },
+  taskList: {
+    results: [
+      {
+        id: 'task-1',
+        status: 'incomplete' as const,
+        spaceId: '654321',
+        pageId: '12345',
+      },
+    ],
+    _links: { next: null },
+  },
 };
 
 export const jiraFixtures = {

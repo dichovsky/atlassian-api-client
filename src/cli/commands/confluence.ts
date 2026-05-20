@@ -37,6 +37,8 @@ export async function executeConfluenceCommand(
       return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
       return executeSpaceRoleMode(client, cmd);
+    case 'tasks':
+      return executeTasks(client, cmd);
     case 'users-bulk':
       return executeUsersBulk(client, cmd);
     default:
@@ -370,6 +372,44 @@ async function executeSpaceRoleMode(
   }
 }
 
+async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.tasks.list({
+        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        includeBlankTasks: opts['include-blank-tasks'] === true ? true : undefined,
+        status: asEnum(opts['status'], TASK_STATUSES, 'status'),
+        taskId: asPositiveInt(opts['task-id'], '--task-id'),
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        createdBy: asString(opts['created-by']),
+        assignedTo: asString(opts['assigned-to']),
+        completedBy: asString(opts['completed-by']),
+        createdAtFrom: asString(opts['created-at-from']),
+        createdAtTo: asString(opts['created-at-to']),
+        dueAtFrom: asString(opts['due-at-from']),
+        dueAtTo: asString(opts['due-at-to']),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'get':
+      return client.tasks.get(requireArg(cmd.positionalArgs[0], 'task ID'), {
+        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+      });
+    case 'update':
+      return client.tasks.update(requireArg(cmd.positionalArgs[0], 'task ID'), {
+        status: requireEnum(opts['status'], TASK_STATUSES, '--status'),
+      });
+    default:
+      throw new Error(`Unknown tasks action: ${cmd.action}. Actions: list, get, update`);
+  }
+}
+
+const TASK_STATUSES = ['incomplete', 'complete'] as const;
+
 async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {
     case 'lookup': {
@@ -530,6 +570,24 @@ function asEnum<T extends string>(
   if (typeof value !== 'string') return undefined;
   if (!(allowed as readonly string[]).includes(value)) {
     throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
+/**
+ * Like `asEnum` but rejects missing values. Use when the flag is required and
+ * must come from a fixed allowlist (e.g. `tasks update --status`).
+ */
+function requireEnum<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`Missing required option: ${flagName} (one of: ${allowed.join(', ')})`);
+  }
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
   }
   return value as T;
 }

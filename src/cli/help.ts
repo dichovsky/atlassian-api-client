@@ -74,6 +74,7 @@ RESOURCES:
   databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
   space-permissions      list
   space-role-mode        get
+  tasks                  list, get, update
   users-bulk             lookup
 
 EXAMPLES:
@@ -91,6 +92,8 @@ EXAMPLES:
   atlas confluence databases update-classification-level 456 --level-id cl-1
   atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
+  atlas confluence tasks list --status incomplete --limit 25
+  atlas confluence tasks update task-1 --status complete
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
 `;
 
