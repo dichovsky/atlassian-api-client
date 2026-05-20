@@ -104,17 +104,17 @@ for await (const issue of paginateSearch(client, { jql: 'project = PROJ' })) {
 
 List sprints, sprint issues, properties, quick filters, and reports scoped to a specific Agile board.
 
-| Action              | Positionals                    | Required flags | Optional flags                                     |
-| ------------------- | ------------------------------ | -------------- | -------------------------------------------------- |
-| `list-sprints`      | `<boardId>`                    | —              | `--state`, `--start-at`, `--max-results`           |
-| `sprint-issues`     | `<boardId> <sprintId>`         | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
-| `list-properties`   | `<boardId>`                    | —              | —                                                  |
-| `delete-property`   | `<boardId> <propertyKey>`      | —              | —                                                  |
-| `get-property`      | `<boardId> <propertyKey>`      | —              | —                                                  |
-| `set-property`      | `<boardId> <propertyKey>`      | `--value`      | —                                                  |
-| `list-quickfilters` | `<boardId>`                    | —              | `--start-at`, `--max-results`                      |
-| `get-quickfilter`   | `<boardId> <quickFilterId>`    | —              | —                                                  |
-| `get-reports`       | `<boardId>`                    | —              | —                                                  |
+| Action              | Positionals                 | Required flags | Optional flags                                     |
+| ------------------- | --------------------------- | -------------- | -------------------------------------------------- |
+| `list-sprints`      | `<boardId>`                 | —              | `--state`, `--start-at`, `--max-results`           |
+| `sprint-issues`     | `<boardId> <sprintId>`      | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `list-properties`   | `<boardId>`                 | —              | —                                                  |
+| `delete-property`   | `<boardId> <propertyKey>`   | —              | —                                                  |
+| `get-property`      | `<boardId> <propertyKey>`   | —              | —                                                  |
+| `set-property`      | `<boardId> <propertyKey>`   | `--value`      | —                                                  |
+| `list-quickfilters` | `<boardId>`                 | —              | `--start-at`, `--max-results`                      |
+| `get-quickfilter`   | `<boardId> <quickFilterId>` | —              | —                                                  |
+| `get-reports`       | `<boardId>`                 | —              | —                                                  |
 
 - `--state` accepts a comma-separated list of sprint states: `future`, `active`, `closed`. Example: `--state active,closed`.
 - `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
