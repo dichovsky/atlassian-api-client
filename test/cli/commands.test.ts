@@ -51,6 +51,11 @@ const confluenceCommentsMock = {
   createInline: vi.fn(),
   deleteFooter: vi.fn(),
   deleteInline: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
 };
 const confluenceAttachmentsMock = {
   listForPage: vi.fn(),
@@ -805,6 +810,168 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('comments', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown comments action',
       );
+    });
+
+    // ── comment content properties ───────────────────────────────────────────
+
+    it('comments list-properties calls listProperties with comment ID and forwards flags', async () => {
+      // Arrange
+      confluenceCommentsMock.listProperties.mockResolvedValue({ results: [] });
+      const parsed = cmd('comments', 'list-properties', ['c-1'], {
+        key: 'reviewed',
+        sort: '-key',
+        cursor: 'tok',
+        limit: '25',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.listProperties).toHaveBeenCalledWith('c-1', {
+        key: 'reviewed',
+        sort: '-key',
+        cursor: 'tok',
+        limit: 25,
+      });
+    });
+
+    it('comments list-properties throws on invalid --sort', async () => {
+      const parsed = cmd('comments', 'list-properties', ['c-1'], { sort: 'invalid' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('comments list-properties throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('comments', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('comments create-property calls createProperty with parsed JSON value', async () => {
+      // Arrange
+      confluenceCommentsMock.createProperty.mockResolvedValue({ id: 'p-new' });
+      const parsed = cmd('comments', 'create-property', ['c-1'], {
+        key: 'reviewed',
+        value: '{"yes":true}',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.createProperty).toHaveBeenCalledWith('c-1', {
+        key: 'reviewed',
+        value: { yes: true },
+      });
+      expect(result).toEqual({ id: 'p-new' });
+    });
+
+    it('comments create-property preserves bare strings when --value is not valid JSON', async () => {
+      // Arrange
+      confluenceCommentsMock.createProperty.mockResolvedValue({ id: 'p-new' });
+      const parsed = cmd('comments', 'create-property', ['c-1'], {
+        key: 'tag',
+        value: 'plain-string',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.createProperty).toHaveBeenCalledWith('c-1', {
+        key: 'tag',
+        value: 'plain-string',
+      });
+    });
+
+    it('comments create-property throws when --key is missing', async () => {
+      const parsed = cmd('comments', 'create-property', ['c-1'], { value: 'v' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('comments create-property throws when --value is missing', async () => {
+      const parsed = cmd('comments', 'create-property', ['c-1'], { key: 'k' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('comments get-property calls getProperty with comment ID and property ID', async () => {
+      // Arrange
+      confluenceCommentsMock.getProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('comments', 'get-property', ['c-1'], { 'property-id': 'p-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.getProperty).toHaveBeenCalledWith('c-1', 'p-1');
+      expect(result).toEqual({ id: 'p-1' });
+    });
+
+    it('comments get-property throws when --property-id is missing', async () => {
+      const parsed = cmd('comments', 'get-property', ['c-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('comments update-property calls updateProperty with version and parsed value', async () => {
+      // Arrange
+      confluenceCommentsMock.updateProperty.mockResolvedValue({
+        id: 'p-1',
+        version: { number: 3 },
+      });
+      const parsed = cmd('comments', 'update-property', ['c-1'], {
+        'property-id': 'p-1',
+        key: 'reviewed',
+        value: '{"yes":false}',
+        'version-number': '3',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.updateProperty).toHaveBeenCalledWith('c-1', 'p-1', {
+        key: 'reviewed',
+        value: { yes: false },
+        version: { number: 3 },
+      });
+    });
+
+    it('comments update-property rejects non-positive --version-number', async () => {
+      const parsed = cmd('comments', 'update-property', ['c-1'], {
+        'property-id': 'p-1',
+        key: 'k',
+        value: 'v',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('comments update-property rejects non-integer --version-number', async () => {
+      const parsed = cmd('comments', 'update-property', ['c-1'], {
+        'property-id': 'p-1',
+        key: 'k',
+        value: 'v',
+        'version-number': 'abc',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('comments delete-property calls deleteProperty and returns { deleted: true }', async () => {
+      // Arrange
+      confluenceCommentsMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('comments', 'delete-property', ['c-1'], { 'property-id': 'p-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.deleteProperty).toHaveBeenCalledWith('c-1', 'p-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('comments delete-property throws when --property-id is missing', async () => {
+      const parsed = cmd('comments', 'delete-property', ['c-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
     });
   });
 

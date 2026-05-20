@@ -64,7 +64,7 @@ RESOURCES:
   pages                  list, get, create, update, delete
   spaces                 list, get
   blog-posts             list, get, create, update, delete
-  comments               list, get, create, delete
+  comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, get, delete
   labels                 list
   admin-key              get, create, delete
@@ -83,6 +83,9 @@ EXAMPLES:
   atlas confluence spaces list
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
+  atlas confluence comments list-properties 77777
+  atlas confluence comments create-property 77777 --key reviewed --value true
+  atlas confluence comments update-property 77777 --property-id prop-1 --key reviewed --value false --version-number 2
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
   atlas confluence databases create --space-id 123 --title "Inventory" --private

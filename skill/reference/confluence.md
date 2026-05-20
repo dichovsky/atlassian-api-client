@@ -9,7 +9,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `pages`                 | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
 | `spaces`                | `list`, `get`                                                                                                                                                                                                                                                               |
 | `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
-| `comments`              | `list`, `get`, `create`, `delete`                                                                                                                                                                                                                                           |
+| `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                               |
 | `attachments`           | `list`, `get`, `delete`                                                                                                                                                                                                                                                     |
 | `labels`                | `list`                                                                                                                                                                                                                                                                      |
 | `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                   |
@@ -49,14 +49,23 @@ Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `
 
 ## `comments`
 
-| Action   | Positional    | Required flags                                   | Optional flags                          |
-| -------- | ------------- | ------------------------------------------------ | --------------------------------------- |
-| `list`   | —             | one of `--page-id` or `--blog-post-id`           | `--limit`, `--cursor`, `--comment-type` |
-| `get`    | `<commentId>` | —                                                | —                                       |
-| `create` | —             | one of `--page-id` or `--blog-post-id`, `--body` | —                                       |
-| `delete` | `<commentId>` | —                                                | —                                       |
+| Action            | Positional    | Required flags                                          | Optional flags                           |
+| ----------------- | ------------- | ------------------------------------------------------- | ---------------------------------------- |
+| `list`            | —             | one of `--page-id` or `--blog-post-id`                  | `--limit`, `--cursor`, `--comment-type`  |
+| `get`             | `<commentId>` | —                                                       | —                                        |
+| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | —                                        |
+| `delete`          | `<commentId>` | —                                                       | —                                        |
+| `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit` |
+| `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                        |
+| `get-property`    | `<commentId>` | `--property-id`                                         | —                                        |
+| `update-property` | `<commentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                        |
+| `delete-property` | `<commentId>` | `--property-id`                                         | —                                        |
 
 - `--comment-type` accepts `footer` (top-level) or `inline`. Default is `footer`.
+- The `*-property` actions hit `/comments/{comment-id}/properties[/{property-id}]` and work for both footer and inline comments — Confluence resolves the comment by id regardless of type, so no `--comment-type` flag is needed.
+- `--sort` on `list-properties` accepts `key` or `-key`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
 
 ## `attachments`
 

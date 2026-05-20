@@ -240,6 +240,23 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  commentProperty: {
+    id: 'cp-1',
+    key: 'reviewed',
+    value: { yes: true },
+    version: { number: 1 },
+  },
+  commentPropertyList: {
+    results: [
+      {
+        id: 'cp-1',
+        key: 'reviewed',
+        value: { yes: true },
+        version: { number: 1 },
+      },
+    ],
+    _links: { next: null },
+  },
 };
 
 export const jiraFixtures = {

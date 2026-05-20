@@ -190,8 +190,49 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         await client.comments.deleteFooter(requireArg(cmd.positionalArgs[0], 'comment ID'));
       }
       return { deleted: true };
+    case 'list-properties':
+      return client.comments.listProperties(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.comments.createProperty(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.comments.getProperty(
+        requireArg(cmd.positionalArgs[0], 'comment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.comments.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'comment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.comments.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'comment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
     default:
-      throw new Error(`Unknown comments action: ${cmd.action}. Actions: list, get, create, delete`);
+      throw new Error(
+        `Unknown comments action: ${cmd.action}. Actions: list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property`,
+      );
   }
 }
 

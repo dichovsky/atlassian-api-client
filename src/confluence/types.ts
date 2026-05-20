@@ -301,6 +301,30 @@ export interface UpdateContentPropertyData {
   readonly version: { readonly number: number; readonly message?: string };
 }
 
+// --- Comment Properties ---
+
+/** Parameters for listing content properties attached to a comment. */
+export interface ListCommentPropertiesParams {
+  readonly key?: string;
+  readonly sort?: 'key' | '-key';
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * Request body for `PUT /comments/{comment-id}/properties/{property-id}`.
+ *
+ * Mirrors the page-level / database-level content property update shape:
+ * callers must echo the existing `key`, set the new `value`, and bump
+ * `version.number` by one for optimistic concurrency (Confluence returns
+ * 409 on mismatched versions).
+ */
+export interface UpdateCommentPropertyData {
+  readonly key: string;
+  readonly value: unknown;
+  readonly version: { readonly number: number; readonly message?: string };
+}
+
 // --- App Properties ---
 
 /**
