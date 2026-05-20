@@ -4,16 +4,17 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 
 ## Resource × action matrix
 
-| Resource      | Actions                                                          |
-| ------------- | ---------------------------------------------------------------- |
-| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions` |
-| `projects`    | `list`, `get`                                                    |
-| `search`      | (no sub-action; uses `--jql`)                                    |
-| `users`       | `get`, `me`, `search`                                            |
-| `issue-types` | `list`, `get`                                                    |
-| `priorities`  | `list`, `get`                                                    |
-| `statuses`    | `list`                                                           |
-| `boards`      | `list-sprints`, `sprint-issues`                                  |
+| Resource      | Actions                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- |
+| `issues`      | `get`, `create`, `update`, `delete`, `transition`, `transitions`                   |
+| `projects`    | `list`, `get`                                                                      |
+| `search`      | (no sub-action; uses `--jql`)                                                      |
+| `users`       | `get`, `me`, `search`                                                              |
+| `issue-types` | `list`, `get`                                                                      |
+| `priorities`  | `list`, `get`                                                                      |
+| `statuses`    | `list`                                                                             |
+| `boards`      | `list-sprints`, `sprint-issues`                                                    |
+| `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues` |
 
 ## `issues`
 
@@ -124,6 +125,56 @@ atlas jira boards sprint-issues 1 10
 
 # List issues with JQL filter and field selection
 atlas jira boards sprint-issues 1 10 --jql "status = 'In Progress'" --fields summary,status,assignee
+```
+
+## `sprints`
+
+Manage Agile sprints directly (not board-scoped). Supports full CRUD, partial patch, issue assignment.
+
+| Action           | Positionals  | Required flags         | Optional flags                                              |
+| ---------------- | ------------ | ---------------------- | ----------------------------------------------------------- |
+| `get`            | `<sprintId>` | —                      | —                                                           |
+| `create`         | —            | `--name`, `--board-id` | `--start-date`, `--end-date`, `--goal`                      |
+| `update`         | `<sprintId>` | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
+| `delete`         | `<sprintId>` | —                      | —                                                           |
+| `get-issues`     | `<sprintId>` | —                      | `--jql`, `--fields`, `--start-at`, `--max-results`          |
+| `partial-update` | `<sprintId>` | —                      | `--name`, `--state`, `--start-date`, `--end-date`, `--goal` |
+| `move-issues`    | `<sprintId>` | `--issues`             | —                                                           |
+
+**Notes:**
+
+- `update` uses **PUT** (full replace) — all current fields are overwritten. Supply every field you want to keep.
+- `partial-update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
+- `--state` accepts `active`, `closed`, or `future` only.
+- `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending.
+- `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
+- `sprintId` and `--board-id` are numeric IDs (not names).
+- Dates are ISO 8601: `--start-date 2026-06-01T00:00:00.000Z`.
+
+```sh
+# Get sprint details
+atlas jira sprints get 42
+
+# Create a new sprint on board 1
+atlas jira sprints create --name "Sprint 5" --board-id 1 --start-date 2026-06-01T00:00:00.000Z --end-date 2026-06-14T00:00:00.000Z --goal "Ship billing module"
+
+# Rename a sprint without touching other fields (partial-update, not update)
+atlas jira sprints partial-update 42 --name "Sprint 5 (revised)"
+
+# Close a sprint via partial-update
+atlas jira sprints partial-update 42 --state closed
+
+# Move issues into sprint 42 (comma-separated, max 50)
+atlas jira sprints move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3
+
+# List sprint issues with JQL filter
+atlas jira sprints get-issues 42 --jql "status != Done" --fields summary,status,assignee
+
+# Full update (replaces all fields — use partial-update to patch)
+atlas jira sprints update 42 --name "Sprint 5" --state active --start-date 2026-06-01T00:00:00.000Z --end-date 2026-06-14T00:00:00.000Z
+
+# Delete a sprint
+atlas jira sprints delete 42
 ```
 
 ## Errors specific to Jira

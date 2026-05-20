@@ -91,6 +91,42 @@ export class SprintsResource {
     });
   }
 
+  /** Partially update a sprint (B316). POST verb is patch semantics per Atlassian Agile API. */
+  async partialUpdate(sprintId: number, data: UpdateSprintData): Promise<Sprint> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    const response = await this.transport.request<Sprint>({
+      method: 'POST',
+      path: `${this.baseUrl}/sprint/${sprintId}`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Move issues into a sprint (B318). Max 50 issues per call. */
+  async moveIssues(sprintId: number, issues: readonly string[]): Promise<void> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (!Array.isArray(issues) || issues.length === 0) {
+      throw new ValidationError('issues must be a non-empty array');
+    }
+    if (issues.length > 50) {
+      throw new ValidationError('issues must contain at most 50 entries');
+    }
+    for (const entry of issues) {
+      if (typeof entry !== 'string' || entry.length === 0) {
+        throw new ValidationError('issues entries must be non-empty strings');
+      }
+    }
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/sprint/${sprintId}/issue`,
+      body: { issues },
+    });
+  }
+
   /** Get issues for a sprint. */
   async getIssues(
     sprintId: number,

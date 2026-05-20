@@ -140,6 +140,122 @@ describe('SprintsResource', () => {
     });
   });
 
+  // ── partialUpdate ─────────────────────────────────────────────────────────
+
+  describe('partialUpdate()', () => {
+    it('calls POST /sprint/{sprintId} with the provided data', async () => {
+      // Arrange
+      const sprint = makeSprint(42, 'Patched Sprint');
+      transport.respondWith(sprint);
+      const data = { name: 'Patched Sprint', state: 'closed' as const };
+
+      // Act
+      const result = await sprints.partialUpdate(42, data);
+
+      // Assert
+      expect(result).toEqual(sprint);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/sprint/42`,
+        body: data,
+      });
+    });
+
+    it('sends partial data (only name) verbatim', async () => {
+      // Arrange
+      const sprint = makeSprint(5, 'Renamed Sprint');
+      transport.respondWith(sprint);
+      const data = { name: 'Renamed Sprint' };
+
+      // Act
+      await sprints.partialUpdate(5, data);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/sprint/5`,
+        body: { name: 'Renamed Sprint' },
+      });
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.partialUpdate(0, {})).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.partialUpdate(-1, {})).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+  });
+
+  // ── moveIssues ────────────────────────────────────────────────────────────
+
+  describe('moveIssues()', () => {
+    it('calls POST /sprint/{sprintId}/issue with issues body and returns void', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+
+      // Act
+      const result = await sprints.moveIssues(42, ['PROJ-1', 'PROJ-2']);
+
+      // Assert
+      expect(result).toBeUndefined();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/sprint/42/issue`,
+        body: { issues: ['PROJ-1', 'PROJ-2'] },
+      });
+    });
+
+    it('sends exactly 50 issues (boundary)', async () => {
+      // Arrange
+      transport.respondWith(undefined, 204);
+      const issues = Array.from({ length: 50 }, (_, i) => `PROJ-${i + 1}`);
+
+      // Act
+      await sprints.moveIssues(1, issues);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/sprint/1/issue`,
+        body: { issues },
+      });
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(sprints.moveIssues(0, ['PROJ-1'])).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId < 0', async () => {
+      await expect(sprints.moveIssues(-5, ['PROJ-1'])).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for empty issues array', async () => {
+      await expect(sprints.moveIssues(1, [])).rejects.toThrow('issues must be a non-empty array');
+    });
+
+    it('throws ValidationError for issues array with 51 entries', async () => {
+      const issues = Array.from({ length: 51 }, (_, i) => `PROJ-${i + 1}`);
+      await expect(sprints.moveIssues(1, issues)).rejects.toThrow(
+        'issues must contain at most 50 entries',
+      );
+    });
+
+    it('throws ValidationError for issue entry that is an empty string', async () => {
+      await expect(sprints.moveIssues(1, ['PROJ-1', ''])).rejects.toThrow(
+        'issues entries must be non-empty strings',
+      );
+    });
+  });
+
   // ── getIssues ─────────────────────────────────────────────────────────────
 
   describe('getIssues()', () => {
@@ -229,5 +345,20 @@ describe('SprintsResource sprintId validation', () => {
 
   it('delete() throws ValidationError for sprintId <= 0', async () => {
     await expect(sprints.delete(0)).rejects.toThrow('sprintId must be a positive integer');
+  });
+
+  it('partialUpdate() throws ValidationError for sprintId <= 0', async () => {
+    await expect(sprints.partialUpdate(0, {})).rejects.toThrow(
+      'sprintId must be a positive integer',
+    );
+    await expect(sprints.partialUpdate(-1, {})).rejects.toThrow(
+      'sprintId must be a positive integer',
+    );
+  });
+
+  it('moveIssues() throws ValidationError for sprintId <= 0', async () => {
+    await expect(sprints.moveIssues(0, ['PROJ-1'])).rejects.toThrow(
+      'sprintId must be a positive integer',
+    );
   });
 });

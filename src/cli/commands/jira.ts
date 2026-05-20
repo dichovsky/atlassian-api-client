@@ -26,6 +26,8 @@ export async function executeJiraCommand(
       return executeStatuses(client, cmd);
     case 'boards':
       return executeBoards(client, cmd);
+    case 'sprints':
+      return executeSprints(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -176,6 +178,103 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     default:
       throw new Error(`Unknown boards action: ${cmd.action}. Actions: list-sprints, sprint-issues`);
   }
+}
+
+async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.get(sprintId);
+    }
+    case 'create':
+      return client.sprints.create({
+        name: requireOpt(opts['name'], '--name'),
+        originBoardId: parsePositiveIntArg(
+          requireOpt(opts['board-id'], '--board-id'),
+          '--board-id',
+        ),
+        startDate: asString(opts['start-date']),
+        endDate: asString(opts['end-date']),
+        goal: asString(opts['goal']),
+      });
+    case 'update': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.update(sprintId, {
+        name: asString(opts['name']),
+        state: asSprintState(opts['state']),
+        startDate: asString(opts['start-date']),
+        endDate: asString(opts['end-date']),
+        goal: asString(opts['goal']),
+      });
+    }
+    case 'delete': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      await client.sprints.delete(sprintId);
+      return { deleted: true };
+    }
+    case 'get-issues': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.getIssues(sprintId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'partial-update': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.partialUpdate(sprintId, {
+        name: asString(opts['name']),
+        state: asSprintState(opts['state']),
+        startDate: asString(opts['start-date']),
+        endDate: asString(opts['end-date']),
+        goal: asString(opts['goal']),
+      });
+    }
+    case 'move-issues': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.sprints.moveIssues(sprintId, issues);
+      return { moved: true };
+    }
+    default:
+      throw new Error(
+        `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, partial-update, move-issues`,
+      );
+  }
+}
+
+function asSprintState(
+  value: string | boolean | undefined,
+): 'active' | 'closed' | 'future' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'active' || s === 'closed' || s === 'future') return s;
+  throw new Error(`--state must be one of: active, closed, future. Got: ${s}`);
 }
 
 function requireArg(value: string | undefined, name: string): string {

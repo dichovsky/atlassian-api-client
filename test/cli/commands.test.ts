@@ -163,6 +163,15 @@ const jiraBoardsMock = {
   listSprints: vi.fn(),
   getSprintIssues: vi.fn(),
 };
+const jiraSprintsMock = {
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  getIssues: vi.fn(),
+  partialUpdate: vi.fn(),
+  moveIssues: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -175,6 +184,7 @@ vi.mock('../../src/jira/client.js', () => {
       priorities: jiraPrioritiesMock,
       statuses: jiraStatusesMock,
       boards: jiraBoardsMock,
+      sprints: jiraSprintsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -2424,6 +2434,266 @@ describe('executeJiraCommand', () => {
     it('boards unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('boards', 'nope', ['1']), GLOBALS)).rejects.toThrow(
         'Unknown boards action',
+      );
+    });
+  });
+
+  // ── sprints ───────────────────────────────────────────────────────────────
+
+  describe('sprints resource', () => {
+    it('sprints get calls client.sprints.get with sprintId', async () => {
+      // Arrange
+      const sprint = { id: 42, name: 'Sprint 1', state: 'active', self: '' };
+      jiraSprintsMock.get.mockResolvedValue(sprint);
+
+      // Act
+      const result = await executeJiraCommand(cmd('sprints', 'get', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.get).toHaveBeenCalledWith(42);
+      expect(result).toEqual(sprint);
+    });
+
+    it('sprints get throws when sprintId is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: sprintId',
+      );
+    });
+
+    it('sprints get throws when sprintId is not a positive integer', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'get', ['abc']), GLOBALS)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('sprints create calls client.sprints.create with name and board-id', async () => {
+      // Arrange
+      const sprint = { id: 1, name: 'New Sprint', state: 'future', self: '' };
+      jiraSprintsMock.create.mockResolvedValue(sprint);
+      const parsed = cmd('sprints', 'create', [], {
+        name: 'New Sprint',
+        'board-id': '1',
+      });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'New Sprint', originBoardId: 1 }),
+      );
+      expect(result).toEqual(sprint);
+    });
+
+    it('sprints create passes optional fields', async () => {
+      // Arrange
+      jiraSprintsMock.create.mockResolvedValue({ id: 2 });
+      const parsed = cmd('sprints', 'create', [], {
+        name: 'Sprint X',
+        'board-id': '5',
+        'start-date': '2026-06-01T00:00:00.000Z',
+        'end-date': '2026-06-14T00:00:00.000Z',
+        goal: 'Ship it',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startDate: '2026-06-01T00:00:00.000Z',
+          endDate: '2026-06-14T00:00:00.000Z',
+          goal: 'Ship it',
+        }),
+      );
+    });
+
+    it('sprints create throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'create', [], { 'board-id': '1' }), GLOBALS),
+      ).rejects.toThrow('--name');
+    });
+
+    it('sprints create throws when --board-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'create', [], { name: 'S' }), GLOBALS),
+      ).rejects.toThrow('--board-id');
+    });
+
+    it('sprints update calls client.sprints.update with sprintId and options', async () => {
+      // Arrange
+      jiraSprintsMock.update.mockResolvedValue({ id: 42, name: 'Updated' });
+      const parsed = cmd('sprints', 'update', ['42'], { name: 'Updated', state: 'active' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.update).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ name: 'Updated', state: 'active' }),
+      );
+      expect(result).toMatchObject({ id: 42 });
+    });
+
+    it('sprints update throws when sprintId is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'update', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: sprintId',
+      );
+    });
+
+    it('sprints update throws when --state is invalid', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'update', ['42'], { state: 'invalid' }), GLOBALS),
+      ).rejects.toThrow('--state must be one of: active, closed, future');
+    });
+
+    it('sprints delete calls client.sprints.delete and returns { deleted: true }', async () => {
+      // Arrange
+      jiraSprintsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('sprints', 'delete', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.delete).toHaveBeenCalledWith(42);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('sprints delete throws when sprintId is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: sprintId',
+      );
+    });
+
+    it('sprints get-issues calls client.sprints.getIssues with sprintId', async () => {
+      // Arrange
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraSprintsMock.getIssues.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('sprints', 'get-issues', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.getIssues).toHaveBeenCalledWith(42, expect.any(Object));
+      expect(result).toEqual(payload);
+    });
+
+    it('sprints get-issues passes jql, fields, start-at, max-results', async () => {
+      // Arrange
+      jiraSprintsMock.getIssues.mockResolvedValue({ values: [] });
+      const parsed = cmd('sprints', 'get-issues', ['42'], {
+        jql: 'status = Done',
+        fields: 'summary,status',
+        'start-at': '5',
+        'max-results': '20',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.getIssues).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          startAt: 5,
+          maxResults: 20,
+        }),
+      );
+    });
+
+    it('sprints get-issues throws when sprintId is missing', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'get-issues', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: sprintId',
+      );
+    });
+
+    it('sprints partial-update calls client.sprints.partialUpdate with sprintId and options', async () => {
+      // Arrange
+      jiraSprintsMock.partialUpdate.mockResolvedValue({ id: 42, name: 'Patched' });
+      const parsed = cmd('sprints', 'partial-update', ['42'], { name: 'Patched' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.partialUpdate).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ name: 'Patched' }),
+      );
+      expect(result).toMatchObject({ id: 42 });
+    });
+
+    it('sprints partial-update accepts --state closed', async () => {
+      // Arrange
+      jiraSprintsMock.partialUpdate.mockResolvedValue({ id: 42 });
+      const parsed = cmd('sprints', 'partial-update', ['42'], { state: 'closed' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.partialUpdate).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ state: 'closed' }),
+      );
+    });
+
+    it('sprints partial-update throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'partial-update', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints partial-update throws when --state is invalid', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'partial-update', ['42'], { state: 'done' }), GLOBALS),
+      ).rejects.toThrow('--state must be one of: active, closed, future');
+    });
+
+    it('sprints move-issues calls client.sprints.moveIssues and returns { moved: true }', async () => {
+      // Arrange
+      jiraSprintsMock.moveIssues.mockResolvedValue(undefined);
+      const parsed = cmd('sprints', 'move-issues', ['42'], { issues: 'KEY-1,KEY-2' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(42, ['KEY-1', 'KEY-2']);
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('sprints move-issues parses comma-separated --issues to array', async () => {
+      // Arrange
+      jiraSprintsMock.moveIssues.mockResolvedValue(undefined);
+      const parsed = cmd('sprints', 'move-issues', ['1'], { issues: 'A-1,B-2,C-3' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSprintsMock.moveIssues).toHaveBeenCalledWith(1, ['A-1', 'B-2', 'C-3']);
+    });
+
+    it('sprints move-issues throws when --issues is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'move-issues', ['42'], {}), GLOBALS),
+      ).rejects.toThrow('--issues');
+    });
+
+    it('sprints move-issues throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'move-issues', [], { issues: 'KEY-1' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('sprints', 'nope', ['1']), GLOBALS)).rejects.toThrow(
+        'Unknown sprints action',
       );
     });
   });

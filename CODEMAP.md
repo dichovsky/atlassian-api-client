@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "d1e17558fa877026153525dae53566db5c9462c3b5d4d0dc30e9a815678afe89",
+  "sourceHash": "2f3f901ac5c5c6ba39142b95f3e60c059c2f7d1690adcda422ea94e8231bc82b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1965,79 +1965,91 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 34,
+          "line": 36,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 77,
+          "line": 79,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 90,
+          "line": 92,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 104,
+          "line": 106,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 120,
+          "line": 122,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 131,
+          "line": 133,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 142,
+          "line": 144,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 151,
+          "line": 153,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeSprints",
+          "kind": "function",
+          "line": 183,
+          "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "asSprintState",
+          "kind": "function",
+          "line": 271,
+          "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 181,
+          "line": 280,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 186,
+          "line": 285,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 191,
+          "line": 290,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 195,
+          "line": 294,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 204,
+          "line": 303,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
@@ -2127,7 +2139,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 117,
+          "line": 118,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -9569,9 +9581,19 @@
               "line": 84
             },
             {
-              "name": "getIssues",
+              "name": "partialUpdate",
               "kind": "method",
               "line": 95
+            },
+            {
+              "name": "moveIssues",
+              "kind": "method",
+              "line": 108
+            },
+            {
+              "name": "getIssues",
+              "kind": "method",
+              "line": 131
             }
           ]
         }
