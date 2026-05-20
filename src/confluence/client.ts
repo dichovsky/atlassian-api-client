@@ -12,6 +12,7 @@ import { CustomContentResource } from './resources/custom-content.js';
 import { WhiteboardsResource } from './resources/whiteboards.js';
 import { TasksResource } from './resources/tasks.js';
 import { VersionsResource } from './resources/versions.js';
+import { ClassificationLevelsResource } from './resources/classification-levels.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
 export class ConfluenceClient {
@@ -31,6 +32,8 @@ export class ConfluenceClient {
   readonly tasks: TasksResource;
   /** Versions resource. */
   readonly versions: VersionsResource;
+  /** Classification levels resource. */
+  readonly classificationLevels: ClassificationLevelsResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -48,5 +51,6 @@ export class ConfluenceClient {
     this.whiteboards = new WhiteboardsResource(transport, baseUrl);
     this.tasks = new TasksResource(transport, baseUrl);
     this.versions = new VersionsResource(transport, baseUrl);
+    this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
   }
 }

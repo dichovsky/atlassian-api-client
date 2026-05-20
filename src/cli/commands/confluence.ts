@@ -22,6 +22,8 @@ export async function executeConfluenceCommand(
       return executeAttachments(client, cmd);
     case 'labels':
       return executeLabels(client, cmd);
+    case 'classification-levels':
+      return executeClassificationLevels(client, cmd);
     default:
       throw new Error(`Unknown Confluence resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -200,6 +202,18 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
       });
     default:
       throw new Error(`Unknown labels action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeClassificationLevels(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list':
+      return client.classificationLevels.list();
+    default:
+      throw new Error(`Unknown classification-levels action: ${cmd.action}. Actions: list`);
   }
 }
 

@@ -78,9 +78,15 @@ describe('Example commands in SKILL.md parse correctly', () => {
       const parsed = parseCommand(argv);
       expect(parsed.api).toMatch(/^(confluence|jira|install-skill)$/);
       if (parsed.api === 'confluence') {
-        expect(['pages', 'spaces', 'blog-posts', 'comments', 'attachments', 'labels']).toContain(
-          parsed.resource,
-        );
+        expect([
+          'pages',
+          'spaces',
+          'blog-posts',
+          'comments',
+          'attachments',
+          'labels',
+          'classification-levels',
+        ]).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
         expect([
           'issues',
@@ -111,7 +117,15 @@ describe('Resource coverage drift check', () => {
     expect(jiraResources.length).toBeGreaterThan(0);
   });
 
-  for (const resource of ['pages', 'spaces', 'blog-posts', 'comments', 'attachments', 'labels']) {
+  for (const resource of [
+    'pages',
+    'spaces',
+    'blog-posts',
+    'comments',
+    'attachments',
+    'labels',
+    'classification-levels',
+  ]) {
     it(`Confluence resource '${resource}' is documented in reference/confluence.md`, () => {
       if (!confluenceResources.includes(resource)) {
         return; // dispatcher doesn't have it; nothing to drift against

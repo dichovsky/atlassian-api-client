@@ -59,6 +59,12 @@
   - **Impl:** Branch `feat/b035-log-path-credential-redaction` (2026-05-18); `sanitizePathForLogging` expanded marker list (password, pwd, apikey, api_key, access_token, refresh_token, bearer, jwt, assertion, client_secret, signature, sig, jsessionid, sid, session); added JWT compact-serialization shape redaction (`eyJ…` → `***.jwt.***`); userinfo `user:pass@host` stripped in fallback branch; matrix-param coverage (`;jsessionid=…`) inherited from expanded `name=` regex.
   - **Rat:** Shrink the credential-in-debug-log attack surface without changing public API; close userinfo gap in the URL-parse-failure fallback; catch raw JWTs that bypass marker-based redaction.
 
+## 🧩 Confluence
+
+- [x] 🔴 🧩 Confluence: B085 expose GET /classification-levels
+  - **Impl:** Branch `feat/api-classification-levels` (2026-05-20); new `ClassificationLevelsResource` (`src/confluence/resources/classification-levels.ts`) exposes `list()` mapped to `GET /wiki/api/v2/classification-levels`, returning the bare `ClassificationLevel[]` array per the OpenAPI spec. Wired as `ConfluenceClient.classificationLevels`; new `ClassificationLevel` + `ListClassificationLevelsResponse` types exported from `src/confluence/types.ts` and re-exported through `src/confluence/index.ts` + `src/index.ts`. CLI dispatch added in `src/cli/commands/confluence.ts` (`case 'classification-levels' → executeClassificationLevels` with `list` action); help text and reference doc (`skill/reference/confluence.md`) updated. Coverage: 100% on the new resource + dispatch arms; unit test (`test/confluence/classification-levels.test.ts`) asserts exact GET path with no query/body; CLI command test covers the dispatch arm and unknown-action error; E2E matrix gains a `classification-levels list` row exercising the full `runCli` → `HttpTransport` pipeline.
+  - **Rat:** Pilot for the bulk API-coverage backlog. Lists the org-wide data-classification levels needed to drive the per-content classification-level endpoints (B073/B118/B171/B198/B224) without each caller hand-rolling the lookup.
+
 ## 🧩 Jira
 
 - [x] 🔴 🐛 Jira: B033 `DashboardsResource.listAll` infinite pagination

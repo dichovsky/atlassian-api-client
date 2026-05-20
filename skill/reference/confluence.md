@@ -4,14 +4,15 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 
 ## Resource × action matrix
 
-| Resource      | Actions                                     |
-| ------------- | ------------------------------------------- |
-| `pages`       | `list`, `get`, `create`, `update`, `delete` |
-| `spaces`      | `list`, `get`                               |
-| `blog-posts`  | `list`, `get`, `create`, `update`, `delete` |
-| `comments`    | `list`, `get`, `create`, `delete`           |
-| `attachments` | `list`, `get`, `delete`                     |
-| `labels`      | `list`                                      |
+| Resource                | Actions                                     |
+| ----------------------- | ------------------------------------------- |
+| `pages`                 | `list`, `get`, `create`, `update`, `delete` |
+| `spaces`                | `list`, `get`                               |
+| `blog-posts`            | `list`, `get`, `create`, `update`, `delete` |
+| `comments`              | `list`, `get`, `create`, `delete`           |
+| `attachments`           | `list`, `get`, `delete`                     |
+| `labels`                | `list`                                      |
+| `classification-levels` | `list`                                      |
 
 ## `pages`
 
@@ -64,6 +65,18 @@ Upload is not exposed via the CLI; use the SDK's `attachments.upload()` with a `
 | Action | Positional | Optional flags                     |
 | ------ | ---------- | ---------------------------------- |
 | `list` | —          | `--page-id`, `--limit`, `--cursor` |
+
+## `classification-levels`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+
+Lists the data-classification levels defined for the Confluence Cloud organization (`GET /wiki/api/v2/classification-levels`). Requires the `read:configuration:confluence` OAuth scope (or `READ` Connect app scope) and the `Can use` global permission. Returns a JSON array of `ClassificationLevel` objects (`id`, `status`, `order`, `name`, `description`, `guideline`, `color`); responds 404 when the site edition has no data-classification entitlement.
+
+```sh
+atlas confluence classification-levels list
+```
 
 ## Pagination
 

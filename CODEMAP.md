@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "5c63f083c2335250bfcbf7ddda18bc04c2c3b8960a71ce92ab9bfd66f613d653",
+  "sourceHash": "d023f4659ed73239da0b0733558da035119cdc547f040063c651fc9a414b5c14",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -152,6 +152,15 @@
       "typeOnly": true
     },
     {
+      "name": "ClassificationLevel",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 467,
+      "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
+      "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations.",
+      "typeOnly": true
+    },
+    {
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
@@ -164,7 +173,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 17,
+      "line": 18,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -637,6 +646,15 @@
       "file": "src/jira/resources/boards.ts",
       "line": 19,
       "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…",
+      "typeOnly": true
+    },
+    {
+      "name": "ListClassificationLevelsResponse",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 492,
+      "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
+      "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}.",
       "typeOnly": true
     },
     {
@@ -1336,67 +1354,73 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 30,
+          "line": 32,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 79,
+          "line": 81,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 93,
+          "line": 95,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 135,
+          "line": 137,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 179,
+          "line": 181,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 195,
+          "line": 197,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeClassificationLevels",
+          "kind": "function",
+          "line": 208,
+          "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 206,
+          "line": 220,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 211,
+          "line": 225,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 216,
+          "line": 230,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 220,
+          "line": 234,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 229,
+          "line": 243,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1734,18 +1758,18 @@
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
           "line": 61,
-          "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages         list, get, create, …"
+          "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages                  list, get,…"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 77,
+          "line": 79,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 96,
+          "line": 98,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2017,7 +2041,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 17,
+          "line": 18,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2025,62 +2049,67 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 18
+              "line": 19
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 19
+              "line": 20
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 20
+              "line": 21
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 21
+              "line": 22
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 22
+              "line": 23
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 23
+              "line": 24
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 25
+              "line": 26
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 27
+              "line": 28
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 29
+              "line": 30
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 31
+              "line": 32
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 33
+              "line": 34
+            },
+            {
+              "name": "classificationLevels",
+              "kind": "property",
+              "line": 36
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 35
+              "line": 38
             }
           ]
         }
@@ -2091,6 +2120,7 @@
         "../core/types.js",
         "./resources/attachments.js",
         "./resources/blog-posts.js",
+        "./resources/classification-levels.js",
         "./resources/comments.js",
         "./resources/content-properties.js",
         "./resources/custom-content.js",
@@ -2146,6 +2176,17 @@
             {
               "exported": "BlogPostsResource",
               "original": "BlogPostsResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/classification-levels.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "ClassificationLevelsResource",
+              "original": "ClassificationLevelsResource"
             }
           ]
         },
@@ -2424,6 +2465,14 @@
             {
               "exported": "ListVersionsParams",
               "original": "ListVersionsParams"
+            },
+            {
+              "exported": "ClassificationLevel",
+              "original": "ClassificationLevel"
+            },
+            {
+              "exported": "ListClassificationLevelsResponse",
+              "original": "ListClassificationLevelsResponse"
             }
           ]
         }
@@ -2531,6 +2580,35 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
+      "path": "src/confluence/resources/classification-levels.ts",
+      "symbols": [
+        {
+          "name": "ClassificationLevelsResource",
+          "kind": "class",
+          "line": 12,
+          "exported": true,
+          "signature": "export class ClassificationLevelsResource",
+          "jsdoc": "Resource for the Confluence v2 classification-levels API.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 13
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 19
+            }
+          ]
+        }
+      ],
+      "imports": [
         "../../core/types.js",
         "../types.js"
       ]
@@ -3468,6 +3546,22 @@
           "exported": true,
           "signature": "export interface ListVersionsParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing content versions."
+        },
+        {
+          "name": "ClassificationLevel",
+          "kind": "interface",
+          "line": 467,
+          "exported": true,
+          "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
+          "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations."
+        },
+        {
+          "name": "ListClassificationLevelsResponse",
+          "kind": "type",
+          "line": 492,
+          "exported": true,
+          "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
+          "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}."
         }
       ]
     },
@@ -5662,6 +5756,14 @@
             {
               "exported": "ListVersionsParams",
               "original": "ListVersionsParams"
+            },
+            {
+              "exported": "ClassificationLevel",
+              "original": "ClassificationLevel"
+            },
+            {
+              "exported": "ListClassificationLevelsResponse",
+              "original": "ListClassificationLevelsResponse"
             }
           ]
         },

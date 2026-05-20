@@ -60,6 +60,9 @@ const confluenceAttachmentsMock = {
 const confluenceLabelsMock = {
   listForPage: vi.fn(),
 };
+const confluenceClassificationLevelsMock = {
+  list: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -70,6 +73,7 @@ vi.mock('../../src/confluence/client.js', () => {
       comments: confluenceCommentsMock,
       attachments: confluenceAttachmentsMock,
       labels: confluenceLabelsMock,
+      classificationLevels: confluenceClassificationLevelsMock,
     };
   });
   return { ConfluenceClient: MockConfluenceClient };
@@ -854,6 +858,29 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('labels', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown labels action',
       );
+    });
+  });
+
+  // ── classification-levels ─────────────────────────────────────────────────
+
+  describe('classification-levels resource', () => {
+    it('classification-levels list calls client.classificationLevels.list', async () => {
+      // Arrange
+      const payload = [{ id: '1', name: 'Public', status: 'PUBLISHED', color: 'GREEN' }];
+      confluenceClassificationLevelsMock.list.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('classification-levels', 'list'), GLOBALS);
+
+      // Assert
+      expect(confluenceClassificationLevelsMock.list).toHaveBeenCalledWith();
+      expect(result).toEqual(payload);
+    });
+
+    it('classification-levels unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('classification-levels', 'unknown'), GLOBALS),
+      ).rejects.toThrow('Unknown classification-levels action');
     });
   });
 

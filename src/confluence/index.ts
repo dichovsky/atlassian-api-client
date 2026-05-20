@@ -43,6 +43,8 @@ export type {
   UpdateTaskData,
   ContentVersion,
   ListVersionsParams,
+  ClassificationLevel,
+  ListClassificationLevelsResponse,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -56,3 +58,4 @@ export { CustomContentResource } from './resources/custom-content.js';
 export { WhiteboardsResource } from './resources/whiteboards.js';
 export { TasksResource } from './resources/tasks.js';
 export { VersionsResource } from './resources/versions.js';
+export { ClassificationLevelsResource } from './resources/classification-levels.js';

@@ -61,6 +61,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   comments: 'executeComments',
   attachments: 'executeAttachments',
   labels: 'executeLabels',
+  'classification-levels': 'executeClassificationLevels',
   issues: 'executeIssues',
   projects: 'executeProjects',
   search: 'executeSearch',
