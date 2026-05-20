@@ -56,6 +56,16 @@ const GLOBAL_OPTIONS = {
   'include-operations': { type: 'boolean' as const },
   'include-properties': { type: 'boolean' as const },
   'parent-id': { type: 'string' as const },
+  // tasks-specific options
+  'task-id': { type: 'string' as const },
+  'include-blank-tasks': { type: 'boolean' as const },
+  'assigned-to': { type: 'string' as const },
+  'created-by': { type: 'string' as const },
+  'completed-by': { type: 'string' as const },
+  'created-at-from': { type: 'string' as const },
+  'created-at-to': { type: 'string' as const },
+  'due-at-from': { type: 'string' as const },
+  'due-at-to': { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },

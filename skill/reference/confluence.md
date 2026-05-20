@@ -19,6 +19,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
+| `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                     |
 | `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
 
 ## `pages`
@@ -208,6 +209,49 @@ Retrieves the tenant's space role mode (`GET /wiki/api/v2/space-role-mode`). Ava
 
 ```sh
 atlas confluence space-role-mode get
+```
+
+## `tasks`
+
+Inline action items embedded in Confluence pages or blog posts. Each task is
+identified by a server-assigned string ID. The CLI exposes the three v2
+`/tasks` endpoints — list with rich filtering, fetch a single task, and toggle
+its `status` between `incomplete` and `complete`.
+
+| Action   | Positional | Required flags | Optional flags                                                                                                                                                                                                                                                   |
+| -------- | ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`   | —          | —              | `--body-format`, `--include-blank-tasks`, `--status`, `--task-id`, `--space-id`, `--page-id`, `--blog-post-id`, `--created-by`, `--assigned-to`, `--completed-by`, `--created-at-from`, `--created-at-to`, `--due-at-from`, `--due-at-to`, `--limit`, `--cursor` |
+| `get`    | `<taskId>` | —              | `--body-format`                                                                                                                                                                                                                                                  |
+| `update` | `<taskId>` | `--status`     | —                                                                                                                                                                                                                                                                |
+
+- `--status` accepts `incomplete` or `complete` (the only two task states v2 surfaces). On `update` it's required and toggles the task. On `list` it filters results.
+- `--task-id` filters to a single numeric platform task ID (distinct from the string task ID positional argument used by `get` / `update`).
+- `--include-blank-tasks` includes tasks whose `body` is empty (e.g. checkboxes without inline text). Omit to hide them.
+- `--body-format` accepts `storage` or `atlas_doc_format` and controls the representation of the task body when present.
+- The date-range filters (`--created-at-from`, `--created-at-to`, `--due-at-from`, `--due-at-to`) accept ISO-8601 timestamps (e.g. `2026-01-01T00:00:00Z`); ranges are inclusive on both ends.
+- `--space-id`, `--page-id`, `--blog-post-id` scope the listing to tasks within that container; combine to narrow further. The user-attribution filters (`--created-by`, `--assigned-to`, `--completed-by`) accept Atlassian account IDs.
+- Pagination is cursor-based — extract `cursor=…` from `_links.next` and pass it as `--cursor` on the follow-up call.
+- `update` only changes `status`; the task body, assignee, due date, and container are immutable through this endpoint.
+
+```sh
+# All incomplete tasks across the site (first page)
+atlas confluence tasks list --status incomplete --limit 25
+
+# Tasks assigned to a particular user on a page
+atlas confluence tasks list --page-id 12345 --assigned-to acc-123
+
+# Tasks completed in a date window
+atlas confluence tasks list --status complete --completed-by acc-123 \
+  --created-at-from 2026-01-01T00:00:00Z --created-at-to 2026-02-01T00:00:00Z
+
+# Read a single task (with rendered body)
+atlas confluence tasks get task-1 --body-format storage
+
+# Mark a task complete
+atlas confluence tasks update task-1 --status complete
+
+# Reopen a task
+atlas confluence tasks update task-1 --status incomplete
 ```
 
 ## `users-bulk`

@@ -83,6 +83,11 @@ const confluenceSpacePermissionsMock = {
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
 };
+const confluenceTasksMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+};
 const confluenceUsersBulkMock = {
   lookup: vi.fn(),
 };
@@ -120,6 +125,7 @@ vi.mock('../../src/confluence/client.js', () => {
       databases: confluenceDatabasesMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
+      tasks: confluenceTasksMock,
       usersBulk: confluenceUsersBulkMock,
     };
   });
@@ -1311,6 +1317,181 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('space-role-mode', 'list'), GLOBALS),
       ).rejects.toThrow('Unknown space-role-mode action');
+    });
+  });
+
+  // ── tasks ─────────────────────────────────────────────────────────────────
+
+  describe('tasks resource', () => {
+    it('tasks list with no flags calls client.tasks.list with all undefined params', async () => {
+      // Arrange
+      const payload = { results: [{ id: 't-1', status: 'incomplete' }], _links: {} };
+      confluenceTasksMock.list.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('tasks', 'list'), GLOBALS);
+
+      // Assert
+      expect(confluenceTasksMock.list).toHaveBeenCalledWith({
+        'body-format': undefined,
+        includeBlankTasks: undefined,
+        status: undefined,
+        taskId: undefined,
+        spaceId: undefined,
+        pageId: undefined,
+        blogPostId: undefined,
+        createdBy: undefined,
+        assignedTo: undefined,
+        completedBy: undefined,
+        createdAtFrom: undefined,
+        createdAtTo: undefined,
+        dueAtFrom: undefined,
+        dueAtTo: undefined,
+        cursor: undefined,
+        limit: undefined,
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('tasks list forwards every filter flag', async () => {
+      // Arrange
+      confluenceTasksMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('tasks', 'list', [], {
+        'body-format': 'storage',
+        'include-blank-tasks': true,
+        status: 'complete',
+        'task-id': '42',
+        'space-id': 'space-1',
+        'page-id': 'page-1',
+        'blog-post-id': 'blog-1',
+        'created-by': 'acc-creator',
+        'assigned-to': 'acc-assignee',
+        'completed-by': 'acc-finisher',
+        'created-at-from': '2026-01-01T00:00:00Z',
+        'created-at-to': '2026-02-01T00:00:00Z',
+        'due-at-from': '2026-01-15T00:00:00Z',
+        'due-at-to': '2026-02-15T00:00:00Z',
+        cursor: 'next-page',
+        limit: '50',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceTasksMock.list).toHaveBeenCalledWith({
+        'body-format': 'storage',
+        includeBlankTasks: true,
+        status: 'complete',
+        taskId: 42,
+        spaceId: 'space-1',
+        pageId: 'page-1',
+        blogPostId: 'blog-1',
+        createdBy: 'acc-creator',
+        assignedTo: 'acc-assignee',
+        completedBy: 'acc-finisher',
+        createdAtFrom: '2026-01-01T00:00:00Z',
+        createdAtTo: '2026-02-01T00:00:00Z',
+        dueAtFrom: '2026-01-15T00:00:00Z',
+        dueAtTo: '2026-02-15T00:00:00Z',
+        cursor: 'next-page',
+        limit: 50,
+      });
+    });
+
+    it('tasks list throws when --status is not a valid enum value', async () => {
+      const parsed = cmd('tasks', 'list', [], { status: 'maybe' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--status must be one of: incomplete, complete',
+      );
+    });
+
+    it('tasks list throws when --limit is invalid', async () => {
+      const parsed = cmd('tasks', 'list', [], { limit: 'nan' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('tasks list throws when --task-id is invalid', async () => {
+      const parsed = cmd('tasks', 'list', [], { 'task-id': '-1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--task-id must be a positive integer',
+      );
+    });
+
+    it('tasks get calls client.tasks.get with the task ID', async () => {
+      // Arrange
+      const payload = { id: 't-1', status: 'incomplete' };
+      confluenceTasksMock.get.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('tasks', 'get', ['t-1']), GLOBALS);
+
+      // Assert
+      expect(confluenceTasksMock.get).toHaveBeenCalledWith('t-1', { 'body-format': undefined });
+      expect(result).toEqual(payload);
+    });
+
+    it('tasks get forwards --body-format', async () => {
+      // Arrange
+      confluenceTasksMock.get.mockResolvedValue({ id: 't-1' });
+
+      // Act
+      await executeConfluenceCommand(
+        cmd('tasks', 'get', ['t-1'], { 'body-format': 'atlas_doc_format' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(confluenceTasksMock.get).toHaveBeenCalledWith('t-1', {
+        'body-format': 'atlas_doc_format',
+      });
+    });
+
+    it('tasks get throws when no task ID is provided', async () => {
+      await expect(executeConfluenceCommand(cmd('tasks', 'get'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: task ID',
+      );
+    });
+
+    it('tasks update calls client.tasks.update with the status payload', async () => {
+      // Arrange
+      const payload = { id: 't-1', status: 'complete' };
+      confluenceTasksMock.update.mockResolvedValue(payload);
+      const parsed = cmd('tasks', 'update', ['t-1'], { status: 'complete' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceTasksMock.update).toHaveBeenCalledWith('t-1', { status: 'complete' });
+      expect(result).toEqual(payload);
+    });
+
+    it('tasks update throws when --status is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('tasks', 'update', ['t-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --status');
+    });
+
+    it('tasks update throws when --status is not a valid enum value', async () => {
+      const parsed = cmd('tasks', 'update', ['t-1'], { status: 'pending' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--status must be one of: incomplete, complete',
+      );
+    });
+
+    it('tasks update throws when no task ID is provided', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('tasks', 'update', [], { status: 'complete' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: task ID');
+    });
+
+    it('tasks unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('tasks', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown tasks action',
+      );
     });
   });
 

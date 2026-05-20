@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "4cb3ad282b7eecdce31801c4789f8542b58b34523eed133ab6f8d5b7a07c0f1f",
+  "sourceHash": "89480e6a28a79b1ace15fda0ea4a83cf8ec45901b16aaaea46a55048754a855e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1624,148 +1624,167 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 47,
+          "line": 49,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 96,
+          "line": 98,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 110,
+          "line": 112,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 152,
+          "line": 154,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 196,
+          "line": 198,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 212,
+          "line": 214,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 233,
+          "line": 235,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 244,
+          "line": 246,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 276,
+          "line": 278,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 284,
+          "line": 286,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 296,
+          "line": 298,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 315,
+          "line": 317,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 344,
+          "line": 346,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 361,
+          "line": 363,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "executeTasks",
+          "kind": "function",
+          "line": 375,
+          "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "TASK_STATUSES",
+          "kind": "variable",
+          "line": 411,
+          "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 373,
+          "line": 413,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 391,
+          "line": 431,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 497,
+          "line": 537,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 502,
+          "line": 542,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 507,
+          "line": 547,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 511,
+          "line": 551,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 525,
+          "line": 565,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
+          "name": "requireEnum",
+          "kind": "function",
+          "line": 581,
+          "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
+          "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
+        },
+        {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 537,
+          "line": 595,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 550,
+          "line": 608,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 552,
+          "line": 610,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -2133,13 +2152,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 97,
+          "line": 100,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 118,
+          "line": 121,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2300,7 +2319,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 68,
+          "line": 78,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."

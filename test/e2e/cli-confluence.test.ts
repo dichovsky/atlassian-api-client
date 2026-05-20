@@ -477,6 +477,59 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"mode": "ROLES"'],
   },
 
+  // ─── tasks ────────────────────────────────────────────────────────────
+  {
+    name: 'tasks list',
+    argv: ['confluence', 'tasks', 'list'],
+    routes: [{ method: 'GET', path: `${P}/tasks`, body: F.taskList }],
+    expectCall: { method: 'GET', pathname: `${P}/tasks` },
+    expectStdout: ['"id": "task-1"', '"status": "incomplete"'],
+  },
+  {
+    name: 'tasks list — filters and pagination',
+    argv: [
+      'confluence',
+      'tasks',
+      'list',
+      '--status',
+      'incomplete',
+      '--page-id',
+      '12345',
+      '--assigned-to',
+      'acc-assignee',
+      '--limit',
+      '25',
+      '--cursor',
+      'next',
+    ],
+    routes: [{ method: 'GET', path: `${P}/tasks`, body: F.taskList }],
+    expectCall: { method: 'GET', pathname: `${P}/tasks` },
+    expectQuery: (query) => {
+      expect(query.status).toBe('incomplete');
+      expect(query.pageId).toBe('12345');
+      expect(query.assignedTo).toBe('acc-assignee');
+      expect(query.limit).toBe('25');
+      expect(query.cursor).toBe('next');
+    },
+  },
+  {
+    name: 'tasks get',
+    argv: ['confluence', 'tasks', 'get', 'task-1'],
+    routes: [{ method: 'GET', path: `${P}/tasks/task-1`, body: F.task }],
+    expectCall: { method: 'GET', pathname: `${P}/tasks/task-1` },
+    expectStdout: ['"id": "task-1"', '"status": "incomplete"'],
+  },
+  {
+    name: 'tasks update',
+    argv: ['confluence', 'tasks', 'update', 'task-1', '--status', 'complete'],
+    routes: [{ method: 'PUT', path: `${P}/tasks/task-1`, body: F.taskCompleted }],
+    expectCall: { method: 'PUT', pathname: `${P}/tasks/task-1` },
+    expectStdout: ['"status": "complete"'],
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'complete' });
+    },
+  },
+
   // ─── databases ────────────────────────────────────────────────────────
   {
     name: 'databases create',
