@@ -183,6 +183,13 @@ const jiraStatusesMock = {
 const jiraBoardsMock = {
   listSprints: vi.fn(),
   getSprintIssues: vi.fn(),
+  listProperties: vi.fn(),
+  deleteProperty: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  listQuickFilters: vi.fn(),
+  getQuickFilter: vi.fn(),
+  getReports: vi.fn(),
 };
 const jiraSprintsMock = {
   get: vi.fn(),
@@ -3021,6 +3028,237 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('boards', 'nope', ['1']), GLOBALS)).rejects.toThrow(
         'Unknown boards action',
       );
+    });
+
+    // ── boards list-properties ─────────────────────────────────────────────
+
+    it('boards list-properties calls client.boards.listProperties with boardId', async () => {
+      // Arrange
+      const payload = { keys: [{ self: 'https://...', key: 'my-key' }] };
+      jiraBoardsMock.listProperties.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('boards', 'list-properties', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.listProperties).toHaveBeenCalledWith(42);
+      expect(result).toEqual(payload);
+    });
+
+    it('boards list-properties throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    it('boards list-properties throws when boardId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list-properties', ['abc']), GLOBALS),
+      ).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    // ── boards delete-property ─────────────────────────────────────────────
+
+    it('boards delete-property calls client.boards.deleteProperty and returns { deleted: true }', async () => {
+      // Arrange
+      jiraBoardsMock.deleteProperty.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('boards', 'delete-property', ['42', 'my-key']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraBoardsMock.deleteProperty).toHaveBeenCalledWith(42, 'my-key');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('boards delete-property throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'delete-property', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    it('boards delete-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'delete-property', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    // ── boards get-property ────────────────────────────────────────────────
+
+    it('boards get-property calls client.boards.getProperty and returns property', async () => {
+      // Arrange
+      const payload = { key: 'my-key', value: { foo: 'bar' } };
+      jiraBoardsMock.getProperty.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('boards', 'get-property', ['42', 'my-key']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraBoardsMock.getProperty).toHaveBeenCalledWith(42, 'my-key');
+      expect(result).toEqual(payload);
+    });
+
+    it('boards get-property throws when boardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('boards', 'get-property', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: boardId',
+      );
+    });
+
+    it('boards get-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'get-property', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    // ── boards set-property ────────────────────────────────────────────────
+
+    it('boards set-property calls client.boards.setProperty and returns { set: true }', async () => {
+      // Arrange
+      jiraBoardsMock.setProperty.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('boards', 'set-property', ['42', 'my-key'], { value: '{"beta":true}' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraBoardsMock.setProperty).toHaveBeenCalledWith(42, 'my-key', { beta: true });
+      expect(result).toEqual({ set: true });
+    });
+
+    it('boards set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'set-property', ['42', 'my-key']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('boards set-property throws when --value is not valid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'set-property', ['42', 'my-key'], { value: 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('boards set-property throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'set-property', [], { value: '{}' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    it('boards set-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'set-property', ['42'], { value: '{}' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    // ── boards list-quickfilters ───────────────────────────────────────────
+
+    it('boards list-quickfilters calls client.boards.listQuickFilters with boardId', async () => {
+      // Arrange
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraBoardsMock.listQuickFilters.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('boards', 'list-quickfilters', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.listQuickFilters).toHaveBeenCalledWith(42, expect.objectContaining({}));
+      expect(result).toEqual(payload);
+    });
+
+    it('boards list-quickfilters passes start-at and max-results', async () => {
+      // Arrange
+      jiraBoardsMock.listQuickFilters.mockResolvedValue({ values: [] });
+
+      // Act
+      await executeJiraCommand(
+        cmd('boards', 'list-quickfilters', ['42'], { 'start-at': '5', 'max-results': '20' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraBoardsMock.listQuickFilters).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ startAt: 5, maxResults: 20 }),
+      );
+    });
+
+    it('boards list-quickfilters throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list-quickfilters', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    // ── boards get-quickfilter ─────────────────────────────────────────────
+
+    it('boards get-quickfilter calls client.boards.getQuickFilter with boardId and quickFilterId', async () => {
+      // Arrange
+      const payload = { id: 7, boardId: 42, name: 'My Filter', jql: 'status = Done' };
+      jiraBoardsMock.getQuickFilter.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('boards', 'get-quickfilter', ['42', '7']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraBoardsMock.getQuickFilter).toHaveBeenCalledWith(42, 7);
+      expect(result).toEqual(payload);
+    });
+
+    it('boards get-quickfilter throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'get-quickfilter', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    it('boards get-quickfilter throws when quickFilterId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'get-quickfilter', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: quickFilterId');
+    });
+
+    it('boards get-quickfilter throws when quickFilterId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'get-quickfilter', ['42', 'abc']), GLOBALS),
+      ).rejects.toThrow('quickFilterId must be a positive integer');
+    });
+
+    // ── boards get-reports ─────────────────────────────────────────────────
+
+    it('boards get-reports calls client.boards.getReports with boardId', async () => {
+      // Arrange
+      const payload = { burndown: { type: 'burndown' } };
+      jiraBoardsMock.getReports.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('boards', 'get-reports', ['42']), GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.getReports).toHaveBeenCalledWith(42);
+      expect(result).toEqual(payload);
+    });
+
+    it('boards get-reports throws when boardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('boards', 'get-reports', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: boardId',
+      );
+    });
+
+    it('boards get-reports throws when boardId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'get-reports', ['0']), GLOBALS),
+      ).rejects.toThrow('boardId must be a positive integer');
     });
   });
 

@@ -116,7 +116,7 @@ RESOURCES:
   issue-types   list, get
   priorities    list, get
   statuses      list
-  boards        list-sprints, sprint-issues
+  boards        list-sprints, sprint-issues, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports
   sprints       get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
   epic          get, update, issues, move-issues, rank, issues-none, remove-issues
 

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "63766af801b22218c2f66302ac92fcd61e9c18f55d4e21b27aeda8e9cf9db2b7",
+  "sourceHash": "80196e6889bcee94820173c32796b45257d0a6216ad1d9ad02ac9bbea728667d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -98,7 +98,7 @@
       "name": "Board",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 7,
+      "line": 8,
       "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…",
       "typeOnly": true
     },
@@ -106,7 +106,7 @@
       "name": "BoardIssue",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 28,
+      "line": 29,
       "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
       "typeOnly": true
     },
@@ -870,7 +870,7 @@
       "name": "ListBoardIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 35,
+      "line": 36,
       "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…",
       "typeOnly": true
     },
@@ -878,7 +878,7 @@
       "name": "ListBoardsParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 20,
+      "line": 21,
       "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…",
       "typeOnly": true
     },
@@ -2127,49 +2127,49 @@
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 185,
+          "line": 234,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 323,
+          "line": 372,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 395,
+          "line": 444,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 404,
+          "line": 453,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 409,
+          "line": 458,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 414,
+          "line": 463,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 418,
+          "line": 467,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 427,
+          "line": 476,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
@@ -8805,79 +8805,156 @@
         {
           "name": "Board",
           "kind": "interface",
-          "line": 7,
+          "line": 8,
           "exported": true,
           "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…"
         },
         {
           "name": "ListBoardsParams",
           "kind": "interface",
-          "line": 20,
+          "line": 21,
           "exported": true,
           "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…"
         },
         {
           "name": "BoardIssue",
           "kind": "interface",
-          "line": 28,
+          "line": 29,
           "exported": true,
           "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…"
         },
         {
           "name": "ListBoardIssuesParams",
           "kind": "interface",
-          "line": 35,
+          "line": 36,
           "exported": true,
           "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…"
         },
         {
           "name": "ListBoardSprintsParams",
           "kind": "interface",
-          "line": 42,
+          "line": 43,
           "exported": true,
           "signature": "export interface ListBoardSprintsParams { readonly startAt?: number; readonly maxResults?: number; readonly state?: stri…"
         },
         {
+          "name": "BoardPropertyKey",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface BoardPropertyKey { readonly self: string; readonly key: string; }"
+        },
+        {
+          "name": "BoardPropertyKeys",
+          "kind": "interface",
+          "line": 54,
+          "exported": true,
+          "signature": "export interface BoardPropertyKeys { readonly keys: readonly BoardPropertyKey[]; }"
+        },
+        {
+          "name": "BoardProperty",
+          "kind": "interface",
+          "line": 58,
+          "exported": true,
+          "signature": "export interface BoardProperty { readonly key: string; readonly value: unknown; }"
+        },
+        {
+          "name": "QuickFilter",
+          "kind": "interface",
+          "line": 63,
+          "exported": true,
+          "signature": "export interface QuickFilter { readonly id: number; readonly boardId: number; readonly name: string; readonly jql: strin…"
+        },
+        {
+          "name": "ListQuickFiltersParams",
+          "kind": "interface",
+          "line": 72,
+          "exported": true,
+          "signature": "export interface ListQuickFiltersParams { readonly startAt?: number; readonly maxResults?: number; }"
+        },
+        {
+          "name": "BoardReports",
+          "kind": "type",
+          "line": 77,
+          "exported": true,
+          "signature": "export type BoardReports = Record<string, unknown>;"
+        },
+        {
           "name": "BoardsResource",
           "kind": "class",
-          "line": 48,
+          "line": 79,
           "exported": true,
           "signature": "export class BoardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 49
+              "line": 80
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 55
+              "line": 86
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 75
+              "line": 106
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 87
+              "line": 118
             },
             {
               "name": "listSprints",
               "kind": "method",
-              "line": 112
+              "line": 143
             },
             {
               "name": "getSprintIssues",
               "kind": "method",
-              "line": 136
+              "line": 167
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 196
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 208
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 222
+            },
+            {
+              "name": "setProperty",
+              "kind": "method",
+              "line": 237
+            },
+            {
+              "name": "listQuickFilters",
+              "kind": "method",
+              "line": 252
+            },
+            {
+              "name": "getQuickFilter",
+              "kind": "method",
+              "line": 274
+            },
+            {
+              "name": "getReports",
+              "kind": "method",
+              "line": 289
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 165
+              "line": 301
             }
           ]
         }
@@ -8885,6 +8962,7 @@
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
+        "../../core/path.js",
         "../../core/types.js",
         "./sprints.js"
       ]
