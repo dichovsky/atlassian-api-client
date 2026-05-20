@@ -16,6 +16,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `boards`      | `list-sprints`, `sprint-issues`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports`     |
 | `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap` |
 | `epic`        | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                 |
+| `backlog`     | `move`                                                                                                                                                           |
 
 ## `issues`
 
@@ -312,6 +313,28 @@ atlas jira epic issues-none --start-at 50 --max-results 50
 
 # Remove issues from their epics
 atlas jira epic remove-issues --issues PROJ-10,PROJ-11
+```
+
+## `backlog`
+
+Move issues to the Agile backlog. Supports board-scoped (B235) and global (B236) variants via a single `move` action.
+
+| Action | Positionals | Required flags | Optional flags |
+| ------ | ----------- | -------------- | -------------- |
+| `move` | —           | `--issues`     | `--board-id`   |
+
+**Notes:**
+
+- `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`. Max **50** per call; the client validates this before sending.
+- `--board-id` scopes the backlog operation to a specific board (calls `POST /rest/agile/1.0/backlog/{boardId}/issue`). Omit `--board-id` for the global backlog endpoint (`POST /rest/agile/1.0/backlog/issue`).
+- Both variants return 204 No Content; the CLI returns `{ moved: true }`.
+
+```sh
+# Move issues to the backlog scoped to board 1 (B235)
+atlas jira backlog move --board-id 1 --issues PROJ-1,PROJ-2
+
+# Move issues to the global backlog (no board scope) (B236)
+atlas jira backlog move --issues PROJ-3,PROJ-4
 ```
 
 ## Errors specific to Jira

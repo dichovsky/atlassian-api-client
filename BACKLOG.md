@@ -569,10 +569,10 @@
 - [ ] 🔴 🧩 API: B234 Confluence: expose PUT /whiteboards/{whiteboard-id}/properties/{property-id}
   - files: `src/confluence/resources/whiteboards.ts`, `test/confluence/whiteboards.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B235 Jira: expose POST /rest/agile/1.0/backlog/{boardId}/issue
+- [x] 🔴 🧩 API: B235 Jira: expose POST /rest/agile/1.0/backlog/{boardId}/issue
   - files: `src/jira/resources/backlog.ts`, `test/jira/backlog.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B236 Jira: expose POST /rest/agile/1.0/backlog/issue
+- [x] 🔴 🧩 API: B236 Jira: expose POST /rest/agile/1.0/backlog/issue
   - files: `src/jira/resources/backlog.ts`, `test/jira/backlog.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🟡 🖥️ API: B237 Jira: add CLI + skill for GET /rest/agile/1.0/board
