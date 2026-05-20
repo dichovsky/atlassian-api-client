@@ -48,6 +48,7 @@ export type {
   UpsertAppPropertyData,
   ClassificationLevel,
   ListClassificationLevelsResponse,
+  SpaceRoleMode,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -63,3 +64,4 @@ export { TasksResource } from './resources/tasks.js';
 export { VersionsResource } from './resources/versions.js';
 export { AppResource } from './resources/app.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';
+export { SpaceRoleModeResource } from './resources/space-role-mode.js';

@@ -545,3 +545,20 @@ export interface AdminKey {
 export interface CreateAdminKeyData {
   readonly durationInHours?: number;
 }
+
+// --- Space Role Mode ---
+
+/**
+ * Tenant-level role mode for Confluence space permissions. Returned by
+ * `GET /space-role-mode`.
+ *
+ * - `PRE_ROLES`: site still uses the legacy per-permission model.
+ * - `ROLES_TRANSITION`: site is migrating to role-based access control.
+ * - `ROLES`: site has fully adopted the new role-based model.
+ *
+ * The OpenAPI spec defines all fields as optional; callers should treat
+ * a missing `mode` as "unknown" and fall back to feature detection.
+ */
+export interface SpaceRoleMode {
+  readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES';
+}

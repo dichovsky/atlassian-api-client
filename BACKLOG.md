@@ -539,9 +539,6 @@
 - [ ] 🔴 🧩 API: B189 Confluence: expose GET /space-permissions
   - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B190 Confluence: expose GET /space-role-mode
-  - files: `src/confluence/resources/space-role-mode.ts`, `test/confluence/space-role-mode.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B191 Confluence: expose GET /space-roles
   - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

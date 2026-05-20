@@ -118,6 +118,9 @@ export const confluenceFixtures = {
     expireAt: '2026-05-20T13:00:00.000Z',
     durationInHours: 1,
   },
+  spaceRoleMode: {
+    mode: 'ROLES' as const,
+  },
 };
 
 export const jiraFixtures = {

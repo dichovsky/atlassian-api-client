@@ -397,6 +397,15 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/classification-levels` },
     expectStdout: ['"name": "Public"', '"color": "GREEN"'],
   },
+
+  // ─── space-role-mode ──────────────────────────────────────────────────
+  {
+    name: 'space-role-mode get',
+    argv: ['confluence', 'space-role-mode', 'get'],
+    routes: [{ method: 'GET', path: `${P}/space-role-mode`, body: F.spaceRoleMode }],
+    expectCall: { method: 'GET', pathname: `${P}/space-role-mode` },
+    expectStdout: ['"mode": "ROLES"'],
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {
