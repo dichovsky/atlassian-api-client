@@ -642,7 +642,7 @@ describe('executeInstallSkill', () => {
         if (path.endsWith('package.json')) {
           return JSON.stringify({ name: 'x', version: '1.2.3' });
         }
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
+
         throw 'plain string thrown';
       },
       writeFile: (_: string, __: string): void => undefined,

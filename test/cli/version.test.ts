@@ -103,7 +103,6 @@ describe('resolvePackageVersion', () => {
     const fakeFs: VersionFsDeps = {
       exists: () => true,
       readFile: () => {
-        // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw 'plain string failure';
       },
     };

@@ -196,12 +196,132 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
   const opts = cmd.options;
 
   switch (cmd.action) {
+    case 'list': {
+      return client.boards.list({
+        type: asBoardType(opts['type']),
+        name: asString(opts['name']),
+        projectKeyOrId: asString(opts['project']),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'get': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.get(boardId);
+    }
+    case 'create': {
+      const filterIdRaw = requireOpt(opts['filter-id'], '--filter-id');
+      return client.boards.create({
+        name: requireOpt(opts['name'], '--name'),
+        type: requireBoardType(opts['type']),
+        filterId: parsePositiveIntArg(filterIdRaw, '--filter-id'),
+      });
+    }
+    case 'delete': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      await client.boards.delete(boardId);
+      return { deleted: true };
+    }
+    case 'backlog': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getBacklog(boardId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'configuration': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getConfiguration(boardId);
+    }
+    case 'list-epics': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listEpics(boardId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        done: asBoolFlag(opts['done']),
+      });
+    }
+    case 'epic-issues': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const epicId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'epicId'), 'epicId');
+      return client.boards.getEpicIssues(boardId, epicId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'issues-without-epic': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getIssuesWithoutEpic(boardId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'get-features': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getFeatures(boardId);
+    }
+    case 'toggle-feature': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const feature = requireOpt(opts['feature'], '--feature');
+      const stateRaw = requireOpt(opts['state'], '--state');
+      if (stateRaw !== 'ENABLED' && stateRaw !== 'DISABLED') {
+        throw new Error('--state must be ENABLED or DISABLED');
+      }
+      return client.boards.toggleFeature(boardId, { feature, state: stateRaw });
+    }
+    case 'get-issues': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getIssues(boardId, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'move-issues': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.boards.moveIssues(boardId, issues);
+      return { moved: true };
+    }
+    case 'list-projects': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listProjects(boardId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'list-projects-full': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listProjectsFull(boardId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
     case 'list-sprints': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listSprints(boardId, {
         state: asString(opts['state']),
         startAt: asPositiveInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'list-versions': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.listVersions(boardId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        released: asBoolFlag(opts['released']),
       });
     }
     case 'sprint-issues': {
@@ -264,9 +384,19 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.getReports(boardId);
     }
+    case 'list-by-filter': {
+      const filterId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'filterId'),
+        'filterId',
+      );
+      return client.boards.listByFilter(filterId, {
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
     default:
       throw new Error(
-        `Unknown boards action: ${cmd.action}. Actions: list-sprints, sprint-issues, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports`,
+        `Unknown boards action: ${cmd.action}. Actions: list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports`,
       );
   }
 }
@@ -543,4 +673,28 @@ function parsePositiveIntArg(value: string, name: string): number {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
   }
   return n;
+}
+
+function asBoardType(
+  value: string | boolean | undefined,
+): 'scrum' | 'kanban' | 'simple' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'scrum' || s === 'kanban' || s === 'simple') return s;
+  throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
+}
+
+function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
+  const s = asString(value);
+  if (!s) throw new Error('Missing required option: --type');
+  if (s === 'scrum' || s === 'kanban' || s === 'simple') return s;
+  throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
+}
+
+function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`expected 'true' or 'false', got: ${value}`);
 }

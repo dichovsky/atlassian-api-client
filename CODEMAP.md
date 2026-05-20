@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "909aeb88ea79b33a76500dc430478677f3e7e1226d2f31e94d6e4c21a2a2e499",
+  "sourceHash": "823a9ad94a3d06e63449d44845c73e9ffb3c98eea1a3bb661c75fc5689fe6be2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -106,7 +106,7 @@
       "name": "BoardIssue",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 29,
+      "line": 39,
       "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
       "typeOnly": true
     },
@@ -936,7 +936,7 @@
       "name": "ListBoardIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 36,
+      "line": 46,
       "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…",
       "typeOnly": true
     },
@@ -2239,56 +2239,74 @@
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 274,
+          "line": 404,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 412,
+          "line": 542,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 484,
+          "line": 614,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 508,
+          "line": 638,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 517,
+          "line": 647,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 522,
+          "line": 652,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 527,
+          "line": 657,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 531,
+          "line": 661,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 540,
+          "line": 670,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
+        },
+        {
+          "name": "asBoardType",
+          "kind": "function",
+          "line": 678,
+          "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
+        },
+        {
+          "name": "requireBoardType",
+          "kind": "function",
+          "line": 687,
+          "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
+        },
+        {
+          "name": "asBoolFlag",
+          "kind": "function",
+          "line": 694,
+          "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         }
       ],
       "imports": [
@@ -2538,7 +2556,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 96,
+          "line": 100,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -9172,144 +9190,284 @@
           "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…"
         },
         {
-          "name": "BoardIssue",
+          "name": "CreateBoardData",
           "kind": "interface",
           "line": 29,
+          "exported": true,
+          "signature": "export interface CreateBoardData { readonly name: string; readonly type: 'scrum' | 'kanban' | 'simple'; readonly filterI…"
+        },
+        {
+          "name": "BoardIssue",
+          "kind": "interface",
+          "line": 39,
           "exported": true,
           "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…"
         },
         {
           "name": "ListBoardIssuesParams",
           "kind": "interface",
-          "line": 36,
+          "line": 46,
           "exported": true,
           "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…"
         },
         {
           "name": "ListBoardSprintsParams",
           "kind": "interface",
-          "line": 43,
+          "line": 53,
           "exported": true,
           "signature": "export interface ListBoardSprintsParams { readonly startAt?: number; readonly maxResults?: number; readonly state?: stri…"
         },
         {
           "name": "BoardPropertyKey",
           "kind": "interface",
-          "line": 49,
+          "line": 59,
           "exported": true,
           "signature": "export interface BoardPropertyKey { readonly self: string; readonly key: string; }"
         },
         {
           "name": "BoardPropertyKeys",
           "kind": "interface",
-          "line": 54,
+          "line": 64,
           "exported": true,
           "signature": "export interface BoardPropertyKeys { readonly keys: readonly BoardPropertyKey[]; }"
         },
         {
           "name": "BoardProperty",
           "kind": "interface",
-          "line": 58,
+          "line": 68,
           "exported": true,
           "signature": "export interface BoardProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "QuickFilter",
           "kind": "interface",
-          "line": 63,
+          "line": 73,
           "exported": true,
           "signature": "export interface QuickFilter { readonly id: number; readonly boardId: number; readonly name: string; readonly jql: strin…"
         },
         {
           "name": "ListQuickFiltersParams",
           "kind": "interface",
-          "line": 72,
+          "line": 82,
           "exported": true,
           "signature": "export interface ListQuickFiltersParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "BoardReports",
           "kind": "type",
-          "line": 77,
+          "line": 87,
           "exported": true,
           "signature": "export type BoardReports = Record<string, unknown>;"
         },
         {
+          "name": "BoardConfiguration",
+          "kind": "interface",
+          "line": 89,
+          "exported": true,
+          "signature": "export interface BoardConfiguration { readonly id: number; readonly self: string; readonly name: string; readonly type: …"
+        },
+        {
+          "name": "Epic",
+          "kind": "interface",
+          "line": 100,
+          "exported": true,
+          "signature": "export interface Epic { readonly id: number; readonly self: string; readonly name: string; readonly summary?: string; re…"
+        },
+        {
+          "name": "ListEpicIssuesParams",
+          "kind": "interface",
+          "line": 109,
+          "exported": true,
+          "signature": "export interface ListEpicIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string; …"
+        },
+        {
+          "name": "BoardFeature",
+          "kind": "interface",
+          "line": 116,
+          "exported": true,
+          "signature": "export interface BoardFeature { readonly boardFeature: string; readonly boardId: number; readonly state: 'ENABLED' | 'DI…"
+        },
+        {
+          "name": "BoardFeaturesResponse",
+          "kind": "interface",
+          "line": 123,
+          "exported": true,
+          "signature": "export interface BoardFeaturesResponse { readonly features: readonly BoardFeature[]; }"
+        },
+        {
+          "name": "ToggleFeatureData",
+          "kind": "interface",
+          "line": 127,
+          "exported": true,
+          "signature": "export interface ToggleFeatureData { readonly feature: string; readonly state: 'ENABLED' | 'DISABLED'; }"
+        },
+        {
+          "name": "BoardProject",
+          "kind": "interface",
+          "line": 132,
+          "exported": true,
+          "signature": "export interface BoardProject { readonly id: string; readonly key: string; readonly self: string; readonly name: string;…"
+        },
+        {
+          "name": "BoardVersion",
+          "kind": "interface",
+          "line": 141,
+          "exported": true,
+          "signature": "export interface BoardVersion { readonly id: number; readonly self: string; readonly name: string; readonly description?…"
+        },
+        {
+          "name": "ListBoardVersionsParams",
+          "kind": "interface",
+          "line": 152,
+          "exported": true,
+          "signature": "export interface ListBoardVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly released?: …"
+        },
+        {
           "name": "BoardsResource",
           "kind": "class",
-          "line": 79,
+          "line": 158,
           "exported": true,
           "signature": "export class BoardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 80
+              "line": 159
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 86
+              "line": 165
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 185
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 106
+              "line": 204
             },
             {
-              "name": "getIssues",
+              "name": "delete",
               "kind": "method",
-              "line": 118
+              "line": 216
             },
             {
-              "name": "listSprints",
+              "name": "getBacklog",
               "kind": "method",
-              "line": 143
+              "line": 227
             },
             {
-              "name": "getSprintIssues",
-              "kind": "method",
-              "line": 167
-            },
-            {
-              "name": "listProperties",
-              "kind": "method",
-              "line": 196
-            },
-            {
-              "name": "deleteProperty",
-              "kind": "method",
-              "line": 208
-            },
-            {
-              "name": "getProperty",
-              "kind": "method",
-              "line": 222
-            },
-            {
-              "name": "setProperty",
-              "kind": "method",
-              "line": 237
-            },
-            {
-              "name": "listQuickFilters",
+              "name": "getConfiguration",
               "kind": "method",
               "line": 252
             },
             {
+              "name": "listEpics",
+              "kind": "method",
+              "line": 264
+            },
+            {
+              "name": "getEpicIssues",
+              "kind": "method",
+              "line": 288
+            },
+            {
+              "name": "getIssuesWithoutEpic",
+              "kind": "method",
+              "line": 317
+            },
+            {
+              "name": "getFeatures",
+              "kind": "method",
+              "line": 342
+            },
+            {
+              "name": "toggleFeature",
+              "kind": "method",
+              "line": 354
+            },
+            {
+              "name": "getIssues",
+              "kind": "method",
+              "line": 373
+            },
+            {
+              "name": "moveIssues",
+              "kind": "method",
+              "line": 398
+            },
+            {
+              "name": "listProjects",
+              "kind": "method",
+              "line": 431
+            },
+            {
+              "name": "listProjectsFull",
+              "kind": "method",
+              "line": 454
+            },
+            {
+              "name": "listSprints",
+              "kind": "method",
+              "line": 477
+            },
+            {
+              "name": "listVersions",
+              "kind": "method",
+              "line": 501
+            },
+            {
+              "name": "getSprintIssues",
+              "kind": "method",
+              "line": 525
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 554
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 566
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 580
+            },
+            {
+              "name": "setProperty",
+              "kind": "method",
+              "line": 595
+            },
+            {
+              "name": "listQuickFilters",
+              "kind": "method",
+              "line": 610
+            },
+            {
               "name": "getQuickFilter",
               "kind": "method",
-              "line": 274
+              "line": 632
             },
             {
               "name": "getReports",
               "kind": "method",
-              "line": 289
+              "line": 647
+            },
+            {
+              "name": "listByFilter",
+              "kind": "method",
+              "line": 659
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 301
+              "line": 682
             }
           ]
         }
