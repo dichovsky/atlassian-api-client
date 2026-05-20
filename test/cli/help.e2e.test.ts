@@ -66,6 +66,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'classification-levels': 'executeClassificationLevels',
   content: 'executeContent',
   'space-role-mode': 'executeSpaceRoleMode',
+  'users-bulk': 'executeUsersBulk',
   issues: 'executeIssues',
   projects: 'executeProjects',
   search: 'executeSearch',

@@ -596,8 +596,14 @@
 - [ ] 🔴 🧩 API: B218 Confluence: expose POST /user/access/invite-by-email
   - files: `src/confluence/resources/users.ts`, `test/confluence/users.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B219 Confluence: expose POST /users-bulk
-  - files: `src/confluence/resources/users-bulk.ts`, `test/confluence/users-bulk.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🟡 🖥️ API: B220 Confluence: add CLI + skill for POST /whiteboards
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟡 🖥️ API: B221 Confluence: add CLI + skill for DELETE /whiteboards/{id}
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟡 🖥️ API: B222 Confluence: add CLI + skill for GET /whiteboards/{id}
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B223 Confluence: expose GET /whiteboards/{id}/ancestors
   - files: `src/confluence/resources/whiteboards.ts`, `test/confluence/whiteboards.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

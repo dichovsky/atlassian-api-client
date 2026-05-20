@@ -52,6 +52,12 @@ export type {
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
   SpaceRoleMode,
+  ConfluenceUser,
+  ConfluenceUserIcon,
+  ConfluenceAccountStatus,
+  ConfluenceAccountType,
+  BulkUsersRequest,
+  BulkUsersResponse,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -69,3 +75,4 @@ export { AppResource } from './resources/app.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';
 export { ContentResource } from './resources/content.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
+export { UsersBulkResource } from './resources/users-bulk.js';

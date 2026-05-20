@@ -17,6 +17,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `classification-levels` | `list`                                                                  |
 | `content`               | `convert-ids-to-types`                                                  |
 | `space-role-mode`       | `get`                                                                   |
+| `users-bulk`            | `lookup`                                                                |
 
 ## `pages`
 
@@ -186,6 +187,36 @@ Retrieves the tenant's space role mode (`GET /wiki/api/v2/space-role-mode`). Ava
 
 ```sh
 atlas confluence space-role-mode get
+```
+
+## `users-bulk`
+
+| Action   | Positional | Required flags  | Optional flags |
+| -------- | ---------- | --------------- | -------------- |
+| `lookup` | —          | `--account-ids` | —              |
+
+Resolves user details for a batch of `accountId`s in a single request
+(`POST /wiki/api/v2/users-bulk`). The endpoint is single-shot (not paginated)
+and Confluence caps the batch at 1-250 IDs server-side.
+
+- `--account-ids` is a comma-separated list of Atlassian account IDs
+  (e.g. `--account-ids acc-1,acc-2,acc-3`). Surrounding whitespace per entry
+  is trimmed; empty entries are dropped. The CLI rejects an empty effective
+  list before issuing the request.
+- The response shape is `{ results: User[], _links?: { base?: string } }`.
+  `results` may be empty if none of the IDs resolve; per-user fields such as
+  `email`, `timeZone`, and `profilePicture` may be omitted depending on the
+  target user's privacy settings.
+- Requires the `Can use` Confluence global permission and the ability to
+  view user profiles; a 404 is returned when those are absent.
+
+```sh
+# Look up two users by account ID
+atlas confluence users-bulk lookup --account-ids acc-1,acc-2
+
+# Pipe into jq to project just displayName / accountId
+atlas confluence users-bulk lookup --account-ids acc-1,acc-2 \
+  | jq '.results[] | { accountId, displayName }'
 ```
 
 ## Pagination

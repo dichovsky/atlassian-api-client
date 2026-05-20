@@ -72,6 +72,7 @@ RESOURCES:
   classification-levels  list
   content                convert-ids-to-types
   space-role-mode        get
+  users-bulk             lookup
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
@@ -82,6 +83,7 @@ EXAMPLES:
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
   atlas confluence space-role-mode get
+  atlas confluence users-bulk lookup --account-ids acc-1,acc-2
 `;
 
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3

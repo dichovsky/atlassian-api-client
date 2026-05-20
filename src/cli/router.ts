@@ -39,6 +39,7 @@ const GLOBAL_OPTIONS = {
   'comment-type': { type: 'string' as const },
   'duration-hours': { type: 'string' as const },
   value: { type: 'string' as const },
+  'account-ids': { type: 'string' as const },
   ids: { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },

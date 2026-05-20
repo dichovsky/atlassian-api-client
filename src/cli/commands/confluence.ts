@@ -32,6 +32,8 @@ export async function executeConfluenceCommand(
       return executeContent(client, cmd);
     case 'space-role-mode':
       return executeSpaceRoleMode(client, cmd);
+    case 'users-bulk':
+      return executeUsersBulk(client, cmd);
     default:
       throw new Error(`Unknown Confluence resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -343,6 +345,24 @@ async function executeSpaceRoleMode(
       return client.spaceRoleMode.get();
     default:
       throw new Error(`Unknown space-role-mode action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'lookup': {
+      const raw = requireOpt(cmd.options['account-ids'], '--account-ids');
+      const accountIds = raw
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
+      if (accountIds.length === 0) {
+        throw new Error('--account-ids must contain at least one non-empty account ID');
+      }
+      return client.usersBulk.lookup({ accountIds });
+    }
+    default:
+      throw new Error(`Unknown users-bulk action: ${cmd.action}. Actions: lookup`);
   }
 }
 

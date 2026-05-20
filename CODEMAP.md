@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "0058146d2e0137b056c6793f289c961201a8fb0b05eba97d30059215eb42d2b3",
+  "sourceHash": "648a98a3250260a463abe82e484bbd4ec72714b87eac1f6f964f4586ed0fef34",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -143,6 +143,24 @@
       "typeOnly": true
     },
     {
+      "name": "BulkUsersRequest",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 641,
+      "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
+      "jsdoc": "Request body for `POST /users-bulk`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkUsersResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 651,
+      "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
+      "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted.",
+      "typeOnly": true
+    },
+    {
       "name": "CacheOptions",
       "kind": "interface",
       "file": "src/core/cache.ts",
@@ -170,10 +188,28 @@
       "typeOnly": true
     },
     {
+      "name": "ConfluenceAccountStatus",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 607,
+      "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
+      "jsdoc": "Account status of a Confluence user.",
+      "typeOnly": true
+    },
+    {
+      "name": "ConfluenceAccountType",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 610,
+      "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
+      "jsdoc": "Account type of a Confluence user.",
+      "typeOnly": true
+    },
+    {
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 22,
+      "line": 23,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -213,6 +249,24 @@
       "line": 428,
       "signature": "export interface ConfluenceTask { readonly id: string; readonly localId?: string; readonly spaceId?: string; readonly pa…",
       "jsdoc": "Confluence Task.",
+      "typeOnly": true
+    },
+    {
+      "name": "ConfluenceUser",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 622,
+      "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
+      "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints.",
+      "typeOnly": true
+    },
+    {
+      "name": "ConfluenceUserIcon",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 616,
+      "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
+      "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it.",
       "typeOnly": true
     },
     {
@@ -1390,111 +1444,117 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 40,
+          "line": 42,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 89,
+          "line": 91,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 103,
+          "line": 105,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 145,
+          "line": 147,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 189,
+          "line": 191,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 205,
+          "line": 207,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 226,
+          "line": 228,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 237,
+          "line": 239,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 269,
+          "line": 271,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 277,
+          "line": 279,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 289,
+          "line": 291,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 308,
+          "line": 310,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 337,
+          "line": 339,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "executeUsersBulk",
+          "kind": "function",
+          "line": 351,
+          "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 349,
+          "line": 369,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 354,
+          "line": 374,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 359,
+          "line": 379,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 363,
+          "line": 383,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 372,
+          "line": 392,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1837,13 +1897,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 87,
+          "line": 89,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 106,
+          "line": 108,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2004,7 +2064,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 52,
+          "line": 53,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2115,7 +2175,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2123,87 +2183,92 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 23
+              "line": 24
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 24
+              "line": 25
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 25
+              "line": 26
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 26
+              "line": 27
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 27
+              "line": 28
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 28
+              "line": 29
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 42
+              "line": 43
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 44
+              "line": 45
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 46
+              "line": 47
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 48
+              "line": 49
+            },
+            {
+              "name": "usersBulk",
+              "kind": "property",
+              "line": 51
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 50
+              "line": 53
             }
           ]
         }
@@ -2226,6 +2291,7 @@
         "./resources/space-role-mode.js",
         "./resources/spaces.js",
         "./resources/tasks.js",
+        "./resources/users-bulk.js",
         "./resources/versions.js",
         "./resources/whiteboards.js"
       ]
@@ -2395,6 +2461,17 @@
             {
               "exported": "TasksResource",
               "original": "TasksResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/users-bulk.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "UsersBulkResource",
+              "original": "UsersBulkResource"
             }
           ]
         },
@@ -2632,6 +2709,30 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
+            },
+            {
+              "exported": "ConfluenceUser",
+              "original": "ConfluenceUser"
+            },
+            {
+              "exported": "ConfluenceUserIcon",
+              "original": "ConfluenceUserIcon"
+            },
+            {
+              "exported": "ConfluenceAccountStatus",
+              "original": "ConfluenceAccountStatus"
+            },
+            {
+              "exported": "ConfluenceAccountType",
+              "original": "ConfluenceAccountType"
+            },
+            {
+              "exported": "BulkUsersRequest",
+              "original": "BulkUsersRequest"
+            },
+            {
+              "exported": "BulkUsersResponse",
+              "original": "BulkUsersResponse"
             }
           ]
         }
@@ -3413,6 +3514,35 @@
       ]
     },
     {
+      "path": "src/confluence/resources/users-bulk.ts",
+      "symbols": [
+        {
+          "name": "UsersBulkResource",
+          "kind": "class",
+          "line": 16,
+          "exported": true,
+          "signature": "export class UsersBulkResource",
+          "jsdoc": "Resource for the Confluence v2 users-bulk lookup API.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 17
+            },
+            {
+              "name": "lookup",
+              "kind": "method",
+              "line": 32
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
       "path": "src/confluence/resources/versions.ts",
       "symbols": [
         {
@@ -3941,6 +4071,54 @@
           "exported": true,
           "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
           "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`."
+        },
+        {
+          "name": "ConfluenceAccountStatus",
+          "kind": "type",
+          "line": 607,
+          "exported": true,
+          "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
+          "jsdoc": "Account status of a Confluence user."
+        },
+        {
+          "name": "ConfluenceAccountType",
+          "kind": "type",
+          "line": 610,
+          "exported": true,
+          "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
+          "jsdoc": "Account type of a Confluence user."
+        },
+        {
+          "name": "ConfluenceUserIcon",
+          "kind": "interface",
+          "line": 616,
+          "exported": true,
+          "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
+          "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it."
+        },
+        {
+          "name": "ConfluenceUser",
+          "kind": "interface",
+          "line": 622,
+          "exported": true,
+          "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
+          "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints."
+        },
+        {
+          "name": "BulkUsersRequest",
+          "kind": "interface",
+          "line": 641,
+          "exported": true,
+          "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
+          "jsdoc": "Request body for `POST /users-bulk`."
+        },
+        {
+          "name": "BulkUsersResponse",
+          "kind": "interface",
+          "line": 651,
+          "exported": true,
+          "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
+          "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted."
         }
       ]
     },
@@ -6159,6 +6337,30 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
+            },
+            {
+              "exported": "ConfluenceUser",
+              "original": "ConfluenceUser"
+            },
+            {
+              "exported": "ConfluenceUserIcon",
+              "original": "ConfluenceUserIcon"
+            },
+            {
+              "exported": "ConfluenceAccountStatus",
+              "original": "ConfluenceAccountStatus"
+            },
+            {
+              "exported": "ConfluenceAccountType",
+              "original": "ConfluenceAccountType"
+            },
+            {
+              "exported": "BulkUsersRequest",
+              "original": "BulkUsersRequest"
+            },
+            {
+              "exported": "BulkUsersResponse",
+              "original": "BulkUsersResponse"
             }
           ]
         },

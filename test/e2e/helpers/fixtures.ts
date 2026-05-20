@@ -128,6 +128,27 @@ export const confluenceFixtures = {
   spaceRoleMode: {
     mode: 'ROLES' as const,
   },
+  bulkUsersResponse: {
+    results: [
+      {
+        accountId: 'acc-1',
+        accountType: 'atlassian',
+        accountStatus: 'active',
+        displayName: 'E2E Bulk User One',
+        publicName: 'BulkOne',
+        email: 'bulk-one@example.com',
+        timeZone: 'UTC',
+      },
+      {
+        accountId: 'acc-2',
+        accountType: 'atlassian',
+        accountStatus: 'active',
+        displayName: 'E2E Bulk User Two',
+        publicName: 'BulkTwo',
+      },
+    ],
+    _links: { base: 'https://test.atlassian.net/wiki' },
+  },
 };
 
 export const jiraFixtures = {

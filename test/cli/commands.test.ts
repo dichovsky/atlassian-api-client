@@ -80,6 +80,9 @@ const confluenceContentMock = {
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
 };
+const confluenceUsersBulkMock = {
+  lookup: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -95,6 +98,7 @@ vi.mock('../../src/confluence/client.js', () => {
       classificationLevels: confluenceClassificationLevelsMock,
       content: confluenceContentMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
+      usersBulk: confluenceUsersBulkMock,
     };
   });
   return { ConfluenceClient: MockConfluenceClient };
@@ -1219,6 +1223,61 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('space-role-mode', 'list'), GLOBALS),
       ).rejects.toThrow('Unknown space-role-mode action');
+    });
+  });
+
+  // ── users-bulk ────────────────────────────────────────────────────────────
+
+  describe('users-bulk resource', () => {
+    it('users-bulk lookup calls client.usersBulk.lookup with parsed account IDs', async () => {
+      // Arrange
+      const payload = { results: [{ accountId: 'acc-1', displayName: 'A' }] };
+      confluenceUsersBulkMock.lookup.mockResolvedValue(payload);
+      const parsed = cmd('users-bulk', 'lookup', [], { 'account-ids': 'acc-1,acc-2' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceUsersBulkMock.lookup).toHaveBeenCalledWith({
+        accountIds: ['acc-1', 'acc-2'],
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('users-bulk lookup trims whitespace and drops empty entries', async () => {
+      // Arrange
+      confluenceUsersBulkMock.lookup.mockResolvedValue({ results: [] });
+      const parsed = cmd('users-bulk', 'lookup', [], {
+        'account-ids': ' acc-1 , ,acc-2 ,',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceUsersBulkMock.lookup).toHaveBeenCalledWith({
+        accountIds: ['acc-1', 'acc-2'],
+      });
+    });
+
+    it('users-bulk lookup throws when --account-ids is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('users-bulk', 'lookup', [], {}), GLOBALS),
+      ).rejects.toThrow('--account-ids');
+    });
+
+    it('users-bulk lookup throws when --account-ids is all empty after trimming', async () => {
+      const parsed = cmd('users-bulk', 'lookup', [], { 'account-ids': ' , , ' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--account-ids must contain at least one non-empty account ID',
+      );
+    });
+
+    it('users-bulk unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('users-bulk', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown users-bulk action',
+      );
     });
   });
 
