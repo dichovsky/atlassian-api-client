@@ -49,6 +49,8 @@ const confluenceCommentsMock = {
   getInline: vi.fn(),
   createFooter: vi.fn(),
   createInline: vi.fn(),
+  updateFooter: vi.fn(),
+  updateInline: vi.fn(),
   deleteFooter: vi.fn(),
   deleteInline: vi.fn(),
   listProperties: vi.fn(),
@@ -115,6 +117,20 @@ const confluenceUsersMock = {
 const confluenceUsersBulkMock = {
   lookup: vi.fn(),
 };
+const confluenceFooterCommentsMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  get: vi.fn(),
+  listChildren: vi.fn(),
+  listChildrenAll: vi.fn(),
+  getLikeCount: vi.fn(),
+  listLikeUsers: vi.fn(),
+  listLikeUsersAll: vi.fn(),
+  getOperations: vi.fn(),
+  listVersions: vi.fn(),
+  listVersionsAll: vi.fn(),
+  getVersion: vi.fn(),
+};
 const confluenceDatabasesMock = {
   create: vi.fn(),
   get: vi.fn(),
@@ -148,6 +164,7 @@ vi.mock('../../src/confluence/client.js', () => {
       content: confluenceContentMock,
       dataPolicies: confluenceDataPoliciesMock,
       databases: confluenceDatabasesMock,
+      footerComments: confluenceFooterCommentsMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
       spaceRoles: confluenceSpaceRolesMock,
@@ -2870,6 +2887,256 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('databases', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown databases action',
       );
+    });
+  });
+
+  // ── footer-comments ───────────────────────────────────────────────────────
+
+  describe('footer-comments resource', () => {
+    it('footer-comments list with no flags calls list with empty options', async () => {
+      confluenceFooterCommentsMock.list.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('footer-comments', 'list'), GLOBALS);
+      expect(confluenceFooterCommentsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ cursor: undefined, limit: undefined }),
+      );
+    });
+
+    it('footer-comments list passes sort + body-format + cursor + limit', async () => {
+      confluenceFooterCommentsMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('footer-comments', 'list', [], {
+        sort: '-created-date',
+        'body-format': 'storage',
+        cursor: 'tok',
+        limit: '25',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sort: '-created-date',
+          'body-format': 'storage',
+          cursor: 'tok',
+          limit: 25,
+        }),
+      );
+    });
+
+    it('footer-comments list rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('footer-comments', 'list', [], { sort: '-title' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: created-date, -created-date, modified-date, -modified-date, got: -title',
+      );
+      expect(confluenceFooterCommentsMock.list).not.toHaveBeenCalled();
+    });
+
+    it('footer-comments list rejects invalid --body-format', async () => {
+      const parsed = cmd('footer-comments', 'list', [], { 'body-format': 'view' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-format must be one of: storage, atlas_doc_format, got: view',
+      );
+    });
+
+    it('footer-comments get with no flags forwards undefined for every flag', async () => {
+      confluenceFooterCommentsMock.get.mockResolvedValue({ id: '77777' });
+      await executeConfluenceCommand(cmd('footer-comments', 'get', ['77777']), GLOBALS);
+      expect(confluenceFooterCommentsMock.get).toHaveBeenCalledWith('77777', {
+        version: undefined,
+        'include-properties': undefined,
+        'include-operations': undefined,
+        'include-likes': undefined,
+        'include-versions': undefined,
+        'include-version': undefined,
+      });
+    });
+
+    it('footer-comments get throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('footer-comments', 'get', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('footer-comments get forwards every include-* flag, version, body-format', async () => {
+      confluenceFooterCommentsMock.get.mockResolvedValue({ id: '77777' });
+      const parsed = cmd('footer-comments', 'get', ['77777'], {
+        'body-format': 'atlas_doc_format',
+        'version-number': '3',
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.get).toHaveBeenCalledWith('77777', {
+        'body-format': 'atlas_doc_format',
+        version: 3,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': true,
+      });
+    });
+
+    it('footer-comments update issues PUT via comments.updateFooter with body + version', async () => {
+      confluenceCommentsMock.updateFooter.mockResolvedValue({ id: '77777' });
+      const parsed = cmd('footer-comments', 'update', ['77777'], {
+        body: 'new body',
+        'version-number': '2',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateFooter).toHaveBeenCalledWith('77777', {
+        version: { number: 2 },
+        body: { representation: 'storage', value: 'new body' },
+      });
+    });
+
+    it('footer-comments update requires --body', async () => {
+      const parsed = cmd('footer-comments', 'update', ['77777'], { 'version-number': '2' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
+    it('footer-comments update requires --version-number', async () => {
+      const parsed = cmd('footer-comments', 'update', ['77777'], { body: 'b' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('footer-comments update throws when --version-number is not a positive integer', async () => {
+      const parsed = cmd('footer-comments', 'update', ['77777'], {
+        body: 'b',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('footer-comments children forwards body-format + sort + cursor + limit', async () => {
+      confluenceFooterCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('footer-comments', 'children', ['77777'], {
+        'body-format': 'storage',
+        sort: 'created-date',
+        cursor: 'tok',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.listChildren).toHaveBeenCalledWith(
+        '77777',
+        expect.objectContaining({
+          'body-format': 'storage',
+          sort: 'created-date',
+          cursor: 'tok',
+          limit: 10,
+        }),
+      );
+    });
+
+    it('footer-comments children rejects invalid --sort', async () => {
+      const parsed = cmd('footer-comments', 'children', ['77777'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: created-date/,
+      );
+    });
+
+    it('footer-comments likes-count calls getLikeCount', async () => {
+      confluenceFooterCommentsMock.getLikeCount.mockResolvedValue({ count: 5 });
+      const result = await executeConfluenceCommand(
+        cmd('footer-comments', 'likes-count', ['77777']),
+        GLOBALS,
+      );
+      expect(confluenceFooterCommentsMock.getLikeCount).toHaveBeenCalledWith('77777');
+      expect(result).toEqual({ count: 5 });
+    });
+
+    it('footer-comments likes-users calls listLikeUsers with cursor + limit', async () => {
+      confluenceFooterCommentsMock.listLikeUsers.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('footer-comments', 'likes-users', ['77777'], {
+        cursor: 'tok',
+        limit: '50',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.listLikeUsers).toHaveBeenCalledWith(
+        '77777',
+        expect.objectContaining({ cursor: 'tok', limit: 50 }),
+      );
+    });
+
+    it('footer-comments operations calls getOperations', async () => {
+      confluenceFooterCommentsMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('footer-comments', 'operations', ['77777']), GLOBALS);
+      expect(confluenceFooterCommentsMock.getOperations).toHaveBeenCalledWith('77777');
+    });
+
+    it('footer-comments versions forwards body-format + sort + cursor + limit', async () => {
+      confluenceFooterCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('footer-comments', 'versions', ['77777'], {
+        'body-format': 'storage',
+        sort: '-modified-date',
+        cursor: 'tok',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.listVersions).toHaveBeenCalledWith(
+        '77777',
+        expect.objectContaining({
+          'body-format': 'storage',
+          sort: '-modified-date',
+          cursor: 'tok',
+          limit: 5,
+        }),
+      );
+    });
+
+    it('footer-comments versions with no flags omits sort and body-format', async () => {
+      confluenceFooterCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('footer-comments', 'versions', ['77777']), GLOBALS);
+      const callArgs = confluenceFooterCommentsMock.listVersions.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+      expect(callArgs?.['body-format']).toBeUndefined();
+    });
+
+    it('footer-comments children with no flags omits sort and body-format', async () => {
+      confluenceFooterCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('footer-comments', 'children', ['77777']), GLOBALS);
+      const callArgs = confluenceFooterCommentsMock.listChildren.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+      expect(callArgs?.['body-format']).toBeUndefined();
+    });
+
+    it('footer-comments versions rejects invalid --sort (CommentSortOrder is rejected here)', async () => {
+      const parsed = cmd('footer-comments', 'versions', ['77777'], { sort: 'created-date' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: modified-date, -modified-date, got: created-date',
+      );
+    });
+
+    it('footer-comments version calls getVersion with both IDs', async () => {
+      confluenceFooterCommentsMock.getVersion.mockResolvedValue({ number: 3 });
+      const parsed = cmd('footer-comments', 'version', ['77777'], { 'version-number': '3' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceFooterCommentsMock.getVersion).toHaveBeenCalledWith('77777', 3);
+      expect(result).toEqual({ number: 3 });
+    });
+
+    it('footer-comments version requires --version-number', async () => {
+      const parsed = cmd('footer-comments', 'version', ['77777'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('footer-comments version throws when --version-number is non-positive', async () => {
+      const parsed = cmd('footer-comments', 'version', ['77777'], { 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('footer-comments unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('footer-comments', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown footer-comments action');
     });
   });
 

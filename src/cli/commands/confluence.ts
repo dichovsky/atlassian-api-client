@@ -4,12 +4,14 @@ import { buildClientConfig } from '../config.js';
 import type {
   AttachmentSortOrder,
   BlogPostSortOrder,
+  CommentSortOrder,
   ContentSortOrder,
   DataPolicySpaceSortOrder,
   LabelSortOrder,
   PageSortOrder,
   SpaceRolePrincipalType,
   SpaceRoleType,
+  VersionSortOrder,
 } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
@@ -44,6 +46,8 @@ export async function executeConfluenceCommand(
       return executeDataPolicies(client, cmd);
     case 'databases':
       return executeDatabases(client, cmd);
+    case 'footer-comments':
+      return executeFooterComments(client, cmd);
     case 'space-permissions':
       return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
@@ -797,6 +801,96 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
   }
 }
 
+async function executeFooterComments(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.footerComments.list({
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'get': {
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.footerComments.get(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-likes': opts['include-likes'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': opts['include-version'] === true ? true : undefined,
+      });
+    }
+    case 'update': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        version: { number: versionNum },
+        body: {
+          representation: 'storage',
+          value: requireOpt(opts['body'], '--body'),
+        },
+      });
+    }
+    case 'children': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.footerComments.listChildren(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'likes-count':
+      return client.footerComments.getLikeCount(requireArg(cmd.positionalArgs[0], 'comment ID'));
+    case 'likes-users':
+      return client.footerComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'operations':
+      return client.footerComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
+    case 'versions': {
+      const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.footerComments.listVersions(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'version': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.footerComments.getVersion(
+        requireArg(cmd.positionalArgs[0], 'comment ID'),
+        versionNum,
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown footer-comments action: ${cmd.action}. Actions: list, get, update, children, likes-count, likes-users, operations, versions, version`,
+      );
+  }
+}
+
 function requireArg(value: string | undefined, name: string): string {
   if (!value) throw new Error(`Missing required argument: ${name}`);
   return value;
@@ -869,6 +963,15 @@ const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [
 ];
 
 const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;
+
+const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
+];
+
+const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];
 
 const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [
   'id',

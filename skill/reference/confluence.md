@@ -18,6 +18,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                      |
 | `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                               |
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
+| `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                      |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
 | `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
@@ -485,6 +486,56 @@ atlas confluence databases create-property db-1 --key feature-flags --value '{"b
 atlas confluence databases get-property db-1 --property-id prop-1
 atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
 atlas confluence databases delete-property db-1 --property-id prop-1
+```
+
+## `footer-comments`
+
+Top-level (page / blog-post) footer comments exposed through the tenant-wide `/wiki/api/v2/footer-comments` surface. The container-scoped CRUD (`list` by page, `create`, `delete`) lives on the `comments` resource above; this resource covers tenant-wide listing, single-comment fetch with inlinable sub-resources, in-place `update`, and the per-comment navigation collections (`children`, `likes`, `operations`, `versions`).
+
+| Action        | Positional    | Required flags               | Optional flags                                                                                                                                    |
+| ------------- | ------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`        | —             | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
+| `get`         | `<commentId>` | —                            | `--body-format`, `--version-number`, `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions`, `--include-version` |
+| `update`      | `<commentId>` | `--body`, `--version-number` | —                                                                                                                                                 |
+| `children`    | `<commentId>` | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
+| `likes-count` | `<commentId>` | —                            | —                                                                                                                                                 |
+| `likes-users` | `<commentId>` | —                            | `--cursor`, `--limit`                                                                                                                             |
+| `operations`  | `<commentId>` | —                            | —                                                                                                                                                 |
+| `versions`    | `<commentId>` | —                            | `--body-format`, `--sort`, `--cursor`, `--limit`                                                                                                  |
+| `version`     | `<commentId>` | `--version-number`           | —                                                                                                                                                 |
+
+- `--body-format` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum).
+- `--sort` on `list` and `children` accepts the `CommentSortOrder` vocabulary: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
+- `--sort` on `versions` is the narrower `VersionSortOrder`: only `modified-date` / `-modified-date`.
+- `--include-*` flags on `get` ask the server to inline the corresponding sub-resource (properties, operations, likes, versions, or a single version) so callers can fetch the comment plus context in one round-trip.
+- `update` issues `PUT /footer-comments/{id}` — Confluence enforces optimistic concurrency: `--version-number` must be exactly one greater than the comment's current version (mismatches return 409). `--body` is sent with `representation: "storage"`; SDK callers can opt into `atlas_doc_format` via the underlying `comments.updateFooter()` method.
+- `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `version` fetches a single past version by number; the response includes the body and audit metadata.
+- All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
+
+```sh
+# Tenant-wide listing, newest first
+atlas confluence footer-comments list --sort -created-date --limit 25
+
+# Read a single comment with everything inlined
+atlas confluence footer-comments get 77777 --include-likes --include-versions
+
+# Update a footer comment (storage body)
+atlas confluence footer-comments update 77777 --body "Updated reply" --version-number 2
+
+# Walk child replies
+atlas confluence footer-comments children 77777 --sort created-date
+
+# Like counts and likers
+atlas confluence footer-comments likes-count 77777
+atlas confluence footer-comments likes-users 77777 --limit 50
+
+# Permitted operations
+atlas confluence footer-comments operations 77777
+
+# Version history
+atlas confluence footer-comments versions 77777 --sort -modified-date
+atlas confluence footer-comments version 77777 --version-number 3
 ```
 
 ## Pagination

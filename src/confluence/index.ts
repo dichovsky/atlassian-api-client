@@ -82,6 +82,20 @@ export type {
   UpdateDatabasePropertyData,
   UpdateDatabaseClassificationLevelData,
   ResetDatabaseClassificationLevelData,
+  CommentSortOrder,
+  VersionSortOrder,
+  ListFooterCommentsTenantParams,
+  GetFooterCommentParams,
+  ListFooterCommentChildrenParams,
+  FooterCommentChild,
+  FooterCommentLikeCount,
+  FooterCommentLike,
+  ListFooterCommentLikeUsersParams,
+  FooterCommentOperation,
+  FooterCommentOperationsResponse,
+  ListFooterCommentVersionsParams,
+  FooterCommentVersionSummary,
+  FooterCommentVersionDetail,
   SpacePermission,
   ListSpacePermissionsParams,
   SpaceRoleMode,
@@ -120,6 +134,7 @@ export { ClassificationLevelsResource } from './resources/classification-levels.
 export { ContentResource } from './resources/content.js';
 export { DataPoliciesResource } from './resources/data-policies.js';
 export { DatabasesResource } from './resources/databases.js';
+export { FooterCommentsResource } from './resources/footer-comments.js';
 export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
 export { SpaceRolesResource } from './resources/space-roles.js';

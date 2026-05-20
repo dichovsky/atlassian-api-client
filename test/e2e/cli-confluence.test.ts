@@ -1203,6 +1203,127 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'DELETE', pathname: `${P}/databases/db-1/properties/prop-1` },
     expectStdout: ['"deleted": true'],
   },
+  // ─── footer-comments ──────────────────────────────────────────────────
+  {
+    name: 'footer-comments list',
+    argv: ['confluence', 'footer-comments', 'list', '--sort=-created-date', '--limit', '25'],
+    routes: [{ method: 'GET', path: `${P}/footer-comments`, body: F.footerCommentTenantList }],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-created-date');
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'footer-comments get',
+    argv: ['confluence', 'footer-comments', 'get', '77777', '--include-likes'],
+    routes: [{ method: 'GET', path: `${P}/footer-comments/77777`, body: F.footerComment }],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777` },
+    expectQuery: (query) => {
+      expect(query['include-likes']).toBe('true');
+    },
+  },
+  {
+    name: 'footer-comments update',
+    argv: [
+      'confluence',
+      'footer-comments',
+      'update',
+      '77777',
+      '--body',
+      'Updated text',
+      '--version-number',
+      '2',
+    ],
+    routes: [{ method: 'PUT', path: `${P}/footer-comments/77777`, body: F.footerComment }],
+    expectCall: { method: 'PUT', pathname: `${P}/footer-comments/77777` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        version: { number: 2 },
+        body: { representation: 'storage', value: 'Updated text' },
+      });
+    },
+  },
+  {
+    name: 'footer-comments children',
+    argv: ['confluence', 'footer-comments', 'children', '77777'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/children`,
+        body: F.footerCommentChildrenList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/children` },
+    expectStdout: ['child-77778'],
+  },
+  {
+    name: 'footer-comments likes-count',
+    argv: ['confluence', 'footer-comments', 'likes-count', '77777'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/likes/count`,
+        body: F.footerCommentLikeCount,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/likes/count` },
+    expectStdout: ['"count": 5'],
+  },
+  {
+    name: 'footer-comments likes-users',
+    argv: ['confluence', 'footer-comments', 'likes-users', '77777', '--limit', '50'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/likes/users`,
+        body: F.footerCommentLikeUsers,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/likes/users` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'footer-comments operations',
+    argv: ['confluence', 'footer-comments', 'operations', '77777'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/operations`,
+        body: F.footerCommentOperations,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/operations` },
+  },
+  {
+    name: 'footer-comments versions',
+    argv: ['confluence', 'footer-comments', 'versions', '77777', '--sort=-modified-date'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/versions`,
+        body: F.footerCommentVersionsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/versions` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-modified-date');
+    },
+  },
+  {
+    name: 'footer-comments version',
+    argv: ['confluence', 'footer-comments', 'version', '77777', '--version-number', '2'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/footer-comments/77777/versions/2`,
+        body: F.footerCommentVersionDetail,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/versions/2` },
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {
