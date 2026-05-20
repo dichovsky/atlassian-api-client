@@ -71,6 +71,7 @@ RESOURCES:
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
   content                convert-ids-to-types
+  databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
   space-permissions      list
   space-role-mode        get
   users-bulk             lookup
@@ -83,6 +84,11 @@ EXAMPLES:
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
+  atlas confluence databases create --space-id 123 --title "Inventory" --private
+  atlas confluence databases get 456 --include-properties
+  atlas confluence databases descendants 456 --depth 3 --limit 50
+  atlas confluence databases list-properties 456
+  atlas confluence databases update-classification-level 456 --level-id cl-1
   atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2

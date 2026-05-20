@@ -51,6 +51,24 @@ export type {
   ConfluenceContentType,
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
+  Database,
+  CreateDatabaseData,
+  CreateDatabaseParams,
+  GetDatabaseParams,
+  DatabaseAncestor,
+  DatabaseAncestorsResponse,
+  ListDatabaseAncestorsParams,
+  DatabaseDescendant,
+  ListDatabaseDescendantsParams,
+  DatabaseChild,
+  ListDatabaseChildrenParams,
+  ContentSortOrder,
+  DatabaseOperation,
+  DatabaseOperationsResponse,
+  ListDatabasePropertiesParams,
+  UpdateDatabasePropertyData,
+  UpdateDatabaseClassificationLevelData,
+  ResetDatabaseClassificationLevelData,
   SpacePermission,
   ListSpacePermissionsParams,
   SpaceRoleMode,
@@ -76,6 +94,7 @@ export { VersionsResource } from './resources/versions.js';
 export { AppResource } from './resources/app.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';
 export { ContentResource } from './resources/content.js';
+export { DatabasesResource } from './resources/databases.js';
 export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
 export { UsersBulkResource } from './resources/users-bulk.js';

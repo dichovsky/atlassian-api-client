@@ -86,6 +86,23 @@ const confluenceSpaceRoleModeMock = {
 const confluenceUsersBulkMock = {
   lookup: vi.fn(),
 };
+const confluenceDatabasesMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+  listAncestors: vi.fn(),
+  listDescendants: vi.fn(),
+  listDirectChildren: vi.fn(),
+  getOperations: vi.fn(),
+  getClassificationLevel: vi.fn(),
+  updateClassificationLevel: vi.fn(),
+  resetClassificationLevel: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -100,6 +117,7 @@ vi.mock('../../src/confluence/client.js', () => {
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
       content: confluenceContentMock,
+      databases: confluenceDatabasesMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
       usersBulk: confluenceUsersBulkMock,
@@ -1327,6 +1345,399 @@ describe('executeConfluenceCommand', () => {
     it('users-bulk unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('users-bulk', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown users-bulk action',
+      );
+    });
+  });
+  // ── databases ─────────────────────────────────────────────────────────────
+
+  describe('databases resource', () => {
+    it('databases create calls client.databases.create with spaceId', async () => {
+      // Arrange
+      confluenceDatabasesMock.create.mockResolvedValue({ id: 'db-1' });
+      const parsed = cmd('databases', 'create', [], {
+        'space-id': 'space-1',
+        title: 'Inv',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId: 'space-1', title: 'Inv' }),
+        undefined,
+      );
+    });
+
+    it('databases create with --private passes private query param', async () => {
+      // Arrange
+      confluenceDatabasesMock.create.mockResolvedValue({ id: 'db-1' });
+      const parsed = cmd('databases', 'create', [], {
+        'space-id': 'space-1',
+        private: true,
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.create).toHaveBeenCalledWith(expect.any(Object), {
+        private: true,
+      });
+    });
+
+    it('databases create with --parent-id forwards parentId', async () => {
+      // Arrange
+      confluenceDatabasesMock.create.mockResolvedValue({ id: 'db-1' });
+      const parsed = cmd('databases', 'create', [], {
+        'space-id': 'space-1',
+        'parent-id': 'p-9',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ parentId: 'p-9' }),
+        undefined,
+      );
+    });
+
+    it('databases create throws when --space-id is missing', async () => {
+      const parsed = cmd('databases', 'create', [], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
+    });
+
+    it('databases get calls client.databases.get with the ID', async () => {
+      // Arrange
+      confluenceDatabasesMock.get.mockResolvedValue({ id: 'db-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('databases', 'get', ['db-1']), GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.get).toHaveBeenCalledWith('db-1', expect.any(Object));
+      expect(result).toEqual({ id: 'db-1' });
+    });
+
+    it('databases get forwards include-* flags', async () => {
+      // Arrange
+      confluenceDatabasesMock.get.mockResolvedValue({ id: 'db-1' });
+      const parsed = cmd('databases', 'get', ['db-1'], {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.get).toHaveBeenCalledWith('db-1', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+    });
+
+    it('databases get throws when ID is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('databases', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: database ID',
+      );
+    });
+
+    it('databases delete calls client.databases.delete and returns { deleted: true }', async () => {
+      // Arrange
+      confluenceDatabasesMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('databases', 'delete', ['db-1']), GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.delete).toHaveBeenCalledWith('db-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('databases delete throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('databases', 'delete', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: database ID');
+    });
+
+    it('databases ancestors calls listAncestors with limit', async () => {
+      // Arrange
+      confluenceDatabasesMock.listAncestors.mockResolvedValue({ results: [] });
+      const parsed = cmd('databases', 'ancestors', ['db-1'], { limit: '5' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.listAncestors).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ limit: 5 }),
+      );
+    });
+
+    it('databases ancestors throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('databases', 'ancestors', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: database ID');
+    });
+
+    it('databases descendants forwards limit + depth + cursor', async () => {
+      // Arrange
+      confluenceDatabasesMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('databases', 'descendants', ['db-1'], {
+        limit: '25',
+        depth: '3',
+        cursor: 'tok',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.listDescendants).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ limit: 25, depth: 3, cursor: 'tok' }),
+      );
+    });
+
+    it('databases direct-children passes sort when supplied', async () => {
+      // Arrange
+      confluenceDatabasesMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('databases', 'direct-children', ['db-1'], { sort: '-title' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.listDirectChildren).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ sort: '-title' }),
+      );
+    });
+
+    it('databases direct-children omits sort when not supplied', async () => {
+      // Arrange
+      confluenceDatabasesMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+
+      // Act
+      await executeConfluenceCommand(cmd('databases', 'direct-children', ['db-1'], {}), GLOBALS);
+
+      // Assert
+      const callArgs = confluenceDatabasesMock.listDirectChildren.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+    });
+
+    it('databases operations calls getOperations', async () => {
+      // Arrange
+      confluenceDatabasesMock.getOperations.mockResolvedValue({ operations: [] });
+
+      // Act
+      await executeConfluenceCommand(cmd('databases', 'operations', ['db-1']), GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.getOperations).toHaveBeenCalledWith('db-1');
+    });
+
+    it('databases get-classification-level calls getClassificationLevel', async () => {
+      // Arrange
+      confluenceDatabasesMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(
+        cmd('databases', 'get-classification-level', ['db-1']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(confluenceDatabasesMock.getClassificationLevel).toHaveBeenCalledWith('db-1');
+      expect(result).toEqual({ id: 'cl-1' });
+    });
+
+    it('databases update-classification-level requires --level-id', async () => {
+      const parsed = cmd('databases', 'update-classification-level', ['db-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--level-id');
+    });
+
+    it('databases update-classification-level forwards level-id with status=current', async () => {
+      // Arrange
+      confluenceDatabasesMock.updateClassificationLevel.mockResolvedValue(undefined);
+      const parsed = cmd('databases', 'update-classification-level', ['db-1'], {
+        'level-id': 'cl-1',
+      });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.updateClassificationLevel).toHaveBeenCalledWith('db-1', {
+        id: 'cl-1',
+        status: 'current',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('databases reset-classification-level returns { reset: true }', async () => {
+      // Arrange
+      confluenceDatabasesMock.resetClassificationLevel.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeConfluenceCommand(
+        cmd('databases', 'reset-classification-level', ['db-1']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(confluenceDatabasesMock.resetClassificationLevel).toHaveBeenCalledWith('db-1');
+      expect(result).toEqual({ reset: true });
+    });
+
+    it('databases list-properties forwards key, sort, cursor, limit', async () => {
+      // Arrange
+      confluenceDatabasesMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('databases', 'list-properties', ['db-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.listProperties).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('databases create-property parses JSON --value and forwards key + value', async () => {
+      // Arrange
+      confluenceDatabasesMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('databases', 'create-property', ['db-1'], {
+        key: 'feature',
+        value: '{"beta":true}',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.createProperty).toHaveBeenCalledWith('db-1', {
+        key: 'feature',
+        value: { beta: true },
+      });
+    });
+
+    it('databases create-property falls back to raw string when --value is not JSON', async () => {
+      // Arrange
+      confluenceDatabasesMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('databases', 'create-property', ['db-1'], {
+        key: 'feature',
+        value: 'hello',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.createProperty).toHaveBeenCalledWith('db-1', {
+        key: 'feature',
+        value: 'hello',
+      });
+    });
+
+    it('databases create-property requires --key', async () => {
+      const parsed = cmd('databases', 'create-property', ['db-1'], { value: '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('databases create-property requires --value', async () => {
+      const parsed = cmd('databases', 'create-property', ['db-1'], { key: 'k' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('databases get-property requires --property-id', async () => {
+      const parsed = cmd('databases', 'get-property', ['db-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('databases get-property calls getProperty with both IDs', async () => {
+      // Arrange
+      confluenceDatabasesMock.getProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('databases', 'get-property', ['db-1'], { 'property-id': 'p-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.getProperty).toHaveBeenCalledWith('db-1', 'p-1');
+      expect(result).toEqual({ id: 'p-1' });
+    });
+
+    it('databases update-property forwards key, value, version', async () => {
+      // Arrange
+      confluenceDatabasesMock.updateProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('databases', 'update-property', ['db-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '42',
+        'version-number': '4',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.updateProperty).toHaveBeenCalledWith('db-1', 'p-1', {
+        key: 'feature',
+        value: 42,
+        version: { number: 4 },
+      });
+    });
+
+    it('databases update-property throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('databases', 'update-property', ['db-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '1',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('databases delete-property calls deleteProperty and returns { deleted: true }', async () => {
+      // Arrange
+      confluenceDatabasesMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('databases', 'delete-property', ['db-1'], { 'property-id': 'p-1' });
+
+      // Act
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDatabasesMock.deleteProperty).toHaveBeenCalledWith('db-1', 'p-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('databases delete-property requires --property-id', async () => {
+      const parsed = cmd('databases', 'delete-property', ['db-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('databases unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('databases', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown databases action',
       );
     });
   });

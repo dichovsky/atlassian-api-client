@@ -476,6 +476,264 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/space-role-mode` },
     expectStdout: ['"mode": "ROLES"'],
   },
+
+  // ─── databases ────────────────────────────────────────────────────────
+  {
+    name: 'databases create',
+    argv: ['confluence', 'databases', 'create', '--space-id', '654321', '--title', 'E2E Inventory'],
+    routes: [{ method: 'POST', path: `${P}/databases`, status: 201, body: F.database }],
+    expectCall: { method: 'POST', pathname: `${P}/databases` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ spaceId: '654321', title: 'E2E Inventory' });
+    },
+  },
+  {
+    name: 'databases create --private',
+    argv: [
+      'confluence',
+      'databases',
+      'create',
+      '--space-id',
+      '654321',
+      '--title',
+      'Secret',
+      '--private',
+    ],
+    routes: [{ method: 'POST', path: `${P}/databases`, status: 201, body: F.database }],
+    expectCall: { method: 'POST', pathname: `${P}/databases` },
+    expectQuery: (query) => {
+      expect(query.private).toBe('true');
+    },
+  },
+  {
+    name: 'databases get',
+    argv: ['confluence', 'databases', 'get', 'db-1'],
+    routes: [{ method: 'GET', path: `${P}/databases/db-1`, body: F.database }],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1` },
+    expectStdout: ['"id": "db-1"'],
+  },
+  {
+    name: 'databases get --include-properties',
+    argv: ['confluence', 'databases', 'get', 'db-1', '--include-properties'],
+    routes: [{ method: 'GET', path: `${P}/databases/db-1`, body: F.database }],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1` },
+    expectQuery: (query) => {
+      expect(query['include-properties']).toBe('true');
+    },
+  },
+  {
+    name: 'databases delete',
+    argv: ['confluence', 'databases', 'delete', 'db-1'],
+    routes: [{ method: 'DELETE', path: `${P}/databases/db-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/databases/db-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'databases ancestors',
+    argv: ['confluence', 'databases', 'ancestors', 'db-1', '--limit', '10'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/ancestors`,
+        body: F.databaseAncestors,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/ancestors` },
+    expectStdout: ['"id": "ancestor-1"'],
+    expectQuery: (query) => {
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'databases descendants',
+    argv: ['confluence', 'databases', 'descendants', 'db-1', '--depth', '3', '--limit', '25'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/descendants`,
+        body: F.databaseDescendants,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/descendants` },
+    expectStdout: ['"id": "desc-1"'],
+    expectQuery: (query) => {
+      expect(query.depth).toBe('3');
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'databases direct-children',
+    argv: ['confluence', 'databases', 'direct-children', 'db-1', '--sort=-title'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/direct-children`,
+        body: F.databaseChildren,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/direct-children` },
+    expectStdout: ['"id": "child-1"'],
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-title');
+    },
+  },
+  {
+    name: 'databases operations',
+    argv: ['confluence', 'databases', 'operations', 'db-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/operations`,
+        body: F.databaseOperations,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/operations` },
+    expectStdout: ['"operation": "read"'],
+  },
+  {
+    name: 'databases get-classification-level',
+    argv: ['confluence', 'databases', 'get-classification-level', 'db-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/classification-level`,
+        body: F.databaseClassificationLevel,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/classification-level` },
+    expectStdout: ['"id": "cl-1"'],
+  },
+  {
+    name: 'databases update-classification-level',
+    argv: ['confluence', 'databases', 'update-classification-level', 'db-1', '--level-id', 'cl-1'],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/databases/db-1/classification-level`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/databases/db-1/classification-level` },
+    expectStdout: ['"updated": true'],
+    expectBody: (body) => {
+      expect(body).toEqual({ id: 'cl-1', status: 'current' });
+    },
+  },
+  {
+    name: 'databases reset-classification-level',
+    argv: ['confluence', 'databases', 'reset-classification-level', 'db-1'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/databases/db-1/classification-level/reset`,
+        status: 204,
+      },
+    ],
+    expectCall: {
+      method: 'POST',
+      pathname: `${P}/databases/db-1/classification-level/reset`,
+    },
+    expectStdout: ['"reset": true'],
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'current' });
+    },
+  },
+  {
+    name: 'databases list-properties',
+    argv: ['confluence', 'databases', 'list-properties', 'db-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/properties`,
+        body: F.databasePropertyList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/properties` },
+    expectStdout: ['"id": "prop-1"', '"key": "feature-flags"'],
+  },
+  {
+    name: 'databases create-property',
+    argv: [
+      'confluence',
+      'databases',
+      'create-property',
+      'db-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/databases/db-1/properties`,
+        status: 201,
+        body: F.databaseProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/databases/db-1/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'feature-flags', value: { beta: true } });
+    },
+  },
+  {
+    name: 'databases get-property',
+    argv: ['confluence', 'databases', 'get-property', 'db-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/databases/db-1/properties/prop-1`,
+        body: F.databaseProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/databases/db-1/properties/prop-1` },
+    expectStdout: ['"id": "prop-1"'],
+  },
+  {
+    name: 'databases update-property',
+    argv: [
+      'confluence',
+      'databases',
+      'update-property',
+      'db-1',
+      '--property-id',
+      'prop-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":false}',
+      '--version-number',
+      '4',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/databases/db-1/properties/prop-1`,
+        body: F.databaseProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/databases/db-1/properties/prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'feature-flags',
+        value: { beta: false },
+        version: { number: 4 },
+      });
+    },
+  },
+  {
+    name: 'databases delete-property',
+    argv: ['confluence', 'databases', 'delete-property', 'db-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/databases/db-1/properties/prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/databases/db-1/properties/prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {

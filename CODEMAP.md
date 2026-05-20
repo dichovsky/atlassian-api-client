@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "42c8330b71dd646dd4c8e7cca97688418ec31f7e002734f3c021c2821accf6d0",
+  "sourceHash": "f0943813230982befc96420de4861be71550e176052152ecd910fd977c950b9d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -209,7 +209,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 24,
+      "line": 25,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -297,6 +297,15 @@
       "typeOnly": true
     },
     {
+      "name": "ContentSortOrder",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 785,
+      "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
+      "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema.",
+      "typeOnly": true
+    },
+    {
       "name": "ContentVersion",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -356,6 +365,24 @@
       "file": "src/jira/resources/dashboards.ts",
       "line": 35,
       "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+      "typeOnly": true
+    },
+    {
+      "name": "CreateDatabaseData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 719,
+      "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
+      "jsdoc": "Request body for creating a database via `POST /databases`.",
+      "typeOnly": true
+    },
+    {
+      "name": "CreateDatabaseParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 726,
+      "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
+      "jsdoc": "Query parameters for `POST /databases`.",
       "typeOnly": true
     },
     {
@@ -480,6 +507,69 @@
       "typeOnly": true
     },
     {
+      "name": "Database",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 696,
+      "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
+      "jsdoc": "Confluence Database content.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseAncestor",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 732,
+      "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
+      "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseAncestorsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 749,
+      "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
+      "jsdoc": "Response shape for `GET /databases/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseChild",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 772,
+      "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
+      "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseDescendant",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 754,
+      "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
+      "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseOperation",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 805,
+      "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
+      "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "DatabaseOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 811,
+      "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
+      "jsdoc": "Response shape for `GET /databases/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
       "name": "DeletePageParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -545,6 +635,15 @@
       "line": 369,
       "signature": "export interface GetCustomContentParams { readonly 'body-format'?: BodyFormat; readonly version?: number; }",
       "jsdoc": "Parameters for retrieving a single custom content item.",
+      "typeOnly": true
+    },
+    {
+      "name": "GetDatabaseParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 820,
+      "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
+      "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
     },
     {
@@ -762,6 +861,42 @@
       "file": "src/jira/resources/dashboards.ts",
       "line": 27,
       "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabaseAncestorsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 738,
+      "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
+      "jsdoc": "Parameters for listing database ancestors.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabaseChildrenParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 798,
+      "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
+      "jsdoc": "Parameters for listing direct children of a database.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabaseDescendantsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 765,
+      "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
+      "jsdoc": "Parameters for listing database descendants.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListDatabasePropertiesParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 828,
+      "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
+      "jsdoc": "Parameters for listing content properties on a database.",
       "typeOnly": true
     },
     {
@@ -1058,6 +1193,15 @@
       "typeOnly": true
     },
     {
+      "name": "ResetDatabaseClassificationLevelData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 867,
+      "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
+      "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`.",
+      "typeOnly": true
+    },
+    {
       "name": "SanitizeJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
@@ -1230,6 +1374,24 @@
       "file": "src/jira/resources/dashboards.ts",
       "line": 42,
       "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateDatabaseClassificationLevelData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 855,
+      "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+      "jsdoc": "Request body for `PUT /databases/{id}/classification-level`.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateDatabasePropertyData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 842,
+      "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
+      "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`.",
       "typeOnly": true
     },
     {
@@ -1454,7 +1616,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -1462,128 +1624,135 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 44,
+          "line": 47,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 93,
+          "line": 96,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 107,
+          "line": 110,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 149,
+          "line": 152,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 193,
+          "line": 196,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 209,
+          "line": 212,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 230,
+          "line": 233,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 241,
+          "line": 244,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 273,
+          "line": 276,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 281,
+          "line": 284,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 293,
+          "line": 296,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 312,
+          "line": 315,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 341,
+          "line": 344,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 358,
+          "line": 361,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 370,
+          "line": 373,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeDatabases",
+          "kind": "function",
+          "line": 391,
+          "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 388,
+          "line": 497,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 393,
+          "line": 502,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 398,
+          "line": 507,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 402,
+          "line": 511,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 411,
+          "line": 520,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
       "imports": [
         "../../confluence/client.js",
+        "../../confluence/types.js",
         "../config.js",
         "../types.js"
       ]
@@ -1921,13 +2090,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 91,
+          "line": 97,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 110,
+          "line": 116,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2088,7 +2257,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 53,
+          "line": 66,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2199,7 +2368,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 24,
+          "line": 25,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2207,97 +2376,102 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 25
+              "line": 26
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 26
+              "line": 27
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 27
+              "line": 28
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 28
+              "line": 29
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 29
+              "line": 30
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 42
+              "line": 43
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 44
+              "line": 45
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 46
+              "line": 47
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 48
+              "line": 49
+            },
+            {
+              "name": "databases",
+              "kind": "property",
+              "line": 51
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 50
+              "line": 53
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 52
+              "line": 55
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 54
+              "line": 57
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 56
+              "line": 59
             }
           ]
         }
@@ -2315,6 +2489,7 @@
         "./resources/content-properties.js",
         "./resources/content.js",
         "./resources/custom-content.js",
+        "./resources/databases.js",
         "./resources/labels.js",
         "./resources/pages.js",
         "./resources/space-permissions.js",
@@ -2436,6 +2611,17 @@
             {
               "exported": "CustomContentResource",
               "original": "CustomContentResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/databases.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "DatabasesResource",
+              "original": "DatabasesResource"
             }
           ]
         },
@@ -2746,6 +2932,78 @@
             {
               "exported": "ConvertContentIdsToTypesResponse",
               "original": "ConvertContentIdsToTypesResponse"
+            },
+            {
+              "exported": "Database",
+              "original": "Database"
+            },
+            {
+              "exported": "CreateDatabaseData",
+              "original": "CreateDatabaseData"
+            },
+            {
+              "exported": "CreateDatabaseParams",
+              "original": "CreateDatabaseParams"
+            },
+            {
+              "exported": "GetDatabaseParams",
+              "original": "GetDatabaseParams"
+            },
+            {
+              "exported": "DatabaseAncestor",
+              "original": "DatabaseAncestor"
+            },
+            {
+              "exported": "DatabaseAncestorsResponse",
+              "original": "DatabaseAncestorsResponse"
+            },
+            {
+              "exported": "ListDatabaseAncestorsParams",
+              "original": "ListDatabaseAncestorsParams"
+            },
+            {
+              "exported": "DatabaseDescendant",
+              "original": "DatabaseDescendant"
+            },
+            {
+              "exported": "ListDatabaseDescendantsParams",
+              "original": "ListDatabaseDescendantsParams"
+            },
+            {
+              "exported": "DatabaseChild",
+              "original": "DatabaseChild"
+            },
+            {
+              "exported": "ListDatabaseChildrenParams",
+              "original": "ListDatabaseChildrenParams"
+            },
+            {
+              "exported": "ContentSortOrder",
+              "original": "ContentSortOrder"
+            },
+            {
+              "exported": "DatabaseOperation",
+              "original": "DatabaseOperation"
+            },
+            {
+              "exported": "DatabaseOperationsResponse",
+              "original": "DatabaseOperationsResponse"
+            },
+            {
+              "exported": "ListDatabasePropertiesParams",
+              "original": "ListDatabasePropertiesParams"
+            },
+            {
+              "exported": "UpdateDatabasePropertyData",
+              "original": "UpdateDatabasePropertyData"
+            },
+            {
+              "exported": "UpdateDatabaseClassificationLevelData",
+              "original": "UpdateDatabaseClassificationLevelData"
+            },
+            {
+              "exported": "ResetDatabaseClassificationLevelData",
+              "original": "ResetDatabaseClassificationLevelData"
             },
             {
               "exported": "SpacePermission",
@@ -3211,6 +3469,122 @@
               "name": "listAll",
               "kind": "method",
               "line": 69
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
+        "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
+      "path": "src/confluence/resources/databases.ts",
+      "symbols": [
+        {
+          "name": "DatabasesResource",
+          "kind": "class",
+          "line": 44,
+          "exported": true,
+          "signature": "export class DatabasesResource",
+          "jsdoc": "Resource for Confluence v2 databases.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 45
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 60
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 74
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 105
+            },
+            {
+              "name": "listAncestors",
+              "kind": "method",
+              "line": 122
+            },
+            {
+              "name": "listDescendants",
+              "kind": "method",
+              "line": 139
+            },
+            {
+              "name": "listDescendantsAll",
+              "kind": "method",
+              "line": 158
+            },
+            {
+              "name": "listDirectChildren",
+              "kind": "method",
+              "line": 174
+            },
+            {
+              "name": "listDirectChildrenAll",
+              "kind": "method",
+              "line": 193
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 211
+            },
+            {
+              "name": "getClassificationLevel",
+              "kind": "method",
+              "line": 222
+            },
+            {
+              "name": "updateClassificationLevel",
+              "kind": "method",
+              "line": 236
+            },
+            {
+              "name": "resetClassificationLevel",
+              "kind": "method",
+              "line": 252
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 266
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 286
+            },
+            {
+              "name": "createProperty",
+              "kind": "method",
+              "line": 303
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 313
+            },
+            {
+              "name": "updateProperty",
+              "kind": "method",
+              "line": 328
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 342
             }
           ]
         }
@@ -4219,6 +4593,150 @@
           "exported": true,
           "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
           "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted."
+        },
+        {
+          "name": "Database",
+          "kind": "interface",
+          "line": 696,
+          "exported": true,
+          "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
+          "jsdoc": "Confluence Database content."
+        },
+        {
+          "name": "CreateDatabaseData",
+          "kind": "interface",
+          "line": 719,
+          "exported": true,
+          "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
+          "jsdoc": "Request body for creating a database via `POST /databases`."
+        },
+        {
+          "name": "CreateDatabaseParams",
+          "kind": "interface",
+          "line": 726,
+          "exported": true,
+          "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
+          "jsdoc": "Query parameters for `POST /databases`."
+        },
+        {
+          "name": "DatabaseAncestor",
+          "kind": "interface",
+          "line": 732,
+          "exported": true,
+          "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
+          "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`."
+        },
+        {
+          "name": "ListDatabaseAncestorsParams",
+          "kind": "interface",
+          "line": 738,
+          "exported": true,
+          "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
+          "jsdoc": "Parameters for listing database ancestors."
+        },
+        {
+          "name": "DatabaseAncestorsResponse",
+          "kind": "interface",
+          "line": 749,
+          "exported": true,
+          "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
+          "jsdoc": "Response shape for `GET /databases/{id}/ancestors`."
+        },
+        {
+          "name": "DatabaseDescendant",
+          "kind": "interface",
+          "line": 754,
+          "exported": true,
+          "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
+          "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`."
+        },
+        {
+          "name": "ListDatabaseDescendantsParams",
+          "kind": "interface",
+          "line": 765,
+          "exported": true,
+          "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
+          "jsdoc": "Parameters for listing database descendants."
+        },
+        {
+          "name": "DatabaseChild",
+          "kind": "interface",
+          "line": 772,
+          "exported": true,
+          "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
+          "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`."
+        },
+        {
+          "name": "ContentSortOrder",
+          "kind": "type",
+          "line": 785,
+          "exported": true,
+          "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
+          "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema."
+        },
+        {
+          "name": "ListDatabaseChildrenParams",
+          "kind": "interface",
+          "line": 798,
+          "exported": true,
+          "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
+          "jsdoc": "Parameters for listing direct children of a database."
+        },
+        {
+          "name": "DatabaseOperation",
+          "kind": "interface",
+          "line": 805,
+          "exported": true,
+          "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
+          "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`."
+        },
+        {
+          "name": "DatabaseOperationsResponse",
+          "kind": "interface",
+          "line": 811,
+          "exported": true,
+          "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
+          "jsdoc": "Response shape for `GET /databases/{id}/operations`."
+        },
+        {
+          "name": "GetDatabaseParams",
+          "kind": "interface",
+          "line": 820,
+          "exported": true,
+          "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
+          "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
+        },
+        {
+          "name": "ListDatabasePropertiesParams",
+          "kind": "interface",
+          "line": 828,
+          "exported": true,
+          "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
+          "jsdoc": "Parameters for listing content properties on a database."
+        },
+        {
+          "name": "UpdateDatabasePropertyData",
+          "kind": "interface",
+          "line": 842,
+          "exported": true,
+          "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
+          "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`."
+        },
+        {
+          "name": "UpdateDatabaseClassificationLevelData",
+          "kind": "interface",
+          "line": 855,
+          "exported": true,
+          "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+          "jsdoc": "Request body for `PUT /databases/{id}/classification-level`."
+        },
+        {
+          "name": "ResetDatabaseClassificationLevelData",
+          "kind": "interface",
+          "line": 867,
+          "exported": true,
+          "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
+          "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`."
         }
       ]
     },
@@ -6433,6 +6951,78 @@
             {
               "exported": "ConvertContentIdsToTypesResponse",
               "original": "ConvertContentIdsToTypesResponse"
+            },
+            {
+              "exported": "Database",
+              "original": "Database"
+            },
+            {
+              "exported": "CreateDatabaseData",
+              "original": "CreateDatabaseData"
+            },
+            {
+              "exported": "CreateDatabaseParams",
+              "original": "CreateDatabaseParams"
+            },
+            {
+              "exported": "GetDatabaseParams",
+              "original": "GetDatabaseParams"
+            },
+            {
+              "exported": "DatabaseAncestor",
+              "original": "DatabaseAncestor"
+            },
+            {
+              "exported": "DatabaseAncestorsResponse",
+              "original": "DatabaseAncestorsResponse"
+            },
+            {
+              "exported": "ListDatabaseAncestorsParams",
+              "original": "ListDatabaseAncestorsParams"
+            },
+            {
+              "exported": "DatabaseDescendant",
+              "original": "DatabaseDescendant"
+            },
+            {
+              "exported": "ListDatabaseDescendantsParams",
+              "original": "ListDatabaseDescendantsParams"
+            },
+            {
+              "exported": "DatabaseChild",
+              "original": "DatabaseChild"
+            },
+            {
+              "exported": "ListDatabaseChildrenParams",
+              "original": "ListDatabaseChildrenParams"
+            },
+            {
+              "exported": "ContentSortOrder",
+              "original": "ContentSortOrder"
+            },
+            {
+              "exported": "DatabaseOperation",
+              "original": "DatabaseOperation"
+            },
+            {
+              "exported": "DatabaseOperationsResponse",
+              "original": "DatabaseOperationsResponse"
+            },
+            {
+              "exported": "ListDatabasePropertiesParams",
+              "original": "ListDatabasePropertiesParams"
+            },
+            {
+              "exported": "UpdateDatabasePropertyData",
+              "original": "UpdateDatabasePropertyData"
+            },
+            {
+              "exported": "UpdateDatabaseClassificationLevelData",
+              "original": "UpdateDatabaseClassificationLevelData"
+            },
+            {
+              "exported": "ResetDatabaseClassificationLevelData",
+              "original": "ResetDatabaseClassificationLevelData"
             },
             {
               "exported": "SpacePermission",
