@@ -329,6 +329,31 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/pages/12345/labels` },
     expectStdout: ['"name": "production"'],
   },
+
+  // ─── classification-levels ────────────────────────────────────────────
+  {
+    name: 'classification-levels list',
+    argv: ['confluence', 'classification-levels', 'list'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/classification-levels`,
+        body: [
+          {
+            id: 'cl-1',
+            status: 'PUBLISHED',
+            order: 1,
+            name: 'Public',
+            description: 'Anyone',
+            guideline: 'No restrictions',
+            color: 'GREEN',
+          },
+        ],
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/classification-levels` },
+    expectStdout: ['"name": "Public"', '"color": "GREEN"'],
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {

@@ -245,9 +245,6 @@
 - [ ] 🟡 🖥️ API: B084 Confluence: add CLI + skill for GET /blogposts/{id}/versions
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B085 Confluence: expose GET /classification-levels
-  - files: `src/confluence/resources/classification-levels.ts`, `test/confluence/classification-levels.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B086 Confluence: expose GET /comments/{comment-id}/properties
   - files: `src/confluence/resources/comments.ts`, `test/confluence/comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

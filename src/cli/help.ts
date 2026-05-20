@@ -61,17 +61,19 @@ EXIT CODES:
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
-  pages         list, get, create, update, delete
-  spaces        list, get
-  blog-posts    list, get, create, update, delete
-  comments      list, get, create, delete
-  attachments   list, get, delete
-  labels        list
+  pages                  list, get, create, update, delete
+  spaces                 list, get
+  blog-posts             list, get, create, update, delete
+  comments               list, get, create, delete
+  attachments            list, get, delete
+  labels                 list
+  classification-levels  list
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
   atlas confluence pages get 456
   atlas confluence spaces list
+  atlas confluence classification-levels list
 `;
 
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3

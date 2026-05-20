@@ -102,6 +102,8 @@ export type {
   UpdateTaskData,
   ContentVersion,
   ListVersionsParams,
+  ClassificationLevel,
+  ListClassificationLevelsResponse,
 } from './confluence/index.js';
 
 // Jira
