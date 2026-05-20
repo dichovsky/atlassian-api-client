@@ -710,13 +710,13 @@
 - [ ] 🔴 🧩 API: B268 Jira: expose PUT /rest/agile/1.0/issue/rank
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B316 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}
+- [x] 🔴 🧩 API: B316 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}
   - files: `src/jira/resources/sprints.ts`, `test/jira/sprints.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B903 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/issue
+- [x] 🔴 🧩 API: B903 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/issue
   - files: `src/jira/resources/sprints.ts`, `test/jira/sprints.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B318 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}/issue
+- [x] 🔴 🧩 API: B318 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}/issue
   - files: `src/jira/resources/sprints.ts`, `test/jira/sprints.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B319 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/properties

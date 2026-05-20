@@ -106,7 +106,7 @@ describe('atlas — unknown command refusal', () => {
   });
 
   it('rejects an unknown jira resource', async () => {
-    const result = await runAtlas(['jira', 'sprints', 'list']);
+    const result = await runAtlas(['jira', 'epics', 'list']);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain('Unknown Jira resource');
   });
