@@ -104,6 +104,7 @@ RESOURCES:
   issue-types   list, get
   priorities    list, get
   statuses      list
+  boards        list-sprints, sprint-issues
 
 EXAMPLES:
   atlas jira issues get PROJ-123

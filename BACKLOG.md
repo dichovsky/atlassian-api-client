@@ -665,10 +665,10 @@
 - [ ] 🔴 🧩 API: B256 Jira: expose GET /rest/agile/1.0/board/{boardId}/reports
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B257 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint
+- [x] 🔴 🧩 API: B257 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B900 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint/{sprintId}/issue
+- [x] 🔴 🧩 API: B900 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint/{sprintId}/issue
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B258 Jira: expose GET /rest/agile/1.0/board/{boardId}/version

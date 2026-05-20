@@ -159,6 +159,10 @@ const jiraPrioritiesMock = {
 const jiraStatusesMock = {
   list: vi.fn(),
 };
+const jiraBoardsMock = {
+  listSprints: vi.fn(),
+  getSprintIssues: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -170,6 +174,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueTypes: jiraIssueTypesMock,
       priorities: jiraPrioritiesMock,
       statuses: jiraStatusesMock,
+      boards: jiraBoardsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -2292,6 +2297,133 @@ describe('executeJiraCommand', () => {
     it('statuses unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('statuses', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown statuses action',
+      );
+    });
+  });
+
+  // ── boards ────────────────────────────────────────────────────────────────
+
+  describe('boards resource', () => {
+    it('boards list-sprints calls client.boards.listSprints with boardId', async () => {
+      // Arrange
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraBoardsMock.listSprints.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('boards', 'list-sprints', ['1']), GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.listSprints).toHaveBeenCalledWith(1, expect.objectContaining({}));
+      expect(result).toEqual(payload);
+    });
+
+    it('boards list-sprints passes state, start-at, max-results', async () => {
+      // Arrange
+      jiraBoardsMock.listSprints.mockResolvedValue({ values: [] });
+      const parsed = cmd('boards', 'list-sprints', ['1'], {
+        state: 'active,closed',
+        'start-at': '10',
+        'max-results': '25',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.listSprints).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ state: 'active,closed', startAt: 10, maxResults: 25 }),
+      );
+    });
+
+    it('boards list-sprints throws when boardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('boards', 'list-sprints', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: boardId',
+      );
+    });
+
+    it('boards list-sprints throws when boardId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list-sprints', ['abc']), GLOBALS),
+      ).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('boards list-sprints throws when --max-results is invalid', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'list-sprints', ['1'], { 'max-results': '0' }), GLOBALS),
+      ).rejects.toThrow('--max-results must be a positive integer');
+    });
+
+    it('boards sprint-issues calls client.boards.getSprintIssues with boardId and sprintId', async () => {
+      // Arrange
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraBoardsMock.getSprintIssues.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('boards', 'sprint-issues', ['1', '10']), GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.getSprintIssues).toHaveBeenCalledWith(
+        1,
+        10,
+        expect.objectContaining({}),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('boards sprint-issues passes jql, fields, start-at, max-results', async () => {
+      // Arrange
+      jiraBoardsMock.getSprintIssues.mockResolvedValue({ values: [] });
+      const parsed = cmd('boards', 'sprint-issues', ['1', '10'], {
+        jql: 'status = Done',
+        fields: 'summary,status',
+        'start-at': '5',
+        'max-results': '20',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraBoardsMock.getSprintIssues).toHaveBeenCalledWith(
+        1,
+        10,
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          startAt: 5,
+          maxResults: 20,
+        }),
+      );
+    });
+
+    it('boards sprint-issues throws when boardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('boards', 'sprint-issues', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: boardId',
+      );
+    });
+
+    it('boards sprint-issues throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'sprint-issues', ['1']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('boards sprint-issues throws when boardId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'sprint-issues', ['0', '10']), GLOBALS),
+      ).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('boards sprint-issues throws when sprintId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'sprint-issues', ['1', 'abc']), GLOBALS),
+      ).rejects.toThrow('sprintId must be a positive integer');
+    });
+
+    it('boards unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('boards', 'nope', ['1']), GLOBALS)).rejects.toThrow(
+        'Unknown boards action',
       );
     });
   });

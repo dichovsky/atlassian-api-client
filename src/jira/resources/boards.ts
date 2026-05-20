@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import type { Sprint } from './sprints.js';
 
 export interface Board {
   readonly id: number;
@@ -36,6 +37,12 @@ export interface ListBoardIssuesParams {
   readonly maxResults?: number;
   readonly jql?: string;
   readonly fields?: string[];
+}
+
+export interface ListBoardSprintsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly state?: string; // comma-separated: 'future', 'active', 'closed'
 }
 
 export class BoardsResource {
@@ -96,6 +103,59 @@ export class BoardsResource {
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
       path: `${this.baseUrl}/board/${boardId}/issue`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** List sprints associated with a board (B257). */
+  async listSprints(
+    boardId: number,
+    params?: ListBoardSprintsParams,
+  ): Promise<OffsetPaginatedResponse<Sprint>> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.state !== undefined) query['state'] = params.state;
+    }
+
+    const response = await this.transport.request<OffsetPaginatedResponse<Sprint>>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/sprint`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** List issues for a sprint within a board (B900). */
+  async getSprintIssues(
+    boardId: number,
+    sprintId: number,
+    params?: ListBoardIssuesParams,
+  ): Promise<OffsetPaginatedResponse<BoardIssue>> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
+    }
+
+    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+      method: 'GET',
+      path: `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
       query,
     });
     return response.data;

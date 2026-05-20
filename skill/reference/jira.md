@@ -13,6 +13,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issue-types` | `list`, `get`                                                    |
 | `priorities`  | `list`, `get`                                                    |
 | `statuses`    | `list`                                                           |
+| `boards`      | `list-sprints`, `sprint-issues`                                  |
 
 ## `issues`
 
@@ -96,6 +97,34 @@ for await (const issue of paginateSearch(client, { jql: 'project = PROJ' })) {
 - `search` returns `{ issues: [...], total, startAt, maxResults }`. Check `total > startAt + maxResults` to know if more pages exist.
 - `transitions` returns `{ transitions: [{ id, name, to: { name } }, ...] }`. The `id` is what you pass to `--transition-id`.
 - `users me` returns the caller's `accountId`, `emailAddress` (if visible to caller), and `displayName`.
+
+## `boards`
+
+List sprints and sprint issues scoped to a specific Agile board.
+
+| Action          | Positionals            | Required | Optional flags                                     |
+| --------------- | ---------------------- | -------- | -------------------------------------------------- |
+| `list-sprints`  | `<boardId>`            | —        | `--state`, `--start-at`, `--max-results`           |
+| `sprint-issues` | `<boardId> <sprintId>` | —        | `--jql`, `--fields`, `--start-at`, `--max-results` |
+
+- `--state` accepts a comma-separated list of sprint states: `future`, `active`, `closed`. Example: `--state active,closed`.
+- `--fields` is comma-separated, e.g. `--fields summary,status,assignee`.
+- Both `boardId` and `sprintId` are numeric IDs (not names).
+- `--start-at` is the 0-based offset for pagination.
+
+```sh
+# List all active sprints on board 1
+atlas jira boards list-sprints 1 --state active
+
+# List active and future sprints, page 2
+atlas jira boards list-sprints 1 --state active,future --start-at 50 --max-results 50
+
+# List issues in sprint 10 on board 1
+atlas jira boards sprint-issues 1 10
+
+# List issues with JQL filter and field selection
+atlas jira boards sprint-issues 1 10 --jql "status = 'In Progress'" --fields summary,status,assignee
+```
 
 ## Errors specific to Jira
 
