@@ -322,9 +322,9 @@ describe('EpicResource', () => {
     });
 
     it('throws ValidationError when both rankBeforeEpic and rankAfterEpic are provided', async () => {
-      await expect(
-        epic.rank('42', { rankBeforeEpic: '1', rankAfterEpic: '2' }),
-      ).rejects.toThrow('rankBeforeEpic and rankAfterEpic are mutually exclusive');
+      await expect(epic.rank('42', { rankBeforeEpic: '1', rankAfterEpic: '2' })).rejects.toThrow(
+        'rankBeforeEpic and rankAfterEpic are mutually exclusive',
+      );
     });
   });
 
