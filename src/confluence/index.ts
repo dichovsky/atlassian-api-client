@@ -43,6 +43,9 @@ export type {
   UpdateTaskData,
   ContentVersion,
   ListVersionsParams,
+  AppProperty,
+  ListAppPropertiesParams,
+  UpsertAppPropertyData,
   ClassificationLevel,
   ListClassificationLevelsResponse,
 } from './types.js';
@@ -58,4 +61,5 @@ export { CustomContentResource } from './resources/custom-content.js';
 export { WhiteboardsResource } from './resources/whiteboards.js';
 export { TasksResource } from './resources/tasks.js';
 export { VersionsResource } from './resources/versions.js';
+export { AppResource } from './resources/app.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';

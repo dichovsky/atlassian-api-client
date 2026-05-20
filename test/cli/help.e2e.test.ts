@@ -62,6 +62,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   attachments: 'executeAttachments',
   labels: 'executeLabels',
   'admin-key': 'executeAdminKey',
+  app: 'executeApp',
   'classification-levels': 'executeClassificationLevels',
   issues: 'executeIssues',
   projects: 'executeProjects',

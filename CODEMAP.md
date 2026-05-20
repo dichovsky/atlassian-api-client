@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "a4e52a030e01d24e8ee40232d6f65542528de8e1eac0dbc01e10a9fd79dba178",
+  "sourceHash": "1d2b8f892127147b7960fa56e0964744d2df4f77d794a5ff2f10c5acff73de2d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -152,15 +152,6 @@
       "typeOnly": true
     },
     {
-      "name": "ClassificationLevel",
-      "kind": "interface",
-      "file": "src/confluence/types.ts",
-      "line": 467,
-      "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
-      "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations.",
-      "typeOnly": true
-    },
-    {
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
@@ -173,7 +164,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 19,
+      "line": 18,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -191,7 +182,7 @@
       "name": "ConfluenceListTasksParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 414,
+      "line": 447,
       "signature": "export interface ListTasksParams { readonly 'body-format'?: BodyFormat; readonly includeBlankTasks?: boolean; readonly s…",
       "jsdoc": "Parameters for listing Confluence tasks.",
       "typeOnly": true,
@@ -201,7 +192,7 @@
       "name": "ConfluenceTask",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 395,
+      "line": 428,
       "signature": "export interface ConfluenceTask { readonly id: string; readonly localId?: string; readonly spaceId?: string; readonly pa…",
       "jsdoc": "Confluence Task.",
       "typeOnly": true
@@ -237,7 +228,7 @@
       "name": "ContentVersion",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 446,
+      "line": 479,
       "signature": "export interface ContentVersion { readonly number: number; readonly message?: string; readonly minorEdit?: boolean; read…",
       "jsdoc": "Confluence Content Version.",
       "typeOnly": true
@@ -264,7 +255,7 @@
       "name": "CreateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 342,
+      "line": 375,
       "signature": "export interface CreateCustomContentData { readonly type: string; readonly status?: 'current' | 'draft'; readonly spaceI…",
       "jsdoc": "Request body for creating a custom content item.",
       "typeOnly": true
@@ -350,7 +341,7 @@
       "name": "CreateWhiteboardData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 384,
+      "line": 417,
       "signature": "export interface CreateWhiteboardData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; r…",
       "jsdoc": "Request body for creating a whiteboard.",
       "typeOnly": true
@@ -377,7 +368,7 @@
       "name": "CustomContent",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 307,
+      "line": 340,
       "signature": "export interface CustomContent { readonly id: string; readonly type: string; readonly status: string; readonly title?: s…",
       "jsdoc": "Confluence Custom Content item.",
       "typeOnly": true
@@ -461,7 +452,7 @@
       "name": "GetCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 336,
+      "line": 369,
       "signature": "export interface GetCustomContentParams { readonly 'body-format'?: BodyFormat; readonly version?: number; }",
       "jsdoc": "Parameters for retrieving a single custom content item.",
       "typeOnly": true
@@ -488,7 +479,7 @@
       "name": "GetTaskParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 434,
+      "line": 467,
       "signature": "export interface GetTaskParams { readonly 'body-format'?: BodyFormat; }",
       "jsdoc": "Parameters for retrieving a single Confluence task.",
       "typeOnly": true
@@ -649,15 +640,6 @@
       "typeOnly": true
     },
     {
-      "name": "ListClassificationLevelsResponse",
-      "kind": "type",
-      "file": "src/confluence/types.ts",
-      "line": 492,
-      "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
-      "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}.",
-      "typeOnly": true
-    },
-    {
       "name": "ListContentPropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -670,7 +652,7 @@
       "name": "ListCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 323,
+      "line": 356,
       "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly spaceId?: string; read…",
       "jsdoc": "Parameters for listing custom content items.",
       "typeOnly": true
@@ -774,7 +756,7 @@
       "name": "ListVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 455,
+      "line": 488,
       "signature": "export interface ListVersionsParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for listing content versions.",
       "typeOnly": true
@@ -1111,7 +1093,7 @@
       "name": "UpdateCustomContentData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 356,
+      "line": 389,
       "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current' | 'dra…",
       "jsdoc": "Request body for updating a custom content item.",
       "typeOnly": true
@@ -1179,7 +1161,7 @@
       "name": "UpdateTaskData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 439,
+      "line": 472,
       "signature": "export interface UpdateTaskData { readonly status: 'incomplete' | 'complete'; }",
       "jsdoc": "Request body for updating a Confluence task.",
       "typeOnly": true
@@ -1213,7 +1195,7 @@
       "name": "Whiteboard",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 371,
+      "line": 404,
       "signature": "export interface Whiteboard { readonly id: string; readonly title?: string; readonly status?: string; readonly spaceId?:…",
       "jsdoc": "Confluence Whiteboard.",
       "typeOnly": true
@@ -1354,79 +1336,80 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 34,
+          "line": 32,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 83,
+          "line": 81,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 97,
+          "line": 95,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 139,
+          "line": 137,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 183,
+          "line": 181,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
-        },
-        {
-          "name": "executeAdminKey",
-          "kind": "function",
-          "line": 199,
-          "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 220,
+          "line": 197,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeClassificationLevels",
+          "name": "executeApp",
           "kind": "function",
-          "line": 231,
-          "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+          "line": 208,
+          "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "parseJsonValue",
+          "kind": "function",
+          "line": 240,
+          "signature": "function parseJsonValue(raw: string): unknown",
+          "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 243,
+          "line": 248,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 248,
+          "line": 253,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 253,
+          "line": 258,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 257,
+          "line": 262,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 266,
+          "line": 271,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1764,7 +1747,7 @@
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
           "line": 61,
-          "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages                  list, get,…"
+          "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages         list, get, create, …"
         },
         {
           "name": "JIRA_HELP",
@@ -2047,7 +2030,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 19,
+          "line": 18,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2055,72 +2038,67 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 20
+              "line": 19
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 21
+              "line": 20
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 22
+              "line": 21
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 23
+              "line": 22
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 24
+              "line": 23
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 25
+              "line": 24
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 27
+              "line": 26
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 29
+              "line": 28
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 31
+              "line": 30
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 33
+              "line": 32
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 35
+              "line": 34
             },
             {
-              "name": "classificationLevels",
+              "name": "app",
               "kind": "property",
-              "line": 37
-            },
-            {
-              "name": "adminKey",
-              "kind": "property",
-              "line": 39
+              "line": 36
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 41
+              "line": 38
             }
           ]
         }
@@ -2129,10 +2107,9 @@
         "../core/config.js",
         "../core/transport.js",
         "../core/types.js",
-        "./resources/admin-key.js",
+        "./resources/app.js",
         "./resources/attachments.js",
         "./resources/blog-posts.js",
-        "./resources/classification-levels.js",
         "./resources/comments.js",
         "./resources/content-properties.js",
         "./resources/custom-content.js",
@@ -2171,6 +2148,17 @@
         },
         {
           "kind": "named",
+          "from": "./resources/app.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "AppResource",
+              "original": "AppResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/attachments.js",
           "typeOnly": false,
           "names": [
@@ -2188,17 +2176,6 @@
             {
               "exported": "BlogPostsResource",
               "original": "BlogPostsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/classification-levels.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ClassificationLevelsResource",
-              "original": "ClassificationLevelsResource"
             }
           ]
         },
@@ -2479,52 +2456,68 @@
               "original": "ListVersionsParams"
             },
             {
-              "exported": "ClassificationLevel",
-              "original": "ClassificationLevel"
+              "exported": "AppProperty",
+              "original": "AppProperty"
             },
             {
-              "exported": "ListClassificationLevelsResponse",
-              "original": "ListClassificationLevelsResponse"
+              "exported": "ListAppPropertiesParams",
+              "original": "ListAppPropertiesParams"
+            },
+            {
+              "exported": "UpsertAppPropertyData",
+              "original": "UpsertAppPropertyData"
             }
           ]
         }
       ]
     },
     {
-      "path": "src/confluence/resources/admin-key.ts",
+      "path": "src/confluence/resources/app.ts",
       "symbols": [
         {
-          "name": "AdminKeyResource",
+          "name": "AppResource",
           "kind": "class",
-          "line": 15,
+          "line": 17,
           "exported": true,
-          "signature": "export class AdminKeyResource",
-          "jsdoc": "Confluence Admin Key resource.",
+          "signature": "export class AppResource",
+          "jsdoc": "Resource for Confluence Forge / Connect app properties.",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 16
+              "line": 18
             },
             {
-              "name": "get",
+              "name": "listProperties",
               "kind": "method",
-              "line": 22
+              "line": 24
             },
             {
-              "name": "create",
+              "name": "getProperty",
               "kind": "method",
-              "line": 38
+              "line": 41
             },
             {
-              "name": "delete",
+              "name": "upsertProperty",
               "kind": "method",
-              "line": 48
+              "line": 58
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 68
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 76
             }
           ]
         }
       ],
       "imports": [
+        "../../core/pagination.js",
+        "../../core/path.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -2631,35 +2624,6 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/types.js",
-        "../types.js"
-      ]
-    },
-    {
-      "path": "src/confluence/resources/classification-levels.ts",
-      "symbols": [
-        {
-          "name": "ClassificationLevelsResource",
-          "kind": "class",
-          "line": 12,
-          "exported": true,
-          "signature": "export class ClassificationLevelsResource",
-          "jsdoc": "Resource for the Confluence v2 classification-levels API.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 13
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 19
-            }
-          ]
-        }
-      ],
-      "imports": [
         "../../core/types.js",
         "../types.js"
       ]
@@ -3495,9 +3459,33 @@
           "jsdoc": "Request body for updating a content property on a page."
         },
         {
+          "name": "AppProperty",
+          "kind": "interface",
+          "line": 311,
+          "exported": true,
+          "signature": "export interface AppProperty { readonly key: string; readonly value: unknown; readonly id?: string; readonly version?: C…",
+          "jsdoc": "Confluence app property. Returned by the v2 `/app/properties` endpoints. `value` is whatever JSON the app stored — could be a string, number, boolean, array, or arbitrary object."
+        },
+        {
+          "name": "ListAppPropertiesParams",
+          "kind": "interface",
+          "line": 321,
+          "exported": true,
+          "signature": "export interface ListAppPropertiesParams { readonly limit?: number; readonly cursor?: string; }",
+          "jsdoc": "Parameters for listing app properties (cursor-paginated)."
+        },
+        {
+          "name": "UpsertAppPropertyData",
+          "kind": "interface",
+          "line": 333,
+          "exported": true,
+          "signature": "export interface UpsertAppPropertyData { readonly value: unknown; }",
+          "jsdoc": "Body for creating or updating an app property."
+        },
+        {
           "name": "CustomContent",
           "kind": "interface",
-          "line": 307,
+          "line": 340,
           "exported": true,
           "signature": "export interface CustomContent { readonly id: string; readonly type: string; readonly status: string; readonly title?: s…",
           "jsdoc": "Confluence Custom Content item."
@@ -3505,7 +3493,7 @@
         {
           "name": "ListCustomContentParams",
           "kind": "interface",
-          "line": 323,
+          "line": 356,
           "exported": true,
           "signature": "export interface ListCustomContentParams { readonly type?: string; readonly id?: string; readonly spaceId?: string; read…",
           "jsdoc": "Parameters for listing custom content items."
@@ -3513,7 +3501,7 @@
         {
           "name": "GetCustomContentParams",
           "kind": "interface",
-          "line": 336,
+          "line": 369,
           "exported": true,
           "signature": "export interface GetCustomContentParams { readonly 'body-format'?: BodyFormat; readonly version?: number; }",
           "jsdoc": "Parameters for retrieving a single custom content item."
@@ -3521,7 +3509,7 @@
         {
           "name": "CreateCustomContentData",
           "kind": "interface",
-          "line": 342,
+          "line": 375,
           "exported": true,
           "signature": "export interface CreateCustomContentData { readonly type: string; readonly status?: 'current' | 'draft'; readonly spaceI…",
           "jsdoc": "Request body for creating a custom content item."
@@ -3529,7 +3517,7 @@
         {
           "name": "UpdateCustomContentData",
           "kind": "interface",
-          "line": 356,
+          "line": 389,
           "exported": true,
           "signature": "export interface UpdateCustomContentData { readonly id: string; readonly type: string; readonly status: 'current' | 'dra…",
           "jsdoc": "Request body for updating a custom content item."
@@ -3537,7 +3525,7 @@
         {
           "name": "Whiteboard",
           "kind": "interface",
-          "line": 371,
+          "line": 404,
           "exported": true,
           "signature": "export interface Whiteboard { readonly id: string; readonly title?: string; readonly status?: string; readonly spaceId?:…",
           "jsdoc": "Confluence Whiteboard."
@@ -3545,7 +3533,7 @@
         {
           "name": "CreateWhiteboardData",
           "kind": "interface",
-          "line": 384,
+          "line": 417,
           "exported": true,
           "signature": "export interface CreateWhiteboardData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; r…",
           "jsdoc": "Request body for creating a whiteboard."
@@ -3553,7 +3541,7 @@
         {
           "name": "ConfluenceTask",
           "kind": "interface",
-          "line": 395,
+          "line": 428,
           "exported": true,
           "signature": "export interface ConfluenceTask { readonly id: string; readonly localId?: string; readonly spaceId?: string; readonly pa…",
           "jsdoc": "Confluence Task."
@@ -3561,7 +3549,7 @@
         {
           "name": "ListTasksParams",
           "kind": "interface",
-          "line": 414,
+          "line": 447,
           "exported": true,
           "signature": "export interface ListTasksParams { readonly 'body-format'?: BodyFormat; readonly includeBlankTasks?: boolean; readonly s…",
           "jsdoc": "Parameters for listing Confluence tasks."
@@ -3569,7 +3557,7 @@
         {
           "name": "GetTaskParams",
           "kind": "interface",
-          "line": 434,
+          "line": 467,
           "exported": true,
           "signature": "export interface GetTaskParams { readonly 'body-format'?: BodyFormat; }",
           "jsdoc": "Parameters for retrieving a single Confluence task."
@@ -3577,7 +3565,7 @@
         {
           "name": "UpdateTaskData",
           "kind": "interface",
-          "line": 439,
+          "line": 472,
           "exported": true,
           "signature": "export interface UpdateTaskData { readonly status: 'incomplete' | 'complete'; }",
           "jsdoc": "Request body for updating a Confluence task."
@@ -3585,7 +3573,7 @@
         {
           "name": "ContentVersion",
           "kind": "interface",
-          "line": 446,
+          "line": 479,
           "exported": true,
           "signature": "export interface ContentVersion { readonly number: number; readonly message?: string; readonly minorEdit?: boolean; read…",
           "jsdoc": "Confluence Content Version."
@@ -3593,42 +3581,10 @@
         {
           "name": "ListVersionsParams",
           "kind": "interface",
-          "line": 455,
+          "line": 488,
           "exported": true,
           "signature": "export interface ListVersionsParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for listing content versions."
-        },
-        {
-          "name": "ClassificationLevel",
-          "kind": "interface",
-          "line": 467,
-          "exported": true,
-          "signature": "export interface ClassificationLevel { readonly id: string; readonly status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'; readon…",
-          "jsdoc": "A unit of data classification defined by an organization. A classification level may be associated with specific storage and handling requirements or expectations."
-        },
-        {
-          "name": "ListClassificationLevelsResponse",
-          "kind": "type",
-          "line": 492,
-          "exported": true,
-          "signature": "export type ListClassificationLevelsResponse = readonly ClassificationLevel[];",
-          "jsdoc": "Response shape for `GET /classification-levels`. The endpoint returns a bare JSON array of {@link ClassificationLevel}."
-        },
-        {
-          "name": "AdminKey",
-          "kind": "interface",
-          "line": 497,
-          "exported": true,
-          "signature": "export interface AdminKey { readonly createdAt?: string; readonly expireAt?: string; readonly durationInHours?: number; …",
-          "jsdoc": "Confluence Admin Key."
-        },
-        {
-          "name": "CreateAdminKeyData",
-          "kind": "interface",
-          "line": 512,
-          "exported": true,
-          "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
-          "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
         }
       ]
     },
@@ -5823,14 +5779,6 @@
             {
               "exported": "ListVersionsParams",
               "original": "ListVersionsParams"
-            },
-            {
-              "exported": "ClassificationLevel",
-              "original": "ClassificationLevel"
-            },
-            {
-              "exported": "ListClassificationLevelsResponse",
-              "original": "ListClassificationLevelsResponse"
             }
           ]
         },
