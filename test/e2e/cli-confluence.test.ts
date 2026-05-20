@@ -330,6 +330,49 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"name": "production"'],
   },
 
+  // ─── admin-key ────────────────────────────────────────────────────────
+  {
+    name: 'admin-key get',
+    argv: ['confluence', 'admin-key', 'get'],
+    routes: [{ method: 'GET', path: `${P}/admin-key`, body: F.adminKey }],
+    expectCall: { method: 'GET', pathname: `${P}/admin-key` },
+    expectStdout: ['"durationInHours": 1'],
+  },
+  {
+    name: 'admin-key create (no flags)',
+    argv: ['confluence', 'admin-key', 'create'],
+    routes: [{ method: 'POST', path: `${P}/admin-key`, status: 201, body: F.adminKey }],
+    expectCall: { method: 'POST', pathname: `${P}/admin-key` },
+    expectBody: (body) => {
+      // CLI omits a body when --duration-hours is not supplied; the fetch mock
+      // reports that as null/undefined.
+      expect(body == null).toBe(true);
+    },
+  },
+  {
+    name: 'admin-key create --duration-hours',
+    argv: ['confluence', 'admin-key', 'create', '--duration-hours', '4'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/admin-key`,
+        status: 201,
+        body: { ...F.adminKey, durationInHours: 4 },
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/admin-key` },
+    expectBody: (body) => {
+      expect(body).toEqual({ durationInHours: 4 });
+    },
+  },
+  {
+    name: 'admin-key delete',
+    argv: ['confluence', 'admin-key', 'delete'],
+    routes: [{ method: 'DELETE', path: `${P}/admin-key`, status: 204, body: undefined }],
+    expectCall: { method: 'DELETE', pathname: `${P}/admin-key` },
+    expectStdout: ['"deleted": true'],
+  },
+
   // ─── classification-levels ────────────────────────────────────────────
   {
     name: 'classification-levels list',

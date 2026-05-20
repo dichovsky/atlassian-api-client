@@ -60,6 +60,11 @@ const confluenceAttachmentsMock = {
 const confluenceLabelsMock = {
   listForPage: vi.fn(),
 };
+const confluenceAdminKeyMock = {
+  get: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+};
 const confluenceClassificationLevelsMock = {
   list: vi.fn(),
 };
@@ -73,6 +78,7 @@ vi.mock('../../src/confluence/client.js', () => {
       comments: confluenceCommentsMock,
       attachments: confluenceAttachmentsMock,
       labels: confluenceLabelsMock,
+      adminKey: confluenceAdminKeyMock,
       classificationLevels: confluenceClassificationLevelsMock,
     };
   });
@@ -857,6 +863,78 @@ describe('executeConfluenceCommand', () => {
     it('labels unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('labels', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown labels action',
+      );
+    });
+  });
+
+  // ── admin-key ─────────────────────────────────────────────────────────────
+
+  describe('admin-key resource', () => {
+    it('admin-key get calls client.adminKey.get', async () => {
+      // Arrange
+      const key = { createdAt: '2026-05-20T12:00:00Z', durationInHours: 1 };
+      confluenceAdminKeyMock.get.mockResolvedValue(key);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('admin-key', 'get'), GLOBALS);
+
+      // Assert
+      expect(confluenceAdminKeyMock.get).toHaveBeenCalledWith();
+      expect(result).toEqual(key);
+    });
+
+    it('admin-key create with no flags passes undefined', async () => {
+      // Arrange
+      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 1 });
+
+      // Act
+      await executeConfluenceCommand(cmd('admin-key', 'create'), GLOBALS);
+
+      // Assert
+      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith(undefined);
+    });
+
+    it('admin-key create with --duration-hours passes parsed integer', async () => {
+      // Arrange
+      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 4 });
+      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '4' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith({ durationInHours: 4 });
+    });
+
+    it('admin-key create throws when --duration-hours is not a positive integer', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--duration-hours must be a positive integer',
+      );
+    });
+
+    it('admin-key create throws when --duration-hours is NaN', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--duration-hours must be a positive integer',
+      );
+    });
+
+    it('admin-key delete calls client.adminKey.delete and returns { deleted: true }', async () => {
+      // Arrange
+      confluenceAdminKeyMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('admin-key', 'delete'), GLOBALS);
+
+      // Assert
+      expect(confluenceAdminKeyMock.delete).toHaveBeenCalledWith();
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('admin-key unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('admin-key', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown admin-key action',
       );
     });
   });
