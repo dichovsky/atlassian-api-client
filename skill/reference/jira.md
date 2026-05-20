@@ -15,6 +15,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `statuses`    | `list`                                                                                                                                                           |
 | `boards`      | `list-sprints`, `sprint-issues`                                                                                                                                  |
 | `sprints`     | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap` |
+| `epic`        | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                 |
 
 ## `issues`
 
@@ -211,6 +212,71 @@ atlas jira sprints delete-property 42 my-flag
 
 # Swap the rank of sprint 42 with sprint 99
 atlas jira sprints swap 42 --with 99
+```
+
+## `epic`
+
+Manage Agile epics. Supports get, partial update (POST patch semantics), issue assignment, ranking, and epic-less issue queries.
+
+| Action          | Positionals     | Required flags | Optional flags                                     |
+| --------------- | --------------- | -------------- | -------------------------------------------------- |
+| `get`           | `<epicIdOrKey>` | —              | —                                                  |
+| `update`        | `<epicIdOrKey>` | —              | `--name`, `--summary`, `--color`, `--done`         |
+| `issues`        | `<epicIdOrKey>` | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `move-issues`   | `<epicIdOrKey>` | `--issues`     | —                                                  |
+| `rank`          | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                        |
+| `issues-none`   | —               | —              | `--jql`, `--fields`, `--start-at`, `--max-results` |
+| `remove-issues` | —               | `--issues`     | —                                                  |
+
+**Notes:**
+
+- `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`).
+- `update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
+- `--color` accepts the color key string, e.g. `color_1`, `color_2`. Check your Atlassian instance for valid values.
+- `--done` is a boolean flag; passing it sets `done: true` on the epic.
+- `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`.
+- `rank` requires exactly one of `--before` or `--after` (mutually exclusive).
+- `--before` / `--after` accept an epic ID or key to rank the current epic before or after.
+- `--custom-field` is an optional numeric ID of the rank custom field.
+- `issues-none` returns all issues that are not assigned to any epic.
+- `remove-issues` moves the specified issues out of their epics (sets epic link to none).
+
+```sh
+# Get an epic by ID
+atlas jira epic get 42
+
+# Get an epic by key
+atlas jira epic get PROJ-42
+
+# Rename an epic
+atlas jira epic update 42 --name "New Epic Name"
+
+# Mark an epic as done and set summary
+atlas jira epic update PROJ-42 --summary "All done" --done
+
+# List issues in an epic
+atlas jira epic issues 42
+
+# List issues in an epic with JQL filter
+atlas jira epic issues 42 --jql "status != Done" --fields summary,status,assignee
+
+# Move issues into an epic
+atlas jira epic move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3
+
+# Rank epic 42 before epic 99
+atlas jira epic rank 42 --before 99
+
+# Rank epic 42 after epic PROJ-5
+atlas jira epic rank 42 --after PROJ-5
+
+# List all issues without an epic
+atlas jira epic issues-none
+
+# List issues without an epic with pagination
+atlas jira epic issues-none --start-at 50 --max-results 50
+
+# Remove issues from their epics
+atlas jira epic remove-issues --issues PROJ-10,PROJ-11
 ```
 
 ## Errors specific to Jira

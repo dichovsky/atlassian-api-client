@@ -68,6 +68,20 @@ const GLOBAL_OPTIONS = {
   'created-at-to': { type: 'string' as const },
   'due-at-from': { type: 'string' as const },
   'due-at-to': { type: 'string' as const },
+  // sprint/epic options
+  name: { type: 'string' as const },
+  goal: { type: 'string' as const },
+  'board-id': { type: 'string' as const },
+  'start-date': { type: 'string' as const },
+  'end-date': { type: 'string' as const },
+  issues: { type: 'string' as const },
+  with: { type: 'string' as const },
+  // epic options
+  color: { type: 'string' as const },
+  done: { type: 'boolean' as const },
+  before: { type: 'string' as const },
+  after: { type: 'string' as const },
+  'custom-field': { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },

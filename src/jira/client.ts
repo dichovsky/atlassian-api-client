@@ -20,6 +20,7 @@ import { FieldsResource } from './resources/fields.js';
 import { WebhooksResource } from './resources/webhooks.js';
 import { JqlResource } from './resources/jql.js';
 import { BulkResource } from './resources/bulk.js';
+import { EpicResource } from './resources/epic.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -54,6 +55,8 @@ export class JiraClient {
   readonly jql: JqlResource;
   /** Bulk issue operations resource. */
   readonly bulk: BulkResource;
+  /** Agile epic resource. */
+  readonly epic: EpicResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -80,5 +83,6 @@ export class JiraClient {
     this.webhooks = new WebhooksResource(transport, baseUrl);
     this.jql = new JqlResource(transport, baseUrl);
     this.bulk = new BulkResource(transport, baseUrl);
+    this.epic = new EpicResource(transport, agileBaseUrl);
   }
 }

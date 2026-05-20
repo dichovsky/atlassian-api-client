@@ -118,6 +118,7 @@ RESOURCES:
   statuses      list
   boards        list-sprints, sprint-issues
   sprints       get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
+  epic          get, update, issues, move-issues, rank, issues-none, remove-issues
 
 EXAMPLES:
   atlas jira issues get PROJ-123

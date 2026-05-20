@@ -80,6 +80,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   statuses: 'executeStatuses',
   boards: 'executeBoards',
   sprints: 'executeSprints',
+  epic: 'executeEpic',
 };
 
 /**

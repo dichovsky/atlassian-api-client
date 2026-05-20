@@ -28,6 +28,8 @@ export async function executeJiraCommand(
       return executeBoards(client, cmd);
     case 'sprints':
       return executeSprints(client, cmd);
+    case 'epic':
+      return executeEpic(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -314,6 +316,78 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
     default:
       throw new Error(
         `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap`,
+      );
+  }
+}
+
+async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.epic.get(requireArg(cmd.positionalArgs[0], 'epicIdOrKey'));
+    case 'update': {
+      const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
+      const data: Record<string, unknown> = {};
+      const name = asString(opts['name']);
+      if (name !== undefined) data['name'] = name;
+      const summary = asString(opts['summary']);
+      if (summary !== undefined) data['summary'] = summary;
+      const color = asString(opts['color']);
+      if (color !== undefined) data['color'] = { key: color };
+      if (opts['done'] === true) data['done'] = true;
+      return client.epic.partialUpdate(epicIdOrKey, data);
+    }
+    case 'issues': {
+      const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
+      return client.epic.getIssues(epicIdOrKey, {
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'move-issues': {
+      const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.epic.moveIssues(epicIdOrKey, issues);
+      return { moved: true };
+    }
+    case 'rank': {
+      const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
+      const before = asString(opts['before']);
+      const after = asString(opts['after']);
+      const customField = asPositiveInt(opts['custom-field'], '--custom-field');
+      await client.epic.rank(epicIdOrKey, {
+        rankBeforeEpic: before,
+        rankAfterEpic: after,
+        rankCustomFieldId: customField,
+      });
+      return { ranked: true };
+    }
+    case 'issues-none':
+      return client.epic.getIssuesWithoutEpic({
+        jql: asString(opts['jql']),
+        fields: asString(opts['fields'])?.split(','),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'remove-issues': {
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issues = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.epic.removeIssuesFromEpic(issues);
+      return { removed: true };
+    }
+    default:
+      throw new Error(
+        `Unknown epic action: ${cmd.action}. Actions: get, update, issues, move-issues, rank, issues-none, remove-issues`,
       );
   }
 }

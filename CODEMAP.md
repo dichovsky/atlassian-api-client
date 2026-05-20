@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "e2dca03b8e8b4c0ccc1a8b41bb68fda71ef198ed1dbff3b33e883481590ad881",
+  "sourceHash": "63766af801b22218c2f66302ac92fcd61e9c18f55d4e21b27aeda8e9cf9db2b7",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -792,7 +792,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 25,
+      "line": 26,
       "signature": "export class JiraClient",
       "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
     },
@@ -2079,91 +2079,97 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 36,
+          "line": 38,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 79,
+          "line": 81,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 92,
+          "line": 94,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 106,
+          "line": 108,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 122,
+          "line": 124,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 133,
+          "line": 135,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 144,
+          "line": 146,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 153,
+          "line": 155,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 183,
+          "line": 185,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeEpic",
+          "kind": "function",
+          "line": 323,
+          "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 321,
+          "line": 395,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 330,
+          "line": 404,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 335,
+          "line": 409,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 340,
+          "line": 414,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 344,
+          "line": 418,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 353,
+          "line": 427,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         }
       ],
@@ -2253,7 +2259,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 130,
+          "line": 131,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2414,7 +2420,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 80,
+          "line": 94,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -8072,7 +8078,7 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
@@ -8080,102 +8086,107 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 26
+              "line": 27
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 27
+              "line": 28
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 28
+              "line": 29
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 29
+              "line": 30
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 31
+              "line": 32
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 42
+              "line": 43
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 44
+              "line": 45
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 46
+              "line": 47
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 48
+              "line": 49
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 50
+              "line": 51
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 52
+              "line": 53
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 54
+              "line": 55
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 56
+              "line": 57
+            },
+            {
+              "name": "epic",
+              "kind": "property",
+              "line": 59
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 58
+              "line": 61
             }
           ]
         }
@@ -8187,6 +8198,7 @@
         "./resources/boards.js",
         "./resources/bulk.js",
         "./resources/dashboards.js",
+        "./resources/epic.js",
         "./resources/fields.js",
         "./resources/filters.js",
         "./resources/issue-attachments.js",
@@ -9060,6 +9072,94 @@
       ]
     },
     {
+      "path": "src/jira/resources/epic.ts",
+      "symbols": [
+        {
+          "name": "Epic",
+          "kind": "interface",
+          "line": 7,
+          "exported": true,
+          "signature": "export interface Epic { readonly id: number; readonly self: string; readonly name: string; readonly summary?: string; re…"
+        },
+        {
+          "name": "UpdateEpicData",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface UpdateEpicData { readonly name?: string; readonly summary?: string; readonly color?: { readonly key: st…"
+        },
+        {
+          "name": "ListEpicIssuesParams",
+          "kind": "interface",
+          "line": 28,
+          "exported": true,
+          "signature": "export interface ListEpicIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string; …"
+        },
+        {
+          "name": "RankEpicData",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface RankEpicData { readonly rankBeforeEpic?: string; readonly rankAfterEpic?: string; readonly rankCustomFi…"
+        },
+        {
+          "name": "EpicResource",
+          "kind": "class",
+          "line": 41,
+          "exported": true,
+          "signature": "export class EpicResource",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 42
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 48
+            },
+            {
+              "name": "partialUpdate",
+              "kind": "method",
+              "line": 60
+            },
+            {
+              "name": "getIssues",
+              "kind": "method",
+              "line": 73
+            },
+            {
+              "name": "moveIssues",
+              "kind": "method",
+              "line": 98
+            },
+            {
+              "name": "rank",
+              "kind": "method",
+              "line": 118
+            },
+            {
+              "name": "getIssuesWithoutEpic",
+              "kind": "method",
+              "line": 136
+            },
+            {
+              "name": "removeIssuesFromEpic",
+              "kind": "method",
+              "line": 157
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/errors.js",
+        "../../core/pagination.js",
+        "../../core/types.js",
+        "./boards.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/fields.ts",
       "symbols": [
         {
@@ -9258,6 +9358,17 @@
             {
               "exported": "DashboardsResource",
               "original": "DashboardsResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./epic.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "EpicResource",
+              "original": "EpicResource"
             }
           ]
         },
