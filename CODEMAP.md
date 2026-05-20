@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "f0943813230982befc96420de4861be71550e176052152ecd910fd977c950b9d",
+  "sourceHash": "3302f6dd33997d01e06e7a12a322b39029a4c6a9a924b03e6ccbe9162f1fe79c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1744,9 +1744,28 @@
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
+          "name": "asEnum",
+          "kind": "function",
+          "line": 525,
+          "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
+          "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
+        },
+        {
+          "name": "CONTENT_SORT_ORDERS",
+          "kind": "variable",
+          "line": 537,
+          "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
+        },
+        {
+          "name": "PROPERTY_SORT_ORDERS",
+          "kind": "variable",
+          "line": 550,
+          "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
+        },
+        {
           "name": "makeBody",
           "kind": "function",
-          "line": 520,
+          "line": 552,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],

@@ -1536,6 +1536,47 @@ describe('executeConfluenceCommand', () => {
       expect(callArgs?.sort).toBeUndefined();
     });
 
+    it('databases direct-children rejects invalid --sort with allowlist message', async () => {
+      // Arrange
+      const parsed = cmd('databases', 'direct-children', ['db-1'], { sort: 'bogus' });
+
+      // Act + Assert
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: created-date, -created-date, .*-title, got: bogus/,
+      );
+      expect(confluenceDatabasesMock.listDirectChildren).not.toHaveBeenCalled();
+    });
+
+    it('databases direct-children accepts every ContentSortOrder token', async () => {
+      // Arrange
+      confluenceDatabasesMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+      const tokens = [
+        'created-date',
+        '-created-date',
+        'id',
+        '-id',
+        'modified-date',
+        '-modified-date',
+        'child-position',
+        '-child-position',
+        'title',
+        '-title',
+      ];
+
+      // Act + Assert
+      for (const token of tokens) {
+        await executeConfluenceCommand(
+          cmd('databases', 'direct-children', ['db-1'], { sort: token }),
+          GLOBALS,
+        );
+      }
+      const calls = confluenceDatabasesMock.listDirectChildren.mock.calls;
+      expect(calls).toHaveLength(tokens.length);
+      tokens.forEach((token, idx) => {
+        expect(calls[idx]?.[1]).toEqual(expect.objectContaining({ sort: token }));
+      });
+    });
+
     it('databases operations calls getOperations', async () => {
       // Arrange
       confluenceDatabasesMock.getOperations.mockResolvedValue({ operations: [] });
@@ -1618,6 +1659,38 @@ describe('executeConfluenceCommand', () => {
         'db-1',
         expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
       );
+    });
+
+    it('databases list-properties rejects invalid --sort with allowlist message', async () => {
+      // Arrange — `-title` is valid for direct-children but NOT for property sort
+      const parsed = cmd('databases', 'list-properties', ['db-1'], { sort: '-title' });
+
+      // Act + Assert
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: key, -key, got: -title',
+      );
+      expect(confluenceDatabasesMock.listProperties).not.toHaveBeenCalled();
+    });
+
+    it('databases list-properties accepts both key and -key sort tokens', async () => {
+      // Arrange
+      confluenceDatabasesMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+
+      // Act
+      await executeConfluenceCommand(
+        cmd('databases', 'list-properties', ['db-1'], { sort: 'key' }),
+        GLOBALS,
+      );
+      await executeConfluenceCommand(
+        cmd('databases', 'list-properties', ['db-1'], { sort: '-key' }),
+        GLOBALS,
+      );
+
+      // Assert
+      const calls = confluenceDatabasesMock.listProperties.mock.calls;
+      expect(calls).toHaveLength(2);
+      expect(calls[0]?.[1]).toEqual(expect.objectContaining({ sort: 'key' }));
+      expect(calls[1]?.[1]).toEqual(expect.objectContaining({ sort: '-key' }));
     });
 
     it('databases create-property parses JSON --value and forwards key + value', async () => {

@@ -424,11 +424,11 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
-      const sortRaw = asString(opts['sort']);
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
       return client.databases.listDirectChildren(requireArg(cmd.positionalArgs[0], 'database ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
-        ...(sortRaw !== undefined ? { sort: sortRaw as ContentSortOrder } : {}),
+        ...(sort !== undefined ? { sort } : {}),
       });
     }
     case 'operations':
@@ -451,7 +451,7 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'list-properties':
       return client.databases.listProperties(requireArg(cmd.positionalArgs[0], 'database ID'), {
         key: asString(opts['key']),
-        sort: asString(opts['sort']) as 'key' | '-key' | undefined,
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
@@ -516,6 +516,38 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   }
   return n;
 }
+
+/**
+ * Narrow a free-form CLI string to a typed enum, rejecting anything outside the
+ * allowlist with a user-facing error. Returns `undefined` when the flag is unset
+ * so callers can use spread-omit on optional query keys.
+ */
+function asEnum<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
+const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'id',
+  '-id',
+  'modified-date',
+  '-modified-date',
+  'child-position',
+  '-child-position',
+  'title',
+  '-title',
+];
+
+const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;
