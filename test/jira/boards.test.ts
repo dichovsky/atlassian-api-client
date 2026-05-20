@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BoardsResource } from '../../src/jira/resources/boards.js';
+import { BoardsResource, type QuickFilter } from '../../src/jira/resources/boards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { Sprint } from '../../src/jira/resources/sprints.js';
 
