@@ -518,8 +518,8 @@
 - [ ] 🟡 🖥️ API: B188 Confluence: add CLI + skill for GET /pages/{page-id}/versions/{version-number}
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B189 Confluence: expose GET /space-permissions
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🟡 🖥️ API: B893 Confluence: add CLI + skill for POST /pages/{pageId}/attachments
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B191 Confluence: expose GET /space-roles
   - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

@@ -125,6 +125,17 @@ export const confluenceFixtures = {
       '11111': 'footer-comment',
     },
   },
+  spacePermissionList: {
+    results: [
+      {
+        id: 'perm-1',
+        displayName: 'View',
+        description: 'View pages, blogs, comments, and attachments.',
+        requiredPermissionIds: [],
+      },
+    ],
+    _links: { next: null },
+  },
   spaceRoleMode: {
     mode: 'ROLES' as const,
   },

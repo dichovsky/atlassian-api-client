@@ -107,6 +107,8 @@ export type {
   ConfluenceContentType,
   ConvertContentIdsToTypesData,
   ConvertContentIdsToTypesResponse,
+  SpacePermission,
+  ListSpacePermissionsParams,
   SpaceRoleMode,
   ConfluenceUser,
   ConfluenceUserIcon,

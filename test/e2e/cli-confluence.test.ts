@@ -449,6 +449,25 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"name": "Public"', '"color": "GREEN"'],
   },
 
+  // ─── space-permissions ────────────────────────────────────────────────
+  {
+    name: 'space-permissions list',
+    argv: ['confluence', 'space-permissions', 'list'],
+    routes: [{ method: 'GET', path: `${P}/space-permissions`, body: F.spacePermissionList }],
+    expectCall: { method: 'GET', pathname: `${P}/space-permissions` },
+    expectStdout: ['"displayName": "View"'],
+  },
+  {
+    name: 'space-permissions list --limit --cursor',
+    argv: ['confluence', 'space-permissions', 'list', '--limit', '50', '--cursor', 'abc'],
+    routes: [{ method: 'GET', path: `${P}/space-permissions`, body: F.spacePermissionList }],
+    expectCall: { method: 'GET', pathname: `${P}/space-permissions` },
+    expectQuery: (query) => {
+      expect(query['limit']).toBe('50');
+      expect(query['cursor']).toBe('abc');
+    },
+  },
+
   // ─── space-role-mode ──────────────────────────────────────────────────
   {
     name: 'space-role-mode get',
