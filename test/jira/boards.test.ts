@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BoardsResource } from '../../src/jira/resources/boards.js';
-import type { QuickFilter } from '../../src/jira/resources/boards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { Sprint } from '../../src/jira/resources/sprints.js';
 
@@ -566,6 +565,801 @@ describe('BoardsResource', () => {
       await expect(boards.getSprintIssues(42, 10, { maxResults: Infinity })).rejects.toThrow(
         RangeError,
       );
+    });
+  });
+
+  // ── create ────────────────────────────────────────────────────────────────
+
+  describe('create()', () => {
+    it('calls POST /board with name, type, filterId', async () => {
+      // Arrange
+      const board = makeBoard(99, 'New Board');
+      transport.respondWith(board);
+
+      // Act
+      const result = await boards.create({ name: 'New Board', type: 'scrum', filterId: 5 });
+
+      // Assert
+      expect(result).toEqual(board);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/board`,
+        body: { name: 'New Board', type: 'scrum', filterId: 5 },
+      });
+    });
+
+    it('includes optional location when provided', async () => {
+      // Arrange
+      transport.respondWith(makeBoard(100, 'Board'));
+
+      // Act
+      await boards.create({
+        name: 'Board',
+        type: 'kanban',
+        filterId: 10,
+        location: { type: 'project', projectKeyOrId: 'PROJ' },
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        location: { type: 'project', projectKeyOrId: 'PROJ' },
+      });
+    });
+
+    it('throws ValidationError for empty name', async () => {
+      await expect(boards.create({ name: '', type: 'scrum', filterId: 1 })).rejects.toThrow(
+        'name must be a non-empty string',
+      );
+    });
+
+    it('throws ValidationError for invalid filterId', async () => {
+      await expect(boards.create({ name: 'Board', type: 'scrum', filterId: 0 })).rejects.toThrow(
+        'filterId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for negative filterId', async () => {
+      await expect(boards.create({ name: 'Board', type: 'scrum', filterId: -1 })).rejects.toThrow(
+        'filterId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError when type is missing', async () => {
+      await expect(
+        boards.create({ name: 'Board', type: '' as 'scrum', filterId: 1 }),
+      ).rejects.toThrow('type must be one of: scrum, kanban, simple');
+    });
+  });
+
+  // ── delete ────────────────────────────────────────────────────────────────
+
+  describe('delete()', () => {
+    it('calls DELETE /board/{boardId}', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await boards.delete(42);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/board/42`,
+      });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.delete(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.delete(-1)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for non-integer boardId', async () => {
+      await expect(boards.delete(1.5)).rejects.toThrow('boardId must be a positive integer');
+    });
+  });
+
+  // ── getBacklog ─────────────────────────────────────────────────────────────
+
+  describe('getBacklog()', () => {
+    it('calls GET /board/{boardId}/backlog', async () => {
+      // Arrange
+      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.getBacklog(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/backlog`,
+      });
+    });
+
+    it('passes startAt, maxResults, jql, and fields params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getBacklog(42, {
+        startAt: 5,
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: ['summary', 'status'],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 5,
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: 'summary,status',
+      });
+    });
+
+    it('passes only jql and fields without startAt or maxResults', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.getBacklog(42, { jql: 'status = Open', fields: ['id'] });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).toMatchObject({ jql: 'status = Open', fields: 'id' });
+    });
+
+    it('passes only startAt without jql or fields', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.getBacklog(42, { startAt: 5 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('jql');
+      expect(q).not.toHaveProperty('fields');
+      expect(q).toMatchObject({ startAt: 5 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getBacklog(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.getBacklog(-3)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getBacklog(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: Infinity', async () => {
+      await expect(boards.getBacklog(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── getConfiguration ──────────────────────────────────────────────────────
+
+  describe('getConfiguration()', () => {
+    it('calls GET /board/{boardId}/configuration', async () => {
+      // Arrange
+      const config = {
+        id: 42,
+        self: `${BASE_URL}/board/42/configuration`,
+        name: 'Board Config',
+        type: 'scrum',
+      };
+      transport.respondWith(config);
+
+      // Act
+      const result = await boards.getConfiguration(42);
+
+      // Assert
+      expect(result).toEqual(config);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/configuration`,
+      });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getConfiguration(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.getConfiguration(-1)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+  });
+
+  // ── listEpics ─────────────────────────────────────────────────────────────
+
+  describe('listEpics()', () => {
+    const makeEpic = (id: number, name: string) => ({
+      id,
+      self: `${BASE_URL}/epic/${id}`,
+      name,
+      done: false,
+    });
+
+    it('calls GET /board/{boardId}/epic', async () => {
+      // Arrange
+      const payload = makeListResponse([makeEpic(5, 'Epic 1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listEpics(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/epic`,
+      });
+    });
+
+    it('passes startAt, maxResults, and done params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listEpics(42, { startAt: 5, maxResults: 10, done: false });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 5,
+        maxResults: 10,
+        done: false,
+      });
+    });
+
+    it('passes only done param without startAt or maxResults', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listEpics(42, { done: true });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).toMatchObject({ done: true });
+    });
+
+    it('passes startAt and maxResults without done', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listEpics(42, { startAt: 5, maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('done');
+      expect(q).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.listEpics(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listEpics(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── getEpicIssues ─────────────────────────────────────────────────────────
+
+  describe('getEpicIssues()', () => {
+    it('calls GET /board/{boardId}/epic/{epicId}/issue', async () => {
+      // Arrange
+      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.getEpicIssues(42, 7);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/epic/7/issue`,
+      });
+    });
+
+    it('passes jql and fields params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getEpicIssues(42, 7, { jql: 'status = Done', fields: ['summary'] });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        jql: 'status = Done',
+        fields: 'summary',
+      });
+    });
+
+    it('passes startAt and maxResults without jql or fields', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.getEpicIssues(42, 7, { startAt: 5, maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('jql');
+      expect(q).not.toHaveProperty('fields');
+      expect(q).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getEpicIssues(0, 7)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for epicId = 0', async () => {
+      await expect(boards.getEpicIssues(42, 0)).rejects.toThrow(
+        'epicId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for negative epicId', async () => {
+      await expect(boards.getEpicIssues(42, -1)).rejects.toThrow(
+        'epicId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getEpicIssues(42, 7, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── getIssuesWithoutEpic ──────────────────────────────────────────────────
+
+  describe('getIssuesWithoutEpic()', () => {
+    it('calls GET /board/{boardId}/epic/none/issue', async () => {
+      // Arrange
+      const payload = makeListResponse([makeBoardIssue('2', 'PROJ-2')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.getIssuesWithoutEpic(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/epic/none/issue`,
+      });
+    });
+
+    it('passes jql and fields params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.getIssuesWithoutEpic(42, { jql: 'status != Done', fields: ['summary'] });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        jql: 'status != Done',
+        fields: 'summary',
+      });
+    });
+
+    it('passes startAt and maxResults without jql or fields', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.getIssuesWithoutEpic(42, { startAt: 5, maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('jql');
+      expect(q).not.toHaveProperty('fields');
+      expect(q).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getIssuesWithoutEpic(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getIssuesWithoutEpic(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── getFeatures ───────────────────────────────────────────────────────────
+
+  describe('getFeatures()', () => {
+    it('calls GET /board/{boardId}/features', async () => {
+      // Arrange
+      const payload = {
+        features: [{ boardFeature: 'SIMPLE_ROADMAP', boardId: 42, state: 'ENABLED' as const, togglable: true }],
+      };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.getFeatures(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/features`,
+      });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getFeatures(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.getFeatures(-1)).rejects.toThrow('boardId must be a positive integer');
+    });
+  });
+
+  // ── toggleFeature ─────────────────────────────────────────────────────────
+
+  describe('toggleFeature()', () => {
+    it('calls PUT /board/{boardId}/features with feature and state', async () => {
+      // Arrange
+      const payload = { features: [] };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.toggleFeature(42, {
+        feature: 'SIMPLE_ROADMAP',
+        state: 'DISABLED',
+      });
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/board/42/features`,
+        body: { feature: 'SIMPLE_ROADMAP', state: 'DISABLED', boardId: 42 },
+      });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(
+        boards.toggleFeature(0, { feature: 'SIMPLE_ROADMAP', state: 'ENABLED' }),
+      ).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for empty feature name', async () => {
+      await expect(
+        boards.toggleFeature(42, { feature: '', state: 'ENABLED' }),
+      ).rejects.toThrow('feature must be a non-empty string');
+    });
+
+    it('throws ValidationError for invalid state', async () => {
+      await expect(
+        // @ts-expect-error testing invalid runtime value
+        boards.toggleFeature(42, { feature: 'SIMPLE_ROADMAP', state: 'INVALID' }),
+      ).rejects.toThrow('state must be ENABLED or DISABLED');
+    });
+  });
+
+  // ── moveIssues ────────────────────────────────────────────────────────────
+
+  describe('moveIssues()', () => {
+    it('calls POST /board/{boardId}/issue with issues array', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await boards.moveIssues(42, ['PROJ-1', 'PROJ-2']);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/board/42/issue`,
+        body: { issues: ['PROJ-1', 'PROJ-2'] },
+      });
+    });
+
+    it('includes rankBeforeIssue and rankAfterIssue when provided', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await boards.moveIssues(42, ['PROJ-1'], 'PROJ-2', 'PROJ-3');
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        issues: ['PROJ-1'],
+        rankBeforeIssue: 'PROJ-2',
+        rankAfterIssue: 'PROJ-3',
+      });
+    });
+
+    it('includes only rankBeforeIssue when rankAfterIssue is omitted', async () => {
+      transport.respondWith(undefined);
+      await boards.moveIssues(42, ['PROJ-1'], 'PROJ-2', undefined);
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).toMatchObject({ issues: ['PROJ-1'], rankBeforeIssue: 'PROJ-2' });
+      expect(body).not.toHaveProperty('rankAfterIssue');
+    });
+
+    it('includes only rankAfterIssue when rankBeforeIssue is omitted', async () => {
+      transport.respondWith(undefined);
+      await boards.moveIssues(42, ['PROJ-1'], undefined, 'PROJ-3');
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).toMatchObject({ issues: ['PROJ-1'], rankAfterIssue: 'PROJ-3' });
+      expect(body).not.toHaveProperty('rankBeforeIssue');
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.moveIssues(0, ['PROJ-1'])).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for empty issues array', async () => {
+      await expect(boards.moveIssues(42, [])).rejects.toThrow(
+        'issues must be a non-empty array',
+      );
+    });
+
+    it('throws ValidationError for issues entry with empty string', async () => {
+      await expect(boards.moveIssues(42, [''])).rejects.toThrow(
+        'issues entries must be non-empty strings',
+      );
+    });
+
+    it('throws ValidationError when issues array exceeds 50 entries', async () => {
+      const issues = Array.from({ length: 51 }, (_, i) => `PROJ-${i + 1}`);
+      await expect(boards.moveIssues(42, issues)).rejects.toThrow(
+        'issues must contain at most 50 entries',
+      );
+    });
+  });
+
+  // ── listProjects ──────────────────────────────────────────────────────────
+
+  describe('listProjects()', () => {
+    const makeProject = (id: string, key: string) => ({
+      id,
+      key,
+      self: `${BASE_URL}/project/${key}`,
+      name: `Project ${key}`,
+    });
+
+    it('calls GET /board/{boardId}/project', async () => {
+      // Arrange
+      const payload = makeListResponse([makeProject('10001', 'PROJ')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listProjects(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/project`,
+      });
+    });
+
+    it('passes startAt and maxResults params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listProjects(42, { startAt: 5, maxResults: 10 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('passes only maxResults without startAt', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listProjects(42, { maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).toMatchObject({ maxResults: 10 });
+    });
+
+    it('passes only startAt without maxResults', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listProjects(42, { startAt: 5 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).toMatchObject({ startAt: 5 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.listProjects(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listProjects(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── listProjectsFull ──────────────────────────────────────────────────────
+
+  describe('listProjectsFull()', () => {
+    it('calls GET /board/{boardId}/project/full', async () => {
+      // Arrange
+      const payload = makeListResponse([]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listProjectsFull(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/project/full`,
+      });
+    });
+
+    it('passes startAt and maxResults params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listProjectsFull(42, { startAt: 0, maxResults: 5 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0, maxResults: 5 });
+    });
+
+    it('passes only maxResults without startAt', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listProjectsFull(42, { maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).toMatchObject({ maxResults: 10 });
+    });
+
+    it('passes only startAt without maxResults', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listProjectsFull(42, { startAt: 5 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).toMatchObject({ startAt: 5 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.listProjectsFull(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listProjectsFull(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── listVersions ──────────────────────────────────────────────────────────
+
+  describe('listVersions()', () => {
+    const makeVersion = (id: number, name: string) => ({
+      id,
+      self: `${BASE_URL}/version/${id}`,
+      name,
+    });
+
+    it('calls GET /board/{boardId}/version', async () => {
+      // Arrange
+      const payload = makeListResponse([makeVersion(1, 'v1.0')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listVersions(42);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/42/version`,
+      });
+    });
+
+    it('passes startAt, maxResults, and released params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listVersions(42, { startAt: 0, maxResults: 20, released: true });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 0,
+        maxResults: 20,
+        released: true,
+      });
+    });
+
+    it('passes only maxResults without startAt or released', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listVersions(42, { maxResults: 10 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).not.toHaveProperty('released');
+      expect(q).toMatchObject({ maxResults: 10 });
+    });
+
+    it('passes only startAt without maxResults or released', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listVersions(42, { startAt: 5 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).not.toHaveProperty('released');
+      expect(q).toMatchObject({ startAt: 5 });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.listVersions(0)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.listVersions(-5)).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listVersions(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: Infinity', async () => {
+      await expect(boards.listVersions(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── listByFilter ──────────────────────────────────────────────────────────
+
+  describe('listByFilter()', () => {
+    it('calls GET /board/filter/{filterId}', async () => {
+      // Arrange
+      const payload = makeListResponse([makeBoard(1, 'Board 1')]);
+      transport.respondWith(payload);
+
+      // Act
+      const result = await boards.listByFilter(5);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/board/filter/5`,
+      });
+    });
+
+    it('passes startAt and maxResults params', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act
+      await boards.listByFilter(5, { startAt: 10, maxResults: 25 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
+    });
+
+    it('passes only maxResults without startAt', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listByFilter(5, { maxResults: 15 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('startAt');
+      expect(q).toMatchObject({ maxResults: 15 });
+    });
+
+    it('passes only startAt without maxResults', async () => {
+      transport.respondWith(makeListResponse([]));
+      await boards.listByFilter(5, { startAt: 3 });
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).toMatchObject({ startAt: 3 });
+    });
+
+    it('throws ValidationError for filterId = 0', async () => {
+      await expect(boards.listByFilter(0)).rejects.toThrow('filterId must be a positive integer');
+    });
+
+    it('throws ValidationError for negative filterId', async () => {
+      await expect(boards.listByFilter(-1)).rejects.toThrow('filterId must be a positive integer');
+    });
+
+    it('throws ValidationError for non-integer filterId', async () => {
+      await expect(boards.listByFilter(1.5)).rejects.toThrow('filterId must be a positive integer');
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.listByFilter(5, { maxResults: 0 })).rejects.toThrow(RangeError);
     });
   });
 

@@ -84,6 +84,10 @@ const GLOBAL_OPTIONS = {
   before: { type: 'string' as const },
   after: { type: 'string' as const },
   'custom-field': { type: 'string' as const },
+  // boards-specific options
+  'filter-id': { type: 'string' as const },
+  feature: { type: 'string' as const },
+  released: { type: 'boolean' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },
