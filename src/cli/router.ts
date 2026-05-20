@@ -43,6 +43,7 @@ const GLOBAL_OPTIONS = {
   value: { type: 'string' as const },
   'account-ids': { type: 'string' as const },
   ids: { type: 'string' as const },
+  keys: { type: 'string' as const },
   // databases-specific options
   private: { type: 'boolean' as const },
   depth: { type: 'string' as const },

@@ -572,6 +572,60 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"name": "Public"', '"color": "GREEN"'],
   },
 
+  // ─── data-policies ────────────────────────────────────────────────────
+  {
+    name: 'data-policies get-metadata',
+    argv: ['confluence', 'data-policies', 'get-metadata'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/data-policies/metadata`,
+        body: F.dataPolicyMetadata,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/data-policies/metadata` },
+    expectStdout: ['"anyContentBlocked": true'],
+  },
+  {
+    name: 'data-policies list-spaces',
+    argv: ['confluence', 'data-policies', 'list-spaces'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/data-policies/spaces`,
+        body: F.dataPolicySpacesList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/data-policies/spaces` },
+    expectStdout: ['"key": "ENG"'],
+  },
+  {
+    name: 'data-policies list-spaces --keys --limit --sort',
+    argv: [
+      'confluence',
+      'data-policies',
+      'list-spaces',
+      '--keys',
+      'ENG,OPS',
+      '--limit',
+      '50',
+      '--sort=-key',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/data-policies/spaces`,
+        body: F.dataPolicySpacesList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/data-policies/spaces` },
+    expectQuery: (query) => {
+      expect(query.keys).toBe('ENG,OPS');
+      expect(query.limit).toBe('50');
+      expect(query.sort).toBe('-key');
+    },
+  },
+
   // ─── space-permissions ────────────────────────────────────────────────
   {
     name: 'space-permissions list',

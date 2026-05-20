@@ -82,6 +82,10 @@ const confluenceClassificationLevelsMock = {
 const confluenceContentMock = {
   convertIdsToTypes: vi.fn(),
 };
+const confluenceDataPoliciesMock = {
+  getMetadata: vi.fn(),
+  listSpaces: vi.fn(),
+};
 const confluenceSpacePermissionsMock = {
   list: vi.fn(),
 };
@@ -127,6 +131,7 @@ vi.mock('../../src/confluence/client.js', () => {
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
       content: confluenceContentMock,
+      dataPolicies: confluenceDataPoliciesMock,
       databases: confluenceDatabasesMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
@@ -1415,6 +1420,129 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('content', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown content action',
       );
+    });
+  });
+
+  // ── data-policies ─────────────────────────────────────────────────────────
+
+  describe('data-policies resource', () => {
+    it('data-policies get-metadata calls client.dataPolicies.getMetadata', async () => {
+      // Arrange
+      const payload = { anyContentBlocked: true };
+      confluenceDataPoliciesMock.getMetadata.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('data-policies', 'get-metadata'), GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.getMetadata).toHaveBeenCalledWith();
+      expect(result).toEqual(payload);
+    });
+
+    it('data-policies list-spaces calls client.dataPolicies.listSpaces with empty params', async () => {
+      // Arrange
+      const payload = { results: [{ id: '1', key: 'ENG' }], _links: {} };
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('data-policies', 'list-spaces'), GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ids: undefined,
+          keys: undefined,
+          limit: undefined,
+          cursor: undefined,
+        }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('data-policies list-spaces parses --ids and --keys into arrays', async () => {
+      // Arrange
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('data-policies', 'list-spaces', [], {
+        ids: '1,2,3',
+        keys: 'ENG,OPS',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ids: ['1', '2', '3'],
+          keys: ['ENG', 'OPS'],
+        }),
+      );
+    });
+
+    it('data-policies list-spaces trims whitespace and drops empty CSV entries', async () => {
+      // Arrange
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('data-policies', 'list-spaces', [], {
+        ids: ' 1 , ,2 , ',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: ['1', '2'] }),
+      );
+    });
+
+    it('data-policies list-spaces drops --ids that becomes empty after trimming', async () => {
+      // Arrange
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('data-policies', 'list-spaces', [], { ids: ' , , ' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: undefined }),
+      );
+    });
+
+    it('data-policies list-spaces forwards --sort, --limit, and --cursor', async () => {
+      // Arrange
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('data-policies', 'list-spaces', [], {
+        sort: '-key',
+        limit: '50',
+        cursor: 'tok',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({ sort: '-key', limit: 50, cursor: 'tok' }),
+      );
+    });
+
+    it('data-policies list-spaces rejects an unknown --sort value', async () => {
+      const parsed = cmd('data-policies', 'list-spaces', [], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('data-policies list-spaces throws when --limit is invalid', async () => {
+      const parsed = cmd('data-policies', 'list-spaces', [], { limit: 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--limit must be a positive integer',
+      );
+    });
+
+    it('data-policies unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('data-policies', 'unknown'), GLOBALS),
+      ).rejects.toThrow('Unknown data-policies action');
     });
   });
 

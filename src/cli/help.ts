@@ -71,6 +71,7 @@ RESOURCES:
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
   content                convert-ids-to-types
+  data-policies          get-metadata, list-spaces
   databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
   space-permissions      list
   space-role-mode        get
@@ -88,6 +89,8 @@ EXAMPLES:
   atlas confluence comments update-property 77777 --property-id prop-1 --key reviewed --value false --version-number 2
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
+  atlas confluence data-policies get-metadata
+  atlas confluence data-policies list-spaces --keys ENG,OPS --limit 50
   atlas confluence databases create --space-id 123 --title "Inventory" --private
   atlas confluence databases get 456 --include-properties
   atlas confluence databases descendants 456 --depth 3 --limit 50
