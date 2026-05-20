@@ -60,7 +60,7 @@ export class SpaceRolesResource {
   /** Iterate over every available space role across all pages. */
   async *listAll(params?: Omit<ListSpaceRolesParams, 'cursor'>): AsyncGenerator<SpaceRole> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | boolean | undefined> = {};
+    const query: Record<string, string | number | undefined> = {};
     if (params?.['space-id'] !== undefined) query['space-id'] = params['space-id'];
     if (params?.['role-type'] !== undefined) query['role-type'] = params['role-type'];
     if (params?.['principal-id'] !== undefined) query['principal-id'] = params['principal-id'];
@@ -74,8 +74,8 @@ export class SpaceRolesResource {
    * Create a new custom space role.
    *
    * `spacePermissions` is a list of space-permission ids (e.g. `"read/space"`)
-   * obtained from `GET /space-permissions`. Server returns 201 with the
-   * created `SpaceRole` echoed back.
+   * obtained from `GET /space-permissions`. Per the v2 spec, the server returns
+   * 201 with the created `SpaceRole` echoed back.
    */
   async create(data: CreateSpaceRoleData): Promise<SpaceRole> {
     const response = await this.transport.request<SpaceRole>({

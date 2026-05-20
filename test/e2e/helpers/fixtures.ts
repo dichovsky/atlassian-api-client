@@ -222,7 +222,7 @@ export const confluenceFixtures = {
         spacePermissions: ['read/space', 'write/space'],
       },
     ],
-    _links: { next: null },
+    _links: {},
   },
   spaceRoleUpdateResponse: {
     id: 'role-1',
