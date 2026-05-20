@@ -357,6 +357,7 @@ describe('FooterCommentsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/footer-comments/77777/operations`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 
@@ -457,6 +458,15 @@ describe('FooterCommentsResource', () => {
       transport.respondWith({ number: 1 });
       await resource.getVersion('a/b', 4);
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/footer-comments/a%2Fb/versions/4`);
+    });
+
+    it('rejects non-integer versionNumber', async () => {
+      await expect(resource.getVersion('77777', 1.5)).rejects.toThrow(RangeError);
+    });
+
+    it('rejects zero or negative versionNumber', async () => {
+      await expect(resource.getVersion('77777', 0)).rejects.toThrow(RangeError);
+      await expect(resource.getVersion('77777', -1)).rejects.toThrow(RangeError);
     });
 
     it('propagates transport errors', async () => {

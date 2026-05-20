@@ -836,6 +836,7 @@ async function executeFooterComments(
       if (!Number.isInteger(versionNum) || versionNum <= 0) {
         throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
       }
+      // NOTE: deliberate cross-resource call — see CommentsResource.updateFooter for single source of truth
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         version: { number: versionNum },
         body: {

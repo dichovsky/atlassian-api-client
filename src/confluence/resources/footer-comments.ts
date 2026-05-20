@@ -245,6 +245,9 @@ export class FooterCommentsResource {
 
   /** Get detailed information about a specific footer-comment version. */
   async getVersion(commentId: string, versionNumber: number): Promise<FooterCommentVersionDetail> {
+    if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+      throw new RangeError(`versionNumber must be a positive integer, got: ${versionNumber}`);
+    }
     const response = await this.transport.request<FooterCommentVersionDetail>({
       method: 'GET',
       path: `${this.baseUrl}/footer-comments/${encodePathSegment(commentId)}/versions/${encodePathSegment(String(versionNumber))}`,

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "1e847f4095637f93c6ab4e2a52721fb04acc8297f0ceb385d337cf236105c26a",
+  "sourceHash": "50b176c756e5c9b42d029c27cdeef06daa24dfa7bad83297eb0ed9d1fc5fe766",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -146,7 +146,7 @@
       "name": "BulkUsersRequest",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 968,
+      "line": 1098,
       "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
       "jsdoc": "Request body for `POST /users-bulk`.",
       "typeOnly": true
@@ -155,7 +155,7 @@
       "name": "BulkUsersResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 978,
+      "line": 1108,
       "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
       "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted.",
       "typeOnly": true
@@ -173,7 +173,7 @@
       "name": "CheckAccessByEmailResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1006,
+      "line": 1136,
       "signature": "export interface CheckAccessByEmailResponse { readonly emailsWithoutAccess?: readonly string[]; readonly invalidEmails?:…",
       "jsdoc": "Response shape for `POST /user/access/check-access-by-email`.",
       "typeOnly": true
@@ -182,7 +182,7 @@
       "name": "CheckAccessOrInviteByEmailRequest",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 996,
+      "line": 1126,
       "signature": "export interface CheckAccessOrInviteByEmailRequest { readonly emails: readonly string[]; }",
       "jsdoc": "Request body for `POST /user/access/check-access-by-email` and `POST /user/access/invite-by-email`.",
       "typeOnly": true
@@ -218,7 +218,7 @@
       "name": "ConfluenceAccountStatus",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 934,
+      "line": 1064,
       "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
       "jsdoc": "Account status of a Confluence user.",
       "typeOnly": true
@@ -227,7 +227,7 @@
       "name": "ConfluenceAccountType",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 937,
+      "line": 1067,
       "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
       "jsdoc": "Account type of a Confluence user.",
       "typeOnly": true
@@ -256,7 +256,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 28,
+      "line": 29,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -312,7 +312,7 @@
       "name": "ConfluenceUser",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 949,
+      "line": 1079,
       "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
       "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints.",
       "typeOnly": true
@@ -321,7 +321,7 @@
       "name": "ConfluenceUserIcon",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 943,
+      "line": 1073,
       "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
       "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it.",
       "typeOnly": true
@@ -357,7 +357,7 @@
       "name": "ContentSortOrder",
       "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 1113,
+      "line": 1243,
       "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
       "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema.",
       "typeOnly": true
@@ -428,7 +428,7 @@
       "name": "CreateDatabaseData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1047,
+      "line": 1177,
       "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
       "jsdoc": "Request body for creating a database via `POST /databases`.",
       "typeOnly": true
@@ -437,7 +437,7 @@
       "name": "CreateDatabaseParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1054,
+      "line": 1184,
       "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
       "jsdoc": "Query parameters for `POST /databases`.",
       "typeOnly": true
@@ -501,6 +501,15 @@
       "line": 140,
       "signature": "export interface CreatePageData { readonly spaceId: string; readonly title: string; readonly parentId?: string; readonly…",
       "jsdoc": "Request body for creating a Confluence page.",
+      "typeOnly": true
+    },
+    {
+      "name": "CreateSpaceRoleData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1003,
+      "signature": "export interface CreateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
+      "jsdoc": "Request body for `POST /space-roles`. All three fields are required by the server — there are no optional inputs on the create path. `spacePermissions` is a list of space-permission ids (e.g. `\"read/space\"`) obtained from `GET /space-permissions`.",
       "typeOnly": true
     },
     {
@@ -603,7 +612,7 @@
       "name": "Database",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1024,
+      "line": 1154,
       "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
       "jsdoc": "Confluence Database content.",
       "typeOnly": true
@@ -612,7 +621,7 @@
       "name": "DatabaseAncestor",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1060,
+      "line": 1190,
       "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
       "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`.",
       "typeOnly": true
@@ -621,7 +630,7 @@
       "name": "DatabaseAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1077,
+      "line": 1207,
       "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
       "jsdoc": "Response shape for `GET /databases/{id}/ancestors`.",
       "typeOnly": true
@@ -630,7 +639,7 @@
       "name": "DatabaseChild",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1100,
+      "line": 1230,
       "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
       "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`.",
       "typeOnly": true
@@ -639,7 +648,7 @@
       "name": "DatabaseDescendant",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1082,
+      "line": 1212,
       "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
       "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`.",
       "typeOnly": true
@@ -648,7 +657,7 @@
       "name": "DatabaseOperation",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1133,
+      "line": 1263,
       "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`.",
       "typeOnly": true
@@ -657,7 +666,7 @@
       "name": "DatabaseOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1139,
+      "line": 1269,
       "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
       "jsdoc": "Response shape for `GET /databases/{id}/operations`.",
       "typeOnly": true
@@ -669,6 +678,15 @@
       "line": 164,
       "signature": "export interface DeletePageParams { readonly purge?: boolean; readonly draft?: boolean; }",
       "jsdoc": "Parameters for deleting a Confluence page.",
+      "typeOnly": true
+    },
+    {
+      "name": "DeleteSpaceRoleResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1056,
+      "signature": "export interface DeleteSpaceRoleResponse { readonly taskId?: string; }",
+      "jsdoc": "Response shape for `DELETE /space-roles/{id}`. The server returns 202 with a single `taskId` callers can poll to confirm the role's permission assignments have been torn down asynchronously.",
       "typeOnly": true
     },
     {
@@ -797,7 +815,7 @@
       "name": "GetDatabaseParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1148,
+      "line": 1278,
       "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
       "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
@@ -1077,7 +1095,7 @@
       "name": "ListDatabaseAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1066,
+      "line": 1196,
       "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing database ancestors.",
       "typeOnly": true
@@ -1086,7 +1104,7 @@
       "name": "ListDatabaseChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1126,
+      "line": 1256,
       "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
       "jsdoc": "Parameters for listing direct children of a database.",
       "typeOnly": true
@@ -1095,7 +1113,7 @@
       "name": "ListDatabaseDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1093,
+      "line": 1223,
       "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
       "jsdoc": "Parameters for listing database descendants.",
       "typeOnly": true
@@ -1104,7 +1122,7 @@
       "name": "ListDatabasePropertiesParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1156,
+      "line": 1286,
       "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
       "jsdoc": "Parameters for listing content properties on a database.",
       "typeOnly": true
@@ -1231,6 +1249,15 @@
       "line": 885,
       "signature": "export interface ListSpacePermissionsParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Query parameters for `GET /space-permissions`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListSpaceRolesParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 968,
+      "signature": "export interface ListSpaceRolesParams { readonly 'space-id'?: string; readonly 'role-type'?: SpaceRoleType; readonly 'pr…",
+      "jsdoc": "Query parameters for `GET /space-roles`. All filters are optional and apply server-side; the response is the standard `{ results, _links }` cursor envelope.",
       "typeOnly": true
     },
     {
@@ -1451,7 +1478,7 @@
       "name": "ResetDatabaseClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1195,
+      "line": 1325,
       "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
       "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`.",
       "typeOnly": true
@@ -1527,12 +1554,48 @@
       "typeOnly": true
     },
     {
+      "name": "SpaceRole",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 950,
+      "signature": "export interface SpaceRole { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; readonly descr…",
+      "jsdoc": "A Confluence space role definition, as returned by the v2 `/space-roles` endpoints. All fields are documented optional in the OpenAPI spec; callers should treat any missing property as \"not surfaced for this caller\".",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceRoleDetail",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 990,
+      "signature": "export interface SpaceRoleDetail extends SpaceRole { readonly _links?: { readonly base?: string; }; }",
+      "jsdoc": "Response shape for `GET /space-roles/{id}`. Mirrors {@link SpaceRole} with an additional optional `_links.base` Confluence site URL the server inlines on the singular read. The OpenAPI spec models this as an `allOf` composition; we flatten it here for callers that only need the `id` / `type` / `name` fields and ignore the link block.",
+      "typeOnly": true
+    },
+    {
       "name": "SpaceRoleMode",
       "kind": "interface",
       "file": "src/confluence/types.ts",
       "line": 927,
       "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
       "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceRolePrincipalType",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 943,
+      "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
+      "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpaceRoleType",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 937,
+      "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
+      "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant.",
       "typeOnly": true
     },
     {
@@ -1635,7 +1698,7 @@
       "name": "UpdateDatabaseClassificationLevelData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1183,
+      "line": 1313,
       "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
       "jsdoc": "Request body for `PUT /databases/{id}/classification-level`.",
       "typeOnly": true
@@ -1644,7 +1707,7 @@
       "name": "UpdateDatabasePropertyData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1170,
+      "line": 1300,
       "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
       "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`.",
       "typeOnly": true
@@ -1690,6 +1753,24 @@
       "line": 152,
       "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
       "jsdoc": "Request body for updating a Confluence page.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateSpaceRoleData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1018,
+      "signature": "export interface UpdateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
+      "jsdoc": "Request body for `PUT /space-roles/{id}`. The same three required fields as {@link CreateSpaceRoleData}, plus two optional reassignment fields used when the role being modified currently has anonymous-access or guest assignments that need to migrate to another role.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateSpaceRoleResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1042,
+      "signature": "export interface UpdateSpaceRoleResponse { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; …",
+      "jsdoc": "Response shape for `PUT /space-roles/{id}`. The server returns 202 along with the updated role metadata and a `taskId` to poll for the async permission-rewrite progress.",
       "typeOnly": true
     },
     {
@@ -1880,7 +1961,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 16,
+          "line": 18,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -1888,254 +1969,279 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 64,
+          "line": 68,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 113,
+          "line": 117,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 127,
+          "line": 131,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 169,
+          "line": 173,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 254,
+          "line": 258,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 270,
+          "line": 274,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 291,
+          "line": 295,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 353,
+          "line": 357,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 359,
+          "line": 363,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 391,
+          "line": 395,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 399,
+          "line": 403,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 411,
+          "line": 415,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 430,
+          "line": 434,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 459,
+          "line": 463,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 487,
+          "line": 491,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 496,
+          "line": 500,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 513,
+          "line": 517,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "executeSpaceRoles",
+          "kind": "function",
+          "line": 529,
+          "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "SPACE_ROLE_TYPES",
+          "kind": "variable",
+          "line": 581,
+          "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
+        },
+        {
+          "name": "SPACE_ROLE_PRINCIPAL_TYPES",
+          "kind": "variable",
+          "line": 583,
+          "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
+        },
+        {
+          "name": "parseSpacePermissions",
+          "kind": "function",
+          "line": 596,
+          "signature": "function parseSpacePermissions(raw: string): readonly string[]",
+          "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 525,
+          "line": 607,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 561,
+          "line": 643,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 563,
+          "line": 645,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 587,
+          "line": 669,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 598,
+          "line": 680,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 616,
+          "line": 698,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 722,
+          "line": 804,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 812,
+          "line": 895,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 817,
+          "line": 900,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 822,
+          "line": 905,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 826,
+          "line": 909,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 840,
+          "line": 923,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 856,
+          "line": 939,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 870,
+          "line": 953,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 883,
+          "line": 966,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 885,
+          "line": 968,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 892,
+          "line": 975,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 894,
+          "line": 977,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 903,
+          "line": 986,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 912,
+          "line": 995,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 919,
+          "line": 1002,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 928,
+          "line": 1011,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 939,
+          "line": 1022,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 941,
+          "line": 1024,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -2533,13 +2639,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 120,
+          "line": 126,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 143,
+          "line": 149,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2700,7 +2806,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 104,
+          "line": 112,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -2811,7 +2917,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 28,
+          "line": 29,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2819,117 +2925,122 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 29
+              "line": 30
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 31
+              "line": 32
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 33
+              "line": 34
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 42
+              "line": 43
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 44
+              "line": 45
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 46
+              "line": 47
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 48
+              "line": 49
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 50
+              "line": 51
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 52
+              "line": 53
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 54
+              "line": 55
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 56
+              "line": 57
             },
             {
               "name": "footerComments",
               "kind": "property",
-              "line": 61
+              "line": 62
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 63
+              "line": 64
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 65
+              "line": 66
+            },
+            {
+              "name": "spaceRoles",
+              "kind": "property",
+              "line": 68
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 67
+              "line": 70
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 69
+              "line": 72
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 71
+              "line": 74
             }
           ]
         }
@@ -2954,6 +3065,7 @@
         "./resources/pages.js",
         "./resources/space-permissions.js",
         "./resources/space-role-mode.js",
+        "./resources/space-roles.js",
         "./resources/spaces.js",
         "./resources/tasks.js",
         "./resources/users-bulk.js",
@@ -3149,6 +3261,17 @@
             {
               "exported": "SpaceRoleModeResource",
               "original": "SpaceRoleModeResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/space-roles.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "SpaceRolesResource",
+              "original": "SpaceRolesResource"
             }
           ]
         },
@@ -3618,6 +3741,42 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
+            },
+            {
+              "exported": "SpaceRole",
+              "original": "SpaceRole"
+            },
+            {
+              "exported": "SpaceRoleDetail",
+              "original": "SpaceRoleDetail"
+            },
+            {
+              "exported": "SpaceRoleType",
+              "original": "SpaceRoleType"
+            },
+            {
+              "exported": "SpaceRolePrincipalType",
+              "original": "SpaceRolePrincipalType"
+            },
+            {
+              "exported": "ListSpaceRolesParams",
+              "original": "ListSpaceRolesParams"
+            },
+            {
+              "exported": "CreateSpaceRoleData",
+              "original": "CreateSpaceRoleData"
+            },
+            {
+              "exported": "UpdateSpaceRoleData",
+              "original": "UpdateSpaceRoleData"
+            },
+            {
+              "exported": "UpdateSpaceRoleResponse",
+              "original": "UpdateSpaceRoleResponse"
+            },
+            {
+              "exported": "DeleteSpaceRoleResponse",
+              "original": "DeleteSpaceRoleResponse"
             },
             {
               "exported": "ConfluenceUser",
@@ -4731,6 +4890,62 @@
       ]
     },
     {
+      "path": "src/confluence/resources/space-roles.ts",
+      "symbols": [
+        {
+          "name": "SpaceRolesResource",
+          "kind": "class",
+          "line": 34,
+          "exported": true,
+          "signature": "export class SpaceRolesResource",
+          "jsdoc": "Resource for the Confluence v2 `space-roles` API.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 35
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 41
+            },
+            {
+              "name": "listAll",
+              "kind": "method",
+              "line": 61
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 80
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 95
+            },
+            {
+              "name": "update",
+              "kind": "method",
+              "line": 112
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 127
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
+        "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
       "path": "src/confluence/resources/spaces.ts",
       "symbols": [
         {
@@ -5664,9 +5879,81 @@
           "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`."
         },
         {
+          "name": "SpaceRoleType",
+          "kind": "type",
+          "line": 937,
+          "exported": true,
+          "signature": "export type SpaceRoleType = 'SYSTEM' | 'CUSTOM';",
+          "jsdoc": "The role type of a {@link SpaceRole}. `SYSTEM` roles are platform-defined and not user-editable; `CUSTOM` roles are created and managed by the tenant."
+        },
+        {
+          "name": "SpaceRolePrincipalType",
+          "kind": "type",
+          "line": 943,
+          "exported": true,
+          "signature": "export type SpaceRolePrincipalType = 'USER' | 'GROUP' | 'ACCESS_CLASS';",
+          "jsdoc": "The principal-type filter accepted by `GET /space-roles`. Restricts the available-roles listing to those compatible with the named principal class."
+        },
+        {
+          "name": "SpaceRole",
+          "kind": "interface",
+          "line": 950,
+          "exported": true,
+          "signature": "export interface SpaceRole { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; readonly descr…",
+          "jsdoc": "A Confluence space role definition, as returned by the v2 `/space-roles` endpoints. All fields are documented optional in the OpenAPI spec; callers should treat any missing property as \"not surfaced for this caller\"."
+        },
+        {
+          "name": "ListSpaceRolesParams",
+          "kind": "interface",
+          "line": 968,
+          "exported": true,
+          "signature": "export interface ListSpaceRolesParams { readonly 'space-id'?: string; readonly 'role-type'?: SpaceRoleType; readonly 'pr…",
+          "jsdoc": "Query parameters for `GET /space-roles`. All filters are optional and apply server-side; the response is the standard `{ results, _links }` cursor envelope."
+        },
+        {
+          "name": "SpaceRoleDetail",
+          "kind": "interface",
+          "line": 990,
+          "exported": true,
+          "signature": "export interface SpaceRoleDetail extends SpaceRole { readonly _links?: { readonly base?: string; }; }",
+          "jsdoc": "Response shape for `GET /space-roles/{id}`. Mirrors {@link SpaceRole} with an additional optional `_links.base` Confluence site URL the server inlines on the singular read. The OpenAPI spec models this as an `allOf` composition; we flatten it here for callers that only need the `id` / `type` / `name` fields and ignore the link block."
+        },
+        {
+          "name": "CreateSpaceRoleData",
+          "kind": "interface",
+          "line": 1003,
+          "exported": true,
+          "signature": "export interface CreateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
+          "jsdoc": "Request body for `POST /space-roles`. All three fields are required by the server — there are no optional inputs on the create path. `spacePermissions` is a list of space-permission ids (e.g. `\"read/space\"`) obtained from `GET /space-permissions`."
+        },
+        {
+          "name": "UpdateSpaceRoleData",
+          "kind": "interface",
+          "line": 1018,
+          "exported": true,
+          "signature": "export interface UpdateSpaceRoleData { readonly name: string; readonly description: string; readonly spacePermissions: r…",
+          "jsdoc": "Request body for `PUT /space-roles/{id}`. The same three required fields as {@link CreateSpaceRoleData}, plus two optional reassignment fields used when the role being modified currently has anonymous-access or guest assignments that need to migrate to another role."
+        },
+        {
+          "name": "UpdateSpaceRoleResponse",
+          "kind": "interface",
+          "line": 1042,
+          "exported": true,
+          "signature": "export interface UpdateSpaceRoleResponse { readonly id?: string; readonly type?: SpaceRoleType; readonly name?: string; …",
+          "jsdoc": "Response shape for `PUT /space-roles/{id}`. The server returns 202 along with the updated role metadata and a `taskId` to poll for the async permission-rewrite progress."
+        },
+        {
+          "name": "DeleteSpaceRoleResponse",
+          "kind": "interface",
+          "line": 1056,
+          "exported": true,
+          "signature": "export interface DeleteSpaceRoleResponse { readonly taskId?: string; }",
+          "jsdoc": "Response shape for `DELETE /space-roles/{id}`. The server returns 202 with a single `taskId` callers can poll to confirm the role's permission assignments have been torn down asynchronously."
+        },
+        {
           "name": "ConfluenceAccountStatus",
           "kind": "type",
-          "line": 934,
+          "line": 1064,
           "exported": true,
           "signature": "export type ConfluenceAccountStatus = 'active' | 'inactive' | 'closed' | 'unknown';",
           "jsdoc": "Account status of a Confluence user."
@@ -5674,7 +5961,7 @@
         {
           "name": "ConfluenceAccountType",
           "kind": "type",
-          "line": 937,
+          "line": 1067,
           "exported": true,
           "signature": "export type ConfluenceAccountType = 'atlassian' | 'app' | 'customer' | 'unknown';",
           "jsdoc": "Account type of a Confluence user."
@@ -5682,7 +5969,7 @@
         {
           "name": "ConfluenceUserIcon",
           "kind": "interface",
-          "line": 943,
+          "line": 1073,
           "exported": true,
           "signature": "export interface ConfluenceUserIcon { readonly path: string; readonly isDefault: boolean; }",
           "jsdoc": "Profile picture icon for a Confluence user. May be returned as `null` when the user's privacy settings hide it."
@@ -5690,7 +5977,7 @@
         {
           "name": "ConfluenceUser",
           "kind": "interface",
-          "line": 949,
+          "line": 1079,
           "exported": true,
           "signature": "export interface ConfluenceUser { readonly accountId?: string; readonly accountType?: ConfluenceAccountType; readonly ac…",
           "jsdoc": "Confluence User as returned by the v2 user-lookup endpoints."
@@ -5698,7 +5985,7 @@
         {
           "name": "BulkUsersRequest",
           "kind": "interface",
-          "line": 968,
+          "line": 1098,
           "exported": true,
           "signature": "export interface BulkUsersRequest { readonly accountIds: readonly string[]; }",
           "jsdoc": "Request body for `POST /users-bulk`."
@@ -5706,7 +5993,7 @@
         {
           "name": "BulkUsersResponse",
           "kind": "interface",
-          "line": 978,
+          "line": 1108,
           "exported": true,
           "signature": "export interface BulkUsersResponse { readonly results: readonly ConfluenceUser[]; readonly _links?: { readonly next?: st…",
           "jsdoc": "Response shape for `POST /users-bulk`. The endpoint returns the `MultiEntityResult<User>` wrapper; `results` may be empty when none of the provided IDs resolve. Although the wrapper carries `_links`, the endpoint is single-shot — `next` is omitted."
@@ -5714,7 +6001,7 @@
         {
           "name": "CheckAccessOrInviteByEmailRequest",
           "kind": "interface",
-          "line": 996,
+          "line": 1126,
           "exported": true,
           "signature": "export interface CheckAccessOrInviteByEmailRequest { readonly emails: readonly string[]; }",
           "jsdoc": "Request body for `POST /user/access/check-access-by-email` and `POST /user/access/invite-by-email`."
@@ -5722,7 +6009,7 @@
         {
           "name": "CheckAccessByEmailResponse",
           "kind": "interface",
-          "line": 1006,
+          "line": 1136,
           "exported": true,
           "signature": "export interface CheckAccessByEmailResponse { readonly emailsWithoutAccess?: readonly string[]; readonly invalidEmails?:…",
           "jsdoc": "Response shape for `POST /user/access/check-access-by-email`."
@@ -5730,7 +6017,7 @@
         {
           "name": "Database",
           "kind": "interface",
-          "line": 1024,
+          "line": 1154,
           "exported": true,
           "signature": "export interface Database { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: stri…",
           "jsdoc": "Confluence Database content."
@@ -5738,7 +6025,7 @@
         {
           "name": "CreateDatabaseData",
           "kind": "interface",
-          "line": 1047,
+          "line": 1177,
           "exported": true,
           "signature": "export interface CreateDatabaseData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
           "jsdoc": "Request body for creating a database via `POST /databases`."
@@ -5746,7 +6033,7 @@
         {
           "name": "CreateDatabaseParams",
           "kind": "interface",
-          "line": 1054,
+          "line": 1184,
           "exported": true,
           "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
           "jsdoc": "Query parameters for `POST /databases`."
@@ -5754,7 +6041,7 @@
         {
           "name": "DatabaseAncestor",
           "kind": "interface",
-          "line": 1060,
+          "line": 1190,
           "exported": true,
           "signature": "export interface DatabaseAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | …",
           "jsdoc": "Single ancestor entry returned by `GET /databases/{id}/ancestors`."
@@ -5762,7 +6049,7 @@
         {
           "name": "ListDatabaseAncestorsParams",
           "kind": "interface",
-          "line": 1066,
+          "line": 1196,
           "exported": true,
           "signature": "export interface ListDatabaseAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing database ancestors."
@@ -5770,7 +6057,7 @@
         {
           "name": "DatabaseAncestorsResponse",
           "kind": "interface",
-          "line": 1077,
+          "line": 1207,
           "exported": true,
           "signature": "export interface DatabaseAncestorsResponse { readonly results: readonly DatabaseAncestor[]; }",
           "jsdoc": "Response shape for `GET /databases/{id}/ancestors`."
@@ -5778,7 +6065,7 @@
         {
           "name": "DatabaseDescendant",
           "kind": "interface",
-          "line": 1082,
+          "line": 1212,
           "exported": true,
           "signature": "export interface DatabaseDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: st…",
           "jsdoc": "Descendant entry returned by `GET /databases/{id}/descendants`."
@@ -5786,7 +6073,7 @@
         {
           "name": "ListDatabaseDescendantsParams",
           "kind": "interface",
-          "line": 1093,
+          "line": 1223,
           "exported": true,
           "signature": "export interface ListDatabaseDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: str…",
           "jsdoc": "Parameters for listing database descendants."
@@ -5794,7 +6081,7 @@
         {
           "name": "DatabaseChild",
           "kind": "interface",
-          "line": 1100,
+          "line": 1230,
           "exported": true,
           "signature": "export interface DatabaseChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string;…",
           "jsdoc": "Direct child entry returned by `GET /databases/{id}/direct-children`."
@@ -5802,7 +6089,7 @@
         {
           "name": "ContentSortOrder",
           "kind": "type",
-          "line": 1113,
+          "line": 1243,
           "exported": true,
           "signature": "export type ContentSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'modified-date' | '-modified-date' | …",
           "jsdoc": "Sort order tokens accepted by `/databases/{id}/direct-children`. The same vocabulary is documented under the OpenAPI `ContentSortOrder` schema."
@@ -5810,7 +6097,7 @@
         {
           "name": "ListDatabaseChildrenParams",
           "kind": "interface",
-          "line": 1126,
+          "line": 1256,
           "exported": true,
           "signature": "export interface ListDatabaseChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: Content…",
           "jsdoc": "Parameters for listing direct children of a database."
@@ -5818,7 +6105,7 @@
         {
           "name": "DatabaseOperation",
           "kind": "interface",
-          "line": 1133,
+          "line": 1263,
           "exported": true,
           "signature": "export interface DatabaseOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /databases/{id}/operations`."
@@ -5826,7 +6113,7 @@
         {
           "name": "DatabaseOperationsResponse",
           "kind": "interface",
-          "line": 1139,
+          "line": 1269,
           "exported": true,
           "signature": "export interface DatabaseOperationsResponse { readonly operations?: readonly DatabaseOperation[]; }",
           "jsdoc": "Response shape for `GET /databases/{id}/operations`."
@@ -5834,7 +6121,7 @@
         {
           "name": "GetDatabaseParams",
           "kind": "interface",
-          "line": 1148,
+          "line": 1278,
           "exported": true,
           "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
           "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
@@ -5842,7 +6129,7 @@
         {
           "name": "ListDatabasePropertiesParams",
           "kind": "interface",
-          "line": 1156,
+          "line": 1286,
           "exported": true,
           "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
           "jsdoc": "Parameters for listing content properties on a database."
@@ -5850,7 +6137,7 @@
         {
           "name": "UpdateDatabasePropertyData",
           "kind": "interface",
-          "line": 1170,
+          "line": 1300,
           "exported": true,
           "signature": "export interface UpdateDatabasePropertyData { readonly key: string; readonly value: unknown; readonly version: { readonl…",
           "jsdoc": "Request body for `PUT /databases/{database-id}/properties/{property-id}`."
@@ -5858,7 +6145,7 @@
         {
           "name": "UpdateDatabaseClassificationLevelData",
           "kind": "interface",
-          "line": 1183,
+          "line": 1313,
           "exported": true,
           "signature": "export interface UpdateDatabaseClassificationLevelData { readonly id: string; readonly status: 'current'; }",
           "jsdoc": "Request body for `PUT /databases/{id}/classification-level`."
@@ -5866,7 +6153,7 @@
         {
           "name": "ResetDatabaseClassificationLevelData",
           "kind": "interface",
-          "line": 1195,
+          "line": 1325,
           "exported": true,
           "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
           "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`."
@@ -8276,6 +8563,42 @@
             {
               "exported": "SpaceRoleMode",
               "original": "SpaceRoleMode"
+            },
+            {
+              "exported": "SpaceRole",
+              "original": "SpaceRole"
+            },
+            {
+              "exported": "SpaceRoleDetail",
+              "original": "SpaceRoleDetail"
+            },
+            {
+              "exported": "SpaceRoleType",
+              "original": "SpaceRoleType"
+            },
+            {
+              "exported": "SpaceRolePrincipalType",
+              "original": "SpaceRolePrincipalType"
+            },
+            {
+              "exported": "ListSpaceRolesParams",
+              "original": "ListSpaceRolesParams"
+            },
+            {
+              "exported": "CreateSpaceRoleData",
+              "original": "CreateSpaceRoleData"
+            },
+            {
+              "exported": "UpdateSpaceRoleData",
+              "original": "UpdateSpaceRoleData"
+            },
+            {
+              "exported": "UpdateSpaceRoleResponse",
+              "original": "UpdateSpaceRoleResponse"
+            },
+            {
+              "exported": "DeleteSpaceRoleResponse",
+              "original": "DeleteSpaceRoleResponse"
             },
             {
               "exported": "ConfluenceUser",
