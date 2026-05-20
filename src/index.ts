@@ -104,6 +104,7 @@ export type {
   ListVersionsParams,
   ClassificationLevel,
   ListClassificationLevelsResponse,
+  SpaceRoleMode,
 } from './confluence/index.js';
 
 // Jira

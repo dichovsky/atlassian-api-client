@@ -64,6 +64,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'admin-key': 'executeAdminKey',
   app: 'executeApp',
   'classification-levels': 'executeClassificationLevels',
+  'space-role-mode': 'executeSpaceRoleMode',
   issues: 'executeIssues',
   projects: 'executeProjects',
   search: 'executeSearch',

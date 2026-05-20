@@ -70,6 +70,7 @@ RESOURCES:
   admin-key              get, create, delete
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
+  space-role-mode        get
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
@@ -78,6 +79,7 @@ EXAMPLES:
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'
   atlas confluence classification-levels list
+  atlas confluence space-role-mode get
 `;
 
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3

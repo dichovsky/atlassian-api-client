@@ -28,6 +28,8 @@ export async function executeConfluenceCommand(
       return executeApp(client, cmd);
     case 'classification-levels':
       return executeClassificationLevels(client, cmd);
+    case 'space-role-mode':
+      return executeSpaceRoleMode(client, cmd);
     default:
       throw new Error(`Unknown Confluence resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -279,6 +281,18 @@ async function executeClassificationLevels(
       return client.classificationLevels.list();
     default:
       throw new Error(`Unknown classification-levels action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeSpaceRoleMode(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.spaceRoleMode.get();
+    default:
+      throw new Error(`Unknown space-role-mode action: ${cmd.action}. Actions: get`);
   }
 }
 

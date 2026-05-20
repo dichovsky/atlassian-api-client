@@ -74,6 +74,9 @@ const confluenceAppMock = {
 const confluenceClassificationLevelsMock = {
   list: vi.fn(),
 };
+const confluenceSpaceRoleModeMock = {
+  get: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -87,6 +90,7 @@ vi.mock('../../src/confluence/client.js', () => {
       adminKey: confluenceAdminKeyMock,
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
+      spaceRoleMode: confluenceSpaceRoleModeMock,
     };
   });
   return { ConfluenceClient: MockConfluenceClient };
@@ -1090,6 +1094,29 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('classification-levels', 'unknown'), GLOBALS),
       ).rejects.toThrow('Unknown classification-levels action');
+    });
+  });
+
+  // ── space-role-mode ───────────────────────────────────────────────────────
+
+  describe('space-role-mode resource', () => {
+    it('space-role-mode get calls client.spaceRoleMode.get', async () => {
+      // Arrange
+      const payload = { mode: 'ROLES' as const };
+      confluenceSpaceRoleModeMock.get.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeConfluenceCommand(cmd('space-role-mode', 'get'), GLOBALS);
+
+      // Assert
+      expect(confluenceSpaceRoleModeMock.get).toHaveBeenCalledWith();
+      expect(result).toEqual(payload);
+    });
+
+    it('space-role-mode unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('space-role-mode', 'list'), GLOBALS),
+      ).rejects.toThrow('Unknown space-role-mode action');
     });
   });
 

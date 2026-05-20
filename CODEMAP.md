@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "0.7.0"
   },
-  "sourceHash": "eb84f0fb081bc6bae7fc867a08d583f19cc56d1512f6b8fac54052a751a55ee2",
+  "sourceHash": "19c01a18fefc546b1d8f3dee9f65c42565e7c8c713733ef78de2bdad9dc3fb30",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -173,7 +173,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 20,
+      "line": 21,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -1029,6 +1029,15 @@
       "typeOnly": true
     },
     {
+      "name": "SpaceRoleMode",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 562,
+      "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
+      "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`.",
+      "typeOnly": true
+    },
+    {
       "name": "Sprint",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
@@ -1354,92 +1363,98 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 36,
+          "line": 38,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 85,
+          "line": 87,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 99,
+          "line": 101,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 141,
+          "line": 143,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 185,
+          "line": 187,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 201,
+          "line": 203,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 222,
+          "line": 224,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 233,
+          "line": 235,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 265,
+          "line": 267,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 273,
+          "line": 275,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "executeSpaceRoleMode",
+          "kind": "function",
+          "line": 287,
+          "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 285,
+          "line": 299,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 290,
+          "line": 304,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 295,
+          "line": 309,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 299,
+          "line": 313,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 308,
+          "line": 322,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -1782,13 +1797,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 83,
+          "line": 85,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 102,
+          "line": 104,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -2060,7 +2075,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 20,
+          "line": 21,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -2068,77 +2083,82 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 21
+              "line": 22
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 22
+              "line": 23
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 23
+              "line": 24
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 24
+              "line": 25
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 25
+              "line": 26
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 26
+              "line": 27
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 28
+              "line": 29
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 30
+              "line": 31
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 42
+              "line": 43
+            },
+            {
+              "name": "spaceRoleMode",
+              "kind": "property",
+              "line": 45
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 44
+              "line": 47
             }
           ]
         }
@@ -2157,6 +2177,7 @@
         "./resources/custom-content.js",
         "./resources/labels.js",
         "./resources/pages.js",
+        "./resources/space-role-mode.js",
         "./resources/spaces.js",
         "./resources/tasks.js",
         "./resources/versions.js",
@@ -2284,6 +2305,17 @@
             {
               "exported": "PagesResource",
               "original": "PagesResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/space-role-mode.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "SpaceRoleModeResource",
+              "original": "SpaceRoleModeResource"
             }
           ]
         },
@@ -2527,6 +2559,10 @@
             {
               "exported": "ListClassificationLevelsResponse",
               "original": "ListClassificationLevelsResponse"
+            },
+            {
+              "exported": "SpaceRoleMode",
+              "original": "SpaceRoleMode"
             }
           ]
         }
@@ -3165,6 +3201,35 @@
       ]
     },
     {
+      "path": "src/confluence/resources/space-role-mode.ts",
+      "symbols": [
+        {
+          "name": "SpaceRoleModeResource",
+          "kind": "class",
+          "line": 17,
+          "exported": true,
+          "signature": "export class SpaceRoleModeResource",
+          "jsdoc": "Resource for the Confluence v2 space-role-mode API.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 18
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 24
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
       "path": "src/confluence/resources/spaces.ts",
       "symbols": [
         {
@@ -3746,6 +3811,14 @@
           "exported": true,
           "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
           "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
+        },
+        {
+          "name": "SpaceRoleMode",
+          "kind": "interface",
+          "line": 562,
+          "exported": true,
+          "signature": "export interface SpaceRoleMode { readonly mode?: 'PRE_ROLES' | 'ROLES_TRANSITION' | 'ROLES'; }",
+          "jsdoc": "Tenant-level role mode for Confluence space permissions. Returned by `GET /space-role-mode`."
         }
       ]
     },
@@ -5948,6 +6021,10 @@
             {
               "exported": "ListClassificationLevelsResponse",
               "original": "ListClassificationLevelsResponse"
+            },
+            {
+              "exported": "SpaceRoleMode",
+              "original": "SpaceRoleMode"
             }
           ]
         },

@@ -15,6 +15,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `admin-key`             | `get`, `create`, `delete`                                               |
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property` |
 | `classification-levels` | `list`                                                                  |
+| `space-role-mode`       | `get`                                                                   |
 
 ## `pages`
 
@@ -142,6 +143,18 @@ Lists the data-classification levels defined for the Confluence Cloud organizati
 
 ```sh
 atlas confluence classification-levels list
+```
+
+## `space-role-mode`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `get`  | —          | —              | —              |
+
+Retrieves the tenant's space role mode (`GET /wiki/api/v2/space-role-mode`). Available on sites with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). Requires the `read:configuration:confluence` OAuth scope (or `READ` Connect app scope) and the `Can use` global permission. Returns a JSON object `{ "mode": "PRE_ROLES" | "ROLES_TRANSITION" | "ROLES" }`; the field is omitted on tenants that don't surface a mode, so callers should treat it as optional. Responds 404 when the calling user lacks permission to view the role mode.
+
+```sh
+atlas confluence space-role-mode get
 ```
 
 ## Pagination
