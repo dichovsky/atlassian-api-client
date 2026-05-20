@@ -76,6 +76,7 @@ RESOURCES:
   space-permissions      list
   space-role-mode        get
   tasks                  list, get, update
+  users                  check-access-by-email, invite-by-email
   users-bulk             lookup
 
 EXAMPLES:
@@ -100,6 +101,8 @@ EXAMPLES:
   atlas confluence space-role-mode get
   atlas confluence tasks list --status incomplete --limit 25
   atlas confluence tasks update task-1 --status complete
+  atlas confluence users check-access-by-email --emails a@example.com,b@example.com
+  atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
 `;
 

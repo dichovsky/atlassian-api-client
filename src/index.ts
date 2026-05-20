@@ -139,6 +139,8 @@ export type {
   ConfluenceAccountType,
   BulkUsersRequest,
   BulkUsersResponse,
+  CheckAccessOrInviteByEmailRequest,
+  CheckAccessByEmailResponse,
 } from './confluence/index.js';
 
 // Jira

@@ -42,6 +42,7 @@ const GLOBAL_OPTIONS = {
   'duration-hours': { type: 'string' as const },
   value: { type: 'string' as const },
   'account-ids': { type: 'string' as const },
+  emails: { type: 'string' as const },
   ids: { type: 'string' as const },
   keys: { type: 'string' as const },
   // databases-specific options

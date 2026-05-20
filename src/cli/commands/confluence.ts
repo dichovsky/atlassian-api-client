@@ -41,6 +41,8 @@ export async function executeConfluenceCommand(
       return executeSpaceRoleMode(client, cmd);
     case 'tasks':
       return executeTasks(client, cmd);
+    case 'users':
+      return executeUsers(client, cmd);
     case 'users-bulk':
       return executeUsersBulk(client, cmd);
     default:
@@ -489,6 +491,41 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
 }
 
 const TASK_STATUSES = ['incomplete', 'complete'] as const;
+
+async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'check-access-by-email': {
+      const emails = parseEmailList(requireOpt(cmd.options['emails'], '--emails'));
+      return client.users.checkAccessByEmail({ emails });
+    }
+    case 'invite-by-email': {
+      const emails = parseEmailList(requireOpt(cmd.options['emails'], '--emails'));
+      await client.users.inviteByEmail({ emails });
+      return { invited: true };
+    }
+    default:
+      throw new Error(
+        `Unknown users action: ${cmd.action}. Actions: check-access-by-email, invite-by-email`,
+      );
+  }
+}
+
+/**
+ * Parse `--emails` from the CLI into a non-empty list. Mirrors the
+ * `--account-ids` parsing used by `users-bulk` so callers get consistent
+ * comma-separated batch semantics across both user resources: surrounding
+ * whitespace per entry is trimmed and empty entries are dropped.
+ */
+function parseEmailList(raw: string): readonly string[] {
+  const emails = raw
+    .split(',')
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
+  if (emails.length === 0) {
+    throw new Error('--emails must contain at least one non-empty email address');
+  }
+  return emails;
+}
 
 async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {

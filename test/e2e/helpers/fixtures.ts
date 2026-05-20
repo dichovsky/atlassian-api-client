@@ -154,6 +154,10 @@ export const confluenceFixtures = {
   spaceRoleMode: {
     mode: 'ROLES' as const,
   },
+  checkAccessByEmail: {
+    emailsWithoutAccess: ['outsider@example.com'],
+    invalidEmails: ['not-an-email'],
+  },
   bulkUsersResponse: {
     results: [
       {

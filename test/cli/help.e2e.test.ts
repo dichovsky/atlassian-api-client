@@ -82,6 +82,19 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   sprints: 'executeSprints',
 };
 
+/**
+ * Carve out the per-API help block from `help.ts` source so that resource
+ * names shared across APIs (e.g. `users` exists for both Confluence and
+ * Jira) don't collide when we scan for a help line.
+ */
+function extractApiHelpBlock(source: string, api: 'confluence' | 'jira'): string {
+  const constName = api === 'confluence' ? 'CONFLUENCE_HELP' : 'JIRA_HELP';
+  const startRegex = new RegExp(String.raw`const\s+${constName}\s*=\s*\`([\s\S]*?)\`;`);
+  const match = startRegex.exec(source);
+  if (!match) throw new Error(`${constName} not found in help source`);
+  return match[1] as string;
+}
+
 function actionsForResource(source: string, resource: string): string[] {
   const fn = DISPATCHER_FN_BY_RESOURCE[resource];
   if (!fn) throw new Error(`no dispatcher mapping for ${resource}`);
@@ -191,9 +204,17 @@ describe('CLI --help e2e', () => {
       }
     });
 
-    for (const resource of [...confluenceResources, ...jiraResources]) {
-      it(`${resource}: action list is non-empty OR resource is actionless (search)`, () => {
-        const source = confluenceResources.includes(resource) ? confluenceSource : jiraSource;
+    // Resources may share a name across APIs (e.g. both Confluence and Jira
+    // expose a `users` resource), so we iterate over (api, resource) tuples
+    // and scope each help-line lookup to the relevant API block.
+    const apiResourceTuples: readonly { api: 'confluence' | 'jira'; resource: string }[] = [
+      ...confluenceResources.map((resource) => ({ api: 'confluence' as const, resource })),
+      ...jiraResources.map((resource) => ({ api: 'jira' as const, resource })),
+    ];
+
+    for (const { api, resource } of apiResourceTuples) {
+      it(`${api} ${resource}: action list is non-empty OR resource is actionless (search)`, () => {
+        const source = api === 'confluence' ? confluenceSource : jiraSource;
         const actions = actionsForResource(source, resource);
         if (resource === 'search') {
           expect(actions).toEqual([]);
@@ -202,16 +223,18 @@ describe('CLI --help e2e', () => {
         }
       });
 
-      it(`${resource}: every dispatcher action is documented in help text`, () => {
-        const source = confluenceResources.includes(resource) ? confluenceSource : jiraSource;
+      it(`${api} ${resource}: every dispatcher action is documented in help text`, () => {
+        const source = api === 'confluence' ? confluenceSource : jiraSource;
         const actions = actionsForResource(source, resource);
         if (actions.length === 0) return;
-        // Extract the help line for this resource: indented, starts with resource name.
-        const lineMatch = helpSource.match(new RegExp(`^\\s{2,}${resource}\\s+.*$`, 'm'));
-        expect(lineMatch, `help line for ${resource}`).not.toBeNull();
+        // Scope the help-line search to the correct API help constant so
+        // cross-API name collisions (e.g. `users`) don't match the wrong line.
+        const helpBlock = extractApiHelpBlock(helpSource, api);
+        const lineMatch = helpBlock.match(new RegExp(`^\\s{2,}${resource}\\s+.*$`, 'm'));
+        expect(lineMatch, `help line for ${api} ${resource}`).not.toBeNull();
         const helpLine = (lineMatch?.[0] ?? '').toLowerCase();
         for (const action of actions) {
-          expect(helpLine, `action '${action}' in help line for '${resource}'`).toContain(
+          expect(helpLine, `action '${action}' in help line for '${api} ${resource}'`).toContain(
             action.toLowerCase(),
           );
         }

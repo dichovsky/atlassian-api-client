@@ -20,6 +20,7 @@ import { DataPoliciesResource } from './resources/data-policies.js';
 import { DatabasesResource } from './resources/databases.js';
 import { SpacePermissionsResource } from './resources/space-permissions.js';
 import { SpaceRoleModeResource } from './resources/space-role-mode.js';
+import { UsersResource } from './resources/users.js';
 import { UsersBulkResource } from './resources/users-bulk.js';
 
 /** Client for the Atlassian Confluence Cloud REST API v2. */
@@ -56,6 +57,8 @@ export class ConfluenceClient {
   readonly spacePermissions: SpacePermissionsResource;
   /** Space role mode resource. */
   readonly spaceRoleMode: SpaceRoleModeResource;
+  /** Single-user access resource (check-access / invite by email). */
+  readonly users: UsersResource;
   /** Users bulk lookup resource. */
   readonly usersBulk: UsersBulkResource;
 
@@ -83,6 +86,7 @@ export class ConfluenceClient {
     this.databases = new DatabasesResource(transport, baseUrl);
     this.spacePermissions = new SpacePermissionsResource(transport, baseUrl);
     this.spaceRoleMode = new SpaceRoleModeResource(transport, baseUrl);
+    this.users = new UsersResource(transport, baseUrl);
     this.usersBulk = new UsersBulkResource(transport, baseUrl);
   }
 }
