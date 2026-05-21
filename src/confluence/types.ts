@@ -234,6 +234,111 @@ export interface UpdateCommentData {
   };
 }
 
+// --- Attachment Params & Types ---
+
+/** Parameters for listing attachments (tenant-wide via `GET /attachments`). */
+export interface ListAttachmentsParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
+  readonly mediaType?: string;
+  readonly filename?: string;
+}
+
+/**
+ * Status filter accepted by `GET /attachments`. Mirrors the OpenAPI
+ * `ContentStatus` enum subset (`current`, `archived`, `trashed`).
+ */
+export type AttachmentStatus = 'current' | 'archived' | 'trashed';
+
+/**
+ * Parameters for `GET /attachments` (tenant-wide attachment listing).
+ * Companion to `ListAttachmentsParams`; async-generator variant for pagination.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ListAllAttachmentsParams extends Omit<ListAttachmentsParams, 'cursor' | 'limit'> {}
+
+/** Parameters for listing attachment versions. */
+export interface ListAttachmentVersionsParams {
+  readonly sort?: VersionSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * OpenAPI `AttachmentVersion` schema — all fields are optional because the
+ * v2 list endpoint may omit fields that the detail endpoint includes.
+ */
+export interface AttachmentVersion {
+  readonly number?: number;
+  readonly message?: string;
+  readonly minorEdit?: boolean;
+  readonly authorId?: string;
+  readonly createdAt?: string;
+}
+
+/** Detailed version of an attachment, returned by `GET /attachments/{id}/versions/{version-number}`. */
+export interface AttachmentDetailedVersion extends AttachmentVersion {
+  readonly contentTypeModified?: boolean;
+  readonly collaborators?: readonly string[];
+  readonly prevVersion?: number;
+  readonly nextVersion?: number;
+}
+
+/** Parameters for listing footer comments on an attachment. */
+export interface ListAttachmentFooterCommentsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: CommentSortOrder;
+  readonly version?: number;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * Comment attached to an attachment (footer-comment).
+ * OpenAPI `AttachmentCommentModel` schema — analogous to {@link FooterComment} but
+ * tied to an attachment rather than a page/blog post.
+ */
+export interface AttachmentFooterComment {
+  readonly id?: string;
+  readonly status?: string;
+  readonly title?: string;
+  readonly body?: ContentBody;
+  readonly version?: ConfluenceVersion;
+  readonly _links?: Record<string, string>;
+}
+
+/** Parameters for listing labels on an attachment. */
+export interface ListAttachmentLabelsParams {
+  readonly prefix?: 'my' | 'team' | 'global' | 'system';
+  readonly sort?: LabelSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Response shape for `GET /attachments/{id}/operations`. */
+export interface AttachmentOperationsResponse {
+  readonly operations?: readonly { readonly operation?: string; readonly targetType?: string }[];
+}
+
+/** Parameters for downloading an attachment thumbnail. */
+export interface GetAttachmentThumbnailParams {
+  readonly width?: number;
+  readonly height?: number;
+  readonly version?: number;
+}
+
+/**
+ * Sort tokens accepted by `GET /attachments`. Mirrors the
+ * OpenAPI `AttachmentSortOrder` enum.
+ */
+export type AttachmentSortOrder =
+  | 'modified-date'
+  | '-modified-date'
+  | 'created-date'
+  | '-created-date';
+
 // --- Footer Comments (tenant + per-comment navigation) ---
 
 /**
@@ -496,17 +601,6 @@ export interface ListAllLabelsParams {
   readonly cursor?: string;
 }
 
-/**
- * Sort tokens accepted by `GET /labels/{id}/attachments`. The default
- * direction is ascending; prefix with `-` for descending. Matches the
- * OpenAPI `AttachmentSortOrder` enum.
- */
-export type AttachmentSortOrder =
-  | 'created-date'
-  | '-created-date'
-  | 'modified-date'
-  | '-modified-date';
-
 /** Parameters for `GET /labels/{id}/attachments`. */
 export interface ListAttachmentsByLabelParams {
   readonly sort?: AttachmentSortOrder;
@@ -604,10 +698,13 @@ export interface UpdateContentPropertyData {
   readonly version: { readonly number: number; readonly message?: string };
 }
 
-// --- Comment Properties ---
+// --- Shared Content Property Params (comments, attachments, databases) ---
 
-/** Parameters for listing content properties attached to a comment. */
-export interface ListCommentPropertiesParams {
+/**
+ * Parameters for listing content properties on comments, attachments, or databases.
+ * Supports optional `sort` and pagination via `cursor` and `limit`.
+ */
+export interface ListSharedContentPropertiesParams {
   readonly key?: string;
   readonly sort?: 'key' | '-key';
   readonly cursor?: string;
@@ -615,18 +712,23 @@ export interface ListCommentPropertiesParams {
 }
 
 /**
- * Request body for `PUT /comments/{comment-id}/properties/{property-id}`.
+ * Request body for updating a content property on comments, attachments, or databases.
  *
- * Mirrors the page-level / database-level content property update shape:
- * callers must echo the existing `key`, set the new `value`, and bump
+ * Callers must echo the existing `key`, set the new `value`, and bump
  * `version.number` by one for optimistic concurrency (Confluence returns
  * 409 on mismatched versions).
  */
-export interface UpdateCommentPropertyData {
+export interface UpdateSharedContentPropertyData {
   readonly key: string;
   readonly value: unknown;
   readonly version: { readonly number: number; readonly message?: string };
 }
+
+/** @deprecated Use `ListSharedContentPropertiesParams` instead. Same shape, now shared across comments/attachments/databases. */
+export type ListCommentPropertiesParams = ListSharedContentPropertiesParams;
+
+/** @deprecated Use `UpdateSharedContentPropertyData` instead. Same shape, now shared across comments/attachments/databases. */
+export type UpdateCommentPropertyData = UpdateSharedContentPropertyData;
 
 // --- App Properties ---
 
