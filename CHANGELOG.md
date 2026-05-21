@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1 (2026-05-21)
+
+### Fixed
+
+- **package** — `PaginationError`, `ResponseTooLargeError`, `executeWithRetry`, `RetryConfig`, `createMiddlewareChain`, `paginateCursor`, `paginateOffset`, `paginateSearch`, `extractCursor`, `PaginateOptions`, and `SearchPaginatedResponse` are now re-exported from the package root (`atlassian-api-client`). The 1.0.0 CHANGELOG documented them as exported from `src/core/index.ts`, which was technically accurate but unreachable: `package.json` only exposes the `.` subpath, so `import { PaginationError } from 'atlassian-api-client'` failed at runtime (`SyntaxError: does not provide an export named 'PaginationError'`) and there was no supported deep-import alternative. Callers had to catch the base `AtlassianError` and string-match `.code` instead. Existing imports continue to work unchanged.
+
+### Changed
+
+- **publish** — `publishConfig.provenance` removed from `package.json`. The flag requires OIDC and only works under a CI publish; keeping it on caused local `npm publish` to fail. Re-introduce it (and gate the `npm publish` step) inside a GitHub Actions workflow when CI-driven releases land.
+
+### Tests
+
+- **smoke** — `test/smoke/api-surface.test.ts` extended with a `root re-exports documented core surface` block that imports every newly-re-exported name from the package root and asserts the class/function/type is present. Prevents recurrence of the 1.0.0 gap.
+
 ## 1.0.0 (2026-05-21)
 
 ### Added
