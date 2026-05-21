@@ -3,7 +3,20 @@
  * These tests do not make network calls; they validate structure and type compatibility.
  */
 import { describe, it, expect } from 'vitest';
-import { ConfluenceClient, JiraClient, HttpTransport, resolveConfig } from '../../src/index.js';
+import {
+  ConfluenceClient,
+  JiraClient,
+  HttpTransport,
+  resolveConfig,
+  PaginationError,
+  ResponseTooLargeError,
+  executeWithRetry,
+  createMiddlewareChain,
+  paginateCursor,
+  paginateOffset,
+  paginateSearch,
+  extractCursor,
+} from '../../src/index.js';
 import type {
   ClientConfig,
   Logger,
@@ -11,6 +24,9 @@ import type {
   ListLabelsParams,
   ConfluenceListLabelsParams,
   JiraListLabelsParams,
+  RetryConfig,
+  PaginateOptions,
+  SearchPaginatedResponse,
 } from '../../src/index.js';
 
 const BASE_CONFIG: ClientConfig = {
@@ -181,5 +197,41 @@ describe('root type exports', () => {
 
     expect(resolved.baseUrl).toBe('https://test.atlassian.net');
     expect(transport).toBeInstanceOf(HttpTransport);
+  });
+});
+
+// Regression for 1.0.1: 1.0.0 documented these in CHANGELOG but they were
+// not re-exported from the package root, so `import { PaginationError } from
+// 'atlassian-api-client'` failed at runtime. Keep this assertion in lockstep
+// with the documented public surface to prevent recurrence.
+describe('root re-exports documented core surface', () => {
+  it('exports pagination + response-size error classes', () => {
+    expect(typeof PaginationError).toBe('function');
+    expect(new PaginationError('boom')).toBeInstanceOf(Error);
+    expect(typeof ResponseTooLargeError).toBe('function');
+    expect(new ResponseTooLargeError(1024, 200)).toBeInstanceOf(Error);
+  });
+
+  it('exports retry + middleware composition helpers', () => {
+    expect(typeof executeWithRetry).toBe('function');
+    expect(typeof createMiddlewareChain).toBe('function');
+    // Type-level reference keeps RetryConfig in the import graph.
+    const retryConfig: RetryConfig = { retries: 0, retryDelay: 1, maxRetryDelay: 1 };
+    expect(retryConfig.retries).toBe(0);
+  });
+
+  it('exports pagination helpers + options type', () => {
+    expect(typeof extractCursor).toBe('function');
+    expect(typeof paginateCursor).toBe('function');
+    expect(typeof paginateOffset).toBe('function');
+    expect(typeof paginateSearch).toBe('function');
+    const options: PaginateOptions = { maxPages: 10 };
+    expect(options.maxPages).toBe(10);
+    const searchPage: SearchPaginatedResponse<{ id: string }> = {
+      issues: [{ id: '1' }],
+      startAt: 0,
+      maxResults: 50,
+    };
+    expect(searchPage.issues).toHaveLength(1);
   });
 });

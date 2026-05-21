@@ -1,6 +1,6 @@
 {
   "name": "atlassian-api-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Typed Node.js/TypeScript clients and CLI for Atlassian Confluence Cloud REST API v2 and Jira Cloud Platform REST API v3",
   "keywords": [
     "atlassian",
@@ -84,7 +84,6 @@
     "node": ">=24.0.0"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   }
 }
