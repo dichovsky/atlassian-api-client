@@ -14,6 +14,7 @@ import type {
   ListInlineCommentsParams,
   UpdateCommentData,
   UpdateCommentPropertyData,
+  UpdateInlineCommentData,
 } from '../types.js';
 
 export class CommentsResource {
@@ -108,8 +109,12 @@ export class CommentsResource {
     return response.data;
   }
 
-  /** Update an inline comment. */
-  async updateInline(commentId: string, data: UpdateCommentData): Promise<InlineComment> {
+  /**
+   * Update an inline comment. Accepts the shared comment-update body plus the
+   * inline-only `resolved` flag — the PUT endpoint is the resolve / unresolve
+   * verb for the inline thread (spec: `UpdateInlineCommentModel`).
+   */
+  async updateInline(commentId: string, data: UpdateInlineCommentData): Promise<InlineComment> {
     const response = await this.transport.request<InlineComment>({
       method: 'PUT',
       path: `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}`,

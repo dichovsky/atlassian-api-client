@@ -9,3 +9,4 @@ export { CustomContentResource } from './custom-content.js';
 export { WhiteboardsResource } from './whiteboards.js';
 export { TasksResource } from './tasks.js';
 export { VersionsResource } from './versions.js';
+export { InlineCommentsResource } from './inline-comments.js';

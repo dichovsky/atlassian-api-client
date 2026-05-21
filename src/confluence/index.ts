@@ -96,6 +96,16 @@ export type {
   ListFooterCommentVersionsParams,
   FooterCommentVersionSummary,
   FooterCommentVersionDetail,
+  InlineCommentSortOrder,
+  ListInlineCommentsAllParams,
+  ListInlineCommentChildrenParams,
+  ListInlineCommentLikeUsersParams,
+  ListInlineCommentVersionsParams,
+  UpdateInlineCommentData,
+  InlineCommentLikesCount,
+  InlineCommentLikeUser,
+  InlineCommentOperation,
+  InlineCommentOperationsResponse,
   SpacePermission,
   ListSpacePermissionsParams,
   SpaceRoleMode,
@@ -135,6 +145,7 @@ export { ContentResource } from './resources/content.js';
 export { DataPoliciesResource } from './resources/data-policies.js';
 export { DatabasesResource } from './resources/databases.js';
 export { FooterCommentsResource } from './resources/footer-comments.js';
+export { InlineCommentsResource } from './resources/inline-comments.js';
 export { SpacePermissionsResource } from './resources/space-permissions.js';
 export { SpaceRoleModeResource } from './resources/space-role-mode.js';
 export { SpaceRolesResource } from './resources/space-roles.js';

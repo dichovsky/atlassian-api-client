@@ -338,29 +338,29 @@
 - [ ] 🔴 🧩 API: B149 Confluence: expose POST /folders/{id}/properties
   - files: `src/confluence/resources/folders.ts`, `test/confluence/folders.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B158 Confluence: expose GET /inline-comments
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B150 Confluence: expose GET /footer-comments
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🟡 🖥️ API: B159 Confluence: add CLI + skill for PUT /inline-comments/{comment-id}
+- [ ] 🟡 🖥️ API: B151 Confluence: add CLI + skill for PUT /footer-comments/{comment-id}
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B160 Confluence: expose GET /inline-comments/{id}/children
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B152 Confluence: expose GET /footer-comments/{id}/children
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B161 Confluence: expose GET /inline-comments/{id}/likes/count
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B153 Confluence: expose GET /footer-comments/{id}/likes/count
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B162 Confluence: expose GET /inline-comments/{id}/likes/users
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B154 Confluence: expose GET /footer-comments/{id}/likes/users
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B163 Confluence: expose GET /inline-comments/{id}/operations
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B155 Confluence: expose GET /footer-comments/{id}/operations
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B164 Confluence: expose GET /inline-comments/{id}/versions
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B156 Confluence: expose GET /footer-comments/{id}/versions
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B165 Confluence: expose GET /inline-comments/{id}/versions/{version-number}
-  - files: `src/confluence/resources/inline-comments.ts`, `test/confluence/inline-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+- [ ] 🔴 🧩 API: B157 Confluence: expose GET /footer-comments/{id}/versions/{version-number}
+  - files: `src/confluence/resources/footer-comments.ts`, `test/confluence/footer-comments.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B170 Confluence: expose GET /pages/{id}/ancestors
   - files: `src/confluence/resources/pages.ts`, `test/confluence/pages.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
@@ -418,6 +418,21 @@
   - deps: none
 - [ ] 🟡 🖥️ API: B893 Confluence: add CLI + skill for POST /pages/{pageId}/attachments
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🔴 🧩 API: B191 Confluence: expose GET /space-roles
+  - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🔴 🧩 API: B192 Confluence: expose POST /space-roles
+  - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🔴 🧩 API: B193 Confluence: expose DELETE /space-roles/{id}
+  - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🔴 🧩 API: B194 Confluence: expose GET /space-roles/{id}
+  - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🔴 🧩 API: B195 Confluence: expose PUT /space-roles/{id}
+  - files: `src/confluence/resources/space-roles.ts`, `test/confluence/space-roles.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B196 Confluence: expose POST /spaces
   - files: `src/confluence/resources/spaces.ts`, `test/confluence/spaces.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

@@ -360,7 +360,7 @@ export interface FooterCommentVersionDetail {
 
 /** Parameters for listing inline comments on a page or blog post. */
 export interface ListInlineCommentsParams {
-  readonly 'body-format'?: BodyFormat;
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -378,6 +378,86 @@ export interface CreateInlineCommentData {
     readonly textSelectionMatchCount?: number;
     readonly textSelectionMatchIndex?: number;
   };
+}
+
+/**
+ * Sort tokens accepted by the inline-comment list endpoints (tenant-wide list
+ * and the per-comment `/children` collection). Mirrors the `CommentSortOrder`
+ * enum in the OpenAPI spec — the default direction is ascending; prefix with
+ * `-` for descending.
+ */
+export type InlineCommentSortOrder =
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date';
+
+/** Parameters for tenant-wide `GET /inline-comments`. */
+export interface ListInlineCommentsAllParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: InlineCommentSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** Parameters for `GET /inline-comments/{id}/children`. */
+export interface ListInlineCommentChildrenParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: InlineCommentSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** Parameters for `GET /inline-comments/{id}/likes/users`. */
+export interface ListInlineCommentLikeUsersParams {
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** Parameters for `GET /inline-comments/{id}/versions`. */
+export interface ListInlineCommentVersionsParams {
+  readonly sort?: VersionSortOrder;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/**
+ * Request body for `PUT /inline-comments/{id}`. Extends the shared
+ * {@link UpdateCommentData} shape with an optional `resolved` flag — the
+ * inline-comment endpoint is the resolve / unresolve verb for an inline
+ * thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose
+ * this field and continue to use {@link UpdateCommentData}.
+ */
+export interface UpdateInlineCommentData extends UpdateCommentData {
+  readonly resolved?: boolean;
+}
+
+/**
+ * Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint
+ * returns a bare `{ count }` object; this SDK preserves the shape verbatim.
+ */
+export interface InlineCommentLikesCount {
+  readonly count?: number;
+}
+
+/**
+ * Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint
+ * returns Atlassian account identifiers; the OpenAPI spec exposes only the
+ * `accountId` field and callers should treat the shape as forward-compatible.
+ */
+export interface InlineCommentLikeUser {
+  readonly accountId?: string;
+}
+
+/** Permitted operation entry returned by `GET /inline-comments/{id}/operations`. */
+export interface InlineCommentOperation {
+  readonly operation?: string;
+  readonly targetType?: string;
+}
+
+/** Response shape for `GET /inline-comments/{id}/operations`. */
+export interface InlineCommentOperationsResponse {
+  readonly operations?: readonly InlineCommentOperation[];
 }
 
 /** Parameters for listing attachments on a page or blog post. */
