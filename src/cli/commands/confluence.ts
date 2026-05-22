@@ -62,6 +62,8 @@ export async function executeConfluenceCommand(
       return executeUsers(client, cmd);
     case 'users-bulk':
       return executeUsersBulk(client, cmd);
+    case 'whiteboards':
+      return executeWhiteboards(client, cmd);
     default:
       throw new Error(`Unknown Confluence resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -976,6 +978,115 @@ async function executeFooterComments(
     default:
       throw new Error(
         `Unknown footer-comments action: ${cmd.action}. Actions: list, get, update, children, likes-count, likes-users, operations, versions, version`,
+      );
+  }
+}
+
+async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const params = opts['private'] === true ? { private: true } : undefined;
+      return client.whiteboards.create(
+        {
+          spaceId: requireOpt(opts['space-id'], '--space-id'),
+          title: asString(opts['title']),
+          parentId: asString(opts['parent-id']),
+          templateKey: asString(opts['template-key']),
+          locale: asString(opts['locale']),
+        },
+        params,
+      );
+    }
+    case 'get':
+      return client.whiteboards.get(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+    case 'delete':
+      await client.whiteboards.delete(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+      return { deleted: true };
+    case 'ancestors':
+      return client.whiteboards.listAncestors(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.whiteboards.listDescendants(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          limit: asPositiveInt(opts['limit'], '--limit'),
+          depth: asPositiveInt(opts['depth'], '--depth'),
+          cursor: asString(opts['cursor']),
+        },
+      );
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.whiteboards.listDirectChildren(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          limit: asPositiveInt(opts['limit'], '--limit'),
+          cursor: asString(opts['cursor']),
+          ...(sort !== undefined ? { sort } : {}),
+        },
+      );
+    }
+    case 'operations':
+      return client.whiteboards.getOperations(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+    case 'get-classification-level':
+      return client.whiteboards.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+      );
+    case 'update-classification-level':
+      await client.whiteboards.updateClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        { id: requireOpt(opts['level-id'], '--level-id'), status: 'current' },
+      );
+      return { updated: true };
+    case 'reset-classification-level':
+      await client.whiteboards.resetClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+      );
+      return { reset: true };
+    case 'list-properties':
+      return client.whiteboards.listProperties(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.whiteboards.createProperty(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.whiteboards.getProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.whiteboards.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.whiteboards.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown whiteboards action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
       );
   }
 }

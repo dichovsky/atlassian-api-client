@@ -355,6 +355,56 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  whiteboard: {
+    id: 'wb-1',
+    type: 'whiteboard',
+    status: 'current',
+    title: 'E2E Roadmap',
+    spaceId: '654321',
+  },
+  whiteboardAncestors: {
+    results: [
+      { id: 'ancestor-1', type: 'page' },
+      { id: 'ancestor-2', type: 'whiteboard' },
+    ],
+  },
+  whiteboardDescendants: {
+    results: [{ id: 'desc-1', type: 'page', title: 'Child', depth: 1 }],
+    _links: { next: null },
+  },
+  whiteboardChildren: {
+    results: [{ id: 'child-1', type: 'page', title: 'Direct Child' }],
+    _links: { next: null },
+  },
+  whiteboardOperations: {
+    operations: [
+      { operation: 'read', targetType: 'whiteboard' },
+      { operation: 'update', targetType: 'whiteboard' },
+    ],
+  },
+  whiteboardClassificationLevel: {
+    id: 'cl-1',
+    name: 'Public',
+    status: 'PUBLISHED',
+    color: 'GREEN',
+  },
+  whiteboardProperty: {
+    id: 'prop-1',
+    key: 'feature-flags',
+    value: { beta: true },
+    version: { number: 3 },
+  },
+  whiteboardPropertyList: {
+    results: [
+      {
+        id: 'prop-1',
+        key: 'feature-flags',
+        value: { beta: true },
+        version: { number: 3 },
+      },
+    ],
+    _links: { next: null },
+  },
   task: {
     id: 'task-1',
     status: 'incomplete' as const,

@@ -1507,6 +1507,262 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'GET', pathname: `${P}/footer-comments/77777/versions/2` },
   },
+
+  // ─── whiteboards ──────────────────────────────────────────────────────
+  {
+    name: 'whiteboards create',
+    argv: ['confluence', 'whiteboards', 'create', '--space-id', '654321', '--title', 'E2E Roadmap'],
+    routes: [{ method: 'POST', path: `${P}/whiteboards`, status: 201, body: F.whiteboard }],
+    expectCall: { method: 'POST', pathname: `${P}/whiteboards` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ spaceId: '654321', title: 'E2E Roadmap' });
+    },
+  },
+  {
+    name: 'whiteboards create --private',
+    argv: [
+      'confluence',
+      'whiteboards',
+      'create',
+      '--space-id',
+      '654321',
+      '--title',
+      'Secret',
+      '--private',
+    ],
+    routes: [{ method: 'POST', path: `${P}/whiteboards`, status: 201, body: F.whiteboard }],
+    expectCall: { method: 'POST', pathname: `${P}/whiteboards` },
+    expectQuery: (query) => {
+      expect(query.private).toBe('true');
+    },
+  },
+  {
+    name: 'whiteboards get',
+    argv: ['confluence', 'whiteboards', 'get', 'wb-1'],
+    routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"id": "wb-1"'],
+  },
+  {
+    name: 'whiteboards delete',
+    argv: ['confluence', 'whiteboards', 'delete', 'wb-1'],
+    routes: [{ method: 'DELETE', path: `${P}/whiteboards/wb-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'whiteboards ancestors',
+    argv: ['confluence', 'whiteboards', 'ancestors', 'wb-1', '--limit', '10'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/ancestors`,
+        body: F.whiteboardAncestors,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/ancestors` },
+    expectStdout: ['"id": "ancestor-1"'],
+    expectQuery: (query) => {
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'whiteboards descendants',
+    argv: ['confluence', 'whiteboards', 'descendants', 'wb-1', '--depth', '3', '--limit', '25'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/descendants`,
+        body: F.whiteboardDescendants,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/descendants` },
+    expectStdout: ['"id": "desc-1"'],
+    expectQuery: (query) => {
+      expect(query.depth).toBe('3');
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'whiteboards direct-children',
+    argv: ['confluence', 'whiteboards', 'direct-children', 'wb-1', '--sort=-title'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/direct-children`,
+        body: F.whiteboardChildren,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/direct-children` },
+    expectStdout: ['"id": "child-1"'],
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-title');
+    },
+  },
+  {
+    name: 'whiteboards operations',
+    argv: ['confluence', 'whiteboards', 'operations', 'wb-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/operations`,
+        body: F.whiteboardOperations,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/operations` },
+    expectStdout: ['"operation": "read"'],
+  },
+  {
+    name: 'whiteboards get-classification-level',
+    argv: ['confluence', 'whiteboards', 'get-classification-level', 'wb-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/classification-level`,
+        body: F.whiteboardClassificationLevel,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/classification-level` },
+    expectStdout: ['"id": "cl-1"'],
+  },
+  {
+    name: 'whiteboards update-classification-level',
+    argv: [
+      'confluence',
+      'whiteboards',
+      'update-classification-level',
+      'wb-1',
+      '--level-id',
+      'cl-1',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/whiteboards/wb-1/classification-level`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/whiteboards/wb-1/classification-level` },
+    expectStdout: ['"updated": true'],
+    expectBody: (body) => {
+      expect(body).toEqual({ id: 'cl-1', status: 'current' });
+    },
+  },
+  {
+    name: 'whiteboards reset-classification-level',
+    argv: ['confluence', 'whiteboards', 'reset-classification-level', 'wb-1'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/whiteboards/wb-1/classification-level/reset`,
+        status: 204,
+      },
+    ],
+    expectCall: {
+      method: 'POST',
+      pathname: `${P}/whiteboards/wb-1/classification-level/reset`,
+    },
+    expectStdout: ['"reset": true'],
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'current' });
+    },
+  },
+  {
+    name: 'whiteboards list-properties',
+    argv: ['confluence', 'whiteboards', 'list-properties', 'wb-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/properties`,
+        body: F.whiteboardPropertyList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/properties` },
+    expectStdout: ['"id": "prop-1"', '"key": "feature-flags"'],
+  },
+  {
+    name: 'whiteboards create-property',
+    argv: [
+      'confluence',
+      'whiteboards',
+      'create-property',
+      'wb-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/whiteboards/wb-1/properties`,
+        status: 201,
+        body: F.whiteboardProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/whiteboards/wb-1/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'feature-flags', value: { beta: true } });
+    },
+  },
+  {
+    name: 'whiteboards get-property',
+    argv: ['confluence', 'whiteboards', 'get-property', 'wb-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/whiteboards/wb-1/properties/prop-1`,
+        body: F.whiteboardProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1/properties/prop-1` },
+    expectStdout: ['"id": "prop-1"'],
+  },
+  {
+    name: 'whiteboards update-property',
+    argv: [
+      'confluence',
+      'whiteboards',
+      'update-property',
+      'wb-1',
+      '--property-id',
+      'prop-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":false}',
+      '--version-number',
+      '4',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/whiteboards/wb-1/properties/prop-1`,
+        body: F.whiteboardProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/whiteboards/wb-1/properties/prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'feature-flags',
+        value: { beta: false },
+        version: { number: 4 },
+      });
+    },
+  },
+  {
+    name: 'whiteboards delete-property',
+    argv: ['confluence', 'whiteboards', 'delete-property', 'wb-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/whiteboards/wb-1/properties/prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/whiteboards/wb-1/properties/prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {

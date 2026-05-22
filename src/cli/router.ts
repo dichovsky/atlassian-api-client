@@ -101,6 +101,9 @@ const GLOBAL_OPTIONS = {
   'role-type': { type: 'string' as const },
   'anonymous-reassignment-role-id': { type: 'string' as const },
   'guest-reassignment-role-id': { type: 'string' as const },
+  // whiteboards-specific options
+  'template-key': { type: 'string' as const },
+  locale: { type: 'string' as const },
   // boards-specific options
   'filter-id': { type: 'string' as const },
   feature: { type: 'string' as const },
