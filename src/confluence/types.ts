@@ -2167,10 +2167,10 @@ export interface ResetBlogPostClassificationLevelData {
 }
 
 /**
- * Request body for `POST /blogposts/{id}/redact` (also reused by the page
- * variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is
- * required so the server can detect stale clients submitting redactions
- * against an outdated version of the content.
+ * Request body for `POST /blogposts/{id}/redact` (shared with page variant).
+ * Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so
+ * the server can detect stale clients submitting redactions against an
+ * outdated version of the content.
  *
  * Requires Atlassian Guard Premium on the target tenant.
  */
@@ -2379,32 +2379,11 @@ export interface PageOperationsResponse {
   readonly operations?: readonly PageOperation[];
 }
 
-/**
- * Request body for `POST /pages/{id}/redact` — shares the OpenAPI
- * `RedactionRequest` schema with the blog-post variant. `createdAt` is
- * required so the server can detect stale clients submitting redactions
- * against an outdated version of the content.
- *
- * Requires Atlassian Guard Premium on the target tenant.
- */
-export interface RedactPageData {
-  /** Timestamp when the content was last updated; mirrors the server's freshness check. */
-  readonly createdAt: string;
-  /** Squash historical versions containing the redacted text when `true`. */
-  readonly cleanHistory?: boolean;
-  /** Optional specific historical version to redact against (defaults to current). */
-  readonly versionNumber?: number;
-  /** Body redactions — JSON-pointer targeted ranges in the content body. */
-  readonly body?: { readonly redactions?: readonly RedactionPointer[] };
-  /** Title redactions — same pointer format as body. */
-  readonly title?: { readonly redactions?: readonly RedactionPointer[] };
-}
+/** Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type. */
+export type RedactPageData = RedactBlogPostData;
 
-/** Response from `POST /pages/{id}/redact` — mirrors `RedactionResponse`. */
-export interface RedactPageResponse {
-  readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };
-  readonly title?: { readonly redactions?: readonly RedactionPointerResponse[] };
-}
+/** Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type. */
+export type RedactPageResponse = RedactBlogPostResponse;
 
 /**
  * Request body for `PUT /pages/{id}/title`.

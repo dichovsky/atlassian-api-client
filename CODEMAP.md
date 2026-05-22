@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "86318dc2dc75685753bf2986ae232abb4ff85aa6b745d246120d4cff9bd38a5b",
+  "sourceHash": "f922af12e842f32dcceb49325045cd9017e18a95ee0ac58081eaea4c4dbd197f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -608,7 +608,7 @@
       "name": "CreateEmbedData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2604,
+      "line": 2583,
       "signature": "export interface CreateEmbedData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; readon…",
       "jsdoc": "Request body for `POST /embeds`.",
       "typeOnly": true
@@ -633,7 +633,7 @@
       "name": "CreateFolderData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2475,
+      "line": 2454,
       "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
       "jsdoc": "Request body for `POST /folders`.",
       "typeOnly": true
@@ -981,7 +981,7 @@
       "name": "Embed",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2578,
+      "line": 2557,
       "signature": "export interface Embed { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string;…",
       "jsdoc": "Confluence v2 embed (Smart Link in the content tree) — matches the `SmartLinkSingle` schema in the Confluence v2 OpenAPI spec.",
       "typeOnly": true
@@ -990,7 +990,7 @@
       "name": "EmbedAncestor",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2623,
+      "line": 2602,
       "signature": "export interface EmbedAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fo…",
       "jsdoc": "Single ancestor entry returned by `GET /embeds/{id}/ancestors`.",
       "typeOnly": true
@@ -999,7 +999,7 @@
       "name": "EmbedAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2641,
+      "line": 2620,
       "signature": "export interface EmbedAncestorsResponse { readonly results: readonly EmbedAncestor[]; }",
       "jsdoc": "Response shape for `GET /embeds/{id}/ancestors`.",
       "typeOnly": true
@@ -1008,7 +1008,7 @@
       "name": "EmbedChild",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2664,
+      "line": 2643,
       "signature": "export interface EmbedChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; re…",
       "jsdoc": "Direct child entry returned by `GET /embeds/{id}/direct-children`.",
       "typeOnly": true
@@ -1017,7 +1017,7 @@
       "name": "EmbedDescendant",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2646,
+      "line": 2625,
       "signature": "export interface EmbedDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: strin…",
       "jsdoc": "Descendant entry returned by `GET /embeds/{id}/descendants`.",
       "typeOnly": true
@@ -1026,7 +1026,7 @@
       "name": "EmbedOperation",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2688,
+      "line": 2667,
       "signature": "export interface EmbedOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /embeds/{id}/operations`.",
       "typeOnly": true
@@ -1035,7 +1035,7 @@
       "name": "EmbedOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2694,
+      "line": 2673,
       "signature": "export interface EmbedOperationsResponse { readonly operations?: readonly EmbedOperation[]; }",
       "jsdoc": "Response shape for `GET /embeds/{id}/operations`.",
       "typeOnly": true
@@ -1068,7 +1068,7 @@
       "name": "Folder",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2452,
+      "line": 2431,
       "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
       "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`.",
       "typeOnly": true
@@ -1077,7 +1077,7 @@
       "name": "FolderAncestor",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2493,
+      "line": 2472,
       "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
       "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`.",
       "typeOnly": true
@@ -1086,7 +1086,7 @@
       "name": "FolderAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2511,
+      "line": 2490,
       "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
       "jsdoc": "Response shape for `GET /folders/{id}/ancestors`.",
       "typeOnly": true
@@ -1095,7 +1095,7 @@
       "name": "FolderChild",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2534,
+      "line": 2513,
       "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
       "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`.",
       "typeOnly": true
@@ -1104,7 +1104,7 @@
       "name": "FolderDescendant",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2516,
+      "line": 2495,
       "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
       "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`.",
       "typeOnly": true
@@ -1113,7 +1113,7 @@
       "name": "FolderOperation",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2557,
+      "line": 2536,
       "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`.",
       "typeOnly": true
@@ -1122,7 +1122,7 @@
       "name": "FolderOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2563,
+      "line": 2542,
       "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
       "jsdoc": "Response shape for `GET /folders/{id}/operations`.",
       "typeOnly": true
@@ -1274,7 +1274,7 @@
       "name": "GetEmbedParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2615,
+      "line": 2594,
       "signature": "export interface GetEmbedParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: boole…",
       "jsdoc": "Parameters for `GET /embeds/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
@@ -1283,7 +1283,7 @@
       "name": "GetFolderParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2485,
+      "line": 2464,
       "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
       "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
@@ -1833,7 +1833,7 @@
       "name": "ListEmbedAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2629,
+      "line": 2608,
       "signature": "export interface ListEmbedAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing embed ancestors.",
       "typeOnly": true
@@ -1842,7 +1842,7 @@
       "name": "ListEmbedChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2681,
+      "line": 2660,
       "signature": "export interface ListEmbedChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSor…",
       "jsdoc": "Parameters for listing direct children of an embed.",
       "typeOnly": true
@@ -1851,7 +1851,7 @@
       "name": "ListEmbedDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2657,
+      "line": 2636,
       "signature": "export interface ListEmbedDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string…",
       "jsdoc": "Parameters for listing embed descendants (cursor-paginated).",
       "typeOnly": true
@@ -1876,7 +1876,7 @@
       "name": "ListFolderAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2499,
+      "line": 2478,
       "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing folder ancestors.",
       "typeOnly": true
@@ -1885,7 +1885,7 @@
       "name": "ListFolderChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2550,
+      "line": 2529,
       "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
       "jsdoc": "Parameters for listing direct children of a folder.",
       "typeOnly": true
@@ -1894,7 +1894,7 @@
       "name": "ListFolderDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2527,
+      "line": 2506,
       "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
       "jsdoc": "Parameters for listing folder descendants (cursor-paginated).",
       "typeOnly": true
@@ -2047,7 +2047,7 @@
       "name": "ListPageFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2423,
+      "line": 2402,
       "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`.",
       "typeOnly": true
@@ -2056,7 +2056,7 @@
       "name": "ListPageInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2432,
+      "line": 2411,
       "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
       "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`.",
       "typeOnly": true
@@ -2435,7 +2435,7 @@
       "file": "src/confluence/types.ts",
       "line": 2177,
       "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
-      "jsdoc": "Request body for `POST /blogposts/{id}/redact` (also reused by the page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
+      "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
       "typeOnly": true
     },
     {
@@ -2449,20 +2449,20 @@
     },
     {
       "name": "RedactPageData",
-      "kind": "interface",
+      "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 2390,
-      "signature": "export interface RedactPageData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumber?: …",
-      "jsdoc": "Request body for `POST /pages/{id}/redact` — shares the OpenAPI `RedactionRequest` schema with the blog-post variant. `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
+      "line": 2383,
+      "signature": "export type RedactPageData = RedactBlogPostData;",
+      "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type.",
       "typeOnly": true
     },
     {
       "name": "RedactPageResponse",
-      "kind": "interface",
+      "kind": "type",
       "file": "src/confluence/types.ts",
-      "line": 2404,
-      "signature": "export interface RedactPageResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] }; rea…",
-      "jsdoc": "Response from `POST /pages/{id}/redact` — mirrors `RedactionResponse`.",
+      "line": 2386,
+      "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
+      "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type.",
       "typeOnly": true
     },
     {
@@ -2873,7 +2873,7 @@
       "name": "UpdatePageTitleData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 2417,
+      "line": 2396,
       "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
       "jsdoc": "Request body for `PUT /pages/{id}/title`.",
       "typeOnly": true
@@ -9795,7 +9795,7 @@
           "line": 2177,
           "exported": true,
           "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
-          "jsdoc": "Request body for `POST /blogposts/{id}/redact` (also reused by the page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
+          "jsdoc": "Request body for `POST /blogposts/{id}/redact` (shared with page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
         },
         {
           "name": "RedactionPointer",
@@ -9975,24 +9975,24 @@
         },
         {
           "name": "RedactPageData",
-          "kind": "interface",
-          "line": 2390,
+          "kind": "type",
+          "line": 2383,
           "exported": true,
-          "signature": "export interface RedactPageData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumber?: …",
-          "jsdoc": "Request body for `POST /pages/{id}/redact` — shares the OpenAPI `RedactionRequest` schema with the blog-post variant. `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
+          "signature": "export type RedactPageData = RedactBlogPostData;",
+          "jsdoc": "Request body for `POST /pages/{id}/redact`. Type-aliased to the shared redaction type."
         },
         {
           "name": "RedactPageResponse",
-          "kind": "interface",
-          "line": 2404,
+          "kind": "type",
+          "line": 2386,
           "exported": true,
-          "signature": "export interface RedactPageResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] }; rea…",
-          "jsdoc": "Response from `POST /pages/{id}/redact` — mirrors `RedactionResponse`."
+          "signature": "export type RedactPageResponse = RedactBlogPostResponse;",
+          "jsdoc": "Response from `POST /pages/{id}/redact`. Type-aliased to the shared redaction response type."
         },
         {
           "name": "UpdatePageTitleData",
           "kind": "interface",
-          "line": 2417,
+          "line": 2396,
           "exported": true,
           "signature": "export interface UpdatePageTitleData { readonly status: 'current' | 'draft'; readonly title: string; }",
           "jsdoc": "Request body for `PUT /pages/{id}/title`."
@@ -10000,7 +10000,7 @@
         {
           "name": "ListPageFooterCommentsParams",
           "kind": "interface",
-          "line": 2423,
+          "line": 2402,
           "exported": true,
           "signature": "export interface ListPageFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/footer-comments`."
@@ -10008,7 +10008,7 @@
         {
           "name": "ListPageInlineCommentsParams",
           "kind": "interface",
-          "line": 2432,
+          "line": 2411,
           "exported": true,
           "signature": "export interface ListPageInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly status…",
           "jsdoc": "Parameters for `GET /pages/{id}/inline-comments`."
@@ -10016,7 +10016,7 @@
         {
           "name": "Folder",
           "kind": "interface",
-          "line": 2452,
+          "line": 2431,
           "exported": true,
           "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
           "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`."
@@ -10024,7 +10024,7 @@
         {
           "name": "CreateFolderData",
           "kind": "interface",
-          "line": 2475,
+          "line": 2454,
           "exported": true,
           "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
           "jsdoc": "Request body for `POST /folders`."
@@ -10032,7 +10032,7 @@
         {
           "name": "GetFolderParams",
           "kind": "interface",
-          "line": 2485,
+          "line": 2464,
           "exported": true,
           "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
           "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
@@ -10040,7 +10040,7 @@
         {
           "name": "FolderAncestor",
           "kind": "interface",
-          "line": 2493,
+          "line": 2472,
           "exported": true,
           "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
           "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`."
@@ -10048,7 +10048,7 @@
         {
           "name": "ListFolderAncestorsParams",
           "kind": "interface",
-          "line": 2499,
+          "line": 2478,
           "exported": true,
           "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing folder ancestors."
@@ -10056,7 +10056,7 @@
         {
           "name": "FolderAncestorsResponse",
           "kind": "interface",
-          "line": 2511,
+          "line": 2490,
           "exported": true,
           "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
           "jsdoc": "Response shape for `GET /folders/{id}/ancestors`."
@@ -10064,7 +10064,7 @@
         {
           "name": "FolderDescendant",
           "kind": "interface",
-          "line": 2516,
+          "line": 2495,
           "exported": true,
           "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
           "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`."
@@ -10072,7 +10072,7 @@
         {
           "name": "ListFolderDescendantsParams",
           "kind": "interface",
-          "line": 2527,
+          "line": 2506,
           "exported": true,
           "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
           "jsdoc": "Parameters for listing folder descendants (cursor-paginated)."
@@ -10080,7 +10080,7 @@
         {
           "name": "FolderChild",
           "kind": "interface",
-          "line": 2534,
+          "line": 2513,
           "exported": true,
           "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
           "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`."
@@ -10088,7 +10088,7 @@
         {
           "name": "ListFolderChildrenParams",
           "kind": "interface",
-          "line": 2550,
+          "line": 2529,
           "exported": true,
           "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
           "jsdoc": "Parameters for listing direct children of a folder."
@@ -10096,7 +10096,7 @@
         {
           "name": "FolderOperation",
           "kind": "interface",
-          "line": 2557,
+          "line": 2536,
           "exported": true,
           "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`."
@@ -10104,7 +10104,7 @@
         {
           "name": "FolderOperationsResponse",
           "kind": "interface",
-          "line": 2563,
+          "line": 2542,
           "exported": true,
           "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
           "jsdoc": "Response shape for `GET /folders/{id}/operations`."
@@ -10112,7 +10112,7 @@
         {
           "name": "Embed",
           "kind": "interface",
-          "line": 2578,
+          "line": 2557,
           "exported": true,
           "signature": "export interface Embed { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string;…",
           "jsdoc": "Confluence v2 embed (Smart Link in the content tree) — matches the `SmartLinkSingle` schema in the Confluence v2 OpenAPI spec."
@@ -10120,7 +10120,7 @@
         {
           "name": "CreateEmbedData",
           "kind": "interface",
-          "line": 2604,
+          "line": 2583,
           "exported": true,
           "signature": "export interface CreateEmbedData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; readon…",
           "jsdoc": "Request body for `POST /embeds`."
@@ -10128,7 +10128,7 @@
         {
           "name": "GetEmbedParams",
           "kind": "interface",
-          "line": 2615,
+          "line": 2594,
           "exported": true,
           "signature": "export interface GetEmbedParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: boole…",
           "jsdoc": "Parameters for `GET /embeds/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
@@ -10136,7 +10136,7 @@
         {
           "name": "EmbedAncestor",
           "kind": "interface",
-          "line": 2623,
+          "line": 2602,
           "exported": true,
           "signature": "export interface EmbedAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fo…",
           "jsdoc": "Single ancestor entry returned by `GET /embeds/{id}/ancestors`."
@@ -10144,7 +10144,7 @@
         {
           "name": "ListEmbedAncestorsParams",
           "kind": "interface",
-          "line": 2629,
+          "line": 2608,
           "exported": true,
           "signature": "export interface ListEmbedAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing embed ancestors."
@@ -10152,7 +10152,7 @@
         {
           "name": "EmbedAncestorsResponse",
           "kind": "interface",
-          "line": 2641,
+          "line": 2620,
           "exported": true,
           "signature": "export interface EmbedAncestorsResponse { readonly results: readonly EmbedAncestor[]; }",
           "jsdoc": "Response shape for `GET /embeds/{id}/ancestors`."
@@ -10160,7 +10160,7 @@
         {
           "name": "EmbedDescendant",
           "kind": "interface",
-          "line": 2646,
+          "line": 2625,
           "exported": true,
           "signature": "export interface EmbedDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: strin…",
           "jsdoc": "Descendant entry returned by `GET /embeds/{id}/descendants`."
@@ -10168,7 +10168,7 @@
         {
           "name": "ListEmbedDescendantsParams",
           "kind": "interface",
-          "line": 2657,
+          "line": 2636,
           "exported": true,
           "signature": "export interface ListEmbedDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string…",
           "jsdoc": "Parameters for listing embed descendants (cursor-paginated)."
@@ -10176,7 +10176,7 @@
         {
           "name": "EmbedChild",
           "kind": "interface",
-          "line": 2664,
+          "line": 2643,
           "exported": true,
           "signature": "export interface EmbedChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; re…",
           "jsdoc": "Direct child entry returned by `GET /embeds/{id}/direct-children`."
@@ -10184,7 +10184,7 @@
         {
           "name": "ListEmbedChildrenParams",
           "kind": "interface",
-          "line": 2681,
+          "line": 2660,
           "exported": true,
           "signature": "export interface ListEmbedChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSor…",
           "jsdoc": "Parameters for listing direct children of an embed."
@@ -10192,7 +10192,7 @@
         {
           "name": "EmbedOperation",
           "kind": "interface",
-          "line": 2688,
+          "line": 2667,
           "exported": true,
           "signature": "export interface EmbedOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /embeds/{id}/operations`."
@@ -10200,7 +10200,7 @@
         {
           "name": "EmbedOperationsResponse",
           "kind": "interface",
-          "line": 2694,
+          "line": 2673,
           "exported": true,
           "signature": "export interface EmbedOperationsResponse { readonly operations?: readonly EmbedOperation[]; }",
           "jsdoc": "Response shape for `GET /embeds/{id}/operations`."
