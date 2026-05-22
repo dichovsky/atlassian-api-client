@@ -698,6 +698,81 @@ export const confluenceFixtures = {
   customContentOperations: {
     operations: [{ operation: 'read', targetType: 'custom-content' }],
   },
+
+  // ── Page sub-resources (B170-B188 + B895 + B893) ─────────────────────────
+  pageAncestors: {
+    results: [
+      { id: 'ancestor-1', type: 'page' },
+      { id: 'ancestor-2', type: 'page' },
+    ],
+  },
+  pageDescendants: {
+    results: [{ id: 'desc-1', type: 'page', title: 'Nested Page', depth: 1 }],
+    _links: { next: null },
+  },
+  pageDirectChildren: {
+    results: [{ id: 'child-1', type: 'page', title: 'Direct Child' }],
+    _links: { next: null },
+  },
+  pageChildren: {
+    results: [{ id: 'cp-1', title: 'Child Page', spaceId: '654321', childPosition: 0 }],
+    _links: { next: null },
+  },
+  pageClassificationLevel: {
+    id: 'cl-1',
+    name: 'Public',
+    status: 'PUBLISHED',
+    color: 'GREEN',
+  },
+  pageCustomContentList: {
+    results: [{ id: 'cc-pg-1', type: 'ai.atlassian.collection', title: 'Embedded' }],
+    _links: { next: null },
+  },
+  pageLikeCount: { count: 7 },
+  pageLikeUsers: {
+    results: [{ accountId: 'acc-pg-1' }, { accountId: 'acc-pg-2' }],
+    _links: { next: null },
+  },
+  pageOperations: {
+    operations: [
+      { operation: 'read', targetType: 'page' },
+      { operation: 'update', targetType: 'page' },
+    ],
+  },
+  pageRedactResponse: {
+    body: {
+      redactions: [{ pointer: '/body/0/0', from: 0, to: 4, reason: 'PII', id: 'redact-pg-1' }],
+    },
+  },
+  pageProperty: {
+    id: 'pg-prop-1',
+    key: 'reviewed',
+    value: { yes: true },
+    version: { number: 1 },
+  },
+  pagePropertyList: {
+    results: [{ id: 'pg-prop-1', key: 'reviewed', value: { yes: true }, version: { number: 1 } }],
+    _links: { next: null },
+  },
+  pageVersionDetail: {
+    number: 2,
+    authorId: 'acc-1',
+    message: 'edited',
+    createdAt: '2026-05-21T00:00:00Z',
+    minorEdit: false,
+  },
+  pageAttachmentUploadResult: {
+    results: [
+      {
+        id: 'att-uploaded-1',
+        status: 'current',
+        title: 'screenshot.png',
+        pageId: '12345',
+        mediaType: 'image/png',
+      },
+    ],
+    _links: { next: null },
+  },
 };
 
 export const jiraFixtures = {

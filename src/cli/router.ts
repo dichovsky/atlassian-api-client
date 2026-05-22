@@ -142,6 +142,9 @@ const GLOBAL_OPTIONS = {
   filename: { type: 'string' as const },
   width: { type: 'string' as const },
   height: { type: 'string' as const },
+  // Upload-attachment file path (B893 — `atlas confluence pages upload-attachment`).
+  // Local filesystem path read into a Blob before the multipart POST.
+  file: { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

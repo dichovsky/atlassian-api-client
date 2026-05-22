@@ -8,6 +8,7 @@ import type {
   BlogPostLookupStatus,
   BlogPostSortOrder,
   ChildCustomContentSortOrder,
+  ChildPageSortOrder,
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
@@ -126,9 +127,202 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         purge: opts['purge'] === true ? true : undefined,
       });
       return { deleted: true };
+
+    // ── hierarchy (B170, B175, B176, B895) ────────────────────────────────
+    case 'ancestors':
+      return client.pages.listAncestors(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.pages.listDescendants(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        depth: asDepth(opts['depth']),
+        cursor: asString(opts['cursor']),
+      });
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.pages.listDirectChildren(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ...(sort !== undefined ? { sort } : {}),
+      });
+    }
+    case 'children': {
+      const sort = asEnum(opts['sort'], CHILD_PAGE_SORT_ORDERS, 'sort');
+      return client.pages.listChildren(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        ...(sort !== undefined ? { sort } : {}),
+      });
+    }
+
+    // ── classification level (B171-B173) ──────────────────────────────────
+    case 'get-classification-level': {
+      const clStatus = asEnum(opts['status'], CLASSIFICATION_STATUS, 'status');
+      return client.pages.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        clStatus !== undefined ? { status: clStatus } : undefined,
+      );
+    }
+    case 'update-classification-level': {
+      const pageStatus =
+        asEnum(opts['status'], PAGE_CLASSIFICATION_STATUSES, 'status') ?? 'current';
+      await client.pages.updateClassificationLevel(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        id: requireOpt(opts['level-id'], '--level-id'),
+        status: pageStatus,
+      });
+      return { updated: true };
+    }
+    case 'reset-classification-level': {
+      const pageStatus =
+        asEnum(opts['status'], PAGE_CLASSIFICATION_STATUSES, 'status') ?? 'current';
+      await client.pages.resetClassificationLevel(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        status: pageStatus,
+      });
+      return { reset: true };
+    }
+
+    // ── custom content (B174) ─────────────────────────────────────────────
+    case 'custom-content': {
+      const ccSort = asEnum(opts['sort'], CUSTOM_CONTENT_SORT_ORDERS, 'sort');
+      const ccBodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.pages.listCustomContent(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        type: requireOpt(opts['type'], '--type'),
+        ...(ccSort !== undefined ? { sort: ccSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        ...(ccBodyFormat !== undefined ? { 'body-format': ccBodyFormat } : {}),
+      });
+    }
+
+    // ── likes (B177-B178) ─────────────────────────────────────────────────
+    case 'likes-count':
+      return client.pages.getLikeCount(requireArg(cmd.positionalArgs[0], 'page ID'));
+    case 'likes-users':
+      return client.pages.listLikeUsers(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+
+    // ── operations (B179) ─────────────────────────────────────────────────
+    case 'operations':
+      return client.pages.getOperations(requireArg(cmd.positionalArgs[0], 'page ID'));
+
+    // ── redact (B180) ─────────────────────────────────────────────────────
+    case 'redact': {
+      // Body shape is non-trivial (`RedactPageData`), so the CLI accepts the
+      // full payload as a single JSON value through `--value`. Mirrors the
+      // blog-posts redact dispatch — convenience overrides `--created-at` /
+      // `--clean-history` merge into the parsed `--value` payload and win
+      // over its matching top-level keys.
+      const rawPayload = requireOpt(opts['value'], '--value');
+      const parsed = parseJsonValue(rawPayload);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('--value must be a JSON object describing the RedactPageData payload');
+      }
+      const payload: Record<string, unknown> = { ...(parsed as Record<string, unknown>) };
+      if (typeof opts['created-at'] === 'string') {
+        payload['createdAt'] = opts['created-at'];
+      }
+      if (opts['clean-history'] === true) {
+        payload['cleanHistory'] = true;
+      }
+      if (typeof payload['createdAt'] !== 'string' || payload['createdAt'].length === 0) {
+        throw new Error(
+          '--value must include a "createdAt" timestamp (or supply --created-at on the command line)',
+        );
+      }
+      return client.pages.redact(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        payload as unknown as Parameters<typeof client.pages.redact>[1],
+      );
+    }
+
+    // ── title (B181) ──────────────────────────────────────────────────────
+    case 'update-title': {
+      const titleStatus = asEnum(opts['status'], PAGE_TITLE_STATUSES, 'status') ?? 'current';
+      return client.pages.updateTitle(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        status: titleStatus,
+        title: requireOpt(opts['title'], '--title'),
+      });
+    }
+
+    // ── content properties (B182-B187, CLI+skill for B184-B187) ────────────
+    case 'list-properties':
+      return client.pages.listProperties(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.pages.createProperty(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.pages.getProperty(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const propVersionStr = requireOpt(opts['version-number'], '--version-number');
+      const propVersionNum = Number(propVersionStr);
+      if (!Number.isInteger(propVersionNum) || propVersionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${propVersionStr}`);
+      }
+      return client.pages.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: propVersionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.pages.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+
+    // ── versions (B188 single version — CLI+skill only) ───────────────────
+    case 'version': {
+      const singleVerStr = requireOpt(opts['version-number'], '--version-number');
+      const singleVerNum = Number(singleVerStr);
+      if (!Number.isInteger(singleVerNum) || singleVerNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${singleVerStr}`);
+      }
+      return client.versions.getForPage(requireArg(cmd.positionalArgs[0], 'page ID'), singleVerNum);
+    }
+
+    // ── attachments upload (B893 — CLI+skill only) ────────────────────────
+    case 'upload-attachment': {
+      // Uses the existing `AttachmentsResource.upload(pageId, filename, blob, mime?)`
+      // SDK method. The CLI reads the file from disk so callers don't have to
+      // hand-roll a Blob — `--file <path>` is required, `--filename` overrides
+      // the on-disk name when supplied, and `--media-type` overrides the
+      // server-side MIME sniffing.
+      const filePath = requireOpt(opts['file'], '--file');
+      const { readFile } = await import('node:fs/promises');
+      const { basename } = await import('node:path');
+      const buffer = await readFile(filePath);
+      const filename = asString(opts['filename']) ?? basename(filePath);
+      const mimeType = asString(opts['media-type']);
+      const blob = new Blob([new Uint8Array(buffer)]);
+      return client.attachments.upload(
+        requireArg(cmd.positionalArgs[0], 'page ID'),
+        filename,
+        blob,
+        mimeType,
+      );
+    }
+
     default:
       throw new Error(
-        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete`,
+        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment`,
       );
   }
 }
@@ -2104,6 +2298,35 @@ const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus
 ];
 
 const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;
+
+/**
+ * Status enum accepted by `PUT /pages/{id}/classification-level` and the
+ * matching reset endpoint — page allows both `current` and `draft` (unlike
+ * the blog-post variant which is locked to `current`).
+ */
+const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;
+
+/**
+ * Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets
+ * either the published (`current`) revision or the in-flight `draft`.
+ */
+const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;
+
+/**
+ * Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI
+ * `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`
+ * sort because child-page rows don't reliably carry a title field).
+ */
+const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [
+  'created-date',
+  '-created-date',
+  'id',
+  '-id',
+  'child-position',
+  '-child-position',
+  'modified-date',
+  '-modified-date',
+];
 
 const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [
   'current',

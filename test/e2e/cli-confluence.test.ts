@@ -2652,6 +2652,308 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/operations` },
   },
+
+  // ─── pages sub-resources (B170-B188 + B895 + B893) ────────────────────────
+  {
+    name: 'pages ancestors',
+    argv: ['confluence', 'pages', 'ancestors', '12345', '--limit', '25'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/ancestors`, body: F.pageAncestors }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/ancestors` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'pages descendants',
+    argv: ['confluence', 'pages', 'descendants', '12345', '--limit', '50', '--depth', '3'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/descendants`, body: F.pageDescendants }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/descendants` },
+    expectQuery: (query) => {
+      expect(query).toMatchObject({ limit: '50', depth: '3' });
+    },
+  },
+  {
+    name: 'pages direct-children with --sort=-modified-date',
+    argv: ['confluence', 'pages', 'direct-children', '12345', '--sort=-modified-date'],
+    routes: [
+      { method: 'GET', path: `${P}/pages/12345/direct-children`, body: F.pageDirectChildren },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/direct-children` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-modified-date');
+    },
+  },
+  {
+    name: 'pages children with --sort=-child-position',
+    argv: ['confluence', 'pages', 'children', '12345', '--sort=-child-position', '--limit', '10'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/children`, body: F.pageChildren }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/children` },
+    expectQuery: (query) => {
+      expect(query).toMatchObject({ sort: '-child-position', limit: '10' });
+    },
+  },
+  {
+    name: 'pages get-classification-level',
+    argv: ['confluence', 'pages', 'get-classification-level', '12345'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/pages/12345/classification-level`,
+        body: F.pageClassificationLevel,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/classification-level` },
+  },
+  {
+    name: 'pages update-classification-level',
+    argv: ['confluence', 'pages', 'update-classification-level', '12345', '--level-id', 'cl-1'],
+    routes: [{ method: 'PUT', path: `${P}/pages/12345/classification-level`, status: 204 }],
+    expectCall: { method: 'PUT', pathname: `${P}/pages/12345/classification-level` },
+    expectBody: (body) => {
+      expect(body).toEqual({ id: 'cl-1', status: 'current' });
+    },
+    expectStdout: ['"updated": true'],
+  },
+  {
+    name: 'pages update-classification-level --status draft',
+    argv: [
+      'confluence',
+      'pages',
+      'update-classification-level',
+      '12345',
+      '--level-id',
+      'cl-1',
+      '--status',
+      'draft',
+    ],
+    routes: [{ method: 'PUT', path: `${P}/pages/12345/classification-level`, status: 204 }],
+    expectCall: { method: 'PUT', pathname: `${P}/pages/12345/classification-level` },
+    expectBody: (body) => {
+      expect(body).toEqual({ id: 'cl-1', status: 'draft' });
+    },
+  },
+  {
+    name: 'pages reset-classification-level',
+    argv: ['confluence', 'pages', 'reset-classification-level', '12345'],
+    routes: [{ method: 'POST', path: `${P}/pages/12345/classification-level/reset`, status: 204 }],
+    expectCall: { method: 'POST', pathname: `${P}/pages/12345/classification-level/reset` },
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'current' });
+    },
+  },
+  {
+    name: 'pages custom-content',
+    argv: ['confluence', 'pages', 'custom-content', '12345', '--type', 'ai.atlassian.collection'],
+    routes: [
+      { method: 'GET', path: `${P}/pages/12345/custom-content`, body: F.pageCustomContentList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/custom-content` },
+    expectQuery: (query) => {
+      expect(query.type).toBe('ai.atlassian.collection');
+    },
+  },
+  {
+    name: 'pages likes-count',
+    argv: ['confluence', 'pages', 'likes-count', '12345'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/likes/count`, body: F.pageLikeCount }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/likes/count` },
+    expectStdout: ['"count": 7'],
+  },
+  {
+    name: 'pages likes-users',
+    argv: ['confluence', 'pages', 'likes-users', '12345', '--limit', '50'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/likes/users`, body: F.pageLikeUsers }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/likes/users` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'pages operations',
+    argv: ['confluence', 'pages', 'operations', '12345'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/operations`, body: F.pageOperations }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/operations` },
+  },
+  {
+    name: 'pages redact',
+    argv: [
+      'confluence',
+      'pages',
+      'redact',
+      '12345',
+      '--value',
+      '{"createdAt":"2026-01-01T00:00:00Z","body":{"redactions":[{"pointer":"/body/0/0","from":0,"to":4,"reason":"PII"}]}}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/pages/12345/redact`,
+        status: 202,
+        body: F.pageRedactResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/pages/12345/redact` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        createdAt: '2026-01-01T00:00:00Z',
+        body: { redactions: [{ pointer: '/body/0/0', from: 0, to: 4, reason: 'PII' }] },
+      });
+    },
+  },
+  {
+    name: 'pages redact with --created-at + --clean-history convenience overrides',
+    argv: [
+      'confluence',
+      'pages',
+      'redact',
+      '12345',
+      '--value',
+      '{"body":{"redactions":[]}}',
+      '--created-at',
+      '2026-05-22T12:00:00Z',
+      '--clean-history',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/pages/12345/redact`,
+        status: 202,
+        body: F.pageRedactResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/pages/12345/redact` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        createdAt: '2026-05-22T12:00:00Z',
+        cleanHistory: true,
+        body: { redactions: [] },
+      });
+    },
+  },
+  {
+    name: 'pages update-title',
+    argv: ['confluence', 'pages', 'update-title', '12345', '--title', 'Renamed'],
+    routes: [{ method: 'PUT', path: `${P}/pages/12345/title`, body: F.page }],
+    expectCall: { method: 'PUT', pathname: `${P}/pages/12345/title` },
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'current', title: 'Renamed' });
+    },
+  },
+  {
+    name: 'pages update-title --status draft',
+    argv: [
+      'confluence',
+      'pages',
+      'update-title',
+      '12345',
+      '--title',
+      'Draft Title',
+      '--status',
+      'draft',
+    ],
+    routes: [{ method: 'PUT', path: `${P}/pages/12345/title`, body: F.page }],
+    expectCall: { method: 'PUT', pathname: `${P}/pages/12345/title` },
+    expectBody: (body) => {
+      expect(body).toEqual({ status: 'draft', title: 'Draft Title' });
+    },
+  },
+  {
+    name: 'pages list-properties',
+    argv: ['confluence', 'pages', 'list-properties', '12345', '--sort=key', '--limit', '10'],
+    routes: [{ method: 'GET', path: `${P}/pages/12345/properties`, body: F.pagePropertyList }],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/properties` },
+    expectQuery: (query) => {
+      expect(query).toMatchObject({ sort: 'key', limit: '10' });
+    },
+  },
+  {
+    name: 'pages create-property',
+    argv: [
+      'confluence',
+      'pages',
+      'create-property',
+      '12345',
+      '--key',
+      'reviewed',
+      '--value',
+      '{"yes":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/pages/12345/properties`,
+        status: 201,
+        body: F.pageProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/pages/12345/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'reviewed', value: { yes: true } });
+    },
+  },
+  {
+    name: 'pages get-property',
+    argv: ['confluence', 'pages', 'get-property', '12345', '--property-id', 'pg-prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/pages/12345/properties/pg-prop-1`,
+        body: F.pageProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/properties/pg-prop-1` },
+  },
+  {
+    name: 'pages update-property',
+    argv: [
+      'confluence',
+      'pages',
+      'update-property',
+      '12345',
+      '--property-id',
+      'pg-prop-1',
+      '--key',
+      'reviewed',
+      '--value',
+      '{"yes":false}',
+      '--version-number',
+      '2',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/pages/12345/properties/pg-prop-1`,
+        body: F.pageProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/pages/12345/properties/pg-prop-1` },
+    expectBody: (body) => {
+      expect(body).toEqual({
+        key: 'reviewed',
+        value: { yes: false },
+        version: { number: 2 },
+      });
+    },
+  },
+  {
+    name: 'pages delete-property',
+    argv: ['confluence', 'pages', 'delete-property', '12345', '--property-id', 'pg-prop-1'],
+    routes: [{ method: 'DELETE', path: `${P}/pages/12345/properties/pg-prop-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/pages/12345/properties/pg-prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'pages version',
+    argv: ['confluence', 'pages', 'version', '12345', '--version-number', '2'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/pages/12345/versions/2`,
+        body: F.pageVersionDetail,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/pages/12345/versions/2` },
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {
