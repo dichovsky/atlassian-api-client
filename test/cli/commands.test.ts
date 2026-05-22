@@ -2615,6 +2615,30 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('databases descendants omits depth when not supplied', async () => {
+      confluenceDatabasesMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('databases', 'descendants', ['db-1'], {});
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceDatabasesMock.listDescendants).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ depth: undefined }),
+      );
+    });
+
+    it('databases descendants rejects depth > 10', async () => {
+      const parsed = cmd('databases', 'descendants', ['db-1'], { depth: '11' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
+    it('databases descendants rejects depth < 1', async () => {
+      const parsed = cmd('databases', 'descendants', ['db-1'], { depth: '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
     it('databases direct-children passes sort when supplied', async () => {
       // Arrange
       confluenceDatabasesMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
@@ -3661,6 +3685,30 @@ describe('executeConfluenceCommand', () => {
       expect(confluenceWhiteboardsMock.listDescendants).toHaveBeenCalledWith(
         'wb-1',
         expect.objectContaining({ limit: 25, depth: 3, cursor: 'tok' }),
+      );
+    });
+
+    it('whiteboards descendants omits depth when not supplied', async () => {
+      confluenceWhiteboardsMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], {});
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listDescendants).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ depth: undefined }),
+      );
+    });
+
+    it('whiteboards descendants rejects depth > 10', async () => {
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], { depth: '11' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
+    it('whiteboards descendants rejects depth < 1', async () => {
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], { depth: '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
       );
     });
 

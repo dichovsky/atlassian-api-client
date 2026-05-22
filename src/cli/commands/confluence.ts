@@ -733,7 +733,7 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'descendants':
       return client.databases.listDescendants(requireArg(cmd.positionalArgs[0], 'database ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -1022,7 +1022,7 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
         requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
         {
           limit: asPositiveInt(opts['limit'], '--limit'),
-          depth: asPositiveInt(opts['depth'], '--depth'),
+          depth: asDepth(opts['depth']),
           cursor: asString(opts['cursor']),
         },
       );
@@ -1119,6 +1119,19 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
+}
+
+/**
+ * Validate depth parameter for descendant/child queries (must be 1–10 per spec).
+ * Returns `undefined` when unset, otherwise validates and returns the integer.
+ */
+function asDepth(value: string | boolean | undefined): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 10) {
+    throw new Error(`--depth must be between 1 and 10 (per API spec), got: ${value}`);
   }
   return n;
 }

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "682e3518652a6278ac1bc2b6adb78af0a2d77e12325468605e9d56d020053846",
+  "sourceHash": "ddf1168df6109627ec32d3e9136866d97770eaeea01ce6f51e663fbe498ee9a2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2628,95 +2628,102 @@
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
+          "name": "asDepth",
+          "kind": "function",
+          "line": 1130,
+          "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
+          "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
+        },
+        {
           "name": "asEnum",
           "kind": "function",
-          "line": 1131,
+          "line": 1144,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 1147,
+          "line": 1160,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1161,
+          "line": 1174,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 1174,
+          "line": 1187,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1176,
+          "line": 1189,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 1183,
+          "line": 1196,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1185,
+          "line": 1198,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 1194,
+          "line": 1207,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1203,
+          "line": 1216,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1210,
+          "line": 1223,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1219,
+          "line": 1232,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1230,
+          "line": 1243,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 1232,
+          "line": 1245,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 1288,
+          "line": 1301,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1312,
+          "line": 1325,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -4008,6 +4015,14 @@
               "original": "UpdateContentPropertyData"
             },
             {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
+            },
+            {
               "exported": "CustomContent",
               "original": "CustomContent"
             },
@@ -4294,14 +4309,6 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
-            },
-            {
-              "exported": "ListSharedContentPropertiesParams",
-              "original": "ListSharedContentPropertiesParams"
-            },
-            {
-              "exported": "UpdateSharedContentPropertyData",
-              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",
@@ -9681,6 +9688,14 @@
               "original": "UpdateContentPropertyData"
             },
             {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
+            },
+            {
               "exported": "CustomContent",
               "original": "CustomContent"
             },
@@ -9955,14 +9970,6 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
-            },
-            {
-              "exported": "ListSharedContentPropertiesParams",
-              "original": "ListSharedContentPropertiesParams"
-            },
-            {
-              "exported": "UpdateSharedContentPropertyData",
-              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",
