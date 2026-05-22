@@ -1803,6 +1803,48 @@ export interface ResetDatabaseClassificationLevelData {
 // history. Property-shape types are reused from the shared content-property
 // vocabulary; everything blog-post-specific lives below.
 
+/**
+ * Primary body representation accepted by `GET /blogposts/{id}` — mirrors the
+ * spec's `PrimaryBodyRepresentationSingle` enum.
+ */
+export type BlogPostBodyRepresentation =
+  | 'storage'
+  | 'atlas_doc_format'
+  | 'view'
+  | 'export_view'
+  | 'anonymous_export_view'
+  | 'styled_view'
+  | 'editor';
+
+/**
+ * Status filter accepted by `GET /blogposts/{id}` — mirrors the spec's
+ * `ContentStatus` array values for blog-post lookups.
+ */
+export type BlogPostLookupStatus = 'current' | 'trashed' | 'deleted' | 'historical' | 'draft';
+
+/**
+ * Parameters for `GET /blogposts/{id}`. Mirrors `getBlogPostById` in the
+ * v2 OpenAPI spec — every `include-*` flag asks the server to inline an
+ * extra sub-resource block on the response (each capped server-side at 50
+ * with a `_links.next` pointer for the full collection). Leaving the flags
+ * unset keeps the payload minimal.
+ */
+export interface GetBlogPostParams {
+  readonly 'body-format'?: BlogPostBodyRepresentation;
+  readonly 'get-draft'?: boolean;
+  readonly status?: BlogPostLookupStatus | readonly BlogPostLookupStatus[];
+  readonly version?: number;
+  readonly 'include-labels'?: boolean;
+  readonly 'include-properties'?: boolean;
+  readonly 'include-operations'?: boolean;
+  readonly 'include-likes'?: boolean;
+  readonly 'include-versions'?: boolean;
+  readonly 'include-version'?: boolean;
+  readonly 'include-favorited-by-current-user-status'?: boolean;
+  readonly 'include-webresources'?: boolean;
+  readonly 'include-collaborators'?: boolean;
+}
+
 /** Parameters for `GET /blogposts/{id}/attachments`. */
 export interface ListBlogPostAttachmentsParams {
   readonly sort?: AttachmentSortOrder;

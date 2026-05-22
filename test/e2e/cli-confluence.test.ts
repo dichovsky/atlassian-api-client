@@ -147,6 +147,32 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"id": "99999"'],
   },
   {
+    name: 'blog-posts get with include-* + body-format + status',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'get',
+      '99999',
+      '--include-labels',
+      '--include-likes',
+      '--body-format',
+      'atlas_doc_format',
+      '--status',
+      'current,draft',
+      '--historical-version',
+      '3',
+    ],
+    routes: [{ method: 'GET', path: `${P}/blogposts/99999`, body: F.blogPost }],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999` },
+    expectQuery: (query) => {
+      expect(query['include-labels']).toBe('true');
+      expect(query['include-likes']).toBe('true');
+      expect(query['body-format']).toBe('atlas_doc_format');
+      expect(query['status']).toBe('current,draft');
+      expect(query['version']).toBe('3');
+    },
+  },
+  {
     name: 'blog-posts create',
     argv: [
       'confluence',
@@ -1919,6 +1945,21 @@ const matrix: readonly MatrixRow[] = [
     },
   },
   {
+    name: 'blog-posts attachments with --status',
+    argv: ['confluence', 'blog-posts', 'attachments', '99999', '--status', 'current,archived'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/attachments`,
+        body: F.blogPostAttachmentsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/attachments` },
+    expectQuery: (query) => {
+      expect(query.status).toBe('current,archived');
+    },
+  },
+  {
     name: 'blog-posts get-classification-level',
     argv: ['confluence', 'blog-posts', 'get-classification-level', '99999'],
     routes: [
@@ -2072,6 +2113,36 @@ const matrix: readonly MatrixRow[] = [
       expect(body).toMatchObject({
         createdAt: '2026-01-01T00:00:00Z',
         body: { redactions: [{ pointer: '/body/0/0', from: 0, to: 4, reason: 'PII' }] },
+      });
+    },
+  },
+  {
+    name: 'blog-posts redact with --created-at + --clean-history convenience overrides',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'redact',
+      '99999',
+      '--value',
+      '{"body":{"redactions":[]}}',
+      '--created-at',
+      '2026-05-22T12:00:00Z',
+      '--clean-history',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/blogposts/99999/redact`,
+        status: 202,
+        body: F.blogPostRedactResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/blogposts/99999/redact` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        createdAt: '2026-05-22T12:00:00Z',
+        cleanHistory: true,
+        body: { redactions: [] },
       });
     },
   },

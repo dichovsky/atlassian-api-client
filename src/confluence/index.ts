@@ -173,6 +173,9 @@ export type {
   CheckAccessOrInviteByEmailRequest,
   CheckAccessByEmailResponse,
   // Blog post sub-resources (B066-B084)
+  GetBlogPostParams,
+  BlogPostBodyRepresentation,
+  BlogPostLookupStatus,
   ListBlogPostAttachmentsParams,
   ListBlogPostFooterCommentsParams,
   ListBlogPostInlineCommentsParams,

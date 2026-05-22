@@ -702,6 +702,71 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('blog-posts get forwards include-* + body-format + status + historical-version params', async () => {
+      confluenceBlogPostsMock.get.mockResolvedValue({ id: 'bp-1' });
+      const parsed = cmd('blog-posts', 'get', ['bp-1'], {
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        status: 'current,draft',
+        'historical-version': '3',
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.get).toHaveBeenCalledWith('bp-1', {
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        status: ['current', 'draft'],
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+      });
+    });
+
+    it('blog-posts get rejects an invalid body-format value', async () => {
+      const parsed = cmd('blog-posts', 'get', ['bp-1'], { 'body-format': 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-format must be one of',
+      );
+    });
+
+    it('blog-posts get rejects an invalid status token', async () => {
+      const parsed = cmd('blog-posts', 'get', ['bp-1'], { status: 'current,nonsense' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--status must be one of',
+      );
+    });
+
+    it('blog-posts get rejects a non-positive historical-version', async () => {
+      const parsed = cmd('blog-posts', 'get', ['bp-1'], { 'historical-version': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--historical-version must be a positive integer',
+      );
+    });
+
+    it('blog-posts get with no params calls the no-arg overload', async () => {
+      confluenceBlogPostsMock.get.mockResolvedValue({ id: 'bp-1' });
+      await executeConfluenceCommand(cmd('blog-posts', 'get', ['bp-1']), GLOBALS);
+      // No-arg overload: `get(id)` with no params object — match the
+      // single-arg signature exactly so the historical happy-path branch
+      // stays exercised.
+      expect(confluenceBlogPostsMock.get).toHaveBeenCalledWith('bp-1');
+    });
+
     it('blog-posts create calls client.blogPosts.create', async () => {
       // Arrange
       confluenceBlogPostsMock.create.mockResolvedValue({ id: 'bp-new' });
@@ -915,6 +980,48 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('blog-posts attachments forwards a comma-separated --status filter', async () => {
+      confluenceBlogPostsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], {
+        status: 'current,archived',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listAttachments).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ status: ['current', 'archived'] }),
+      );
+    });
+
+    it('blog-posts attachments accepts a scalar --status', async () => {
+      confluenceBlogPostsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], { status: 'trashed' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listAttachments).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ status: ['trashed'] }),
+      );
+    });
+
+    it('blog-posts attachments rejects an invalid --status token', async () => {
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], { status: 'current,bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--status must be one of',
+      );
+    });
+
+    it('blog-posts attachments drops a whitespace-only --status (no status key forwarded)', async () => {
+      // After splitting on `,` and trimming, the resulting token list is empty
+      // — exercise the `tokens.length === 0` short-circuit in `asEnumArray`.
+      confluenceBlogPostsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], { status: ' , , ' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const arg = confluenceBlogPostsMock.listAttachments.mock.calls.at(-1)?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('status');
+    });
+
     it('blog-posts get-classification-level dispatches with --status', async () => {
       confluenceBlogPostsMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
       const parsed = cmd('blog-posts', 'get-classification-level', ['bp-1'], { status: 'draft' });
@@ -1054,6 +1161,62 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('blog-posts', 'redact', ['bp-1'], { value: JSON.stringify(payload) });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceBlogPostsMock.redact).toHaveBeenCalledWith('bp-1', payload);
+    });
+
+    it('blog-posts redact rejects an array payload', async () => {
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], { value: '[]' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'RedactBlogPostData payload',
+      );
+    });
+
+    it('blog-posts redact rejects a payload missing the required createdAt field', async () => {
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], {
+        value: '{"body":{"redactions":[]}}',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'must include a "createdAt" timestamp',
+      );
+    });
+
+    it('blog-posts redact accepts --created-at as a convenience override', async () => {
+      confluenceBlogPostsMock.redact.mockResolvedValue({});
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], {
+        value: '{"body":{"redactions":[]}}',
+        'created-at': '2026-05-22T12:00:00Z',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.redact).toHaveBeenCalledWith('bp-1', {
+        createdAt: '2026-05-22T12:00:00Z',
+        body: { redactions: [] },
+      });
+    });
+
+    it('blog-posts redact accepts --clean-history as a convenience override', async () => {
+      confluenceBlogPostsMock.redact.mockResolvedValue({});
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], {
+        value: '{"createdAt":"2026-05-22T12:00:00Z","body":{"redactions":[]}}',
+        'clean-history': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.redact).toHaveBeenCalledWith('bp-1', {
+        createdAt: '2026-05-22T12:00:00Z',
+        cleanHistory: true,
+        body: { redactions: [] },
+      });
+    });
+
+    it('blog-posts redact --created-at overrides createdAt in --value', async () => {
+      confluenceBlogPostsMock.redact.mockResolvedValue({});
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], {
+        value: '{"createdAt":"2026-01-01T00:00:00Z","body":{"redactions":[]}}',
+        'created-at': '2026-05-22T12:00:00Z',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.redact).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ createdAt: '2026-05-22T12:00:00Z' }),
+      );
     });
 
     it('blog-posts versions dispatches with body-format + sort', async () => {

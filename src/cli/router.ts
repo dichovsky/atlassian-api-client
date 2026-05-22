@@ -110,11 +110,23 @@ const GLOBAL_OPTIONS = {
   feature: { type: 'string' as const },
   released: { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
-  'media-type': { type: 'string' as const },
-  filename: { type: 'string' as const },
   'resolution-status': { type: 'string' as const },
+  // `redact` convenience overrides — when set, these merge into the
+  // `--value` JSON payload before the request is dispatched. The full
+  // payload may still be supplied entirely through `--value`; convenience
+  // flags only override the matching top-level keys.
   'clean-history': { type: 'boolean' as const },
   'created-at': { type: 'string' as const },
+  // `get` include-* flags — each asks the server to inline an extra
+  // sub-resource block on the response. See `GetBlogPostParams` for the
+  // full enumeration mirrored from the v2 OpenAPI spec.
+  'get-draft': { type: 'boolean' as const },
+  'include-favorited-by-current-user-status': { type: 'boolean' as const },
+  'include-webresources': { type: 'boolean' as const },
+  // Historical-version selector for `blog-posts get` (renamed from the
+  // spec's `version` query parameter to avoid clobbering the global
+  // `--version` boolean flag).
+  'historical-version': { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },

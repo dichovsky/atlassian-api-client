@@ -62,7 +62,7 @@ describe('BlogPostsResource', () => {
   // ── get ───────────────────────────────────────────────────────────────────
 
   describe('get()', () => {
-    it('calls GET /blogposts/{id}', async () => {
+    it('calls GET /blogposts/{id} with empty query when no params', async () => {
       // Arrange
       const post = makeBlogPost('42');
       transport.respondWith(post);
@@ -76,6 +76,64 @@ describe('BlogPostsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/blogposts/42`,
       });
+      // Empty params should produce an empty query bag (no spurious keys).
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards every include-* + body-format + status + version param', async () => {
+      // Arrange
+      transport.respondWith(makeBlogPost('42'));
+
+      // Act
+      await blogPosts.get('42', {
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        status: ['current', 'draft'],
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/blogposts/42`,
+        query: {
+          'body-format': 'atlas_doc_format',
+          'get-draft': true,
+          status: 'current,draft',
+          version: 3,
+          'include-labels': true,
+          'include-properties': true,
+          'include-operations': true,
+          'include-likes': true,
+          'include-versions': true,
+          'include-version': false,
+          'include-favorited-by-current-user-status': true,
+          'include-webresources': true,
+          'include-collaborators': true,
+        },
+      });
+    });
+
+    it('accepts a scalar status string', async () => {
+      transport.respondWith(makeBlogPost('42'));
+      await blogPosts.get('42', { status: 'historical' });
+      expect(transport.lastCall?.options.query).toEqual({ status: 'historical' });
+    });
+
+    it('drops an empty-array status', async () => {
+      transport.respondWith(makeBlogPost('42'));
+      await blogPosts.get('42', { status: [] });
+      // Empty array → undefined → key omitted from the query bag.
+      expect(transport.lastCall?.options.query).toEqual({});
     });
   });
 

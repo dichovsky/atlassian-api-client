@@ -16,6 +16,7 @@ import type {
   CustomContent,
   FooterComment,
   GetBlogPostClassificationLevelParams,
+  GetBlogPostParams,
   InlineComment,
   Label,
   ListBlogPostsParams,
@@ -69,11 +70,54 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Get a blog post by ID. */
-  async get(id: string): Promise<BlogPost> {
+  /**
+   * Get a blog post by ID.
+   *
+   * Every `include-*` flag in `params` asks the server to inline an extra
+   * sub-resource block on the response — each is capped server-side at 50
+   * with a `_links.next` pointer for the full collection. Leaving the flags
+   * unset keeps the payload minimal; pass `body-format` to control which
+   * primary body representation the server returns.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-get
+   */
+  async get(id: string, params?: GetBlogPostParams): Promise<BlogPost> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.['get-draft'] !== undefined) query['get-draft'] = params['get-draft'];
+    const status = csvOrScalar(params?.status);
+    if (status !== undefined) query['status'] = status;
+    if (params?.version !== undefined) query['version'] = params.version;
+    if (params?.['include-labels'] !== undefined)
+      query['include-labels'] = params['include-labels'];
+    if (params?.['include-properties'] !== undefined) {
+      query['include-properties'] = params['include-properties'];
+    }
+    if (params?.['include-operations'] !== undefined) {
+      query['include-operations'] = params['include-operations'];
+    }
+    if (params?.['include-likes'] !== undefined) query['include-likes'] = params['include-likes'];
+    if (params?.['include-versions'] !== undefined) {
+      query['include-versions'] = params['include-versions'];
+    }
+    if (params?.['include-version'] !== undefined) {
+      query['include-version'] = params['include-version'];
+    }
+    if (params?.['include-favorited-by-current-user-status'] !== undefined) {
+      query['include-favorited-by-current-user-status'] =
+        params['include-favorited-by-current-user-status'];
+    }
+    if (params?.['include-webresources'] !== undefined) {
+      query['include-webresources'] = params['include-webresources'];
+    }
+    if (params?.['include-collaborators'] !== undefined) {
+      query['include-collaborators'] = params['include-collaborators'];
+    }
+
     const response = await this.transport.request<BlogPost>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(id)}`,
+      query,
     });
     return response.data;
   }
@@ -125,7 +169,11 @@ export class BlogPostsResource {
   // `data.version.number` must be exactly one greater than the current
   // value, otherwise the server returns 409.
 
-  /** List content properties for a blog post (single page). */
+  /**
+   * List content properties for a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-get
+   */
   async listProperties(
     blogPostId: string,
     params?: ListSharedContentPropertiesParams,
@@ -145,7 +193,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate every content property on a blog post across all pages. */
+  /**
+   * Iterate every content property on a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-get
+   */
   async *listPropertiesAll(
     blogPostId: string,
     params?: Omit<ListSharedContentPropertiesParams, 'cursor'>,
@@ -162,7 +214,11 @@ export class BlogPostsResource {
     );
   }
 
-  /** Create a content property on a blog post. */
+  /**
+   * Create a content property on a blog post.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-post
+   */
   async createProperty(
     blogPostId: string,
     data: CreateContentPropertyData,
@@ -175,7 +231,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Get a single content property on a blog post by property ID. */
+  /**
+   * Get a single content property on a blog post by property ID.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-property-id-get
+   */
   async getProperty(blogPostId: string, propertyId: string): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'GET',
@@ -190,6 +250,8 @@ export class BlogPostsResource {
    * Confluence enforces optimistic concurrency: `data.version.number` must
    * be exactly one greater than the property's current version, otherwise
    * the server returns 409.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-property-id-put
    */
   async updateProperty(
     blogPostId: string,
@@ -204,7 +266,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Delete a content property on a blog post. */
+  /**
+   * Delete a content property on a blog post.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-blogpost-id-properties-property-id-delete
+   */
   async deleteProperty(blogPostId: string, propertyId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
@@ -214,7 +280,11 @@ export class BlogPostsResource {
 
   // ── attachments (B072) ────────────────────────────────────────────────────
 
-  /** List attachments on a blog post (single page). */
+  /**
+   * List attachments on a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-attachments-get
+   */
   async listAttachments(
     blogPostId: string,
     params?: ListBlogPostAttachmentsParams,
@@ -229,7 +299,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate over every attachment on a blog post across all pages. */
+  /**
+   * Iterate over every attachment on a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-attachments-get
+   */
   async *listAttachmentsAll(
     blogPostId: string,
     params?: Omit<ListBlogPostAttachmentsParams, 'cursor'>,
@@ -245,7 +319,11 @@ export class BlogPostsResource {
 
   // ── classification level (B073-B075) ──────────────────────────────────────
 
-  /** Get the classification level applied to a blog post. */
+  /**
+   * Get the classification level applied to a blog post.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-classification-level/#api-blogposts-id-classification-level-get
+   */
   async getClassificationLevel(
     blogPostId: string,
     params?: GetBlogPostClassificationLevelParams,
@@ -265,6 +343,8 @@ export class BlogPostsResource {
    *
    * The server returns 204 with no body; the resource discards the empty
    * response. Pass `status: 'current'` — it is the only legal value.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-classification-level/#api-blogposts-id-classification-level-put
    */
   async updateClassificationLevel(
     blogPostId: string,
@@ -281,6 +361,8 @@ export class BlogPostsResource {
    * Reset the blog-post classification level to the space default.
    *
    * Body is `{ status: 'current' }`; the server returns 204.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-classification-level/#api-blogposts-id-classification-level-reset-post
    */
   async resetClassificationLevel(
     blogPostId: string,
@@ -295,7 +377,11 @@ export class BlogPostsResource {
 
   // ── custom content (B076) ─────────────────────────────────────────────────
 
-  /** List custom content children of a blog post (single page). `type` is required by the server. */
+  /**
+   * List custom content children of a blog post (single page). `type` is required by the server.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-custom-content-get
+   */
   async listCustomContent(
     blogPostId: string,
     params: ListBlogPostCustomContentParams,
@@ -310,7 +396,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate every custom content child of a blog post across all pages. */
+  /**
+   * Iterate every custom content child of a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-custom-content-get
+   */
   async *listCustomContentAll(
     blogPostId: string,
     params: Omit<ListBlogPostCustomContentParams, 'cursor'>,
@@ -326,7 +416,11 @@ export class BlogPostsResource {
 
   // ── footer comments (B077) ────────────────────────────────────────────────
 
-  /** List footer comments on a blog post (single page). */
+  /**
+   * List footer comments on a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-footer-comments-get
+   */
   async listFooterComments(
     blogPostId: string,
     params?: ListBlogPostFooterCommentsParams,
@@ -341,7 +435,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate every footer comment on a blog post across all pages. */
+  /**
+   * Iterate every footer comment on a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-footer-comments-get
+   */
   async *listFooterCommentsAll(
     blogPostId: string,
     params?: Omit<ListBlogPostFooterCommentsParams, 'cursor'>,
@@ -357,7 +455,11 @@ export class BlogPostsResource {
 
   // ── inline comments (B078) ────────────────────────────────────────────────
 
-  /** List inline comments on a blog post (single page). */
+  /**
+   * List inline comments on a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-inline-comments-get
+   */
   async listInlineComments(
     blogPostId: string,
     params?: ListBlogPostInlineCommentsParams,
@@ -372,7 +474,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate every inline comment on a blog post across all pages. */
+  /**
+   * Iterate every inline comment on a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-inline-comments-get
+   */
   async *listInlineCommentsAll(
     blogPostId: string,
     params?: Omit<ListBlogPostInlineCommentsParams, 'cursor'>,
@@ -393,6 +499,8 @@ export class BlogPostsResource {
    *
    * Returns the bare `{ count }` envelope — this endpoint is not paginated
    * and does not accept query parameters.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-likes-count-get
    */
   async getLikeCount(blogPostId: string): Promise<BlogPostLikesCount> {
     const response = await this.transport.request<BlogPostLikesCount>({
@@ -402,7 +510,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** List the users who liked a blog post (single page). */
+  /**
+   * List the users who liked a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-likes-users-get
+   */
   async listLikeUsers(
     blogPostId: string,
     params?: ListBlogPostLikeUsersParams,
@@ -419,7 +531,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate over every like author across all pages. */
+  /**
+   * Iterate over every like author across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-likes-users-get
+   */
   async *listLikeUsersAll(
     blogPostId: string,
     params?: Omit<ListBlogPostLikeUsersParams, 'cursor'>,
@@ -436,7 +552,11 @@ export class BlogPostsResource {
 
   // ── operations (B082) ─────────────────────────────────────────────────────
 
-  /** Get the set of operations the calling user may perform on the blog post. */
+  /**
+   * Get the set of operations the calling user may perform on the blog post.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/#api-blogposts-id-operations-get
+   */
   async getOperations(blogPostId: string): Promise<BlogPostOperationsResponse> {
     const response = await this.transport.request<BlogPostOperationsResponse>({
       method: 'GET',
@@ -455,6 +575,8 @@ export class BlogPostsResource {
    * includes a UUID that can be used to restore the redaction later
    * (except for code-block redactions, which are not restorable per
    * Atlassian's documentation).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-redactions/#api-blogposts-id-redact-post
    */
   async redact(blogPostId: string, data: RedactBlogPostData): Promise<RedactBlogPostResponse> {
     const response = await this.transport.request<RedactBlogPostResponse>({
@@ -472,7 +594,11 @@ export class BlogPostsResource {
   // here with the richer sort / prefix params so that blog-post-centric
   // callers can stay on a single resource handle).
 
-  /** List labels for a blog post (single page). */
+  /**
+   * List labels for a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-label/#api-blogposts-id-labels-get
+   */
   async listLabels(
     blogPostId: string,
     params?: ListBlogPostLabelsParams,
@@ -491,7 +617,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate over every label on a blog post across all pages. */
+  /**
+   * Iterate over every label on a blog post across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-label/#api-blogposts-id-labels-get
+   */
   async *listLabelsAll(
     blogPostId: string,
     params?: Omit<ListBlogPostLabelsParams, 'cursor'>,
@@ -514,7 +644,11 @@ export class BlogPostsResource {
   // on `VersionsResource`. We re-expose them here so the blog-post handle
   // stays self-contained for callers walking the full sub-resource graph.
 
-  /** List versions of a blog post (single page). */
+  /**
+   * List versions of a blog post (single page).
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-version/#api-blogposts-id-versions-get
+   */
   async listVersions(
     blogPostId: string,
     params?: ListBlogPostVersionsParams,
@@ -533,7 +667,11 @@ export class BlogPostsResource {
     return response.data;
   }
 
-  /** Iterate over every blog-post version across all pages. */
+  /**
+   * Iterate over every blog-post version across all pages.
+   *
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-version/#api-blogposts-id-versions-get
+   */
   async *listVersionsAll(
     blogPostId: string,
     params?: Omit<ListBlogPostVersionsParams, 'cursor'>,
