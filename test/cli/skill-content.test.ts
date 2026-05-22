@@ -99,6 +99,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'tasks',
           'users',
           'users-bulk',
+          'whiteboards',
         ]).toContain(parsed.resource);
       } else if (parsed.api === 'jira') {
         expect([
@@ -155,6 +156,7 @@ describe('Resource coverage drift check', () => {
     'tasks',
     'users',
     'users-bulk',
+    'whiteboards',
   ]) {
     it(`Confluence resource '${resource}' is documented in reference/confluence.md`, () => {
       if (!confluenceResources.includes(resource)) {

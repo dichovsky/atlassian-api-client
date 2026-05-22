@@ -26,6 +26,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                     |
 | `users`                 | `check-access-by-email`, `invite-by-email`                                                                                                                                                                                                                                  |
 | `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
+| `whiteboards`           | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
 
 ## `pages`
 
@@ -592,6 +593,73 @@ atlas confluence footer-comments operations 77777
 # Version history
 atlas confluence footer-comments versions 77777 --sort -modified-date
 atlas confluence footer-comments version 77777 --version-number 3
+```
+
+## `whiteboards`
+
+Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Shape is identical to `databases`: pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
+
+| Action                        | Positional       | Required flags                                          | Optional flags                                                                                         |
+| ----------------------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `create`                      | —                | `--space-id`                                            | `--title`, `--parent-id`, `--template-key`, `--locale`, `--private`                                    |
+| `get`                         | `<whiteboardId>` | —                                                       | `--include-collaborators`, `--include-direct-children`, `--include-operations`, `--include-properties` |
+| `delete`                      | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `ancestors`                   | `<whiteboardId>` | —                                                       | `--limit`                                                                                              |
+| `descendants`                 | `<whiteboardId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                       |
+| `direct-children`             | `<whiteboardId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                        |
+| `operations`                  | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `get-classification-level`    | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `update-classification-level` | `<whiteboardId>` | `--level-id`                                            | —                                                                                                      |
+| `reset-classification-level`  | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `list-properties`             | `<whiteboardId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
+| `create-property`             | `<whiteboardId>` | `--key`, `--value`                                      | —                                                                                                      |
+| `get-property`                | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
+| `update-property`             | `<whiteboardId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `delete-property`             | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
+
+- `--private` on `create` creates a whiteboard visible only to the creator.
+- `--template-key` and `--locale` on `create` select an initial template and locale; both are optional and forwarded as body fields. **Both are closed enums** validated client-side against the Confluence v2 OpenAPI spec (53 template keys, 21 locales — see `WhiteboardTemplateKey` / `WhiteboardLocale` in `src/confluence/types.ts`). Invalid values are rejected with the full allowlist before any HTTP request is sent.
+- `get` returns the `WhiteboardSingle` shape: `id`, `type`, `status`, `title`, `parentId`, `parentType`, `position`, `authorId`, `ownerId`, `createdAt`, `spaceId`, `version` (`{ createdAt, message, number, minorEdit, authorId }`), and `_links` (`webui`, `editui`).
+- `--depth` on `descendants` accepts positive integers (server-validated; default 2).
+- `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
+- `--sort` on `list-properties` accepts `key` or `-key`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property` and `databases create-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `update-classification-level` always sends `status: "current"` (the only legal server value); the CLI hard-codes it so callers only need `--level-id`.
+- `reset-classification-level` sends `{ status: "current" }` and falls back to the space default classification.
+- `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<whiteboardId>`.
+- `delete` trashes the whiteboard (recoverable from the space trash); there is no purge flag on this endpoint.
+
+```sh
+# Create a whiteboard in a space
+atlas confluence whiteboards create --space-id 654321 --title "Roadmap"
+
+# Create a private whiteboard with a template
+atlas confluence whiteboards create --space-id 654321 --title "Secret" --template-key kanban-board --locale en-US --private
+
+# Read a whiteboard (basic)
+atlas confluence whiteboards get wb-1
+
+# Read a whiteboard with additional details
+atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
+
+# Walk the descendant tree
+atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50
+
+# Sort direct children by most-recently modified
+atlas confluence whiteboards direct-children wb-1 --sort=-modified-date
+
+# Classification level lifecycle
+atlas confluence whiteboards get-classification-level wb-1
+atlas confluence whiteboards update-classification-level wb-1 --level-id cl-restricted
+atlas confluence whiteboards reset-classification-level wb-1
+
+# Content properties
+atlas confluence whiteboards list-properties wb-1
+atlas confluence whiteboards create-property wb-1 --key feature-flags --value '{"beta":true}'
+atlas confluence whiteboards get-property wb-1 --property-id prop-1
+atlas confluence whiteboards update-property wb-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence whiteboards delete-property wb-1 --property-id prop-1
 ```
 
 ## Pagination

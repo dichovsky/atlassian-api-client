@@ -162,6 +162,23 @@ const confluenceFoldersMock = {
   updateProperty: vi.fn(),
   deleteProperty: vi.fn(),
 };
+const confluenceWhiteboardsMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+  listAncestors: vi.fn(),
+  listDescendants: vi.fn(),
+  listDirectChildren: vi.fn(),
+  getOperations: vi.fn(),
+  getClassificationLevel: vi.fn(),
+  updateClassificationLevel: vi.fn(),
+  resetClassificationLevel: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -186,6 +203,7 @@ vi.mock('../../src/confluence/client.js', () => {
       tasks: confluenceTasksMock,
       users: confluenceUsersMock,
       usersBulk: confluenceUsersBulkMock,
+      whiteboards: confluenceWhiteboardsMock,
     };
   });
   return { ConfluenceClient: MockConfluenceClient };
@@ -2597,6 +2615,30 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('databases descendants omits depth when not supplied', async () => {
+      confluenceDatabasesMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('databases', 'descendants', ['db-1'], {});
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceDatabasesMock.listDescendants).toHaveBeenCalledWith(
+        'db-1',
+        expect.objectContaining({ depth: undefined }),
+      );
+    });
+
+    it('databases descendants rejects depth > 10', async () => {
+      const parsed = cmd('databases', 'descendants', ['db-1'], { depth: '11' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
+    it('databases descendants rejects depth < 1', async () => {
+      const parsed = cmd('databases', 'descendants', ['db-1'], { depth: '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
     it('databases direct-children passes sort when supplied', async () => {
       // Arrange
       confluenceDatabasesMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
@@ -3449,6 +3491,421 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('footer-comments', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown footer-comments action');
+    });
+  });
+
+  // ── whiteboards ───────────────────────────────────────────────────────────
+
+  describe('whiteboards resource', () => {
+    it('whiteboards create calls client.whiteboards.create with spaceId', async () => {
+      confluenceWhiteboardsMock.create.mockResolvedValue({ id: 'wb-1' });
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        title: 'Roadmap',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId: 'space-1', title: 'Roadmap' }),
+        undefined,
+      );
+    });
+
+    it('whiteboards create with --private passes private query param', async () => {
+      confluenceWhiteboardsMock.create.mockResolvedValue({ id: 'wb-1' });
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        private: true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(expect.any(Object), {
+        private: true,
+      });
+    });
+
+    it('whiteboards create forwards templateKey + locale + parentId', async () => {
+      confluenceWhiteboardsMock.create.mockResolvedValue({ id: 'wb-1' });
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        'parent-id': 'p-9',
+        'template-key': 'flow-chart',
+        locale: 'en-US',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ parentId: 'p-9', templateKey: 'flow-chart', locale: 'en-US' }),
+        undefined,
+      );
+    });
+
+    it('whiteboards create throws when --space-id is missing', async () => {
+      const parsed = cmd('whiteboards', 'create', [], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
+    });
+
+    it('whiteboards create rejects unknown --template-key (closed enum)', async () => {
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        'template-key': 'blank',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--template-key must be one of: 2x2-prioritization.*got: blank/,
+      );
+      expect(confluenceWhiteboardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards create rejects unknown --locale (closed enum)', async () => {
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        locale: 'xx-YY',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--locale must be one of: de-DE.*got: xx-YY/,
+      );
+      expect(confluenceWhiteboardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards create accepts a valid --template-key + --locale pair', async () => {
+      confluenceWhiteboardsMock.create.mockResolvedValue({ id: 'wb-1' });
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        'template-key': 'kanban-board',
+        locale: 'en-US',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ templateKey: 'kanban-board', locale: 'en-US' }),
+        undefined,
+      );
+    });
+
+    it('whiteboards get calls client.whiteboards.get with the ID', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      const result = await executeConfluenceCommand(cmd('whiteboards', 'get', ['wb-1']), GLOBALS);
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': undefined,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': undefined,
+      });
+      expect(result).toEqual({ id: 'wb-1' });
+    });
+
+    it('whiteboards get forwards include-collaborators flag', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], { 'include-collaborators': true }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': true,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': undefined,
+      });
+    });
+
+    it('whiteboards get forwards include-properties flag', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], { 'include-properties': true }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': undefined,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': true,
+      });
+    });
+
+    it('whiteboards get forwards multiple include flags', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], {
+          'include-collaborators': true,
+          'include-direct-children': true,
+          'include-operations': true,
+        }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': undefined,
+      });
+    });
+
+    it('whiteboards get throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('whiteboards', 'get', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: whiteboard ID');
+    });
+
+    it('whiteboards delete calls client.whiteboards.delete and returns { deleted: true }', async () => {
+      confluenceWhiteboardsMock.delete.mockResolvedValue(undefined);
+      const result = await executeConfluenceCommand(
+        cmd('whiteboards', 'delete', ['wb-1']),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.delete).toHaveBeenCalledWith('wb-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('whiteboards delete throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('whiteboards', 'delete', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: whiteboard ID');
+    });
+
+    it('whiteboards ancestors forwards limit', async () => {
+      confluenceWhiteboardsMock.listAncestors.mockResolvedValue({ results: [] });
+      const parsed = cmd('whiteboards', 'ancestors', ['wb-1'], { limit: '5' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listAncestors).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ limit: 5 }),
+      );
+    });
+
+    it('whiteboards ancestors throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('whiteboards', 'ancestors', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: whiteboard ID');
+    });
+
+    it('whiteboards descendants forwards limit + depth + cursor', async () => {
+      confluenceWhiteboardsMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], {
+        limit: '25',
+        depth: '3',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listDescendants).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ limit: 25, depth: 3, cursor: 'tok' }),
+      );
+    });
+
+    it('whiteboards descendants omits depth when not supplied', async () => {
+      confluenceWhiteboardsMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], {});
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listDescendants).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ depth: undefined }),
+      );
+    });
+
+    it('whiteboards descendants rejects depth > 10', async () => {
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], { depth: '11' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
+    it('whiteboards descendants rejects depth < 1', async () => {
+      const parsed = cmd('whiteboards', 'descendants', ['wb-1'], { depth: '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--depth must be between 1 and 10',
+      );
+    });
+
+    it('whiteboards direct-children passes sort when supplied', async () => {
+      confluenceWhiteboardsMock.listDirectChildren.mockResolvedValue({
+        results: [],
+        _links: {},
+      });
+      const parsed = cmd('whiteboards', 'direct-children', ['wb-1'], { sort: '-title' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listDirectChildren).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ sort: '-title' }),
+      );
+    });
+
+    it('whiteboards direct-children omits sort when not supplied', async () => {
+      confluenceWhiteboardsMock.listDirectChildren.mockResolvedValue({
+        results: [],
+        _links: {},
+      });
+      await executeConfluenceCommand(cmd('whiteboards', 'direct-children', ['wb-1'], {}), GLOBALS);
+      const callArgs = confluenceWhiteboardsMock.listDirectChildren.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+    });
+
+    it('whiteboards direct-children rejects invalid --sort', async () => {
+      const parsed = cmd('whiteboards', 'direct-children', ['wb-1'], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: created-date.*got: bogus/,
+      );
+      expect(confluenceWhiteboardsMock.listDirectChildren).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards operations calls getOperations', async () => {
+      confluenceWhiteboardsMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('whiteboards', 'operations', ['wb-1']), GLOBALS);
+      expect(confluenceWhiteboardsMock.getOperations).toHaveBeenCalledWith('wb-1');
+    });
+
+    it('whiteboards get-classification-level calls getClassificationLevel', async () => {
+      confluenceWhiteboardsMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const result = await executeConfluenceCommand(
+        cmd('whiteboards', 'get-classification-level', ['wb-1']),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.getClassificationLevel).toHaveBeenCalledWith('wb-1');
+      expect(result).toEqual({ id: 'cl-1' });
+    });
+
+    it('whiteboards update-classification-level requires --level-id', async () => {
+      const parsed = cmd('whiteboards', 'update-classification-level', ['wb-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--level-id');
+    });
+
+    it('whiteboards update-classification-level forwards level-id with status=current', async () => {
+      confluenceWhiteboardsMock.updateClassificationLevel.mockResolvedValue(undefined);
+      const parsed = cmd('whiteboards', 'update-classification-level', ['wb-1'], {
+        'level-id': 'cl-1',
+      });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.updateClassificationLevel).toHaveBeenCalledWith('wb-1', {
+        id: 'cl-1',
+        status: 'current',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('whiteboards reset-classification-level returns { reset: true }', async () => {
+      confluenceWhiteboardsMock.resetClassificationLevel.mockResolvedValue(undefined);
+      const result = await executeConfluenceCommand(
+        cmd('whiteboards', 'reset-classification-level', ['wb-1']),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.resetClassificationLevel).toHaveBeenCalledWith('wb-1');
+      expect(result).toEqual({ reset: true });
+    });
+
+    it('whiteboards list-properties forwards key, sort, cursor, limit', async () => {
+      confluenceWhiteboardsMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('whiteboards', 'list-properties', ['wb-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.listProperties).toHaveBeenCalledWith(
+        'wb-1',
+        expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('whiteboards list-properties rejects invalid --sort', async () => {
+      const parsed = cmd('whiteboards', 'list-properties', ['wb-1'], { sort: '-title' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: key, -key, got: -title',
+      );
+      expect(confluenceWhiteboardsMock.listProperties).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards create-property parses JSON --value and forwards key + value', async () => {
+      confluenceWhiteboardsMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('whiteboards', 'create-property', ['wb-1'], {
+        key: 'feature',
+        value: '{"beta":true}',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.createProperty).toHaveBeenCalledWith('wb-1', {
+        key: 'feature',
+        value: { beta: true },
+      });
+    });
+
+    it('whiteboards create-property falls back to raw string when --value is not JSON', async () => {
+      confluenceWhiteboardsMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('whiteboards', 'create-property', ['wb-1'], {
+        key: 'feature',
+        value: 'hello',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.createProperty).toHaveBeenCalledWith('wb-1', {
+        key: 'feature',
+        value: 'hello',
+      });
+    });
+
+    it('whiteboards create-property requires --key', async () => {
+      const parsed = cmd('whiteboards', 'create-property', ['wb-1'], { value: '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('whiteboards create-property requires --value', async () => {
+      const parsed = cmd('whiteboards', 'create-property', ['wb-1'], { key: 'k' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('whiteboards get-property requires --property-id', async () => {
+      const parsed = cmd('whiteboards', 'get-property', ['wb-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('whiteboards get-property calls getProperty with both IDs', async () => {
+      confluenceWhiteboardsMock.getProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('whiteboards', 'get-property', ['wb-1'], { 'property-id': 'p-1' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.getProperty).toHaveBeenCalledWith('wb-1', 'p-1');
+      expect(result).toEqual({ id: 'p-1' });
+    });
+
+    it('whiteboards update-property forwards key, value, version', async () => {
+      confluenceWhiteboardsMock.updateProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('whiteboards', 'update-property', ['wb-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '42',
+        'version-number': '4',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.updateProperty).toHaveBeenCalledWith('wb-1', 'p-1', {
+        key: 'feature',
+        value: 42,
+        version: { number: 4 },
+      });
+    });
+
+    it('whiteboards update-property throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('whiteboards', 'update-property', ['wb-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '1',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('whiteboards delete-property calls deleteProperty and returns { deleted: true }', async () => {
+      confluenceWhiteboardsMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('whiteboards', 'delete-property', ['wb-1'], { 'property-id': 'p-1' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.deleteProperty).toHaveBeenCalledWith('wb-1', 'p-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('whiteboards delete-property requires --property-id', async () => {
+      const parsed = cmd('whiteboards', 'delete-property', ['wb-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('whiteboards unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('whiteboards', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown whiteboards action',
+      );
     });
   });
 

@@ -74,6 +74,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'space-roles': 'executeSpaceRoles',
   tasks: 'executeTasks',
   'users-bulk': 'executeUsersBulk',
+  whiteboards: 'executeWhiteboards',
   issues: 'executeIssues',
   projects: 'executeProjects',
   search: 'executeSearch',

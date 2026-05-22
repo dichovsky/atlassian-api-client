@@ -81,6 +81,7 @@ RESOURCES:
   tasks                  list, get, update
   users                  check-access-by-email, invite-by-email
   users-bulk             lookup
+  whiteboards            create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
 
 EXAMPLES:
   atlas confluence pages list --space-id 123
@@ -127,6 +128,12 @@ EXAMPLES:
   atlas confluence labels attachments 12345 --sort -created-date
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
   atlas confluence labels pages 12345 --sort -modified-date
+  atlas confluence whiteboards create --space-id 123 --title "Roadmap" --private
+  atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
+  atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50
+  atlas confluence whiteboards direct-children wb-1 --sort=-modified-date
+  atlas confluence whiteboards list-properties wb-1
+  atlas confluence whiteboards update-classification-level wb-1 --level-id cl-1
 `;
 
 const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3

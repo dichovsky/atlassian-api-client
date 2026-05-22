@@ -12,6 +12,8 @@ import type {
   SpaceRolePrincipalType,
   SpaceRoleType,
   VersionSortOrder,
+  WhiteboardLocale,
+  WhiteboardTemplateKey,
 } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
@@ -62,6 +64,8 @@ export async function executeConfluenceCommand(
       return executeUsers(client, cmd);
     case 'users-bulk':
       return executeUsersBulk(client, cmd);
+    case 'whiteboards':
+      return executeWhiteboards(client, cmd);
     default:
       throw new Error(`Unknown Confluence resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -729,7 +733,7 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'descendants':
       return client.databases.listDescendants(requireArg(cmd.positionalArgs[0], 'database ID'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
-        depth: asPositiveInt(opts['depth'], '--depth'),
+        depth: asDepth(opts['depth']),
         cursor: asString(opts['cursor']),
       });
     case 'direct-children': {
@@ -980,6 +984,122 @@ async function executeFooterComments(
   }
 }
 
+async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const params = opts['private'] === true ? { private: true } : undefined;
+      const templateKey = asEnum(opts['template-key'], WHITEBOARD_TEMPLATE_KEYS, 'template-key');
+      const locale = asEnum(opts['locale'], WHITEBOARD_LOCALES, 'locale');
+      return client.whiteboards.create(
+        {
+          spaceId: requireOpt(opts['space-id'], '--space-id'),
+          title: asString(opts['title']),
+          parentId: asString(opts['parent-id']),
+          ...(templateKey !== undefined ? { templateKey } : {}),
+          ...(locale !== undefined ? { locale } : {}),
+        },
+        params,
+      );
+    }
+    case 'get':
+      return client.whiteboards.get(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+        'include-direct-children': opts['include-direct-children'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+      });
+    case 'delete':
+      await client.whiteboards.delete(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+      return { deleted: true };
+    case 'ancestors':
+      return client.whiteboards.listAncestors(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.whiteboards.listDescendants(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          limit: asPositiveInt(opts['limit'], '--limit'),
+          depth: asDepth(opts['depth']),
+          cursor: asString(opts['cursor']),
+        },
+      );
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.whiteboards.listDirectChildren(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        {
+          limit: asPositiveInt(opts['limit'], '--limit'),
+          cursor: asString(opts['cursor']),
+          ...(sort !== undefined ? { sort } : {}),
+        },
+      );
+    }
+    case 'operations':
+      return client.whiteboards.getOperations(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+    case 'get-classification-level':
+      return client.whiteboards.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+      );
+    case 'update-classification-level':
+      await client.whiteboards.updateClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        { id: requireOpt(opts['level-id'], '--level-id'), status: 'current' },
+      );
+      return { updated: true };
+    case 'reset-classification-level':
+      await client.whiteboards.resetClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+      );
+      return { reset: true };
+    case 'list-properties':
+      return client.whiteboards.listProperties(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.whiteboards.createProperty(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.whiteboards.getProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.whiteboards.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.whiteboards.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown whiteboards action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+      );
+  }
+}
+
 function requireArg(value: string | undefined, name: string): string {
   if (!value) throw new Error(`Missing required argument: ${name}`);
   return value;
@@ -999,6 +1119,19 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
+}
+
+/**
+ * Validate depth parameter for descendant/child queries (must be 1–10 per spec).
+ * Returns `undefined` when unset, otherwise validates and returns the integer.
+ */
+function asDepth(value: string | boolean | undefined): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 10) {
+    throw new Error(`--depth must be between 1 and 10 (per API spec), got: ${value}`);
   }
   return n;
 }
@@ -1108,6 +1241,86 @@ const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [
 ];
 
 const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;
+
+const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [
+  '2x2-prioritization',
+  '4ls-retro',
+  'annual-calendar',
+  'brainwriting',
+  'concept-map',
+  'crazy-8s',
+  'daily-sync',
+  'disruptive-brainstorm',
+  'dot-voting',
+  'elevator-pitch',
+  'flow-chart',
+  'gap-analysis',
+  'ice-breakers',
+  'incident-postmortem',
+  'journey-mapping-kit',
+  'kanban-board',
+  'lean-coffee',
+  'network-of-teams',
+  'org-chart',
+  'pi-planning',
+  'prioritization',
+  'prioritization-experiment',
+  'product-roadmap',
+  'product-vision-board',
+  'rice',
+  'sailboat-retro',
+  'service-blueprint',
+  'simple-retrospective',
+  'sprint-planning',
+  'sticky-note-pack',
+  'swimlanes',
+  'team-formation-guide',
+  'timeline',
+  'timeline-workflow',
+  'user-story-map',
+  'workflow',
+  'vision-board',
+  'venn-diagram',
+  'storyboard',
+  'action-plan',
+  'root-cause-analysis',
+  'executive-summary',
+  'stakeholder-mapping',
+  'annual-calendar-2025-2026',
+  'health-monitor',
+  'okr-planning',
+  'swot-analysis',
+  'poker-planning',
+  'fishbone-diagram',
+  'risk-assessment',
+  'bounded-context',
+  'hopes-and-fears',
+  'swimlane-vertical',
+];
+
+const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [
+  'de-DE',
+  'cs-CZ',
+  'ko-KR',
+  'fr-FR',
+  'it-IT',
+  'ja-JP',
+  'nl-NL',
+  'nb-NO',
+  'da-DK',
+  'sv-SE',
+  'fi-FI',
+  'ru-RU',
+  'pl-PL',
+  'tr-TR',
+  'hu-HU',
+  'en-GB',
+  'en-US',
+  'pt-BR',
+  'zh-CN',
+  'zh-TW',
+  'es-ES',
+];
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;
