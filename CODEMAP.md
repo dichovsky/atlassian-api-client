@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "277045313c339102e4b3023face7876b99b54355d2b81d3ccfb0bfa0c1217923",
+  "sourceHash": "515e7c9e081a0005c26501eb1d15de539eb77a1928cb1ce1fae8536f2c68427f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1432,6 +1432,15 @@
       "typeOnly": true
     },
     {
+      "name": "ListSharedContentPropertiesParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 707,
+      "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
+      "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`.",
+      "typeOnly": true
+    },
+    {
       "name": "ListSpacePermissionsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1994,6 +2003,15 @@
       "line": 152,
       "signature": "export interface UpdatePageData { readonly id: string; readonly title: string; readonly status: 'current' | 'draft'; rea…",
       "jsdoc": "Request body for updating a Confluence page.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateSharedContentPropertyData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 721,
+      "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
+      "jsdoc": "Request body for updating a content property on comments, attachments, or databases.",
       "typeOnly": true
     },
     {
@@ -4050,6 +4068,14 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",
@@ -9434,6 +9460,14 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",

@@ -94,6 +94,8 @@ export type {
   ListFolderChildrenParams,
   FolderOperation,
   FolderOperationsResponse,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
   CommentSortOrder,
   VersionSortOrder,
   ListFooterCommentsTenantParams,

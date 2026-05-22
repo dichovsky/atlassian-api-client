@@ -151,7 +151,7 @@ export class FoldersResource {
     params?: Omit<ListFolderDescendantsParams, 'cursor'>,
   ): AsyncGenerator<FolderDescendant> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | boolean | undefined> = {};
+    const query: Record<string, string | number | undefined> = {};
     if (params?.limit !== undefined) query['limit'] = params.limit;
     if (params?.depth !== undefined) query['depth'] = params.depth;
     yield* paginateCursor<FolderDescendant>(
@@ -186,7 +186,7 @@ export class FoldersResource {
     params?: Omit<ListFolderChildrenParams, 'cursor'>,
   ): AsyncGenerator<FolderChild> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | boolean | undefined> = {};
+    const query: Record<string, string | number | undefined> = {};
     if (params?.limit !== undefined) query['limit'] = params.limit;
     if (params?.sort !== undefined) query['sort'] = params.sort;
     yield* paginateCursor<FolderChild>(
@@ -235,7 +235,7 @@ export class FoldersResource {
     params?: Omit<ListSharedContentPropertiesParams, 'cursor'>,
   ): AsyncGenerator<ContentProperty> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Record<string, string | number | boolean | undefined> = {};
+    const query: Record<string, string | number | undefined> = {};
     if (params?.key !== undefined) query['key'] = params.key;
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
