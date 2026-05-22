@@ -1,6 +1,7 @@
 # BACKLOG Path Audit — 2026-05-23
 
 ## Summary
+
 - **Total unique paths referenced in BACKLOG:** 178
 - **OK (file exists):** 34
 - **PLURAL_MISMATCH:** 2 (webhook.ts vs webhooks.ts, issuetype.ts vs issue-types.ts)
@@ -9,16 +10,20 @@
 ## Findings
 
 ### Critical Insight
+
 BACKLOG.md references 178 distinct Jira resource files, but only 22 actual source files + 22 test files exist in the repo (44 total). This reflects the **planned API coverage roadmap** — BACKLOG is aspirational, not reflective of current state.
 
 ### PLURAL_MISMATCH (Update BACKLOG)
-| BACKLOG path | Actual file | Issue |
-|---|---|---|
-| src/jira/resources/webhook.ts | src/jira/resources/webhooks.ts | Singular vs plural |
+
+| BACKLOG path                    | Actual file                       | Issue                  |
+| ------------------------------- | --------------------------------- | ---------------------- |
+| src/jira/resources/webhook.ts   | src/jira/resources/webhooks.ts    | Singular vs plural     |
 | src/jira/resources/issuetype.ts | src/jira/resources/issue-types.ts | Singular + hyphenation |
 
 ### Key Missing Resources (Sample of 142)
+
 These files are referenced in BACKLOG but don't yet exist:
+
 - src/jira/resources/addons.ts
 - src/jira/resources/announcementbanner.ts
 - src/jira/resources/app.ts
