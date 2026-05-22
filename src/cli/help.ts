@@ -61,7 +61,7 @@ EXIT CODES:
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
-  pages                  list, get, create, update, delete
+  pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment
   spaces                 list, get
   blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
   comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
@@ -88,6 +88,22 @@ RESOURCES:
 EXAMPLES:
   atlas confluence pages list --space-id 123
   atlas confluence pages get 456
+  atlas confluence pages ancestors 456 --limit 50
+  atlas confluence pages descendants 456 --depth 3 --limit 50
+  atlas confluence pages direct-children 456 --sort=-modified-date
+  atlas confluence pages children 456 --sort=-child-position
+  atlas confluence pages get-classification-level 456
+  atlas confluence pages update-classification-level 456 --level-id cl-1
+  atlas confluence pages reset-classification-level 456
+  atlas confluence pages custom-content 456 --type ai.atlassian.collection
+  atlas confluence pages likes-count 456
+  atlas confluence pages likes-users 456 --limit 50
+  atlas confluence pages operations 456
+  atlas confluence pages update-title 456 --title "Renamed" --status current
+  atlas confluence pages list-properties 456 --sort key
+  atlas confluence pages create-property 456 --key reviewed --value true
+  atlas confluence pages version 456 --version-number 2
+  atlas confluence pages upload-attachment 456 --file ./screenshot.png
   atlas confluence spaces list
   atlas confluence app list-properties --limit 25
   atlas confluence app upsert-property my-flag --value '{"beta":true}'

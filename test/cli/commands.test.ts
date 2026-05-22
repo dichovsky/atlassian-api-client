@@ -30,6 +30,25 @@ const confluencePagesMock = {
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  // sub-resources (B170-B188 + B895)
+  listAncestors: vi.fn(),
+  listDescendants: vi.fn(),
+  listDirectChildren: vi.fn(),
+  listChildren: vi.fn(),
+  getClassificationLevel: vi.fn(),
+  updateClassificationLevel: vi.fn(),
+  resetClassificationLevel: vi.fn(),
+  listCustomContent: vi.fn(),
+  getLikeCount: vi.fn(),
+  listLikeUsers: vi.fn(),
+  getOperations: vi.fn(),
+  redact: vi.fn(),
+  updateTitle: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
 };
 const confluenceSpacesMock = {
   list: vi.fn(),
@@ -63,6 +82,7 @@ const confluenceBlogPostsMock = {
 };
 const confluenceVersionsMock = {
   getForBlogPost: vi.fn(),
+  getForPage: vi.fn(),
 };
 const confluenceCommentsMock = {
   listFooter: vi.fn(),
@@ -97,6 +117,7 @@ const confluenceAttachmentsMock = {
   listLabels: vi.fn(),
   getOperations: vi.fn(),
   downloadThumbnail: vi.fn(),
+  upload: vi.fn(),
 };
 const confluenceLabelsMock = {
   listForPage: vi.fn(),
@@ -635,6 +656,454 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('pages', 'invalid'), GLOBALS)).rejects.toThrow(
         'Unknown pages action',
       );
+    });
+
+    // ── hierarchy (B170, B175, B176, B895) ───────────────────────────────
+
+    it('pages ancestors forwards --limit', async () => {
+      confluencePagesMock.listAncestors.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'ancestors', ['p-1'], { limit: '25' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listAncestors).toHaveBeenCalledWith('p-1', { limit: 25 });
+    });
+
+    it('pages descendants forwards --limit / --depth / --cursor', async () => {
+      confluencePagesMock.listDescendants.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'descendants', ['p-1'], {
+        limit: '50',
+        depth: '3',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listDescendants).toHaveBeenCalledWith('p-1', {
+        limit: 50,
+        depth: 3,
+        cursor: 'tok',
+      });
+    });
+
+    it('pages descendants rejects out-of-range --depth', async () => {
+      const parsed = cmd('pages', 'descendants', ['p-1'], { depth: '11' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--depth must be between 1 and 10/,
+      );
+    });
+
+    it('pages direct-children forwards --sort / --cursor / --limit', async () => {
+      confluencePagesMock.listDirectChildren.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'direct-children', ['p-1'], {
+        sort: '-modified-date',
+        cursor: 'c',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listDirectChildren).toHaveBeenCalledWith('p-1', {
+        limit: 5,
+        cursor: 'c',
+        sort: '-modified-date',
+      });
+    });
+
+    it('pages direct-children rejects unknown --sort', async () => {
+      const parsed = cmd('pages', 'direct-children', ['p-1'], { sort: 'banana' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of/,
+      );
+    });
+
+    it('pages direct-children with no --sort omits the sort key', async () => {
+      confluencePagesMock.listDirectChildren.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'direct-children', ['p-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const callArgs = confluencePagesMock.listDirectChildren.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(callArgs).not.toHaveProperty('sort');
+    });
+
+    it('pages children with no --sort omits the sort key', async () => {
+      confluencePagesMock.listChildren.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'children', ['p-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const callArgs = confluencePagesMock.listChildren.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(callArgs).not.toHaveProperty('sort');
+    });
+
+    it('pages children forwards --sort (ChildPageSortOrder)', async () => {
+      confluencePagesMock.listChildren.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'children', ['p-1'], {
+        sort: '-child-position',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listChildren).toHaveBeenCalledWith('p-1', {
+        cursor: undefined,
+        limit: 10,
+        sort: '-child-position',
+      });
+    });
+
+    it('pages children rejects unknown --sort (narrower than ContentSortOrder)', async () => {
+      // `title` is valid for direct-children but rejected by /children.
+      const parsed = cmd('pages', 'children', ['p-1'], { sort: 'title' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of/,
+      );
+    });
+
+    // ── classification level (B171-B173) ─────────────────────────────────
+
+    it('pages get-classification-level forwards --status', async () => {
+      confluencePagesMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const parsed = cmd('pages', 'get-classification-level', ['p-1'], { status: 'draft' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.getClassificationLevel).toHaveBeenCalledWith('p-1', {
+        status: 'draft',
+      });
+    });
+
+    it('pages get-classification-level omits status when unset', async () => {
+      confluencePagesMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const parsed = cmd('pages', 'get-classification-level', ['p-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.getClassificationLevel).toHaveBeenCalledWith('p-1', undefined);
+    });
+
+    it('pages update-classification-level defaults to status:current', async () => {
+      confluencePagesMock.updateClassificationLevel.mockResolvedValue(undefined);
+      const parsed = cmd('pages', 'update-classification-level', ['p-1'], { 'level-id': 'cl-1' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.updateClassificationLevel).toHaveBeenCalledWith('p-1', {
+        id: 'cl-1',
+        status: 'current',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('pages update-classification-level accepts --status draft', async () => {
+      confluencePagesMock.updateClassificationLevel.mockResolvedValue(undefined);
+      const parsed = cmd('pages', 'update-classification-level', ['p-1'], {
+        'level-id': 'cl-1',
+        status: 'draft',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.updateClassificationLevel).toHaveBeenCalledWith('p-1', {
+        id: 'cl-1',
+        status: 'draft',
+      });
+    });
+
+    it('pages update-classification-level rejects --status archived (page allows only current|draft)', async () => {
+      const parsed = cmd('pages', 'update-classification-level', ['p-1'], {
+        'level-id': 'cl-1',
+        status: 'archived',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--status must be one of/,
+      );
+    });
+
+    it('pages reset-classification-level defaults to status:current and prints reset:true', async () => {
+      confluencePagesMock.resetClassificationLevel.mockResolvedValue(undefined);
+      const parsed = cmd('pages', 'reset-classification-level', ['p-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.resetClassificationLevel).toHaveBeenCalledWith('p-1', {
+        status: 'current',
+      });
+      expect(result).toEqual({ reset: true });
+    });
+
+    // ── custom content (B174) ────────────────────────────────────────────
+
+    it('pages custom-content requires --type and forwards optional flags', async () => {
+      confluencePagesMock.listCustomContent.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'custom-content', ['p-1'], {
+        type: 'ai.atlassian.collection',
+        sort: '-modified-date',
+        cursor: 'c',
+        limit: '7',
+        'body-format': 'storage',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listCustomContent).toHaveBeenCalledWith('p-1', {
+        type: 'ai.atlassian.collection',
+        sort: '-modified-date',
+        cursor: 'c',
+        limit: 7,
+        'body-format': 'storage',
+      });
+    });
+
+    it('pages custom-content throws when --type missing', async () => {
+      const parsed = cmd('pages', 'custom-content', ['p-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--type');
+    });
+
+    // ── likes / operations (B177-B179) ───────────────────────────────────
+
+    it('pages likes-count calls client.pages.getLikeCount', async () => {
+      confluencePagesMock.getLikeCount.mockResolvedValue({ count: 3 });
+      await executeConfluenceCommand(cmd('pages', 'likes-count', ['p-1']), GLOBALS);
+      expect(confluencePagesMock.getLikeCount).toHaveBeenCalledWith('p-1');
+    });
+
+    it('pages likes-users forwards cursor + limit', async () => {
+      confluencePagesMock.listLikeUsers.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'likes-users', ['p-1'], { cursor: 'c', limit: '5' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listLikeUsers).toHaveBeenCalledWith('p-1', {
+        cursor: 'c',
+        limit: 5,
+      });
+    });
+
+    it('pages operations calls client.pages.getOperations', async () => {
+      confluencePagesMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('pages', 'operations', ['p-1']), GLOBALS);
+      expect(confluencePagesMock.getOperations).toHaveBeenCalledWith('p-1');
+    });
+
+    // ── redact (B180) ────────────────────────────────────────────────────
+
+    it('pages redact requires --value', async () => {
+      const parsed = cmd('pages', 'redact', ['p-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('pages redact rejects non-object --value', async () => {
+      const parsed = cmd('pages', 'redact', ['p-1'], { value: '"just a string"' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /must be a JSON object/,
+      );
+    });
+
+    it('pages redact rejects an array --value', async () => {
+      const parsed = cmd('pages', 'redact', ['p-1'], { value: '[]' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /must be a JSON object/,
+      );
+    });
+
+    it('pages redact requires createdAt (via --value or --created-at)', async () => {
+      const parsed = cmd('pages', 'redact', ['p-1'], { value: '{"body":{"redactions":[]}}' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(/createdAt/);
+    });
+
+    it('pages redact merges --created-at + --clean-history overrides over --value', async () => {
+      confluencePagesMock.redact.mockResolvedValue({});
+      const parsed = cmd('pages', 'redact', ['p-1'], {
+        value: '{"createdAt":"old","body":{"redactions":[]}}',
+        'created-at': '2026-05-22T12:00:00Z',
+        'clean-history': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.redact).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({
+          createdAt: '2026-05-22T12:00:00Z',
+          cleanHistory: true,
+          body: { redactions: [] },
+        }),
+      );
+    });
+
+    it('pages redact accepts a full --value payload', async () => {
+      confluencePagesMock.redact.mockResolvedValue({});
+      const parsed = cmd('pages', 'redact', ['p-1'], {
+        value: '{"createdAt":"2026-01-01T00:00:00Z","body":{"redactions":[]}}',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.redact).toHaveBeenCalledWith('p-1', {
+        createdAt: '2026-01-01T00:00:00Z',
+        body: { redactions: [] },
+      });
+    });
+
+    // ── title (B181) ─────────────────────────────────────────────────────
+
+    it('pages update-title PUTs status:current + title', async () => {
+      confluencePagesMock.updateTitle.mockResolvedValue({ id: 'p-1', title: 'Renamed' });
+      const parsed = cmd('pages', 'update-title', ['p-1'], { title: 'Renamed' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.updateTitle).toHaveBeenCalledWith('p-1', {
+        status: 'current',
+        title: 'Renamed',
+      });
+    });
+
+    it('pages update-title accepts --status draft', async () => {
+      confluencePagesMock.updateTitle.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('pages', 'update-title', ['p-1'], {
+        title: 'Draft Title',
+        status: 'draft',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.updateTitle).toHaveBeenCalledWith('p-1', {
+        status: 'draft',
+        title: 'Draft Title',
+      });
+    });
+
+    it('pages update-title throws when --title missing', async () => {
+      const parsed = cmd('pages', 'update-title', ['p-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
+    });
+
+    // ── content properties (B182-B187) ────────────────────────────────────
+
+    it('pages list-properties forwards key/sort/cursor/limit', async () => {
+      confluencePagesMock.listProperties.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'list-properties', ['p-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'c',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listProperties).toHaveBeenCalledWith('p-1', {
+        key: 'k',
+        sort: 'key',
+        cursor: 'c',
+        limit: 5,
+      });
+    });
+
+    it('pages create-property POSTs {key, value} (JSON-parsed)', async () => {
+      confluencePagesMock.createProperty.mockResolvedValue({ id: 'np' });
+      const parsed = cmd('pages', 'create-property', ['p-1'], {
+        key: 'reviewed',
+        value: '{"yes":true}',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.createProperty).toHaveBeenCalledWith('p-1', {
+        key: 'reviewed',
+        value: { yes: true },
+      });
+    });
+
+    it('pages get-property GETs by property id', async () => {
+      confluencePagesMock.getProperty.mockResolvedValue({ id: 'cp-1' });
+      const parsed = cmd('pages', 'get-property', ['p-1'], { 'property-id': 'cp-1' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.getProperty).toHaveBeenCalledWith('p-1', 'cp-1');
+    });
+
+    it('pages update-property PUTs body with version', async () => {
+      confluencePagesMock.updateProperty.mockResolvedValue({ id: 'cp-1' });
+      const parsed = cmd('pages', 'update-property', ['p-1'], {
+        'property-id': 'cp-1',
+        key: 'reviewed',
+        value: 'false',
+        'version-number': '2',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.updateProperty).toHaveBeenCalledWith('p-1', 'cp-1', {
+        key: 'reviewed',
+        value: false,
+        version: { number: 2 },
+      });
+    });
+
+    it('pages update-property rejects --version-number 0', async () => {
+      const parsed = cmd('pages', 'update-property', ['p-1'], {
+        'property-id': 'cp-1',
+        key: 'k',
+        value: '1',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--version-number must be a positive integer/,
+      );
+    });
+
+    it('pages delete-property DELETEs and returns {deleted:true}', async () => {
+      confluencePagesMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('pages', 'delete-property', ['p-1'], { 'property-id': 'cp-1' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.deleteProperty).toHaveBeenCalledWith('p-1', 'cp-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    // ── version (B188 — dispatches to versions.getForPage) ─────────────────
+
+    it('pages version dispatches to versions.getForPage with positive int', async () => {
+      confluenceVersionsMock.getForPage.mockResolvedValue({ number: 2 });
+      const parsed = cmd('pages', 'version', ['p-1'], { 'version-number': '2' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceVersionsMock.getForPage).toHaveBeenCalledWith('p-1', 2);
+    });
+
+    it('pages version rejects --version-number 0', async () => {
+      const parsed = cmd('pages', 'version', ['p-1'], { 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--version-number must be a positive integer/,
+      );
+    });
+
+    it('pages version rejects --version-number NaN', async () => {
+      const parsed = cmd('pages', 'version', ['p-1'], { 'version-number': 'abc' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--version-number must be a positive integer/,
+      );
+    });
+
+    // ── upload-attachment (B893 — dispatches to attachments.upload) ────────
+
+    it('pages upload-attachment dispatches to attachments.upload', async () => {
+      const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = mkdtempSync(join(tmpdir(), 'atlas-upload-'));
+      const file = join(dir, 'screenshot.png');
+      writeFileSync(file, 'fake-png-bytes');
+      try {
+        confluenceAttachmentsMock.upload.mockResolvedValue({ results: [], _links: {} });
+        const parsed = cmd('pages', 'upload-attachment', ['p-1'], { file });
+        await executeConfluenceCommand(parsed, GLOBALS);
+        expect(confluenceAttachmentsMock.upload).toHaveBeenCalledWith(
+          'p-1',
+          'screenshot.png',
+          expect.any(Blob),
+          undefined,
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('pages upload-attachment honours --filename and --media-type overrides', async () => {
+      const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = mkdtempSync(join(tmpdir(), 'atlas-upload-'));
+      const file = join(dir, 'on-disk.png');
+      writeFileSync(file, 'fake-png-bytes');
+      try {
+        confluenceAttachmentsMock.upload.mockResolvedValue({ results: [], _links: {} });
+        const parsed = cmd('pages', 'upload-attachment', ['p-1'], {
+          file,
+          filename: 'override.png',
+          'media-type': 'image/png',
+        });
+        await executeConfluenceCommand(parsed, GLOBALS);
+        expect(confluenceAttachmentsMock.upload).toHaveBeenCalledWith(
+          'p-1',
+          'override.png',
+          expect.any(Blob),
+          'image/png',
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('pages upload-attachment throws when --file missing', async () => {
+      const parsed = cmd('pages', 'upload-attachment', ['p-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--file');
     });
   });
 
