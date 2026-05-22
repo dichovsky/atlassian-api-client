@@ -11,6 +11,8 @@ import type {
   AttachmentVersion,
   ContentProperty,
   CreateContentPropertyData,
+  DeleteAttachmentParams,
+  GetAttachmentParams,
   GetAttachmentThumbnailParams,
   Label,
   ListAllAttachmentsParams,
@@ -39,6 +41,37 @@ function statusParam(
   return value.join(',');
 }
 
+/**
+ * Return `undefined` for an empty query bag so the transport does not append
+ * a stray `?` to the URL. Used by methods whose params are entirely optional.
+ */
+function nonEmptyQuery(query: Query): Query | undefined {
+  for (const _ in query) return query;
+  return undefined;
+}
+
+/**
+ * Choose the upload body for `POST /pages/{id}/attachments`. If the caller
+ * passed an explicit `mimeType` that differs from the blob's own `type`, wrap
+ * the bytes in a new `Blob` so the multipart part carries the override.
+ */
+function wrapUploadContent(content: Blob, mimeType: string | undefined): Blob {
+  const needsOverride = mimeType !== undefined && content.type !== mimeType;
+  if (!needsOverride) return content;
+  return new Blob([content], { type: mimeType });
+}
+
+/**
+ * Validate that `versionNumber` is a positive integer before dispatching.
+ * Mirrors the CLI's `--version-number` guard so SDK callers fail fast
+ * instead of round-tripping to the server.
+ */
+function validateVersionNumber(versionNumber: number): void {
+  if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
+    throw new Error(`versionNumber must be a positive integer, got: ${versionNumber}`);
+  }
+}
+
 /** Confluence Attachments resource — list, get, delete, and upload attachments on pages. */
 export class AttachmentsResource {
   constructor(
@@ -46,7 +79,10 @@ export class AttachmentsResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List attachments for a page. */
+  /**
+   * List attachments for a page.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-pages-id-attachments-get
+   */
   async listForPage(
     pageId: string,
     params?: ListAttachmentsParams,
@@ -55,25 +91,35 @@ export class AttachmentsResource {
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
-      query: params as Query,
+      query: this.buildPageAttachmentsQuery(params),
     });
     return response.data;
   }
 
-  /** Get an attachment by ID. */
-  async get(id: string): Promise<Attachment> {
+  /**
+   * Get an attachment by ID. Use `params.include-*` to inline sub-resources
+   * (labels, properties, operations, versions, collaborators).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-get
+   */
+  async get(id: string, params?: GetAttachmentParams): Promise<Attachment> {
     const response = await this.transport.request<Attachment>({
       method: 'GET',
       path: `${this.baseUrl}/attachments/${encodePathSegment(id)}`,
+      query: this.buildGetQuery(params),
     });
     return response.data;
   }
 
-  /** Delete an attachment by ID. */
-  async delete(id: string): Promise<void> {
+  /**
+   * Delete an attachment by ID. Pass `params.purge=true` to permanently
+   * delete a previously-trashed attachment.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-delete
+   */
+  async delete(id: string, params?: DeleteAttachmentParams): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/attachments/${encodePathSegment(id)}`,
+      query: this.buildDeleteQuery(params),
     });
   }
 
@@ -81,8 +127,12 @@ export class AttachmentsResource {
    * Upload an attachment to a page.
    * @param pageId - The page to attach to.
    * @param filename - The filename as it should appear in Confluence.
-   * @param content - The file content as a Blob.
+   * @param content - The file content as a {@link Blob}. Node ESM callers can
+   *   wrap a `Buffer`, a `Uint8Array`, or a `fs.ReadStream`-derived buffer in
+   *   a `Blob` before passing it here; raw `ReadableStream` is not accepted
+   *   by the current signature.
    * @param mimeType - Optional MIME type override (e.g. 'image/png').
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments
    */
   async upload(
     pageId: string,
@@ -91,10 +141,7 @@ export class AttachmentsResource {
     mimeType?: string,
   ): Promise<CursorPaginatedResponse<Attachment>> {
     const formData = new FormData();
-    const file =
-      mimeType !== undefined && content.type !== mimeType
-        ? new Blob([content], { type: mimeType })
-        : content;
+    const file = wrapUploadContent(content, mimeType);
     formData.append('file', file, filename);
 
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
@@ -105,7 +152,10 @@ export class AttachmentsResource {
     return response.data;
   }
 
-  /** Iterate over all attachments for a page. */
+  /**
+   * Iterate over all attachments for a page.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-pages-id-attachments-get
+   */
   async *listAllForPage(
     pageId: string,
     params?: Omit<ListAttachmentsParams, 'cursor'>,
@@ -114,7 +164,7 @@ export class AttachmentsResource {
     yield* paginateCursor<Attachment>(
       this.transport,
       `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
-      params as Query,
+      this.buildPageAttachmentsQuery(params),
     );
   }
 
@@ -124,6 +174,7 @@ export class AttachmentsResource {
    * List attachments across the tenant (`GET /attachments`). Supports the
    * `status` array filter (comma-joined on the wire), plus `mediaType`,
    * `filename`, `sort`, `limit`, `cursor`.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-get
    */
   async list(params?: ListAllAttachmentsParams): Promise<CursorPaginatedResponse<Attachment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
@@ -135,7 +186,11 @@ export class AttachmentsResource {
     return response.data;
   }
 
-  /** Iterate over every attachment in the tenant, transparently following cursors. */
+  /**
+   * Iterate over every attachment in the tenant, transparently following
+   * cursors.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-get
+   */
   async *listAll(params?: Omit<ListAllAttachmentsParams, 'cursor'>): AsyncGenerator<Attachment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Attachment>(
@@ -147,7 +202,10 @@ export class AttachmentsResource {
 
   // ── content properties ───────────────────────────────────────────────────
 
-  /** List content properties on an attachment (single page). */
+  /**
+   * List content properties on an attachment (single page).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-get
+   */
   async listProperties(
     attachmentId: string,
     params?: ListSharedContentPropertiesParams,
@@ -161,7 +219,10 @@ export class AttachmentsResource {
     return response.data;
   }
 
-  /** Iterate every content property on an attachment across all pages. */
+  /**
+   * Iterate every content property on an attachment across all pages.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-get
+   */
   async *listPropertiesAll(
     attachmentId: string,
     params?: Omit<ListSharedContentPropertiesParams, 'cursor'>,
@@ -174,7 +235,10 @@ export class AttachmentsResource {
     );
   }
 
-  /** Create a content property on an attachment. */
+  /**
+   * Create a content property on an attachment.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-post
+   */
   async createProperty(
     attachmentId: string,
     data: CreateContentPropertyData,
@@ -187,7 +251,10 @@ export class AttachmentsResource {
     return response.data;
   }
 
-  /** Get a single content property on an attachment by property ID. */
+  /**
+   * Get a single content property on an attachment by property ID.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-property-id-get
+   */
   async getProperty(attachmentId: string, propertyId: string): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'GET',
@@ -202,6 +269,7 @@ export class AttachmentsResource {
    * Confluence enforces optimistic concurrency: `data.version.number` must be
    * exactly one greater than the property's current version, otherwise the
    * server returns 409.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-property-id-put
    */
   async updateProperty(
     attachmentId: string,
@@ -216,7 +284,10 @@ export class AttachmentsResource {
     return response.data;
   }
 
-  /** Delete a content property on an attachment. */
+  /**
+   * Delete a content property on an attachment.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-content-properties/#api-attachments-attachment-id-properties-property-id-delete
+   */
   async deleteProperty(attachmentId: string, propertyId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
@@ -226,7 +297,10 @@ export class AttachmentsResource {
 
   // ── versions ─────────────────────────────────────────────────────────────
 
-  /** List versions for an attachment (single page). */
+  /**
+   * List versions for an attachment (single page).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-versions-get
+   */
   async listVersions(
     attachmentId: string,
     params?: ListAttachmentVersionsParams,
@@ -235,12 +309,15 @@ export class AttachmentsResource {
     const response = await this.transport.request<CursorPaginatedResponse<AttachmentVersion>>({
       method: 'GET',
       path: `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/versions`,
-      query: params as Query,
+      query: this.buildVersionsQuery(params),
     });
     return response.data;
   }
 
-  /** Iterate every version of an attachment across all pages. */
+  /**
+   * Iterate every version of an attachment across all pages.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-versions-get
+   */
   async *listAllVersions(
     attachmentId: string,
     params?: Omit<ListAttachmentVersionsParams, 'cursor'>,
@@ -249,19 +326,20 @@ export class AttachmentsResource {
     yield* paginateCursor<AttachmentVersion>(
       this.transport,
       `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/versions`,
-      params as Query,
+      this.buildVersionsQuery(params),
     );
   }
 
   /**
    * Get a specific version of an attachment. `versionNumber` must be a
-   * positive integer; the resource lets the server reject anything else
-   * with a 404 to keep the validation surface narrow.
+   * positive integer; values that fail that guard reject without a request.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-versions-version-number-get
    */
   async getVersion(
     attachmentId: string,
     versionNumber: number,
   ): Promise<AttachmentDetailedVersion> {
+    validateVersionNumber(versionNumber);
     const response = await this.transport.request<AttachmentDetailedVersion>({
       method: 'GET',
       path: `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/versions/${encodePathSegment(String(versionNumber))}`,
@@ -271,7 +349,10 @@ export class AttachmentsResource {
 
   // ── footer comments ──────────────────────────────────────────────────────
 
-  /** List footer comments associated with an attachment (single page). */
+  /**
+   * List footer comments associated with an attachment (single page).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-comment/#api-attachments-id-footer-comments-get
+   */
   async listFooterComments(
     attachmentId: string,
     params?: ListAttachmentFooterCommentsParams,
@@ -281,13 +362,16 @@ export class AttachmentsResource {
       {
         method: 'GET',
         path: `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/footer-comments`,
-        query: params as Query,
+        query: this.buildFooterCommentsQuery(params),
       },
     );
     return response.data;
   }
 
-  /** Iterate every footer comment on an attachment across all pages. */
+  /**
+   * Iterate every footer comment on an attachment across all pages.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-comment/#api-attachments-id-footer-comments-get
+   */
   async *listAllFooterComments(
     attachmentId: string,
     params?: Omit<ListAttachmentFooterCommentsParams, 'cursor'>,
@@ -296,13 +380,16 @@ export class AttachmentsResource {
     yield* paginateCursor<AttachmentFooterComment>(
       this.transport,
       `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/footer-comments`,
-      params as Query,
+      this.buildFooterCommentsQuery(params),
     );
   }
 
   // ── labels ───────────────────────────────────────────────────────────────
 
-  /** List labels applied to an attachment (single page). */
+  /**
+   * List labels applied to an attachment (single page).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-label/#api-attachments-id-labels-get
+   */
   async listLabels(
     attachmentId: string,
     params?: ListAttachmentLabelsParams,
@@ -311,12 +398,15 @@ export class AttachmentsResource {
     const response = await this.transport.request<CursorPaginatedResponse<Label>>({
       method: 'GET',
       path: `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/labels`,
-      query: params as Query,
+      query: this.buildLabelsQuery(params),
     });
     return response.data;
   }
 
-  /** Iterate every label on an attachment across all pages. */
+  /**
+   * Iterate every label on an attachment across all pages.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-label/#api-attachments-id-labels-get
+   */
   async *listAllLabels(
     attachmentId: string,
     params?: Omit<ListAttachmentLabelsParams, 'cursor'>,
@@ -325,13 +415,16 @@ export class AttachmentsResource {
     yield* paginateCursor<Label>(
       this.transport,
       `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/labels`,
-      params as Query,
+      this.buildLabelsQuery(params),
     );
   }
 
   // ── operations ───────────────────────────────────────────────────────────
 
-  /** Get the set of operations the calling user may perform on the attachment. */
+  /**
+   * Get the set of operations the calling user may perform on the attachment.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-operation/#api-attachments-id-operations-get
+   */
   async getOperations(attachmentId: string): Promise<AttachmentOperationsResponse> {
     const response = await this.transport.request<AttachmentOperationsResponse>({
       method: 'GET',
@@ -360,6 +453,7 @@ export class AttachmentsResource {
    * is configured, the transport enforces that bound on the buffer size;
    * oversized thumbnails will be rejected at the transport layer before
    * being returned to the caller.
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/#api-attachments-id-thumbnail-download-get
    */
   async downloadThumbnail(
     attachmentId: string,
@@ -368,7 +462,7 @@ export class AttachmentsResource {
     const response = await this.transport.request<ArrayBuffer>({
       method: 'GET',
       path: `${this.baseUrl}/attachments/${encodePathSegment(attachmentId)}/thumbnail/download`,
-      query: params as Query,
+      query: this.buildThumbnailQuery(params),
       responseType: 'arrayBuffer',
     });
     return response.data;
@@ -390,6 +484,47 @@ export class AttachmentsResource {
     return query;
   }
 
+  /** Build the query bag for `GET /pages/{pageId}/attachments`. */
+  private buildPageAttachmentsQuery(params: ListAttachmentsParams | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
+    if (params.limit !== undefined) query.limit = params.limit;
+    if (params.cursor !== undefined) query.cursor = params.cursor;
+    if (params.mediaType !== undefined) query.mediaType = params.mediaType;
+    if (params.filename !== undefined) query.filename = params.filename;
+    return query;
+  }
+
+  /** Build the query bag for `GET /attachments/{id}`. */
+  private buildGetQuery(params: GetAttachmentParams | undefined): Query | undefined {
+    const query: Query = {};
+    if (params === undefined) return undefined;
+    if (params.version !== undefined) query.version = params.version;
+    if (params['include-labels'] !== undefined) query['include-labels'] = params['include-labels'];
+    if (params['include-properties'] !== undefined) {
+      query['include-properties'] = params['include-properties'];
+    }
+    if (params['include-operations'] !== undefined) {
+      query['include-operations'] = params['include-operations'];
+    }
+    if (params['include-versions'] !== undefined) {
+      query['include-versions'] = params['include-versions'];
+    }
+    if (params['include-version'] !== undefined) {
+      query['include-version'] = params['include-version'];
+    }
+    if (params['include-collaborators'] !== undefined) {
+      query['include-collaborators'] = params['include-collaborators'];
+    }
+    return nonEmptyQuery(query);
+  }
+
+  /** Build the query bag for `DELETE /attachments/{id}`. */
+  private buildDeleteQuery(params: DeleteAttachmentParams | undefined): Query | undefined {
+    if (params?.purge === undefined) return undefined;
+    return { purge: params.purge };
+  }
+
   /** Build the query bag for `GET /attachments/{id}/properties`. */
   private buildPropertiesQuery(params: ListSharedContentPropertiesParams | undefined): Query {
     const query: Query = {};
@@ -399,5 +534,48 @@ export class AttachmentsResource {
     if (params.cursor !== undefined) query.cursor = params.cursor;
     if (params.limit !== undefined) query.limit = params.limit;
     return query;
+  }
+
+  /** Build the query bag for `GET /attachments/{id}/versions`. */
+  private buildVersionsQuery(params: ListAttachmentVersionsParams | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
+    if (params.sort !== undefined) query.sort = params.sort;
+    if (params.cursor !== undefined) query.cursor = params.cursor;
+    if (params.limit !== undefined) query.limit = params.limit;
+    return query;
+  }
+
+  /** Build the query bag for `GET /attachments/{id}/footer-comments`. */
+  private buildFooterCommentsQuery(params: ListAttachmentFooterCommentsParams | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
+    if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params.sort !== undefined) query.sort = params.sort;
+    if (params.version !== undefined) query.version = params.version;
+    if (params.cursor !== undefined) query.cursor = params.cursor;
+    if (params.limit !== undefined) query.limit = params.limit;
+    return query;
+  }
+
+  /** Build the query bag for `GET /attachments/{id}/labels`. */
+  private buildLabelsQuery(params: ListAttachmentLabelsParams | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
+    if (params.prefix !== undefined) query.prefix = params.prefix;
+    if (params.sort !== undefined) query.sort = params.sort;
+    if (params.cursor !== undefined) query.cursor = params.cursor;
+    if (params.limit !== undefined) query.limit = params.limit;
+    return query;
+  }
+
+  /** Build the query bag for `GET /attachments/{id}/thumbnail/download`. */
+  private buildThumbnailQuery(params: GetAttachmentThumbnailParams | undefined): Query | undefined {
+    const query: Query = {};
+    if (params === undefined) return undefined;
+    if (params.version !== undefined) query.version = params.version;
+    if (params.width !== undefined) query.width = params.width;
+    if (params.height !== undefined) query.height = params.height;
+    return nonEmptyQuery(query);
   }
 }

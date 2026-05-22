@@ -1132,13 +1132,23 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('attachments list forwards --cursor when provided', async () => {
+      confluenceAttachmentsMock.listForPage.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'list', [], { 'page-id': 'p-1', cursor: 'tok-42' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.listForPage).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({ cursor: 'tok-42' }),
+      );
+    });
+
     it('attachments list throws when page-id is missing', async () => {
       await expect(executeConfluenceCommand(cmd('attachments', 'list'), GLOBALS)).rejects.toThrow(
         '--page-id',
       );
     });
 
-    it('attachments get calls client.attachments.get', async () => {
+    it('attachments get calls client.attachments.get with default empty params', async () => {
       // Arrange
       confluenceAttachmentsMock.get.mockResolvedValue({ id: 'att-1' });
 
@@ -1146,8 +1156,39 @@ describe('executeConfluenceCommand', () => {
       const result = await executeConfluenceCommand(cmd('attachments', 'get', ['att-1']), GLOBALS);
 
       // Assert
-      expect(confluenceAttachmentsMock.get).toHaveBeenCalledWith('att-1');
+      expect(confluenceAttachmentsMock.get).toHaveBeenCalledWith('att-1', {
+        version: undefined,
+        'include-labels': undefined,
+        'include-properties': undefined,
+        'include-operations': undefined,
+        'include-versions': undefined,
+        'include-version': undefined,
+        'include-collaborators': undefined,
+      });
       expect(result).toEqual({ id: 'att-1' });
+    });
+
+    it('attachments get forwards include-* flags and --version-number', async () => {
+      confluenceAttachmentsMock.get.mockResolvedValue({ id: 'att-1' });
+      const parsed = cmd('attachments', 'get', ['att-1'], {
+        'version-number': '3',
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.get).toHaveBeenCalledWith('att-1', {
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
     });
 
     it('attachments get throws when ID is missing', async () => {
@@ -1156,7 +1197,7 @@ describe('executeConfluenceCommand', () => {
       ).rejects.toThrow('Missing required argument: attachment ID');
     });
 
-    it('attachments delete calls client.attachments.delete and returns { deleted: true }', async () => {
+    it('attachments delete calls client.attachments.delete without purge by default', async () => {
       // Arrange
       confluenceAttachmentsMock.delete.mockResolvedValue(undefined);
 
@@ -1167,8 +1208,15 @@ describe('executeConfluenceCommand', () => {
       );
 
       // Assert
-      expect(confluenceAttachmentsMock.delete).toHaveBeenCalledWith('att-1');
+      expect(confluenceAttachmentsMock.delete).toHaveBeenCalledWith('att-1', undefined);
       expect(result).toEqual({ deleted: true });
+    });
+
+    it('attachments delete forwards --purge=true when set', async () => {
+      confluenceAttachmentsMock.delete.mockResolvedValue(undefined);
+      const parsed = cmd('attachments', 'delete', ['att-1'], { purge: true });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.delete).toHaveBeenCalledWith('att-1', { purge: true });
     });
 
     it('attachments delete throws when ID is missing', async () => {
@@ -1228,6 +1276,15 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
       const call = confluenceAttachmentsMock.list.mock.calls[0]?.[0] as Record<string, unknown>;
       expect('status' in call).toBe(false);
+    });
+
+    it('attachments list-all dedupes repeated --status tokens', async () => {
+      confluenceAttachmentsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'list-all', [], { status: 'current,current,archived' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ status: ['current', 'archived'] }),
+      );
     });
 
     // ── properties ────────────────────────────────────────────────────────

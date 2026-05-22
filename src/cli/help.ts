@@ -125,6 +125,8 @@ EXAMPLES:
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
   atlas confluence attachments list-all --status current,archived --sort -modified-date
+  atlas confluence attachments get att-1 --include-labels --include-properties
+  atlas confluence attachments delete att-1 --purge
   atlas confluence attachments versions att-1 --sort -modified-date
   atlas confluence attachments get-version att-1 --version-number 2
   atlas confluence attachments footer-comments att-1 --body-format storage

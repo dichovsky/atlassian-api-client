@@ -79,8 +79,8 @@ Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `
 | ----------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `list`            | —                | `--page-id`                                             | `--limit`, `--cursor`                                                     |
 | `list-all`        | —                | —                                                       | `--status`, `--media-type`, `--filename`, `--sort`, `--limit`, `--cursor` |
-| `get`             | `<attachmentId>` | —                                                       | —                                                                         |
-| `delete`          | `<attachmentId>` | —                                                       | —                                                                         |
+| `get`             | `<attachmentId>` | —                                                       | `--version-number`, `--include-*` (see notes)                             |
+| `delete`          | `<attachmentId>` | —                                                       | `--purge`                                                                 |
 | `list-properties` | `<attachmentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                  |
 | `create-property` | `<attachmentId>` | `--key`, `--value`                                      | —                                                                         |
 | `get-property`    | `<attachmentId>` | `--property-id`                                         | —                                                                         |
@@ -93,7 +93,7 @@ Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `
 | `operations`      | `<attachmentId>` | —                                                       | —                                                                         |
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`                                 |
 
-- Upload is not exposed via the CLI; use the SDK's `attachments.upload()` with a `Blob` or `ReadableStream`.
+- Upload is not exposed via the CLI; use the SDK's `attachments.upload()` and pass the file content as a `Blob`. Node ESM callers can wrap a `Buffer`, `Uint8Array`, or `fs.ReadStream`-derived buffer in a `Blob` first; raw `ReadableStream` is not accepted by the current signature.
 - `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - `--sort` enums per action:
   - `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
@@ -101,6 +101,14 @@ Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `
   - `footer-comments`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
   - `labels`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`
   - `list-properties`: `key`, `-key`
+- `get` accepts `--version-number` to pin the response to a specific version, plus these `--include-*` boolean flags that inline sub-resources on the response:
+  - `--include-labels`
+  - `--include-properties`
+  - `--include-operations`
+  - `--include-versions`
+  - `--include-version` (on by default server-side; pass explicitly only to override)
+  - `--include-collaborators`
+- `delete` accepts `--purge` to permanently delete a previously-trashed attachment (default soft-delete moves it to trash).
 - `--prefix` (labels) accepts `my`, `team`, `global`, or `system`.
 - `--body-format` (footer-comments) accepts `storage` or `atlas_doc_format`.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `comments create-property`).

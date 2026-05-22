@@ -8,6 +8,7 @@ import type {
   CommentSortOrder,
   ContentSortOrder,
   DataPolicySpaceSortOrder,
+  LabelPrefix,
   LabelSortOrder,
   PageSortOrder,
   SpaceRolePrincipalType,
@@ -16,8 +17,6 @@ import type {
   WhiteboardLocale,
   WhiteboardTemplateKey,
 } from '../../confluence/types.js';
-
-type LabelPrefix = 'my' | 'team' | 'global' | 'system';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
 export async function executeConfluenceCommand(
@@ -271,6 +270,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
     case 'list':
       return client.attachments.listForPage(requireOpt(opts['page-id'], '--page-id'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
       });
     case 'list-all': {
       const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
@@ -285,10 +285,23 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
       });
     }
     case 'get':
-      return client.attachments.get(requireArg(cmd.positionalArgs[0], 'attachment ID'));
-    case 'delete':
-      await client.attachments.delete(requireArg(cmd.positionalArgs[0], 'attachment ID'));
+      return client.attachments.get(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-labels': opts['include-labels'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+      });
+    case 'delete': {
+      const purge = opts['purge'] === true ? true : undefined;
+      await client.attachments.delete(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        purge === undefined ? undefined : { purge },
+      );
       return { deleted: true };
+    }
     case 'list-properties':
       return client.attachments.listProperties(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
         key: asString(opts['key']),
@@ -399,7 +412,8 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
  * Parse the `--status` CLI flag into a non-empty list of
  * {@link AttachmentStatus} values. Accepts a single value (`current`) or
  * comma-separated (`current,archived`); rejects unknown tokens with the
- * standard `must be one of` error to match other enum flags.
+ * standard `must be one of` error to match other enum flags. Duplicate
+ * tokens are collapsed so the wire format never carries `status=a,a`.
  */
 function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined {
   if (raw === undefined) return undefined;
@@ -413,7 +427,8 @@ function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentSt
       throw new Error(`--status must be one of: ${ATTACHMENT_STATUSES.join(', ')}, got: ${part}`);
     }
   }
-  return parts as readonly AttachmentStatus[];
+  const deduped = Array.from(new Set(parts));
+  return deduped as readonly AttachmentStatus[];
 }
 
 async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {

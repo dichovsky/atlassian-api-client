@@ -57,6 +57,7 @@ const GLOBAL_OPTIONS = {
   prefix: { type: 'string' as const },
   'include-collaborators': { type: 'boolean' as const },
   'include-direct-children': { type: 'boolean' as const },
+  'include-labels': { type: 'boolean' as const },
   'include-operations': { type: 'boolean' as const },
   'include-properties': { type: 'boolean' as const },
   // footer-comments include-* flags

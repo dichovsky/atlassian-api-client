@@ -55,7 +55,7 @@ describe('AttachmentsResource', () => {
   // ── get ───────────────────────────────────────────────────────────────────
 
   describe('get()', () => {
-    it('calls GET /attachments/{id}', async () => {
+    it('calls GET /attachments/{id} without a query when no params', async () => {
       // Arrange
       const attachment = makeAttachment('a42');
       transport.respondWith(attachment);
@@ -69,13 +69,57 @@ describe('AttachmentsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/attachments/a42`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('forwards version and every include-* flag', async () => {
+      transport.respondWith(makeAttachment('a42'));
+      await attachments.get('a42', {
+        version: 5,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-collaborators': true,
+      });
+      expect(transport.lastCall?.options.query).toEqual({
+        version: 5,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-collaborators': true,
+      });
+    });
+
+    it('omits the query bag when params object has no defined fields', async () => {
+      transport.respondWith(makeAttachment('a42'));
+      await attachments.get('a42', {});
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('exposes spec-modelled nested envelopes in the typed response', async () => {
+      transport.respondWith({
+        ...makeAttachment('a42'),
+        createdAt: '2026-05-01T00:00:00Z',
+        customContentId: 'cc-1',
+        fileId: 'file-9',
+        labels: { results: [{ id: 'l1', name: 'urgent' }], meta: { hasMore: false } },
+      });
+      const attachment = await attachments.get('a42', { 'include-labels': true });
+      expect(attachment.createdAt).toBe('2026-05-01T00:00:00Z');
+      expect(attachment.customContentId).toBe('cc-1');
+      expect(attachment.fileId).toBe('file-9');
+      expect(attachment.labels?.results?.[0]?.name).toBe('urgent');
     });
   });
 
   // ── delete ────────────────────────────────────────────────────────────────
 
   describe('delete()', () => {
-    it('calls DELETE /attachments/{id}', async () => {
+    it('calls DELETE /attachments/{id} without a query when no params', async () => {
       // Arrange
       transport.respondWith(undefined);
 
@@ -87,6 +131,19 @@ describe('AttachmentsResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/attachments/a7`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('forwards purge=true when requested', async () => {
+      transport.respondWith(undefined);
+      await attachments.delete('a7', { purge: true });
+      expect(transport.lastCall?.options.query).toEqual({ purge: true });
+    });
+
+    it('omits the query when purge is undefined', async () => {
+      transport.respondWith(undefined);
+      await attachments.delete('a7', {});
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 
@@ -248,9 +305,13 @@ describe('AttachmentsResource', () => {
   // ── list (tenant-wide) ────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('calls GET /attachments with no params', async () => {
-      transport.respondWith({ results: [makeAttachment('a1')], _links: {} });
-      await attachments.list();
+    it('returns the exact paginated payload when called with no params', async () => {
+      const payload = { results: [makeAttachment('a1')], _links: {} };
+      transport.respondWith(payload);
+      const result = await attachments.list();
+      expect(result).toEqual(payload);
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0]?.id).toBe('a1');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/attachments`,
@@ -475,6 +536,12 @@ describe('AttachmentsResource', () => {
       await attachments.listVersions('att-1');
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/att-1/versions`);
     });
+
+    it('forwards only the cursor when other filters are unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listVersions('att-1', { cursor: 'next' });
+      expect(transport.lastCall?.options.query).toEqual({ cursor: 'next' });
+    });
   });
 
   describe('listAllVersions()', () => {
@@ -514,6 +581,31 @@ describe('AttachmentsResource', () => {
         path: `${BASE_URL}/attachments/att-1/versions/3`,
       });
     });
+
+    it('rejects a zero versionNumber without making a request', async () => {
+      await expect(attachments.getVersion('att-1', 0)).rejects.toThrow(/positive integer/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects a negative versionNumber without making a request', async () => {
+      await expect(attachments.getVersion('att-1', -3)).rejects.toThrow(/positive integer/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects a non-integer versionNumber without making a request', async () => {
+      await expect(attachments.getVersion('att-1', 1.5)).rejects.toThrow(/positive integer/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('exposes the spec `attachment` back-reference on the typed version', async () => {
+      transport.respondWith({
+        number: 4,
+        attachment: { id: 'att-1', title: 'spec.pdf' },
+      });
+      const version = await attachments.getVersion('att-1', 4);
+      expect(version.attachment?.id).toBe('att-1');
+      expect(version.attachment?.title).toBe('spec.pdf');
+    });
   });
 
   // ── footer comments ──────────────────────────────────────────────────────
@@ -549,6 +641,12 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/attachments/att-1/footer-comments`,
       );
+    });
+
+    it('forwards only the cursor when other filters are unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listFooterComments('att-1', { cursor: 'next' });
+      expect(transport.lastCall?.options.query).toEqual({ cursor: 'next' });
     });
   });
 
@@ -605,6 +703,12 @@ describe('AttachmentsResource', () => {
       transport.respondWith({ results: [], _links: {} });
       await attachments.listLabels('att-1');
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/att-1/labels`);
+    });
+
+    it('forwards only the cursor when other filters are unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listLabels('att-1', { cursor: 'next' });
+      expect(transport.lastCall?.options.query).toEqual({ cursor: 'next' });
     });
   });
 
@@ -684,6 +788,19 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/attachments/att-1/thumbnail/download`,
       );
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('omits query when params object is empty', async () => {
+      transport.respondWith(new ArrayBuffer(0));
+      await attachments.downloadThumbnail('att-1', {});
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('forwards only the defined hints when partial params are supplied', async () => {
+      transport.respondWith(new ArrayBuffer(0));
+      await attachments.downloadThumbnail('att-1', { width: 64 });
+      expect(transport.lastCall?.options.query).toEqual({ width: 64 });
     });
   });
 });
