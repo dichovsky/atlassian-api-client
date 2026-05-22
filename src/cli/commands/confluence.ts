@@ -46,6 +46,8 @@ export async function executeConfluenceCommand(
       return executeDataPolicies(client, cmd);
     case 'databases':
       return executeDatabases(client, cmd);
+    case 'folders':
+      return executeFolders(client, cmd);
     case 'footer-comments':
       return executeFooterComments(client, cmd);
     case 'space-permissions':
@@ -797,6 +799,92 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown databases action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+      );
+  }
+}
+
+async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create':
+      return client.folders.create({
+        spaceId: requireOpt(opts['space-id'], '--space-id'),
+        title: asString(opts['title']),
+        parentId: asString(opts['parent-id']),
+      });
+    case 'get':
+      return client.folders.get(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+        'include-direct-children': opts['include-direct-children'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+      });
+    case 'delete':
+      await client.folders.delete(requireArg(cmd.positionalArgs[0], 'folder ID'));
+      return { deleted: true };
+    case 'ancestors':
+      return client.folders.listAncestors(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.folders.listDescendants(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        depth: asPositiveInt(opts['depth'], '--depth'),
+        cursor: asString(opts['cursor']),
+      });
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.folders.listDirectChildren(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ...(sort !== undefined ? { sort } : {}),
+      });
+    }
+    case 'operations':
+      return client.folders.getOperations(requireArg(cmd.positionalArgs[0], 'folder ID'));
+    case 'list-properties':
+      return client.folders.listProperties(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.folders.createProperty(requireArg(cmd.positionalArgs[0], 'folder ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.folders.getProperty(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.folders.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.folders.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'folder ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown folders action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property`,
       );
   }
 }

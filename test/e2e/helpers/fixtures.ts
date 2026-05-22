@@ -310,6 +310,51 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  folder: {
+    id: 'folder-1',
+    type: 'folder',
+    status: 'current',
+    title: 'E2E Drafts',
+    spaceId: '654321',
+    version: { number: 1 },
+  },
+  folderAncestors: {
+    results: [
+      { id: 'ancestor-1', type: 'page' },
+      { id: 'ancestor-2', type: 'folder' },
+    ],
+  },
+  folderDescendants: {
+    results: [{ id: 'desc-1', type: 'page', title: 'Nested Page', depth: 1 }],
+    _links: { next: null },
+  },
+  folderChildren: {
+    results: [{ id: 'child-1', type: 'page', title: 'Direct Child' }],
+    _links: { next: null },
+  },
+  folderOperations: {
+    operations: [
+      { operation: 'read', targetType: 'folder' },
+      { operation: 'update', targetType: 'folder' },
+    ],
+  },
+  folderProperty: {
+    id: 'prop-1',
+    key: 'feature-flags',
+    value: { beta: true },
+    version: { number: 3 },
+  },
+  folderPropertyList: {
+    results: [
+      {
+        id: 'prop-1',
+        key: 'feature-flags',
+        value: { beta: true },
+        version: { number: 3 },
+      },
+    ],
+    _links: { next: null },
+  },
   task: {
     id: 'task-1',
     status: 'incomplete' as const,

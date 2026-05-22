@@ -1203,6 +1203,189 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'DELETE', pathname: `${P}/databases/db-1/properties/prop-1` },
     expectStdout: ['"deleted": true'],
   },
+  // ─── folders ──────────────────────────────────────────────────────────
+  {
+    name: 'folders create',
+    argv: ['confluence', 'folders', 'create', '--space-id', '654321', '--title', 'E2E Drafts'],
+    routes: [{ method: 'POST', path: `${P}/folders`, status: 201, body: F.folder }],
+    expectCall: { method: 'POST', pathname: `${P}/folders` },
+    expectBody: (body) => {
+      expect(body).toEqual({ spaceId: '654321', title: 'E2E Drafts' });
+    },
+  },
+  {
+    name: 'folders create --parent-id',
+    argv: [
+      'confluence',
+      'folders',
+      'create',
+      '--space-id',
+      '654321',
+      '--title',
+      'Nested',
+      '--parent-id',
+      'parent-9',
+    ],
+    routes: [{ method: 'POST', path: `${P}/folders`, status: 201, body: F.folder }],
+    expectCall: { method: 'POST', pathname: `${P}/folders` },
+    expectBody: (body) => {
+      expect(body).toEqual({ spaceId: '654321', title: 'Nested', parentId: 'parent-9' });
+    },
+  },
+  {
+    name: 'folders get',
+    argv: ['confluence', 'folders', 'get', 'folder-1'],
+    routes: [{ method: 'GET', path: `${P}/folders/folder-1`, body: F.folder }],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1` },
+    expectStdout: ['"id": "folder-1"'],
+  },
+  {
+    name: 'folders get --include-properties',
+    argv: ['confluence', 'folders', 'get', 'folder-1', '--include-properties'],
+    routes: [{ method: 'GET', path: `${P}/folders/folder-1`, body: F.folder }],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1` },
+    expectQuery: (query) => {
+      expect(query['include-properties']).toBe('true');
+    },
+  },
+  {
+    name: 'folders delete',
+    argv: ['confluence', 'folders', 'delete', 'folder-1'],
+    routes: [{ method: 'DELETE', path: `${P}/folders/folder-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/folders/folder-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'folders ancestors',
+    argv: ['confluence', 'folders', 'ancestors', 'folder-1', '--limit', '10'],
+    routes: [{ method: 'GET', path: `${P}/folders/folder-1/ancestors`, body: F.folderAncestors }],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/ancestors` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'folders descendants',
+    argv: ['confluence', 'folders', 'descendants', 'folder-1', '--depth', '3', '--limit', '25'],
+    routes: [
+      { method: 'GET', path: `${P}/folders/folder-1/descendants`, body: F.folderDescendants },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/descendants` },
+    expectQuery: (query) => {
+      expect(query.depth).toBe('3');
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'folders direct-children',
+    argv: ['confluence', 'folders', 'direct-children', 'folder-1', '--sort=-title'],
+    routes: [
+      { method: 'GET', path: `${P}/folders/folder-1/direct-children`, body: F.folderChildren },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/direct-children` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-title');
+    },
+  },
+  {
+    name: 'folders operations',
+    argv: ['confluence', 'folders', 'operations', 'folder-1'],
+    routes: [{ method: 'GET', path: `${P}/folders/folder-1/operations`, body: F.folderOperations }],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/operations` },
+    expectStdout: ['"operation": "read"'],
+  },
+  {
+    name: 'folders list-properties',
+    argv: ['confluence', 'folders', 'list-properties', 'folder-1'],
+    routes: [
+      { method: 'GET', path: `${P}/folders/folder-1/properties`, body: F.folderPropertyList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/properties` },
+    expectStdout: ['"id": "prop-1"', '"key": "feature-flags"'],
+  },
+  {
+    name: 'folders create-property',
+    argv: [
+      'confluence',
+      'folders',
+      'create-property',
+      'folder-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/folders/folder-1/properties`,
+        status: 201,
+        body: F.folderProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/folders/folder-1/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'feature-flags', value: { beta: true } });
+    },
+  },
+  {
+    name: 'folders get-property',
+    argv: ['confluence', 'folders', 'get-property', 'folder-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/folders/folder-1/properties/prop-1`,
+        body: F.folderProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/folders/folder-1/properties/prop-1` },
+    expectStdout: ['"id": "prop-1"'],
+  },
+  {
+    name: 'folders update-property',
+    argv: [
+      'confluence',
+      'folders',
+      'update-property',
+      'folder-1',
+      '--property-id',
+      'prop-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":false}',
+      '--version-number',
+      '4',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/folders/folder-1/properties/prop-1`,
+        body: F.folderProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/folders/folder-1/properties/prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'feature-flags',
+        value: { beta: false },
+        version: { number: 4 },
+      });
+    },
+  },
+  {
+    name: 'folders delete-property',
+    argv: ['confluence', 'folders', 'delete-property', 'folder-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/folders/folder-1/properties/prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/folders/folder-1/properties/prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
   // ─── footer-comments ──────────────────────────────────────────────────
   {
     name: 'footer-comments list',
