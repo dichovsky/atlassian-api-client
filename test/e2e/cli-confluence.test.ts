@@ -1229,6 +1229,197 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'DELETE', pathname: `${P}/databases/db-1/properties/prop-1` },
     expectStdout: ['"deleted": true'],
   },
+  // ─── embeds ───────────────────────────────────────────────────────────
+  {
+    name: 'embeds create',
+    argv: [
+      'confluence',
+      'embeds',
+      'create',
+      '--space-id',
+      '654321',
+      '--title',
+      'E2E Embed',
+      '--embed-url',
+      'https://example.com/demo',
+    ],
+    routes: [{ method: 'POST', path: `${P}/embeds`, status: 201, body: F.embed }],
+    expectCall: { method: 'POST', pathname: `${P}/embeds` },
+    expectBody: (body) => {
+      expect(body).toEqual({
+        spaceId: '654321',
+        title: 'E2E Embed',
+        embedUrl: 'https://example.com/demo',
+      });
+    },
+  },
+  {
+    name: 'embeds create --parent-id',
+    argv: [
+      'confluence',
+      'embeds',
+      'create',
+      '--space-id',
+      '654321',
+      '--title',
+      'Nested',
+      '--parent-id',
+      'parent-9',
+    ],
+    routes: [{ method: 'POST', path: `${P}/embeds`, status: 201, body: F.embed }],
+    expectCall: { method: 'POST', pathname: `${P}/embeds` },
+    expectBody: (body) => {
+      expect(body).toEqual({ spaceId: '654321', title: 'Nested', parentId: 'parent-9' });
+    },
+  },
+  {
+    name: 'embeds get',
+    argv: ['confluence', 'embeds', 'get', 'embed-1'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1`, body: F.embed }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1` },
+    expectStdout: ['"id": "embed-1"'],
+  },
+  {
+    name: 'embeds get --include-properties',
+    argv: ['confluence', 'embeds', 'get', 'embed-1', '--include-properties'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1`, body: F.embed }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1` },
+    expectQuery: (query) => {
+      expect(query['include-properties']).toBe('true');
+    },
+  },
+  {
+    name: 'embeds delete',
+    argv: ['confluence', 'embeds', 'delete', 'embed-1'],
+    routes: [{ method: 'DELETE', path: `${P}/embeds/embed-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/embeds/embed-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'embeds ancestors',
+    argv: ['confluence', 'embeds', 'ancestors', 'embed-1', '--limit', '10'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1/ancestors`, body: F.embedAncestors }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/ancestors` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'embeds descendants',
+    argv: ['confluence', 'embeds', 'descendants', 'embed-1', '--depth', '3', '--limit', '25'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1/descendants`, body: F.embedDescendants }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/descendants` },
+    expectQuery: (query) => {
+      expect(query.depth).toBe('3');
+      expect(query.limit).toBe('25');
+    },
+  },
+  {
+    name: 'embeds direct-children',
+    argv: ['confluence', 'embeds', 'direct-children', 'embed-1', '--sort=-title'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1/direct-children`, body: F.embedChildren }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/direct-children` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-title');
+    },
+  },
+  {
+    name: 'embeds operations',
+    argv: ['confluence', 'embeds', 'operations', 'embed-1'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1/operations`, body: F.embedOperations }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/operations` },
+    expectStdout: ['"operation": "read"'],
+  },
+  {
+    name: 'embeds list-properties',
+    argv: ['confluence', 'embeds', 'list-properties', 'embed-1'],
+    routes: [{ method: 'GET', path: `${P}/embeds/embed-1/properties`, body: F.embedPropertyList }],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/properties` },
+    expectStdout: ['"id": "prop-1"', '"key": "feature-flags"'],
+  },
+  {
+    name: 'embeds create-property',
+    argv: [
+      'confluence',
+      'embeds',
+      'create-property',
+      'embed-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/embeds/embed-1/properties`,
+        status: 201,
+        body: F.embedProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/embeds/embed-1/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'feature-flags', value: { beta: true } });
+    },
+  },
+  {
+    name: 'embeds get-property',
+    argv: ['confluence', 'embeds', 'get-property', 'embed-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/embeds/embed-1/properties/prop-1`,
+        body: F.embedProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/embeds/embed-1/properties/prop-1` },
+    expectStdout: ['"id": "prop-1"'],
+  },
+  {
+    name: 'embeds update-property',
+    argv: [
+      'confluence',
+      'embeds',
+      'update-property',
+      'embed-1',
+      '--property-id',
+      'prop-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":false}',
+      '--version-number',
+      '4',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/embeds/embed-1/properties/prop-1`,
+        body: F.embedProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/embeds/embed-1/properties/prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'feature-flags',
+        value: { beta: false },
+        version: { number: 4 },
+      });
+    },
+  },
+  {
+    name: 'embeds delete-property',
+    argv: ['confluence', 'embeds', 'delete-property', 'embed-1', '--property-id', 'prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/embeds/embed-1/properties/prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/embeds/embed-1/properties/prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
   // ─── folders ──────────────────────────────────────────────────────────
   {
     name: 'folders create',

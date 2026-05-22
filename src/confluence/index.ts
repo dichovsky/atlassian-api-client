@@ -128,6 +128,18 @@ export type {
   ListFolderChildrenParams,
   FolderOperation,
   FolderOperationsResponse,
+  Embed,
+  CreateEmbedData,
+  GetEmbedParams,
+  EmbedAncestor,
+  EmbedAncestorsResponse,
+  ListEmbedAncestorsParams,
+  EmbedDescendant,
+  ListEmbedDescendantsParams,
+  EmbedChild,
+  ListEmbedChildrenParams,
+  EmbedOperation,
+  EmbedOperationsResponse,
   CommentSortOrder,
   VersionSortOrder,
   ListFooterCommentsTenantParams,
@@ -215,6 +227,7 @@ export { ClassificationLevelsResource } from './resources/classification-levels.
 export { ContentResource } from './resources/content.js';
 export { DataPoliciesResource } from './resources/data-policies.js';
 export { DatabasesResource } from './resources/databases.js';
+export { EmbedsResource } from './resources/embeds.js';
 export { FoldersResource } from './resources/folders.js';
 export { FooterCommentsResource } from './resources/footer-comments.js';
 export { InlineCommentsResource } from './resources/inline-comments.js';

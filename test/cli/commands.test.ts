@@ -196,6 +196,20 @@ const confluenceFoldersMock = {
   updateProperty: vi.fn(),
   deleteProperty: vi.fn(),
 };
+const confluenceEmbedsMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+  listAncestors: vi.fn(),
+  listDescendants: vi.fn(),
+  listDirectChildren: vi.fn(),
+  getOperations: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
 const confluenceWhiteboardsMock = {
   create: vi.fn(),
   get: vi.fn(),
@@ -229,6 +243,7 @@ vi.mock('../../src/confluence/client.js', () => {
       content: confluenceContentMock,
       dataPolicies: confluenceDataPoliciesMock,
       databases: confluenceDatabasesMock,
+      embeds: confluenceEmbedsMock,
       folders: confluenceFoldersMock,
       footerComments: confluenceFooterCommentsMock,
       spacePermissions: confluenceSpacePermissionsMock,
@@ -3876,6 +3891,302 @@ describe('executeConfluenceCommand', () => {
     it('databases unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('databases', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown databases action',
+      );
+    });
+  });
+
+  // ── embeds ────────────────────────────────────────────────────────────────
+
+  describe('embeds resource', () => {
+    it('embeds create calls client.embeds.create with spaceId + title', async () => {
+      confluenceEmbedsMock.create.mockResolvedValue({ id: 'embed-1' });
+      const parsed = cmd('embeds', 'create', [], {
+        'space-id': 'space-1',
+        title: 'Demo',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.create).toHaveBeenCalledWith({
+        spaceId: 'space-1',
+        title: 'Demo',
+        parentId: undefined,
+        embedUrl: undefined,
+      });
+    });
+
+    it('embeds create forwards parentId and embedUrl when supplied', async () => {
+      confluenceEmbedsMock.create.mockResolvedValue({ id: 'embed-1' });
+      const parsed = cmd('embeds', 'create', [], {
+        'space-id': 'space-1',
+        'parent-id': 'p-9',
+        'embed-url': 'https://example.com',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ parentId: 'p-9', embedUrl: 'https://example.com' }),
+      );
+    });
+
+    it('embeds create throws when --space-id is missing', async () => {
+      const parsed = cmd('embeds', 'create', [], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
+    });
+
+    it('embeds get calls client.embeds.get with the ID', async () => {
+      confluenceEmbedsMock.get.mockResolvedValue({ id: 'embed-1' });
+
+      const result = await executeConfluenceCommand(cmd('embeds', 'get', ['embed-1']), GLOBALS);
+
+      expect(confluenceEmbedsMock.get).toHaveBeenCalledWith('embed-1', expect.any(Object));
+      expect(result).toEqual({ id: 'embed-1' });
+    });
+
+    it('embeds get forwards all include-* flags', async () => {
+      confluenceEmbedsMock.get.mockResolvedValue({ id: 'embed-1' });
+      const parsed = cmd('embeds', 'get', ['embed-1'], {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.get).toHaveBeenCalledWith('embed-1', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+    });
+
+    it('embeds get throws when ID is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('embeds', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: embed ID',
+      );
+    });
+
+    it('embeds delete calls client.embeds.delete and returns { deleted: true }', async () => {
+      confluenceEmbedsMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeConfluenceCommand(cmd('embeds', 'delete', ['embed-1']), GLOBALS);
+
+      expect(confluenceEmbedsMock.delete).toHaveBeenCalledWith('embed-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('embeds delete throws when ID is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('embeds', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: embed ID',
+      );
+    });
+
+    it('embeds ancestors calls listAncestors with limit', async () => {
+      confluenceEmbedsMock.listAncestors.mockResolvedValue({ results: [] });
+      const parsed = cmd('embeds', 'ancestors', ['embed-1'], { limit: '5' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.listAncestors).toHaveBeenCalledWith(
+        'embed-1',
+        expect.objectContaining({ limit: 5 }),
+      );
+    });
+
+    it('embeds ancestors throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('embeds', 'ancestors', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: embed ID');
+    });
+
+    it('embeds descendants forwards limit + depth + cursor', async () => {
+      confluenceEmbedsMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('embeds', 'descendants', ['embed-1'], {
+        limit: '25',
+        depth: '3',
+        cursor: 'tok',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.listDescendants).toHaveBeenCalledWith(
+        'embed-1',
+        expect.objectContaining({ limit: 25, depth: 3, cursor: 'tok' }),
+      );
+    });
+
+    it('embeds direct-children passes sort when supplied', async () => {
+      confluenceEmbedsMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('embeds', 'direct-children', ['embed-1'], { sort: '-title' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.listDirectChildren).toHaveBeenCalledWith(
+        'embed-1',
+        expect.objectContaining({ sort: '-title' }),
+      );
+    });
+
+    it('embeds direct-children omits sort when not supplied', async () => {
+      confluenceEmbedsMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+
+      await executeConfluenceCommand(cmd('embeds', 'direct-children', ['embed-1'], {}), GLOBALS);
+
+      const callArgs = confluenceEmbedsMock.listDirectChildren.mock.calls.at(-1)?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+    });
+
+    it('embeds direct-children rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('embeds', 'direct-children', ['embed-1'], { sort: 'bogus' });
+
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: created-date, -created-date, .*-title, got: bogus/,
+      );
+      expect(confluenceEmbedsMock.listDirectChildren).not.toHaveBeenCalled();
+    });
+
+    it('embeds operations calls getOperations', async () => {
+      confluenceEmbedsMock.getOperations.mockResolvedValue({ operations: [] });
+
+      await executeConfluenceCommand(cmd('embeds', 'operations', ['embed-1']), GLOBALS);
+
+      expect(confluenceEmbedsMock.getOperations).toHaveBeenCalledWith('embed-1');
+    });
+
+    it('embeds list-properties forwards key, sort, cursor, limit', async () => {
+      confluenceEmbedsMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('embeds', 'list-properties', ['embed-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.listProperties).toHaveBeenCalledWith(
+        'embed-1',
+        expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('embeds list-properties rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('embeds', 'list-properties', ['embed-1'], { sort: '-title' });
+
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: key, -key, got: -title',
+      );
+      expect(confluenceEmbedsMock.listProperties).not.toHaveBeenCalled();
+    });
+
+    it('embeds create-property parses JSON --value and forwards key + value', async () => {
+      confluenceEmbedsMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('embeds', 'create-property', ['embed-1'], {
+        key: 'feature',
+        value: '{"beta":true}',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.createProperty).toHaveBeenCalledWith('embed-1', {
+        key: 'feature',
+        value: { beta: true },
+      });
+    });
+
+    it('embeds create-property falls back to raw string when --value is not JSON', async () => {
+      confluenceEmbedsMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('embeds', 'create-property', ['embed-1'], {
+        key: 'feature',
+        value: 'hello',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.createProperty).toHaveBeenCalledWith('embed-1', {
+        key: 'feature',
+        value: 'hello',
+      });
+    });
+
+    it('embeds create-property requires --key', async () => {
+      const parsed = cmd('embeds', 'create-property', ['embed-1'], { value: '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('embeds create-property requires --value', async () => {
+      const parsed = cmd('embeds', 'create-property', ['embed-1'], { key: 'k' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('embeds get-property requires --property-id', async () => {
+      const parsed = cmd('embeds', 'get-property', ['embed-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('embeds get-property calls getProperty with both IDs', async () => {
+      confluenceEmbedsMock.getProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('embeds', 'get-property', ['embed-1'], { 'property-id': 'p-1' });
+
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.getProperty).toHaveBeenCalledWith('embed-1', 'p-1');
+      expect(result).toEqual({ id: 'p-1' });
+    });
+
+    it('embeds update-property forwards key, value, version', async () => {
+      confluenceEmbedsMock.updateProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('embeds', 'update-property', ['embed-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '42',
+        'version-number': '4',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.updateProperty).toHaveBeenCalledWith('embed-1', 'p-1', {
+        key: 'feature',
+        value: 42,
+        version: { number: 4 },
+      });
+    });
+
+    it('embeds update-property throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('embeds', 'update-property', ['embed-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '1',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('embeds delete-property calls deleteProperty and returns { deleted: true }', async () => {
+      confluenceEmbedsMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('embeds', 'delete-property', ['embed-1'], { 'property-id': 'p-1' });
+
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceEmbedsMock.deleteProperty).toHaveBeenCalledWith('embed-1', 'p-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('embeds delete-property requires --property-id', async () => {
+      const parsed = cmd('embeds', 'delete-property', ['embed-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('embeds unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('embeds', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown embeds action',
       );
     });
   });
