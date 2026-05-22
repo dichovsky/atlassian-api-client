@@ -10,7 +10,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `spaces`                | `list`, `get`                                                                                                                                                                                                                                                               |
 | `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
 | `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                               |
-| `attachments`           | `list`, `get`, `delete`                                                                                                                                                                                                                                                     |
+| `attachments`           | `list`, `list-all`, `get`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `get-version`, `footer-comments`, `labels`, `operations`, `thumbnail`                                                          |
 | `labels`                | `list`, `list-all`, `attachments`, `blog-posts`, `pages`                                                                                                                                                                                                                    |
 | `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                   |
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                     |
@@ -75,13 +75,45 @@ Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `
 
 ## `attachments`
 
-| Action   | Positional       | Optional flags                     |
-| -------- | ---------------- | ---------------------------------- |
-| `list`   | —                | `--page-id`, `--limit`, `--cursor` |
-| `get`    | `<attachmentId>` | —                                  |
-| `delete` | `<attachmentId>` | —                                  |
+| Action            | Positional       | Required flags                                          | Optional flags                                                            |
+| ----------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `list`            | —                | `--page-id`                                             | `--limit`, `--cursor`                                                     |
+| `list-all`        | —                | —                                                       | `--status`, `--media-type`, `--filename`, `--sort`, `--limit`, `--cursor` |
+| `get`             | `<attachmentId>` | —                                                       | `--version-number`, `--include-*` (see notes)                             |
+| `delete`          | `<attachmentId>` | —                                                       | `--purge`                                                                 |
+| `list-properties` | `<attachmentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                  |
+| `create-property` | `<attachmentId>` | `--key`, `--value`                                      | —                                                                         |
+| `get-property`    | `<attachmentId>` | `--property-id`                                         | —                                                                         |
+| `update-property` | `<attachmentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                         |
+| `delete-property` | `<attachmentId>` | `--property-id`                                         | —                                                                         |
+| `versions`        | `<attachmentId>` | —                                                       | `--sort`, `--cursor`, `--limit`                                           |
+| `get-version`     | `<attachmentId>` | `--version-number`                                      | —                                                                         |
+| `footer-comments` | `<attachmentId>` | —                                                       | `--body-format`, `--sort`, `--cursor`, `--limit`, `--version-number`      |
+| `labels`          | `<attachmentId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                               |
+| `operations`      | `<attachmentId>` | —                                                       | —                                                                         |
+| `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`                                 |
 
-Upload is not exposed via the CLI; use the SDK's `attachments.upload()` with a `Blob` or `ReadableStream`.
+- Upload is not exposed via the CLI; use the SDK's `attachments.upload()` and pass the file content as a `Blob`. Node ESM callers can wrap a `Buffer`, `Uint8Array`, or `fs.ReadStream`-derived buffer in a `Blob` first; raw `ReadableStream` is not accepted by the current signature.
+- `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
+- `--sort` enums per action:
+  - `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
+  - `versions`: `modified-date`, `-modified-date`
+  - `footer-comments`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
+  - `labels`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`
+  - `list-properties`: `key`, `-key`
+- `get` accepts `--version-number` to pin the response to a specific version, plus these `--include-*` boolean flags that inline sub-resources on the response:
+  - `--include-labels`
+  - `--include-properties`
+  - `--include-operations`
+  - `--include-versions`
+  - `--include-version` (on by default server-side; pass explicitly only to override)
+  - `--include-collaborators`
+- `delete` accepts `--purge` to permanently delete a previously-trashed attachment (default soft-delete moves it to trash).
+- `--prefix` (labels) accepts `my`, `team`, `global`, or `system`.
+- `--body-format` (footer-comments) accepts `storage` or `atlas_doc_format`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `comments create-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409). On `get-version` it identifies the attachment version to fetch; on `footer-comments` it pins the listing to a specific attachment version; on `thumbnail` it pins the rendered thumbnail to a specific attachment version.
+- `thumbnail` downloads the binary thumbnail; the CLI reports `{ "downloaded": true, "byteLength": N }` rather than echoing bytes. Use the SDK's `attachments.downloadThumbnail()` to get the raw `ArrayBuffer` for writing to disk.
 
 ## `labels`
 

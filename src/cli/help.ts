@@ -65,7 +65,7 @@ RESOURCES:
   spaces                 list, get
   blog-posts             list, get, create, update, delete
   comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
-  attachments            list, get, delete
+  attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
   labels                 list, list-all, attachments, blog-posts, pages
   admin-key              get, create, delete
   app                    list-properties, get-property, upsert-property, delete-property
@@ -124,6 +124,16 @@ EXAMPLES:
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
   atlas confluence users invite-by-email --emails a@example.com,b@example.com
   atlas confluence users-bulk lookup --account-ids acc-1,acc-2
+  atlas confluence attachments list-all --status current,archived --sort -modified-date
+  atlas confluence attachments get att-1 --include-labels --include-properties
+  atlas confluence attachments delete att-1 --purge
+  atlas confluence attachments versions att-1 --sort -modified-date
+  atlas confluence attachments get-version att-1 --version-number 2
+  atlas confluence attachments footer-comments att-1 --body-format storage
+  atlas confluence attachments labels att-1 --prefix global
+  atlas confluence attachments thumbnail att-1 --width 200 --height 200
+  atlas confluence attachments list-properties att-1
+  atlas confluence attachments create-property att-1 --key reviewed --value true
   atlas confluence labels list-all --prefix global --limit 50
   atlas confluence labels attachments 12345 --sort -created-date
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25

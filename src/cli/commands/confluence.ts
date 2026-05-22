@@ -3,10 +3,12 @@ import { ConfluenceClient } from '../../confluence/client.js';
 import { buildClientConfig } from '../config.js';
 import type {
   AttachmentSortOrder,
+  AttachmentStatus,
   BlogPostSortOrder,
   CommentSortOrder,
   ContentSortOrder,
   DataPolicySpaceSortOrder,
+  LabelPrefix,
   LabelSortOrder,
   PageSortOrder,
   SpaceRolePrincipalType,
@@ -262,19 +264,171 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
 }
 
 async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
-      return client.attachments.listForPage(requireOpt(cmd.options['page-id'], '--page-id'), {
-        limit: asPositiveInt(cmd.options['limit'], '--limit'),
+      return client.attachments.listForPage(requireOpt(opts['page-id'], '--page-id'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
       });
+    case 'list-all': {
+      const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      const status = parseAttachmentStatuses(asString(opts['status']));
+      return client.attachments.list({
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        ...(status !== undefined ? { status } : {}),
+        mediaType: asString(opts['media-type']),
+        filename: asString(opts['filename']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
     case 'get':
-      return client.attachments.get(requireArg(cmd.positionalArgs[0], 'attachment ID'));
-    case 'delete':
-      await client.attachments.delete(requireArg(cmd.positionalArgs[0], 'attachment ID'));
+      return client.attachments.get(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-labels': opts['include-labels'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+      });
+    case 'delete': {
+      const purge = opts['purge'] === true ? true : undefined;
+      await client.attachments.delete(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        purge === undefined ? undefined : { purge },
+      );
       return { deleted: true };
+    }
+    case 'list-properties':
+      return client.attachments.listProperties(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.attachments.createProperty(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.attachments.getProperty(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.attachments.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.attachments.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    case 'versions': {
+      const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      return client.attachments.listVersions(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'get-version': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.attachments.getVersion(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        versionNum,
+      );
+    }
+    case 'footer-comments': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.attachments.listFooterComments(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        {
+          ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+          version: asPositiveInt(opts['version-number'], '--version-number'),
+        },
+      );
+    }
+    case 'labels': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.attachments.listLabels(requireArg(cmd.positionalArgs[0], 'attachment ID'), {
+        ...(prefix !== undefined ? { prefix } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'operations':
+      return client.attachments.getOperations(requireArg(cmd.positionalArgs[0], 'attachment ID'));
+    case 'thumbnail': {
+      const buffer = await client.attachments.downloadThumbnail(
+        requireArg(cmd.positionalArgs[0], 'attachment ID'),
+        {
+          version: asPositiveInt(opts['version-number'], '--version-number'),
+          width: asPositiveInt(opts['width'], '--width'),
+          height: asPositiveInt(opts['height'], '--height'),
+        },
+      );
+      // The thumbnail body is binary; expose its byte length so the CLI's
+      // JSON formatter renders a useful confirmation (the bytes themselves
+      // belong on stdout/a file via the SDK, not in the structured CLI
+      // output).
+      return { downloaded: true, byteLength: buffer.byteLength };
+    }
     default:
-      throw new Error(`Unknown attachments action: ${cmd.action}. Actions: list, get, delete`);
+      throw new Error(
+        `Unknown attachments action: ${cmd.action}. Actions: list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail`,
+      );
   }
+}
+
+/**
+ * Parse the `--status` CLI flag into a non-empty list of
+ * {@link AttachmentStatus} values. Accepts a single value (`current`) or
+ * comma-separated (`current,archived`); rejects unknown tokens with the
+ * standard `must be one of` error to match other enum flags. Duplicate
+ * tokens are collapsed so the wire format never carries `status=a,a`.
+ */
+function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined {
+  if (raw === undefined) return undefined;
+  const parts = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (parts.length === 0) return undefined;
+  for (const part of parts) {
+    if (!(ATTACHMENT_STATUSES as readonly string[]).includes(part)) {
+      throw new Error(`--status must be one of: ${ATTACHMENT_STATUSES.join(', ')}, got: ${part}`);
+    }
+  }
+  const deduped = Array.from(new Set(parts));
+  return deduped as readonly AttachmentStatus[];
 }
 
 async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
@@ -1219,6 +1373,10 @@ const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [
   'modified-date',
   '-modified-date',
 ];
+
+const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];
+
+const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];
 
 const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [
   'id',
