@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "ddf1168df6109627ec32d3e9136866d97770eaeea01ce6f51e663fbe498ee9a2",
+  "sourceHash": "16f414d9bbcda85f0c1cf2fa2df3800b2f84fb798137a7ebe73509aa15077623",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1152,9 +1152,9 @@
       "name": "ListAttachmentsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 240,
-      "signature": "export interface ListAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly limit?:…",
-      "jsdoc": "Parameters for listing attachments (tenant-wide via `GET /attachments`).",
+      "line": 569,
+      "signature": "export interface ListAttachmentsParams { readonly limit?: number; readonly cursor?: string; readonly mediaType?: string;…",
+      "jsdoc": "Parameters for listing attachments on a page or blog post.",
       "typeOnly": true
     },
     {
@@ -2410,9 +2410,15 @@
       "path": "src/cli/commands/confluence.ts",
       "symbols": [
         {
+          "name": "LabelPrefix",
+          "kind": "type",
+          "line": 20,
+          "signature": "type LabelPrefix = 'my' | 'team' | 'global' | 'system';"
+        },
+        {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 20,
+          "line": 23,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -2420,310 +2426,329 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 74,
+          "line": 77,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 123,
+          "line": 126,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 137,
+          "line": 140,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 179,
+          "line": 182,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 264,
+          "line": 267,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "parseAttachmentStatuses",
+          "kind": "function",
+          "line": 404,
+          "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
+          "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 280,
+          "line": 419,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 301,
+          "line": 440,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 363,
+          "line": 502,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 369,
+          "line": 508,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 401,
+          "line": 540,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 409,
+          "line": 548,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 421,
+          "line": 560,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 440,
+          "line": 579,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 469,
+          "line": 608,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 497,
+          "line": 636,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 506,
+          "line": 645,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 523,
+          "line": 662,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 535,
+          "line": 674,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 587,
+          "line": 726,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 589,
+          "line": 728,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 602,
+          "line": 741,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 613,
+          "line": 752,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 649,
+          "line": 788,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 651,
+          "line": 790,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 675,
+          "line": 814,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 686,
+          "line": 825,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 704,
+          "line": 843,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 810,
+          "line": 949,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 896,
+          "line": 1035,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 987,
+          "line": 1126,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 1103,
+          "line": 1242,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 1108,
+          "line": 1247,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 1113,
+          "line": 1252,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 1117,
+          "line": 1256,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 1130,
+          "line": 1269,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 1144,
+          "line": 1283,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 1160,
+          "line": 1299,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1174,
+          "line": 1313,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 1187,
+          "line": 1326,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1189,
+          "line": 1328,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 1196,
+          "line": 1335,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1198,
+          "line": 1337,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 1207,
+          "line": 1346,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1216,
+          "line": 1355,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
+        },
+        {
+          "name": "ATTACHMENT_STATUSES",
+          "kind": "variable",
+          "line": 1362,
+          "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
+        },
+        {
+          "name": "LABEL_PREFIXES",
+          "kind": "variable",
+          "line": 1364,
+          "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1223,
+          "line": 1366,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1232,
+          "line": 1375,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1243,
+          "line": 1386,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 1245,
+          "line": 1388,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 1301,
+          "line": 1444,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1325,
+          "line": 1468,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -3121,13 +3146,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 139,
+          "line": 147,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 162,
+          "line": 170,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -3288,7 +3313,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 120,
+          "line": 125,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -4584,9 +4609,23 @@
       "path": "src/confluence/resources/attachments.ts",
       "symbols": [
         {
+          "name": "Query",
+          "kind": "type",
+          "line": 26,
+          "signature": "type Query = Record<string, string | number | boolean | undefined>;",
+          "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
+        },
+        {
+          "name": "statusParam",
+          "kind": "function",
+          "line": 33,
+          "signature": "function statusParam( value: AttachmentStatus | readonly AttachmentStatus[] | undefined, ): string | undefined",
+          "jsdoc": "Flatten a single value or non-empty array of statuses into the comma-joined string the wire format expects. An empty array drops out as `undefined` so callers can build the params object unconditionally."
+        },
+        {
           "name": "AttachmentsResource",
           "kind": "class",
-          "line": 8,
+          "line": 43,
           "exported": true,
           "signature": "export class AttachmentsResource",
           "jsdoc": "Confluence Attachments resource — list, get, delete, and upload attachments on pages.",
@@ -4594,32 +4633,127 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 9
+              "line": 44
             },
             {
               "name": "listForPage",
               "kind": "method",
-              "line": 15
+              "line": 50
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 28
+              "line": 64
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 37
+              "line": 73
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 51
+              "line": 87
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 73
+              "line": 109
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 128
+            },
+            {
+              "name": "listAll",
+              "kind": "method",
+              "line": 138
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 149
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 163
+            },
+            {
+              "name": "createProperty",
+              "kind": "method",
+              "line": 176
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 189
+            },
+            {
+              "name": "updateProperty",
+              "kind": "method",
+              "line": 204
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 218
+            },
+            {
+              "name": "listVersions",
+              "kind": "method",
+              "line": 228
+            },
+            {
+              "name": "listAllVersions",
+              "kind": "method",
+              "line": 242
+            },
+            {
+              "name": "getVersion",
+              "kind": "method",
+              "line": 259
+            },
+            {
+              "name": "listFooterComments",
+              "kind": "method",
+              "line": 273
+            },
+            {
+              "name": "listAllFooterComments",
+              "kind": "method",
+              "line": 289
+            },
+            {
+              "name": "listLabels",
+              "kind": "method",
+              "line": 304
+            },
+            {
+              "name": "listAllLabels",
+              "kind": "method",
+              "line": 318
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 333
+            },
+            {
+              "name": "downloadThumbnail",
+              "kind": "method",
+              "line": 362
+            },
+            {
+              "name": "buildListQuery",
+              "kind": "method",
+              "line": 378
+            },
+            {
+              "name": "buildPropertiesQuery",
+              "kind": "method",
+              "line": 392
             }
           ]
         }
@@ -6322,17 +6456,9 @@
           "jsdoc": "Request body for updating an existing comment."
         },
         {
-          "name": "ListAttachmentsParams",
-          "kind": "interface",
-          "line": 240,
-          "exported": true,
-          "signature": "export interface ListAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly limit?:…",
-          "jsdoc": "Parameters for listing attachments (tenant-wide via `GET /attachments`)."
-        },
-        {
           "name": "AttachmentStatus",
           "kind": "type",
-          "line": 253,
+          "line": 243,
           "exported": true,
           "signature": "export type AttachmentStatus = 'current' | 'archived' | 'trashed';",
           "jsdoc": "Status filter accepted by `GET /attachments`. Mirrors the OpenAPI `ContentStatus` enum subset (`current`, `archived`, `trashed`)."
@@ -6340,10 +6466,10 @@
         {
           "name": "ListAllAttachmentsParams",
           "kind": "interface",
-          "line": 260,
+          "line": 253,
           "exported": true,
-          "signature": "export interface ListAllAttachmentsParams extends Omit<ListAttachmentsParams, 'cursor' | 'limit'> {}",
-          "jsdoc": "Parameters for `GET /attachments` (tenant-wide attachment listing). Companion to `ListAttachmentsParams`; async-generator variant for pagination."
+          "signature": "export interface ListAllAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly stat…",
+          "jsdoc": "Parameters for `GET /attachments` (tenant-wide attachment listing)."
         },
         {
           "name": "ListAttachmentVersionsParams",

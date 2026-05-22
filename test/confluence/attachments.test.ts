@@ -244,4 +244,420 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/attachments`);
     });
   });
+
+  // ── list (tenant-wide) ────────────────────────────────────────────────────
+
+  describe('list()', () => {
+    it('calls GET /attachments with no params', async () => {
+      transport.respondWith({ results: [makeAttachment('a1')], _links: {} });
+      await attachments.list();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('flattens a status array and forwards every filter', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.list({
+        sort: '-modified-date',
+        cursor: 'tok',
+        status: ['current', 'archived'],
+        mediaType: 'application/pdf',
+        filename: 'report',
+        limit: 25,
+      });
+      expect(transport.lastCall?.options.query).toEqual({
+        sort: '-modified-date',
+        cursor: 'tok',
+        status: 'current,archived',
+        mediaType: 'application/pdf',
+        filename: 'report',
+        limit: 25,
+      });
+    });
+
+    it('passes a scalar status straight through', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.list({ status: 'archived' });
+      expect(transport.lastCall?.options.query).toEqual({ status: 'archived' });
+    });
+
+    it('drops an empty status array', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.list({ status: [] });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  describe('listAll()', () => {
+    it('iterates across multiple pages and yields all items', async () => {
+      transport
+        .respondWith({
+          results: [makeAttachment('a1')],
+          _links: { next: '/wiki/api/v2/attachments?cursor=p2' },
+        })
+        .respondWith({ results: [makeAttachment('a2')], _links: {} });
+
+      const ids: string[] = [];
+      for await (const a of attachments.listAll({ sort: 'created-date' })) {
+        ids.push(a.id);
+      }
+
+      expect(ids).toEqual(['a1', 'a2']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.query).toMatchObject({ sort: 'created-date' });
+    });
+  });
+
+  // ── content properties ───────────────────────────────────────────────────
+
+  describe('listProperties()', () => {
+    it('calls GET /attachments/{id}/properties with the property query', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listProperties('att-1', { key: 'flag', sort: '-key', limit: 10 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/properties`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({
+        key: 'flag',
+        sort: '-key',
+        limit: 10,
+      });
+    });
+
+    it('rejects an out-of-range limit', async () => {
+      await expect(attachments.listProperties('att-1', { limit: 0 })).rejects.toThrow(/limit/);
+    });
+
+    it('omits the query bag entirely when no params are provided', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listProperties('att-1');
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards only the cursor when other filters are unset', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listProperties('att-1', { cursor: 'tok' });
+      expect(transport.lastCall?.options.query).toEqual({ cursor: 'tok' });
+    });
+  });
+
+  describe('listPropertiesAll()', () => {
+    it('iterates across multiple pages and forwards the query bag', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'p1', key: 'a', value: 1 }],
+          _links: { next: '/wiki/api/v2/attachments/att-1/properties?cursor=n' },
+        })
+        .respondWith({ results: [{ id: 'p2', key: 'b', value: 2 }], _links: {} });
+
+      const props: { id: string }[] = [];
+      for await (const p of attachments.listPropertiesAll('att-1', { key: 'a' })) {
+        props.push(p as { id: string });
+      }
+
+      expect(props).toHaveLength(2);
+      expect(transport.calls[0]?.options.query).toMatchObject({ key: 'a' });
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('rejects an out-of-range limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listPropertiesAll('att-1', { limit: 0 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  describe('createProperty()', () => {
+    it('calls POST with the property body', async () => {
+      transport.respondWith({ id: 'p1', key: 'k', value: { v: 1 }, version: { number: 1 } });
+      await attachments.createProperty('att-1', { key: 'k', value: { v: 1 } });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/attachments/att-1/properties`,
+        body: { key: 'k', value: { v: 1 } },
+      });
+    });
+  });
+
+  describe('getProperty()', () => {
+    it('calls GET /attachments/{id}/properties/{property-id}', async () => {
+      transport.respondWith({ id: 'p1', key: 'k', value: 1 });
+      await attachments.getProperty('att-1', 'p1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/properties/p1`,
+      });
+    });
+  });
+
+  describe('updateProperty()', () => {
+    it('calls PUT with the optimistic-concurrency version', async () => {
+      transport.respondWith({ id: 'p1', key: 'k', value: 'v2', version: { number: 2 } });
+      await attachments.updateProperty('att-1', 'p1', {
+        key: 'k',
+        value: 'v2',
+        version: { number: 2 },
+      });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/attachments/att-1/properties/p1`,
+        body: { key: 'k', value: 'v2', version: { number: 2 } },
+      });
+    });
+  });
+
+  describe('deleteProperty()', () => {
+    it('calls DELETE /attachments/{id}/properties/{property-id}', async () => {
+      transport.respondWith(undefined);
+      await attachments.deleteProperty('att-1', 'p1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/attachments/att-1/properties/p1`,
+      });
+    });
+  });
+
+  // ── versions ─────────────────────────────────────────────────────────────
+
+  describe('listVersions()', () => {
+    it('calls GET /attachments/{id}/versions with the sort/limit query', async () => {
+      transport.respondWith({ results: [{ number: 2 }], _links: {} });
+      await attachments.listVersions('att-1', { sort: '-modified-date', limit: 10 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/versions`,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        sort: '-modified-date',
+        limit: 10,
+      });
+    });
+
+    it('rejects an out-of-range limit', async () => {
+      await expect(attachments.listVersions('att-1', { limit: 0 })).rejects.toThrow(/limit/);
+    });
+
+    it('omits the query when called without params', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listVersions('att-1');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/att-1/versions`);
+    });
+  });
+
+  describe('listAllVersions()', () => {
+    it('iterates across multiple pages', async () => {
+      transport
+        .respondWith({
+          results: [{ number: 2 }],
+          _links: { next: '/wiki/api/v2/attachments/att-1/versions?cursor=n' },
+        })
+        .respondWith({ results: [{ number: 1 }], _links: {} });
+
+      const nums: number[] = [];
+      for await (const v of attachments.listAllVersions('att-1')) {
+        if (v.number !== undefined) nums.push(v.number);
+      }
+
+      expect(nums).toEqual([2, 1]);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('rejects an out-of-range limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listAllVersions('att-1', { limit: 0 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  describe('getVersion()', () => {
+    it('calls GET /attachments/{id}/versions/{version-number}', async () => {
+      transport.respondWith({ number: 3 });
+      await attachments.getVersion('att-1', 3);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/versions/3`,
+      });
+    });
+  });
+
+  // ── footer comments ──────────────────────────────────────────────────────
+
+  describe('listFooterComments()', () => {
+    it('calls GET /attachments/{id}/footer-comments with the comment query', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listFooterComments('att-1', {
+        'body-format': 'storage',
+        sort: '-modified-date',
+        version: 2,
+        limit: 10,
+      });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/footer-comments`,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'body-format': 'storage',
+        sort: '-modified-date',
+        version: 2,
+        limit: 10,
+      });
+    });
+
+    it('rejects an out-of-range limit', async () => {
+      await expect(attachments.listFooterComments('att-1', { limit: 0 })).rejects.toThrow(/limit/);
+    });
+
+    it('omits the query when called without params', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listFooterComments('att-1');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/attachments/att-1/footer-comments`,
+      );
+    });
+  });
+
+  describe('listAllFooterComments()', () => {
+    it('iterates across multiple pages', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'c1', attachmentId: 'att-1' }],
+          _links: { next: '/wiki/api/v2/attachments/att-1/footer-comments?cursor=n' },
+        })
+        .respondWith({ results: [{ id: 'c2', attachmentId: 'att-1' }], _links: {} });
+
+      const ids: string[] = [];
+      for await (const c of attachments.listAllFooterComments('att-1')) {
+        if (c.id !== undefined) ids.push(c.id);
+      }
+
+      expect(ids).toEqual(['c1', 'c2']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('rejects an out-of-range limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listAllFooterComments('att-1', { limit: 0 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── labels ───────────────────────────────────────────────────────────────
+
+  describe('listLabels()', () => {
+    it('calls GET /attachments/{id}/labels with the prefix/sort query', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listLabels('att-1', { prefix: 'global', sort: '-name', limit: 5 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/labels`,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        prefix: 'global',
+        sort: '-name',
+        limit: 5,
+      });
+    });
+
+    it('rejects an out-of-range limit', async () => {
+      await expect(attachments.listLabels('att-1', { limit: 0 })).rejects.toThrow(/limit/);
+    });
+
+    it('omits the query when called without params', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await attachments.listLabels('att-1');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments/att-1/labels`);
+    });
+  });
+
+  describe('listAllLabels()', () => {
+    it('iterates across multiple pages', async () => {
+      transport
+        .respondWith({
+          results: [{ id: 'l1', name: 'one' }],
+          _links: { next: '/wiki/api/v2/attachments/att-1/labels?cursor=n' },
+        })
+        .respondWith({ results: [{ id: 'l2', name: 'two' }], _links: {} });
+
+      const names: string[] = [];
+      for await (const l of attachments.listAllLabels('att-1')) {
+        names.push(l.name);
+      }
+
+      expect(names).toEqual(['one', 'two']);
+      expect(transport.calls).toHaveLength(2);
+    });
+
+    it('rejects an out-of-range limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listAllLabels('att-1', { limit: 0 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── operations ───────────────────────────────────────────────────────────
+
+  describe('getOperations()', () => {
+    it('calls GET /attachments/{id}/operations', async () => {
+      transport.respondWith({ operations: [{ operation: 'read', targetType: 'attachment' }] });
+      const result = await attachments.getOperations('att-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/operations`,
+      });
+      expect(result.operations?.[0]).toMatchObject({
+        operation: 'read',
+        targetType: 'attachment',
+      });
+    });
+  });
+
+  // ── thumbnail ────────────────────────────────────────────────────────────
+
+  describe('downloadThumbnail()', () => {
+    it('calls GET /attachments/{id}/thumbnail/download with responseType arrayBuffer', async () => {
+      const bytes = new Uint8Array([1, 2, 3, 4]);
+      transport.respondWith(bytes.buffer);
+      const result = await attachments.downloadThumbnail('att-1', {
+        version: 2,
+        width: 100,
+        height: 200,
+      });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/attachments/att-1/thumbnail/download`,
+        responseType: 'arrayBuffer',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        version: 2,
+        width: 100,
+        height: 200,
+      });
+      expect(result).toBeInstanceOf(ArrayBuffer);
+      expect((result as ArrayBuffer).byteLength).toBe(4);
+    });
+
+    it('omits query when no params provided', async () => {
+      transport.respondWith(new ArrayBuffer(0));
+      await attachments.downloadThumbnail('att-1');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/attachments/att-1/thumbnail/download`,
+      );
+    });
+  });
 });

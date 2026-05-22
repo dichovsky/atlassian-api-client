@@ -236,16 +236,6 @@ export interface UpdateCommentData {
 
 // --- Attachment Params & Types ---
 
-/** Parameters for listing attachments (tenant-wide via `GET /attachments`). */
-export interface ListAttachmentsParams {
-  readonly sort?: AttachmentSortOrder;
-  readonly cursor?: string;
-  readonly limit?: number;
-  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
-  readonly mediaType?: string;
-  readonly filename?: string;
-}
-
 /**
  * Status filter accepted by `GET /attachments`. Mirrors the OpenAPI
  * `ContentStatus` enum subset (`current`, `archived`, `trashed`).
@@ -254,10 +244,20 @@ export type AttachmentStatus = 'current' | 'archived' | 'trashed';
 
 /**
  * Parameters for `GET /attachments` (tenant-wide attachment listing).
- * Companion to `ListAttachmentsParams`; async-generator variant for pagination.
+ *
+ * `status` accepts a single value or a non-empty array; arrays are
+ * comma-joined on the wire to match the OpenAPI `array` form. Other
+ * filters (`mediaType`, `filename`) are scalar — `sort` is constrained to
+ * the `AttachmentSortOrder` enum.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ListAllAttachmentsParams extends Omit<ListAttachmentsParams, 'cursor' | 'limit'> {}
+export interface ListAllAttachmentsParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly cursor?: string;
+  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
+  readonly mediaType?: string;
+  readonly filename?: string;
+  readonly limit?: number;
+}
 
 /** Parameters for listing attachment versions. */
 export interface ListAttachmentVersionsParams {

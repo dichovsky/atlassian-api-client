@@ -114,6 +114,11 @@ const GLOBAL_OPTIONS = {
   force: { type: 'boolean' as const },
   'dry-run': { type: 'boolean' as const },
   print: { type: 'boolean' as const },
+  // attachments-specific options
+  'media-type': { type: 'string' as const },
+  filename: { type: 'string' as const },
+  width: { type: 'string' as const },
+  height: { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

@@ -61,8 +61,20 @@ const confluenceCommentsMock = {
 };
 const confluenceAttachmentsMock = {
   listForPage: vi.fn(),
+  list: vi.fn(),
   get: vi.fn(),
   delete: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  listVersions: vi.fn(),
+  getVersion: vi.fn(),
+  listFooterComments: vi.fn(),
+  listLabels: vi.fn(),
+  getOperations: vi.fn(),
+  downloadThumbnail: vi.fn(),
 };
 const confluenceLabelsMock = {
   listForPage: vi.fn(),
@@ -1169,6 +1181,294 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('attachments', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown attachments action',
       );
+    });
+
+    // ── list-all ───────────────────────────────────────────────────────────
+
+    it('attachments list-all forwards filters / sort / status', async () => {
+      confluenceAttachmentsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'list-all', [], {
+        sort: '-modified-date',
+        status: 'current,archived',
+        'media-type': 'application/pdf',
+        filename: 'report',
+        limit: '25',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.list).toHaveBeenCalledWith({
+        sort: '-modified-date',
+        status: ['current', 'archived'],
+        mediaType: 'application/pdf',
+        filename: 'report',
+        limit: 25,
+        cursor: 'tok',
+      });
+    });
+
+    it('attachments list-all with no options calls client.attachments.list', async () => {
+      confluenceAttachmentsMock.list.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('attachments', 'list-all'), GLOBALS);
+      expect(confluenceAttachmentsMock.list).toHaveBeenCalledWith(expect.any(Object));
+    });
+
+    it('attachments list-all rejects unknown --sort values', async () => {
+      const parsed = cmd('attachments', 'list-all', [], { sort: 'nope' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('attachments list-all rejects unknown --status values', async () => {
+      const parsed = cmd('attachments', 'list-all', [], { status: 'invalid' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--status');
+    });
+
+    it('attachments list-all drops a blank --status flag', async () => {
+      confluenceAttachmentsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'list-all', [], { status: ' , ' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const call = confluenceAttachmentsMock.list.mock.calls[0]?.[0] as Record<string, unknown>;
+      expect('status' in call).toBe(false);
+    });
+
+    // ── properties ────────────────────────────────────────────────────────
+
+    it('attachments list-properties forwards --key / --sort / pagination', async () => {
+      confluenceAttachmentsMock.listProperties.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'list-properties', ['att-1'], {
+        key: 'flag',
+        sort: '-key',
+        limit: '5',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.listProperties).toHaveBeenCalledWith('att-1', {
+        key: 'flag',
+        sort: '-key',
+        limit: 5,
+        cursor: 'tok',
+      });
+    });
+
+    it('attachments list-properties rejects unknown --sort values', async () => {
+      const parsed = cmd('attachments', 'list-properties', ['att-1'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('attachments create-property parses --value as JSON', async () => {
+      confluenceAttachmentsMock.createProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('attachments', 'create-property', ['att-1'], {
+        key: 'flag',
+        value: '{"on":true}',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.createProperty).toHaveBeenCalledWith('att-1', {
+        key: 'flag',
+        value: { on: true },
+      });
+    });
+
+    it('attachments create-property falls back to raw string for non-JSON --value', async () => {
+      confluenceAttachmentsMock.createProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('attachments', 'create-property', ['att-1'], {
+        key: 'note',
+        value: 'hello',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.createProperty).toHaveBeenCalledWith('att-1', {
+        key: 'note',
+        value: 'hello',
+      });
+    });
+
+    it('attachments get-property calls client with --property-id', async () => {
+      confluenceAttachmentsMock.getProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('attachments', 'get-property', ['att-1'], { 'property-id': 'p1' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.getProperty).toHaveBeenCalledWith('att-1', 'p1');
+    });
+
+    it('attachments update-property echoes version-number into body.version', async () => {
+      confluenceAttachmentsMock.updateProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('attachments', 'update-property', ['att-1'], {
+        'property-id': 'p1',
+        key: 'flag',
+        value: 'false',
+        'version-number': '2',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.updateProperty).toHaveBeenCalledWith('att-1', 'p1', {
+        key: 'flag',
+        value: false,
+        version: { number: 2 },
+      });
+    });
+
+    it('attachments update-property rejects non-positive --version-number', async () => {
+      const parsed = cmd('attachments', 'update-property', ['att-1'], {
+        'property-id': 'p1',
+        key: 'flag',
+        value: 'true',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('attachments delete-property returns { deleted: true }', async () => {
+      confluenceAttachmentsMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('attachments', 'delete-property', ['att-1'], { 'property-id': 'p1' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.deleteProperty).toHaveBeenCalledWith('att-1', 'p1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('attachments delete-property throws when --property-id missing', async () => {
+      const parsed = cmd('attachments', 'delete-property', ['att-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    // ── versions ──────────────────────────────────────────────────────────
+
+    it('attachments versions forwards --sort / pagination', async () => {
+      confluenceAttachmentsMock.listVersions.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'versions', ['att-1'], {
+        sort: '-modified-date',
+        limit: '10',
+        cursor: 'tok',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.listVersions).toHaveBeenCalledWith('att-1', {
+        sort: '-modified-date',
+        limit: 10,
+        cursor: 'tok',
+      });
+    });
+
+    it('attachments versions rejects unknown --sort values', async () => {
+      const parsed = cmd('attachments', 'versions', ['att-1'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('attachments versions without --sort omits the sort key', async () => {
+      confluenceAttachmentsMock.listVersions.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('attachments', 'versions', ['att-1']), GLOBALS);
+      const call = confluenceAttachmentsMock.listVersions.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect('sort' in call).toBe(false);
+    });
+
+    it('attachments get-version calls client with parsed version number', async () => {
+      confluenceAttachmentsMock.getVersion.mockResolvedValue({ number: 3 });
+      const parsed = cmd('attachments', 'get-version', ['att-1'], { 'version-number': '3' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.getVersion).toHaveBeenCalledWith('att-1', 3);
+    });
+
+    it('attachments get-version rejects non-positive --version-number', async () => {
+      const parsed = cmd('attachments', 'get-version', ['att-1'], { 'version-number': '-1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    // ── footer-comments ───────────────────────────────────────────────────
+
+    it('attachments footer-comments forwards --body-format / --sort / --version-number', async () => {
+      confluenceAttachmentsMock.listFooterComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'footer-comments', ['att-1'], {
+        'body-format': 'storage',
+        sort: '-created-date',
+        'version-number': '2',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.listFooterComments).toHaveBeenCalledWith('att-1', {
+        'body-format': 'storage',
+        sort: '-created-date',
+        version: 2,
+        limit: 10,
+        cursor: undefined,
+      });
+    });
+
+    it('attachments footer-comments rejects unknown --sort values', async () => {
+      const parsed = cmd('attachments', 'footer-comments', ['att-1'], { sort: 'name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--sort');
+    });
+
+    it('attachments footer-comments rejects unknown --body-format values', async () => {
+      const parsed = cmd('attachments', 'footer-comments', ['att-1'], { 'body-format': 'view' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body-format');
+    });
+
+    it('attachments footer-comments without flags omits sort/body-format keys', async () => {
+      confluenceAttachmentsMock.listFooterComments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('attachments', 'footer-comments', ['att-1']), GLOBALS);
+      const call = confluenceAttachmentsMock.listFooterComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect('sort' in call).toBe(false);
+      expect('body-format' in call).toBe(false);
+    });
+
+    // ── labels ────────────────────────────────────────────────────────────
+
+    it('attachments labels forwards --prefix / --sort / pagination', async () => {
+      confluenceAttachmentsMock.listLabels.mockResolvedValue({ results: [] });
+      const parsed = cmd('attachments', 'labels', ['att-1'], {
+        prefix: 'global',
+        sort: '-name',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.listLabels).toHaveBeenCalledWith('att-1', {
+        prefix: 'global',
+        sort: '-name',
+        limit: 5,
+        cursor: undefined,
+      });
+    });
+
+    it('attachments labels rejects unknown --prefix values', async () => {
+      const parsed = cmd('attachments', 'labels', ['att-1'], { prefix: 'oops' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--prefix');
+    });
+
+    it('attachments labels without flags omits prefix/sort keys', async () => {
+      confluenceAttachmentsMock.listLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('attachments', 'labels', ['att-1']), GLOBALS);
+      const call = confluenceAttachmentsMock.listLabels.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect('sort' in call).toBe(false);
+      expect('prefix' in call).toBe(false);
+    });
+
+    // ── operations ────────────────────────────────────────────────────────
+
+    it('attachments operations calls client.attachments.getOperations', async () => {
+      confluenceAttachmentsMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('attachments', 'operations', ['att-1']), GLOBALS);
+      expect(confluenceAttachmentsMock.getOperations).toHaveBeenCalledWith('att-1');
+    });
+
+    // ── thumbnail ─────────────────────────────────────────────────────────
+
+    it('attachments thumbnail returns { downloaded, byteLength }', async () => {
+      confluenceAttachmentsMock.downloadThumbnail.mockResolvedValue(new ArrayBuffer(8));
+      const parsed = cmd('attachments', 'thumbnail', ['att-1'], {
+        width: '200',
+        height: '100',
+        'version-number': '2',
+      });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceAttachmentsMock.downloadThumbnail).toHaveBeenCalledWith('att-1', {
+        width: 200,
+        height: 100,
+        version: 2,
+      });
+      expect(result).toEqual({ downloaded: true, byteLength: 8 });
     });
   });
 
