@@ -53,6 +53,25 @@ const confluencePagesMock = {
 const confluenceSpacesMock = {
   list: vi.fn(),
   get: vi.fn(),
+  // sub-resources (B196-B213)
+  create: vi.fn(),
+  listBlogPosts: vi.fn(),
+  getDefaultClassificationLevel: vi.fn(),
+  updateDefaultClassificationLevel: vi.fn(),
+  deleteDefaultClassificationLevel: vi.fn(),
+  listContentLabels: vi.fn(),
+  listCustomContent: vi.fn(),
+  listLabels: vi.fn(),
+  getOperations: vi.fn(),
+  listPages: vi.fn(),
+  listPermissions: vi.fn(),
+  listRoleAssignments: vi.fn(),
+  setRoleAssignments: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
 };
 const confluenceBlogPostsMock = {
   list: vi.fn(),
@@ -1157,6 +1176,467 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('spaces', 'invalid'), GLOBALS)).rejects.toThrow(
         'Unknown spaces action',
       );
+    });
+
+    // ── create (B196) ───────────────────────────────────────────────────────
+    it('spaces create requires --name', async () => {
+      await expect(executeConfluenceCommand(cmd('spaces', 'create'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('spaces create forwards name + key', async () => {
+      confluenceSpacesMock.create.mockResolvedValue({ id: '1' });
+      await executeConfluenceCommand(
+        cmd('spaces', 'create', [], { name: 'Eng', key: 'ENG' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Eng', key: 'ENG' }),
+      );
+    });
+
+    it('spaces create wraps --description as { value, representation }', async () => {
+      confluenceSpacesMock.create.mockResolvedValue({ id: '1' });
+      await executeConfluenceCommand(
+        cmd('spaces', 'create', [], { name: 'Eng', alias: 'eng', description: 'Hi there' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Eng',
+          alias: 'eng',
+          description: { value: 'Hi there', representation: 'plain' },
+        }),
+      );
+    });
+
+    it('spaces create supports --private and --template-key and --copy-space-access-configuration', async () => {
+      confluenceSpacesMock.create.mockResolvedValue({ id: '1' });
+      await executeConfluenceCommand(
+        cmd('spaces', 'create', [], {
+          name: 'Priv',
+          key: 'PRIV',
+          private: true,
+          'template-key': 'team',
+          'copy-space-access-configuration': '42',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Priv',
+          createPrivateSpace: true,
+          templateKey: 'team',
+          copySpaceAccessConfiguration: 42,
+        }),
+      );
+    });
+
+    // ── blog-posts (B197) ───────────────────────────────────────────────────
+    it('spaces blog-posts requires space ID', async () => {
+      await expect(executeConfluenceCommand(cmd('spaces', 'blog-posts'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: space ID',
+      );
+    });
+
+    it('spaces blog-posts passes sort + status (comma-separated) + body-format', async () => {
+      confluenceSpacesMock.listBlogPosts.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'blog-posts', ['SP-1'], {
+          sort: '-created-date',
+          status: 'current,trashed',
+          'body-format': 'storage',
+          title: 'Launch',
+          limit: '25',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listBlogPosts).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({
+          sort: '-created-date',
+          status: ['current', 'trashed'],
+          'body-format': 'storage',
+          title: 'Launch',
+          limit: 25,
+        }),
+      );
+    });
+
+    it('spaces blog-posts rejects invalid status', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'blog-posts', ['SP-1'], { status: 'historical' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(/--status/);
+    });
+
+    // ── default classification level (B198-B200) ────────────────────────────
+    it('spaces get-default-classification-level calls SDK', async () => {
+      confluenceSpacesMock.getDefaultClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const out = await executeConfluenceCommand(
+        cmd('spaces', 'get-default-classification-level', ['SP-1']),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.getDefaultClassificationLevel).toHaveBeenCalledWith('SP-1');
+      expect(out).toEqual({ id: 'cl-1' });
+    });
+
+    it('spaces update-default-classification-level requires --level-id', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'update-default-classification-level', ['SP-1']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --level-id');
+    });
+
+    it('spaces update-default-classification-level sends { id: levelId }', async () => {
+      confluenceSpacesMock.updateDefaultClassificationLevel.mockResolvedValue(undefined);
+      const out = await executeConfluenceCommand(
+        cmd('spaces', 'update-default-classification-level', ['SP-1'], { 'level-id': 'cl-2' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.updateDefaultClassificationLevel).toHaveBeenCalledWith('SP-1', {
+        id: 'cl-2',
+      });
+      expect(out).toEqual({ updated: true });
+    });
+
+    it('spaces delete-default-classification-level returns { deleted: true }', async () => {
+      confluenceSpacesMock.deleteDefaultClassificationLevel.mockResolvedValue(undefined);
+      const out = await executeConfluenceCommand(
+        cmd('spaces', 'delete-default-classification-level', ['SP-1']),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.deleteDefaultClassificationLevel).toHaveBeenCalledWith('SP-1');
+      expect(out).toEqual({ deleted: true });
+    });
+
+    // ── content-labels + labels (B201, B203) ────────────────────────────────
+    it('spaces content-labels passes prefix + sort', async () => {
+      confluenceSpacesMock.listContentLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'content-labels', ['SP-1'], { prefix: 'team', sort: '-name' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listContentLabels).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ prefix: 'team', sort: '-name' }),
+      );
+    });
+
+    it('spaces content-labels rejects out-of-spec prefix', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'content-labels', ['SP-1'], { prefix: 'global' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(/--prefix/);
+    });
+
+    it('spaces labels passes prefix + sort to spaces.listLabels', async () => {
+      confluenceSpacesMock.listLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'labels', ['SP-1'], { prefix: 'team', sort: 'name', limit: '50' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listLabels).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ prefix: 'team', sort: 'name', limit: 50 }),
+      );
+    });
+
+    // ── custom-content (B202) ───────────────────────────────────────────────
+    it('spaces custom-content requires --type', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('spaces', 'custom-content', ['SP-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --type');
+    });
+
+    it('spaces custom-content passes type + body-format', async () => {
+      confluenceSpacesMock.listCustomContent.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'custom-content', ['SP-1'], {
+          type: 'ai.atlassian.collection',
+          'body-format': 'storage',
+          limit: '10',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listCustomContent).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({
+          type: 'ai.atlassian.collection',
+          'body-format': 'storage',
+          limit: 10,
+        }),
+      );
+    });
+
+    // ── operations (B204) ───────────────────────────────────────────────────
+    it('spaces operations calls SDK', async () => {
+      confluenceSpacesMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('spaces', 'operations', ['SP-1']), GLOBALS);
+      expect(confluenceSpacesMock.getOperations).toHaveBeenCalledWith('SP-1');
+    });
+
+    // ── pages (B205) ────────────────────────────────────────────────────────
+    it('spaces pages passes depth + status (comma-separated) + sort + body-format', async () => {
+      confluenceSpacesMock.listPages.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'pages', ['SP-1'], {
+          depth: 'root',
+          status: 'current,archived',
+          sort: '-modified-date',
+          'body-format': 'storage',
+          title: 'Q',
+          limit: '25',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listPages).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({
+          depth: 'root',
+          status: ['current', 'archived'],
+          sort: '-modified-date',
+          'body-format': 'storage',
+          title: 'Q',
+          limit: 25,
+        }),
+      );
+    });
+
+    it('spaces pages rejects invalid depth', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('spaces', 'pages', ['SP-1'], { depth: 'deep' }), GLOBALS),
+      ).rejects.toThrow(/--depth/);
+    });
+
+    // ── permissions (B206) ──────────────────────────────────────────────────
+    it('spaces permissions passes cursor + limit', async () => {
+      confluenceSpacesMock.listPermissions.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'permissions', ['SP-1'], { cursor: 'tok', limit: '50' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listPermissions).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ cursor: 'tok', limit: 50 }),
+      );
+    });
+
+    // ── role-assignments (B207-B208) ────────────────────────────────────────
+    it('spaces role-assignments forwards all filters', async () => {
+      confluenceSpacesMock.listRoleAssignments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'role-assignments', ['SP-1'], {
+          'role-id': 'role-1',
+          'role-type': 'CUSTOM',
+          'principal-id': 'acc-1',
+          'principal-type': 'USER',
+          limit: '10',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listRoleAssignments).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({
+          'role-id': 'role-1',
+          'role-type': 'CUSTOM',
+          'principal-id': 'acc-1',
+          'principal-type': 'USER',
+          limit: 10,
+        }),
+      );
+    });
+
+    it('spaces role-assignments rejects invalid role-type', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'role-assignments', ['SP-1'], { 'role-type': 'OTHER' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(/--role-type/);
+    });
+
+    it('spaces set-role-assignments requires --value', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('spaces', 'set-role-assignments', ['SP-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('spaces set-role-assignments rejects non-array --value', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'set-role-assignments', ['SP-1'], { value: '{"not":"array"}' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(/JSON array/);
+    });
+
+    it('spaces set-role-assignments forwards parsed array', async () => {
+      confluenceSpacesMock.setRoleAssignments.mockResolvedValue(undefined);
+      const payload = [
+        { principal: { principalType: 'USER', principalId: 'acc-1' }, roleId: 'role-1' },
+      ];
+      const out = await executeConfluenceCommand(
+        cmd('spaces', 'set-role-assignments', ['SP-1'], { value: JSON.stringify(payload) }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.setRoleAssignments).toHaveBeenCalledWith('SP-1', payload);
+      expect(out).toEqual({ updated: true });
+    });
+
+    // ── space properties (B209-B213) ────────────────────────────────────────
+    it('spaces list-properties passes key + sort', async () => {
+      confluenceSpacesMock.listProperties.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'list-properties', ['SP-1'], { key: 'k', sort: 'key', limit: '5' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.listProperties).toHaveBeenCalledWith(
+        'SP-1',
+        expect.objectContaining({ key: 'k', sort: 'key', limit: 5 }),
+      );
+    });
+
+    it('spaces create-property parses JSON --value', async () => {
+      confluenceSpacesMock.createProperty.mockResolvedValue({ id: 'p1' });
+      await executeConfluenceCommand(
+        cmd('spaces', 'create-property', ['SP-1'], { key: 'k', value: '{"beta":true}' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.createProperty).toHaveBeenCalledWith('SP-1', {
+        key: 'k',
+        value: { beta: true },
+      });
+    });
+
+    it('spaces get-property requires --property-id', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('spaces', 'get-property', ['SP-1']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --property-id');
+    });
+
+    it('spaces update-property enforces positive integer --version-number', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('spaces', 'update-property', ['SP-1'], {
+            'property-id': 'p1',
+            key: 'k',
+            value: '1',
+            'version-number': '0',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(/--version-number/);
+    });
+
+    it('spaces update-property sends optimistic-concurrency body', async () => {
+      confluenceSpacesMock.updateProperty.mockResolvedValue({ id: 'p1' });
+      await executeConfluenceCommand(
+        cmd('spaces', 'update-property', ['SP-1'], {
+          'property-id': 'p1',
+          key: 'k',
+          value: '"v"',
+          'version-number': '2',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.updateProperty).toHaveBeenCalledWith('SP-1', 'p1', {
+        key: 'k',
+        value: 'v',
+        version: { number: 2 },
+      });
+    });
+
+    it('spaces delete-property returns { deleted: true }', async () => {
+      confluenceSpacesMock.deleteProperty.mockResolvedValue(undefined);
+      const out = await executeConfluenceCommand(
+        cmd('spaces', 'delete-property', ['SP-1'], { 'property-id': 'p1' }),
+        GLOBALS,
+      );
+      expect(confluenceSpacesMock.deleteProperty).toHaveBeenCalledWith('SP-1', 'p1');
+      expect(out).toEqual({ deleted: true });
+    });
+
+    // ── coverage: enum spreads are conditional; cover the undefined-branch
+    //    for every enum flag we expose so 100% branch coverage holds when
+    //    the user simply omits them.
+    it('spaces blog-posts with no enum flags omits sort/status/body-format', async () => {
+      confluenceSpacesMock.listBlogPosts.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'blog-posts', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listBlogPosts.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(call?.['sort']).toBeUndefined();
+      expect(call?.['status']).toBeUndefined();
+      expect(call?.['body-format']).toBeUndefined();
+    });
+
+    it('spaces content-labels with no flags omits prefix/sort', async () => {
+      confluenceSpacesMock.listContentLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'content-labels', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listContentLabels.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(call?.['prefix']).toBeUndefined();
+      expect(call?.['sort']).toBeUndefined();
+    });
+
+    it('spaces labels with no flags omits prefix/sort', async () => {
+      confluenceSpacesMock.listLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'labels', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listLabels.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(call?.['prefix']).toBeUndefined();
+      expect(call?.['sort']).toBeUndefined();
+    });
+
+    it('spaces pages with no enum flags omits depth/sort/status/body-format', async () => {
+      confluenceSpacesMock.listPages.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'pages', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listPages.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(call?.['depth']).toBeUndefined();
+      expect(call?.['sort']).toBeUndefined();
+      expect(call?.['status']).toBeUndefined();
+      expect(call?.['body-format']).toBeUndefined();
+    });
+
+    it('spaces role-assignments with no enum flags omits role-type/principal-type', async () => {
+      confluenceSpacesMock.listRoleAssignments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'role-assignments', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listRoleAssignments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(call?.['role-type']).toBeUndefined();
+      expect(call?.['principal-type']).toBeUndefined();
+    });
+
+    it('spaces list-properties with no sort flag omits it', async () => {
+      confluenceSpacesMock.listProperties.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('spaces', 'list-properties', ['SP-1']), GLOBALS);
+      const call = confluenceSpacesMock.listProperties.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(call?.['sort']).toBeUndefined();
+    });
+
+    it('spaces custom-content with no body-format flag omits it', async () => {
+      confluenceSpacesMock.listCustomContent.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('spaces', 'custom-content', ['SP-1'], { type: 't' }),
+        GLOBALS,
+      );
+      const call = confluenceSpacesMock.listCustomContent.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(call?.['body-format']).toBeUndefined();
     });
   });
 
