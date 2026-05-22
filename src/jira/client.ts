@@ -22,6 +22,7 @@ import { JqlResource } from './resources/jql.js';
 import { BulkResource } from './resources/bulk.js';
 import { EpicResource } from './resources/epic.js';
 import { BacklogResource } from './resources/backlog.js';
+import { AnnouncementBannerResource } from './resources/announcement-banner.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -60,6 +61,8 @@ export class JiraClient {
   readonly epic: EpicResource;
   /** Agile backlog resource. */
   readonly backlog: BacklogResource;
+  /** Announcement banner resource. */
+  readonly announcementBanner: AnnouncementBannerResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -88,5 +91,6 @@ export class JiraClient {
     this.bulk = new BulkResource(transport, baseUrl);
     this.epic = new EpicResource(transport, agileBaseUrl);
     this.backlog = new BacklogResource(transport, agileBaseUrl);
+    this.announcementBanner = new AnnouncementBannerResource(transport, baseUrl);
   }
 }

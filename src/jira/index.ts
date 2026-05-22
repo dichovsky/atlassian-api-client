@@ -25,6 +25,8 @@ export type {
   CreateIssueCommentData,
   UpdateIssueCommentData,
   ListLabelsParams,
+  AnnouncementBanner,
+  UpdateAnnouncementBannerData,
 } from './types.js';
 export type { OffsetPaginatedResponse } from '../core/pagination.js';
 export { IssuesResource } from './resources/issues.js';
@@ -108,3 +110,4 @@ export type {
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
 } from './resources/bulk.js';
+export { AnnouncementBannerResource } from './resources/announcement-banner.js';

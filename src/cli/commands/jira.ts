@@ -32,6 +32,8 @@ export async function executeJiraCommand(
       return executeEpic(client, cmd);
     case 'backlog':
       return executeBacklog(client, cmd);
+    case 'announcement-banner':
+      return executeAnnouncementBanner(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -633,6 +635,32 @@ async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<u
     default:
       throw new Error(`Unknown backlog action: ${cmd.action}. Actions: move`);
   }
+}
+
+async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.announcementBanner.get();
+    case 'update': {
+      const message = asString(opts['message']);
+      const visibility = asAnnouncementBannerVisibility(opts['visibility']);
+      await client.announcementBanner.update({ message, visibility });
+      return { updated: true };
+    }
+    default:
+      throw new Error(`Unknown announcement-banner action: ${cmd.action}. Actions: get, update`);
+  }
+}
+
+function asAnnouncementBannerVisibility(
+  value: string | boolean | undefined,
+): 'PUBLIC' | 'PRIVATE' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'PUBLIC' || s === 'PRIVATE') return s;
+  throw new Error(`--visibility must be one of: PUBLIC, PRIVATE. Got: ${s}`);
 }
 
 function asSprintState(

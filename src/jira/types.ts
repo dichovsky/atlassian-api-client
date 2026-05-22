@@ -278,3 +278,19 @@ export interface ListLabelsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
 }
+
+/** The current announcement banner configuration. */
+export interface AnnouncementBanner {
+  readonly isDismissible: boolean;
+  readonly isEnabled: boolean;
+  readonly message: string;
+  readonly visibility: 'PUBLIC' | 'PRIVATE';
+}
+
+/** Request body for updating the announcement banner. */
+export interface UpdateAnnouncementBannerData {
+  readonly isDismissible?: boolean;
+  readonly isEnabled?: boolean;
+  readonly message?: string;
+  readonly visibility?: 'PUBLIC' | 'PRIVATE';
+}
