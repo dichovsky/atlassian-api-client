@@ -289,6 +289,14 @@ describe('AttachmentsResource', () => {
       await attachments.list({ status: [] });
       expect(transport.lastCall?.options.query).toEqual({});
     });
+
+    it('rejects an out-of-range limit', async () => {
+      await expect(attachments.list({ limit: 0 })).rejects.toThrow(/limit/);
+    });
+
+    it('rejects a negative limit', async () => {
+      await expect(attachments.list({ limit: -1 })).rejects.toThrow(/limit/);
+    });
   });
 
   describe('listAll()', () => {
@@ -308,6 +316,24 @@ describe('AttachmentsResource', () => {
       expect(ids).toEqual(['a1', 'a2']);
       expect(transport.calls).toHaveLength(2);
       expect(transport.calls[0]?.options.query).toMatchObject({ sort: 'created-date' });
+    });
+
+    it('rejects an out-of-range limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listAll({ limit: 0 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('rejects a negative limit before any request', async () => {
+      await expect(async () => {
+        for await (const _ of attachments.listAll({ limit: -5 })) {
+          /* consume */
+        }
+      }).rejects.toThrow(/limit/);
+      expect(transport.calls).toHaveLength(0);
     });
   });
 

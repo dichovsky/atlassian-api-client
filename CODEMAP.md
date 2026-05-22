@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "410739205c01a127f66ed2d0b5c52e10c76541094bd9d8e634eaf276d472b0fa",
+  "sourceHash": "576115d33fb50c98c9a814ca67929bd12528803fa5586e4d73f48bbc7f9e9c27",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4759,92 +4759,92 @@
             {
               "name": "listAll",
               "kind": "method",
-              "line": 138
+              "line": 139
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 149
+              "line": 151
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 163
+              "line": 165
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 176
+              "line": 178
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 189
+              "line": 191
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 204
+              "line": 206
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 218
+              "line": 220
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 228
+              "line": 230
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 242
+              "line": 244
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 259
+              "line": 261
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 273
+              "line": 275
             },
             {
               "name": "listAllFooterComments",
               "kind": "method",
-              "line": 289
+              "line": 291
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 304
+              "line": 306
             },
             {
               "name": "listAllLabels",
               "kind": "method",
-              "line": 318
+              "line": 320
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 333
+              "line": 335
             },
             {
               "name": "downloadThumbnail",
               "kind": "method",
-              "line": 362
+              "line": 364
             },
             {
               "name": "buildListQuery",
               "kind": "method",
-              "line": 378
+              "line": 380
             },
             {
               "name": "buildPropertiesQuery",
               "kind": "method",
-              "line": 392
+              "line": 394
             }
           ]
         }

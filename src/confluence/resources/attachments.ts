@@ -126,6 +126,7 @@ export class AttachmentsResource {
    * `filename`, `sort`, `limit`, `cursor`.
    */
   async list(params?: ListAllAttachmentsParams): Promise<CursorPaginatedResponse<Attachment>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
       path: `${this.baseUrl}/attachments`,
@@ -136,6 +137,7 @@ export class AttachmentsResource {
 
   /** Iterate over every attachment in the tenant, transparently following cursors. */
   async *listAll(params?: Omit<ListAllAttachmentsParams, 'cursor'>): AsyncGenerator<Attachment> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Attachment>(
       this.transport,
       `${this.baseUrl}/attachments`,
