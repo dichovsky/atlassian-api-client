@@ -3,7 +3,7 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import type { ContentVersion, ListVersionsParams } from '../types.js';
+import type { ContentVersion, ListVersionsParams, ListBlogPostVersionsParams } from '../types.js';
 
 export class VersionsResource {
   constructor(
@@ -37,16 +37,25 @@ export class VersionsResource {
     return response.data;
   }
 
-  /** List versions for a blog post. */
+  /**
+   * List versions for a blog post.
+   *
+   * @see {@link BlogPostsResource.listVersions} for the canonical method with the same parameters.
+   */
   async listForBlogPost(
     blogPostId: string,
-    params?: ListVersionsParams,
+    params?: ListBlogPostVersionsParams,
   ): Promise<CursorPaginatedResponse<ContentVersion>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.sort !== undefined) query['sort'] = params.sort;
+    if (params?.cursor !== undefined) query['cursor'] = params.cursor;
+    if (params?.limit !== undefined) query['limit'] = params.limit;
     const response = await this.transport.request<CursorPaginatedResponse<ContentVersion>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query,
     });
     return response.data;
   }
@@ -78,12 +87,17 @@ export class VersionsResource {
   /** Iterate over all versions for a blog post across all result pages. */
   async *listAllForBlogPost(
     blogPostId: string,
-    params?: Omit<ListVersionsParams, 'cursor'>,
+    params?: Omit<ListBlogPostVersionsParams, 'cursor'>,
   ): AsyncGenerator<ContentVersion> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.sort !== undefined) query['sort'] = params.sort;
+    if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<ContentVersion>(
       this.transport,
       `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions`,
-      params as Record<string, string | number | boolean | undefined>,
+      query,
     );
   }
 }

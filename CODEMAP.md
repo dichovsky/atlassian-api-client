@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "dbd195e34c417a2006a502b66fa9d3bc77aa1e7b56bfe6b54b9d48271530b3a8",
+  "sourceHash": "3e08c93261c633deac269892f91a137609830248a14863a66b863c27880647e4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -6851,22 +6851,22 @@
             {
               "name": "listForBlogPost",
               "kind": "method",
-              "line": 41
+              "line": 45
             },
             {
               "name": "getForBlogPost",
               "kind": "method",
-              "line": 55
+              "line": 64
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 67
+              "line": 76
             },
             {
               "name": "listAllForBlogPost",
               "kind": "method",
-              "line": 79
+              "line": 88
             }
           ]
         }
