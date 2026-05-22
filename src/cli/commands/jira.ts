@@ -646,7 +646,29 @@ async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand)
     case 'update': {
       const message = asString(opts['message']);
       const visibility = asAnnouncementBannerVisibility(opts['visibility']);
-      await client.announcementBanner.update({ message, visibility });
+      const isDismissible =
+        opts['dismissible'] !== undefined ? asBoolFlag(opts['dismissible']) : undefined;
+      const isEnabled = opts['enabled'] !== undefined ? asBoolFlag(opts['enabled']) : undefined;
+
+      if (
+        message === undefined &&
+        visibility === undefined &&
+        isDismissible === undefined &&
+        isEnabled === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --message, --visibility, --dismissible, --enabled',
+        );
+      }
+
+      const body = {
+        ...(message !== undefined && { message }),
+        ...(visibility !== undefined && { visibility }),
+        ...(isDismissible !== undefined && { isDismissible }),
+        ...(isEnabled !== undefined && { isEnabled }),
+      };
+
+      await client.announcementBanner.update(body);
       return { updated: true };
     }
     default:

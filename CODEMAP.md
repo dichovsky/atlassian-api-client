@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "924cb8a8eea9f741a6bf2b2b80bf709bf4a35d40f866d82a1e9e42c8086d4409",
+  "sourceHash": "89d71ff3531d776f304cac415319d0610c7ecdb03b036b152b7b1f66200e6125",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4110,61 +4110,61 @@
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 657,
+          "line": 679,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 666,
+          "line": 688,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 675,
+          "line": 697,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 680,
+          "line": 702,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 685,
+          "line": 707,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 689,
+          "line": 711,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 698,
+          "line": 720,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 706,
+          "line": 728,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 715,
+          "line": 737,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 722,
+          "line": 744,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         }
       ],
@@ -4415,7 +4415,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 158,
+          "line": 160,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -14654,6 +14654,21 @@
         {
           "kind": "named",
           "from": "./resources/announcement-banner.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "AnnouncementBanner",
+              "original": "AnnouncementBanner"
+            },
+            {
+              "exported": "UpdateAnnouncementBannerData",
+              "original": "UpdateAnnouncementBannerData"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/announcement-banner.js",
           "typeOnly": false,
           "names": [
             {
@@ -15214,14 +15229,6 @@
             {
               "exported": "ListLabelsParams",
               "original": "ListLabelsParams"
-            },
-            {
-              "exported": "AnnouncementBanner",
-              "original": "AnnouncementBanner"
-            },
-            {
-              "exported": "UpdateAnnouncementBannerData",
-              "original": "UpdateAnnouncementBannerData"
             }
           ]
         }
@@ -17395,22 +17402,6 @@
           "exported": true,
           "signature": "export interface ListLabelsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Parameters for listing Jira labels."
-        },
-        {
-          "name": "AnnouncementBanner",
-          "kind": "interface",
-          "line": 283,
-          "exported": true,
-          "signature": "export interface AnnouncementBanner { readonly isDismissible: boolean; readonly isEnabled: boolean; readonly message: st…",
-          "jsdoc": "The current announcement banner configuration."
-        },
-        {
-          "name": "UpdateAnnouncementBannerData",
-          "kind": "interface",
-          "line": 291,
-          "exported": true,
-          "signature": "export interface UpdateAnnouncementBannerData { readonly isDismissible?: boolean; readonly isEnabled?: boolean; readonly…",
-          "jsdoc": "Request body for updating the announcement banner."
         }
       ]
     }

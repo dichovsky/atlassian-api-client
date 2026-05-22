@@ -25,9 +25,11 @@ export type {
   CreateIssueCommentData,
   UpdateIssueCommentData,
   ListLabelsParams,
+} from './types.js';
+export type {
   AnnouncementBanner,
   UpdateAnnouncementBannerData,
-} from './types.js';
+} from './resources/announcement-banner.js';
 export type { OffsetPaginatedResponse } from '../core/pagination.js';
 export { IssuesResource } from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';

@@ -152,6 +152,8 @@ const GLOBAL_OPTIONS = {
   // announcement-banner options (B324-B325)
   message: { type: 'string' as const },
   visibility: { type: 'string' as const },
+  dismissible: { type: 'boolean' as const },
+  enabled: { type: 'boolean' as const },
 };
 
 /** Parse process.argv into a structured command. */
