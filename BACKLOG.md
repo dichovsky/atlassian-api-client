@@ -7,6 +7,9 @@
 - [ ] 🔴 📝 Docs: B001 JSDoc public exports
   - files: `src/index.ts`, `src/core/index.ts`, referenced public type files
   - deps: none
+- [ ] 🟢 📝 Docs: B032 Update CONTRIBUTING.md with npm security practices
+  - files: `CONTRIBUTING.md`
+  - deps: none
 
 ## ⚙️ Core
 
@@ -63,6 +66,12 @@
 
 - [ ] 🟡 📦 Infra: B018 OpenAPI type regeneration in CI
   - files: `scripts/regenerate-types.ts`, `.github/workflows/*`, `package.json`, `README.md`
+  - deps: none
+- [ ] 🟡 🔒 Infra: B030 Hardening developer environments with local .npmrc
+  - files: `.npmrc` (new)
+  - deps: none
+- [ ] 🟡 🔒 Infra: B031 Configure automated dependency upgrades with security cooldown
+  - files: `.github/dependabot.yml` (new)
   - deps: none
 
 ## 🏛️ Architecture
