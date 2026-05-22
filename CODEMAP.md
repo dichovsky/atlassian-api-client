@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "16f414d9bbcda85f0c1cf2fa2df3800b2f84fb798137a7ebe73509aa15077623",
+  "sourceHash": "410739205c01a127f66ed2d0b5c52e10c76541094bd9d8e634eaf276d472b0fa",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -48,6 +48,24 @@
       "line": 94,
       "signature": "export interface Attachment { readonly id: string; readonly status: string; readonly title: string; readonly mediaType?:…",
       "jsdoc": "Confluence Attachment.",
+      "typeOnly": true
+    },
+    {
+      "name": "AttachmentFooterComment",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 303,
+      "signature": "export interface AttachmentFooterComment { readonly id?: string; readonly status?: string; readonly title?: string; read…",
+      "jsdoc": "Comment attached to an attachment (footer-comment). OpenAPI `AttachmentCommentModel` schema — analogous to {@link FooterComment} but tied to an attachment rather than a page/blog post.",
+      "typeOnly": true
+    },
+    {
+      "name": "AttachmentOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 321,
+      "signature": "export interface AttachmentOperationsResponse { readonly operations?: readonly { readonly operation?: string; readonly t…",
+      "jsdoc": "Response shape for `GET /attachments/{id}/operations`.",
       "typeOnly": true
     },
     {
@@ -884,6 +902,15 @@
       "typeOnly": true
     },
     {
+      "name": "GetAttachmentThumbnailParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 326,
+      "signature": "export interface GetAttachmentThumbnailParams { readonly width?: number; readonly height?: number; readonly version?: nu…",
+      "jsdoc": "Parameters for downloading an attachment thumbnail.",
+      "typeOnly": true
+    },
+    {
       "name": "GetCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1131,12 +1158,48 @@
       "typeOnly": true
     },
     {
+      "name": "ListAllAttachmentsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 253,
+      "signature": "export interface ListAllAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly stat…",
+      "jsdoc": "Parameters for `GET /attachments` (tenant-wide attachment listing).",
+      "typeOnly": true
+    },
+    {
       "name": "ListAllLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
       "line": 596,
       "signature": "export interface ListAllLabelsParams { readonly 'label-id'?: string | readonly (string | number)[]; readonly prefix?: st…",
       "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both are comma-separated lists at the wire level). Callers may pass either a string (already comma-joined) or a non-empty array; the resource flattens arrays via `join(',')` before shipping.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListAttachmentFooterCommentsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 290,
+      "signature": "export interface ListAttachmentFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly …",
+      "jsdoc": "Parameters for listing footer comments on an attachment.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListAttachmentLabelsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 313,
+      "signature": "export interface ListAttachmentLabelsParams { readonly prefix?: 'my' | 'team' | 'global' | 'system'; readonly sort?: Lab…",
+      "jsdoc": "Parameters for listing labels on an attachment.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListAttachmentVersionsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 263,
+      "signature": "export interface ListAttachmentVersionsParams { readonly sort?: VersionSortOrder; readonly cursor?: string; readonly lim…",
+      "jsdoc": "Parameters for listing attachment versions.",
       "typeOnly": true
     },
     {
@@ -3912,6 +3975,14 @@
               "original": "Attachment"
             },
             {
+              "exported": "AttachmentFooterComment",
+              "original": "AttachmentFooterComment"
+            },
+            {
+              "exported": "AttachmentOperationsResponse",
+              "original": "AttachmentOperationsResponse"
+            },
+            {
               "exported": "Label",
               "original": "Label"
             },
@@ -3988,6 +4059,22 @@
               "original": "ListAttachmentsParams"
             },
             {
+              "exported": "ListAllAttachmentsParams",
+              "original": "ListAllAttachmentsParams"
+            },
+            {
+              "exported": "ListAttachmentFooterCommentsParams",
+              "original": "ListAttachmentFooterCommentsParams"
+            },
+            {
+              "exported": "ListAttachmentLabelsParams",
+              "original": "ListAttachmentLabelsParams"
+            },
+            {
+              "exported": "ListAttachmentVersionsParams",
+              "original": "ListAttachmentVersionsParams"
+            },
+            {
               "exported": "ListLabelsParams",
               "original": "ListLabelsParams"
             },
@@ -4032,16 +4119,16 @@
               "original": "ListContentPropertiesParams"
             },
             {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
               "exported": "CreateContentPropertyData",
               "original": "CreateContentPropertyData"
             },
             {
               "exported": "UpdateContentPropertyData",
               "original": "UpdateContentPropertyData"
-            },
-            {
-              "exported": "ListSharedContentPropertiesParams",
-              "original": "ListSharedContentPropertiesParams"
             },
             {
               "exported": "UpdateSharedContentPropertyData",
@@ -4066,6 +4153,10 @@
             {
               "exported": "UpdateCustomContentData",
               "original": "UpdateCustomContentData"
+            },
+            {
+              "exported": "GetAttachmentThumbnailParams",
+              "original": "GetAttachmentThumbnailParams"
             },
             {
               "exported": "Whiteboard",
@@ -9686,6 +9777,14 @@
               "original": "Attachment"
             },
             {
+              "exported": "AttachmentFooterComment",
+              "original": "AttachmentFooterComment"
+            },
+            {
+              "exported": "AttachmentOperationsResponse",
+              "original": "AttachmentOperationsResponse"
+            },
+            {
               "exported": "Label",
               "original": "Label"
             },
@@ -9754,6 +9853,22 @@
               "original": "ListAttachmentsParams"
             },
             {
+              "exported": "ListAllAttachmentsParams",
+              "original": "ListAllAttachmentsParams"
+            },
+            {
+              "exported": "ListAttachmentFooterCommentsParams",
+              "original": "ListAttachmentFooterCommentsParams"
+            },
+            {
+              "exported": "ListAttachmentLabelsParams",
+              "original": "ListAttachmentLabelsParams"
+            },
+            {
+              "exported": "ListAttachmentVersionsParams",
+              "original": "ListAttachmentVersionsParams"
+            },
+            {
               "exported": "ListLabelsParams",
               "original": "ListLabelsParams"
             },
@@ -9806,16 +9921,16 @@
               "original": "ListContentPropertiesParams"
             },
             {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
               "exported": "CreateContentPropertyData",
               "original": "CreateContentPropertyData"
             },
             {
               "exported": "UpdateContentPropertyData",
               "original": "UpdateContentPropertyData"
-            },
-            {
-              "exported": "ListSharedContentPropertiesParams",
-              "original": "ListSharedContentPropertiesParams"
             },
             {
               "exported": "UpdateSharedContentPropertyData",
@@ -9840,6 +9955,10 @@
             {
               "exported": "UpdateCustomContentData",
               "original": "UpdateCustomContentData"
+            },
+            {
+              "exported": "GetAttachmentThumbnailParams",
+              "original": "GetAttachmentThumbnailParams"
             },
             {
               "exported": "Whiteboard",
