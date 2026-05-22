@@ -312,14 +312,32 @@ const matrix: readonly MatrixRow[] = [
       '--value',
       '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]',
     ],
-    routes: [{ method: 'POST', path: `${P}/spaces/654321/role-assignments`, status: 204 }],
+    // POST /spaces/{id}/role-assignments returns 200 with a
+    // `MultiEntityResult<SpaceRoleAssignment>` envelope (the canonicalised
+    // post-write set), not 204. The CLI surfaces that body verbatim so users
+    // can see server-side normalisation rather than a placeholder ack.
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/spaces/654321/role-assignments`,
+        body: {
+          results: [
+            {
+              principal: { principalType: 'USER', principalId: 'acc-1-normalised' },
+              roleId: 'role-1',
+            },
+          ],
+          _links: { base: 'https://example.atlassian.net/wiki' },
+        },
+      },
+    ],
     expectCall: { method: 'POST', pathname: `${P}/spaces/654321/role-assignments` },
     expectBody: (body) => {
       expect(body).toEqual([
         { principal: { principalType: 'USER', principalId: 'acc-1' }, roleId: 'role-1' },
       ]);
     },
-    expectStdout: ['"updated": true'],
+    expectStdout: ['"results"', '"acc-1-normalised"'],
   },
   {
     name: 'spaces list-properties',

@@ -602,6 +602,17 @@ describe('SpacesResource', () => {
       expect(query['limit']).toBeUndefined();
     });
 
+    it('emits only the cursor when limit is omitted', async () => {
+      // Covers the `cursor` branch of `buildPermissionsQuery` independently
+      // of `limit` so refactors of the shared helper cannot silently drop
+      // either side of the pagination contract.
+      transport.respondWith({ results: [], _links: {} });
+      await spaces.listPermissions('SP-1', { cursor: 'tok' });
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['cursor']).toBe('tok');
+      expect(query['limit']).toBeUndefined();
+    });
+
     it('rejects out-of-range limit', async () => {
       await expect(spaces.listPermissions('SP-1', { limit: 0 })).rejects.toThrow(/limit/);
     });
@@ -677,18 +688,34 @@ describe('SpacesResource', () => {
 
   describe('setRoleAssignments() (B208)', () => {
     it('POSTs /spaces/{id}/role-assignments with the array body', async () => {
-      transport.respondWith(undefined);
+      // The server replies 200 with a `MultiEntityResult<SpaceRoleAssignment>`
+      // envelope (the canonicalised post-write state); we stub a non-trivial
+      // payload to lock in that the resource returns the body verbatim rather
+      // than echoing the request.
+      const responseBody = {
+        results: [
+          {
+            principal: { principalType: 'USER' as const, principalId: 'acc-1-normalised' },
+            roleId: 'role-1',
+          },
+        ],
+        _links: { base: 'https://example.atlassian.net/wiki' },
+      };
+      transport.respondWith(responseBody);
       const data = [
         { principal: { principalType: 'USER' as const, principalId: 'acc-1' }, roleId: 'role-1' },
       ];
 
-      await spaces.setRoleAssignments('SP-1', data);
+      const result = await spaces.setRoleAssignments('SP-1', data);
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/spaces/SP-1/role-assignments`,
         body: data,
       });
+      // Resource surfaces the response body so callers can diff request vs
+      // server-normalised set rather than re-fetching state.
+      expect(result).toEqual(responseBody);
     });
   });
 

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { csvOrScalar } from './query.js';
 import type {
   Attachment,
   BlogPost,
@@ -750,16 +751,4 @@ export class BlogPostsResource {
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
     return query;
   }
-}
-
-/**
- * Normalise an array-or-scalar filter into the comma-joined scalar the wire
- * format expects. Returns `undefined` for both omitted and explicit empty
- * arrays so the caller can drop the key from the query bag entirely.
- */
-function csvOrScalar(value: string | readonly string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.join(',');
 }

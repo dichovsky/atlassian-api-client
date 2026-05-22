@@ -2865,6 +2865,23 @@ export interface ListSpaceRoleAssignmentsParams {
  */
 export type SetSpaceRoleAssignmentsData = readonly SpaceRoleAssignment[];
 
+/**
+ * Response body for `POST /spaces/{id}/role-assignments` (B208). The
+ * spec returns 200 with a `MultiEntityResult<SpaceRoleAssignment>`
+ * envelope: `results` is the server's confirmed, normalised set of
+ * assignments after the wholesale replace, and `_links` carries the
+ * single-shot wrapper links (no `next` — the response is not paginated).
+ *
+ * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space/#api-spaces-id-role-assignments-post
+ */
+export interface SetSpaceRoleAssignmentsResponse {
+  readonly results: readonly SpaceRoleAssignment[];
+  readonly _links?: {
+    readonly next?: string;
+    readonly base?: string;
+  };
+}
+
 // --- Space Properties (B209-B213) ---
 //
 // The `/spaces/{space-id}/properties` collection mirrors the same shared

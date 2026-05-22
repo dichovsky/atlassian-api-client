@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { csvOrScalar } from './query.js';
 import type {
   BlogPost,
   ClassificationLevel,
@@ -21,6 +22,7 @@ import type {
   CustomContent,
   Page,
   SetSpaceRoleAssignmentsData,
+  SetSpaceRoleAssignmentsResponse,
   Space,
   SpaceOperationsResponse,
   SpacePermissionAssignment,
@@ -31,18 +33,6 @@ import type {
 
 /** Query shape accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
-
-/**
- * Normalise an array-or-scalar filter into the comma-joined scalar the wire
- * format expects. Returns `undefined` for both omitted values and explicit
- * empty arrays so callers can drop the key from the query bag entirely.
- */
-function csvOrScalar(value: string | readonly string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.join(',');
-}
 
 /**
  * Resource for Confluence v2 spaces.
@@ -80,14 +70,8 @@ export class SpacesResource {
    */
   async list(params?: ListSpacesParams): Promise<CursorPaginatedResponse<Space>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Query = {};
-    if (params) {
-      if (params.keys) query['keys'] = params.keys.join(',');
-      if (params.type) query['type'] = params.type;
-      if (params.status) query['status'] = params.status;
-      if (params.limit !== undefined) query['limit'] = params.limit;
-      if (params.cursor) query['cursor'] = params.cursor;
-    }
+    const query = this.buildSpacesQuery(params);
+    if (params?.cursor) query['cursor'] = params.cursor;
 
     const response = await this.transport.request<CursorPaginatedResponse<Space>>({
       method: 'GET',
@@ -113,13 +97,7 @@ export class SpacesResource {
   /** Iterate over all spaces across all result pages. */
   async *listAll(params?: Omit<ListSpacesParams, 'cursor'>): AsyncGenerator<Space> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Query = {};
-    if (params) {
-      if (params.keys) query['keys'] = params.keys.join(',');
-      if (params.type) query['type'] = params.type;
-      if (params.status) query['status'] = params.status;
-      if (params.limit !== undefined) query['limit'] = params.limit;
-    }
+    const query = this.buildSpacesQuery(params);
     yield* paginateCursor<Space>(this.transport, `${this.baseUrl}/spaces`, query);
   }
 
@@ -427,10 +405,7 @@ export class SpacesResource {
     params?: ListSpacePermissionAssignmentsParams,
   ): Promise<CursorPaginatedResponse<SpacePermissionAssignment>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Query = {};
-    if (params?.cursor !== undefined) query['cursor'] = params.cursor;
-    if (params?.limit !== undefined) query['limit'] = params.limit;
-
+    const query = this.buildPermissionsQuery(params);
     const response = await this.transport.request<
       CursorPaginatedResponse<SpacePermissionAssignment>
     >({
@@ -451,8 +426,7 @@ export class SpacesResource {
     params?: Omit<ListSpacePermissionAssignmentsParams, 'cursor'>,
   ): AsyncGenerator<SpacePermissionAssignment> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const query: Query = {};
-    if (params?.limit !== undefined) query['limit'] = params.limit;
+    const query = this.buildPermissionsQuery(params);
     yield* paginateCursor<SpacePermissionAssignment>(
       this.transport,
       `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/permissions`,
@@ -504,16 +478,24 @@ export class SpacesResource {
    *
    * The request body is a JSON array of `{ principal, roleId }` entries;
    * the server replaces the space's assignments wholesale with the provided
-   * list. Returns 204 with no body.
+   * list. Returns 200 with a `MultiEntityResult<SpaceRoleAssignment>`
+   * envelope — `results` is the server's confirmed, normalised set of
+   * assignments after the replace (principals are resolved, role IDs are
+   * canonicalised). Callers should treat the returned `results` as the
+   * authoritative post-write state rather than echoing back the request.
    *
    * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space/#api-spaces-id-role-assignments-post
    */
-  async setRoleAssignments(spaceId: string, data: SetSpaceRoleAssignmentsData): Promise<void> {
-    await this.transport.request<undefined>({
+  async setRoleAssignments(
+    spaceId: string,
+    data: SetSpaceRoleAssignmentsData,
+  ): Promise<SetSpaceRoleAssignmentsResponse> {
+    const response = await this.transport.request<SetSpaceRoleAssignmentsResponse>({
       method: 'POST',
       path: `${this.baseUrl}/spaces/${encodePathSegment(spaceId)}/role-assignments`,
       body: data,
     });
+    return response.data;
   }
 
   // ── space properties (B209-B213) ──────────────────────────────────────────
@@ -633,6 +615,24 @@ export class SpacesResource {
 
   // ── internals ─────────────────────────────────────────────────────────────
 
+  /**
+   * Build the shared query bag for `GET /spaces` (B196). Reused by both
+   * `list` and `listAll` so the param-omission rules stay in one place. The
+   * `cursor` param is intentionally excluded — `listAll` threads cursors
+   * itself, and `list` overlays its caller-supplied cursor after this helper
+   * returns.
+   */
+  private buildSpacesQuery(params: Omit<ListSpacesParams, 'cursor'> | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
+    const keys = csvOrScalar(params.keys);
+    if (keys !== undefined) query['keys'] = keys;
+    if (params.type !== undefined) query['type'] = params.type;
+    if (params.status !== undefined) query['status'] = params.status;
+    if (params.limit !== undefined) query['limit'] = params.limit;
+    return query;
+  }
+
   /** Build the query bag for `GET /spaces/{id}/blogposts` (B197). */
   private buildBlogPostsQuery(params: ListSpaceBlogPostsParams | undefined): Query {
     const query: Query = {};
@@ -680,6 +680,15 @@ export class SpacesResource {
     if (status !== undefined) query['status'] = status;
     if (params.title !== undefined) query['title'] = params.title;
     if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params.cursor !== undefined) query['cursor'] = params.cursor;
+    if (params.limit !== undefined) query['limit'] = params.limit;
+    return query;
+  }
+
+  /** Build the query bag for `GET /spaces/{id}/permissions` (B206). */
+  private buildPermissionsQuery(params: ListSpacePermissionAssignmentsParams | undefined): Query {
+    const query: Query = {};
+    if (params === undefined) return query;
     if (params.cursor !== undefined) query['cursor'] = params.cursor;
     if (params.limit !== undefined) query['limit'] = params.limit;
     return query;

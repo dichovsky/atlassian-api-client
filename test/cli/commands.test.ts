@@ -1478,8 +1478,21 @@ describe('executeConfluenceCommand', () => {
       ).rejects.toThrow(/JSON array/);
     });
 
-    it('spaces set-role-assignments forwards parsed array', async () => {
-      confluenceSpacesMock.setRoleAssignments.mockResolvedValue(undefined);
+    it('spaces set-role-assignments forwards parsed array and surfaces the server response', async () => {
+      // POST /spaces/{id}/role-assignments returns 200 with a
+      // `MultiEntityResult<SpaceRoleAssignment>` envelope; the CLI must pass
+      // that body through so users see the canonicalised post-write set
+      // rather than a placeholder `{ updated: true }`.
+      const serverResponse = {
+        results: [
+          {
+            principal: { principalType: 'USER', principalId: 'acc-1-normalised' },
+            roleId: 'role-1',
+          },
+        ],
+        _links: { base: 'https://example.atlassian.net/wiki' },
+      };
+      confluenceSpacesMock.setRoleAssignments.mockResolvedValue(serverResponse);
       const payload = [
         { principal: { principalType: 'USER', principalId: 'acc-1' }, roleId: 'role-1' },
       ];
@@ -1488,7 +1501,7 @@ describe('executeConfluenceCommand', () => {
         GLOBALS,
       );
       expect(confluenceSpacesMock.setRoleAssignments).toHaveBeenCalledWith('SP-1', payload);
-      expect(out).toEqual({ updated: true });
+      expect(out).toEqual(serverResponse);
     });
 
     // ── space properties (B209-B213) ────────────────────────────────────────

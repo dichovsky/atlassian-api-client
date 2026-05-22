@@ -12,6 +12,7 @@ import type {
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
+  CreateSpaceData,
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
   GetBlogPostParams,
@@ -342,22 +343,26 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
     // ── lifecycle (B196) ──────────────────────────────────────────────────
     case 'create': {
       const description = asString(opts['description']);
-      const data: Record<string, unknown> = {
-        name: requireOpt(opts['name'], '--name'),
-      };
-      if (typeof opts['key'] === 'string') data['key'] = opts['key'];
-      if (typeof opts['alias'] === 'string') data['alias'] = opts['alias'];
-      if (description !== undefined) {
-        data['description'] = { value: description, representation: 'plain' };
-      }
-      if (opts['private'] === true) data['createPrivateSpace'] = true;
-      if (typeof opts['template-key'] === 'string') data['templateKey'] = opts['template-key'];
       const copyFrom = asPositiveInt(
         opts['copy-space-access-configuration'],
         '--copy-space-access-configuration',
       );
-      if (copyFrom !== undefined) data['copySpaceAccessConfiguration'] = copyFrom;
-      return client.spaces.create(data as unknown as Parameters<typeof client.spaces.create>[0]);
+      // The spec note on `description.representation` says: "only the 'plain'
+      // representation is currently supported." We surface `--description` as
+      // a plain string and fix `representation: 'plain'` here rather than
+      // exposing an unsupported knob through the CLI surface.
+      const data: Partial<CreateSpaceData> & { name: string } = {
+        name: requireOpt(opts['name'], '--name'),
+        ...(typeof opts['key'] === 'string' ? { key: opts['key'] } : {}),
+        ...(typeof opts['alias'] === 'string' ? { alias: opts['alias'] } : {}),
+        ...(description !== undefined
+          ? { description: { value: description, representation: 'plain' } }
+          : {}),
+        ...(opts['private'] === true ? { createPrivateSpace: true } : {}),
+        ...(typeof opts['template-key'] === 'string' ? { templateKey: opts['template-key'] } : {}),
+        ...(copyFrom !== undefined ? { copySpaceAccessConfiguration: copyFrom } : {}),
+      };
+      return client.spaces.create(data);
     }
 
     // ── blog posts in space (B197) ────────────────────────────────────────
@@ -476,6 +481,10 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
       // The wire format is a JSON array of `{ principal, roleId }` entries.
       // The CLI accepts the array verbatim through `--value` (same JSON-or-fall-back
       // semantics as `blog-posts redact` and `app upsert-property`).
+      // The server returns 200 with a `MultiEntityResult<SpaceRoleAssignment>`
+      // envelope — the confirmed, normalised assignment set after the replace.
+      // We surface the body verbatim so callers can diff request vs response
+      // and detect server-side principal/role canonicalisation.
       const raw = requireOpt(opts['value'], '--value');
       const parsed = parseJsonValue(raw);
       if (!Array.isArray(parsed)) {
@@ -483,11 +492,10 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
           '--value must be a JSON array of `{ principal: { principalType, principalId }, roleId }` entries',
         );
       }
-      await client.spaces.setRoleAssignments(
+      return client.spaces.setRoleAssignments(
         requireArg(cmd.positionalArgs[0], 'space ID'),
         parsed as Parameters<typeof client.spaces.setRoleAssignments>[1],
       );
-      return { updated: true };
     }
 
     // ── space properties (B209-B213) ──────────────────────────────────────
