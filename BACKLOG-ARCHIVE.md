@@ -82,6 +82,42 @@
 - [x] 🔴 🧩 Confluence: B053 expose PUT /app/properties/{propertyKey}
   - **Impl:** Branch `feat/api-app` (2026-05-20); `AppResource.upsertProperty(key, { value })` issues `PUT /app/properties/{key}` with the raw JSON value as the request body (Confluence wraps it server-side; there is no `key`/`version` field on the wire). CLI: `atlas confluence app upsert-property <key> --value <json>`; `--value` is parsed as JSON when possible and falls back to the literal string otherwise.
   - **Rat:** Confluence treats this PUT as an idempotent upsert, so a single `upsertProperty` covers both the "create new" and "update existing" backlog intents without forcing callers to inspect existence first.
+- [x] 🔴 🧩 Confluence: B054 expose GET /attachments
+  - **Impl:** PR #51 / #54 (`b54b9ec`, `e8a7bc6`); `AttachmentsResource.list(params?)` + `listAll()` async-generator mapped to `GET /wiki/api/v2/attachments`, cursor-paginated with `sort`, `cursor`, `status` (CSV or single, validated against `AttachmentStatus`), `mediaType`, `filename`, `limit`. CLI: `atlas confluence attachments list [--sort] [--status] [--cursor] [--media-type] [--filename] [--limit]`.
+  - **Rat:** Workspace-wide attachment enumeration was the only missing read primitive on the attachments root; required by storage-quota / cleanup automation that does not start from a page handle.
+- [x] 🔴 🧩 Confluence: B055 expose GET /attachments/{attachment-id}/properties
+  - **Impl:** PR #51 / #54; `AttachmentsResource.listProperties(attachmentId, params?)` + `listPropertiesAll()` mapped to `GET /attachments/{id}/properties`, cursor-paginated with optional `key`/`sort` filters. Reuses the shared `ListSharedContentPropertiesParams` + `ContentProperty` types. CLI: `atlas confluence attachments list-properties <id> [--key] [--sort] [--cursor] [--limit]`.
+  - **Rat:** Closes parity with pages / comments / blog-posts / custom-content — every v2 content type exposes a `/properties` collection so callers attaching metadata to attachments no longer need to fall back to v1.
+- [x] 🔴 🧩 Confluence: B056 expose POST /attachments/{attachment-id}/properties
+  - **Impl:** PR #51 / #54; `AttachmentsResource.createProperty(attachmentId, data)` issues `POST /attachments/{id}/properties` with `{ key, value }`, returning the created `ContentProperty`. CLI: `atlas confluence attachments create-property <id> --key --value`; `--value` is JSON-parsed with raw-string fallback.
+  - **Rat:** Lets automation attach scan / moderation / virus-check state to individual attachments without overloading the file body or the parent page.
+- [x] 🔴 🧩 Confluence: B057 expose DELETE /attachments/{attachment-id}/properties/{property-id}
+  - **Impl:** PR #51 / #54; `AttachmentsResource.deleteProperty(attachmentId, propertyId)` issues `DELETE /attachments/{id}/properties/{property-id}` and resolves `void` on 204. Both path segments go through `encodePathSegment`. CLI: `atlas confluence attachments delete-property <id> --property-id <pid>` (prints `{ "deleted": true }`).
+  - **Rat:** Symmetric tear-down for B056; transient flags set during moderation workflows need a clean removal path.
+- [x] 🔴 🧩 Confluence: B058 expose GET /attachments/{attachment-id}/properties/{property-id}
+  - **Impl:** PR #51 / #54; `AttachmentsResource.getProperty(attachmentId, propertyId)` issues `GET /attachments/{id}/properties/{property-id}`. CLI: `atlas confluence attachments get-property <id> --property-id <pid>`.
+  - **Rat:** Point-reads avoid paginating the entire collection when callers already know the property id.
+- [x] 🔴 🧩 Confluence: B059 expose PUT /attachments/{attachment-id}/properties/{property-id}
+  - **Impl:** PR #51 / #54; `AttachmentsResource.updateProperty(attachmentId, propertyId, data)` issues `PUT /attachments/{id}/properties/{property-id}` with the shared `UpdateSharedContentPropertyData` body. Confluence enforces optimistic concurrency: `data.version.number` must be exactly one greater than the current version (409 otherwise). CLI: `atlas confluence attachments update-property <id> --property-id --key --value --version-number` (CLI validates the version is a positive integer before issuing the request).
+  - **Rat:** Closes the property write-path triangle (`POST` / `GET` / `PUT` / `DELETE`) for attachments.
+- [x] 🔴 🧩 Confluence: B060 expose GET /attachments/{attachment-id}/versions/{version-number}
+  - **Impl:** PR #51 / #54; `AttachmentsResource.getVersion(attachmentId, versionNumber)` issues `GET /attachments/{id}/versions/{version-number}` and returns the historical `ContentVersion`. CLI: `atlas confluence attachments get-version <id> --version-number <n>` (positive-integer validated client-side).
+  - **Rat:** Point-fetch for a specific historical attachment version — required by diff / restore flows that already know the version number.
+- [x] 🔴 🧩 Confluence: B061 expose GET /attachments/{id}/footer-comments
+  - **Impl:** PR #51 / #54; `AttachmentsResource.listFooterComments(attachmentId, params?)` + `listAllFooterComments()` mapped to `GET /attachments/{id}/footer-comments`. Accepts `body-format` (`storage` | `atlas_doc_format`), `sort` (`CommentSortOrder`), `cursor`, `limit`. CLI: `atlas confluence attachments footer-comments <id> [--body-format] [--sort] [--cursor] [--limit]`.
+  - **Rat:** Attachments can carry footer-comment review threads — restores parity so callers can paginate the full discussion thread from the attachment handle.
+- [x] 🔴 🧩 Confluence: B062 expose GET /attachments/{id}/labels
+  - **Impl:** PR #51 / #54; `AttachmentsResource.listLabels(attachmentId, params?)` + `listAllLabels()` mapped to `GET /attachments/{id}/labels`. Accepts `prefix` (`my`/`team`/`global`/`system`), `sort` (`LabelSortOrder`), `cursor`, `limit`. CLI: `atlas confluence attachments labels <id> [--prefix] [--sort] [--cursor] [--limit]`.
+  - **Rat:** Surfaces the inverse-label lookup on the attachment handle for tag-driven enumeration.
+- [x] 🔴 🧩 Confluence: B063 expose GET /attachments/{id}/operations
+  - **Impl:** PR #51 / #54; `AttachmentsResource.getOperations(attachmentId)` issues `GET /attachments/{id}/operations` and returns `{ operations: [{ operation, targetType }] }` (`AttachmentOperationsResponse`). CLI: `atlas confluence attachments operations <id>`.
+  - **Rat:** Lets UIs grey out actions the caller doesn't have permission for and powers permission-aware automation that wants to fail fast before issuing a 403-bound write.
+- [x] 🔴 🧩 Confluence: B064 expose GET /attachments/{id}/thumbnail/download
+  - **Impl:** PR #51 / #54; `AttachmentsResource.downloadThumbnail(attachmentId, params?)` issues `GET /attachments/{id}/thumbnail/download` and returns the binary body (per the OpenAPI spec). CLI: `atlas confluence attachments thumbnail <id>` streams bytes to stdout.
+  - **Rat:** Required by gallery / preview UIs that want to render thumbnails without pulling the full attachment payload.
+- [x] 🔴 🧩 Confluence: B065 expose GET /attachments/{id}/versions
+  - **Impl:** PR #51 / #54; `AttachmentsResource.listVersions(attachmentId, params?)` + `listAllVersions()` mapped to `GET /attachments/{id}/versions`, cursor-paginated. Accepts `body-format`, `sort` (`VersionSortOrder`), `cursor`, `limit`. CLI: `atlas confluence attachments versions <id> [--body-format] [--sort] [--cursor] [--limit]`.
+  - **Rat:** Audit tooling needs to walk an attachment's edit graph from a single handle; mirrors the pages / blog-posts / custom-content versions surface.
 - [x] 🔴 🧩 Confluence: B066 expose GET /blogposts/{blogpost-id}/properties
   - **Impl:** Branch `feat/api-blog-posts`; `BlogPostsResource.listProperties(blogPostId, params?)` mapped to `GET /wiki/api/v2/blogposts/{blogpost-id}/properties`, cursor-paginated with optional `key`/`sort` filters (`key` | `-key`). Companion `listPropertiesAll()` async-generator walks every page via `paginateCursor`. Reuses the shared `ListSharedContentPropertiesParams` + `ContentProperty` types. CLI: `atlas confluence blog-posts list-properties <id> [--key] [--sort] [--cursor] [--limit]`.
   - **Rat:** Closes parity with pages / comments / databases — every other v2 content type exposes a `/properties` collection so callers building per-blog review state no longer need to fall back to v1 or piggy-back on the parent space.
