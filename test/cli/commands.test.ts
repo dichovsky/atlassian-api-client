@@ -411,6 +411,10 @@ const jiraBacklogMock = {
   moveIssuesToBoard: vi.fn(),
   moveIssues: vi.fn(),
 };
+const jiraAnnouncementBannerMock = {
+  get: vi.fn(),
+  update: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -426,6 +430,7 @@ vi.mock('../../src/jira/client.js', () => {
       sprints: jiraSprintsMock,
       epic: jiraEpicMock,
       backlog: jiraBacklogMock,
+      announcementBanner: jiraAnnouncementBannerMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -8848,6 +8853,149 @@ describe('executeJiraCommand', () => {
     it('backlog unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('backlog', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown backlog action',
+      );
+    });
+  });
+
+  // ── announcement-banner ───────────────────────────────────────────────────
+
+  describe('announcement-banner resource', () => {
+    it('announcement-banner get calls client.announcementBanner.get()', async () => {
+      // Arrange
+      const banner = {
+        isDismissible: false,
+        isEnabled: true,
+        message: 'Hello',
+        visibility: 'PUBLIC',
+      };
+      jiraAnnouncementBannerMock.get.mockResolvedValue(banner);
+
+      // Act
+      const result = await executeJiraCommand(cmd('announcement-banner', 'get'), GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.get).toHaveBeenCalledOnce();
+      expect(result).toEqual(banner);
+    });
+
+    it('announcement-banner update calls client.announcementBanner.update() and returns { updated: true }', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], {
+        message: 'Maintenance tonight',
+        visibility: 'PUBLIC',
+      });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({
+        message: 'Maintenance tonight',
+        visibility: 'PUBLIC',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('announcement-banner update with only --message sends only message in body', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], { message: 'Notice' });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({ message: 'Notice' });
+    });
+
+    it('announcement-banner update with --dismissible true passes isDismissible: true', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], { dismissible: true });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({ isDismissible: true });
+    });
+
+    it('announcement-banner update with --dismissible false passes isDismissible: false', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], { dismissible: false });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({ isDismissible: false });
+    });
+
+    it('announcement-banner update with --enabled true passes isEnabled: true', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], { enabled: true });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({ isEnabled: true });
+    });
+
+    it('announcement-banner update with --enabled false passes isEnabled: false', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], { enabled: false });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({ isEnabled: false });
+    });
+
+    it('announcement-banner update with all flags passes full body', async () => {
+      // Arrange
+      jiraAnnouncementBannerMock.update.mockResolvedValue(undefined);
+      const parsed = cmd('announcement-banner', 'update', [], {
+        message: 'All flags',
+        visibility: 'PRIVATE',
+        dismissible: true,
+        enabled: false,
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraAnnouncementBannerMock.update).toHaveBeenCalledWith({
+        message: 'All flags',
+        visibility: 'PRIVATE',
+        isDismissible: true,
+        isEnabled: false,
+      });
+    });
+
+    it('announcement-banner update with no flags throws validation error', async () => {
+      const parsed = cmd('announcement-banner', 'update', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'update requires at least one of: --message, --visibility, --dismissible, --enabled',
+      );
+    });
+
+    it('announcement-banner update rejects invalid --visibility', async () => {
+      const parsed = cmd('announcement-banner', 'update', [], { visibility: 'UNKNOWN' });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--visibility must be one of: PUBLIC, PRIVATE',
+      );
+    });
+
+    it('announcement-banner unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('announcement-banner', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown announcement-banner action',
       );
     });
   });

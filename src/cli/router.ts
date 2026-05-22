@@ -149,6 +149,11 @@ const GLOBAL_OPTIONS = {
   alias: { type: 'string' as const },
   'role-id': { type: 'string' as const },
   'copy-space-access-configuration': { type: 'string' as const },
+  // announcement-banner options (B324-B325)
+  message: { type: 'string' as const },
+  visibility: { type: 'string' as const },
+  dismissible: { type: 'boolean' as const },
+  enabled: { type: 'boolean' as const },
 };
 
 /** Parse process.argv into a structured command. */

@@ -604,6 +604,13 @@
 
 ## 🧩 Jira
 
+- [x] 🔴 🧩 API: B324 Jira: expose GET /rest/api/3/announcementBanner
+  - **Impl:** Branch `feat/jira-announcement-banner`; new `AnnouncementBannerResource` (`src/jira/resources/announcement-banner.ts`) exposes `get()` mapped to `GET /rest/api/3/announcementBanner`, returning `AnnouncementBanner` (`isDismissible`, `isEnabled`, `message`, `visibility`). Wired as `JiraClient.announcementBanner`; types exported from `src/jira/types.ts` + `src/jira/index.ts`. CLI: `atlas jira announcement-banner get`. Covered by `test/jira/announcement-banner.test.ts` and CLI command tests.
+  - **Rat:** First Jira resource PR of the API coverage campaign — establishes the new-resource pattern (kebab-case filename, injectable transport, types in types.ts, CLI action, skill ref update) for ~70 future PRs.
+- [x] 🔴 🧩 API: B325 Jira: expose PUT /rest/api/3/announcementBanner
+  - **Impl:** Branch `feat/jira-announcement-banner`; `AnnouncementBannerResource.update(data: UpdateAnnouncementBannerData)` issues `PUT /rest/api/3/announcementBanner` with optional `isDismissible`, `isEnabled`, `message`, `visibility` fields; returns `void`. CLI: `atlas jira announcement-banner update --message <msg> --visibility PUBLIC|PRIVATE`; `--visibility` validated to `PUBLIC` | `PRIVATE`; all fields optional. `--message` / `--visibility` options added to `src/cli/router.ts` global option set.
+  - **Rat:** Symmetric update for B324 — lets automation enable/disable the banner and set its content without manual UI access.
+
 - [x] 🔴 🐛 Jira: B033 `DashboardsResource.listAll` infinite pagination
   - **Impl:** Branch `fix/ctf-phase8-p0p1` (2026-05-16); dashboard pagination now uses a `maxPages` cap plus warning path instead of looping forever.
   - **Rat:** Bound dashboard listing against pathological server responses.
