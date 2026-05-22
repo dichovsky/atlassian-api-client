@@ -3503,12 +3503,12 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('whiteboards', 'create', [], {
         'space-id': 'space-1',
         'parent-id': 'p-9',
-        'template-key': 'blank',
+        'template-key': 'flow-chart',
         locale: 'en-US',
       });
       await executeConfluenceCommand(parsed, GLOBALS);
       expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(
-        expect.objectContaining({ parentId: 'p-9', templateKey: 'blank', locale: 'en-US' }),
+        expect.objectContaining({ parentId: 'p-9', templateKey: 'flow-chart', locale: 'en-US' }),
         undefined,
       );
     });
@@ -3516,6 +3516,42 @@ describe('executeConfluenceCommand', () => {
     it('whiteboards create throws when --space-id is missing', async () => {
       const parsed = cmd('whiteboards', 'create', [], {});
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
+    });
+
+    it('whiteboards create rejects unknown --template-key (closed enum)', async () => {
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        'template-key': 'blank',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--template-key must be one of: 2x2-prioritization.*got: blank/,
+      );
+      expect(confluenceWhiteboardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards create rejects unknown --locale (closed enum)', async () => {
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        locale: 'xx-YY',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--locale must be one of: de-DE.*got: xx-YY/,
+      );
+      expect(confluenceWhiteboardsMock.create).not.toHaveBeenCalled();
+    });
+
+    it('whiteboards create accepts a valid --template-key + --locale pair', async () => {
+      confluenceWhiteboardsMock.create.mockResolvedValue({ id: 'wb-1' });
+      const parsed = cmd('whiteboards', 'create', [], {
+        'space-id': 'space-1',
+        'template-key': 'kanban-board',
+        locale: 'en-US',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceWhiteboardsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ templateKey: 'kanban-board', locale: 'en-US' }),
+        undefined,
+      );
     });
 
     it('whiteboards get calls client.whiteboards.get with the ID', async () => {

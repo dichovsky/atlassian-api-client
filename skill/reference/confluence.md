@@ -618,7 +618,8 @@ Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). T
 | `delete-property`             | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
 
 - `--private` on `create` creates a whiteboard visible only to the creator.
-- `--template-key` and `--locale` on `create` select an initial template and locale; both are optional and forwarded as body fields.
+- `--template-key` and `--locale` on `create` select an initial template and locale; both are optional and forwarded as body fields. **Both are closed enums** validated client-side against the Confluence v2 OpenAPI spec (53 template keys, 21 locales — see `WhiteboardTemplateKey` / `WhiteboardLocale` in `src/confluence/types.ts`). Invalid values are rejected with the full allowlist before any HTTP request is sent.
+- `get` returns the `WhiteboardSingle` shape: `id`, `type`, `status`, `title`, `parentId`, `parentType`, `position`, `authorId`, `ownerId`, `createdAt`, `spaceId`, `version` (`{ createdAt, message, number, minorEdit, authorId }`), and `_links` (`webui`, `editui`).
 - `--depth` on `descendants` accepts positive integers (server-validated; default 2).
 - `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
 - `--sort` on `list-properties` accepts `key` or `-key`.
@@ -634,7 +635,7 @@ Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). T
 atlas confluence whiteboards create --space-id 654321 --title "Roadmap"
 
 # Create a private whiteboard with a template
-atlas confluence whiteboards create --space-id 654321 --title "Secret" --template-key blank --private
+atlas confluence whiteboards create --space-id 654321 --title "Secret" --template-key kanban-board --locale en-US --private
 
 # Read a whiteboard (basic)
 atlas confluence whiteboards get wb-1

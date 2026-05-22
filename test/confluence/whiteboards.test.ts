@@ -59,14 +59,14 @@ describe('WhiteboardsResource', () => {
       await resource.create({
         spaceId: 'space-1',
         parentId: 'p-9',
-        templateKey: 'blank',
+        templateKey: 'flow-chart',
         locale: 'en-US',
       });
 
       expect(transport.lastCall?.options.body).toEqual({
         spaceId: 'space-1',
         parentId: 'p-9',
-        templateKey: 'blank',
+        templateKey: 'flow-chart',
         locale: 'en-US',
       });
     });
@@ -101,6 +101,42 @@ describe('WhiteboardsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/whiteboards/42`,
       });
+    });
+
+    it('returns a fully populated WhiteboardSingle shape (type/ownerId/position/version)', async () => {
+      // Mirrors the WhiteboardSingle schema in the Confluence v2 OpenAPI spec.
+      const full = {
+        id: 'wb-42',
+        type: 'whiteboard',
+        status: 'current',
+        title: 'Roadmap',
+        parentId: 'p-1',
+        parentType: 'page' as const,
+        position: 3,
+        authorId: 'author-1',
+        ownerId: 'owner-1',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        spaceId: 'space-1',
+        version: {
+          createdAt: '2025-01-01T00:00:00.000Z',
+          message: 'initial',
+          number: 1,
+          minorEdit: false,
+          authorId: 'author-1',
+        },
+        _links: { webui: '/x/wb-42', editui: '/pages/edit/wb-42' },
+      };
+      transport.respondWith(full);
+
+      const result = await resource.get('wb-42');
+
+      // Assert each new field is typed-accessible through the Whiteboard interface.
+      expect(result.type).toBe('whiteboard');
+      expect(result.ownerId).toBe('owner-1');
+      expect(result.position).toBe(3);
+      expect(result.version?.number).toBe(1);
+      expect(result.version?.minorEdit).toBe(false);
+      expect(result.parentType).toBe('page');
     });
 
     it('includes include-collaborators flag when passed', async () => {

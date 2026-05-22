@@ -829,16 +829,121 @@ export interface UpdateCustomContentData {
 
 // --- Whiteboards ---
 
-/** Confluence Whiteboard. */
+/**
+ * Allowed values for `WhiteboardCreateRequest.templateKey`.
+ * Mirrors the closed enum (53 values) in the Confluence v2 OpenAPI spec.
+ */
+export type WhiteboardTemplateKey =
+  | '2x2-prioritization'
+  | '4ls-retro'
+  | 'annual-calendar'
+  | 'brainwriting'
+  | 'concept-map'
+  | 'crazy-8s'
+  | 'daily-sync'
+  | 'disruptive-brainstorm'
+  | 'dot-voting'
+  | 'elevator-pitch'
+  | 'flow-chart'
+  | 'gap-analysis'
+  | 'ice-breakers'
+  | 'incident-postmortem'
+  | 'journey-mapping-kit'
+  | 'kanban-board'
+  | 'lean-coffee'
+  | 'network-of-teams'
+  | 'org-chart'
+  | 'pi-planning'
+  | 'prioritization'
+  | 'prioritization-experiment'
+  | 'product-roadmap'
+  | 'product-vision-board'
+  | 'rice'
+  | 'sailboat-retro'
+  | 'service-blueprint'
+  | 'simple-retrospective'
+  | 'sprint-planning'
+  | 'sticky-note-pack'
+  | 'swimlanes'
+  | 'team-formation-guide'
+  | 'timeline'
+  | 'timeline-workflow'
+  | 'user-story-map'
+  | 'workflow'
+  | 'vision-board'
+  | 'venn-diagram'
+  | 'storyboard'
+  | 'action-plan'
+  | 'root-cause-analysis'
+  | 'executive-summary'
+  | 'stakeholder-mapping'
+  | 'annual-calendar-2025-2026'
+  | 'health-monitor'
+  | 'okr-planning'
+  | 'swot-analysis'
+  | 'poker-planning'
+  | 'fishbone-diagram'
+  | 'risk-assessment'
+  | 'bounded-context'
+  | 'hopes-and-fears'
+  | 'swimlane-vertical';
+
+/**
+ * Allowed values for `WhiteboardCreateRequest.locale`.
+ * Mirrors the closed enum (21 values) in the Confluence v2 OpenAPI spec.
+ */
+export type WhiteboardLocale =
+  | 'de-DE'
+  | 'cs-CZ'
+  | 'ko-KR'
+  | 'fr-FR'
+  | 'it-IT'
+  | 'ja-JP'
+  | 'nl-NL'
+  | 'nb-NO'
+  | 'da-DK'
+  | 'sv-SE'
+  | 'fi-FI'
+  | 'ru-RU'
+  | 'pl-PL'
+  | 'tr-TR'
+  | 'hu-HU'
+  | 'en-GB'
+  | 'en-US'
+  | 'pt-BR'
+  | 'zh-CN'
+  | 'zh-TW'
+  | 'es-ES';
+
+/**
+ * Version metadata returned on a `WhiteboardSingle` response.
+ * Matches the `Version` schema in the Confluence v2 OpenAPI spec.
+ */
+export interface WhiteboardVersion {
+  readonly createdAt?: string;
+  readonly message?: string;
+  readonly number?: number;
+  readonly minorEdit?: boolean;
+  readonly authorId?: string;
+}
+
+/**
+ * Confluence Whiteboard — matches the `WhiteboardSingle` schema in
+ * the Confluence v2 OpenAPI spec.
+ */
 export interface Whiteboard {
   readonly id: string;
-  readonly title?: string;
+  readonly type?: string;
   readonly status?: string;
-  readonly spaceId?: string;
+  readonly title?: string;
   readonly parentId?: string;
-  readonly parentType?: string;
+  readonly parentType?: 'page' | 'whiteboard' | 'database' | 'embed' | 'folder';
+  readonly position?: number | null;
   readonly authorId?: string;
+  readonly ownerId?: string;
   readonly createdAt?: string;
+  readonly spaceId?: string;
+  readonly version?: WhiteboardVersion;
   readonly _links?: Record<string, string>;
 }
 
@@ -847,8 +952,8 @@ export interface CreateWhiteboardData {
   readonly spaceId: string;
   readonly title?: string;
   readonly parentId?: string;
-  readonly templateKey?: string;
-  readonly locale?: string;
+  readonly templateKey?: WhiteboardTemplateKey;
+  readonly locale?: WhiteboardLocale;
 }
 
 /** Query parameters for `POST /whiteboards`. */

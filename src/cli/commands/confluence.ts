@@ -12,6 +12,8 @@ import type {
   SpaceRolePrincipalType,
   SpaceRoleType,
   VersionSortOrder,
+  WhiteboardLocale,
+  WhiteboardTemplateKey,
 } from '../../confluence/types.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
@@ -988,13 +990,15 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
   switch (cmd.action) {
     case 'create': {
       const params = opts['private'] === true ? { private: true } : undefined;
+      const templateKey = asEnum(opts['template-key'], WHITEBOARD_TEMPLATE_KEYS, 'template-key');
+      const locale = asEnum(opts['locale'], WHITEBOARD_LOCALES, 'locale');
       return client.whiteboards.create(
         {
           spaceId: requireOpt(opts['space-id'], '--space-id'),
           title: asString(opts['title']),
           parentId: asString(opts['parent-id']),
-          templateKey: asString(opts['template-key']),
-          locale: asString(opts['locale']),
+          ...(templateKey !== undefined ? { templateKey } : {}),
+          ...(locale !== undefined ? { locale } : {}),
         },
         params,
       );
@@ -1224,6 +1228,86 @@ const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [
 ];
 
 const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;
+
+const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [
+  '2x2-prioritization',
+  '4ls-retro',
+  'annual-calendar',
+  'brainwriting',
+  'concept-map',
+  'crazy-8s',
+  'daily-sync',
+  'disruptive-brainstorm',
+  'dot-voting',
+  'elevator-pitch',
+  'flow-chart',
+  'gap-analysis',
+  'ice-breakers',
+  'incident-postmortem',
+  'journey-mapping-kit',
+  'kanban-board',
+  'lean-coffee',
+  'network-of-teams',
+  'org-chart',
+  'pi-planning',
+  'prioritization',
+  'prioritization-experiment',
+  'product-roadmap',
+  'product-vision-board',
+  'rice',
+  'sailboat-retro',
+  'service-blueprint',
+  'simple-retrospective',
+  'sprint-planning',
+  'sticky-note-pack',
+  'swimlanes',
+  'team-formation-guide',
+  'timeline',
+  'timeline-workflow',
+  'user-story-map',
+  'workflow',
+  'vision-board',
+  'venn-diagram',
+  'storyboard',
+  'action-plan',
+  'root-cause-analysis',
+  'executive-summary',
+  'stakeholder-mapping',
+  'annual-calendar-2025-2026',
+  'health-monitor',
+  'okr-planning',
+  'swot-analysis',
+  'poker-planning',
+  'fishbone-diagram',
+  'risk-assessment',
+  'bounded-context',
+  'hopes-and-fears',
+  'swimlane-vertical',
+];
+
+const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [
+  'de-DE',
+  'cs-CZ',
+  'ko-KR',
+  'fr-FR',
+  'it-IT',
+  'ja-JP',
+  'nl-NL',
+  'nb-NO',
+  'da-DK',
+  'sv-SE',
+  'fi-FI',
+  'ru-RU',
+  'pl-PL',
+  'tr-TR',
+  'hu-HU',
+  'en-GB',
+  'en-US',
+  'pt-BR',
+  'zh-CN',
+  'zh-TW',
+  'es-ES',
+];
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;

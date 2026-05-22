@@ -1544,11 +1544,44 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"id": "wb-1"'],
   },
   {
-    name: 'whiteboards get with include-properties flag',
+    name: 'whiteboards get with --include-properties flag',
     argv: ['confluence', 'whiteboards', 'get', 'wb-1', '--include-properties'],
     routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
     expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
     expectStdout: ['"id": "wb-1"'],
+    expectQuery: (query) => {
+      expect(query['include-properties']).toBe('true');
+    },
+  },
+  {
+    name: 'whiteboards get with --include-collaborators flag',
+    argv: ['confluence', 'whiteboards', 'get', 'wb-1', '--include-collaborators'],
+    routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"id": "wb-1"'],
+    expectQuery: (query) => {
+      expect(query['include-collaborators']).toBe('true');
+    },
+  },
+  {
+    name: 'whiteboards get with --include-direct-children flag',
+    argv: ['confluence', 'whiteboards', 'get', 'wb-1', '--include-direct-children'],
+    routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"id": "wb-1"'],
+    expectQuery: (query) => {
+      expect(query['include-direct-children']).toBe('true');
+    },
+  },
+  {
+    name: 'whiteboards get with --include-operations flag',
+    argv: ['confluence', 'whiteboards', 'get', 'wb-1', '--include-operations'],
+    routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"id": "wb-1"'],
+    expectQuery: (query) => {
+      expect(query['include-operations']).toBe('true');
+    },
   },
   {
     name: 'whiteboards delete',
