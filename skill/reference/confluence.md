@@ -18,6 +18,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                                                                                                                                         |
 | `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                                                                                                                                                  |
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                    |
+| `embeds`                | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                             |
 | `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                             |
 | `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                         |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -595,6 +596,62 @@ atlas confluence databases create-property db-1 --key feature-flags --value '{"b
 atlas confluence databases get-property db-1 --property-id prop-1
 atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
 atlas confluence databases delete-property db-1 --property-id prop-1
+```
+
+## `embeds`
+
+Embeds (Smart Links in the content tree) wrap an external URL as a first-class v2 hierarchy node alongside pages, whiteboards, databases, and folders. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
+
+| Action            | Positional  | Required flags                                          | Optional flags                                                                                         |
+| ----------------- | ----------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `create`          | —           | `--space-id`                                            | `--title`, `--parent-id`, `--embed-url`                                                                |
+| `get`             | `<embedId>` | —                                                       | `--include-collaborators`, `--include-direct-children`, `--include-operations`, `--include-properties` |
+| `delete`          | `<embedId>` | —                                                       | —                                                                                                      |
+| `ancestors`       | `<embedId>` | —                                                       | `--limit`                                                                                              |
+| `descendants`     | `<embedId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                       |
+| `direct-children` | `<embedId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                        |
+| `operations`      | `<embedId>` | —                                                       | —                                                                                                      |
+| `list-properties` | `<embedId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
+| `create-property` | `<embedId>` | `--key`, `--value`                                      | —                                                                                                      |
+| `get-property`    | `<embedId>` | `--property-id`                                         | —                                                                                                      |
+| `update-property` | `<embedId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `delete-property` | `<embedId>` | `--property-id`                                         | —                                                                                                      |
+
+- `--embed-url` on `create` is optional; omit it to create an embed without an attached URL (the server allows the URL to be set later via update flows on the broader content tree).
+- `--depth` on `descendants` accepts positive integers (server-validated; default 2).
+- `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
+- `--sort` on `list-properties` accepts `key` or `-key`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`, `databases create-property`, and `folders create-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<embedId>`.
+- Embeds have no classification-level endpoints — unlike `databases` / `whiteboards`, the `/embeds` surface does not expose `get`/`update`/`reset-classification-level` (matches `folders`).
+- `delete` removes the embed (recoverable from the space trash via standard Confluence recovery flow); there is no purge flag on this endpoint.
+
+```sh
+# Create an embed at the space root pointing at an external URL
+atlas confluence embeds create --space-id 654321 --title "Demo Video" --embed-url https://example.com/video
+
+# Create an embed nested under a parent page / folder
+atlas confluence embeds create --space-id 654321 --title "Spec" --parent-id 789 --embed-url https://example.com/spec
+
+# Read an embed with everything inlined
+atlas confluence embeds get embed-1 --include-properties --include-operations
+
+# Walk the descendant tree
+atlas confluence embeds descendants embed-1 --depth 3 --limit 50
+
+# Sort direct children by most-recently modified
+atlas confluence embeds direct-children embed-1 --sort=-modified-date
+
+# Permitted operations
+atlas confluence embeds operations embed-1
+
+# Content properties
+atlas confluence embeds list-properties embed-1
+atlas confluence embeds create-property embed-1 --key feature-flags --value '{"beta":true}'
+atlas confluence embeds get-property embed-1 --property-id prop-1
+atlas confluence embeds update-property embed-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence embeds delete-property embed-1 --property-id prop-1
 ```
 
 ## `folders`

@@ -67,6 +67,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   content: 'executeContent',
   'data-policies': 'executeDataPolicies',
   databases: 'executeDatabases',
+  embeds: 'executeEmbeds',
   folders: 'executeFolders',
   'footer-comments': 'executeFooterComments',
   'space-permissions': 'executeSpacePermissions',

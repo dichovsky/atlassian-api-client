@@ -310,6 +310,52 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  embed: {
+    id: 'embed-1',
+    type: 'embed',
+    status: 'current',
+    title: 'E2E Embed',
+    spaceId: '654321',
+    embedUrl: 'https://example.com/demo',
+    version: { number: 1 },
+  },
+  embedAncestors: {
+    results: [
+      { id: 'ancestor-1', type: 'page' },
+      { id: 'ancestor-2', type: 'embed' },
+    ],
+  },
+  embedDescendants: {
+    results: [{ id: 'desc-1', type: 'page', title: 'Nested Page', depth: 1 }],
+    _links: { next: null },
+  },
+  embedChildren: {
+    results: [{ id: 'child-1', type: 'page', title: 'Direct Child' }],
+    _links: { next: null },
+  },
+  embedOperations: {
+    operations: [
+      { operation: 'read', targetType: 'embed' },
+      { operation: 'update', targetType: 'embed' },
+    ],
+  },
+  embedProperty: {
+    id: 'prop-1',
+    key: 'feature-flags',
+    value: { beta: true },
+    version: { number: 3 },
+  },
+  embedPropertyList: {
+    results: [
+      {
+        id: 'prop-1',
+        key: 'feature-flags',
+        value: { beta: true },
+        version: { number: 3 },
+      },
+    ],
+    _links: { next: null },
+  },
   folder: {
     id: 'folder-1',
     type: 'folder',

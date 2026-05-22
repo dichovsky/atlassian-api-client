@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "001aeb172bc1c62340a9374b0eae91c694f167d5af2c16ad2b7e08c1726370bd",
+  "sourceHash": "8e2b6a6d284a6a3393d34a004829ad14f69e32ea30a72d7ba084afeaafeb2f31",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -391,7 +391,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 31,
+      "line": 32,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -575,6 +575,15 @@
       "line": 1653,
       "signature": "export interface CreateDatabaseParams { readonly private?: boolean; }",
       "jsdoc": "Query parameters for `POST /databases`.",
+      "typeOnly": true
+    },
+    {
+      "name": "CreateEmbedData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2194,
+      "signature": "export interface CreateEmbedData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; readon…",
+      "jsdoc": "Request body for `POST /embeds`.",
       "typeOnly": true
     },
     {
@@ -861,6 +870,69 @@
       "typeOnly": true
     },
     {
+      "name": "Embed",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2168,
+      "signature": "export interface Embed { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string;…",
+      "jsdoc": "Confluence v2 embed (Smart Link in the content tree) — matches the `SmartLinkSingle` schema in the Confluence v2 OpenAPI spec.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedAncestor",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2213,
+      "signature": "export interface EmbedAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fo…",
+      "jsdoc": "Single ancestor entry returned by `GET /embeds/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedAncestorsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2231,
+      "signature": "export interface EmbedAncestorsResponse { readonly results: readonly EmbedAncestor[]; }",
+      "jsdoc": "Response shape for `GET /embeds/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedChild",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2254,
+      "signature": "export interface EmbedChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; re…",
+      "jsdoc": "Direct child entry returned by `GET /embeds/{id}/direct-children`.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedDescendant",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2236,
+      "signature": "export interface EmbedDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: strin…",
+      "jsdoc": "Descendant entry returned by `GET /embeds/{id}/descendants`.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedOperation",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2278,
+      "signature": "export interface EmbedOperation { readonly operation?: string; readonly targetType?: string; }",
+      "jsdoc": "Permitted operation entry returned by `GET /embeds/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "EmbedOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2284,
+      "signature": "export interface EmbedOperationsResponse { readonly operations?: readonly EmbedOperation[]; }",
+      "jsdoc": "Response shape for `GET /embeds/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
       "name": "Field",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
@@ -1088,6 +1160,15 @@
       "line": 1747,
       "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
       "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
+      "typeOnly": true
+    },
+    {
+      "name": "GetEmbedParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2205,
+      "signature": "export interface GetEmbedParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: boole…",
+      "jsdoc": "Parameters for `GET /embeds/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
     },
     {
@@ -1575,6 +1656,33 @@
       "line": 1755,
       "signature": "export interface ListDatabasePropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cursor?:…",
       "jsdoc": "Parameters for listing content properties on a database.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListEmbedAncestorsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2219,
+      "signature": "export interface ListEmbedAncestorsParams { readonly limit?: number; }",
+      "jsdoc": "Parameters for listing embed ancestors.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListEmbedChildrenParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2271,
+      "signature": "export interface ListEmbedChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSor…",
+      "jsdoc": "Parameters for listing direct children of an embed.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListEmbedDescendantsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 2247,
+      "signature": "export interface ListEmbedDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string…",
+      "jsdoc": "Parameters for listing embed descendants (cursor-paginated).",
       "typeOnly": true
     },
     {
@@ -2780,384 +2888,390 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 82,
+          "line": 84,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 131,
+          "line": 133,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 145,
+          "line": 147,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 403,
+          "line": 405,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 488,
+          "line": 490,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseAttachmentStatuses",
           "kind": "function",
-          "line": 640,
+          "line": 642,
           "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
           "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags. Duplicate tokens are collapsed so the wire format never carries `status=a,a`."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 656,
+          "line": 658,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 677,
+          "line": 679,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 739,
+          "line": 741,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 745,
+          "line": 747,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 777,
+          "line": 779,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 785,
+          "line": 787,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 797,
+          "line": 799,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 816,
+          "line": 818,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 845,
+          "line": 847,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 873,
+          "line": 875,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 882,
+          "line": 884,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 899,
+          "line": 901,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 911,
+          "line": 913,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 963,
+          "line": 965,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 965,
+          "line": 967,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 978,
+          "line": 980,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 989,
+          "line": 991,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1025,
+          "line": 1027,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1027,
+          "line": 1029,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1051,
+          "line": 1053,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1062,
+          "line": 1064,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1080,
+          "line": 1082,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeEmbeds",
+          "kind": "function",
+          "line": 1188,
+          "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 1186,
+          "line": 1275,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 1272,
+          "line": 1361,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 1363,
+          "line": 1452,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 1479,
+          "line": 1568,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 1484,
+          "line": 1573,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 1489,
+          "line": 1578,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 1493,
+          "line": 1582,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 1506,
+          "line": 1595,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 1520,
+          "line": 1609,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 1538,
+          "line": 1627,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 1562,
+          "line": 1651,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1576,
+          "line": 1665,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 1589,
+          "line": 1678,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1591,
+          "line": 1680,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 1598,
+          "line": 1687,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1600,
+          "line": 1689,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 1609,
+          "line": 1698,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1618,
+          "line": 1707,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 1625,
+          "line": 1714,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1627,
+          "line": 1716,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1629,
+          "line": 1718,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1638,
+          "line": 1727,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1649,
+          "line": 1738,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 1651,
+          "line": 1740,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 1707,
+          "line": 1796,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1731,
+          "line": 1820,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1733,
+          "line": 1822,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 1744,
+          "line": 1833,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 1752,
+          "line": 1841,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 1759,
+          "line": 1848,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 1761,
+          "line": 1850,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 1769,
+          "line": 1858,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1779,
+          "line": 1868,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 1795,
+          "line": 1884,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         }
@@ -3556,13 +3670,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 158,
+          "line": 164,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 181,
+          "line": 187,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -3723,7 +3837,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 144,
+          "line": 146,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -3834,7 +3948,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 31,
+          "line": 32,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -3842,132 +3956,137 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 33
+              "line": 34
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 35
+              "line": 36
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 37
+              "line": 38
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 39
+              "line": 40
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 41
+              "line": 42
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 43
+              "line": 44
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 45
+              "line": 46
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 47
+              "line": 48
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 49
+              "line": 50
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 51
+              "line": 52
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 53
+              "line": 54
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 55
+              "line": 56
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 57
+              "line": 58
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 59
+              "line": 60
+            },
+            {
+              "name": "embeds",
+              "kind": "property",
+              "line": 62
             },
             {
               "name": "folders",
               "kind": "property",
-              "line": 61
+              "line": 64
             },
             {
               "name": "footerComments",
               "kind": "property",
-              "line": 66
+              "line": 69
             },
             {
               "name": "inlineComments",
               "kind": "property",
-              "line": 73
+              "line": 76
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 75
+              "line": 78
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 77
+              "line": 80
             },
             {
               "name": "spaceRoles",
               "kind": "property",
-              "line": 79
+              "line": 82
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 81
+              "line": 84
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 83
+              "line": 86
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 85
+              "line": 88
             }
           ]
         }
@@ -3987,6 +4106,7 @@
         "./resources/custom-content.js",
         "./resources/data-policies.js",
         "./resources/databases.js",
+        "./resources/embeds.js",
         "./resources/folders.js",
         "./resources/footer-comments.js",
         "./resources/inline-comments.js",
@@ -4135,6 +4255,17 @@
             {
               "exported": "DatabasesResource",
               "original": "DatabasesResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/embeds.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "EmbedsResource",
+              "original": "EmbedsResource"
             }
           ]
         },
@@ -4808,6 +4939,54 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "Embed",
+              "original": "Embed"
+            },
+            {
+              "exported": "CreateEmbedData",
+              "original": "CreateEmbedData"
+            },
+            {
+              "exported": "GetEmbedParams",
+              "original": "GetEmbedParams"
+            },
+            {
+              "exported": "EmbedAncestor",
+              "original": "EmbedAncestor"
+            },
+            {
+              "exported": "EmbedAncestorsResponse",
+              "original": "EmbedAncestorsResponse"
+            },
+            {
+              "exported": "ListEmbedAncestorsParams",
+              "original": "ListEmbedAncestorsParams"
+            },
+            {
+              "exported": "EmbedDescendant",
+              "original": "EmbedDescendant"
+            },
+            {
+              "exported": "ListEmbedDescendantsParams",
+              "original": "ListEmbedDescendantsParams"
+            },
+            {
+              "exported": "EmbedChild",
+              "original": "EmbedChild"
+            },
+            {
+              "exported": "ListEmbedChildrenParams",
+              "original": "ListEmbedChildrenParams"
+            },
+            {
+              "exported": "EmbedOperation",
+              "original": "EmbedOperation"
+            },
+            {
+              "exported": "EmbedOperationsResponse",
+              "original": "EmbedOperationsResponse"
             },
             {
               "exported": "CommentSortOrder",
@@ -6032,6 +6211,107 @@
               "name": "deleteProperty",
               "kind": "method",
               "line": 342
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
+        "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
+      "path": "src/confluence/resources/embeds.ts",
+      "symbols": [
+        {
+          "name": "EmbedsResource",
+          "kind": "class",
+          "line": 47,
+          "exported": true,
+          "signature": "export class EmbedsResource",
+          "jsdoc": "Resource for Confluence v2 embeds (Smart Links in the content tree).",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 48
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 64
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 78
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 110
+            },
+            {
+              "name": "listAncestors",
+              "kind": "method",
+              "line": 129
+            },
+            {
+              "name": "listDescendants",
+              "kind": "method",
+              "line": 150
+            },
+            {
+              "name": "listDescendantsAll",
+              "kind": "method",
+              "line": 169
+            },
+            {
+              "name": "listDirectChildren",
+              "kind": "method",
+              "line": 189
+            },
+            {
+              "name": "listDirectChildrenAll",
+              "kind": "method",
+              "line": 208
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 230
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 245
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 265
+            },
+            {
+              "name": "createProperty",
+              "kind": "method",
+              "line": 286
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 300
+            },
+            {
+              "name": "updateProperty",
+              "kind": "method",
+              "line": 317
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 335
             }
           ]
         }
@@ -8662,6 +8942,102 @@
           "exported": true,
           "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
           "jsdoc": "Response shape for `GET /folders/{id}/operations`."
+        },
+        {
+          "name": "Embed",
+          "kind": "interface",
+          "line": 2168,
+          "exported": true,
+          "signature": "export interface Embed { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string;…",
+          "jsdoc": "Confluence v2 embed (Smart Link in the content tree) — matches the `SmartLinkSingle` schema in the Confluence v2 OpenAPI spec."
+        },
+        {
+          "name": "CreateEmbedData",
+          "kind": "interface",
+          "line": 2194,
+          "exported": true,
+          "signature": "export interface CreateEmbedData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; readon…",
+          "jsdoc": "Request body for `POST /embeds`."
+        },
+        {
+          "name": "GetEmbedParams",
+          "kind": "interface",
+          "line": 2205,
+          "exported": true,
+          "signature": "export interface GetEmbedParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: boole…",
+          "jsdoc": "Parameters for `GET /embeds/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
+        },
+        {
+          "name": "EmbedAncestor",
+          "kind": "interface",
+          "line": 2213,
+          "exported": true,
+          "signature": "export interface EmbedAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'fo…",
+          "jsdoc": "Single ancestor entry returned by `GET /embeds/{id}/ancestors`."
+        },
+        {
+          "name": "ListEmbedAncestorsParams",
+          "kind": "interface",
+          "line": 2219,
+          "exported": true,
+          "signature": "export interface ListEmbedAncestorsParams { readonly limit?: number; }",
+          "jsdoc": "Parameters for listing embed ancestors."
+        },
+        {
+          "name": "EmbedAncestorsResponse",
+          "kind": "interface",
+          "line": 2231,
+          "exported": true,
+          "signature": "export interface EmbedAncestorsResponse { readonly results: readonly EmbedAncestor[]; }",
+          "jsdoc": "Response shape for `GET /embeds/{id}/ancestors`."
+        },
+        {
+          "name": "EmbedDescendant",
+          "kind": "interface",
+          "line": 2236,
+          "exported": true,
+          "signature": "export interface EmbedDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: strin…",
+          "jsdoc": "Descendant entry returned by `GET /embeds/{id}/descendants`."
+        },
+        {
+          "name": "ListEmbedDescendantsParams",
+          "kind": "interface",
+          "line": 2247,
+          "exported": true,
+          "signature": "export interface ListEmbedDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: string…",
+          "jsdoc": "Parameters for listing embed descendants (cursor-paginated)."
+        },
+        {
+          "name": "EmbedChild",
+          "kind": "interface",
+          "line": 2254,
+          "exported": true,
+          "signature": "export interface EmbedChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; re…",
+          "jsdoc": "Direct child entry returned by `GET /embeds/{id}/direct-children`."
+        },
+        {
+          "name": "ListEmbedChildrenParams",
+          "kind": "interface",
+          "line": 2271,
+          "exported": true,
+          "signature": "export interface ListEmbedChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSor…",
+          "jsdoc": "Parameters for listing direct children of an embed."
+        },
+        {
+          "name": "EmbedOperation",
+          "kind": "interface",
+          "line": 2278,
+          "exported": true,
+          "signature": "export interface EmbedOperation { readonly operation?: string; readonly targetType?: string; }",
+          "jsdoc": "Permitted operation entry returned by `GET /embeds/{id}/operations`."
+        },
+        {
+          "name": "EmbedOperationsResponse",
+          "kind": "interface",
+          "line": 2284,
+          "exported": true,
+          "signature": "export interface EmbedOperationsResponse { readonly operations?: readonly EmbedOperation[]; }",
+          "jsdoc": "Response shape for `GET /embeds/{id}/operations`."
         }
       ]
     },
@@ -11184,6 +11560,54 @@
             {
               "exported": "FolderOperationsResponse",
               "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "Embed",
+              "original": "Embed"
+            },
+            {
+              "exported": "CreateEmbedData",
+              "original": "CreateEmbedData"
+            },
+            {
+              "exported": "GetEmbedParams",
+              "original": "GetEmbedParams"
+            },
+            {
+              "exported": "EmbedAncestor",
+              "original": "EmbedAncestor"
+            },
+            {
+              "exported": "EmbedAncestorsResponse",
+              "original": "EmbedAncestorsResponse"
+            },
+            {
+              "exported": "ListEmbedAncestorsParams",
+              "original": "ListEmbedAncestorsParams"
+            },
+            {
+              "exported": "EmbedDescendant",
+              "original": "EmbedDescendant"
+            },
+            {
+              "exported": "ListEmbedDescendantsParams",
+              "original": "ListEmbedDescendantsParams"
+            },
+            {
+              "exported": "EmbedChild",
+              "original": "EmbedChild"
+            },
+            {
+              "exported": "ListEmbedChildrenParams",
+              "original": "ListEmbedChildrenParams"
+            },
+            {
+              "exported": "EmbedOperation",
+              "original": "EmbedOperation"
+            },
+            {
+              "exported": "EmbedOperationsResponse",
+              "original": "EmbedOperationsResponse"
             },
             {
               "exported": "CommentSortOrder",

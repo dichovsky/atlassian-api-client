@@ -105,6 +105,8 @@ const GLOBAL_OPTIONS = {
   // whiteboards-specific options
   'template-key': { type: 'string' as const },
   locale: { type: 'string' as const },
+  // embeds-specific options
+  'embed-url': { type: 'string' as const },
   // boards-specific options
   'filter-id': { type: 'string' as const },
   feature: { type: 'string' as const },

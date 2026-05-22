@@ -73,6 +73,7 @@ RESOURCES:
   content                convert-ids-to-types
   data-policies          get-metadata, list-spaces
   databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
+  embeds                 create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
   folders                create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
   footer-comments        list, get, update, children, likes-count, likes-users, operations, versions, version
   space-permissions      list
@@ -101,6 +102,11 @@ EXAMPLES:
   atlas confluence databases descendants 456 --depth 3 --limit 50
   atlas confluence databases list-properties 456
   atlas confluence databases update-classification-level 456 --level-id cl-1
+  atlas confluence embeds create --space-id 123 --title "Demo" --embed-url https://example.com
+  atlas confluence embeds get embed-1 --include-direct-children
+  atlas confluence embeds descendants embed-1 --depth 3 --limit 50
+  atlas confluence embeds direct-children embed-1 --sort=-modified-date
+  atlas confluence embeds list-properties embed-1
   atlas confluence folders create --space-id 123 --title "Drafts" --parent-id 456
   atlas confluence folders get 789 --include-direct-children
   atlas confluence folders descendants 789 --depth 3 --limit 50

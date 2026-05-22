@@ -56,6 +56,8 @@ export async function executeConfluenceCommand(
       return executeDataPolicies(client, cmd);
     case 'databases':
       return executeDatabases(client, cmd);
+    case 'embeds':
+      return executeEmbeds(client, cmd);
     case 'folders':
       return executeFolders(client, cmd);
     case 'footer-comments':
@@ -1179,6 +1181,93 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown databases action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property`,
+      );
+  }
+}
+
+async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create':
+      return client.embeds.create({
+        spaceId: requireOpt(opts['space-id'], '--space-id'),
+        title: asString(opts['title']),
+        parentId: asString(opts['parent-id']),
+        embedUrl: asString(opts['embed-url']),
+      });
+    case 'get':
+      return client.embeds.get(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+        'include-direct-children': opts['include-direct-children'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+      });
+    case 'delete':
+      await client.embeds.delete(requireArg(cmd.positionalArgs[0], 'embed ID'));
+      return { deleted: true };
+    case 'ancestors':
+      return client.embeds.listAncestors(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'descendants':
+      return client.embeds.listDescendants(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        depth: asPositiveInt(opts['depth'], '--depth'),
+        cursor: asString(opts['cursor']),
+      });
+    case 'direct-children': {
+      const sort = asEnum(opts['sort'], CONTENT_SORT_ORDERS, 'sort');
+      return client.embeds.listDirectChildren(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        ...(sort !== undefined ? { sort } : {}),
+      });
+    }
+    case 'operations':
+      return client.embeds.getOperations(requireArg(cmd.positionalArgs[0], 'embed ID'));
+    case 'list-properties':
+      return client.embeds.listProperties(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.embeds.createProperty(requireArg(cmd.positionalArgs[0], 'embed ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.embeds.getProperty(
+        requireArg(cmd.positionalArgs[0], 'embed ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.embeds.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'embed ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.embeds.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'embed ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown embeds action: ${cmd.action}. Actions: create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property`,
       );
   }
 }
