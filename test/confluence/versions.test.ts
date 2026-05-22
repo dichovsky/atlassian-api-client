@@ -137,6 +137,20 @@ describe('VersionsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
 
+    it('calls GET /blogposts/{blogPostId}/versions with blog-post specific params', async () => {
+      const payload = { results: [], _links: {} };
+      transport.respondWith(payload);
+      const params = {
+        'body-format': 'atlas_doc_format' as const,
+        sort: 'modified-date' as const,
+        limit: 10,
+      };
+
+      await resource.listForBlogPost('blog-1', params);
+
+      expect(transport.lastCall?.options.query).toMatchObject(params);
+    });
+
     it('throws RangeError for invalid limit', async () => {
       await expect(resource.listForBlogPost('blog-1', { limit: -1 })).rejects.toThrow(RangeError);
       expect(transport.calls).toHaveLength(0);
@@ -301,6 +315,21 @@ describe('VersionsResource', () => {
       }
 
       expect(transport.calls[0]?.options.query).toMatchObject({ limit: 5 });
+    });
+
+    it('passes blog-post specific params to the first request', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const params = {
+        'body-format': 'storage' as const,
+        sort: '-modified-date' as const,
+        limit: 8,
+      };
+
+      for await (const _ of resource.listAllForBlogPost('blog-1', params)) {
+        /* consume */
+      }
+
+      expect(transport.calls[0]?.options.query).toMatchObject(params);
     });
 
     it('propagates the cursor on subsequent requests', async () => {
