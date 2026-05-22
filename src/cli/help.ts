@@ -71,6 +71,7 @@ RESOURCES:
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
   content                convert-ids-to-types
+  custom-content         list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, versions, version, attachments, children, footer-comments, labels, operations
   data-policies          get-metadata, list-spaces
   databases              create, get, delete, ancestors, descendants, direct-children, operations, get-classification-level, update-classification-level, reset-classification-level, list-properties, create-property, get-property, update-property, delete-property
   embeds                 create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
@@ -95,6 +96,18 @@ EXAMPLES:
   atlas confluence comments update-property 77777 --property-id prop-1 --key reviewed --value false --version-number 2
   atlas confluence classification-levels list
   atlas confluence content convert-ids-to-types --ids 12345,67890
+  atlas confluence custom-content list --type ai.atlassian.collection --space-id 654321
+  atlas confluence custom-content get cc-1 --body-format storage
+  atlas confluence custom-content create --type ai.atlassian.collection --space-id 654321 --title "AI Notes" --body "<p>hi</p>"
+  atlas confluence custom-content update cc-1 --type ai.atlassian.collection --version-number 2 --title "Renamed"
+  atlas confluence custom-content list-properties cc-1 --sort key
+  atlas confluence custom-content create-property cc-1 --key reviewed --value true
+  atlas confluence custom-content versions cc-1 --sort=-modified-date
+  atlas confluence custom-content attachments cc-1 --media-type image/png
+  atlas confluence custom-content children cc-1 --limit 50
+  atlas confluence custom-content footer-comments cc-1 --sort=-created-date
+  atlas confluence custom-content labels cc-1 --prefix global
+  atlas confluence custom-content operations cc-1
   atlas confluence data-policies get-metadata
   atlas confluence data-policies list-spaces --keys ENG,OPS --limit 50
   atlas confluence databases create --space-id 123 --title "Inventory" --private

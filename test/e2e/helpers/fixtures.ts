@@ -620,6 +620,84 @@ export const confluenceFixtures = {
     createdAt: '2026-05-21T00:00:00Z',
     minorEdit: false,
   },
+  customContentItem: {
+    id: 'cc-1',
+    type: 'ai.atlassian.collection',
+    status: 'current',
+    title: 'CC One',
+    spaceId: '654321',
+  },
+  customContentList: {
+    results: [
+      {
+        id: 'cc-1',
+        type: 'ai.atlassian.collection',
+        status: 'current',
+        title: 'CC One',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  customContentProperty: {
+    id: 'cc-prop-1',
+    key: 'reviewed',
+    value: true,
+    version: { number: 1 },
+  },
+  customContentPropertyList: {
+    results: [{ id: 'cc-prop-1', key: 'reviewed', value: true, version: { number: 1 } }],
+    _links: { next: null },
+  },
+  customContentVersionsList: {
+    results: [
+      { number: 1, message: 'created', authorId: 'acc-1', createdAt: '2026-05-20T00:00:00Z' },
+      { number: 2, message: 'edited', authorId: 'acc-1', createdAt: '2026-05-21T00:00:00Z' },
+    ],
+    _links: { next: null },
+  },
+  customContentVersionDetail: {
+    number: 2,
+    authorId: 'acc-1',
+    message: 'edited',
+    createdAt: '2026-05-21T00:00:00Z',
+    minorEdit: false,
+  },
+  customContentAttachmentsList: {
+    results: [
+      {
+        id: 'att-1',
+        title: 'image.png',
+        mediaType: 'image/png',
+        fileSize: 1024,
+        status: 'current',
+      },
+    ],
+    _links: { next: null },
+  },
+  customContentChildrenList: {
+    results: [
+      {
+        id: 'cc-child-1',
+        status: 'current',
+        title: 'Child One',
+        type: 'ai.atlassian.item',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  customContentFooterCommentList: {
+    results: [{ id: 'fc-1', status: 'current', title: 'Reply' }],
+    _links: { next: null },
+  },
+  customContentLabelsList: {
+    results: [{ id: 'lbl-1', name: 'global-tag', prefix: 'global' }],
+    _links: { next: null },
+  },
+  customContentOperations: {
+    operations: [{ operation: 'read', targetType: 'custom-content' }],
+  },
 };
 
 export const jiraFixtures = {

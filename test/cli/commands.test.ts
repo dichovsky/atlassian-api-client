@@ -122,6 +122,25 @@ const confluenceClassificationLevelsMock = {
 const confluenceContentMock = {
   convertIdsToTypes: vi.fn(),
 };
+const confluenceCustomContentMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  listVersions: vi.fn(),
+  getVersion: vi.fn(),
+  listAttachments: vi.fn(),
+  listChildren: vi.fn(),
+  listFooterComments: vi.fn(),
+  listLabels: vi.fn(),
+  getOperations: vi.fn(),
+};
 const confluenceDataPoliciesMock = {
   getMetadata: vi.fn(),
   listSpaces: vi.fn(),
@@ -241,6 +260,7 @@ vi.mock('../../src/confluence/client.js', () => {
       app: confluenceAppMock,
       classificationLevels: confluenceClassificationLevelsMock,
       content: confluenceContentMock,
+      customContent: confluenceCustomContentMock,
       dataPolicies: confluenceDataPoliciesMock,
       databases: confluenceDatabasesMock,
       embeds: confluenceEmbedsMock,
@@ -2660,6 +2680,588 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('content', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown content action',
       );
+    });
+  });
+
+  // ── custom-content ────────────────────────────────────────────────────────
+
+  describe('custom-content resource', () => {
+    // lifecycle
+    it('custom-content list forwards type/space-id/sort/limit with kebab-case wire keys', async () => {
+      confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'list', [], {
+        type: 'ai.atlassian.collection',
+        'space-id': 'sp-1',
+        sort: 'created-date',
+        limit: '25',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      const args = confluenceCustomContentMock.list.mock.calls.at(-1)?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(args).toMatchObject({
+        type: 'ai.atlassian.collection',
+        'space-id': 'sp-1',
+        sort: 'created-date',
+        limit: 25,
+      });
+      expect(args).not.toHaveProperty('spaceId');
+      expect(args).not.toHaveProperty('pageId');
+      expect(args).not.toHaveProperty('blogPostId');
+      expect(args).not.toHaveProperty('status');
+    });
+
+    it('custom-content list rejects invalid --body-format with allowlist message', async () => {
+      const parsed = cmd('custom-content', 'list', [], { 'body-format': 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--body-format must be one of: raw, storage, atlas_doc_format, got: bogus/,
+      );
+      expect(confluenceCustomContentMock.list).not.toHaveBeenCalled();
+    });
+
+    it('custom-content list rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('custom-content', 'list', [], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: id, -id, created-date, -created-date, modified-date, -modified-date, title, -title, got: bogus/,
+      );
+      expect(confluenceCustomContentMock.list).not.toHaveBeenCalled();
+    });
+
+    it('custom-content list with --body-format forwards the flag', async () => {
+      confluenceCustomContentMock.list.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(
+        cmd('custom-content', 'list', [], { 'body-format': 'storage' }),
+        GLOBALS,
+      );
+      const args = confluenceCustomContentMock.list.mock.calls.at(-1)?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(args['body-format']).toBe('storage');
+    });
+
+    it('custom-content get forwards body-format + version-number', async () => {
+      confluenceCustomContentMock.get.mockResolvedValue({ id: 'cc-1' });
+      const parsed = cmd('custom-content', 'get', ['cc-1'], {
+        'body-format': 'storage',
+        'version-number': '3',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.get).toHaveBeenCalledWith('cc-1', {
+        'body-format': 'storage',
+        version: 3,
+        'include-labels': undefined,
+        'include-properties': undefined,
+        'include-operations': undefined,
+        'include-versions': undefined,
+        'include-version': undefined,
+        'include-collaborators': undefined,
+      });
+    });
+
+    it('custom-content get forwards all include-* flags when set', async () => {
+      confluenceCustomContentMock.get.mockResolvedValue({ id: 'cc-1' });
+      const parsed = cmd('custom-content', 'get', ['cc-1'], {
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.get).toHaveBeenCalledWith('cc-1', {
+        version: undefined,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
+    });
+
+    it('custom-content get accepts the extended single-item body-format vocabulary', async () => {
+      confluenceCustomContentMock.get.mockResolvedValue({ id: 'cc-1' });
+      await executeConfluenceCommand(
+        cmd('custom-content', 'get', ['cc-1'], { 'body-format': 'export_view' }),
+        GLOBALS,
+      );
+      const args = confluenceCustomContentMock.get.mock.calls.at(-1)?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(args['body-format']).toBe('export_view');
+    });
+
+    it('custom-content get rejects invalid --body-format against the extended enum', async () => {
+      const parsed = cmd('custom-content', 'get', ['cc-1'], { 'body-format': 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--body-format must be one of: raw, storage, atlas_doc_format, view, export_view, anonymous_export_view, got: bogus/,
+      );
+    });
+
+    it('custom-content get throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('custom-content', 'get', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: custom content ID');
+    });
+
+    it('custom-content create forwards type/title/body and all containers', async () => {
+      confluenceCustomContentMock.create.mockResolvedValue({ id: 'cc-new' });
+      const parsed = cmd('custom-content', 'create', [], {
+        type: 'ai.atlassian.collection',
+        'space-id': 'sp-1',
+        title: 'New CC',
+        body: '<p>hi</p>',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.create).toHaveBeenCalledWith({
+        type: 'ai.atlassian.collection',
+        title: 'New CC',
+        body: { representation: 'storage', value: '<p>hi</p>' },
+        spaceId: 'sp-1',
+        pageId: undefined,
+        blogPostId: undefined,
+        customContentId: undefined,
+      });
+    });
+
+    it('custom-content create forwards --custom-content-id container', async () => {
+      confluenceCustomContentMock.create.mockResolvedValue({ id: 'cc-nested' });
+      const parsed = cmd('custom-content', 'create', [], {
+        type: 'ai.atlassian.collection',
+        'custom-content-id': 'cc-parent',
+        title: 'Nested',
+        body: '<p>nested</p>',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      const args = confluenceCustomContentMock.create.mock.calls.at(-1)?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(args.customContentId).toBe('cc-parent');
+    });
+
+    it('custom-content create throws when --type is missing', async () => {
+      const parsed = cmd('custom-content', 'create', [], {
+        'space-id': 'sp-1',
+        title: 't',
+        body: '<p>b</p>',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--type');
+    });
+
+    it('custom-content create throws when --title is missing (spec: required)', async () => {
+      const parsed = cmd('custom-content', 'create', [], {
+        type: 't',
+        'space-id': 'sp-1',
+        body: '<p>b</p>',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
+    });
+
+    it('custom-content create throws when --body is missing (spec: required)', async () => {
+      const parsed = cmd('custom-content', 'create', [], {
+        type: 't',
+        'space-id': 'sp-1',
+        title: 't',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
+    it('custom-content update forwards id/type/title/body/version + status=current', async () => {
+      confluenceCustomContentMock.update.mockResolvedValue({ id: 'cc-1' });
+      const parsed = cmd('custom-content', 'update', ['cc-1'], {
+        type: 'ai.atlassian.collection',
+        'version-number': '2',
+        title: 'Renamed',
+        body: '<p>updated</p>',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.update).toHaveBeenCalledWith('cc-1', {
+        id: 'cc-1',
+        type: 'ai.atlassian.collection',
+        status: 'current',
+        title: 'Renamed',
+        body: { representation: 'storage', value: '<p>updated</p>' },
+        version: { number: 2 },
+        spaceId: undefined,
+        pageId: undefined,
+        blogPostId: undefined,
+        customContentId: undefined,
+      });
+    });
+
+    it('custom-content update throws when --title is missing (spec: required)', async () => {
+      const parsed = cmd('custom-content', 'update', ['cc-1'], {
+        type: 't',
+        'version-number': '2',
+        body: '<p>b</p>',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
+    });
+
+    it('custom-content update throws when --body is missing (spec: required)', async () => {
+      const parsed = cmd('custom-content', 'update', ['cc-1'], {
+        type: 't',
+        'version-number': '2',
+        title: 't',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
+    it('custom-content update throws on invalid --version-number', async () => {
+      const parsed = cmd('custom-content', 'update', ['cc-1'], {
+        type: 't',
+        title: 't',
+        body: '<p>b</p>',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('custom-content delete calls delete and returns { deleted: true }', async () => {
+      confluenceCustomContentMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeConfluenceCommand(
+        cmd('custom-content', 'delete', ['cc-1']),
+        GLOBALS,
+      );
+
+      expect(confluenceCustomContentMock.delete).toHaveBeenCalledWith('cc-1', undefined);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('custom-content delete forwards --purge', async () => {
+      confluenceCustomContentMock.delete.mockResolvedValue(undefined);
+
+      await executeConfluenceCommand(
+        cmd('custom-content', 'delete', ['cc-1'], { purge: true }),
+        GLOBALS,
+      );
+
+      expect(confluenceCustomContentMock.delete).toHaveBeenCalledWith('cc-1', { purge: true });
+    });
+
+    // properties
+    it('custom-content list-properties forwards key, sort, cursor, limit', async () => {
+      confluenceCustomContentMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'list-properties', ['cc-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listProperties).toHaveBeenCalledWith(
+        'cc-1',
+        expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('custom-content list-properties rejects invalid --sort', async () => {
+      const parsed = cmd('custom-content', 'list-properties', ['cc-1'], { sort: '-name' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: key, -key, got: -name',
+      );
+    });
+
+    it('custom-content create-property parses JSON --value', async () => {
+      confluenceCustomContentMock.createProperty.mockResolvedValue({ id: 'p1', key: 'k' });
+      const parsed = cmd('custom-content', 'create-property', ['cc-1'], {
+        key: 'reviewed',
+        value: '{"flag":true}',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.createProperty).toHaveBeenCalledWith('cc-1', {
+        key: 'reviewed',
+        value: { flag: true },
+      });
+    });
+
+    it('custom-content create-property requires --key + --value', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('custom-content', 'create-property', ['cc-1'], { value: '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--key');
+      await expect(
+        executeConfluenceCommand(
+          cmd('custom-content', 'create-property', ['cc-1'], { key: 'k' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('custom-content get-property calls getProperty with both ids', async () => {
+      confluenceCustomContentMock.getProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('custom-content', 'get-property', ['cc-1'], { 'property-id': 'p1' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.getProperty).toHaveBeenCalledWith('cc-1', 'p1');
+    });
+
+    it('custom-content update-property forwards key/value/version', async () => {
+      confluenceCustomContentMock.updateProperty.mockResolvedValue({ id: 'p1' });
+      const parsed = cmd('custom-content', 'update-property', ['cc-1'], {
+        'property-id': 'p1',
+        key: 'reviewed',
+        value: 'false',
+        'version-number': '4',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.updateProperty).toHaveBeenCalledWith('cc-1', 'p1', {
+        key: 'reviewed',
+        value: false,
+        version: { number: 4 },
+      });
+    });
+
+    it('custom-content update-property throws on invalid --version-number', async () => {
+      const parsed = cmd('custom-content', 'update-property', ['cc-1'], {
+        'property-id': 'p1',
+        key: 'k',
+        value: '1',
+        'version-number': '-1',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('custom-content delete-property returns { deleted: true }', async () => {
+      confluenceCustomContentMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('custom-content', 'delete-property', ['cc-1'], { 'property-id': 'p1' });
+
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.deleteProperty).toHaveBeenCalledWith('cc-1', 'p1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    // versions
+    it('custom-content versions forwards body-format/sort/cursor/limit', async () => {
+      confluenceCustomContentMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'versions', ['cc-1'], {
+        'body-format': 'storage',
+        sort: '-modified-date',
+        cursor: 'tok',
+        limit: '50',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listVersions).toHaveBeenCalledWith('cc-1', {
+        'body-format': 'storage',
+        sort: '-modified-date',
+        cursor: 'tok',
+        limit: 50,
+      });
+    });
+
+    it('custom-content versions rejects invalid --sort', async () => {
+      const parsed = cmd('custom-content', 'versions', ['cc-1'], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: modified-date, -modified-date, got: bogus',
+      );
+    });
+
+    it('custom-content versions omits sort + body-format when not supplied', async () => {
+      confluenceCustomContentMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('custom-content', 'versions', ['cc-1']), GLOBALS);
+      const args = confluenceCustomContentMock.listVersions.mock.calls.at(-1)?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(args?.sort).toBeUndefined();
+      expect(args?.['body-format']).toBeUndefined();
+    });
+
+    it('custom-content version forwards positive --version-number', async () => {
+      confluenceCustomContentMock.getVersion.mockResolvedValue({ number: 2 });
+      const parsed = cmd('custom-content', 'version', ['cc-1'], { 'version-number': '2' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.getVersion).toHaveBeenCalledWith('cc-1', 2);
+    });
+
+    it('custom-content version rejects non-positive --version-number', async () => {
+      const parsed = cmd('custom-content', 'version', ['cc-1'], { 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    // attachments
+    it('custom-content attachments forwards sort/status/media-type/limit', async () => {
+      confluenceCustomContentMock.listAttachments.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'attachments', ['cc-1'], {
+        sort: '-created-date',
+        status: 'current,archived',
+        'media-type': 'image/png',
+        limit: '10',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listAttachments).toHaveBeenCalledWith('cc-1', {
+        sort: '-created-date',
+        status: ['current', 'archived'],
+        cursor: undefined,
+        mediaType: 'image/png',
+        filename: undefined,
+        limit: 10,
+      });
+    });
+
+    it('custom-content attachments rejects invalid --status enum entry', async () => {
+      const parsed = cmd('custom-content', 'attachments', ['cc-1'], { status: 'foobar' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--status must be one of: current, archived, trashed, got: foobar/,
+      );
+    });
+
+    // children
+    it('custom-content children forwards enum-narrowed sort + cursor + limit', async () => {
+      confluenceCustomContentMock.listChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'children', ['cc-1'], {
+        sort: 'created-date',
+        cursor: 'tok',
+        limit: '50',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listChildren).toHaveBeenCalledWith('cc-1', {
+        sort: 'created-date',
+        cursor: 'tok',
+        limit: 50,
+      });
+    });
+
+    it('custom-content children rejects invalid --sort against ChildCustomContentSortOrder enum', async () => {
+      const parsed = cmd('custom-content', 'children', ['cc-1'], { sort: 'title' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: id, -id, created-date, -created-date, modified-date, -modified-date, got: title/,
+      );
+      expect(confluenceCustomContentMock.listChildren).not.toHaveBeenCalled();
+    });
+
+    // footer-comments
+    it('custom-content footer-comments forwards body-format/sort', async () => {
+      confluenceCustomContentMock.listFooterComments.mockResolvedValue({
+        results: [],
+        _links: {},
+      });
+      const parsed = cmd('custom-content', 'footer-comments', ['cc-1'], {
+        'body-format': 'storage',
+        sort: '-created-date',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listFooterComments).toHaveBeenCalledWith('cc-1', {
+        'body-format': 'storage',
+        sort: '-created-date',
+        cursor: undefined,
+        limit: undefined,
+      });
+    });
+
+    it('custom-content footer-comments rejects invalid --body-format', async () => {
+      const parsed = cmd('custom-content', 'footer-comments', ['cc-1'], {
+        'body-format': 'raw',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--body-format must be one of: storage, atlas_doc_format, got: raw/,
+      );
+    });
+
+    it('custom-content footer-comments omits sort + body-format when not supplied', async () => {
+      confluenceCustomContentMock.listFooterComments.mockResolvedValue({
+        results: [],
+        _links: {},
+      });
+      await executeConfluenceCommand(cmd('custom-content', 'footer-comments', ['cc-1']), GLOBALS);
+      const args = confluenceCustomContentMock.listFooterComments.mock.calls.at(-1)?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(args?.sort).toBeUndefined();
+      expect(args?.['body-format']).toBeUndefined();
+    });
+
+    // labels
+    it('custom-content labels forwards prefix/sort', async () => {
+      confluenceCustomContentMock.listLabels.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('custom-content', 'labels', ['cc-1'], {
+        prefix: 'global',
+        sort: '-name',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceCustomContentMock.listLabels).toHaveBeenCalledWith('cc-1', {
+        prefix: 'global',
+        sort: '-name',
+        cursor: undefined,
+        limit: undefined,
+      });
+    });
+
+    it('custom-content labels rejects invalid --prefix', async () => {
+      const parsed = cmd('custom-content', 'labels', ['cc-1'], { prefix: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--prefix must be one of: my, team, global, system, got: bogus/,
+      );
+    });
+
+    it('custom-content labels omits prefix + sort when not supplied', async () => {
+      confluenceCustomContentMock.listLabels.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('custom-content', 'labels', ['cc-1']), GLOBALS);
+      const args = confluenceCustomContentMock.listLabels.mock.calls.at(-1)?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(args?.prefix).toBeUndefined();
+      expect(args?.sort).toBeUndefined();
+    });
+
+    // operations
+    it('custom-content operations calls getOperations', async () => {
+      confluenceCustomContentMock.getOperations.mockResolvedValue({ operations: [] });
+
+      await executeConfluenceCommand(cmd('custom-content', 'operations', ['cc-1']), GLOBALS);
+
+      expect(confluenceCustomContentMock.getOperations).toHaveBeenCalledWith('cc-1');
+    });
+
+    it('custom-content unknown action throws', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('custom-content', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown custom-content action');
     });
   });
 

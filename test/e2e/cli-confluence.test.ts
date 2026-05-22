@@ -2360,6 +2360,298 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/versions/2` },
   },
+
+  // ─── custom-content (B094-B108) ──────────────────────────────────────
+  {
+    name: 'custom-content list',
+    argv: [
+      'confluence',
+      'custom-content',
+      'list',
+      '--type',
+      'ai.atlassian.collection',
+      '--limit',
+      '10',
+    ],
+    routes: [{ method: 'GET', path: `${P}/custom-content`, body: F.customContentList }],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content` },
+    expectQuery: (query) => {
+      expect(query.type).toBe('ai.atlassian.collection');
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'custom-content get',
+    argv: ['confluence', 'custom-content', 'get', 'cc-1'],
+    routes: [{ method: 'GET', path: `${P}/custom-content/cc-1`, body: F.customContentItem }],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1` },
+    expectStdout: ['"id": "cc-1"'],
+  },
+  {
+    name: 'custom-content create',
+    argv: [
+      'confluence',
+      'custom-content',
+      'create',
+      '--type',
+      'ai.atlassian.collection',
+      '--space-id',
+      '654321',
+      '--title',
+      'New CC',
+      '--body',
+      '<p>hi</p>',
+    ],
+    routes: [
+      { method: 'POST', path: `${P}/custom-content`, status: 201, body: F.customContentItem },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/custom-content` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        type: 'ai.atlassian.collection',
+        spaceId: '654321',
+        title: 'New CC',
+        body: { representation: 'storage', value: '<p>hi</p>' },
+      });
+    },
+  },
+  {
+    name: 'custom-content update',
+    argv: [
+      'confluence',
+      'custom-content',
+      'update',
+      'cc-1',
+      '--type',
+      'ai.atlassian.collection',
+      '--version-number',
+      '2',
+      '--title',
+      'Renamed',
+      '--body',
+      '<p>updated</p>',
+    ],
+    routes: [{ method: 'PUT', path: `${P}/custom-content/cc-1`, body: F.customContentItem }],
+    expectCall: { method: 'PUT', pathname: `${P}/custom-content/cc-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        id: 'cc-1',
+        type: 'ai.atlassian.collection',
+        status: 'current',
+        title: 'Renamed',
+        body: { representation: 'storage', value: '<p>updated</p>' },
+        version: { number: 2 },
+      });
+    },
+  },
+  {
+    name: 'custom-content delete',
+    argv: ['confluence', 'custom-content', 'delete', 'cc-1'],
+    routes: [{ method: 'DELETE', path: `${P}/custom-content/cc-1`, status: 204 }],
+    expectCall: { method: 'DELETE', pathname: `${P}/custom-content/cc-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'custom-content list-properties',
+    argv: [
+      'confluence',
+      'custom-content',
+      'list-properties',
+      'cc-1',
+      '--key',
+      'reviewed',
+      '--sort=key',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/properties`,
+        body: F.customContentPropertyList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/properties` },
+    expectQuery: (query) => {
+      expect(query.key).toBe('reviewed');
+      expect(query.sort).toBe('key');
+    },
+  },
+  {
+    name: 'custom-content create-property',
+    argv: [
+      'confluence',
+      'custom-content',
+      'create-property',
+      'cc-1',
+      '--key',
+      'reviewed',
+      '--value',
+      'true',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/custom-content/cc-1/properties`,
+        status: 201,
+        body: F.customContentProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/custom-content/cc-1/properties` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ key: 'reviewed', value: true });
+    },
+  },
+  {
+    name: 'custom-content get-property',
+    argv: ['confluence', 'custom-content', 'get-property', 'cc-1', '--property-id', 'cc-prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/properties/cc-prop-1`,
+        body: F.customContentProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/properties/cc-prop-1` },
+  },
+  {
+    name: 'custom-content update-property',
+    argv: [
+      'confluence',
+      'custom-content',
+      'update-property',
+      'cc-1',
+      '--property-id',
+      'cc-prop-1',
+      '--key',
+      'reviewed',
+      '--value',
+      'false',
+      '--version-number',
+      '2',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/custom-content/cc-1/properties/cc-prop-1`,
+        body: F.customContentProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/custom-content/cc-1/properties/cc-prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ key: 'reviewed', value: false, version: { number: 2 } });
+    },
+  },
+  {
+    name: 'custom-content delete-property',
+    argv: ['confluence', 'custom-content', 'delete-property', 'cc-1', '--property-id', 'cc-prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/custom-content/cc-1/properties/cc-prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/custom-content/cc-1/properties/cc-prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'custom-content versions',
+    argv: ['confluence', 'custom-content', 'versions', 'cc-1', '--sort=-modified-date'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/versions`,
+        body: F.customContentVersionsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/versions` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-modified-date');
+    },
+  },
+  {
+    name: 'custom-content version',
+    argv: ['confluence', 'custom-content', 'version', 'cc-1', '--version-number', '2'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/versions/2`,
+        body: F.customContentVersionDetail,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/versions/2` },
+  },
+  {
+    name: 'custom-content attachments',
+    argv: ['confluence', 'custom-content', 'attachments', 'cc-1', '--media-type', 'image/png'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/attachments`,
+        body: F.customContentAttachmentsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/attachments` },
+    expectQuery: (query) => {
+      expect(query.mediaType).toBe('image/png');
+    },
+  },
+  {
+    name: 'custom-content children',
+    argv: ['confluence', 'custom-content', 'children', 'cc-1', '--limit', '50'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/children`,
+        body: F.customContentChildrenList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/children` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'custom-content footer-comments',
+    argv: ['confluence', 'custom-content', 'footer-comments', 'cc-1', '--sort=-created-date'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/footer-comments`,
+        body: F.customContentFooterCommentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/footer-comments` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-created-date');
+    },
+  },
+  {
+    name: 'custom-content labels',
+    argv: ['confluence', 'custom-content', 'labels', 'cc-1', '--prefix', 'global'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/labels`,
+        body: F.customContentLabelsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/labels` },
+    expectQuery: (query) => {
+      expect(query.prefix).toBe('global');
+    },
+  },
+  {
+    name: 'custom-content operations',
+    argv: ['confluence', 'custom-content', 'operations', 'cc-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/custom-content/cc-1/operations`,
+        body: F.customContentOperations,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/custom-content/cc-1/operations` },
+  },
 ];
 
 function findFirstApiCall(calls: readonly CapturedCall[]): CapturedCall {

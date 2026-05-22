@@ -7,6 +7,7 @@ import type {
   BlogPostBodyRepresentation,
   BlogPostLookupStatus,
   BlogPostSortOrder,
+  ChildCustomContentSortOrder,
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
@@ -52,6 +53,8 @@ export async function executeConfluenceCommand(
       return executeClassificationLevels(client, cmd);
     case 'content':
       return executeContent(client, cmd);
+    case 'custom-content':
+      return executeCustomContent(client, cmd);
     case 'data-policies':
       return executeDataPolicies(client, cmd);
     case 'databases':
@@ -842,6 +845,238 @@ function parseContentIds(raw: string): readonly (string | number)[] {
     throw new Error('--ids: expected a non-empty list of content ids');
   }
   return parts;
+}
+
+async function executeCustomContent(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // ── lifecycle ─────────────────────────────────────────────────────────
+    case 'list': {
+      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      const sort = asEnum(opts['sort'], CUSTOM_CONTENT_SORT_ORDERS, 'sort');
+      const spaceId = asString(opts['space-id']);
+      return client.customContent.list({
+        type: asString(opts['type']),
+        id: asString(opts['id']),
+        ...(spaceId !== undefined ? { 'space-id': spaceId } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'get': {
+      const bodyFormat = asEnum(
+        opts['body-format'],
+        CUSTOM_CONTENT_BODY_FORMATS_SINGLE,
+        'body-format',
+      );
+      return client.customContent.get(requireArg(cmd.positionalArgs[0], 'custom content ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-labels': opts['include-labels'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+      });
+    }
+    case 'create': {
+      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
+      return client.customContent.create({
+        type: requireOpt(opts['type'], '--type'),
+        title: requireOpt(opts['title'], '--title'),
+        body,
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        customContentId: asString(opts['custom-content-id']),
+      });
+    }
+    case 'update': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      const id = requireArg(cmd.positionalArgs[0], 'custom content ID');
+      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
+      return client.customContent.update(id, {
+        id,
+        type: requireOpt(opts['type'], '--type'),
+        status: 'current',
+        title: requireOpt(opts['title'], '--title'),
+        body,
+        version: { number: versionNum },
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        customContentId: asString(opts['custom-content-id']),
+      });
+    }
+    case 'delete': {
+      const purge = opts['purge'] === true ? true : undefined;
+      await client.customContent.delete(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        purge === undefined ? undefined : { purge },
+      );
+      return { deleted: true };
+    }
+
+    // ── content properties (B094-B098) ────────────────────────────────────
+    case 'list-properties':
+      return client.customContent.listProperties(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          key: asString(opts['key']),
+          sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    case 'create-property':
+      return client.customContent.createProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+        },
+      );
+    case 'get-property':
+      return client.customContent.getProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.customContent.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.customContent.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+
+    // ── versions (B099-B100) ──────────────────────────────────────────────
+    case 'versions': {
+      const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.listVersions(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+    case 'version': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.customContent.getVersion(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        versionNum,
+      );
+    }
+
+    // ── attachments (B104) ────────────────────────────────────────────────
+    case 'attachments': {
+      const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      const status = asEnumArray(opts['status'], ATTACHMENT_STATUSES, 'status');
+      return client.customContent.listAttachments(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(sort !== undefined ? { sort } : {}),
+          ...(status !== undefined ? { status } : {}),
+          cursor: asString(opts['cursor']),
+          mediaType: asString(opts['media-type']),
+          filename: asString(opts['filename']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── children (B105) ───────────────────────────────────────────────────
+    case 'children': {
+      const sort = asEnum(opts['sort'], CHILD_CUSTOM_CONTENT_SORT_ORDERS, 'sort');
+      return client.customContent.listChildren(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── footer comments (B106) ────────────────────────────────────────────
+    case 'footer-comments': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.listFooterComments(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── labels (B107) ─────────────────────────────────────────────────────
+    case 'labels': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.customContent.listLabels(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(prefix !== undefined ? { prefix } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── operations (B108) ─────────────────────────────────────────────────
+    case 'operations':
+      return client.customContent.getOperations(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+      );
+
+    default:
+      throw new Error(
+        `Unknown custom-content action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, versions, version, attachments, children, footer-comments, labels, operations`,
+      );
+  }
+}
+
+/** Build a custom-content body envelope from a raw storage-format string. */
+function makeCustomContentBody(value: string) {
+  return { representation: 'storage' as const, value };
 }
 
 async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
@@ -1819,6 +2054,20 @@ const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [
 
 const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;
 
+/**
+ * Extended body-format vocabulary accepted only by `GET /custom-content/{id}`
+ * — adds the read-only `view`, `export_view`, and `anonymous_export_view`
+ * projections from the spec's `CustomContentBodyRepresentationSingle` enum.
+ */
+const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [
+  'raw',
+  'storage',
+  'atlas_doc_format',
+  'view',
+  'export_view',
+  'anonymous_export_view',
+] as const;
+
 const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [
   'id',
   '-id',
@@ -1828,6 +2077,15 @@ const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [
   '-modified-date',
   'title',
   '-title',
+];
+
+const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [
+  'id',
+  '-id',
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
 ];
 
 const COMMENT_STATUSES: readonly CommentStatus[] = [

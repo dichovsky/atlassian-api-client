@@ -19,6 +19,8 @@ const GLOBAL_OPTIONS = {
   'space-id': { type: 'string' as const },
   'page-id': { type: 'string' as const },
   'blog-post-id': { type: 'string' as const },
+  'custom-content-id': { type: 'string' as const },
+  id: { type: 'string' as const },
   limit: { type: 'string' as const },
   cursor: { type: 'string' as const },
   title: { type: 'string' as const },
