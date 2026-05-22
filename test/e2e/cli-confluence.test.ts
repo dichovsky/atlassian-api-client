@@ -147,6 +147,32 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"id": "99999"'],
   },
   {
+    name: 'blog-posts get with include-* + body-format + status',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'get',
+      '99999',
+      '--include-labels',
+      '--include-likes',
+      '--body-format',
+      'atlas_doc_format',
+      '--status',
+      'current,draft',
+      '--historical-version',
+      '3',
+    ],
+    routes: [{ method: 'GET', path: `${P}/blogposts/99999`, body: F.blogPost }],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999` },
+    expectQuery: (query) => {
+      expect(query['include-labels']).toBe('true');
+      expect(query['include-likes']).toBe('true');
+      expect(query['body-format']).toBe('atlas_doc_format');
+      expect(query['status']).toBe('current,draft');
+      expect(query['version']).toBe('3');
+    },
+  },
+  {
     name: 'blog-posts create',
     argv: [
       'confluence',
@@ -1802,6 +1828,346 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'DELETE', pathname: `${P}/whiteboards/wb-1/properties/prop-1` },
     expectStdout: ['"deleted": true'],
+  },
+  // ─── blog-posts sub-resources (B066-B084) ─────────────────────────────────
+  {
+    name: 'blog-posts list-properties',
+    argv: ['confluence', 'blog-posts', 'list-properties', '99999', '--sort=key', '--limit', '10'],
+    routes: [
+      { method: 'GET', path: `${P}/blogposts/99999/properties`, body: F.blogPostPropertyList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/properties` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('key');
+      expect(query.limit).toBe('10');
+    },
+  },
+  {
+    name: 'blog-posts create-property',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'create-property',
+      '99999',
+      '--key',
+      'reviewed',
+      '--value',
+      'true',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/blogposts/99999/properties`,
+        status: 201,
+        body: F.blogPostProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/blogposts/99999/properties` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ key: 'reviewed', value: true });
+    },
+  },
+  {
+    name: 'blog-posts get-property',
+    argv: ['confluence', 'blog-posts', 'get-property', '99999', '--property-id', 'bp-prop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/properties/bp-prop-1`,
+        body: F.blogPostProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/properties/bp-prop-1` },
+  },
+  {
+    name: 'blog-posts update-property',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'update-property',
+      '99999',
+      '--property-id',
+      'bp-prop-1',
+      '--key',
+      'reviewed',
+      '--value',
+      'false',
+      '--version-number',
+      '2',
+    ],
+    routes: [
+      {
+        method: 'PUT',
+        path: `${P}/blogposts/99999/properties/bp-prop-1`,
+        body: F.blogPostProperty,
+      },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/blogposts/99999/properties/bp-prop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ key: 'reviewed', value: false, version: { number: 2 } });
+    },
+  },
+  {
+    name: 'blog-posts delete-property',
+    argv: ['confluence', 'blog-posts', 'delete-property', '99999', '--property-id', 'bp-prop-1'],
+    routes: [
+      {
+        method: 'DELETE',
+        path: `${P}/blogposts/99999/properties/bp-prop-1`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'DELETE', pathname: `${P}/blogposts/99999/properties/bp-prop-1` },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'blog-posts attachments',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'attachments',
+      '99999',
+      '--media-type',
+      'image/png',
+      '--sort=-created-date',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/attachments`,
+        body: F.blogPostAttachmentsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/attachments` },
+    expectQuery: (query) => {
+      expect(query.mediaType).toBe('image/png');
+      expect(query.sort).toBe('-created-date');
+    },
+  },
+  {
+    name: 'blog-posts attachments with --status',
+    argv: ['confluence', 'blog-posts', 'attachments', '99999', '--status', 'current,archived'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/attachments`,
+        body: F.blogPostAttachmentsList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/attachments` },
+    expectQuery: (query) => {
+      expect(query.status).toBe('current,archived');
+    },
+  },
+  {
+    name: 'blog-posts get-classification-level',
+    argv: ['confluence', 'blog-posts', 'get-classification-level', '99999'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/classification-level`,
+        body: F.blogPostClassificationLevel,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/classification-level` },
+  },
+  {
+    name: 'blog-posts update-classification-level',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'update-classification-level',
+      '99999',
+      '--level-id',
+      'cl-restricted',
+    ],
+    routes: [{ method: 'PUT', path: `${P}/blogposts/99999/classification-level`, status: 204 }],
+    expectCall: { method: 'PUT', pathname: `${P}/blogposts/99999/classification-level` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ id: 'cl-restricted', status: 'current' });
+    },
+    expectStdout: ['"updated": true'],
+  },
+  {
+    name: 'blog-posts reset-classification-level',
+    argv: ['confluence', 'blog-posts', 'reset-classification-level', '99999'],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/blogposts/99999/classification-level/reset`,
+        status: 204,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/blogposts/99999/classification-level/reset` },
+    expectStdout: ['"reset": true'],
+  },
+  {
+    name: 'blog-posts custom-content',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'custom-content',
+      '99999',
+      '--type',
+      'ai.atlassian.collection',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/custom-content`,
+        body: F.blogPostCustomContentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/custom-content` },
+    expectQuery: (query) => {
+      expect(query.type).toBe('ai.atlassian.collection');
+    },
+  },
+  {
+    name: 'blog-posts footer-comments',
+    argv: ['confluence', 'blog-posts', 'footer-comments', '99999', '--sort=-created-date'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/footer-comments`,
+        body: F.blogPostFooterCommentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/footer-comments` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-created-date');
+    },
+  },
+  {
+    name: 'blog-posts inline-comments',
+    argv: ['confluence', 'blog-posts', 'inline-comments', '99999', '--resolution-status', 'open'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/inline-comments`,
+        body: F.blogPostInlineCommentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/inline-comments` },
+    expectQuery: (query) => {
+      expect(query['resolution-status']).toBe('open');
+    },
+  },
+  {
+    name: 'blog-posts labels',
+    argv: ['confluence', 'blog-posts', 'labels', '99999', '--prefix', 'global'],
+    routes: [{ method: 'GET', path: `${P}/blogposts/99999/labels`, body: F.blogPostLabelsList }],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/labels` },
+    expectQuery: (query) => {
+      expect(query.prefix).toBe('global');
+    },
+  },
+  {
+    name: 'blog-posts likes-count',
+    argv: ['confluence', 'blog-posts', 'likes-count', '99999'],
+    routes: [
+      { method: 'GET', path: `${P}/blogposts/99999/likes/count`, body: F.blogPostLikeCount },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/likes/count` },
+    expectStdout: ['"count": 9'],
+  },
+  {
+    name: 'blog-posts likes-users',
+    argv: ['confluence', 'blog-posts', 'likes-users', '99999', '--limit', '50'],
+    routes: [
+      { method: 'GET', path: `${P}/blogposts/99999/likes/users`, body: F.blogPostLikeUsers },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/likes/users` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'blog-posts operations',
+    argv: ['confluence', 'blog-posts', 'operations', '99999'],
+    routes: [
+      { method: 'GET', path: `${P}/blogposts/99999/operations`, body: F.blogPostOperations },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/operations` },
+  },
+  {
+    name: 'blog-posts redact',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'redact',
+      '99999',
+      '--value',
+      '{"createdAt":"2026-01-01T00:00:00Z","body":{"redactions":[{"pointer":"/body/0/0","from":0,"to":4,"reason":"PII"}]}}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/blogposts/99999/redact`,
+        status: 202,
+        body: F.blogPostRedactResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/blogposts/99999/redact` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        createdAt: '2026-01-01T00:00:00Z',
+        body: { redactions: [{ pointer: '/body/0/0', from: 0, to: 4, reason: 'PII' }] },
+      });
+    },
+  },
+  {
+    name: 'blog-posts redact with --created-at + --clean-history convenience overrides',
+    argv: [
+      'confluence',
+      'blog-posts',
+      'redact',
+      '99999',
+      '--value',
+      '{"body":{"redactions":[]}}',
+      '--created-at',
+      '2026-05-22T12:00:00Z',
+      '--clean-history',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/blogposts/99999/redact`,
+        status: 202,
+        body: F.blogPostRedactResponse,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/blogposts/99999/redact` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        createdAt: '2026-05-22T12:00:00Z',
+        cleanHistory: true,
+        body: { redactions: [] },
+      });
+    },
+  },
+  {
+    name: 'blog-posts versions',
+    argv: ['confluence', 'blog-posts', 'versions', '99999', '--sort=-modified-date'],
+    routes: [
+      { method: 'GET', path: `${P}/blogposts/99999/versions`, body: F.blogPostVersionsList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/versions` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-modified-date');
+    },
+  },
+  {
+    name: 'blog-posts version',
+    argv: ['confluence', 'blog-posts', 'version', '99999', '--version-number', '2'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/blogposts/99999/versions/2`,
+        body: F.blogPostVersionDetail,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/versions/2` },
   },
 ];
 
