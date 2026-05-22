@@ -16,6 +16,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                                                                                                                                        |
 | `classification-levels` | `list`                                                                                                                                                                                                                                                                                                                                                                                         |
 | `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                                                                                                                                         |
+| `custom-content`        | `list`, `get`, `create`, `update`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `version`, `attachments`, `children`, `footer-comments`, `labels`, `operations`                                                                                                                                                           |
 | `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                                                                                                                                                  |
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                    |
 | `embeds`                | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                             |
@@ -315,6 +316,73 @@ atlas confluence content convert-ids-to-types --ids 12345,67890,11111
 
 # JSON form (mixed string / number)
 atlas confluence content convert-ids-to-types --ids '["12345",67890]'
+```
+
+## `custom-content`
+
+First-class v2 content for app-defined types (AI collections, embedded items, third-party app payloads). The CLI exposes the full surface: lifecycle (`list` / `get` / `create` / `update` / `delete`) and every per-item sub-resource — content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`), version history (`versions` / `version`), `attachments`, `children`, `footer-comments`, `labels`, and permitted `operations`. Pagination is cursor-based across all list endpoints.
+
+| Action            | Positional          | Required flags                                          | Optional flags                                                                                            |
+| ----------------- | ------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `list`            | —                   | —                                                       | `--type`, `--space-id`, `--page-id`, `--blog-post-id`, `--status`, `--body-format`, `--cursor`, `--limit` |
+| `get`             | `<customContentId>` | —                                                       | `--body-format`, `--version-number`                                                                       |
+| `create`          | —                   | `--type`                                                | `--space-id`, `--page-id`, `--blog-post-id`, `--title`, `--body`                                          |
+| `update`          | `<customContentId>` | `--type`, `--version-number`                            | `--title`, `--body`                                                                                       |
+| `delete`          | `<customContentId>` | —                                                       | —                                                                                                         |
+| `list-properties` | `<customContentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                                  |
+| `create-property` | `<customContentId>` | `--key`, `--value`                                      | —                                                                                                         |
+| `get-property`    | `<customContentId>` | `--property-id`                                         | —                                                                                                         |
+| `update-property` | `<customContentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                         |
+| `delete-property` | `<customContentId>` | `--property-id`                                         | —                                                                                                         |
+| `versions`        | `<customContentId>` | —                                                       | `--body-format`, `--sort`, `--cursor`, `--limit`                                                          |
+| `version`         | `<customContentId>` | `--version-number`                                      | —                                                                                                         |
+| `attachments`     | `<customContentId>` | —                                                       | `--sort`, `--status`, `--cursor`, `--media-type`, `--filename`, `--limit`                                 |
+| `children`        | `<customContentId>` | —                                                       | `--sort`, `--cursor`, `--limit`                                                                           |
+| `footer-comments` | `<customContentId>` | —                                                       | `--body-format`, `--sort`, `--cursor`, `--limit`                                                          |
+| `labels`          | `<customContentId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                               |
+| `operations`      | `<customContentId>` | —                                                       | —                                                                                                         |
+
+- `--type` is a free-form string identifying the custom-content namespace (e.g. `ai.atlassian.collection`). Confluence resolves the namespace from this value; mismatches against the parent space's installed apps return 400.
+- `--body-format` on `list` / `get` / `versions` accepts `raw`, `storage`, or `atlas_doc_format` (`CustomContentBodyRepresentation`). The `get` endpoint additionally accepts the broader `CustomContentBodyRepresentationSingle` server-side (`view`, `export_view`, `anonymous_export_view`), but the CLI narrows to the three values shared by `list` and `versions` to keep the flag vocabulary consistent.
+- `update --version-number` must be a positive integer exactly one greater than the item's current version — Confluence enforces optimistic concurrency and rejects mismatches with a 409. `--type` must also be re-sent on update (the server validates the type matches the stored value).
+- `update` always sends `status: "current"`. The CLI does not expose `draft` status writes — use the SDK directly (`client.customContent.update(id, { …, status: 'draft' })`) if you need to manage drafts.
+- `create` / `update` `--body` is wrapped in `{ representation: 'storage', value: … }`. SDK callers can opt into `atlas_doc_format` via the resource method directly.
+- Properties: `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property` / `databases create-property`). `--sort` on `list-properties` accepts `key` or `-key`. `update-property --version-number` follows the same optimistic-concurrency rule as `update` above.
+- `versions --sort` is the narrow `VersionSortOrder`: only `modified-date` / `-modified-date`. `version --version-number` fetches a single past version by number and returns the body + audit metadata.
+- `attachments --sort` accepts `AttachmentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`. `--status` is a comma-separated subset of `current,archived,trashed` (server default is `current,archived`). `--media-type` filters by MIME, `--filename` by exact name.
+- `children` returns the lightweight `ChildCustomContent` shape (`id`, `status`, `title`, `type`, `spaceId`); `status` is restricted to `current` or `archived`. `--sort` is intentionally free-form — the v2 OpenAPI spec leaves this enum open and the CLI does not narrow it client-side.
+- `footer-comments --body-format` accepts `storage` or `atlas_doc_format`. `--sort` is `CommentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
+- `labels --prefix` accepts `my`, `team`, `global`, `system`. `--sort` is `LabelSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`.
+- `operations` returns `{ operations: [{ operation, targetType }] }` — useful for gating UI actions and permission-aware automation that wants to fail fast before issuing a 403-bound write.
+- All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
+
+```sh
+# Lifecycle
+atlas confluence custom-content list --type ai.atlassian.collection --space-id 654321 --limit 25
+atlas confluence custom-content get cc-1 --body-format storage
+atlas confluence custom-content create --type ai.atlassian.collection --space-id 654321 --title "AI Notes" --body "<p>hi</p>"
+atlas confluence custom-content update cc-1 --type ai.atlassian.collection --version-number 2 --title "Renamed"
+atlas confluence custom-content delete cc-1
+
+# Content properties
+atlas confluence custom-content list-properties cc-1 --sort key
+atlas confluence custom-content create-property cc-1 --key reviewed --value true
+atlas confluence custom-content get-property cc-1 --property-id prop-1
+atlas confluence custom-content update-property cc-1 --property-id prop-1 --key reviewed --value false --version-number 2
+atlas confluence custom-content delete-property cc-1 --property-id prop-1
+
+# Versions
+atlas confluence custom-content versions cc-1 --sort=-modified-date
+atlas confluence custom-content version cc-1 --version-number 2
+
+# Sub-collections
+atlas confluence custom-content attachments cc-1 --media-type image/png --sort=-created-date
+atlas confluence custom-content children cc-1 --limit 50
+atlas confluence custom-content footer-comments cc-1 --sort=-created-date
+atlas confluence custom-content labels cc-1 --prefix global
+
+# Permitted operations
+atlas confluence custom-content operations cc-1
 ```
 
 ## `data-policies`

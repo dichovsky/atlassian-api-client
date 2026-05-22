@@ -52,6 +52,8 @@ export async function executeConfluenceCommand(
       return executeClassificationLevels(client, cmd);
     case 'content':
       return executeContent(client, cmd);
+    case 'custom-content':
+      return executeCustomContent(client, cmd);
     case 'data-policies':
       return executeDataPolicies(client, cmd);
     case 'databases':
@@ -842,6 +844,213 @@ function parseContentIds(raw: string): readonly (string | number)[] {
     throw new Error('--ids: expected a non-empty list of content ids');
   }
   return parts;
+}
+
+async function executeCustomContent(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // ── lifecycle ─────────────────────────────────────────────────────────
+    case 'list': {
+      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.list({
+        type: asString(opts['type']),
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        status: asString(opts['status']),
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'get': {
+      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.get(requireArg(cmd.positionalArgs[0], 'custom content ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        version: asPositiveInt(opts['version-number'], '--version-number'),
+      });
+    }
+    case 'create':
+      return client.customContent.create({
+        type: requireOpt(opts['type'], '--type'),
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        title: asString(opts['title']),
+        body: makeCustomContentBody(asString(opts['body'])),
+      });
+    case 'update': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      const id = requireArg(cmd.positionalArgs[0], 'custom content ID');
+      return client.customContent.update(id, {
+        id,
+        type: requireOpt(opts['type'], '--type'),
+        status: 'current',
+        title: asString(opts['title']),
+        version: { number: versionNum },
+        body: makeCustomContentBody(asString(opts['body'])),
+      });
+    }
+    case 'delete':
+      await client.customContent.delete(requireArg(cmd.positionalArgs[0], 'custom content ID'));
+      return { deleted: true };
+
+    // ── content properties (B094-B098) ────────────────────────────────────
+    case 'list-properties':
+      return client.customContent.listProperties(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          key: asString(opts['key']),
+          sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    case 'create-property':
+      return client.customContent.createProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+        },
+      );
+    case 'get-property':
+      return client.customContent.getProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.customContent.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.customContent.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+
+    // ── versions (B099-B100) ──────────────────────────────────────────────
+    case 'versions': {
+      const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.listVersions(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+    case 'version': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.customContent.getVersion(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        versionNum,
+      );
+    }
+
+    // ── attachments (B104) ────────────────────────────────────────────────
+    case 'attachments': {
+      const sort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      const status = asEnumArray(opts['status'], ATTACHMENT_STATUSES, 'status');
+      return client.customContent.listAttachments(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(sort !== undefined ? { sort } : {}),
+          ...(status !== undefined ? { status } : {}),
+          cursor: asString(opts['cursor']),
+          mediaType: asString(opts['media-type']),
+          filename: asString(opts['filename']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── children (B105) ───────────────────────────────────────────────────
+    case 'children':
+      return client.customContent.listChildren(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          sort: asString(opts['sort']),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+
+    // ── footer comments (B106) ────────────────────────────────────────────
+    case 'footer-comments': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.customContent.listFooterComments(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── labels (B107) ─────────────────────────────────────────────────────
+    case 'labels': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.customContent.listLabels(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        {
+          ...(prefix !== undefined ? { prefix } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── operations (B108) ─────────────────────────────────────────────────
+    case 'operations':
+      return client.customContent.getOperations(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+      );
+
+    default:
+      throw new Error(
+        `Unknown custom-content action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, versions, version, attachments, children, footer-comments, labels, operations`,
+      );
+  }
+}
+
+/** Build a custom-content body envelope from a raw storage-format string. */
+function makeCustomContentBody(value: string | undefined) {
+  if (!value) return undefined;
+  return { representation: 'storage' as const, value };
 }
 
 async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {

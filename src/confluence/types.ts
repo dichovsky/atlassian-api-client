@@ -901,6 +901,89 @@ export interface UpdateCustomContentData {
   };
 }
 
+// --- Custom Content sub-resources (B094-B108) ---
+//
+// Wire-format shared with the blog-posts / pages / databases families:
+// `status` arrays serialise as CSV scalars, sort tokens are closed enums,
+// and every list endpoint is cursor-paginated. The body-format enums split
+// across two surfaces:
+//   - `versions` uses the narrow `CustomContentBodyRepresentation`
+//     (`raw | storage | atlas_doc_format`).
+//   - `footer-comments` uses the shared comment representation
+//     (`storage | atlas_doc_format`) — different from the page comment
+//     surface, but identical to blog-post footer comments.
+
+/** Parameters for `GET /custom-content/{id}/attachments`. */
+export interface ListCustomContentAttachmentsParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly cursor?: string;
+  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
+  readonly mediaType?: string;
+  readonly filename?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /custom-content/{id}/footer-comments`. */
+export interface ListCustomContentFooterCommentsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly cursor?: string;
+  readonly limit?: number;
+  readonly sort?: CommentSortOrder;
+}
+
+/** Parameters for `GET /custom-content/{id}/labels`. */
+export interface ListCustomContentLabelsParams {
+  readonly prefix?: LabelPrefix;
+  readonly sort?: LabelSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /custom-content/{custom-content-id}/versions`. */
+export interface ListCustomContentVersionsParams {
+  readonly 'body-format'?: 'raw' | 'storage' | 'atlas_doc_format';
+  readonly cursor?: string;
+  readonly limit?: number;
+  readonly sort?: VersionSortOrder;
+}
+
+/** Parameters for `GET /custom-content/{id}/children`. */
+export interface ListCustomContentChildrenParams {
+  readonly cursor?: string;
+  readonly limit?: number;
+  /**
+   * Free-form sort token — the spec leaves the enum open here (the field is a
+   * bare `string` in the v2 OpenAPI) so the SDK does not narrow the shape.
+   */
+  readonly sort?: string;
+}
+
+/**
+ * Child custom content entry returned by `GET /custom-content/{id}/children`.
+ * Mirrors the `ChildCustomContent` schema in the v2 OpenAPI spec — the server
+ * trims the response to the subset listed here (no body / version / authoring
+ * metadata).
+ */
+export interface CustomContentChild {
+  readonly id?: string;
+  /** Restricted to `current` / `archived` per `OnlyArchivedAndCurrentContentStatus`. */
+  readonly status?: 'current' | 'archived';
+  readonly title?: string;
+  readonly type?: string;
+  readonly spaceId?: string;
+}
+
+/** Permitted operation entry returned by `GET /custom-content/{id}/operations`. */
+export interface CustomContentOperation {
+  readonly operation?: string;
+  readonly targetType?: string;
+}
+
+/** Response shape for `GET /custom-content/{id}/operations`. */
+export interface CustomContentOperationsResponse {
+  readonly operations?: readonly CustomContentOperation[];
+}
+
 // --- Whiteboards ---
 
 /**
