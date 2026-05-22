@@ -118,6 +118,7 @@ export type {
   Whiteboard,
   CreateWhiteboardData,
   CreateWhiteboardParams,
+  GetWhiteboardParams,
   WhiteboardAncestor,
   WhiteboardAncestorsResponse,
   ListWhiteboardAncestorsParams,

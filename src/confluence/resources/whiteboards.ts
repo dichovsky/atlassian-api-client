@@ -8,6 +8,7 @@ import type {
   CreateContentPropertyData,
   CreateWhiteboardData,
   CreateWhiteboardParams,
+  GetWhiteboardParams,
   ListSharedContentPropertiesParams,
   ListWhiteboardAncestorsParams,
   ListWhiteboardChildrenParams,
@@ -68,11 +69,26 @@ export class WhiteboardsResource {
     return response.data;
   }
 
-  /** Get a whiteboard by ID. */
-  async get(id: string): Promise<Whiteboard> {
+  /** Fetch a single whiteboard by ID. */
+  async get(id: string, params?: GetWhiteboardParams): Promise<Whiteboard> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['include-collaborators'] !== undefined) {
+      query['include-collaborators'] = params['include-collaborators'];
+    }
+    if (params?.['include-direct-children'] !== undefined) {
+      query['include-direct-children'] = params['include-direct-children'];
+    }
+    if (params?.['include-operations'] !== undefined) {
+      query['include-operations'] = params['include-operations'];
+    }
+    if (params?.['include-properties'] !== undefined) {
+      query['include-properties'] = params['include-properties'];
+    }
+
     const response = await this.transport.request<Whiteboard>({
       method: 'GET',
       path: `${this.baseUrl}/whiteboards/${encodePathSegment(id)}`,
+      query,
     });
     return response.data;
   }

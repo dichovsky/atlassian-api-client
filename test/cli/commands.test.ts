@@ -3521,8 +3521,59 @@ describe('executeConfluenceCommand', () => {
     it('whiteboards get calls client.whiteboards.get with the ID', async () => {
       confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
       const result = await executeConfluenceCommand(cmd('whiteboards', 'get', ['wb-1']), GLOBALS);
-      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1');
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': undefined,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': undefined,
+      });
       expect(result).toEqual({ id: 'wb-1' });
+    });
+
+    it('whiteboards get forwards include-collaborators flag', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], { 'include-collaborators': true }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': true,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': undefined,
+      });
+    });
+
+    it('whiteboards get forwards include-properties flag', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], { 'include-properties': true }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': undefined,
+        'include-direct-children': undefined,
+        'include-operations': undefined,
+        'include-properties': true,
+      });
+    });
+
+    it('whiteboards get forwards multiple include flags', async () => {
+      confluenceWhiteboardsMock.get.mockResolvedValue({ id: 'wb-1' });
+      await executeConfluenceCommand(
+        cmd('whiteboards', 'get', ['wb-1'], {
+          'include-collaborators': true,
+          'include-direct-children': true,
+          'include-operations': true,
+        }),
+        GLOBALS,
+      );
+      expect(confluenceWhiteboardsMock.get).toHaveBeenCalledWith('wb-1', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': undefined,
+      });
     });
 
     it('whiteboards get throws when ID is missing', async () => {

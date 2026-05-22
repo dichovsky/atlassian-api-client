@@ -1000,7 +1000,12 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
       );
     }
     case 'get':
-      return client.whiteboards.get(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
+      return client.whiteboards.get(requireArg(cmd.positionalArgs[0], 'whiteboard ID'), {
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
+        'include-direct-children': opts['include-direct-children'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+      });
     case 'delete':
       await client.whiteboards.delete(requireArg(cmd.positionalArgs[0], 'whiteboard ID'));
       return { deleted: true };

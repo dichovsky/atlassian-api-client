@@ -599,23 +599,23 @@ atlas confluence footer-comments version 77777 --version-number 3
 
 Whiteboards are first-class v2 content (drawings / Confluence whiteboards UI). The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), classification level (`get-`/`update-`/`reset-classification-level`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Shape is identical to `databases`: pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
 
-| Action                        | Positional       | Required flags                                          | Optional flags                                                      |
-| ----------------------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------- |
-| `create`                      | —                | `--space-id`                                            | `--title`, `--parent-id`, `--template-key`, `--locale`, `--private` |
-| `get`                         | `<whiteboardId>` | —                                                       | —                                                                   |
-| `delete`                      | `<whiteboardId>` | —                                                       | —                                                                   |
-| `ancestors`                   | `<whiteboardId>` | —                                                       | `--limit`                                                           |
-| `descendants`                 | `<whiteboardId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                    |
-| `direct-children`             | `<whiteboardId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                     |
-| `operations`                  | `<whiteboardId>` | —                                                       | —                                                                   |
-| `get-classification-level`    | `<whiteboardId>` | —                                                       | —                                                                   |
-| `update-classification-level` | `<whiteboardId>` | `--level-id`                                            | —                                                                   |
-| `reset-classification-level`  | `<whiteboardId>` | —                                                       | —                                                                   |
-| `list-properties`             | `<whiteboardId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                            |
-| `create-property`             | `<whiteboardId>` | `--key`, `--value`                                      | —                                                                   |
-| `get-property`                | `<whiteboardId>` | `--property-id`                                         | —                                                                   |
-| `update-property`             | `<whiteboardId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                   |
-| `delete-property`             | `<whiteboardId>` | `--property-id`                                         | —                                                                   |
+| Action                        | Positional       | Required flags                                          | Optional flags                                                                                         |
+| ----------------------------- | ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `create`                      | —                | `--space-id`                                            | `--title`, `--parent-id`, `--template-key`, `--locale`, `--private`                                    |
+| `get`                         | `<whiteboardId>` | —                                                       | `--include-collaborators`, `--include-direct-children`, `--include-operations`, `--include-properties` |
+| `delete`                      | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `ancestors`                   | `<whiteboardId>` | —                                                       | `--limit`                                                                                              |
+| `descendants`                 | `<whiteboardId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                       |
+| `direct-children`             | `<whiteboardId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                        |
+| `operations`                  | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `get-classification-level`    | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `update-classification-level` | `<whiteboardId>` | `--level-id`                                            | —                                                                                                      |
+| `reset-classification-level`  | `<whiteboardId>` | —                                                       | —                                                                                                      |
+| `list-properties`             | `<whiteboardId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
+| `create-property`             | `<whiteboardId>` | `--key`, `--value`                                      | —                                                                                                      |
+| `get-property`                | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
+| `update-property`             | `<whiteboardId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `delete-property`             | `<whiteboardId>` | `--property-id`                                         | —                                                                                                      |
 
 - `--private` on `create` creates a whiteboard visible only to the creator.
 - `--template-key` and `--locale` on `create` select an initial template and locale; both are optional and forwarded as body fields.
@@ -636,8 +636,11 @@ atlas confluence whiteboards create --space-id 654321 --title "Roadmap"
 # Create a private whiteboard with a template
 atlas confluence whiteboards create --space-id 654321 --title "Secret" --template-key blank --private
 
-# Read a whiteboard
+# Read a whiteboard (basic)
 atlas confluence whiteboards get wb-1
+
+# Read a whiteboard with additional details
+atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
 
 # Walk the descendant tree
 atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50

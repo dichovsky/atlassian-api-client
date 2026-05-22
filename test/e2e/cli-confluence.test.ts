@@ -1544,6 +1544,13 @@ const matrix: readonly MatrixRow[] = [
     expectStdout: ['"id": "wb-1"'],
   },
   {
+    name: 'whiteboards get with include-properties flag',
+    argv: ['confluence', 'whiteboards', 'get', 'wb-1', '--include-properties'],
+    routes: [{ method: 'GET', path: `${P}/whiteboards/wb-1`, body: F.whiteboard }],
+    expectCall: { method: 'GET', pathname: `${P}/whiteboards/wb-1` },
+    expectStdout: ['"id": "wb-1"'],
+  },
+  {
     name: 'whiteboards delete',
     argv: ['confluence', 'whiteboards', 'delete', 'wb-1'],
     routes: [{ method: 'DELETE', path: `${P}/whiteboards/wb-1`, status: 204 }],

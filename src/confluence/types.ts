@@ -857,6 +857,14 @@ export interface CreateWhiteboardParams {
   readonly private?: boolean;
 }
 
+/** Query parameters for `GET /whiteboards/{id}`. */
+export interface GetWhiteboardParams {
+  readonly 'include-collaborators'?: boolean;
+  readonly 'include-direct-children'?: boolean;
+  readonly 'include-operations'?: boolean;
+  readonly 'include-properties'?: boolean;
+}
+
 /** Single ancestor entry returned by `GET /whiteboards/{id}/ancestors`. */
 export interface WhiteboardAncestor {
   readonly id: string;

@@ -102,6 +102,54 @@ describe('WhiteboardsResource', () => {
         path: `${BASE_URL}/whiteboards/42`,
       });
     });
+
+    it('includes include-collaborators flag when passed', async () => {
+      transport.respondWith(makeWhiteboard('42'));
+      await resource.get('42', { 'include-collaborators': true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'include-collaborators': true,
+      });
+    });
+
+    it('includes include-direct-children flag when passed', async () => {
+      transport.respondWith(makeWhiteboard('42'));
+      await resource.get('42', { 'include-direct-children': true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'include-direct-children': true,
+      });
+    });
+
+    it('includes include-operations flag when passed', async () => {
+      transport.respondWith(makeWhiteboard('42'));
+      await resource.get('42', { 'include-operations': true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'include-operations': true,
+      });
+    });
+
+    it('includes include-properties flag when passed', async () => {
+      transport.respondWith(makeWhiteboard('42'));
+      await resource.get('42', { 'include-properties': true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'include-properties': true,
+      });
+    });
+
+    it('includes all four include-* flags when all passed', async () => {
+      transport.respondWith(makeWhiteboard('42'));
+      await resource.get('42', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+    });
   });
 
   // ── delete ────────────────────────────────────────────────────────────────

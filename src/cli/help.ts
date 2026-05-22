@@ -129,7 +129,7 @@ EXAMPLES:
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
   atlas confluence labels pages 12345 --sort -modified-date
   atlas confluence whiteboards create --space-id 123 --title "Roadmap" --private
-  atlas confluence whiteboards get wb-1
+  atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
   atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50
   atlas confluence whiteboards direct-children wb-1 --sort=-modified-date
   atlas confluence whiteboards list-properties wb-1
