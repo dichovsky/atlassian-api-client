@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "38441f41f410efd57bcb9a4dbf771fff410598f03199b1cf6d22d3972af44a57",
+  "sourceHash": "515e7c9e081a0005c26501eb1d15de539eb77a1928cb1ce1fae8536f2c68427f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -256,7 +256,7 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 30,
+      "line": 31,
       "signature": "export class ConfluenceClient",
       "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
     },
@@ -456,6 +456,15 @@
       "file": "src/jira/resources/filters.ts",
       "line": 36,
       "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
+      "typeOnly": true
+    },
+    {
+      "name": "CreateFolderData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1543,
+      "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
+      "jsdoc": "Request body for `POST /folders`.",
       "typeOnly": true
     },
     {
@@ -714,6 +723,69 @@
       "typeOnly": true
     },
     {
+      "name": "Folder",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1520,
+      "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
+      "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderAncestor",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1561,
+      "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
+      "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderAncestorsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1579,
+      "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
+      "jsdoc": "Response shape for `GET /folders/{id}/ancestors`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderChild",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1602,
+      "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
+      "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderDescendant",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1584,
+      "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
+      "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderOperation",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1625,
+      "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
+      "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "FolderOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1631,
+      "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
+      "jsdoc": "Response shape for `GET /folders/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
       "name": "FooterComment",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -818,6 +890,15 @@
       "line": 1460,
       "signature": "export interface GetDatabaseParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bo…",
       "jsdoc": "Parameters for `GET /databases/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
+      "typeOnly": true
+    },
+    {
+      "name": "GetFolderParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1553,
+      "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
+      "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
     },
     {
@@ -1189,6 +1270,33 @@
       "typeOnly": true
     },
     {
+      "name": "ListFolderAncestorsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1567,
+      "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
+      "jsdoc": "Parameters for listing folder ancestors.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListFolderChildrenParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1618,
+      "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
+      "jsdoc": "Parameters for listing direct children of a folder.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListFolderDescendantsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1595,
+      "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
+      "jsdoc": "Parameters for listing folder descendants (cursor-paginated).",
+      "typeOnly": true
+    },
+    {
       "name": "ListFooterCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1321,6 +1429,15 @@
       "line": 194,
       "signature": "export interface ListProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?: string…",
       "jsdoc": "Parameters for listing Jira projects.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListSharedContentPropertiesParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 707,
+      "signature": "export interface ListSharedContentPropertiesParams { readonly key?: string; readonly sort?: 'key' | '-key'; readonly cur…",
+      "jsdoc": "Parameters for listing content properties on comments, attachments, or databases. Supports optional `sort` and pagination via `cursor` and `limit`.",
       "typeOnly": true
     },
     {
@@ -1889,6 +2006,15 @@
       "typeOnly": true
     },
     {
+      "name": "UpdateSharedContentPropertyData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 721,
+      "signature": "export interface UpdateSharedContentPropertyData { readonly key: string; readonly value: unknown; readonly version: { re…",
+      "jsdoc": "Request body for updating a content property on comments, attachments, or databases.",
+      "typeOnly": true
+    },
+    {
       "name": "UpdateSpaceRoleData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -2150,279 +2276,285 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 68,
+          "line": 70,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 117,
+          "line": 119,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 131,
+          "line": 133,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 173,
+          "line": 175,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 258,
+          "line": 260,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 274,
+          "line": 276,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 295,
+          "line": 297,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 357,
+          "line": 359,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 363,
+          "line": 365,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 395,
+          "line": 397,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 403,
+          "line": 405,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 415,
+          "line": 417,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 434,
+          "line": 436,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 463,
+          "line": 465,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 491,
+          "line": 493,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 500,
+          "line": 502,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 517,
+          "line": 519,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 529,
+          "line": 531,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 581,
+          "line": 583,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 583,
+          "line": 585,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 596,
+          "line": 598,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 607,
+          "line": 609,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 643,
+          "line": 645,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 645,
+          "line": 647,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 669,
+          "line": 671,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 680,
+          "line": 682,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 698,
+          "line": 700,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeFolders",
+          "kind": "function",
+          "line": 806,
+          "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 804,
+          "line": 892,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 895,
+          "line": 983,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 900,
+          "line": 988,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 905,
+          "line": 993,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 909,
+          "line": 997,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 923,
+          "line": 1011,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 939,
+          "line": 1027,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 953,
+          "line": 1041,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 966,
+          "line": 1054,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 968,
+          "line": 1056,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 975,
+          "line": 1063,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 977,
+          "line": 1065,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 986,
+          "line": 1074,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 995,
+          "line": 1083,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1002,
+          "line": 1090,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1011,
+          "line": 1099,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1022,
+          "line": 1110,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1024,
+          "line": 1112,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -2820,13 +2952,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 126,
+          "line": 132,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 149,
+          "line": 155,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -3098,7 +3230,7 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 30,
+          "line": 31,
           "exported": true,
           "signature": "export class ConfluenceClient",
           "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
@@ -3106,127 +3238,132 @@
             {
               "name": "pages",
               "kind": "property",
-              "line": 31
+              "line": 32
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 32
+              "line": 33
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 33
+              "line": 34
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 34
+              "line": 35
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 35
+              "line": 36
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 36
+              "line": 37
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 38
+              "line": 39
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 40
+              "line": 41
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 42
+              "line": 43
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 44
+              "line": 45
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 46
+              "line": 47
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 48
+              "line": 49
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 50
+              "line": 51
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 52
+              "line": 53
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 54
+              "line": 55
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 56
+              "line": 57
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 58
+              "line": 59
+            },
+            {
+              "name": "folders",
+              "kind": "property",
+              "line": 61
             },
             {
               "name": "footerComments",
               "kind": "property",
-              "line": 63
+              "line": 66
             },
             {
               "name": "inlineComments",
               "kind": "property",
-              "line": 70
+              "line": 73
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 72
+              "line": 75
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 74
+              "line": 77
             },
             {
               "name": "spaceRoles",
               "kind": "property",
-              "line": 76
+              "line": 79
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 78
+              "line": 81
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 80
+              "line": 83
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 82
+              "line": 85
             }
           ]
         }
@@ -3246,6 +3383,7 @@
         "./resources/custom-content.js",
         "./resources/data-policies.js",
         "./resources/databases.js",
+        "./resources/folders.js",
         "./resources/footer-comments.js",
         "./resources/inline-comments.js",
         "./resources/labels.js",
@@ -3393,6 +3531,17 @@
             {
               "exported": "DatabasesResource",
               "original": "DatabasesResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/folders.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "FoldersResource",
+              "original": "FoldersResource"
             }
           ]
         },
@@ -3871,6 +4020,62 @@
             {
               "exported": "ResetDatabaseClassificationLevelData",
               "original": "ResetDatabaseClassificationLevelData"
+            },
+            {
+              "exported": "Folder",
+              "original": "Folder"
+            },
+            {
+              "exported": "CreateFolderData",
+              "original": "CreateFolderData"
+            },
+            {
+              "exported": "GetFolderParams",
+              "original": "GetFolderParams"
+            },
+            {
+              "exported": "FolderAncestor",
+              "original": "FolderAncestor"
+            },
+            {
+              "exported": "FolderAncestorsResponse",
+              "original": "FolderAncestorsResponse"
+            },
+            {
+              "exported": "ListFolderAncestorsParams",
+              "original": "ListFolderAncestorsParams"
+            },
+            {
+              "exported": "FolderDescendant",
+              "original": "FolderDescendant"
+            },
+            {
+              "exported": "ListFolderDescendantsParams",
+              "original": "ListFolderDescendantsParams"
+            },
+            {
+              "exported": "FolderChild",
+              "original": "FolderChild"
+            },
+            {
+              "exported": "ListFolderChildrenParams",
+              "original": "ListFolderChildrenParams"
+            },
+            {
+              "exported": "FolderOperation",
+              "original": "FolderOperation"
+            },
+            {
+              "exported": "FolderOperationsResponse",
+              "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",
@@ -4676,6 +4881,107 @@
               "name": "deleteProperty",
               "kind": "method",
               "line": 342
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
+        "../../core/path.js",
+        "../../core/types.js",
+        "../types.js"
+      ]
+    },
+    {
+      "path": "src/confluence/resources/folders.ts",
+      "symbols": [
+        {
+          "name": "FoldersResource",
+          "kind": "class",
+          "line": 42,
+          "exported": true,
+          "signature": "export class FoldersResource",
+          "jsdoc": "Resource for Confluence v2 folders.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 43
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 57
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 67
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 97
+            },
+            {
+              "name": "listAncestors",
+              "kind": "method",
+              "line": 113
+            },
+            {
+              "name": "listDescendants",
+              "kind": "method",
+              "line": 130
+            },
+            {
+              "name": "listDescendantsAll",
+              "kind": "method",
+              "line": 149
+            },
+            {
+              "name": "listDirectChildren",
+              "kind": "method",
+              "line": 165
+            },
+            {
+              "name": "listDirectChildrenAll",
+              "kind": "method",
+              "line": 184
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 202
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 213
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 233
+            },
+            {
+              "name": "createProperty",
+              "kind": "method",
+              "line": 250
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 260
+            },
+            {
+              "name": "updateProperty",
+              "kind": "method",
+              "line": 275
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 289
             }
           ]
         }
@@ -6672,6 +6978,102 @@
           "exported": true,
           "signature": "export interface ResetDatabaseClassificationLevelData { readonly status: 'current'; }",
           "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`."
+        },
+        {
+          "name": "Folder",
+          "kind": "interface",
+          "line": 1520,
+          "exported": true,
+          "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
+          "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`."
+        },
+        {
+          "name": "CreateFolderData",
+          "kind": "interface",
+          "line": 1543,
+          "exported": true,
+          "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
+          "jsdoc": "Request body for `POST /folders`."
+        },
+        {
+          "name": "GetFolderParams",
+          "kind": "interface",
+          "line": 1553,
+          "exported": true,
+          "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
+          "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
+        },
+        {
+          "name": "FolderAncestor",
+          "kind": "interface",
+          "line": 1561,
+          "exported": true,
+          "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
+          "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`."
+        },
+        {
+          "name": "ListFolderAncestorsParams",
+          "kind": "interface",
+          "line": 1567,
+          "exported": true,
+          "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
+          "jsdoc": "Parameters for listing folder ancestors."
+        },
+        {
+          "name": "FolderAncestorsResponse",
+          "kind": "interface",
+          "line": 1579,
+          "exported": true,
+          "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
+          "jsdoc": "Response shape for `GET /folders/{id}/ancestors`."
+        },
+        {
+          "name": "FolderDescendant",
+          "kind": "interface",
+          "line": 1584,
+          "exported": true,
+          "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
+          "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`."
+        },
+        {
+          "name": "ListFolderDescendantsParams",
+          "kind": "interface",
+          "line": 1595,
+          "exported": true,
+          "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
+          "jsdoc": "Parameters for listing folder descendants (cursor-paginated)."
+        },
+        {
+          "name": "FolderChild",
+          "kind": "interface",
+          "line": 1602,
+          "exported": true,
+          "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
+          "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`."
+        },
+        {
+          "name": "ListFolderChildrenParams",
+          "kind": "interface",
+          "line": 1618,
+          "exported": true,
+          "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
+          "jsdoc": "Parameters for listing direct children of a folder."
+        },
+        {
+          "name": "FolderOperation",
+          "kind": "interface",
+          "line": 1625,
+          "exported": true,
+          "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
+          "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`."
+        },
+        {
+          "name": "FolderOperationsResponse",
+          "kind": "interface",
+          "line": 1631,
+          "exported": true,
+          "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
+          "jsdoc": "Response shape for `GET /folders/{id}/operations`."
         }
       ]
     },
@@ -9010,6 +9412,62 @@
             {
               "exported": "ResetDatabaseClassificationLevelData",
               "original": "ResetDatabaseClassificationLevelData"
+            },
+            {
+              "exported": "Folder",
+              "original": "Folder"
+            },
+            {
+              "exported": "CreateFolderData",
+              "original": "CreateFolderData"
+            },
+            {
+              "exported": "GetFolderParams",
+              "original": "GetFolderParams"
+            },
+            {
+              "exported": "FolderAncestor",
+              "original": "FolderAncestor"
+            },
+            {
+              "exported": "FolderAncestorsResponse",
+              "original": "FolderAncestorsResponse"
+            },
+            {
+              "exported": "ListFolderAncestorsParams",
+              "original": "ListFolderAncestorsParams"
+            },
+            {
+              "exported": "FolderDescendant",
+              "original": "FolderDescendant"
+            },
+            {
+              "exported": "ListFolderDescendantsParams",
+              "original": "ListFolderDescendantsParams"
+            },
+            {
+              "exported": "FolderChild",
+              "original": "FolderChild"
+            },
+            {
+              "exported": "ListFolderChildrenParams",
+              "original": "ListFolderChildrenParams"
+            },
+            {
+              "exported": "FolderOperation",
+              "original": "FolderOperation"
+            },
+            {
+              "exported": "FolderOperationsResponse",
+              "original": "FolderOperationsResponse"
+            },
+            {
+              "exported": "ListSharedContentPropertiesParams",
+              "original": "ListSharedContentPropertiesParams"
+            },
+            {
+              "exported": "UpdateSharedContentPropertyData",
+              "original": "UpdateSharedContentPropertyData"
             },
             {
               "exported": "CommentSortOrder",

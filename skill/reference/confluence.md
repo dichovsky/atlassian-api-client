@@ -18,6 +18,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                      |
 | `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                               |
 | `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
+| `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                          |
 | `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                      |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
@@ -486,6 +487,61 @@ atlas confluence databases create-property db-1 --key feature-flags --value '{"b
 atlas confluence databases get-property db-1 --property-id prop-1
 atlas confluence databases update-property db-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
 atlas confluence databases delete-property db-1 --property-id prop-1
+```
+
+## `folders`
+
+Folders are first-class v2 content for grouping pages, whiteboards, databases, and other folders inside a space. The CLI exposes the full surface: lifecycle (`create`/`get`/`delete`), hierarchy navigation (`ancestors`/`descendants`/`direct-children`/`operations`), and content properties (`list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`). Pagination is cursor-based for `descendants`, `direct-children`, and `list-properties`; `ancestors` returns a bare `{ results }` and is re-called with the highest ancestor's ID instead of a cursor.
+
+| Action            | Positional   | Required flags                                          | Optional flags                                                                                         |
+| ----------------- | ------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `create`          | —            | `--space-id`                                            | `--title`, `--parent-id`                                                                               |
+| `get`             | `<folderId>` | —                                                       | `--include-collaborators`, `--include-direct-children`, `--include-operations`, `--include-properties` |
+| `delete`          | `<folderId>` | —                                                       | —                                                                                                      |
+| `ancestors`       | `<folderId>` | —                                                       | `--limit`                                                                                              |
+| `descendants`     | `<folderId>` | —                                                       | `--limit`, `--depth`, `--cursor`                                                                       |
+| `direct-children` | `<folderId>` | —                                                       | `--limit`, `--cursor`, `--sort`                                                                        |
+| `operations`      | `<folderId>` | —                                                       | —                                                                                                      |
+| `list-properties` | `<folderId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                               |
+| `create-property` | `<folderId>` | `--key`, `--value`                                      | —                                                                                                      |
+| `get-property`    | `<folderId>` | `--property-id`                                         | —                                                                                                      |
+| `update-property` | `<folderId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                      |
+| `delete-property` | `<folderId>` | `--property-id`                                         | —                                                                                                      |
+
+- `--depth` on `descendants` accepts 1–10 (server-validated; default 2).
+- `--sort` on `direct-children` accepts the `ContentSortOrder` vocabulary: `created-date`, `id`, `modified-date`, `child-position`, `title`, each optionally prefixed with `-` for descending.
+- `--sort` on `list-properties` accepts `key` or `-key`.
+- `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property` and `databases create-property`).
+- `--version-number` on `update-property` must be a positive integer one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `ancestors` returns `{ results }` without `_links.next`; iterate by calling again with the highest ancestor's ID as the new `<folderId>`.
+- Folders have no classification-level endpoints — unlike `databases`, the `/folders` surface does not expose `get`/`update`/`reset-classification-level`.
+- `delete` removes the folder (recoverable from the space trash via standard Confluence recovery flow); there is no purge flag on this endpoint.
+
+```sh
+# Create a folder at the space root
+atlas confluence folders create --space-id 654321 --title "Drafts"
+
+# Create a folder nested under another folder / page
+atlas confluence folders create --space-id 654321 --title "Q1 Drafts" --parent-id 789
+
+# Read a folder with everything inlined
+atlas confluence folders get folder-1 --include-properties --include-operations
+
+# Walk the descendant tree
+atlas confluence folders descendants folder-1 --depth 3 --limit 50
+
+# Sort direct children by most-recently modified
+atlas confluence folders direct-children folder-1 --sort -modified-date
+
+# Permitted operations
+atlas confluence folders operations folder-1
+
+# Content properties
+atlas confluence folders list-properties folder-1
+atlas confluence folders create-property folder-1 --key feature-flags --value '{"beta":true}'
+atlas confluence folders get-property folder-1 --property-id prop-1
+atlas confluence folders update-property folder-1 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 4
+atlas confluence folders delete-property folder-1 --property-id prop-1
 ```
 
 ## `footer-comments`

@@ -18,6 +18,7 @@ import { ClassificationLevelsResource } from './resources/classification-levels.
 import { ContentResource } from './resources/content.js';
 import { DataPoliciesResource } from './resources/data-policies.js';
 import { DatabasesResource } from './resources/databases.js';
+import { FoldersResource } from './resources/folders.js';
 import { FooterCommentsResource } from './resources/footer-comments.js';
 import { InlineCommentsResource } from './resources/inline-comments.js';
 import { SpacePermissionsResource } from './resources/space-permissions.js';
@@ -56,6 +57,8 @@ export class ConfluenceClient {
   readonly dataPolicies: DataPoliciesResource;
   /** Databases resource (v2 `/databases` surface). */
   readonly databases: DatabasesResource;
+  /** Folders resource (v2 `/folders` surface — lifecycle, hierarchy, properties). */
+  readonly folders: FoldersResource;
   /**
    * Footer comments resource — tenant-wide listing plus per-comment
    * navigation (`/footer-comments`, `/footer-comments/{id}/{children,likes,operations,versions}`).
@@ -101,6 +104,7 @@ export class ConfluenceClient {
     this.content = new ContentResource(transport, baseUrl);
     this.dataPolicies = new DataPoliciesResource(transport, baseUrl);
     this.databases = new DatabasesResource(transport, baseUrl);
+    this.folders = new FoldersResource(transport, baseUrl);
     this.footerComments = new FooterCommentsResource(transport, baseUrl);
     this.inlineComments = new InlineCommentsResource(transport, baseUrl);
     this.spacePermissions = new SpacePermissionsResource(transport, baseUrl);

@@ -148,6 +148,20 @@ const confluenceDatabasesMock = {
   updateProperty: vi.fn(),
   deleteProperty: vi.fn(),
 };
+const confluenceFoldersMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+  listAncestors: vi.fn(),
+  listDescendants: vi.fn(),
+  listDirectChildren: vi.fn(),
+  getOperations: vi.fn(),
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
 
 vi.mock('../../src/confluence/client.js', () => {
   const MockConfluenceClient = vi.fn(function () {
@@ -164,6 +178,7 @@ vi.mock('../../src/confluence/client.js', () => {
       content: confluenceContentMock,
       dataPolicies: confluenceDataPoliciesMock,
       databases: confluenceDatabasesMock,
+      folders: confluenceFoldersMock,
       footerComments: confluenceFooterCommentsMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
@@ -2886,6 +2901,303 @@ describe('executeConfluenceCommand', () => {
     it('databases unknown action throws', async () => {
       await expect(executeConfluenceCommand(cmd('databases', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown databases action',
+      );
+    });
+  });
+
+  // ── folders ───────────────────────────────────────────────────────────────
+
+  describe('folders resource', () => {
+    it('folders create calls client.folders.create with spaceId + title', async () => {
+      confluenceFoldersMock.create.mockResolvedValue({ id: 'folder-1' });
+      const parsed = cmd('folders', 'create', [], {
+        'space-id': 'space-1',
+        title: 'Drafts',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.create).toHaveBeenCalledWith({
+        spaceId: 'space-1',
+        title: 'Drafts',
+        parentId: undefined,
+      });
+    });
+
+    it('folders create with --parent-id forwards parentId', async () => {
+      confluenceFoldersMock.create.mockResolvedValue({ id: 'folder-1' });
+      const parsed = cmd('folders', 'create', [], {
+        'space-id': 'space-1',
+        'parent-id': 'p-9',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ parentId: 'p-9' }),
+      );
+    });
+
+    it('folders create throws when --space-id is missing', async () => {
+      const parsed = cmd('folders', 'create', [], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--space-id');
+    });
+
+    it('folders get calls client.folders.get with the ID', async () => {
+      confluenceFoldersMock.get.mockResolvedValue({ id: 'folder-1' });
+
+      const result = await executeConfluenceCommand(cmd('folders', 'get', ['folder-1']), GLOBALS);
+
+      expect(confluenceFoldersMock.get).toHaveBeenCalledWith('folder-1', expect.any(Object));
+      expect(result).toEqual({ id: 'folder-1' });
+    });
+
+    it('folders get forwards all include-* flags', async () => {
+      confluenceFoldersMock.get.mockResolvedValue({ id: 'folder-1' });
+      const parsed = cmd('folders', 'get', ['folder-1'], {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.get).toHaveBeenCalledWith('folder-1', {
+        'include-collaborators': true,
+        'include-direct-children': true,
+        'include-operations': true,
+        'include-properties': true,
+      });
+    });
+
+    it('folders get throws when ID is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('folders', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: folder ID',
+      );
+    });
+
+    it('folders delete calls client.folders.delete and returns { deleted: true }', async () => {
+      confluenceFoldersMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeConfluenceCommand(
+        cmd('folders', 'delete', ['folder-1']),
+        GLOBALS,
+      );
+
+      expect(confluenceFoldersMock.delete).toHaveBeenCalledWith('folder-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('folders delete throws when ID is missing', async () => {
+      await expect(executeConfluenceCommand(cmd('folders', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: folder ID',
+      );
+    });
+
+    it('folders ancestors calls listAncestors with limit', async () => {
+      confluenceFoldersMock.listAncestors.mockResolvedValue({ results: [] });
+      const parsed = cmd('folders', 'ancestors', ['folder-1'], { limit: '5' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.listAncestors).toHaveBeenCalledWith(
+        'folder-1',
+        expect.objectContaining({ limit: 5 }),
+      );
+    });
+
+    it('folders ancestors throws when ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('folders', 'ancestors', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: folder ID');
+    });
+
+    it('folders descendants forwards limit + depth + cursor', async () => {
+      confluenceFoldersMock.listDescendants.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('folders', 'descendants', ['folder-1'], {
+        limit: '25',
+        depth: '3',
+        cursor: 'tok',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.listDescendants).toHaveBeenCalledWith(
+        'folder-1',
+        expect.objectContaining({ limit: 25, depth: 3, cursor: 'tok' }),
+      );
+    });
+
+    it('folders direct-children passes sort when supplied', async () => {
+      confluenceFoldersMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('folders', 'direct-children', ['folder-1'], { sort: '-title' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.listDirectChildren).toHaveBeenCalledWith(
+        'folder-1',
+        expect.objectContaining({ sort: '-title' }),
+      );
+    });
+
+    it('folders direct-children omits sort when not supplied', async () => {
+      confluenceFoldersMock.listDirectChildren.mockResolvedValue({ results: [], _links: {} });
+
+      await executeConfluenceCommand(cmd('folders', 'direct-children', ['folder-1'], {}), GLOBALS);
+
+      const callArgs = confluenceFoldersMock.listDirectChildren.mock.calls.at(-1)?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+    });
+
+    it('folders direct-children rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('folders', 'direct-children', ['folder-1'], { sort: 'bogus' });
+
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        /--sort must be one of: created-date, -created-date, .*-title, got: bogus/,
+      );
+      expect(confluenceFoldersMock.listDirectChildren).not.toHaveBeenCalled();
+    });
+
+    it('folders operations calls getOperations', async () => {
+      confluenceFoldersMock.getOperations.mockResolvedValue({ operations: [] });
+
+      await executeConfluenceCommand(cmd('folders', 'operations', ['folder-1']), GLOBALS);
+
+      expect(confluenceFoldersMock.getOperations).toHaveBeenCalledWith('folder-1');
+    });
+
+    it('folders list-properties forwards key, sort, cursor, limit', async () => {
+      confluenceFoldersMock.listProperties.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('folders', 'list-properties', ['folder-1'], {
+        key: 'k',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.listProperties).toHaveBeenCalledWith(
+        'folder-1',
+        expect.objectContaining({ key: 'k', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('folders list-properties rejects invalid --sort with allowlist message', async () => {
+      const parsed = cmd('folders', 'list-properties', ['folder-1'], { sort: '-title' });
+
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: key, -key, got: -title',
+      );
+      expect(confluenceFoldersMock.listProperties).not.toHaveBeenCalled();
+    });
+
+    it('folders create-property parses JSON --value and forwards key + value', async () => {
+      confluenceFoldersMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('folders', 'create-property', ['folder-1'], {
+        key: 'feature',
+        value: '{"beta":true}',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.createProperty).toHaveBeenCalledWith('folder-1', {
+        key: 'feature',
+        value: { beta: true },
+      });
+    });
+
+    it('folders create-property falls back to raw string when --value is not JSON', async () => {
+      confluenceFoldersMock.createProperty.mockResolvedValue({ id: 'p-1', key: 'k' });
+      const parsed = cmd('folders', 'create-property', ['folder-1'], {
+        key: 'feature',
+        value: 'hello',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.createProperty).toHaveBeenCalledWith('folder-1', {
+        key: 'feature',
+        value: 'hello',
+      });
+    });
+
+    it('folders create-property requires --key', async () => {
+      const parsed = cmd('folders', 'create-property', ['folder-1'], { value: '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('folders create-property requires --value', async () => {
+      const parsed = cmd('folders', 'create-property', ['folder-1'], { key: 'k' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('folders get-property requires --property-id', async () => {
+      const parsed = cmd('folders', 'get-property', ['folder-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('folders get-property calls getProperty with both IDs', async () => {
+      confluenceFoldersMock.getProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('folders', 'get-property', ['folder-1'], { 'property-id': 'p-1' });
+
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.getProperty).toHaveBeenCalledWith('folder-1', 'p-1');
+      expect(result).toEqual({ id: 'p-1' });
+    });
+
+    it('folders update-property forwards key, value, version', async () => {
+      confluenceFoldersMock.updateProperty.mockResolvedValue({ id: 'p-1' });
+      const parsed = cmd('folders', 'update-property', ['folder-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '42',
+        'version-number': '4',
+      });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.updateProperty).toHaveBeenCalledWith('folder-1', 'p-1', {
+        key: 'feature',
+        value: 42,
+        version: { number: 4 },
+      });
+    });
+
+    it('folders update-property throws when version-number is not a positive integer', async () => {
+      const parsed = cmd('folders', 'update-property', ['folder-1'], {
+        'property-id': 'p-1',
+        key: 'feature',
+        value: '1',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('folders delete-property calls deleteProperty and returns { deleted: true }', async () => {
+      confluenceFoldersMock.deleteProperty.mockResolvedValue(undefined);
+      const parsed = cmd('folders', 'delete-property', ['folder-1'], { 'property-id': 'p-1' });
+
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+
+      expect(confluenceFoldersMock.deleteProperty).toHaveBeenCalledWith('folder-1', 'p-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('folders delete-property requires --property-id', async () => {
+      const parsed = cmd('folders', 'delete-property', ['folder-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--property-id');
+    });
+
+    it('folders unknown action throws', async () => {
+      await expect(executeConfluenceCommand(cmd('folders', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown folders action',
       );
     });
   });
