@@ -7,6 +7,7 @@ import type {
   BlogPostBodyRepresentation,
   BlogPostLookupStatus,
   BlogPostSortOrder,
+  ChildCustomContentSortOrder,
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
@@ -856,33 +857,47 @@ async function executeCustomContent(
     // ── lifecycle ─────────────────────────────────────────────────────────
     case 'list': {
       const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      const sort = asEnum(opts['sort'], CUSTOM_CONTENT_SORT_ORDERS, 'sort');
+      const spaceId = asString(opts['space-id']);
       return client.customContent.list({
         type: asString(opts['type']),
-        spaceId: asString(opts['space-id']),
-        pageId: asString(opts['page-id']),
-        blogPostId: asString(opts['blog-post-id']),
-        status: asString(opts['status']),
+        id: asString(opts['id']),
+        ...(spaceId !== undefined ? { 'space-id': spaceId } : {}),
+        ...(sort !== undefined ? { sort } : {}),
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
     }
     case 'get': {
-      const bodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      const bodyFormat = asEnum(
+        opts['body-format'],
+        CUSTOM_CONTENT_BODY_FORMATS_SINGLE,
+        'body-format',
+      );
       return client.customContent.get(requireArg(cmd.positionalArgs[0], 'custom content ID'), {
         ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
         version: asPositiveInt(opts['version-number'], '--version-number'),
+        'include-labels': opts['include-labels'] === true ? true : undefined,
+        'include-properties': opts['include-properties'] === true ? true : undefined,
+        'include-operations': opts['include-operations'] === true ? true : undefined,
+        'include-versions': opts['include-versions'] === true ? true : undefined,
+        'include-version': opts['include-version'] === true ? true : undefined,
+        'include-collaborators': opts['include-collaborators'] === true ? true : undefined,
       });
     }
-    case 'create':
+    case 'create': {
+      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
       return client.customContent.create({
         type: requireOpt(opts['type'], '--type'),
+        title: requireOpt(opts['title'], '--title'),
+        body,
         spaceId: asString(opts['space-id']),
         pageId: asString(opts['page-id']),
         blogPostId: asString(opts['blog-post-id']),
-        title: asString(opts['title']),
-        body: makeCustomContentBody(asString(opts['body'])),
+        customContentId: asString(opts['custom-content-id']),
       });
+    }
     case 'update': {
       const versionStr = requireOpt(opts['version-number'], '--version-number');
       const versionNum = Number(versionStr);
@@ -890,18 +905,28 @@ async function executeCustomContent(
         throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
       }
       const id = requireArg(cmd.positionalArgs[0], 'custom content ID');
+      const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
       return client.customContent.update(id, {
         id,
         type: requireOpt(opts['type'], '--type'),
         status: 'current',
-        title: asString(opts['title']),
+        title: requireOpt(opts['title'], '--title'),
+        body,
         version: { number: versionNum },
-        body: makeCustomContentBody(asString(opts['body'])),
+        spaceId: asString(opts['space-id']),
+        pageId: asString(opts['page-id']),
+        blogPostId: asString(opts['blog-post-id']),
+        customContentId: asString(opts['custom-content-id']),
       });
     }
-    case 'delete':
-      await client.customContent.delete(requireArg(cmd.positionalArgs[0], 'custom content ID'));
+    case 'delete': {
+      const purge = opts['purge'] === true ? true : undefined;
+      await client.customContent.delete(
+        requireArg(cmd.positionalArgs[0], 'custom content ID'),
+        purge === undefined ? undefined : { purge },
+      );
       return { deleted: true };
+    }
 
     // ── content properties (B094-B098) ────────────────────────────────────
     case 'list-properties':
@@ -994,15 +1019,17 @@ async function executeCustomContent(
     }
 
     // ── children (B105) ───────────────────────────────────────────────────
-    case 'children':
+    case 'children': {
+      const sort = asEnum(opts['sort'], CHILD_CUSTOM_CONTENT_SORT_ORDERS, 'sort');
       return client.customContent.listChildren(
         requireArg(cmd.positionalArgs[0], 'custom content ID'),
         {
-          sort: asString(opts['sort']),
+          ...(sort !== undefined ? { sort } : {}),
           cursor: asString(opts['cursor']),
           limit: asPositiveInt(opts['limit'], '--limit'),
         },
       );
+    }
 
     // ── footer comments (B106) ────────────────────────────────────────────
     case 'footer-comments': {
@@ -1048,8 +1075,7 @@ async function executeCustomContent(
 }
 
 /** Build a custom-content body envelope from a raw storage-format string. */
-function makeCustomContentBody(value: string | undefined) {
-  if (!value) return undefined;
+function makeCustomContentBody(value: string) {
   return { representation: 'storage' as const, value };
 }
 
@@ -2028,6 +2054,20 @@ const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [
 
 const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;
 
+/**
+ * Extended body-format vocabulary accepted only by `GET /custom-content/{id}`
+ * — adds the read-only `view`, `export_view`, and `anonymous_export_view`
+ * projections from the spec's `CustomContentBodyRepresentationSingle` enum.
+ */
+const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [
+  'raw',
+  'storage',
+  'atlas_doc_format',
+  'view',
+  'export_view',
+  'anonymous_export_view',
+] as const;
+
 const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [
   'id',
   '-id',
@@ -2037,6 +2077,15 @@ const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [
   '-modified-date',
   'title',
   '-title',
+];
+
+const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [
+  'id',
+  '-id',
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
 ];
 
 const COMMENT_STATUSES: readonly CommentStatus[] = [

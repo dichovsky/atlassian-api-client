@@ -34,18 +34,17 @@ describe('CustomContentResource', () => {
         method: 'GET',
         path: `${BASE_URL}/custom-content`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('calls GET /custom-content with all supported params', async () => {
+    it('forwards every spec-defined query key with kebab-case wire format', async () => {
       const payload = { results: [], _links: {} };
       transport.respondWith(payload);
       const params = {
         type: 'custom-type',
         id: '123',
-        spaceId: 'SPACE',
-        pageId: 'PAGE',
-        blogPostId: 'BLOG',
-        status: 'current',
+        'space-id': 'SPACE',
+        sort: 'created-date' as const,
         'body-format': 'storage' as const,
         cursor: 'abc',
         limit: 25,
@@ -54,12 +53,33 @@ describe('CustomContentResource', () => {
       const result = await resource.list(params);
 
       expect(result).toEqual(payload);
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      expect(transport.lastCall?.options.query).toEqual(params);
+    });
+
+    it('omits keys not in the spec (no pageId/blogPostId/status drift)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list({ type: 't', 'space-id': 'SPACE' });
+
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).toEqual({ type: 't', 'space-id': 'SPACE' });
+      expect(query).not.toHaveProperty('spaceId');
+      expect(query).not.toHaveProperty('pageId');
+      expect(query).not.toHaveProperty('blogPostId');
+      expect(query).not.toHaveProperty('status');
     });
 
     it('throws RangeError for invalid limit', async () => {
       await expect(resource.list({ limit: 0 })).rejects.toThrow(RangeError);
       expect(transport.calls).toHaveLength(0);
+    });
+
+    it('forwards id-only filter without other keys', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list({ id: '42' });
+
+      expect(transport.lastCall?.options.query).toEqual({ id: '42' });
     });
   });
 
@@ -77,15 +97,56 @@ describe('CustomContentResource', () => {
         method: 'GET',
         path: `${BASE_URL}/custom-content/42`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('includes query params when provided', async () => {
+    it('forwards body-format and version', async () => {
       transport.respondWith(makeCustomContent('42'));
       const params = { 'body-format': 'storage' as const, version: 2 };
 
       await resource.get('42', params);
 
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      expect(transport.lastCall?.options.query).toEqual(params);
+    });
+
+    it('forwards every include-* flag set on the spec', async () => {
+      transport.respondWith(makeCustomContent('42'));
+
+      await resource.get('42', {
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-versions': true,
+        'include-version': true,
+        'include-collaborators': true,
+      });
+    });
+
+    it('accepts the extended single-item body-format vocabulary', async () => {
+      transport.respondWith(makeCustomContent('42'));
+      await resource.get('42', { 'body-format': 'export_view' });
+      expect(transport.lastCall?.options.query).toEqual({ 'body-format': 'export_view' });
+    });
+
+    it('omits the entire query bag when params is undefined', async () => {
+      transport.respondWith(makeCustomContent('42'));
+      await resource.get('42');
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('omits the query bag when only undefined flags are passed', async () => {
+      transport.respondWith(makeCustomContent('42'));
+      await resource.get('42', {});
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 
@@ -125,6 +186,7 @@ describe('CustomContentResource', () => {
         type: 'custom-type',
         status: 'current' as const,
         title: 'Updated Title',
+        body: { representation: 'storage' as const, value: '<p>updated</p>' },
         version: { number: 2 },
       };
 
@@ -142,7 +204,7 @@ describe('CustomContentResource', () => {
   // ── delete ────────────────────────────────────────────────────────────────
 
   describe('delete()', () => {
-    it('calls DELETE /custom-content/{id}', async () => {
+    it('calls DELETE /custom-content/{id} with no query when no params', async () => {
       transport.respondWith(undefined);
 
       await resource.delete('7');
@@ -151,6 +213,31 @@ describe('CustomContentResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/custom-content/7`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('forwards purge=true when set', async () => {
+      transport.respondWith(undefined);
+
+      await resource.delete('7', { purge: true });
+
+      expect(transport.lastCall?.options.query).toEqual({ purge: true });
+    });
+
+    it('forwards purge=false when explicitly set', async () => {
+      transport.respondWith(undefined);
+
+      await resource.delete('7', { purge: false });
+
+      expect(transport.lastCall?.options.query).toEqual({ purge: false });
+    });
+
+    it('omits query when params object has no purge key', async () => {
+      transport.respondWith(undefined);
+
+      await resource.delete('7', {});
+
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 
@@ -235,6 +322,8 @@ describe('CustomContentResource', () => {
         id: '../admin',
         type: 'custom-type',
         status: 'current',
+        title: 'x',
+        body: { representation: 'storage', value: '<p>x</p>' },
         version: { number: 2 },
       });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/custom-content/..%2Fadmin`);

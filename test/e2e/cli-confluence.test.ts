@@ -2428,6 +2428,8 @@ const matrix: readonly MatrixRow[] = [
       '2',
       '--title',
       'Renamed',
+      '--body',
+      '<p>updated</p>',
     ],
     routes: [{ method: 'PUT', path: `${P}/custom-content/cc-1`, body: F.customContentItem }],
     expectCall: { method: 'PUT', pathname: `${P}/custom-content/cc-1` },
@@ -2437,6 +2439,7 @@ const matrix: readonly MatrixRow[] = [
         type: 'ai.atlassian.collection',
         status: 'current',
         title: 'Renamed',
+        body: { representation: 'storage', value: '<p>updated</p>' },
         version: { number: 2 },
       });
     },

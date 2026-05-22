@@ -11,6 +11,7 @@ import type {
   CustomContent,
   CustomContentChild,
   CustomContentOperationsResponse,
+  DeleteCustomContentParams,
   FooterComment,
   GetCustomContentParams,
   Label,
@@ -24,6 +25,18 @@ import type {
   UpdateCustomContentData,
   UpdateSharedContentPropertyData,
 } from '../types.js';
+
+/** Query bag accepted by the underlying transport. Scalars only. */
+type Query = Record<string, string | number | boolean | undefined>;
+
+/**
+ * Return `undefined` for an empty query bag so the transport does not append
+ * a stray `?` to the URL. Used by methods whose params are entirely optional.
+ */
+function nonEmptyQuery(query: Query): Query | undefined {
+  for (const _ in query) return query;
+  return undefined;
+}
 
 /**
  * Resource for Confluence v2 custom content.
@@ -55,17 +68,20 @@ export class CustomContentResource {
     const response = await this.transport.request<CursorPaginatedResponse<CustomContent>>({
       method: 'GET',
       path: `${this.baseUrl}/custom-content`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: this.buildListQuery(params),
     });
     return response.data;
   }
 
-  /** Get a custom content item by ID. */
+  /**
+   * Get a custom content item by ID. Use `params.include-*` to inline
+   * sub-resources (labels, properties, operations, versions, collaborators).
+   */
   async get(id: string, params?: GetCustomContentParams): Promise<CustomContent> {
     const response = await this.transport.request<CustomContent>({
       method: 'GET',
       path: `${this.baseUrl}/custom-content/${encodePathSegment(id)}`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: this.buildGetQuery(params),
     });
     return response.data;
   }
@@ -90,20 +106,25 @@ export class CustomContentResource {
     return response.data;
   }
 
-  /** Delete a custom content item. */
-  async delete(id: string): Promise<void> {
+  /**
+   * Delete a custom content item. Pass `params.purge=true` to permanently
+   * delete a previously-trashed item.
+   */
+  async delete(id: string, params?: DeleteCustomContentParams): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/custom-content/${encodePathSegment(id)}`,
+      query: this.buildDeleteQuery(params),
     });
   }
 
   /** Iterate over all custom content items across all result pages. */
   async *listAll(params?: Omit<ListCustomContentParams, 'cursor'>): AsyncGenerator<CustomContent> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<CustomContent>(
       this.transport,
       `${this.baseUrl}/custom-content`,
-      params as Record<string, string | number | boolean | undefined>,
+      this.buildListQuery(params),
     );
   }
 
@@ -467,6 +488,53 @@ export class CustomContentResource {
   }
 
   // ── internals ─────────────────────────────────────────────────────────────
+
+  /** Build the query bag for `GET /custom-content`. */
+  private buildListQuery(
+    params: ListCustomContentParams | Omit<ListCustomContentParams, 'cursor'> | undefined,
+  ): Query | undefined {
+    const query: Query = {};
+    if (params === undefined) return undefined;
+    if (params.type !== undefined) query['type'] = params.type;
+    if (params.id !== undefined) query['id'] = params.id;
+    if (params['space-id'] !== undefined) query['space-id'] = params['space-id'];
+    if (params.sort !== undefined) query['sort'] = params.sort;
+    if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if ('cursor' in params && params.cursor !== undefined) query['cursor'] = params.cursor;
+    if (params.limit !== undefined) query['limit'] = params.limit;
+    return nonEmptyQuery(query);
+  }
+
+  /** Build the query bag for `GET /custom-content/{id}`. */
+  private buildGetQuery(params: GetCustomContentParams | undefined): Query | undefined {
+    if (params === undefined) return undefined;
+    const query: Query = {};
+    if (params['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params.version !== undefined) query['version'] = params.version;
+    if (params['include-labels'] !== undefined) query['include-labels'] = params['include-labels'];
+    if (params['include-properties'] !== undefined) {
+      query['include-properties'] = params['include-properties'];
+    }
+    if (params['include-operations'] !== undefined) {
+      query['include-operations'] = params['include-operations'];
+    }
+    if (params['include-versions'] !== undefined) {
+      query['include-versions'] = params['include-versions'];
+    }
+    if (params['include-version'] !== undefined) {
+      query['include-version'] = params['include-version'];
+    }
+    if (params['include-collaborators'] !== undefined) {
+      query['include-collaborators'] = params['include-collaborators'];
+    }
+    return nonEmptyQuery(query);
+  }
+
+  /** Build the query bag for `DELETE /custom-content/{id}`. */
+  private buildDeleteQuery(params: DeleteCustomContentParams | undefined): Query | undefined {
+    if (params?.purge === undefined) return undefined;
+    return { purge: params.purge };
+  }
 
   /** Build the query bag for `GET /custom-content/{id}/attachments`. */
   private buildAttachmentsQuery(
