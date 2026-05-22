@@ -7,7 +7,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | Resource                | Actions                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pages`                 | `list`, `get`, `create`, `update`, `delete`, `ancestors`, `descendants`, `direct-children`, `children`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `custom-content`, `likes-count`, `likes-users`, `operations`, `redact`, `update-title`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `version`, `upload-attachment` |
-| `spaces`                | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `spaces`                | `list`, `get`, `create`, `blog-posts`, `get-default-classification-level`, `update-default-classification-level`, `delete-default-classification-level`, `content-labels`, `custom-content`, `labels`, `operations`, `pages`, `permissions`, `role-assignments`, `set-role-assignments`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                 |
 | `blog-posts`            | `list`, `get`, `create`, `update`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `attachments`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `custom-content`, `footer-comments`, `inline-comments`, `labels`, `likes-count`, `likes-users`, `operations`, `redact`, `versions`, `version`                      |
 | `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                                                                       |
 | `attachments`           | `list`, `list-all`, `get`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `get-version`, `footer-comments`, `labels`, `operations`, `thumbnail`                                                                                                                                                                                                  |
@@ -120,10 +120,75 @@ atlas confluence pages upload-attachment 12345 --file ./screenshot.png --media-t
 
 ## `spaces`
 
-| Action | Positional  | Optional flags        |
-| ------ | ----------- | --------------------- |
-| `list` | —           | `--limit`, `--cursor` |
-| `get`  | `<spaceId>` | —                     |
+Lifecycle (`list` / `get` / `create`) plus the full `/spaces/{id}/…` sub-resource family: per-space blog posts and pages, custom content of a given type, content labels (on contained content) vs. labels (on the space entity itself), default classification level (read / write / clear), permitted operations, permission assignments, role assignments (read + bulk overwrite), and space-property CRUD.
+
+| Action                                | Positional  | Required flags                                          | Optional flags                                                                                          |
+| ------------------------------------- | ----------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `list`                                | —           | —                                                       | `--limit`, `--cursor`                                                                                   |
+| `get`                                 | `<spaceId>` | —                                                       | —                                                                                                       |
+| `create`                              | —           | `--name`                                                | `--key`, `--alias`, `--description`, `--private`, `--template-key`, `--copy-space-access-configuration` |
+| `blog-posts`                          | `<spaceId>` | —                                                       | `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                                 |
+| `get-default-classification-level`    | `<spaceId>` | —                                                       | —                                                                                                       |
+| `update-default-classification-level` | `<spaceId>` | `--level-id`                                            | —                                                                                                       |
+| `delete-default-classification-level` | `<spaceId>` | —                                                       | —                                                                                                       |
+| `content-labels`                      | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                             |
+| `custom-content`                      | `<spaceId>` | `--type`                                                | `--cursor`, `--limit`, `--body-format`                                                                  |
+| `labels`                              | `<spaceId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                                             |
+| `operations`                          | `<spaceId>` | —                                                       | —                                                                                                       |
+| `pages`                               | `<spaceId>` | —                                                       | `--depth`, `--sort`, `--status`, `--title`, `--body-format`, `--cursor`, `--limit`                      |
+| `permissions`                         | `<spaceId>` | —                                                       | `--cursor`, `--limit`                                                                                   |
+| `role-assignments`                    | `<spaceId>` | —                                                       | `--role-id`, `--role-type`, `--principal-id`, `--principal-type`, `--cursor`, `--limit`                 |
+| `set-role-assignments`                | `<spaceId>` | `--value` (JSON array)                                  | —                                                                                                       |
+| `list-properties`                     | `<spaceId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                                                |
+| `create-property`                     | `<spaceId>` | `--key`, `--value`                                      | —                                                                                                       |
+| `get-property`                        | `<spaceId>` | `--property-id`                                         | —                                                                                                       |
+| `update-property`                     | `<spaceId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                                       |
+| `delete-property`                     | `<spaceId>` | `--property-id`                                         | —                                                                                                       |
+
+- `create` requires either `--key` or `--alias` for the space URL identifier (the OpenAPI spec encodes this constraint in prose); `--description` is sent as `{ value, representation: 'plain' }` since the v2 API only accepts the plain representation. `--private` mints a private space (the calling user becomes the sole admin). `--copy-space-access-configuration` clones the access configuration from the named space id. Available on tenants with Role-Based Access Control.
+- `blog-posts --sort` accepts `BlogPostSortOrder` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`). `--status` is comma-separated `current,deleted,trashed` (narrower than the standalone `/blogposts` collection — `historical` / `draft` are not legal here). `--body-format` is `storage` or `atlas_doc_format`.
+- `pages --depth` accepts `all` (default — full subtree) or `root` (top-level pages only). `--status` is comma-separated `current,archived,deleted,trashed`. `--sort` is `PageSortOrder` (`id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`). `--body-format` is `storage` or `atlas_doc_format`.
+- `content-labels` returns labels applied to **content within the space** (pages, blog posts, attachments). `labels` returns labels applied to the **space entity itself**. Both accept `--prefix` (`my` or `team` only — narrower than the tenant-wide `/labels` collection which also accepts `global` and `system`) and `--sort` from `LabelSortOrder` (`created-date`, `-created-date`, `id`, `-id`, `name`, `-name`).
+- `custom-content --type` is required (Confluence resolves the custom-content namespace from this value). `--body-format` accepts `raw`, `storage`, or `atlas_doc_format`. Unlike the blog-post variant this endpoint does not accept a `--sort` parameter.
+- `update-default-classification-level --level-id` sends `{ id: <level-id> }` and returns 204. `delete-default-classification-level` clears the override so content falls back to the tenant-wide default.
+- `permissions` returns per-space permission assignments (the `{ principal, operation }` grants actually issued on this space). Distinct from `space-permissions list`, which lists the available permission _definitions_.
+- `role-assignments` lists current grants; filter by `--role-id`, `--role-type` (`SYSTEM` / `CUSTOM`), `--principal-id`, `--principal-type` (`USER` / `GROUP` / `ACCESS_CLASS`).
+- `set-role-assignments --value` accepts a JSON array of `{ principal: { principalType, principalId }, roleId }` entries; the server replaces the space's role assignments wholesale with the provided list. Returns the `MultiEntityResult<SpaceRoleAssignment>` envelope from the server (200 response) — `results` is the canonicalised assignment set after the replace (principals and role ids may be normalised), so treat it as the authoritative post-write state rather than re-echoing the request.
+- The `*-property` actions wrap `/spaces/{space-id}/properties`. `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string. `--sort` on `list-properties` accepts `key` or `-key`. `update-property --version-number` must be exactly one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
+
+```sh
+# Lifecycle
+atlas confluence spaces list --limit 25
+atlas confluence spaces get 654321
+atlas confluence spaces create --name "Engineering" --key ENG --description "Eng wiki"
+atlas confluence spaces create --name "Private Inbox" --alias inbox --private
+
+# Sub-collections
+atlas confluence spaces blog-posts 654321 --sort=-created-date --status current --limit 25
+atlas confluence spaces pages 654321 --depth root --title "Quarterly" --sort=-modified-date
+atlas confluence spaces custom-content 654321 --type ai.atlassian.collection
+atlas confluence spaces content-labels 654321 --prefix team
+atlas confluence spaces labels 654321 --prefix team --sort -name
+atlas confluence spaces operations 654321
+
+# Classification
+atlas confluence spaces get-default-classification-level 654321
+atlas confluence spaces update-default-classification-level 654321 --level-id cl-restricted
+atlas confluence spaces delete-default-classification-level 654321
+
+# Permissions + roles
+atlas confluence spaces permissions 654321 --limit 50
+atlas confluence spaces role-assignments 654321 --role-type CUSTOM --principal-type USER
+atlas confluence spaces set-role-assignments 654321 --value '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]'
+
+# Space properties
+atlas confluence spaces list-properties 654321 --sort key
+atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
+atlas confluence spaces get-property 654321 --property-id prop-1
+atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
+atlas confluence spaces delete-property 654321 --property-id prop-1
+```
 
 ## `blog-posts`
 

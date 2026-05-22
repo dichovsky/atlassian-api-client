@@ -130,6 +130,299 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/spaces/654321` },
     expectStdout: ['"id": "654321"'],
   },
+  {
+    name: 'spaces create',
+    argv: [
+      'confluence',
+      'spaces',
+      'create',
+      '--name',
+      'Newly Created Space',
+      '--key',
+      'NEW',
+      '--description',
+      'Created via E2E',
+    ],
+    routes: [{ method: 'POST', path: `${P}/spaces`, status: 201, body: F.spaceCreated }],
+    expectCall: { method: 'POST', pathname: `${P}/spaces` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        name: 'Newly Created Space',
+        key: 'NEW',
+        description: { value: 'Created via E2E', representation: 'plain' },
+      });
+    },
+    expectStdout: ['"key": "NEW"'],
+  },
+  {
+    name: 'spaces blog-posts',
+    argv: ['confluence', 'spaces', 'blog-posts', '654321', '--sort=-created-date'],
+    routes: [{ method: 'GET', path: `${P}/spaces/654321/blogposts`, body: F.spaceBlogPostList }],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/blogposts` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-created-date');
+    },
+    expectStdout: ['"id": "sb-1"'],
+  },
+  {
+    name: 'spaces get-default-classification-level',
+    argv: ['confluence', 'spaces', 'get-default-classification-level', '654321'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/spaces/654321/classification-level/default`,
+        body: F.spaceDefaultClassificationLevel,
+      },
+    ],
+    expectCall: {
+      method: 'GET',
+      pathname: `${P}/spaces/654321/classification-level/default`,
+    },
+    expectStdout: ['"id": "cl-public"'],
+  },
+  {
+    name: 'spaces update-default-classification-level',
+    argv: [
+      'confluence',
+      'spaces',
+      'update-default-classification-level',
+      '654321',
+      '--level-id',
+      'cl-restricted',
+    ],
+    routes: [
+      { method: 'PUT', path: `${P}/spaces/654321/classification-level/default`, status: 204 },
+    ],
+    expectCall: {
+      method: 'PUT',
+      pathname: `${P}/spaces/654321/classification-level/default`,
+    },
+    expectBody: (body) => {
+      expect(body).toMatchObject({ id: 'cl-restricted' });
+    },
+    expectStdout: ['"updated": true'],
+  },
+  {
+    name: 'spaces delete-default-classification-level',
+    argv: ['confluence', 'spaces', 'delete-default-classification-level', '654321'],
+    routes: [
+      { method: 'DELETE', path: `${P}/spaces/654321/classification-level/default`, status: 204 },
+    ],
+    expectCall: {
+      method: 'DELETE',
+      pathname: `${P}/spaces/654321/classification-level/default`,
+    },
+    expectStdout: ['"deleted": true'],
+  },
+  {
+    name: 'spaces content-labels',
+    argv: ['confluence', 'spaces', 'content-labels', '654321', '--prefix', 'team'],
+    routes: [
+      { method: 'GET', path: `${P}/spaces/654321/content/labels`, body: F.spaceContentLabelList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/content/labels` },
+    expectQuery: (query) => {
+      expect(query.prefix).toBe('team');
+    },
+  },
+  {
+    name: 'spaces custom-content',
+    argv: ['confluence', 'spaces', 'custom-content', '654321', '--type', 'ai.atlassian.collection'],
+    routes: [
+      { method: 'GET', path: `${P}/spaces/654321/custom-content`, body: F.spaceCustomContentList },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/custom-content` },
+    expectQuery: (query) => {
+      expect(query.type).toBe('ai.atlassian.collection');
+    },
+  },
+  {
+    name: 'spaces labels',
+    argv: ['confluence', 'spaces', 'labels', '654321', '--sort=-name'],
+    routes: [{ method: 'GET', path: `${P}/spaces/654321/labels`, body: F.spaceLabelList }],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/labels` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('-name');
+    },
+  },
+  {
+    name: 'spaces operations',
+    argv: ['confluence', 'spaces', 'operations', '654321'],
+    routes: [{ method: 'GET', path: `${P}/spaces/654321/operations`, body: F.spaceOperations }],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/operations` },
+    expectStdout: ['"targetType": "space"'],
+  },
+  {
+    name: 'spaces pages',
+    argv: ['confluence', 'spaces', 'pages', '654321', '--depth', 'root', '--sort=-modified-date'],
+    routes: [{ method: 'GET', path: `${P}/spaces/654321/pages`, body: F.spacePageList }],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/pages` },
+    expectQuery: (query) => {
+      expect(query.depth).toBe('root');
+      expect(query.sort).toBe('-modified-date');
+    },
+  },
+  {
+    name: 'spaces permissions',
+    argv: ['confluence', 'spaces', 'permissions', '654321', '--limit', '50'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/spaces/654321/permissions`,
+        body: F.spacePermissionAssignmentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/permissions` },
+    expectQuery: (query) => {
+      expect(query.limit).toBe('50');
+    },
+  },
+  {
+    name: 'spaces role-assignments',
+    argv: [
+      'confluence',
+      'spaces',
+      'role-assignments',
+      '654321',
+      '--role-type',
+      'CUSTOM',
+      '--principal-type',
+      'USER',
+    ],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/spaces/654321/role-assignments`,
+        body: F.spaceRoleAssignmentList,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/role-assignments` },
+    expectQuery: (query) => {
+      expect(query['role-type']).toBe('CUSTOM');
+      expect(query['principal-type']).toBe('USER');
+    },
+  },
+  {
+    name: 'spaces set-role-assignments',
+    argv: [
+      'confluence',
+      'spaces',
+      'set-role-assignments',
+      '654321',
+      '--value',
+      '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]',
+    ],
+    // POST /spaces/{id}/role-assignments returns 200 with a
+    // `MultiEntityResult<SpaceRoleAssignment>` envelope (the canonicalised
+    // post-write set), not 204. The CLI surfaces that body verbatim so users
+    // can see server-side normalisation rather than a placeholder ack.
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/spaces/654321/role-assignments`,
+        body: {
+          results: [
+            {
+              principal: { principalType: 'USER', principalId: 'acc-1-normalised' },
+              roleId: 'role-1',
+            },
+          ],
+          _links: { base: 'https://example.atlassian.net/wiki' },
+        },
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/spaces/654321/role-assignments` },
+    expectBody: (body) => {
+      expect(body).toEqual([
+        { principal: { principalType: 'USER', principalId: 'acc-1' }, roleId: 'role-1' },
+      ]);
+    },
+    expectStdout: ['"results"', '"acc-1-normalised"'],
+  },
+  {
+    name: 'spaces list-properties',
+    argv: ['confluence', 'spaces', 'list-properties', '654321', '--sort', 'key'],
+    routes: [{ method: 'GET', path: `${P}/spaces/654321/properties`, body: F.spacePropertyList }],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/properties` },
+    expectQuery: (query) => {
+      expect(query.sort).toBe('key');
+    },
+  },
+  {
+    name: 'spaces create-property',
+    argv: [
+      'confluence',
+      'spaces',
+      'create-property',
+      '654321',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":true}',
+    ],
+    routes: [
+      {
+        method: 'POST',
+        path: `${P}/spaces/654321/properties`,
+        status: 201,
+        body: F.spaceProperty,
+      },
+    ],
+    expectCall: { method: 'POST', pathname: `${P}/spaces/654321/properties` },
+    expectBody: (body) => {
+      expect(body).toEqual({ key: 'feature-flags', value: { beta: true } });
+    },
+  },
+  {
+    name: 'spaces get-property',
+    argv: ['confluence', 'spaces', 'get-property', '654321', '--property-id', 'sprop-1'],
+    routes: [
+      {
+        method: 'GET',
+        path: `${P}/spaces/654321/properties/sprop-1`,
+        body: F.spaceProperty,
+      },
+    ],
+    expectCall: { method: 'GET', pathname: `${P}/spaces/654321/properties/sprop-1` },
+  },
+  {
+    name: 'spaces update-property',
+    argv: [
+      'confluence',
+      'spaces',
+      'update-property',
+      '654321',
+      '--property-id',
+      'sprop-1',
+      '--key',
+      'feature-flags',
+      '--value',
+      '{"beta":false}',
+      '--version-number',
+      '2',
+    ],
+    routes: [
+      { method: 'PUT', path: `${P}/spaces/654321/properties/sprop-1`, body: F.spaceProperty },
+    ],
+    expectCall: { method: 'PUT', pathname: `${P}/spaces/654321/properties/sprop-1` },
+    expectBody: (body) => {
+      expect(body).toMatchObject({
+        key: 'feature-flags',
+        value: { beta: false },
+        version: { number: 2 },
+      });
+    },
+  },
+  {
+    name: 'spaces delete-property',
+    argv: ['confluence', 'spaces', 'delete-property', '654321', '--property-id', 'sprop-1'],
+    routes: [{ method: 'DELETE', path: `${P}/spaces/654321/properties/sprop-1`, status: 204 }],
+    expectCall: {
+      method: 'DELETE',
+      pathname: `${P}/spaces/654321/properties/sprop-1`,
+    },
+    expectStdout: ['"deleted": true'],
+  },
 
   // ─── blog-posts ───────────────────────────────────────────────────────
   {

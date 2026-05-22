@@ -318,6 +318,23 @@ export type {
   UpdatePageTitleData,
   ListPageFooterCommentsParams,
   ListPageInlineCommentsParams,
+  // Spaces sub-resources (B196-B213)
+  CreateSpaceData,
+  SpaceRoleAssignment,
+  ListSpaceBlogPostsParams,
+  SpaceContentLabelPrefix,
+  ListSpaceContentLabelsParams,
+  ListSpaceLabelsParams,
+  ListSpaceCustomContentParams,
+  SpaceOperation,
+  SpaceOperationsResponse,
+  SpacePageDepth,
+  ListSpacePagesParams,
+  SpacePermissionAssignment,
+  ListSpacePermissionAssignmentsParams,
+  ListSpaceRoleAssignmentsParams,
+  SetSpaceRoleAssignmentsData,
+  UpdateSpaceDefaultClassificationLevelData,
 } from './confluence/index.js';
 
 // Jira

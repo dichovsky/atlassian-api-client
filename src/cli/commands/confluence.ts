@@ -12,6 +12,7 @@ import type {
   CommentSortOrder,
   CommentStatus,
   ContentSortOrder,
+  CreateSpaceData,
   CustomContentSortOrder,
   DataPolicySpaceSortOrder,
   GetBlogPostParams,
@@ -328,16 +329,222 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
 }
 
 async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
       return client.spaces.list({
-        limit: asPositiveInt(cmd.options['limit'], '--limit'),
-        cursor: asString(cmd.options['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
       });
     case 'get':
       return client.spaces.get(requireArg(cmd.positionalArgs[0], 'space ID'));
+
+    // ── lifecycle (B196) ──────────────────────────────────────────────────
+    case 'create': {
+      const description = asString(opts['description']);
+      const copyFrom = asPositiveInt(
+        opts['copy-space-access-configuration'],
+        '--copy-space-access-configuration',
+      );
+      // The spec note on `description.representation` says: "only the 'plain'
+      // representation is currently supported." We surface `--description` as
+      // a plain string and fix `representation: 'plain'` here rather than
+      // exposing an unsupported knob through the CLI surface.
+      const data: Partial<CreateSpaceData> & { name: string } = {
+        name: requireOpt(opts['name'], '--name'),
+        ...(typeof opts['key'] === 'string' ? { key: opts['key'] } : {}),
+        ...(typeof opts['alias'] === 'string' ? { alias: opts['alias'] } : {}),
+        ...(description !== undefined
+          ? { description: { value: description, representation: 'plain' } }
+          : {}),
+        ...(opts['private'] === true ? { createPrivateSpace: true } : {}),
+        ...(typeof opts['template-key'] === 'string' ? { templateKey: opts['template-key'] } : {}),
+        ...(copyFrom !== undefined ? { copySpaceAccessConfiguration: copyFrom } : {}),
+      };
+      return client.spaces.create(data);
+    }
+
+    // ── blog posts in space (B197) ────────────────────────────────────────
+    case 'blog-posts': {
+      const bpSort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
+      const bpStatus = asEnumArray(opts['status'], SPACE_BLOG_POST_STATUSES, 'status');
+      const bpBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.spaces.listBlogPosts(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        ...(bpSort !== undefined ? { sort: bpSort } : {}),
+        ...(bpStatus !== undefined ? { status: bpStatus } : {}),
+        title: asString(opts['title']),
+        ...(bpBodyFormat !== undefined ? { 'body-format': bpBodyFormat } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── default classification level (B198-B200) ──────────────────────────
+    case 'get-default-classification-level':
+      return client.spaces.getDefaultClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+      );
+    case 'update-default-classification-level':
+      await client.spaces.updateDefaultClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+        { id: requireOpt(opts['level-id'], '--level-id') },
+      );
+      return { updated: true };
+    case 'delete-default-classification-level':
+      await client.spaces.deleteDefaultClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+      );
+      return { deleted: true };
+
+    // ── content labels (B201) ─────────────────────────────────────────────
+    case 'content-labels': {
+      const clSort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const clPrefix = asEnum(opts['prefix'], SPACE_CONTENT_LABEL_PREFIXES, 'prefix');
+      return client.spaces.listContentLabels(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        ...(clPrefix !== undefined ? { prefix: clPrefix } : {}),
+        ...(clSort !== undefined ? { sort: clSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── custom content in space (B202) ────────────────────────────────────
+    case 'custom-content': {
+      const ccBodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.spaces.listCustomContent(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        type: requireOpt(opts['type'], '--type'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        ...(ccBodyFormat !== undefined ? { 'body-format': ccBodyFormat } : {}),
+      });
+    }
+
+    // ── labels on space entity (B203 — CLI+skill only) ────────────────────
+    case 'labels': {
+      const lblSort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const lblPrefix = asEnum(opts['prefix'], SPACE_CONTENT_LABEL_PREFIXES, 'prefix');
+      return client.spaces.listLabels(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        ...(lblPrefix !== undefined ? { prefix: lblPrefix } : {}),
+        ...(lblSort !== undefined ? { sort: lblSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── operations (B204) ─────────────────────────────────────────────────
+    case 'operations':
+      return client.spaces.getOperations(requireArg(cmd.positionalArgs[0], 'space ID'));
+
+    // ── pages in space (B205) ─────────────────────────────────────────────
+    case 'pages': {
+      const pgSort = asEnum(opts['sort'], PAGE_SORT_ORDERS, 'sort');
+      const pgDepth = asEnum(opts['depth'], SPACE_PAGE_DEPTHS, 'depth');
+      const pgStatus = asEnumArray(opts['status'], SPACE_PAGE_STATUSES, 'status');
+      const pgBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.spaces.listPages(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        ...(pgDepth !== undefined ? { depth: pgDepth } : {}),
+        ...(pgSort !== undefined ? { sort: pgSort } : {}),
+        ...(pgStatus !== undefined ? { status: pgStatus } : {}),
+        title: asString(opts['title']),
+        ...(pgBodyFormat !== undefined ? { 'body-format': pgBodyFormat } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── permission assignments (B206) ─────────────────────────────────────
+    case 'permissions':
+      return client.spaces.listPermissions(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+
+    // ── role assignments (B207-B208) ──────────────────────────────────────
+    case 'role-assignments': {
+      const raRoleType = asEnum(opts['role-type'], SPACE_ROLE_TYPES, 'role-type');
+      const raPrincipalType = asEnum(
+        opts['principal-type'],
+        SPACE_ROLE_PRINCIPAL_TYPES,
+        'principal-type',
+      );
+      return client.spaces.listRoleAssignments(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        'role-id': asString(opts['role-id']),
+        ...(raRoleType !== undefined ? { 'role-type': raRoleType } : {}),
+        'principal-id': asString(opts['principal-id']),
+        ...(raPrincipalType !== undefined ? { 'principal-type': raPrincipalType } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'set-role-assignments': {
+      // The wire format is a JSON array of `{ principal, roleId }` entries.
+      // The CLI accepts the array verbatim through `--value` (same JSON-or-fall-back
+      // semantics as `blog-posts redact` and `app upsert-property`).
+      // The server returns 200 with a `MultiEntityResult<SpaceRoleAssignment>`
+      // envelope — the confirmed, normalised assignment set after the replace.
+      // We surface the body verbatim so callers can diff request vs response
+      // and detect server-side principal/role canonicalisation.
+      const raw = requireOpt(opts['value'], '--value');
+      const parsed = parseJsonValue(raw);
+      if (!Array.isArray(parsed)) {
+        throw new Error(
+          '--value must be a JSON array of `{ principal: { principalType, principalId }, roleId }` entries',
+        );
+      }
+      return client.spaces.setRoleAssignments(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+        parsed as Parameters<typeof client.spaces.setRoleAssignments>[1],
+      );
+    }
+
+    // ── space properties (B209-B213) ──────────────────────────────────────
+    case 'list-properties': {
+      const propSort = asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort');
+      return client.spaces.listProperties(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        key: asString(opts['key']),
+        ...(propSort !== undefined ? { sort: propSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'create-property':
+      return client.spaces.createProperty(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.spaces.getProperty(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const versionStr = requireOpt(opts['version-number'], '--version-number');
+      const versionNum = Number(versionStr);
+      if (!Number.isInteger(versionNum) || versionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
+      }
+      return client.spaces.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: versionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.spaces.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'space ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+
     default:
-      throw new Error(`Unknown spaces action: ${cmd.action}. Actions: list, get`);
+      throw new Error(
+        `Unknown spaces action: ${cmd.action}. Actions: list, get, create, blog-posts, get-default-classification-level, update-default-classification-level, delete-default-classification-level, content-labels, custom-content, labels, operations, pages, permissions, role-assignments, set-role-assignments, list-properties, create-property, get-property, update-property, delete-property`,
+      );
   }
 }
 
@@ -1398,6 +1605,23 @@ const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [
   'GROUP',
   'ACCESS_CLASS',
 ];
+
+// ── spaces sub-resource enums (B196-B213) ─────────────────────────────────
+//
+// The OpenAPI spec narrows several enums on the `/spaces/{id}/…` collections
+// compared with their tenant-wide counterparts — e.g. `GET /spaces/{id}/blogposts`
+// only accepts `current,deleted,trashed` for `status`, whereas the standalone
+// `/blogposts` collection also accepts `historical,draft`. We mirror the
+// narrower enums here so the CLI fails fast on out-of-band values instead of
+// round-tripping to a 400.
+
+const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;
+
+const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;
+
+const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;
+
+const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;
 
 /**
  * Split `--space-permissions` from the CLI into a non-empty array. Accepts a

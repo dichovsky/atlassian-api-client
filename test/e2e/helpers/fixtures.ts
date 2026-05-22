@@ -773,6 +773,87 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+
+  // ── Space sub-resources (B196-B213) ──────────────────────────────────────
+  spaceCreated: {
+    id: '777777',
+    key: 'NEW',
+    name: 'Newly Created Space',
+    type: 'global',
+    status: 'current',
+    _links: { base: 'https://test.atlassian.net/wiki' },
+  },
+  spaceBlogPostList: {
+    results: [
+      {
+        id: 'sb-1',
+        type: 'blogpost',
+        status: 'current',
+        title: 'In-Space Post',
+        spaceId: '654321',
+      },
+    ],
+    _links: { next: null },
+  },
+  spaceDefaultClassificationLevel: {
+    id: 'cl-public',
+    name: 'Public',
+    status: 'PUBLISHED',
+    color: 'GREEN',
+  },
+  spaceContentLabelList: {
+    results: [{ id: 'lbl-sc-1', name: 'sprint', prefix: 'team' }],
+    _links: { next: null },
+  },
+  spaceCustomContentList: {
+    results: [{ id: 'cc-sp-1', type: 'ai.atlassian.collection', title: 'In-Space CC' }],
+    _links: { next: null },
+  },
+  spaceLabelList: {
+    results: [{ id: 'lbl-sp-1', name: 'roadmap', prefix: 'team' }],
+    _links: { next: null },
+  },
+  spaceOperations: {
+    operations: [
+      { operation: 'read', targetType: 'space' },
+      { operation: 'administer', targetType: 'space' },
+    ],
+  },
+  spacePageList: {
+    results: [{ id: 'pg-sp-1', type: 'page', status: 'current', title: 'Root', spaceId: '654321' }],
+    _links: { next: null },
+  },
+  spacePermissionAssignmentList: {
+    results: [
+      {
+        id: 'perm-asg-1',
+        principal: { type: 'user' as const, id: 'acc-1' },
+        operation: { key: 'read' as const, targetType: 'space' as const },
+      },
+    ],
+    _links: { next: null },
+  },
+  spaceRoleAssignmentList: {
+    results: [
+      {
+        principal: { principalType: 'USER' as const, principalId: 'acc-1' },
+        roleId: 'role-1',
+      },
+    ],
+    _links: { next: null },
+  },
+  spaceProperty: {
+    id: 'sprop-1',
+    key: 'feature-flags',
+    value: { beta: true },
+    version: { number: 1 },
+  },
+  spacePropertyList: {
+    results: [
+      { id: 'sprop-1', key: 'feature-flags', value: { beta: true }, version: { number: 1 } },
+    ],
+    _links: { next: null },
+  },
 };
 
 export const jiraFixtures = {

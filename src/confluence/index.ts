@@ -249,6 +249,23 @@ export type {
   UpdatePageTitleData,
   ListPageFooterCommentsParams,
   ListPageInlineCommentsParams,
+  // Spaces sub-resources (B196-B213)
+  CreateSpaceData,
+  SpaceRoleAssignment,
+  ListSpaceBlogPostsParams,
+  SpaceContentLabelPrefix,
+  ListSpaceContentLabelsParams,
+  ListSpaceLabelsParams,
+  ListSpaceCustomContentParams,
+  SpaceOperation,
+  SpaceOperationsResponse,
+  SpacePageDepth,
+  ListSpacePagesParams,
+  SpacePermissionAssignment,
+  ListSpacePermissionAssignmentsParams,
+  ListSpaceRoleAssignmentsParams,
+  SetSpaceRoleAssignmentsData,
+  UpdateSpaceDefaultClassificationLevelData,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';

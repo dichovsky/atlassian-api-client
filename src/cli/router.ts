@@ -145,6 +145,10 @@ const GLOBAL_OPTIONS = {
   // Upload-attachment file path (B893 — `atlas confluence pages upload-attachment`).
   // Local filesystem path read into a Blob before the multipart POST.
   file: { type: 'string' as const },
+  // spaces sub-resource options (B196-B213)
+  alias: { type: 'string' as const },
+  'role-id': { type: 'string' as const },
+  'copy-space-access-configuration': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

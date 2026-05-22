@@ -62,7 +62,7 @@ const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
   pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment
-  spaces                 list, get
+  spaces                 list, get, create, blog-posts, get-default-classification-level, update-default-classification-level, delete-default-classification-level, content-labels, custom-content, labels, operations, pages, permissions, role-assignments, set-role-assignments, list-properties, create-property, get-property, update-property, delete-property
   blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
   comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
@@ -154,6 +154,22 @@ EXAMPLES:
   atlas confluence space-roles create --name "Editor" --description "Edit role" --space-permissions read/space,write/space
   atlas confluence space-roles update role-1 --name "Editor v2" --description "Updated" --space-permissions read/space
   atlas confluence space-roles delete role-1
+  atlas confluence spaces create --name "Engineering" --key ENG --description "Eng space"
+  atlas confluence spaces blog-posts 654321 --sort=-created-date --limit 25
+  atlas confluence spaces content-labels 654321 --prefix team
+  atlas confluence spaces custom-content 654321 --type ai.atlassian.collection
+  atlas confluence spaces get-default-classification-level 654321
+  atlas confluence spaces update-default-classification-level 654321 --level-id cl-1
+  atlas confluence spaces delete-default-classification-level 654321
+  atlas confluence spaces labels 654321 --prefix team --sort -name
+  atlas confluence spaces operations 654321
+  atlas confluence spaces pages 654321 --depth root --sort=-modified-date
+  atlas confluence spaces permissions 654321 --limit 50
+  atlas confluence spaces role-assignments 654321 --role-type CUSTOM --principal-type USER
+  atlas confluence spaces set-role-assignments 654321 --value '[{"principal":{"principalType":"USER","principalId":"acc-1"},"roleId":"role-1"}]'
+  atlas confluence spaces list-properties 654321 --sort key
+  atlas confluence spaces create-property 654321 --key feature-flags --value '{"beta":true}'
+  atlas confluence spaces update-property 654321 --property-id prop-1 --key feature-flags --value '{"beta":false}' --version-number 2
   atlas confluence tasks list --status incomplete --limit 25
   atlas confluence tasks update task-1 --status complete
   atlas confluence users check-access-by-email --emails a@example.com,b@example.com
