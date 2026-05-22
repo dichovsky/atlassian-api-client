@@ -41,6 +41,28 @@ const confluenceBlogPostsMock = {
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  // sub-resources (B066-B084)
+  listProperties: vi.fn(),
+  createProperty: vi.fn(),
+  getProperty: vi.fn(),
+  updateProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  listAttachments: vi.fn(),
+  getClassificationLevel: vi.fn(),
+  updateClassificationLevel: vi.fn(),
+  resetClassificationLevel: vi.fn(),
+  listCustomContent: vi.fn(),
+  listFooterComments: vi.fn(),
+  listInlineComments: vi.fn(),
+  listLabels: vi.fn(),
+  getLikeCount: vi.fn(),
+  listLikeUsers: vi.fn(),
+  getOperations: vi.fn(),
+  redact: vi.fn(),
+  listVersions: vi.fn(),
+};
+const confluenceVersionsMock = {
+  getForBlogPost: vi.fn(),
 };
 const confluenceCommentsMock = {
   listFooter: vi.fn(),
@@ -215,6 +237,7 @@ vi.mock('../../src/confluence/client.js', () => {
       tasks: confluenceTasksMock,
       users: confluenceUsersMock,
       usersBulk: confluenceUsersBulkMock,
+      versions: confluenceVersionsMock,
       whiteboards: confluenceWhiteboardsMock,
     };
   });
@@ -788,6 +811,396 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(cmd('blog-posts', 'unknown'), GLOBALS)).rejects.toThrow(
         'Unknown blog-posts action',
       );
+    });
+
+    // ── sub-resources (B066-B084) ───────────────────────────────────────────
+
+    it('blog-posts list-properties dispatches with optional sort/key/cursor/limit', async () => {
+      confluenceBlogPostsMock.listProperties.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'list-properties', ['bp-1'], {
+        key: 'reviewed',
+        sort: 'key',
+        cursor: 'tok',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listProperties).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ key: 'reviewed', sort: 'key', cursor: 'tok', limit: 10 }),
+      );
+    });
+
+    it('blog-posts create-property parses JSON value', async () => {
+      confluenceBlogPostsMock.createProperty.mockResolvedValue({ id: 'prop-1' });
+      const parsed = cmd('blog-posts', 'create-property', ['bp-1'], {
+        key: 'flag',
+        value: '{"beta":true}',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.createProperty).toHaveBeenCalledWith('bp-1', {
+        key: 'flag',
+        value: { beta: true },
+      });
+    });
+
+    it('blog-posts get-property dispatches with --property-id', async () => {
+      confluenceBlogPostsMock.getProperty.mockResolvedValue({ id: 'prop-1' });
+      const parsed = cmd('blog-posts', 'get-property', ['bp-1'], { 'property-id': 'prop-1' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.getProperty).toHaveBeenCalledWith('bp-1', 'prop-1');
+    });
+
+    it('blog-posts update-property dispatches with concurrency-controlled version', async () => {
+      confluenceBlogPostsMock.updateProperty.mockResolvedValue({ id: 'prop-1' });
+      const parsed = cmd('blog-posts', 'update-property', ['bp-1'], {
+        'property-id': 'prop-1',
+        key: 'flag',
+        value: 'false',
+        'version-number': '3',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.updateProperty).toHaveBeenCalledWith('bp-1', 'prop-1', {
+        key: 'flag',
+        value: false,
+        version: { number: 3 },
+      });
+    });
+
+    it('blog-posts update-property rejects non-positive version', async () => {
+      const parsed = cmd('blog-posts', 'update-property', ['bp-1'], {
+        'property-id': 'prop-1',
+        key: 'k',
+        value: 'v',
+        'version-number': '0',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('blog-posts delete-property returns { deleted: true }', async () => {
+      confluenceBlogPostsMock.deleteProperty.mockResolvedValue(undefined);
+      const result = await executeConfluenceCommand(
+        cmd('blog-posts', 'delete-property', ['bp-1'], { 'property-id': 'prop-1' }),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.deleteProperty).toHaveBeenCalledWith('bp-1', 'prop-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('blog-posts attachments dispatches with filters', async () => {
+      confluenceBlogPostsMock.listAttachments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], {
+        sort: '-created-date',
+        'media-type': 'image/png',
+        filename: 'a.png',
+        limit: '20',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listAttachments).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({
+          sort: '-created-date',
+          mediaType: 'image/png',
+          filename: 'a.png',
+          limit: 20,
+        }),
+      );
+    });
+
+    it('blog-posts attachments rejects invalid sort', async () => {
+      const parsed = cmd('blog-posts', 'attachments', ['bp-1'], { sort: 'bogus' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of',
+      );
+    });
+
+    it('blog-posts get-classification-level dispatches with --status', async () => {
+      confluenceBlogPostsMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const parsed = cmd('blog-posts', 'get-classification-level', ['bp-1'], { status: 'draft' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.getClassificationLevel).toHaveBeenCalledWith('bp-1', {
+        status: 'draft',
+      });
+    });
+
+    it('blog-posts update-classification-level forwards --level-id', async () => {
+      confluenceBlogPostsMock.updateClassificationLevel.mockResolvedValue(undefined);
+      const result = await executeConfluenceCommand(
+        cmd('blog-posts', 'update-classification-level', ['bp-1'], { 'level-id': 'cl-1' }),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.updateClassificationLevel).toHaveBeenCalledWith('bp-1', {
+        id: 'cl-1',
+        status: 'current',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('blog-posts reset-classification-level returns { reset: true }', async () => {
+      confluenceBlogPostsMock.resetClassificationLevel.mockResolvedValue(undefined);
+      const result = await executeConfluenceCommand(
+        cmd('blog-posts', 'reset-classification-level', ['bp-1']),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.resetClassificationLevel).toHaveBeenCalledWith('bp-1');
+      expect(result).toEqual({ reset: true });
+    });
+
+    it('blog-posts custom-content requires --type', async () => {
+      const parsed = cmd('blog-posts', 'custom-content', ['bp-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--type');
+    });
+
+    it('blog-posts custom-content dispatches with type + sort + body-format', async () => {
+      confluenceBlogPostsMock.listCustomContent.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'custom-content', ['bp-1'], {
+        type: 'my.cc',
+        sort: '-modified-date',
+        'body-format': 'raw',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listCustomContent).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({
+          type: 'my.cc',
+          sort: '-modified-date',
+          'body-format': 'raw',
+          limit: 5,
+        }),
+      );
+    });
+
+    it('blog-posts footer-comments dispatches with status + sort', async () => {
+      confluenceBlogPostsMock.listFooterComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'footer-comments', ['bp-1'], {
+        status: 'current',
+        sort: '-created-date',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listFooterComments).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ status: 'current', sort: '-created-date' }),
+      );
+    });
+
+    it('blog-posts inline-comments dispatches with resolution-status', async () => {
+      confluenceBlogPostsMock.listInlineComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'inline-comments', ['bp-1'], {
+        'resolution-status': 'open',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listInlineComments).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ 'resolution-status': 'open' }),
+      );
+    });
+
+    it('blog-posts labels dispatches with prefix + sort', async () => {
+      confluenceBlogPostsMock.listLabels.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'labels', ['bp-1'], { prefix: 'global', sort: '-name' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listLabels).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ prefix: 'global', sort: '-name' }),
+      );
+    });
+
+    it('blog-posts likes-count dispatches with id only', async () => {
+      confluenceBlogPostsMock.getLikeCount.mockResolvedValue({ count: 7 });
+      const result = await executeConfluenceCommand(
+        cmd('blog-posts', 'likes-count', ['bp-1']),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.getLikeCount).toHaveBeenCalledWith('bp-1');
+      expect(result).toEqual({ count: 7 });
+    });
+
+    it('blog-posts likes-users passes cursor + limit', async () => {
+      confluenceBlogPostsMock.listLikeUsers.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'likes-users', ['bp-1'], { cursor: 'c', limit: '8' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listLikeUsers).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ cursor: 'c', limit: 8 }),
+      );
+    });
+
+    it('blog-posts operations dispatches with id only', async () => {
+      confluenceBlogPostsMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'operations', ['bp-1']), GLOBALS);
+      expect(confluenceBlogPostsMock.getOperations).toHaveBeenCalledWith('bp-1');
+    });
+
+    it('blog-posts redact requires --value', async () => {
+      const parsed = cmd('blog-posts', 'redact', ['bp-1']);
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('blog-posts redact rejects non-object JSON', async () => {
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], { value: '"hello"' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'RedactBlogPostData payload',
+      );
+    });
+
+    it('blog-posts redact forwards parsed JSON payload', async () => {
+      confluenceBlogPostsMock.redact.mockResolvedValue({});
+      const payload = {
+        createdAt: '2026-01-01T00:00:00Z',
+        body: { redactions: [{ pointer: '/0', from: 0, to: 3, reason: 'PII' }] },
+      };
+      const parsed = cmd('blog-posts', 'redact', ['bp-1'], { value: JSON.stringify(payload) });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.redact).toHaveBeenCalledWith('bp-1', payload);
+    });
+
+    it('blog-posts versions dispatches with body-format + sort', async () => {
+      confluenceBlogPostsMock.listVersions.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'versions', ['bp-1'], {
+        sort: '-modified-date',
+        'body-format': 'storage',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceBlogPostsMock.listVersions).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({ sort: '-modified-date', 'body-format': 'storage' }),
+      );
+    });
+
+    it('blog-posts version dispatches via versions.getForBlogPost', async () => {
+      confluenceVersionsMock.getForBlogPost.mockResolvedValue({ number: 2 });
+      const parsed = cmd('blog-posts', 'version', ['bp-1'], { 'version-number': '2' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceVersionsMock.getForBlogPost).toHaveBeenCalledWith('bp-1', 2);
+      expect(result).toEqual({ number: 2 });
+    });
+
+    it('blog-posts version rejects non-positive version-number', async () => {
+      const parsed = cmd('blog-posts', 'version', ['bp-1'], { 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    // ── branch coverage: unset optional flags on sub-resource actions ──────────
+    // Each test below drives a single `cmd.action` without any optional flags,
+    // exercising the `?? {}` / `!== undefined ? {…} : {}` branches that the
+    // happy-path tests above always take with flags set.
+
+    it('blog-posts attachments without --sort omits sort key', async () => {
+      confluenceBlogPostsMock.listAttachments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'attachments', ['bp-1']), GLOBALS);
+      const arg = confluenceBlogPostsMock.listAttachments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('sort');
+    });
+
+    it('blog-posts get-classification-level without --status passes undefined', async () => {
+      confluenceBlogPostsMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'get-classification-level', ['bp-1']),
+        GLOBALS,
+      );
+      expect(confluenceBlogPostsMock.getClassificationLevel).toHaveBeenCalledWith(
+        'bp-1',
+        undefined,
+      );
+    });
+
+    it('blog-posts custom-content without --sort/--body-format omits those keys', async () => {
+      confluenceBlogPostsMock.listCustomContent.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'custom-content', ['bp-1'], { type: 't' }),
+        GLOBALS,
+      );
+      const arg = confluenceBlogPostsMock.listCustomContent.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('sort');
+      expect(arg).not.toHaveProperty('body-format');
+    });
+
+    it('blog-posts footer-comments without optional flags omits them', async () => {
+      confluenceBlogPostsMock.listFooterComments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'footer-comments', ['bp-1']), GLOBALS);
+      const arg = confluenceBlogPostsMock.listFooterComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('sort');
+      expect(arg).not.toHaveProperty('status');
+      expect(arg).not.toHaveProperty('body-format');
+    });
+
+    it('blog-posts inline-comments without optional flags omits them', async () => {
+      confluenceBlogPostsMock.listInlineComments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'inline-comments', ['bp-1']), GLOBALS);
+      const arg = confluenceBlogPostsMock.listInlineComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('sort');
+      expect(arg).not.toHaveProperty('status');
+      expect(arg).not.toHaveProperty('body-format');
+      expect(arg).not.toHaveProperty('resolution-status');
+    });
+
+    it('blog-posts labels without --prefix/--sort omits both', async () => {
+      confluenceBlogPostsMock.listLabels.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'labels', ['bp-1']), GLOBALS);
+      const arg = confluenceBlogPostsMock.listLabels.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(arg).not.toHaveProperty('prefix');
+      expect(arg).not.toHaveProperty('sort');
+    });
+
+    it('blog-posts footer-comments with --body-format passes it through', async () => {
+      confluenceBlogPostsMock.listFooterComments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'footer-comments', ['bp-1'], { 'body-format': 'storage' }),
+        GLOBALS,
+      );
+      const arg = confluenceBlogPostsMock.listFooterComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg['body-format']).toBe('storage');
+    });
+
+    it('blog-posts inline-comments with --body-format/--status/--sort passes all through', async () => {
+      confluenceBlogPostsMock.listInlineComments.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(
+        cmd('blog-posts', 'inline-comments', ['bp-1'], {
+          'body-format': 'atlas_doc_format',
+          status: 'current',
+          sort: '-modified-date',
+        }),
+        GLOBALS,
+      );
+      const arg = confluenceBlogPostsMock.listInlineComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).toMatchObject({
+        'body-format': 'atlas_doc_format',
+        status: 'current',
+        sort: '-modified-date',
+      });
+    });
+
+    it('blog-posts versions without --body-format/--sort omits both', async () => {
+      confluenceBlogPostsMock.listVersions.mockResolvedValue({ results: [] });
+      await executeConfluenceCommand(cmd('blog-posts', 'versions', ['bp-1']), GLOBALS);
+      const arg = confluenceBlogPostsMock.listVersions.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(arg).not.toHaveProperty('body-format');
+      expect(arg).not.toHaveProperty('sort');
     });
   });
 

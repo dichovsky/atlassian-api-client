@@ -491,6 +491,89 @@ export const confluenceFixtures = {
     ],
     _links: { next: null },
   },
+  // ── Blog post sub-resources (B066-B084) ──────────────────────────────────
+  blogPostProperty: {
+    id: 'bp-prop-1',
+    key: 'reviewed',
+    value: { yes: true },
+    version: { number: 1 },
+  },
+  blogPostPropertyList: {
+    results: [{ id: 'bp-prop-1', key: 'reviewed', value: { yes: true }, version: { number: 1 } }],
+    _links: { next: null },
+  },
+  blogPostAttachmentsList: {
+    results: [
+      {
+        id: 'bp-att-1',
+        status: 'current',
+        title: 'cover.png',
+        mediaType: 'image/png',
+        fileSize: 2048,
+      },
+    ],
+    _links: { next: null },
+  },
+  blogPostClassificationLevel: {
+    id: 'cl-restricted',
+    name: 'Restricted',
+    status: 'PUBLISHED',
+    color: 'RED',
+  },
+  blogPostCustomContentList: {
+    results: [{ id: 'cc-bp-1', type: 'ai.atlassian.collection', title: 'Embedded' }],
+    _links: { next: null },
+  },
+  blogPostFooterCommentList: {
+    results: [{ id: 'fc-bp-1', status: 'current', blogPostId: '99999', version: { number: 1 } }],
+    _links: { next: null },
+  },
+  blogPostInlineCommentList: {
+    results: [
+      {
+        id: 'ic-bp-1',
+        status: 'current',
+        blogPostId: '99999',
+        resolutionStatus: 'open',
+        version: { number: 1 },
+      },
+    ],
+    _links: { next: null },
+  },
+  blogPostLabelsList: {
+    results: [{ id: 'lbl-bp-1', name: 'launch', prefix: 'global' }],
+    _links: { next: null },
+  },
+  blogPostLikeCount: { count: 9 },
+  blogPostLikeUsers: {
+    results: [{ accountId: 'acc-bp-1' }, { accountId: 'acc-bp-2' }],
+    _links: { next: null },
+  },
+  blogPostOperations: {
+    operations: [
+      { operation: 'read', targetType: 'blogpost' },
+      { operation: 'update', targetType: 'blogpost' },
+    ],
+  },
+  blogPostRedactResponse: {
+    body: {
+      redactions: [{ pointer: '/body/0/0', from: 0, to: 4, reason: 'PII', id: 'redact-1' }],
+    },
+  },
+  blogPostVersionsList: {
+    results: [
+      { number: 1, message: 'created', authorId: 'acc-1', createdAt: '2026-05-20T00:00:00Z' },
+      { number: 2, message: 'edited', authorId: 'acc-1', createdAt: '2026-05-21T00:00:00Z' },
+    ],
+    _links: { next: null },
+  },
+  blogPostVersionDetail: {
+    number: 2,
+    authorId: 'acc-1',
+    message: 'edited',
+    createdAt: '2026-05-21T00:00:00Z',
+    minorEdit: false,
+  },
 };
 
 export const jiraFixtures = {

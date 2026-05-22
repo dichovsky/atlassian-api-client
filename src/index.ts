@@ -241,6 +241,28 @@ export type {
   BulkUsersResponse,
   CheckAccessOrInviteByEmailRequest,
   CheckAccessByEmailResponse,
+  // Blog post sub-resources (B066-B084)
+  ListBlogPostAttachmentsParams,
+  ListBlogPostFooterCommentsParams,
+  ListBlogPostInlineCommentsParams,
+  CommentStatus,
+  InlineCommentResolutionStatus,
+  ListBlogPostLabelsParams,
+  CustomContentSortOrder,
+  ListBlogPostCustomContentParams,
+  ListBlogPostLikeUsersParams,
+  ListBlogPostVersionsParams,
+  GetBlogPostClassificationLevelParams,
+  BlogPostLikesCount,
+  BlogPostLikeUser,
+  BlogPostOperation,
+  BlogPostOperationsResponse,
+  UpdateBlogPostClassificationLevelData,
+  ResetBlogPostClassificationLevelData,
+  RedactBlogPostData,
+  RedactionPointer,
+  RedactBlogPostResponse,
+  RedactionPointerResponse,
 } from './confluence/index.js';
 
 // Jira

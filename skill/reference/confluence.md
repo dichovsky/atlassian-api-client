@@ -4,29 +4,29 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 
 ## Resource × action matrix
 
-| Resource                | Actions                                                                                                                                                                                                                                                                     |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pages`                 | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
-| `spaces`                | `list`, `get`                                                                                                                                                                                                                                                               |
-| `blog-posts`            | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
-| `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                               |
-| `attachments`           | `list`, `list-all`, `get`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `get-version`, `footer-comments`, `labels`, `operations`, `thumbnail`                                                          |
-| `labels`                | `list`, `list-all`, `attachments`, `blog-posts`, `pages`                                                                                                                                                                                                                    |
-| `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                   |
-| `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                     |
-| `classification-levels` | `list`                                                                                                                                                                                                                                                                      |
-| `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                      |
-| `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                               |
-| `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
-| `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                          |
-| `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                      |
-| `space-permissions`     | `list`                                                                                                                                                                                                                                                                      |
-| `space-role-mode`       | `get`                                                                                                                                                                                                                                                                       |
-| `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                 |
-| `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                     |
-| `users`                 | `check-access-by-email`, `invite-by-email`                                                                                                                                                                                                                                  |
-| `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                    |
-| `whiteboards`           | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property` |
+| Resource                | Actions                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`                 | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                    |
+| `spaces`                | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                  |
+| `blog-posts`            | `list`, `get`, `create`, `update`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `attachments`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `custom-content`, `footer-comments`, `inline-comments`, `labels`, `likes-count`, `likes-users`, `operations`, `redact`, `versions`, `version` |
+| `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                                                  |
+| `attachments`           | `list`, `list-all`, `get`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `get-version`, `footer-comments`, `labels`, `operations`, `thumbnail`                                                                                                                                                                             |
+| `labels`                | `list`, `list-all`, `attachments`, `blog-posts`, `pages`                                                                                                                                                                                                                                                                                                                                       |
+| `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                                                                                                                                      |
+| `app`                   | `list-properties`, `get-property`, `upsert-property`, `delete-property`                                                                                                                                                                                                                                                                                                                        |
+| `classification-levels` | `list`                                                                                                                                                                                                                                                                                                                                                                                         |
+| `content`               | `convert-ids-to-types`                                                                                                                                                                                                                                                                                                                                                                         |
+| `data-policies`         | `get-metadata`, `list-spaces`                                                                                                                                                                                                                                                                                                                                                                  |
+| `databases`             | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                    |
+| `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                             |
+| `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                         |
+| `space-permissions`     | `list`                                                                                                                                                                                                                                                                                                                                                                                         |
+| `space-role-mode`       | `get`                                                                                                                                                                                                                                                                                                                                                                                          |
+| `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                    |
+| `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                                                                                                                                        |
+| `users`                 | `check-access-by-email`, `invite-by-email`                                                                                                                                                                                                                                                                                                                                                     |
+| `users-bulk`            | `lookup`                                                                                                                                                                                                                                                                                                                                                                                       |
+| `whiteboards`           | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                    |
 
 ## `pages`
 
@@ -51,7 +51,79 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 
 ## `blog-posts`
 
-Same shape as `pages`: `list`, `get <id>`, `create --space-id --title --body`, `update <id> --version-number --title --body`, `delete <id> [--purge]`.
+Lifecycle (`list` / `get` / `create` / `update` / `delete`) mirrors `pages`: `create --space-id --title --body`, `update <id> --version-number --title --body`, `delete <id> [--purge]`.
+
+The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — content properties, attachments, classification level, custom content children, footer + inline comments, labels, likes, operations, redaction, and version history.
+
+| Action                        | Positional     | Required flags                                          | Optional flags                                                                      |
+| ----------------------------- | -------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `list`                        | —              | —                                                       | `--space-id`, `--limit`, `--cursor`                                                 |
+| `get`                         | `<blogPostId>` | —                                                       | —                                                                                   |
+| `create`                      | —              | `--space-id`, `--title`                                 | `--body`                                                                            |
+| `update`                      | `<blogPostId>` | `--version-number`, `--title`                           | —                                                                                   |
+| `delete`                      | `<blogPostId>` | —                                                       | —                                                                                   |
+| `list-properties`             | `<blogPostId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                                            |
+| `create-property`             | `<blogPostId>` | `--key`, `--value`                                      | —                                                                                   |
+| `get-property`                | `<blogPostId>` | `--property-id`                                         | —                                                                                   |
+| `update-property`             | `<blogPostId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                                                   |
+| `delete-property`             | `<blogPostId>` | `--property-id`                                         | —                                                                                   |
+| `attachments`                 | `<blogPostId>` | —                                                       | `--sort`, `--cursor`, `--media-type`, `--filename`, `--limit`                       |
+| `get-classification-level`    | `<blogPostId>` | —                                                       | `--status`                                                                          |
+| `update-classification-level` | `<blogPostId>` | `--level-id`                                            | —                                                                                   |
+| `reset-classification-level`  | `<blogPostId>` | —                                                       | —                                                                                   |
+| `custom-content`              | `<blogPostId>` | `--type`                                                | `--sort`, `--cursor`, `--limit`, `--body-format`                                    |
+| `footer-comments`             | `<blogPostId>` | —                                                       | `--body-format`, `--status`, `--sort`, `--cursor`, `--limit`                        |
+| `inline-comments`             | `<blogPostId>` | —                                                       | `--body-format`, `--status`, `--resolution-status`, `--sort`, `--cursor`, `--limit` |
+| `labels`                      | `<blogPostId>` | —                                                       | `--prefix`, `--sort`, `--cursor`, `--limit`                                         |
+| `likes-count`                 | `<blogPostId>` | —                                                       | —                                                                                   |
+| `likes-users`                 | `<blogPostId>` | —                                                       | `--cursor`, `--limit`                                                               |
+| `operations`                  | `<blogPostId>` | —                                                       | —                                                                                   |
+| `redact`                      | `<blogPostId>` | `--value`                                               | —                                                                                   |
+| `versions`                    | `<blogPostId>` | —                                                       | `--body-format`, `--sort`, `--cursor`, `--limit`                                    |
+| `version`                     | `<blogPostId>` | `--version-number`                                      | —                                                                                   |
+
+- Property `--value` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`). `update-property --version-number` must be exactly one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `attachments --sort` accepts `AttachmentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`. `--media-type` filters by MIME, `--filename` by exact name.
+- `get-classification-level --status` accepts `current` (default), `draft`, or `archived`. `update-classification-level --level-id` sends the chosen classification id; the server always treats the request as `status: current`. `reset-classification-level` falls back to the space default and accepts no flags.
+- `custom-content --type` is required (Confluence resolves the custom-content namespace from this value). `--body-format` accepts `raw`, `storage`, or `atlas_doc_format`. `--sort` accepts `CustomContentSortOrder`: `id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`, `title`, `-title`.
+- `footer-comments` / `inline-comments` `--body-format` accepts `storage` or `atlas_doc_format`. `--status` accepts `current`, `deleted`, `trashed`, `historical`, `draft`. Inline comments additionally accept `--resolution-status` from `resolved`, `open`, `dangling`, `reopened`. `--sort` is `CommentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
+- `labels --prefix` accepts `my`, `team`, `global`, `system`. `--sort` is `LabelSortOrder`: `created-date`, `-created-date`, `id`, `-id`, `name`, `-name`. The SDK shares this collection with `labels.listForBlogPost` — both call `GET /blogposts/{id}/labels`.
+- `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `redact --value` accepts the full `RedactBlogPostData` payload as JSON (e.g. `--value '{"createdAt":"2026-05-01T00:00:00Z","body":{"redactions":[{"pointer":"/body/0/0","from":0,"to":4,"reason":"PII"}]}}'`). Requires Atlassian Guard Premium on the target tenant.
+- `versions --sort` is the narrow `VersionSortOrder`: only `modified-date` / `-modified-date`. `version --version-number` fetches a single past version by number; the response includes the body and audit metadata.
+- All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
+
+```sh
+# Lifecycle
+atlas confluence blog-posts list --space-id 654321 --limit 25
+atlas confluence blog-posts get 99999
+
+# Content properties
+atlas confluence blog-posts list-properties 99999 --sort key
+atlas confluence blog-posts create-property 99999 --key reviewed --value true
+atlas confluence blog-posts update-property 99999 --property-id prop-1 --key reviewed --value false --version-number 2
+
+# Attachments + classification
+atlas confluence blog-posts attachments 99999 --media-type image/png --sort -created-date
+atlas confluence blog-posts get-classification-level 99999
+atlas confluence blog-posts update-classification-level 99999 --level-id cl-restricted
+atlas confluence blog-posts reset-classification-level 99999
+
+# Sub-collections
+atlas confluence blog-posts custom-content 99999 --type ai.atlassian.collection
+atlas confluence blog-posts footer-comments 99999 --sort -created-date
+atlas confluence blog-posts inline-comments 99999 --resolution-status open
+atlas confluence blog-posts labels 99999 --prefix global
+
+# Likes + operations
+atlas confluence blog-posts likes-count 99999
+atlas confluence blog-posts likes-users 99999 --limit 50
+atlas confluence blog-posts operations 99999
+
+# Versions
+atlas confluence blog-posts versions 99999 --sort -modified-date
+atlas confluence blog-posts version 99999 --version-number 2
+```
 
 ## `comments`
 

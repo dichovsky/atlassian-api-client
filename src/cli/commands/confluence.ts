@@ -6,8 +6,11 @@ import type {
   AttachmentStatus,
   BlogPostSortOrder,
   CommentSortOrder,
+  CommentStatus,
   ContentSortOrder,
+  CustomContentSortOrder,
   DataPolicySpaceSortOrder,
+  InlineCommentResolutionStatus,
   LabelPrefix,
   LabelSortOrder,
   PageSortOrder,
@@ -171,9 +174,199 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
     case 'delete':
       await client.blogPosts.delete(requireArg(cmd.positionalArgs[0], 'blog post ID'));
       return { deleted: true };
+
+    // ── content properties (B066-B070) ────────────────────────────────────
+    case 'list-properties':
+      return client.blogPosts.listProperties(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        key: asString(opts['key']),
+        sort: asEnum(opts['sort'], PROPERTY_SORT_ORDERS, 'sort'),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'create-property':
+      return client.blogPosts.createProperty(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        key: requireOpt(opts['key'], '--key'),
+        value: parseJsonValue(requireOpt(opts['value'], '--value')),
+      });
+    case 'get-property':
+      return client.blogPosts.getProperty(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+    case 'update-property': {
+      const propVersionStr = requireOpt(opts['version-number'], '--version-number');
+      const propVersionNum = Number(propVersionStr);
+      if (!Number.isInteger(propVersionNum) || propVersionNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${propVersionStr}`);
+      }
+      return client.blogPosts.updateProperty(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+        {
+          key: requireOpt(opts['key'], '--key'),
+          value: parseJsonValue(requireOpt(opts['value'], '--value')),
+          version: { number: propVersionNum },
+        },
+      );
+    }
+    case 'delete-property':
+      await client.blogPosts.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        requireOpt(opts['property-id'], '--property-id'),
+      );
+      return { deleted: true };
+
+    // ── attachments (B072) ────────────────────────────────────────────────
+    case 'attachments': {
+      const attSort = asEnum(opts['sort'], ATTACHMENT_SORT_ORDERS, 'sort');
+      return client.blogPosts.listAttachments(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...(attSort !== undefined ? { sort: attSort } : {}),
+        cursor: asString(opts['cursor']),
+        mediaType: asString(opts['media-type']),
+        filename: asString(opts['filename']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── classification level (B073-B075) ──────────────────────────────────
+    case 'get-classification-level': {
+      const clStatus = asEnum(opts['status'], CLASSIFICATION_STATUS, 'status');
+      return client.blogPosts.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        clStatus !== undefined ? { status: clStatus } : undefined,
+      );
+    }
+    case 'update-classification-level':
+      await client.blogPosts.updateClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        { id: requireOpt(opts['level-id'], '--level-id'), status: 'current' },
+      );
+      return { updated: true };
+    case 'reset-classification-level':
+      await client.blogPosts.resetClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+      );
+      return { reset: true };
+
+    // ── custom content (B076) ─────────────────────────────────────────────
+    case 'custom-content': {
+      const ccSort = asEnum(opts['sort'], CUSTOM_CONTENT_SORT_ORDERS, 'sort');
+      const ccBodyFormat = asEnum(opts['body-format'], CUSTOM_CONTENT_BODY_FORMATS, 'body-format');
+      return client.blogPosts.listCustomContent(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        type: requireOpt(opts['type'], '--type'),
+        ...(ccSort !== undefined ? { sort: ccSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        ...(ccBodyFormat !== undefined ? { 'body-format': ccBodyFormat } : {}),
+      });
+    }
+
+    // ── footer / inline comments (B077-B078) ──────────────────────────────
+    case 'footer-comments': {
+      const fcSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const fcBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      const fcStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      return client.blogPosts.listFooterComments(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        {
+          ...(fcBodyFormat !== undefined ? { 'body-format': fcBodyFormat } : {}),
+          ...(fcStatus !== undefined ? { status: fcStatus } : {}),
+          ...(fcSort !== undefined ? { sort: fcSort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+    case 'inline-comments': {
+      const icSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const icBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      const icStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      const icResolution = asEnum(
+        opts['resolution-status'],
+        INLINE_COMMENT_RESOLUTION_STATUSES,
+        'resolution-status',
+      );
+      return client.blogPosts.listInlineComments(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        {
+          ...(icBodyFormat !== undefined ? { 'body-format': icBodyFormat } : {}),
+          ...(icStatus !== undefined ? { status: icStatus } : {}),
+          ...(icResolution !== undefined ? { 'resolution-status': icResolution } : {}),
+          ...(icSort !== undefined ? { sort: icSort } : {}),
+          cursor: asString(opts['cursor']),
+          limit: asPositiveInt(opts['limit'], '--limit'),
+        },
+      );
+    }
+
+    // ── labels (B079, CLI+skill only — SDK method already shipped) ────────
+    case 'labels': {
+      const lblSort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const lblPrefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.blogPosts.listLabels(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...(lblPrefix !== undefined ? { prefix: lblPrefix } : {}),
+        ...(lblSort !== undefined ? { sort: lblSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
+    // ── likes (B080-B081) ─────────────────────────────────────────────────
+    case 'likes-count':
+      return client.blogPosts.getLikeCount(requireArg(cmd.positionalArgs[0], 'blog post ID'));
+    case 'likes-users':
+      return client.blogPosts.listLikeUsers(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+
+    // ── operations (B082) ─────────────────────────────────────────────────
+    case 'operations':
+      return client.blogPosts.getOperations(requireArg(cmd.positionalArgs[0], 'blog post ID'));
+
+    // ── redact (B083) ─────────────────────────────────────────────────────
+    case 'redact': {
+      // Body shape is non-trivial (`RedactBlogPostData`), so the CLI accepts
+      // the full payload as a single JSON value through `--value`. The
+      // parser falls back to a string if the input isn't valid JSON, mirroring
+      // `app upsert-property` / `*-property` semantics.
+      const rawPayload = requireOpt(opts['value'], '--value');
+      const payload = parseJsonValue(rawPayload);
+      if (typeof payload !== 'object' || payload === null) {
+        throw new Error('--value must be a JSON object describing the RedactBlogPostData payload');
+      }
+      return client.blogPosts.redact(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        payload as Parameters<typeof client.blogPosts.redact>[1],
+      );
+    }
+
+    // ── versions (B084 list, B071 single — CLI+skill only) ────────────────
+    case 'versions': {
+      const verSort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      const verBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.blogPosts.listVersions(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...(verBodyFormat !== undefined ? { 'body-format': verBodyFormat } : {}),
+        ...(verSort !== undefined ? { sort: verSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'version': {
+      const singleVerStr = requireOpt(opts['version-number'], '--version-number');
+      const singleVerNum = Number(singleVerStr);
+      if (!Number.isInteger(singleVerNum) || singleVerNum <= 0) {
+        throw new Error(`--version-number must be a positive integer, got: ${singleVerStr}`);
+      }
+      return client.versions.getForBlogPost(
+        requireArg(cmd.positionalArgs[0], 'blog post ID'),
+        singleVerNum,
+      );
+    }
+
     default:
       throw new Error(
-        `Unknown blog-posts action: ${cmd.action}. Actions: list, get, create, update, delete`,
+        `Unknown blog-posts action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version`,
       );
   }
 }
@@ -1479,6 +1672,36 @@ const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [
   'zh-TW',
   'es-ES',
 ];
+
+const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;
+
+const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [
+  'id',
+  '-id',
+  'created-date',
+  '-created-date',
+  'modified-date',
+  '-modified-date',
+  'title',
+  '-title',
+];
+
+const COMMENT_STATUSES: readonly CommentStatus[] = [
+  'current',
+  'deleted',
+  'trashed',
+  'historical',
+  'draft',
+];
+
+const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [
+  'resolved',
+  'open',
+  'dangling',
+  'reopened',
+];
+
+const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;
 
 function makeBody(value: string | undefined) {
   if (!value) return undefined;

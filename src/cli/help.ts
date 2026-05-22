@@ -63,7 +63,7 @@ const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 RESOURCES:
   pages                  list, get, create, update, delete
   spaces                 list, get
-  blog-posts             list, get, create, update, delete
+  blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
   comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
   labels                 list, list-all, attachments, blog-posts, pages
@@ -138,6 +138,15 @@ EXAMPLES:
   atlas confluence labels attachments 12345 --sort -created-date
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
   atlas confluence labels pages 12345 --sort -modified-date
+  atlas confluence blog-posts list-properties 99999
+  atlas confluence blog-posts create-property 99999 --key reviewed --value true
+  atlas confluence blog-posts attachments 99999 --media-type image/png
+  atlas confluence blog-posts get-classification-level 99999
+  atlas confluence blog-posts custom-content 99999 --type my.custom.type
+  atlas confluence blog-posts footer-comments 99999 --sort -created-date
+  atlas confluence blog-posts likes-count 99999
+  atlas confluence blog-posts versions 99999 --sort -modified-date
+  atlas confluence blog-posts version 99999 --version-number 2
   atlas confluence whiteboards create --space-id 123 --title "Roadmap" --private
   atlas confluence whiteboards get wb-1 --include-collaborators --include-properties
   atlas confluence whiteboards descendants wb-1 --depth 3 --limit 50

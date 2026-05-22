@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "94456bc88f9fa29f1d3bdbbbf98057693dea74d8d5ba39af25b8e7d22c42c5a6",
+  "sourceHash": "dbd195e34c417a2006a502b66fa9d3bc77aa1e7b56bfe6b54b9d48271530b3a8",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -167,6 +167,42 @@
       "typeOnly": true
     },
     {
+      "name": "BlogPostLikeUser",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1906,
+      "signature": "export interface BlogPostLikeUser { readonly accountId?: string; }",
+      "jsdoc": "Entry returned by `GET /blogposts/{id}/likes/users` (Atlassian `Like` schema).",
+      "typeOnly": true
+    },
+    {
+      "name": "BlogPostLikesCount",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1901,
+      "signature": "export interface BlogPostLikesCount { readonly count?: number; }",
+      "jsdoc": "Response shape for `GET /blogposts/{id}/likes/count`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BlogPostOperation",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1911,
+      "signature": "export interface BlogPostOperation { readonly operation?: string; readonly targetType?: string; }",
+      "jsdoc": "Permitted operation entry returned by `GET /blogposts/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BlogPostOperationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1917,
+      "signature": "export interface BlogPostOperationsResponse { readonly operations?: readonly BlogPostOperation[]; }",
+      "jsdoc": "Response shape for `GET /blogposts/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
       "name": "Board",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
@@ -284,6 +320,15 @@
       "line": 424,
       "signature": "export type CommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by the tenant-wide `GET /footer-comments` and the per-comment `GET /footer-comments/{id}/children` endpoints. Default direction is ascending; prefix with `-` for descending. Mirrors the OpenAPI `CommentSortOrder` enum.",
+      "typeOnly": true
+    },
+    {
+      "name": "CommentStatus",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 1842,
+      "signature": "export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';",
+      "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`).",
       "typeOnly": true
     },
     {
@@ -534,7 +579,7 @@
       "name": "CreateFolderData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1830,
+      "line": 2023,
       "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
       "jsdoc": "Request body for `POST /folders`.",
       "typeOnly": true
@@ -644,6 +689,15 @@
       "line": 843,
       "signature": "export interface CustomContent { readonly id: string; readonly type: string; readonly status: string; readonly title?: s…",
       "jsdoc": "Confluence Custom Content item.",
+      "typeOnly": true
+    },
+    {
+      "name": "CustomContentSortOrder",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 1862,
+      "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
+      "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum.",
       "typeOnly": true
     },
     {
@@ -816,7 +870,7 @@
       "name": "Folder",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1807,
+      "line": 2000,
       "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
       "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`.",
       "typeOnly": true
@@ -825,7 +879,7 @@
       "name": "FolderAncestor",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1848,
+      "line": 2041,
       "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
       "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`.",
       "typeOnly": true
@@ -834,7 +888,7 @@
       "name": "FolderAncestorsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1866,
+      "line": 2059,
       "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
       "jsdoc": "Response shape for `GET /folders/{id}/ancestors`.",
       "typeOnly": true
@@ -843,7 +897,7 @@
       "name": "FolderChild",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1889,
+      "line": 2082,
       "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
       "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`.",
       "typeOnly": true
@@ -852,7 +906,7 @@
       "name": "FolderDescendant",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1871,
+      "line": 2064,
       "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
       "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`.",
       "typeOnly": true
@@ -861,7 +915,7 @@
       "name": "FolderOperation",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1912,
+      "line": 2105,
       "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`.",
       "typeOnly": true
@@ -870,7 +924,7 @@
       "name": "FolderOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1918,
+      "line": 2111,
       "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
       "jsdoc": "Response shape for `GET /folders/{id}/operations`.",
       "typeOnly": true
@@ -983,6 +1037,15 @@
       "typeOnly": true
     },
     {
+      "name": "GetBlogPostClassificationLevelParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1896,
+      "signature": "export interface GetBlogPostClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/classification-level`.",
+      "typeOnly": true
+    },
+    {
       "name": "GetCustomContentParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1004,7 +1067,7 @@
       "name": "GetFolderParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1840,
+      "line": 2033,
       "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
       "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal.",
       "typeOnly": true
@@ -1113,6 +1176,15 @@
       "line": 638,
       "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
       "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "InlineCommentResolutionStatus",
+      "kind": "type",
+      "file": "src/confluence/types.ts",
+      "line": 1848,
+      "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
+      "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}.",
       "typeOnly": true
     },
     {
@@ -1302,6 +1374,69 @@
       "typeOnly": true
     },
     {
+      "name": "ListBlogPostAttachmentsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1807,
+      "signature": "export interface ListBlogPostAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/attachments`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostCustomContentParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1873,
+      "signature": "export interface ListBlogPostCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readon…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/custom-content`. The `type` filter is required by the server.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostFooterCommentsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1817,
+      "signature": "export interface ListBlogPostFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/footer-comments`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostInlineCommentsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1826,
+      "signature": "export interface ListBlogPostInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/inline-comments`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostLabelsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1851,
+      "signature": "export interface ListBlogPostLabelsParams { readonly prefix?: 'my' | 'team' | 'global' | 'system'; readonly sort?: Label…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/labels`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostLikeUsersParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1882,
+      "signature": "export interface ListBlogPostLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/likes/users`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListBlogPostVersionsParams",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1888,
+      "signature": "export interface ListBlogPostVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: V…",
+      "jsdoc": "Parameters for `GET /blogposts/{id}/versions`.",
+      "typeOnly": true
+    },
+    {
       "name": "ListBlogPostsByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -1435,7 +1570,7 @@
       "name": "ListFolderAncestorsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1854,
+      "line": 2047,
       "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
       "jsdoc": "Parameters for listing folder ancestors.",
       "typeOnly": true
@@ -1444,7 +1579,7 @@
       "name": "ListFolderChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1905,
+      "line": 2098,
       "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
       "jsdoc": "Parameters for listing direct children of a folder.",
       "typeOnly": true
@@ -1453,7 +1588,7 @@
       "name": "ListFolderDescendantsParams",
       "kind": "interface",
       "file": "src/confluence/types.ts",
-      "line": 1882,
+      "line": 2075,
       "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
       "jsdoc": "Parameters for listing folder descendants (cursor-paginated).",
       "typeOnly": true
@@ -1854,6 +1989,42 @@
       "typeOnly": true
     },
     {
+      "name": "RedactBlogPostData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1950,
+      "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
+      "jsdoc": "Request body for `POST /blogposts/{id}/redact` (also reused by the page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content.",
+      "typeOnly": true
+    },
+    {
+      "name": "RedactBlogPostResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1976,
+      "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
+      "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`.",
+      "typeOnly": true
+    },
+    {
+      "name": "RedactionPointer",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1964,
+      "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
+      "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema.",
+      "typeOnly": true
+    },
+    {
+      "name": "RedactionPointerResponse",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1986,
+      "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
+      "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable).",
+      "typeOnly": true
+    },
+    {
       "name": "RegisterWebhookData",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
@@ -1876,6 +2047,15 @@
       "line": 5,
       "signature": "export interface RequestOptions { readonly method: HttpMethod; readonly path: string; readonly query?: Readonly<Record<s…",
       "jsdoc": "Options for a single HTTP request.",
+      "typeOnly": true
+    },
+    {
+      "name": "ResetBlogPostClassificationLevelData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1938,
+      "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current'; }",
+      "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. Only `status: \"current\"` is required by the server; the request signals that the blog post should fall back to the space-level default.",
       "typeOnly": true
     },
     {
@@ -2087,6 +2267,15 @@
       "line": 63,
       "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
       "jsdoc": "Transport abstraction — the only interface resource modules depend on.",
+      "typeOnly": true
+    },
+    {
+      "name": "UpdateBlogPostClassificationLevelData",
+      "kind": "interface",
+      "file": "src/confluence/types.ts",
+      "line": 1928,
+      "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+      "jsdoc": "Request body for `PUT /blogposts/{id}/classification-level`.",
       "typeOnly": true
     },
     {
@@ -2556,7 +2745,7 @@
         {
           "name": "executeConfluenceCommand",
           "kind": "function",
-          "line": 22,
+          "line": 25,
           "exported": true,
           "signature": "export async function executeConfluenceCommand( cmd: ParsedCommand, globals: GlobalOptions, ): Promise<unknown>",
           "jsdoc": "Execute a Confluence CLI command. Returns the data to be printed."
@@ -2564,329 +2753,359 @@
         {
           "name": "executePages",
           "kind": "function",
-          "line": 76,
+          "line": 79,
           "signature": "async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSpaces",
           "kind": "function",
-          "line": 125,
+          "line": 128,
           "signature": "async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBlogPosts",
           "kind": "function",
-          "line": 139,
+          "line": 142,
           "signature": "async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 181,
+          "line": 374,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 266,
+          "line": 459,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseAttachmentStatuses",
           "kind": "function",
-          "line": 418,
+          "line": 611,
           "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
           "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags. Duplicate tokens are collapsed so the wire format never carries `status=a,a`."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 434,
+          "line": 627,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 455,
+          "line": 648,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 517,
+          "line": 710,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 523,
+          "line": 716,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 555,
+          "line": 748,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 563,
+          "line": 756,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 575,
+          "line": 768,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 594,
+          "line": 787,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 623,
+          "line": 816,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 651,
+          "line": 844,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 660,
+          "line": 853,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 677,
+          "line": 870,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 689,
+          "line": 882,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 741,
+          "line": 934,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 743,
+          "line": 936,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 756,
+          "line": 949,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 767,
+          "line": 960,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 803,
+          "line": 996,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 805,
+          "line": 998,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 829,
+          "line": 1022,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 840,
+          "line": 1033,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 858,
+          "line": 1051,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 964,
+          "line": 1157,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 1050,
+          "line": 1243,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 1141,
+          "line": 1334,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 1257,
+          "line": 1450,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 1262,
+          "line": 1455,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 1267,
+          "line": 1460,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 1271,
+          "line": 1464,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 1284,
+          "line": 1477,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 1298,
+          "line": 1491,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 1314,
+          "line": 1507,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1328,
+          "line": 1521,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 1341,
+          "line": 1534,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1343,
+          "line": 1536,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 1350,
+          "line": 1543,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1352,
+          "line": 1545,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 1361,
+          "line": 1554,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 1370,
+          "line": 1563,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 1377,
+          "line": 1570,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1379,
+          "line": 1572,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 1381,
+          "line": 1574,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 1390,
+          "line": 1583,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 1401,
+          "line": 1594,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 1403,
+          "line": 1596,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 1459,
+          "line": 1652,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
+        },
+        {
+          "name": "CUSTOM_CONTENT_BODY_FORMATS",
+          "kind": "variable",
+          "line": 1676,
+          "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
+        },
+        {
+          "name": "CUSTOM_CONTENT_SORT_ORDERS",
+          "kind": "variable",
+          "line": 1678,
+          "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
+        },
+        {
+          "name": "COMMENT_STATUSES",
+          "kind": "variable",
+          "line": 1689,
+          "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
+        },
+        {
+          "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
+          "kind": "variable",
+          "line": 1697,
+          "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
+        },
+        {
+          "name": "CLASSIFICATION_STATUS",
+          "kind": "variable",
+          "line": 1704,
+          "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 1483,
+          "line": 1706,
           "signature": "function makeBody(value: string | undefined)"
         }
       ],
@@ -3284,13 +3503,13 @@
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 149,
+          "line": 158,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 172,
+          "line": 181,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -3451,7 +3670,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 126,
+          "line": 132,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -4712,6 +4931,90 @@
             {
               "exported": "CheckAccessByEmailResponse",
               "original": "CheckAccessByEmailResponse"
+            },
+            {
+              "exported": "ListBlogPostAttachmentsParams",
+              "original": "ListBlogPostAttachmentsParams"
+            },
+            {
+              "exported": "ListBlogPostFooterCommentsParams",
+              "original": "ListBlogPostFooterCommentsParams"
+            },
+            {
+              "exported": "ListBlogPostInlineCommentsParams",
+              "original": "ListBlogPostInlineCommentsParams"
+            },
+            {
+              "exported": "CommentStatus",
+              "original": "CommentStatus"
+            },
+            {
+              "exported": "InlineCommentResolutionStatus",
+              "original": "InlineCommentResolutionStatus"
+            },
+            {
+              "exported": "ListBlogPostLabelsParams",
+              "original": "ListBlogPostLabelsParams"
+            },
+            {
+              "exported": "CustomContentSortOrder",
+              "original": "CustomContentSortOrder"
+            },
+            {
+              "exported": "ListBlogPostCustomContentParams",
+              "original": "ListBlogPostCustomContentParams"
+            },
+            {
+              "exported": "ListBlogPostLikeUsersParams",
+              "original": "ListBlogPostLikeUsersParams"
+            },
+            {
+              "exported": "ListBlogPostVersionsParams",
+              "original": "ListBlogPostVersionsParams"
+            },
+            {
+              "exported": "GetBlogPostClassificationLevelParams",
+              "original": "GetBlogPostClassificationLevelParams"
+            },
+            {
+              "exported": "BlogPostLikesCount",
+              "original": "BlogPostLikesCount"
+            },
+            {
+              "exported": "BlogPostLikeUser",
+              "original": "BlogPostLikeUser"
+            },
+            {
+              "exported": "BlogPostOperation",
+              "original": "BlogPostOperation"
+            },
+            {
+              "exported": "BlogPostOperationsResponse",
+              "original": "BlogPostOperationsResponse"
+            },
+            {
+              "exported": "UpdateBlogPostClassificationLevelData",
+              "original": "UpdateBlogPostClassificationLevelData"
+            },
+            {
+              "exported": "ResetBlogPostClassificationLevelData",
+              "original": "ResetBlogPostClassificationLevelData"
+            },
+            {
+              "exported": "RedactBlogPostData",
+              "original": "RedactBlogPostData"
+            },
+            {
+              "exported": "RedactionPointer",
+              "original": "RedactionPointer"
+            },
+            {
+              "exported": "RedactBlogPostResponse",
+              "original": "RedactBlogPostResponse"
+            },
+            {
+              "exported": "RedactionPointerResponse",
+              "original": "RedactionPointerResponse"
             }
           ]
         }
@@ -5029,46 +5332,204 @@
         {
           "name": "BlogPostsResource",
           "kind": "class",
-          "line": 12,
+          "line": 54,
           "exported": true,
           "signature": "export class BlogPostsResource",
+          "jsdoc": "Resource for Confluence v2 blog posts.",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 13
+              "line": 55
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 19
+              "line": 63
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 29
+              "line": 73
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 38
+              "line": 82
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 48
+              "line": 92
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 58
+              "line": 102
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 66
+              "line": 110
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 129
+            },
+            {
+              "name": "listPropertiesAll",
+              "kind": "method",
+              "line": 149
+            },
+            {
+              "name": "createProperty",
+              "kind": "method",
+              "line": 166
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 179
+            },
+            {
+              "name": "updateProperty",
+              "kind": "method",
+              "line": 194
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 208
+            },
+            {
+              "name": "listAttachments",
+              "kind": "method",
+              "line": 218
+            },
+            {
+              "name": "listAttachmentsAll",
+              "kind": "method",
+              "line": 233
+            },
+            {
+              "name": "getClassificationLevel",
+              "kind": "method",
+              "line": 249
+            },
+            {
+              "name": "updateClassificationLevel",
+              "kind": "method",
+              "line": 269
+            },
+            {
+              "name": "resetClassificationLevel",
+              "kind": "method",
+              "line": 285
+            },
+            {
+              "name": "listCustomContent",
+              "kind": "method",
+              "line": 299
+            },
+            {
+              "name": "listCustomContentAll",
+              "kind": "method",
+              "line": 314
+            },
+            {
+              "name": "listFooterComments",
+              "kind": "method",
+              "line": 330
+            },
+            {
+              "name": "listFooterCommentsAll",
+              "kind": "method",
+              "line": 345
+            },
+            {
+              "name": "listInlineComments",
+              "kind": "method",
+              "line": 361
+            },
+            {
+              "name": "listInlineCommentsAll",
+              "kind": "method",
+              "line": 376
+            },
+            {
+              "name": "getLikeCount",
+              "kind": "method",
+              "line": 397
+            },
+            {
+              "name": "listLikeUsers",
+              "kind": "method",
+              "line": 406
+            },
+            {
+              "name": "listLikeUsersAll",
+              "kind": "method",
+              "line": 423
+            },
+            {
+              "name": "getOperations",
+              "kind": "method",
+              "line": 440
+            },
+            {
+              "name": "redact",
+              "kind": "method",
+              "line": 459
+            },
+            {
+              "name": "listLabels",
+              "kind": "method",
+              "line": 476
+            },
+            {
+              "name": "listLabelsAll",
+              "kind": "method",
+              "line": 495
+            },
+            {
+              "name": "listVersions",
+              "kind": "method",
+              "line": 518
+            },
+            {
+              "name": "listVersionsAll",
+              "kind": "method",
+              "line": 537
+            },
+            {
+              "name": "buildAttachmentsQuery",
+              "kind": "method",
+              "line": 556
+            },
+            {
+              "name": "buildCommentsQuery",
+              "kind": "method",
+              "line": 572
+            },
+            {
+              "name": "buildInlineCommentsQuery",
+              "kind": "method",
+              "line": 587
+            },
+            {
+              "name": "buildCustomContentQuery",
+              "kind": "method",
+              "line": 604
             }
           ]
+        },
+        {
+          "name": "csvOrScalar",
+          "kind": "function",
+          "line": 622,
+          "signature": "function csvOrScalar(value: string | readonly string[] | undefined): string | undefined",
+          "jsdoc": "Normalise an array-or-scalar filter into the comma-joined scalar the wire format expects. Returns `undefined` for both omitted and explicit empty arrays so the caller can drop the key from the query bag entirely."
         }
       ],
       "imports": [
@@ -7850,9 +8311,177 @@
           "jsdoc": "Request body for `POST /databases/{id}/classification-level/reset`."
         },
         {
-          "name": "Folder",
+          "name": "ListBlogPostAttachmentsParams",
           "kind": "interface",
           "line": 1807,
+          "exported": true,
+          "signature": "export interface ListBlogPostAttachmentsParams { readonly sort?: AttachmentSortOrder; readonly cursor?: string; readonly…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/attachments`."
+        },
+        {
+          "name": "ListBlogPostFooterCommentsParams",
+          "kind": "interface",
+          "line": 1817,
+          "exported": true,
+          "signature": "export interface ListBlogPostFooterCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/footer-comments`."
+        },
+        {
+          "name": "ListBlogPostInlineCommentsParams",
+          "kind": "interface",
+          "line": 1826,
+          "exported": true,
+          "signature": "export interface ListBlogPostInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly st…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/inline-comments`."
+        },
+        {
+          "name": "CommentStatus",
+          "kind": "type",
+          "line": 1842,
+          "exported": true,
+          "signature": "export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';",
+          "jsdoc": "Status filter accepted by comment list endpoints on pages / blog posts. Mirrors the OpenAPI `ContentStatus` enum subset used by the comment collections (`current`, `deleted`, `trashed`, `historical`, `draft`)."
+        },
+        {
+          "name": "InlineCommentResolutionStatus",
+          "kind": "type",
+          "line": 1848,
+          "exported": true,
+          "signature": "export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';",
+          "jsdoc": "Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments` (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}."
+        },
+        {
+          "name": "ListBlogPostLabelsParams",
+          "kind": "interface",
+          "line": 1851,
+          "exported": true,
+          "signature": "export interface ListBlogPostLabelsParams { readonly prefix?: 'my' | 'team' | 'global' | 'system'; readonly sort?: Label…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/labels`."
+        },
+        {
+          "name": "CustomContentSortOrder",
+          "kind": "type",
+          "line": 1862,
+          "exported": true,
+          "signature": "export type CustomContentSortOrder = | 'id' | '-id' | 'created-date' | '-created-date' | 'modified-date' | '-modified-da…",
+          "jsdoc": "Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the OpenAPI `CustomContentSortOrder` enum."
+        },
+        {
+          "name": "ListBlogPostCustomContentParams",
+          "kind": "interface",
+          "line": 1873,
+          "exported": true,
+          "signature": "export interface ListBlogPostCustomContentParams { readonly type: string; readonly sort?: CustomContentSortOrder; readon…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/custom-content`. The `type` filter is required by the server."
+        },
+        {
+          "name": "ListBlogPostLikeUsersParams",
+          "kind": "interface",
+          "line": 1882,
+          "exported": true,
+          "signature": "export interface ListBlogPostLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/likes/users`."
+        },
+        {
+          "name": "ListBlogPostVersionsParams",
+          "kind": "interface",
+          "line": 1888,
+          "exported": true,
+          "signature": "export interface ListBlogPostVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: V…",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/versions`."
+        },
+        {
+          "name": "GetBlogPostClassificationLevelParams",
+          "kind": "interface",
+          "line": 1896,
+          "exported": true,
+          "signature": "export interface GetBlogPostClassificationLevelParams { readonly status?: 'current' | 'draft' | 'archived'; }",
+          "jsdoc": "Parameters for `GET /blogposts/{id}/classification-level`."
+        },
+        {
+          "name": "BlogPostLikesCount",
+          "kind": "interface",
+          "line": 1901,
+          "exported": true,
+          "signature": "export interface BlogPostLikesCount { readonly count?: number; }",
+          "jsdoc": "Response shape for `GET /blogposts/{id}/likes/count`."
+        },
+        {
+          "name": "BlogPostLikeUser",
+          "kind": "interface",
+          "line": 1906,
+          "exported": true,
+          "signature": "export interface BlogPostLikeUser { readonly accountId?: string; }",
+          "jsdoc": "Entry returned by `GET /blogposts/{id}/likes/users` (Atlassian `Like` schema)."
+        },
+        {
+          "name": "BlogPostOperation",
+          "kind": "interface",
+          "line": 1911,
+          "exported": true,
+          "signature": "export interface BlogPostOperation { readonly operation?: string; readonly targetType?: string; }",
+          "jsdoc": "Permitted operation entry returned by `GET /blogposts/{id}/operations`."
+        },
+        {
+          "name": "BlogPostOperationsResponse",
+          "kind": "interface",
+          "line": 1917,
+          "exported": true,
+          "signature": "export interface BlogPostOperationsResponse { readonly operations?: readonly BlogPostOperation[]; }",
+          "jsdoc": "Response shape for `GET /blogposts/{id}/operations`."
+        },
+        {
+          "name": "UpdateBlogPostClassificationLevelData",
+          "kind": "interface",
+          "line": 1928,
+          "exported": true,
+          "signature": "export interface UpdateBlogPostClassificationLevelData { readonly id: string; readonly status: 'current'; }",
+          "jsdoc": "Request body for `PUT /blogposts/{id}/classification-level`."
+        },
+        {
+          "name": "ResetBlogPostClassificationLevelData",
+          "kind": "interface",
+          "line": 1938,
+          "exported": true,
+          "signature": "export interface ResetBlogPostClassificationLevelData { readonly status: 'current'; }",
+          "jsdoc": "Request body for `POST /blogposts/{id}/classification-level/reset`. Only `status: \"current\"` is required by the server; the request signals that the blog post should fall back to the space-level default."
+        },
+        {
+          "name": "RedactBlogPostData",
+          "kind": "interface",
+          "line": 1950,
+          "exported": true,
+          "signature": "export interface RedactBlogPostData { readonly createdAt: string; readonly cleanHistory?: boolean; readonly versionNumbe…",
+          "jsdoc": "Request body for `POST /blogposts/{id}/redact` (also reused by the page variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is required so the server can detect stale clients submitting redactions against an outdated version of the content."
+        },
+        {
+          "name": "RedactionPointer",
+          "kind": "interface",
+          "line": 1964,
+          "exported": true,
+          "signature": "export interface RedactionPointer { readonly pointer: string; readonly from?: number; readonly to?: number; readonly rea…",
+          "jsdoc": "A single redaction target — mirrors the OpenAPI `RedactionPointer` schema."
+        },
+        {
+          "name": "RedactBlogPostResponse",
+          "kind": "interface",
+          "line": 1976,
+          "exported": true,
+          "signature": "export interface RedactBlogPostResponse { readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };…",
+          "jsdoc": "Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`."
+        },
+        {
+          "name": "RedactionPointerResponse",
+          "kind": "interface",
+          "line": 1986,
+          "exported": true,
+          "signature": "export interface RedactionPointerResponse extends RedactionPointer { readonly id?: string; }",
+          "jsdoc": "Echo of an applied redaction — server returns the original pointer plus a UUID the caller can use to restore the redaction later (except for code blocks, which the spec calls out as non-restorable)."
+        },
+        {
+          "name": "Folder",
+          "kind": "interface",
+          "line": 2000,
           "exported": true,
           "signature": "export interface Folder { readonly id: string; readonly type?: string; readonly status?: string; readonly title?: string…",
           "jsdoc": "Confluence v2 folder entity returned by `POST /folders` and `GET /folders/{id}`."
@@ -7860,7 +8489,7 @@
         {
           "name": "CreateFolderData",
           "kind": "interface",
-          "line": 1830,
+          "line": 2023,
           "exported": true,
           "signature": "export interface CreateFolderData { readonly spaceId: string; readonly title?: string; readonly parentId?: string; }",
           "jsdoc": "Request body for `POST /folders`."
@@ -7868,7 +8497,7 @@
         {
           "name": "GetFolderParams",
           "kind": "interface",
-          "line": 1840,
+          "line": 2033,
           "exported": true,
           "signature": "export interface GetFolderParams { readonly 'include-collaborators'?: boolean; readonly 'include-direct-children'?: bool…",
           "jsdoc": "Parameters for `GET /folders/{id}`. Each flag asks the server to inline an extra block on the response — leaving them unset keeps the payload minimal."
@@ -7876,7 +8505,7 @@
         {
           "name": "FolderAncestor",
           "kind": "interface",
-          "line": 1848,
+          "line": 2041,
           "exported": true,
           "signature": "export interface FolderAncestor { readonly id: string; readonly type?: 'page' | 'whiteboard' | 'database' | 'embed' | 'f…",
           "jsdoc": "Single ancestor entry returned by `GET /folders/{id}/ancestors`."
@@ -7884,7 +8513,7 @@
         {
           "name": "ListFolderAncestorsParams",
           "kind": "interface",
-          "line": 1854,
+          "line": 2047,
           "exported": true,
           "signature": "export interface ListFolderAncestorsParams { readonly limit?: number; }",
           "jsdoc": "Parameters for listing folder ancestors."
@@ -7892,7 +8521,7 @@
         {
           "name": "FolderAncestorsResponse",
           "kind": "interface",
-          "line": 1866,
+          "line": 2059,
           "exported": true,
           "signature": "export interface FolderAncestorsResponse { readonly results: readonly FolderAncestor[]; }",
           "jsdoc": "Response shape for `GET /folders/{id}/ancestors`."
@@ -7900,7 +8529,7 @@
         {
           "name": "FolderDescendant",
           "kind": "interface",
-          "line": 1871,
+          "line": 2064,
           "exported": true,
           "signature": "export interface FolderDescendant { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: stri…",
           "jsdoc": "Descendant entry returned by `GET /folders/{id}/descendants`."
@@ -7908,7 +8537,7 @@
         {
           "name": "ListFolderDescendantsParams",
           "kind": "interface",
-          "line": 1882,
+          "line": 2075,
           "exported": true,
           "signature": "export interface ListFolderDescendantsParams { readonly limit?: number; readonly depth?: number; readonly cursor?: strin…",
           "jsdoc": "Parameters for listing folder descendants (cursor-paginated)."
@@ -7916,7 +8545,7 @@
         {
           "name": "FolderChild",
           "kind": "interface",
-          "line": 1889,
+          "line": 2082,
           "exported": true,
           "signature": "export interface FolderChild { readonly id: string; readonly status?: 'current' | 'archived'; readonly title?: string; r…",
           "jsdoc": "Direct child entry returned by `GET /folders/{id}/direct-children`."
@@ -7924,7 +8553,7 @@
         {
           "name": "ListFolderChildrenParams",
           "kind": "interface",
-          "line": 1905,
+          "line": 2098,
           "exported": true,
           "signature": "export interface ListFolderChildrenParams { readonly limit?: number; readonly cursor?: string; readonly sort?: ContentSo…",
           "jsdoc": "Parameters for listing direct children of a folder."
@@ -7932,7 +8561,7 @@
         {
           "name": "FolderOperation",
           "kind": "interface",
-          "line": 1912,
+          "line": 2105,
           "exported": true,
           "signature": "export interface FolderOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /folders/{id}/operations`."
@@ -7940,7 +8569,7 @@
         {
           "name": "FolderOperationsResponse",
           "kind": "interface",
-          "line": 1918,
+          "line": 2111,
           "exported": true,
           "signature": "export interface FolderOperationsResponse { readonly operations?: readonly FolderOperation[]; }",
           "jsdoc": "Response shape for `GET /folders/{id}/operations`."
@@ -10642,6 +11271,90 @@
             {
               "exported": "CheckAccessByEmailResponse",
               "original": "CheckAccessByEmailResponse"
+            },
+            {
+              "exported": "ListBlogPostAttachmentsParams",
+              "original": "ListBlogPostAttachmentsParams"
+            },
+            {
+              "exported": "ListBlogPostFooterCommentsParams",
+              "original": "ListBlogPostFooterCommentsParams"
+            },
+            {
+              "exported": "ListBlogPostInlineCommentsParams",
+              "original": "ListBlogPostInlineCommentsParams"
+            },
+            {
+              "exported": "CommentStatus",
+              "original": "CommentStatus"
+            },
+            {
+              "exported": "InlineCommentResolutionStatus",
+              "original": "InlineCommentResolutionStatus"
+            },
+            {
+              "exported": "ListBlogPostLabelsParams",
+              "original": "ListBlogPostLabelsParams"
+            },
+            {
+              "exported": "CustomContentSortOrder",
+              "original": "CustomContentSortOrder"
+            },
+            {
+              "exported": "ListBlogPostCustomContentParams",
+              "original": "ListBlogPostCustomContentParams"
+            },
+            {
+              "exported": "ListBlogPostLikeUsersParams",
+              "original": "ListBlogPostLikeUsersParams"
+            },
+            {
+              "exported": "ListBlogPostVersionsParams",
+              "original": "ListBlogPostVersionsParams"
+            },
+            {
+              "exported": "GetBlogPostClassificationLevelParams",
+              "original": "GetBlogPostClassificationLevelParams"
+            },
+            {
+              "exported": "BlogPostLikesCount",
+              "original": "BlogPostLikesCount"
+            },
+            {
+              "exported": "BlogPostLikeUser",
+              "original": "BlogPostLikeUser"
+            },
+            {
+              "exported": "BlogPostOperation",
+              "original": "BlogPostOperation"
+            },
+            {
+              "exported": "BlogPostOperationsResponse",
+              "original": "BlogPostOperationsResponse"
+            },
+            {
+              "exported": "UpdateBlogPostClassificationLevelData",
+              "original": "UpdateBlogPostClassificationLevelData"
+            },
+            {
+              "exported": "ResetBlogPostClassificationLevelData",
+              "original": "ResetBlogPostClassificationLevelData"
+            },
+            {
+              "exported": "RedactBlogPostData",
+              "original": "RedactBlogPostData"
+            },
+            {
+              "exported": "RedactionPointer",
+              "original": "RedactionPointer"
+            },
+            {
+              "exported": "RedactBlogPostResponse",
+              "original": "RedactBlogPostResponse"
+            },
+            {
+              "exported": "RedactionPointerResponse",
+              "original": "RedactionPointerResponse"
             }
           ]
         },

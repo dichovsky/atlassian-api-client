@@ -109,6 +109,12 @@ const GLOBAL_OPTIONS = {
   'filter-id': { type: 'string' as const },
   feature: { type: 'string' as const },
   released: { type: 'boolean' as const },
+  // blog-posts sub-resource flags (B066-B084)
+  'media-type': { type: 'string' as const },
+  filename: { type: 'string' as const },
+  'resolution-status': { type: 'string' as const },
+  'clean-history': { type: 'boolean' as const },
+  'created-at': { type: 'string' as const },
   // install-skill options
   local: { type: 'boolean' as const },
   path: { type: 'string' as const },

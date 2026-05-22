@@ -1795,6 +1795,199 @@ export interface ResetDatabaseClassificationLevelData {
   readonly status: 'current';
 }
 
+// --- Blog Post sub-resources (B066-B084) -----------------------------------
+//
+// The `/blogposts/{id}/…` collection family mirrors the page sub-resources:
+// content properties, attachments, custom content, footer + inline comments,
+// labels, likes, operations, classification levels, redactions, and version
+// history. Property-shape types are reused from the shared content-property
+// vocabulary; everything blog-post-specific lives below.
+
+/** Parameters for `GET /blogposts/{id}/attachments`. */
+export interface ListBlogPostAttachmentsParams {
+  readonly sort?: AttachmentSortOrder;
+  readonly cursor?: string;
+  readonly status?: AttachmentStatus | readonly AttachmentStatus[];
+  readonly mediaType?: string;
+  readonly filename?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /blogposts/{id}/footer-comments`. */
+export interface ListBlogPostFooterCommentsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly status?: CommentStatus | readonly CommentStatus[];
+  readonly sort?: CommentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /blogposts/{id}/inline-comments`. */
+export interface ListBlogPostInlineCommentsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly status?: CommentStatus | readonly CommentStatus[];
+  readonly 'resolution-status'?:
+    | InlineCommentResolutionStatus
+    | readonly InlineCommentResolutionStatus[];
+  readonly sort?: CommentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * Status filter accepted by comment list endpoints on pages / blog posts.
+ * Mirrors the OpenAPI `ContentStatus` enum subset used by the comment
+ * collections (`current`, `deleted`, `trashed`, `historical`, `draft`).
+ */
+export type CommentStatus = 'current' | 'deleted' | 'trashed' | 'historical' | 'draft';
+
+/**
+ * Resolution-status filter accepted by `GET /blogposts/{id}/inline-comments`
+ * (and the page counterpart). Spec: enum {resolved, open, dangling, reopened}.
+ */
+export type InlineCommentResolutionStatus = 'resolved' | 'open' | 'dangling' | 'reopened';
+
+/** Parameters for `GET /blogposts/{id}/labels`. */
+export interface ListBlogPostLabelsParams {
+  readonly prefix?: 'my' | 'team' | 'global' | 'system';
+  readonly sort?: LabelSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * Sort tokens accepted by `GET /blogposts/{id}/custom-content`. Mirrors the
+ * OpenAPI `CustomContentSortOrder` enum.
+ */
+export type CustomContentSortOrder =
+  | 'id'
+  | '-id'
+  | 'created-date'
+  | '-created-date'
+  | 'modified-date'
+  | '-modified-date'
+  | 'title'
+  | '-title';
+
+/** Parameters for `GET /blogposts/{id}/custom-content`. The `type` filter is required by the server. */
+export interface ListBlogPostCustomContentParams {
+  readonly type: string;
+  readonly sort?: CustomContentSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+  readonly 'body-format'?: 'raw' | 'storage' | 'atlas_doc_format';
+}
+
+/** Parameters for `GET /blogposts/{id}/likes/users`. */
+export interface ListBlogPostLikeUsersParams {
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /blogposts/{id}/versions`. */
+export interface ListBlogPostVersionsParams {
+  readonly 'body-format'?: 'storage' | 'atlas_doc_format';
+  readonly sort?: VersionSortOrder;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/** Parameters for `GET /blogposts/{id}/classification-level`. */
+export interface GetBlogPostClassificationLevelParams {
+  readonly status?: 'current' | 'draft' | 'archived';
+}
+
+/** Response shape for `GET /blogposts/{id}/likes/count`. */
+export interface BlogPostLikesCount {
+  readonly count?: number;
+}
+
+/** Entry returned by `GET /blogposts/{id}/likes/users` (Atlassian `Like` schema). */
+export interface BlogPostLikeUser {
+  readonly accountId?: string;
+}
+
+/** Permitted operation entry returned by `GET /blogposts/{id}/operations`. */
+export interface BlogPostOperation {
+  readonly operation?: string;
+  readonly targetType?: string;
+}
+
+/** Response shape for `GET /blogposts/{id}/operations`. */
+export interface BlogPostOperationsResponse {
+  readonly operations?: readonly BlogPostOperation[];
+}
+
+/**
+ * Request body for `PUT /blogposts/{id}/classification-level`.
+ *
+ * Same shape as the database / page variants — `id` is the classification
+ * level being applied and `status` must always be `"current"` (the only
+ * value the server accepts).
+ */
+export interface UpdateBlogPostClassificationLevelData {
+  readonly id: string;
+  readonly status: 'current';
+}
+
+/**
+ * Request body for `POST /blogposts/{id}/classification-level/reset`.
+ * Only `status: "current"` is required by the server; the request signals
+ * that the blog post should fall back to the space-level default.
+ */
+export interface ResetBlogPostClassificationLevelData {
+  readonly status: 'current';
+}
+
+/**
+ * Request body for `POST /blogposts/{id}/redact` (also reused by the page
+ * variant). Mirrors the OpenAPI `RedactionRequest` schema; `createdAt` is
+ * required so the server can detect stale clients submitting redactions
+ * against an outdated version of the content.
+ *
+ * Requires Atlassian Guard Premium on the target tenant.
+ */
+export interface RedactBlogPostData {
+  /** Timestamp when the content was last updated; mirrors the server's freshness check. */
+  readonly createdAt: string;
+  /** Squash historical versions containing the redacted text when `true`. */
+  readonly cleanHistory?: boolean;
+  /** Optional specific historical version to redact against (defaults to current). */
+  readonly versionNumber?: number;
+  /** Body redactions — JSON-pointer targeted ranges in the content body. */
+  readonly body?: { readonly redactions?: readonly RedactionPointer[] };
+  /** Title redactions — same pointer format as body. */
+  readonly title?: { readonly redactions?: readonly RedactionPointer[] };
+}
+
+/** A single redaction target — mirrors the OpenAPI `RedactionPointer` schema. */
+export interface RedactionPointer {
+  /** JSON pointer to the text node containing the content to redact. */
+  readonly pointer: string;
+  /** Starting character index (zero-based, inclusive). */
+  readonly from?: number;
+  /** Ending character index (zero-based, exclusive); must be ≥ `from`. */
+  readonly to?: number;
+  /** Optional audit-trail / compliance note. */
+  readonly reason?: string | null;
+}
+
+/** Response from `POST /blogposts/{id}/redact` — mirrors `RedactionResponse`. */
+export interface RedactBlogPostResponse {
+  readonly body?: { readonly redactions?: readonly RedactionPointerResponse[] };
+  readonly title?: { readonly redactions?: readonly RedactionPointerResponse[] };
+}
+
+/**
+ * Echo of an applied redaction — server returns the original pointer plus a
+ * UUID the caller can use to restore the redaction later (except for code
+ * blocks, which the spec calls out as non-restorable).
+ */
+export interface RedactionPointerResponse extends RedactionPointer {
+  /** UUID assigned by the server; absent for non-restorable redactions. */
+  readonly id?: string;
+}
+
 // --- Folders ---
 
 /**
