@@ -9279,11 +9279,11 @@ describe('executeJiraCommand', () => {
       expect(jiraStatusMock.list).toHaveBeenCalledOnce();
     });
 
-    it('status get calls client.status.get() with --id-or-name', async () => {
+    it('status get calls client.status.get() with positional idOrName', async () => {
       // Arrange
       const single = { id: '10001', name: 'To Do' };
       jiraStatusMock.get.mockResolvedValue(single);
-      const parsed = cmd('status', 'get', [], { 'id-or-name': '10001' });
+      const parsed = cmd('status', 'get', ['10001'], {});
 
       // Act
       const result = await executeJiraCommand(parsed, GLOBALS);
@@ -9293,10 +9293,10 @@ describe('executeJiraCommand', () => {
       expect(jiraStatusMock.get).toHaveBeenCalledWith('10001');
     });
 
-    it('status get throws when --id-or-name is missing', async () => {
+    it('status get throws when idOrName is missing', async () => {
       const parsed = cmd('status', 'get', [], {});
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
-        'Missing required option: --id-or-name',
+        'Missing required argument: idOrName',
       );
     });
 
@@ -9323,24 +9323,24 @@ describe('executeJiraCommand', () => {
       expect(jiraStatusCategoryMock.list).toHaveBeenCalledOnce();
     });
 
-    it('status-category get calls client.statusCategory.get() with --id-or-name', async () => {
+    it('status-category get calls client.statusCategory.get() with positional idOrKey', async () => {
       // Arrange
       const category = { id: 2, key: 'new', name: 'To Do' };
       jiraStatusCategoryMock.get.mockResolvedValue(category);
-      const parsed = cmd('status-category', 'get', [], { 'id-or-name': '2' });
+      const parsed = cmd('status-category', 'get', ['done'], {});
 
       // Act
       const result = await executeJiraCommand(parsed, GLOBALS);
 
       // Assert
       expect(result).toEqual(category);
-      expect(jiraStatusCategoryMock.get).toHaveBeenCalledWith('2');
+      expect(jiraStatusCategoryMock.get).toHaveBeenCalledWith('done');
     });
 
-    it('status-category get throws when --id-or-name is missing', async () => {
+    it('status-category get throws when idOrKey is missing', async () => {
       const parsed = cmd('status-category', 'get', [], {});
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
-        'Missing required option: --id-or-name',
+        'Missing required argument: idOrKey',
       );
     });
 

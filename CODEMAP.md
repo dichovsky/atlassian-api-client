@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "11135be18916ec988069f31870edcdf43c954fa4b97985bd7a949754152af5c4",
+  "sourceHash": "dda8584f0faf66fe337892efd38df0aa89b9e21ce1a0f53b455d7bc82f4b32f9",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4194,7 +4194,7 @@
         {
           "name": "executeStatusCategory",
           "kind": "function",
-          "line": 833,
+          "line": 831,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -4445,7 +4445,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 162,
+          "line": 160,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."

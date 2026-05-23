@@ -154,8 +154,6 @@ const GLOBAL_OPTIONS = {
   visibility: { type: 'string' as const },
   dismissible: { type: 'boolean' as const },
   enabled: { type: 'boolean' as const },
-  // status / status-category options (B773-B776)
-  'id-or-name': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

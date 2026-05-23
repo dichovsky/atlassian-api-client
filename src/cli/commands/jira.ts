@@ -818,26 +818,22 @@ async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): P
 }
 
 async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const opts = cmd.options;
-
   switch (cmd.action) {
     case 'list':
       return client.status.list();
     case 'get':
-      return client.status.get(requireOpt(opts['id-or-name'], '--id-or-name'));
+      return client.status.get(requireArg(cmd.positionalArgs[0], 'idOrName'));
     default:
       throw new Error(`Unknown status action: ${cmd.action}. Actions: list, get`);
   }
 }
 
 async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const opts = cmd.options;
-
   switch (cmd.action) {
     case 'list':
       return client.statusCategory.list();
     case 'get':
-      return client.statusCategory.get(requireOpt(opts['id-or-name'], '--id-or-name'));
+      return client.statusCategory.get(requireArg(cmd.positionalArgs[0], 'idOrKey'));
     default:
       throw new Error(`Unknown status-category action: ${cmd.action}. Actions: list, get`);
   }

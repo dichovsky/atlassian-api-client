@@ -553,15 +553,15 @@ atlas jira webhooks list-failed --max-results 20
 | Action | Positional | Required flags | Optional flags |
 | ------ | ---------- | -------------- | -------------- |
 | `list` | —          | —              | —              |
-| `get`  | —          | `--id-or-name` | —              |
+| `get`  | `idOrName` | —              | —              |
 
 ```sh
 # List all workflow statuses
 atlas jira status list
 
 # Get a specific status by id or name
-atlas jira status get --id-or-name 10001
-atlas jira status get --id-or-name "In Progress"
+atlas jira status get 10001
+atlas jira status get "In Progress"
 ```
 
 ## `status-category`
@@ -569,21 +569,21 @@ atlas jira status get --id-or-name "In Progress"
 | Action | Positional | Required flags | Optional flags |
 | ------ | ---------- | -------------- | -------------- |
 | `list` | —          | —              | —              |
-| `get`  | —          | `--id-or-name` | —              |
+| `get`  | `idOrKey`  | —              | —              |
 
 **Notes:**
 
-- `--id-or-name` accepts either the numeric id (e.g. `2`) or the category key (e.g. `new`, `indeterminate`, `done`).
+- `idOrKey` accepts either the numeric id (e.g. `2`) or the category key (e.g. `new`, `indeterminate`, `done`).
 
 ```sh
 # List all status categories
 atlas jira status-category list
 
 # Get a specific status category by id
-atlas jira status-category get --id-or-name 2
+atlas jira status-category get 2
 
 # Get a specific status category by key
-atlas jira status-category get --id-or-name done
+atlas jira status-category get done
 ```
 
 ## Errors specific to Jira
