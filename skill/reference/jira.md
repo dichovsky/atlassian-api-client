@@ -18,6 +18,22 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `epic`                | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                                                                                                                                                                                                                                                                         |
 | `backlog`             | `move`                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `announcement-banner` | `get`, `update`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `application-role`    | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+## `application-role`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+| `get`  | —          | `--key`        | —              |
+
+```sh
+# List all application roles
+atlas jira application-role list
+
+# Get a specific application role by key
+atlas jira application-role get --key jira-software
+```
 
 ## `announcement-banner`
 
