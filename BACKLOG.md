@@ -326,7 +326,7 @@
 - [ ] 🔴 🧩 API: B342 Jira: expose GET /rest/api/3/attachment/thumbnail/{id}
   - files: `src/jira/resources/issue-attachments.ts`, `test/jira/issue-attachments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B343 Jira: expose GET /rest/api/3/auditing/record
+- [x] 🔴 🧩 API: B343 Jira: expose GET /rest/api/3/auditing/record
   - files: `src/jira/resources/auditing.ts`, `test/jira/auditing.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B344 Jira: expose GET /rest/api/3/avatar/{type}/system
@@ -359,7 +359,7 @@
 - [ ] 🔴 🧩 API: B353 Jira: expose GET /rest/api/3/bulk/queue/{taskId}
   - files: `src/jira/resources/bulk.ts`, `test/jira/bulk.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B354 Jira: expose POST /rest/api/3/changelog/bulkfetch
+- [x] 🔴 🧩 API: B354 Jira: expose POST /rest/api/3/changelog/bulkfetch
   - files: `src/jira/resources/changelog.ts`, `test/jira/changelog.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B355 Jira: expose GET /rest/api/3/classification-levels
@@ -500,7 +500,7 @@
 - [ ] 🔴 🧩 API: B405 Jira: expose GET /rest/api/3/dashboard/search
   - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B408 Jira: expose GET /rest/api/3/events
+- [x] 🔴 🧩 API: B408 Jira: expose GET /rest/api/3/events
   - files: `src/jira/resources/events.ts`, `test/jira/events.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B409 Jira: expose POST /rest/api/3/expression/analyse
@@ -713,7 +713,7 @@
 - [ ] 🟡 🖥️ API: B466 Jira: add CLI + skill for GET /rest/api/3/filter/search
   - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B467 Jira: expose POST /rest/api/3/forge/panel/action/bulk/async
+- [x] 🔴 🧩 API: B467 Jira: expose POST /rest/api/3/forge/panel/action/bulk/async
   - files: `src/jira/resources/forge.ts`, `test/jira/forge.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B468 Jira: expose DELETE /rest/api/3/group

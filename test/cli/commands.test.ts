@@ -448,6 +448,19 @@ const jiraInstanceMock = {
 const jiraMyPermissionsMock = {
   get: vi.fn(),
 };
+const jiraAuditingMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+};
+const jiraEventsMock = {
+  list: vi.fn(),
+};
+const jiraChangelogMock = {
+  bulkFetch: vi.fn(),
+};
+const jiraForgeMock = {
+  bulkPanelAction: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -472,6 +485,10 @@ vi.mock('../../src/jira/client.js', () => {
       serverInfo: jiraServerInfoMock,
       instance: jiraInstanceMock,
       myPermissions: jiraMyPermissionsMock,
+      auditing: jiraAuditingMock,
+      events: jiraEventsMock,
+      changelog: jiraChangelogMock,
+      forge: jiraForgeMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9460,6 +9477,217 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('mypermissions', 'unknown-action'), GLOBALS),
       ).rejects.toThrow('Unknown mypermissions action');
+    });
+  });
+
+  // ── auditing ──────────────────────────────────────────────────────────────
+
+  describe('auditing resource', () => {
+    it('auditing list calls client.auditing.list() with no opts', async () => {
+      // Arrange
+      const response = { offset: 0, limit: 1000, total: 0, records: [] };
+      jiraAuditingMock.list.mockResolvedValue(response);
+
+      // Act
+      const result = await executeJiraCommand(cmd('auditing', 'list'), GLOBALS);
+
+      // Assert
+      expect(jiraAuditingMock.list).toHaveBeenCalledOnce();
+      expect(result).toEqual(response);
+    });
+
+    it('auditing list passes --filter', async () => {
+      // Arrange
+      jiraAuditingMock.list.mockResolvedValue({ offset: 0, limit: 1000, total: 0, records: [] });
+
+      // Act
+      await executeJiraCommand(cmd('auditing', 'list', [], { filter: 'project' }), GLOBALS);
+
+      // Assert
+      expect(jiraAuditingMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ filter: 'project' }),
+      );
+    });
+
+    it('auditing list passes --from and --to', async () => {
+      // Arrange
+      jiraAuditingMock.list.mockResolvedValue({ offset: 0, limit: 1000, total: 0, records: [] });
+
+      // Act
+      await executeJiraCommand(
+        cmd('auditing', 'list', [], { from: '2024-01-01', to: '2024-12-31' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraAuditingMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ from: '2024-01-01', to: '2024-12-31' }),
+      );
+    });
+
+    it('auditing list passes --offset and --limit', async () => {
+      // Arrange
+      jiraAuditingMock.list.mockResolvedValue({ offset: 100, limit: 50, total: 0, records: [] });
+
+      // Act
+      await executeJiraCommand(
+        cmd('auditing', 'list', [], { offset: '100', limit: '50' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraAuditingMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ offset: 100, limit: 50 }),
+      );
+    });
+
+    it('auditing unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('auditing', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown auditing action',
+      );
+    });
+  });
+
+  // ── events ────────────────────────────────────────────────────────────────
+
+  describe('events resource', () => {
+    it('events list calls client.events.list() and returns result', async () => {
+      // Arrange
+      const eventList = [
+        { id: 1, name: 'Issue Created' },
+        { id: 2, name: 'Issue Updated' },
+      ];
+      jiraEventsMock.list.mockResolvedValue(eventList);
+
+      // Act
+      const result = await executeJiraCommand(cmd('events', 'list'), GLOBALS);
+
+      // Assert
+      expect(jiraEventsMock.list).toHaveBeenCalledOnce();
+      expect(result).toEqual(eventList);
+    });
+
+    it('events unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('events', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown events action',
+      );
+    });
+  });
+
+  // ── changelog ─────────────────────────────────────────────────────────────
+
+  describe('changelog resource', () => {
+    it('changelog bulk-fetch calls client.changelog.bulkFetch() with issues', async () => {
+      // Arrange
+      const response = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraChangelogMock.bulkFetch.mockResolvedValue(response);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('changelog', 'bulk-fetch', [], { issues: 'PROJ-1,PROJ-2' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraChangelogMock.bulkFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('changelog bulk-fetch passes --author-ids as array', async () => {
+      // Arrange
+      jiraChangelogMock.bulkFetch.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('changelog', 'bulk-fetch', [], { issues: 'PROJ-1', 'author-ids': 'acc-1,acc-2' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraChangelogMock.bulkFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ filterByAuthorAccountId: ['acc-1', 'acc-2'] }),
+      );
+    });
+
+    it('changelog bulk-fetch passes --field-ids as array', async () => {
+      // Arrange
+      jiraChangelogMock.bulkFetch.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('changelog', 'bulk-fetch', [], { issues: 'PROJ-1', 'field-ids': 'status,priority' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraChangelogMock.bulkFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ filterByFieldId: ['status', 'priority'] }),
+      );
+    });
+
+    it('changelog bulk-fetch throws when --issues is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('changelog', 'bulk-fetch', [], {}), GLOBALS),
+      ).rejects.toThrow('--issues');
+    });
+
+    it('changelog unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('changelog', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown changelog action',
+      );
+    });
+  });
+
+  // ── forge ─────────────────────────────────────────────────────────────────
+
+  describe('forge resource', () => {
+    it('forge bulk-panel-action calls client.forge.bulkPanelAction() with parsed actions', async () => {
+      // Arrange
+      const taskResponse = { taskId: 'task-123' };
+      jiraForgeMock.bulkPanelAction.mockResolvedValue(taskResponse);
+      const actions = [{ issueId: '10001', moduleKey: 'my-app:my-panel' }];
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('forge', 'bulk-panel-action', [], { value: JSON.stringify(actions) }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraForgeMock.bulkPanelAction).toHaveBeenCalledWith({ actions });
+      expect(result).toEqual(taskResponse);
+    });
+
+    it('forge bulk-panel-action throws when --value is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], { value: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('forge bulk-panel-action throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], {}), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('forge unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('forge', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown forge action',
+      );
     });
   });
 });

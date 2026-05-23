@@ -50,6 +50,14 @@ export async function executeJiraCommand(
       return executeInstance(client, cmd);
     case 'mypermissions':
       return executeMyPermissions(client, cmd);
+    case 'auditing':
+      return executeAuditing(client, cmd);
+    case 'events':
+      return executeEvents(client, cmd);
+    case 'changelog':
+      return executeChangelog(client, cmd);
+    case 'forge':
+      return executeForge(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -880,5 +888,87 @@ async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Pro
       });
     default:
       throw new Error(`Unknown mypermissions action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.auditing.list({
+        offset: asPositiveInt(opts['offset'], '--offset'),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        filter: asString(opts['filter']),
+        from: asString(opts['from']),
+        to: asString(opts['to']),
+      });
+    default:
+      throw new Error(`Unknown auditing action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list':
+      return client.events.list();
+    default:
+      throw new Error(`Unknown events action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'bulk-fetch': {
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issueIdsOrKeys = issuesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const authorIdsRaw = asString(opts['author-ids']);
+      const filterByAuthorAccountId = authorIdsRaw
+        ? authorIdsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      const fieldIdsRaw = asString(opts['field-ids']);
+      const filterByFieldId = fieldIdsRaw
+        ? fieldIdsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      return client.changelog.bulkFetch({
+        issueIdsOrKeys,
+        ...(filterByAuthorAccountId !== undefined && { filterByAuthorAccountId }),
+        ...(filterByFieldId !== undefined && { filterByFieldId }),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    default:
+      throw new Error(`Unknown changelog action: ${cmd.action}. Actions: bulk-fetch`);
+  }
+}
+
+async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'bulk-panel-action': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let actions: { issueId: string; moduleKey: string; payload?: Record<string, unknown> }[];
+      try {
+        actions = JSON.parse(valueRaw) as typeof actions;
+      } catch {
+        throw new Error('--value must be valid JSON (array of panel action objects)');
+      }
+      return client.forge.bulkPanelAction({ actions });
+    }
+    default:
+      throw new Error(`Unknown forge action: ${cmd.action}. Actions: bulk-panel-action`);
   }
 }

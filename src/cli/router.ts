@@ -163,6 +163,14 @@ const GLOBAL_OPTIONS = {
   'project-uuid': { type: 'string' as const },
   'project-configuration-uuid': { type: 'string' as const },
   'comment-id': { type: 'string' as const },
+  // auditing options (B343)
+  offset: { type: 'string' as const },
+  filter: { type: 'string' as const },
+  from: { type: 'string' as const },
+  to: { type: 'string' as const },
+  // changelog options (B354)
+  'author-ids': { type: 'string' as const },
+  'field-ids': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */
