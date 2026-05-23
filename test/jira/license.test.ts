@@ -1,0 +1,97 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { LicenseResource } from '../../src/jira/resources/license.js';
+import { MockTransport } from '../helpers/mock-transport.js';
+
+const BASE_URL = 'https://test.atlassian.net/rest/api/3';
+
+describe('LicenseResource', () => {
+  let transport: MockTransport;
+  let license: LicenseResource;
+
+  beforeEach(() => {
+    transport = new MockTransport();
+    license = new LicenseResource(transport, BASE_URL);
+  });
+
+  // ── getApproximateCount ───────────────────────────────────────────────────
+
+  describe('getApproximateCount()', () => {
+    it('calls GET /license/approximateLicenseCount and returns count', async () => {
+      // Arrange
+      const payload = { count: 42 };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await license.getApproximateCount();
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/license/approximateLicenseCount`,
+      });
+    });
+
+    it('returns count of 0 for unlicensed instance', async () => {
+      // Arrange
+      transport.respondWith({ count: 0 });
+
+      // Act
+      const result = await license.getApproximateCount();
+
+      // Assert
+      expect(result.count).toBe(0);
+    });
+
+    it('propagates transport errors', async () => {
+      // Arrange
+      transport.respondWithError(new Error('network error'));
+
+      // Act / Assert
+      await expect(license.getApproximateCount()).rejects.toThrow('network error');
+    });
+  });
+
+  // ── getApproximateCountForProduct ─────────────────────────────────────────
+
+  describe('getApproximateCountForProduct()', () => {
+    it('calls GET /license/approximateLicenseCount/product/{key} with the given key', async () => {
+      // Arrange
+      const payload = { count: 25 };
+      transport.respondWith(payload);
+
+      // Act
+      const result = await license.getApproximateCountForProduct('jira-software');
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/license/approximateLicenseCount/product/jira-software`,
+      });
+    });
+
+    it('URL-encodes special characters in applicationKey', async () => {
+      // Arrange
+      transport.respondWith({ count: 10 });
+
+      // Act
+      await license.getApproximateCountForProduct('jira service desk');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/license/approximateLicenseCount/product/jira%20service%20desk`,
+      );
+    });
+
+    it('propagates transport errors', async () => {
+      // Arrange
+      transport.respondWithError(new Error('server error'));
+
+      // Act / Assert
+      await expect(license.getApproximateCountForProduct('jira-software')).rejects.toThrow(
+        'server error',
+      );
+    });
+  });
+});

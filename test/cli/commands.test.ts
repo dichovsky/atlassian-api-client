@@ -486,6 +486,26 @@ const jiraGroupUserPickerMock = {
 const jiraSecurityLevelMock = {
   get: vi.fn(),
 };
+const jiraLicenseMock = {
+  getApproximateCount: vi.fn(),
+  getApproximateCountForProduct: vi.fn(),
+};
+const jiraSettingsMock = {
+  getColumns: vi.fn(),
+  setColumns: vi.fn(),
+};
+const jiraRedactMock = {
+  start: vi.fn(),
+  getStatus: vi.fn(),
+};
+const jiraFlagMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+const jiraTaskMock = {
+  get: vi.fn(),
+  cancel: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -521,6 +541,11 @@ vi.mock('../../src/jira/client.js', () => {
       groups: jiraGroupsMock,
       groupUserPicker: jiraGroupUserPickerMock,
       securityLevel: jiraSecurityLevelMock,
+      license: jiraLicenseMock,
+      settings: jiraSettingsMock,
+      redact: jiraRedactMock,
+      flag: jiraFlagMock,
+      task: jiraTaskMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -10082,6 +10107,266 @@ describe('executeJiraCommand', () => {
     it('security-level unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('security-level', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown security-level action',
+      );
+    });
+  });
+
+  // ── license ───────────────────────────────────────────────────────────────
+
+  describe('license resource', () => {
+    it('license get-approximate-count calls client.license.getApproximateCount()', async () => {
+      // Arrange
+      const payload = { count: 42 };
+      jiraLicenseMock.getApproximateCount.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('license', 'get-approximate-count'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(jiraLicenseMock.getApproximateCount).toHaveBeenCalled();
+    });
+
+    it('license get-approximate-count-for-product calls client.license.getApproximateCountForProduct() with positional applicationKey', async () => {
+      // Arrange
+      const payload = { count: 25 };
+      jiraLicenseMock.getApproximateCountForProduct.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('license', 'get-approximate-count-for-product', ['jira-software'], {}),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(jiraLicenseMock.getApproximateCountForProduct).toHaveBeenCalledWith('jira-software');
+    });
+
+    it('license get-approximate-count-for-product throws when applicationKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('license', 'get-approximate-count-for-product'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: applicationKey');
+    });
+
+    it('license unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('license', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown license action',
+      );
+    });
+  });
+
+  // ── settings ──────────────────────────────────────────────────────────────
+
+  describe('settings resource', () => {
+    it('settings get-columns calls client.settings.getColumns()', async () => {
+      // Arrange
+      const columns = [{ label: 'Key', value: 'issuekey' }];
+      jiraSettingsMock.getColumns.mockResolvedValue(columns);
+
+      // Act
+      const result = await executeJiraCommand(cmd('settings', 'get-columns'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(columns);
+      expect(jiraSettingsMock.getColumns).toHaveBeenCalled();
+    });
+
+    it('settings set-columns calls client.settings.setColumns() with parsed JSON', async () => {
+      // Arrange
+      jiraSettingsMock.setColumns.mockResolvedValue(undefined);
+      const columnsJson = '[{"label":"Key","value":"issuekey"}]';
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('settings', 'set-columns', [], { columns: columnsJson }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual({ updated: true });
+      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith({
+        columns: [{ label: 'Key', value: 'issuekey' }],
+      });
+    });
+
+    it('settings set-columns throws when --columns is missing', async () => {
+      await expect(executeJiraCommand(cmd('settings', 'set-columns'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --columns',
+      );
+    });
+
+    it('settings set-columns throws when --columns is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('settings', 'set-columns', [], { columns: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('--columns must be valid JSON');
+    });
+
+    it('settings unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('settings', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown settings action',
+      );
+    });
+  });
+
+  // ── redact ────────────────────────────────────────────────────────────────
+
+  describe('redact resource', () => {
+    it('redact start calls client.redact.start() with jql and returns jobId', async () => {
+      // Arrange
+      const payload = { jobId: 'job-abc' };
+      jiraRedactMock.start.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('redact', 'start', [], { jql: 'project = PROJ' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(jiraRedactMock.start).toHaveBeenCalledWith({ jql: 'project = PROJ' });
+    });
+
+    it('redact start passes fieldIds when --field-ids provided', async () => {
+      // Arrange
+      jiraRedactMock.start.mockResolvedValue({ jobId: 'job-1' });
+
+      // Act
+      await executeJiraCommand(
+        cmd('redact', 'start', [], { jql: 'project = PROJ', 'field-ids': 'summary,description' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraRedactMock.start).toHaveBeenCalledWith({
+        jql: 'project = PROJ',
+        fieldIds: ['summary', 'description'],
+      });
+    });
+
+    it('redact start throws when --jql is missing', async () => {
+      await expect(executeJiraCommand(cmd('redact', 'start'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --jql',
+      );
+    });
+
+    it('redact get-status calls client.redact.getStatus() with positional jobId', async () => {
+      // Arrange
+      const payload = { jobId: 'job-abc', status: 'IN_PROGRESS', progress: 50 };
+      jiraRedactMock.getStatus.mockResolvedValue(payload);
+
+      // Act
+      const result = await executeJiraCommand(cmd('redact', 'get-status', ['job-abc']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(payload);
+      expect(jiraRedactMock.getStatus).toHaveBeenCalledWith('job-abc');
+    });
+
+    it('redact get-status throws when jobId is missing', async () => {
+      await expect(executeJiraCommand(cmd('redact', 'get-status', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: jobId',
+      );
+    });
+
+    it('redact unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('redact', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown redact action',
+      );
+    });
+  });
+
+  // ── flag ──────────────────────────────────────────────────────────────────
+
+  describe('flag resource', () => {
+    it('flag get calls client.flag.get() with featureFlagId', async () => {
+      // Arrange
+      const flag = { id: 'flag-xyz', displayName: 'My Flag' };
+      jiraFlagMock.get.mockResolvedValue(flag);
+
+      // Act
+      const result = await executeJiraCommand(cmd('flag', 'get', ['flag-xyz']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(flag);
+      expect(jiraFlagMock.get).toHaveBeenCalledWith('flag-xyz');
+    });
+
+    it('flag get throws when featureFlagId is missing', async () => {
+      await expect(executeJiraCommand(cmd('flag', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: featureFlagId',
+      );
+    });
+
+    it('flag delete calls client.flag.delete() and returns { deleted: true }', async () => {
+      // Arrange
+      jiraFlagMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('flag', 'delete', ['flag-xyz']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual({ deleted: true });
+      expect(jiraFlagMock.delete).toHaveBeenCalledWith('flag-xyz');
+    });
+
+    it('flag delete throws when featureFlagId is missing', async () => {
+      await expect(executeJiraCommand(cmd('flag', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: featureFlagId',
+      );
+    });
+
+    it('flag unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('flag', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown flag action',
+      );
+    });
+  });
+
+  // ── task ──────────────────────────────────────────────────────────────────
+
+  describe('task resource', () => {
+    it('task get calls client.task.get() with taskId', async () => {
+      // Arrange
+      const task = { id: 'task-1', status: 'RUNNING', progress: 50 };
+      jiraTaskMock.get.mockResolvedValue(task);
+
+      // Act
+      const result = await executeJiraCommand(cmd('task', 'get', ['task-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(task);
+      expect(jiraTaskMock.get).toHaveBeenCalledWith('task-1');
+    });
+
+    it('task get throws when taskId is missing', async () => {
+      await expect(executeJiraCommand(cmd('task', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: taskId',
+      );
+    });
+
+    it('task cancel calls client.task.cancel() and returns { cancelled: true }', async () => {
+      // Arrange
+      jiraTaskMock.cancel.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('task', 'cancel', ['task-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual({ cancelled: true });
+      expect(jiraTaskMock.cancel).toHaveBeenCalledWith('task-1');
+    });
+
+    it('task cancel throws when taskId is missing', async () => {
+      await expect(executeJiraCommand(cmd('task', 'cancel', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: taskId',
+      );
+    });
+
+    it('task unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('task', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown task action',
       );
     });
   });

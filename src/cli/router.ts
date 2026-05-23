@@ -179,6 +179,8 @@ const GLOBAL_OPTIONS = {
   'project-role': { type: 'string' as const },
   'show-avatar': { type: 'boolean' as const },
   'user-name': { type: 'string' as const },
+  // settings/columns options (B772)
+  columns: { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

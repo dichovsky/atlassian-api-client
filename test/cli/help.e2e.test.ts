@@ -108,6 +108,11 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   groups: 'executeGroups',
   'group-user-picker': 'executeGroupUserPicker',
   'security-level': 'executeSecurityLevel',
+  license: 'executeLicense',
+  settings: 'executeSettings',
+  redact: 'executeRedact',
+  flag: 'executeFlag',
+  task: 'executeTask',
 };
 
 /**

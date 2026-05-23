@@ -180,3 +180,16 @@ export type {
 export { GroupUserPickerResource } from './resources/group-user-picker.js';
 export type { SecurityLevel } from './resources/security-level.js';
 export { SecurityLevelResource } from './resources/security-level.js';
+export type {
+  ApproximateLicenseCount,
+  ApproximateProductLicenseCount,
+} from './resources/license.js';
+export { LicenseResource } from './resources/license.js';
+export type { Column, SetSettingsColumnsData } from './resources/settings.js';
+export { SettingsResource } from './resources/settings.js';
+export type { RedactIssueData, RedactJobStarted, RedactJobStatus } from './resources/redact.js';
+export { RedactResource } from './resources/redact.js';
+export type { FeatureFlag } from './resources/flag.js';
+export { FlagResource } from './resources/flag.js';
+export type { Task } from './resources/task.js';
+export { TaskResource } from './resources/task.js';
