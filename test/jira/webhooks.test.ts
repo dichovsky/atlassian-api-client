@@ -342,5 +342,29 @@ describe('WebhooksResource', () => {
       // Second call advances the 'after' cursor to the last failureTime of page 1
       expect(transport.calls[1]?.options.query).toMatchObject({ after: 1700000001000 });
     });
+
+    it('breaks the loop when the cursor advance value is not a finite number', async () => {
+      // Arrange — server returns a malformed failureTime on the last item; client must not loop forever
+      const malformed = {
+        ...makeFailedWebhook('bad', 0),
+        failureTime: Number.NaN as unknown as number,
+      };
+      transport.respondWith({
+        values: [makeFailedWebhook('1', 1700000000000), malformed],
+        startAt: 0,
+        maxResults: 2,
+        isLast: false,
+      });
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed()) {
+        results.push(item);
+      }
+
+      // Assert — first page items are yielded, then the defensive guard halts iteration
+      expect(results).toHaveLength(2);
+      expect(transport.calls).toHaveLength(1);
+    });
   });
 });

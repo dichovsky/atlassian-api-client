@@ -124,7 +124,13 @@ export class WebhooksResource {
     return response.data;
   }
 
-  /** Iterate over all failed webhook deliveries, optionally filtering by timestamp. */
+  /**
+   * Iterate over all failed webhook deliveries, optionally filtering by timestamp.
+   *
+   * Pagination uses Atlassian's `after` filter (strictly greater than `failureTime`).
+   * If multiple failures share the same `failureTime` across a page boundary, the
+   * second occurrence may be skipped — this is server-side semantics, not a client bug.
+   */
   async *listAllFailed(params?: ListFailedWebhooksParams): AsyncGenerator<FailedWebhook> {
     let after = params?.after;
     const maxResults = params?.maxResults;
@@ -138,10 +144,11 @@ export class WebhooksResource {
         yield item;
       }
       if (page.isLast || page.values.length === 0) break;
-      // Advance the cursor using the failureTime of the last item.
-      // Non-null assertion is safe: values.length === 0 is guarded above.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      after = page.values[page.values.length - 1]!.failureTime;
+      const last = page.values[page.values.length - 1];
+      const nextCursor = last?.failureTime;
+      // Defensive guard: break if server returns a malformed cursor to avoid an infinite loop.
+      if (!Number.isFinite(nextCursor)) break;
+      after = nextCursor;
     }
   }
 }
