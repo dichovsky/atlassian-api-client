@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "d0caf8714de3006d77a4ef6b4924578bde77f13345f647f4e2c442e58dde2359",
+  "sourceHash": "7ba89a17cb0431343bcfbaeae8e321ea1cb4d22a298b2799f1ad62c1543094d6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4529,7 +4529,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 177,
+          "line": 185,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
