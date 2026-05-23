@@ -831,3 +831,27 @@
 - [x] ✅ 🧩 API: B786 Jira: expose POST /rest/api/3/task/{taskId}/cancel
       **Impl:** `src/jira/resources/task.ts` (`TaskResource.cancel()`) · CLI `atlas jira task cancel <taskId>` · returns `{cancelled: true}` · positional `taskId`
       **Rat:** Cancel counterpart to B785; only applicable to RUNNING/ENQUEUED tasks per spec.
+- [x] ✅ 🧩 API: B344 Jira: expose GET /rest/api/3/avatar/{type}/system
+      **Impl:** `src/jira/resources/avatar.ts` (`AvatarResource.listSystem(type)`) · CLI `atlas jira avatar list-system <type>` · types `JiraAvatar`, `JiraAvatarSystemResponse` (prefixed to avoid potential future collision)
+      **Rat:** Returns built-in system avatars for a given type (issuetype, project, user); type is positional per convention.
+- [x] ✅ 🧩 API: B355 Jira: expose GET /rest/api/3/classification-levels
+      **Impl:** `src/jira/resources/classification-levels.ts` (`ClassificationLevelsResource.list()`) · CLI `atlas jira classification-levels list` · type `ClassificationLevel`
+      **Rat:** Read-only list of all data classification levels; singleton GET, no path params.
+- [x] ✅ 🧩 API: B388 Jira: expose GET /rest/api/3/customFieldOption/{id}
+      **Impl:** `src/jira/resources/custom-field-option.ts` (`CustomFieldOptionResource.get(id)`) · CLI `atlas jira custom-field-option get <id>` · renamed from `customfieldoption.ts` to kebab-case · type `CustomFieldOption`
+      **Rat:** Returns value/disabled state of a custom field option; positional `id` arg.
+- [x] ✅ 🧩 API: B951 Jira: expose GET /rest/atlassian-connect/1/service-registry
+      **Impl:** `src/jira/resources/service-registry.ts` (`ServiceRegistryResource.get()`) · CLI `atlas jira service-registry get` · base URL `/rest/atlassian-connect/1` (non-standard)
+      **Rat:** Atlassian Connect service registry; lists installed Connect app metadata.
+- [x] ✅ 🧩 API: B963 Jira: expose GET /rest/devinfo/0.10/existsByProperties
+      **Impl:** `src/jira/resources/exists-by-properties.ts` (`ExistsByPropertiesResource.get(params)`) · CLI `atlas jira exists-by-properties get [--entity-type X] [--entity-id Y]` · base URL `/rest/devinfo/0.10` (non-standard)
+      **Rat:** DevInfo API existence check; optional query params (not path params).
+- [x] ✅ 🧩 API: B979 Jira: expose POST /rest/internal/api/latest/worklog/bulk
+      **Impl:** `src/jira/resources/latest.ts` (`LatestResource.bulkWorklog(data)`) · CLI `atlas jira latest bulk-worklog --value <JSON>` · base URL `/rest/internal/api/latest` (internal API, not public)
+      **Rat:** Internal worklog bulk endpoint; uses JSON array `--value` flag (matches forge bulk-panel-action pattern); documented as unstable.
+- [x] ✅ 🧩 API: B991 Jira: expose DELETE /rest/remotelinks/1.0/remotelink/{remoteLinkId}
+      **Impl:** `src/jira/resources/remote-link.ts` (`RemoteLinkResource.delete(remoteLinkId)`) · CLI `atlas jira remote-link delete <remoteLinkId>` · base URL `/rest/remotelinks/1.0` (non-standard; distinct from issue-scoped remotelinks) · renamed from `remotelink.ts` to kebab-case
+      **Rat:** Remote Links integration API; distinct from issue-scoped remote links at `/rest/api/3/issue/{key}/remotelink`.
+- [x] ✅ 🧩 API: B992 Jira: expose GET /rest/remotelinks/1.0/remotelink/{remoteLinkId}
+      **Impl:** `src/jira/resources/remote-link.ts` (`RemoteLinkResource.get(remoteLinkId)`) · CLI `atlas jira remote-link get <remoteLinkId>` · bundled with B991 in same file
+      **Rat:** Complements B991; positional `remoteLinkId` argument.

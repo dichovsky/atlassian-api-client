@@ -193,3 +193,20 @@ export type { FeatureFlag } from './resources/flag.js';
 export { FlagResource } from './resources/flag.js';
 export type { Task } from './resources/task.js';
 export { TaskResource } from './resources/task.js';
+export type { Avatar, AvatarSystemResponse } from './resources/avatar.js';
+export { AvatarResource } from './resources/avatar.js';
+export type { CustomFieldOption } from './resources/custom-field-option.js';
+export { CustomFieldOptionResource } from './resources/custom-field-option.js';
+export type { ClassificationLevel } from './resources/classification-levels.js';
+export { ClassificationLevelsResource } from './resources/classification-levels.js';
+export type { WorklogBulkEntry, BulkWorklogData, BulkWorklogResponse } from './resources/latest.js';
+export { LatestResource } from './resources/latest.js';
+export type { RemoteLink } from './resources/remote-link.js';
+export { RemoteLinkResource } from './resources/remote-link.js';
+export type { ServiceRegistryEntry } from './resources/service-registry.js';
+export { ServiceRegistryResource } from './resources/service-registry.js';
+export type {
+  ExistsByPropertiesParams,
+  ExistsByPropertiesResponse,
+} from './resources/exists-by-properties.js';
+export { ExistsByPropertiesResource } from './resources/exists-by-properties.js';

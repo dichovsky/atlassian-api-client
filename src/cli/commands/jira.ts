@@ -82,6 +82,20 @@ export async function executeJiraCommand(
       return executeFlag(client, cmd);
     case 'task':
       return executeTask(client, cmd);
+    case 'avatar':
+      return executeAvatar(client, cmd);
+    case 'custom-field-option':
+      return executeCustomFieldOption(client, cmd);
+    case 'classification-levels':
+      return executeClassificationLevels(client, cmd);
+    case 'latest':
+      return executeLatest(client, cmd);
+    case 'remote-link':
+      return executeRemoteLink(client, cmd);
+    case 'service-registry':
+      return executeServiceRegistry(client, cmd);
+    case 'exists-by-properties':
+      return executeExistsByProperties(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1198,5 +1212,95 @@ async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       return { cancelled: true };
     default:
       throw new Error(`Unknown task action: ${cmd.action}. Actions: get, cancel`);
+  }
+}
+
+async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list-system':
+      return client.avatar.listSystem(requireArg(cmd.positionalArgs[0], 'type'));
+    default:
+      throw new Error(`Unknown avatar action: ${cmd.action}. Actions: list-system`);
+  }
+}
+
+async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.customFieldOption.get(requireArg(cmd.positionalArgs[0], 'id'));
+    default:
+      throw new Error(`Unknown custom-field-option action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeClassificationLevels(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list':
+      return client.classificationLevels.list();
+    default:
+      throw new Error(`Unknown classification-levels action: ${cmd.action}. Actions: list`);
+  }
+}
+
+async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'bulk-worklog': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let worklogs: {
+        issueIdOrKey: string;
+        timeSpentSeconds: number;
+        started: string;
+        comment?: string;
+        authorAccountId?: string;
+      }[];
+      try {
+        worklogs = JSON.parse(valueRaw) as typeof worklogs;
+      } catch {
+        throw new Error('--value must be valid JSON (array of worklog objects)');
+      }
+      return client.latest.bulkWorklog({ worklogs });
+    }
+    default:
+      throw new Error(`Unknown latest action: ${cmd.action}. Actions: bulk-worklog`);
+  }
+}
+
+async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.remoteLink.get(requireArg(cmd.positionalArgs[0], 'remoteLinkId'));
+    case 'delete':
+      await client.remoteLink.delete(requireArg(cmd.positionalArgs[0], 'remoteLinkId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown remote-link action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.serviceRegistry.get();
+    default:
+      throw new Error(`Unknown service-registry action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.existsByProperties.get({
+        entityType: asString(opts['entity-type']),
+        entityId: asString(opts['entity-id']),
+      });
+    default:
+      throw new Error(`Unknown exists-by-properties action: ${cmd.action}. Actions: get`);
   }
 }
