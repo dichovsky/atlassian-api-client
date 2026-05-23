@@ -58,6 +58,14 @@ export async function executeJiraCommand(
       return executeChangelog(client, cmd);
     case 'forge':
       return executeForge(client, cmd);
+    case 'incidents':
+      return executeIncidents(client, cmd);
+    case 'post-incident-reviews':
+      return executePostIncidentReviews(client, cmd);
+    case 'vulnerability':
+      return executeVulnerability(client, cmd);
+    case 'devopscomponents':
+      return executeDevopscomponents(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -970,5 +978,56 @@ async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     default:
       throw new Error(`Unknown forge action: ${cmd.action}. Actions: bulk-panel-action`);
+  }
+}
+
+async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.incidents.get(requireArg(cmd.positionalArgs[0], 'incidentId'));
+    case 'delete':
+      await client.incidents.delete(requireArg(cmd.positionalArgs[0], 'incidentId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown incidents action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executePostIncidentReviews(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.postIncidentReviews.get(requireArg(cmd.positionalArgs[0], 'reviewId'));
+    case 'delete':
+      await client.postIncidentReviews.delete(requireArg(cmd.positionalArgs[0], 'reviewId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown post-incident-reviews action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.vulnerability.get(requireArg(cmd.positionalArgs[0], 'vulnerabilityId'));
+    case 'delete':
+      await client.vulnerability.delete(requireArg(cmd.positionalArgs[0], 'vulnerabilityId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown vulnerability action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.devopscomponents.get(requireArg(cmd.positionalArgs[0], 'componentId'));
+    case 'delete':
+      await client.devopscomponents.delete(requireArg(cmd.positionalArgs[0], 'componentId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown devopscomponents action: ${cmd.action}. Actions: get, delete`);
   }
 }

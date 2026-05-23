@@ -34,6 +34,10 @@ import { AuditingResource } from './resources/auditing.js';
 import { EventsResource } from './resources/events.js';
 import { ChangelogResource } from './resources/changelog.js';
 import { ForgeResource } from './resources/forge.js';
+import { IncidentsResource } from './resources/incidents.js';
+import { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
+import { VulnerabilityResource } from './resources/vulnerability.js';
+import { DevopscomponentsResource } from './resources/devopscomponents.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -96,11 +100,22 @@ export class JiraClient {
   readonly changelog: ChangelogResource;
   /** Forge panel actions resource. */
   readonly forge: ForgeResource;
+  /** Jira Operations incidents resource (base: /rest/operations/1.0). */
+  readonly incidents: IncidentsResource;
+  /** Jira Operations post-incident reviews resource (base: /rest/operations/1.0). */
+  readonly postIncidentReviews: PostIncidentReviewsResource;
+  /** Jira Security vulnerability resource (base: /rest/security/1.0). */
+  readonly vulnerability: VulnerabilityResource;
+  /** Jira DevOps components resource (base: /rest/devopscomponents/1.0). */
+  readonly devopscomponents: DevopscomponentsResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
     const agileBaseUrl = `${resolved.baseUrl}/rest/agile/1.0`;
+    const operationsBaseUrl = `${resolved.baseUrl}/rest/operations/1.0`;
+    const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
+    const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
@@ -136,5 +151,9 @@ export class JiraClient {
     this.events = new EventsResource(transport, baseUrl);
     this.changelog = new ChangelogResource(transport, baseUrl);
     this.forge = new ForgeResource(transport, baseUrl);
+    this.incidents = new IncidentsResource(transport, operationsBaseUrl);
+    this.postIncidentReviews = new PostIncidentReviewsResource(transport, operationsBaseUrl);
+    this.vulnerability = new VulnerabilityResource(transport, securityBaseUrl);
+    this.devopscomponents = new DevopscomponentsResource(transport, devopscomponentsBaseUrl);
   }
 }

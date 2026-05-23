@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "6f50e0b41a9a3a6e0eaf58602522279690c1e7c701bd726c076bc0edc9dec803",
+  "sourceHash": "543ef305c07cb5d1ffe20847ef64cc75ac2c58596dedb715379c7a79c772ea13",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1470,7 +1470,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 39,
+      "line": 43,
       "signature": "export class JiraClient",
       "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
     },
@@ -4038,206 +4038,230 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 66,
+          "line": 74,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 147,
+          "line": 155,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 160,
+          "line": 168,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 174,
+          "line": 182,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 190,
+          "line": 198,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 201,
+          "line": 209,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 212,
+          "line": 220,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 221,
+          "line": 229,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 430,
+          "line": 438,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 568,
+          "line": 576,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 640,
+          "line": 648,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 664,
+          "line": 672,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-          "line": 703,
+          "line": 711,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-          "line": 730,
+          "line": 738,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 748,
+          "line": 756,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 757,
+          "line": 765,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 766,
+          "line": 774,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 771,
+          "line": 779,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 776,
+          "line": 784,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 780,
+          "line": 788,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 789,
+          "line": 797,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 797,
+          "line": 805,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 806,
+          "line": 814,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 813,
+          "line": 821,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-          "line": 821,
+          "line": 829,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
-          "line": 834,
+          "line": 842,
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
-          "line": 845,
+          "line": 853,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
-          "line": 856,
+          "line": 864,
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
-          "line": 865,
+          "line": 873,
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
-          "line": 874,
+          "line": 882,
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
-          "line": 894,
+          "line": 902,
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
-          "line": 911,
+          "line": 919,
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
-          "line": 920,
+          "line": 928,
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
-          "line": 957,
+          "line": 965,
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeIncidents",
+          "kind": "function",
+          "line": 984,
+          "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executePostIncidentReviews",
+          "kind": "function",
+          "line": 996,
+          "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
+        },
+        {
+          "name": "executeVulnerability",
+          "kind": "function",
+          "line": 1011,
+          "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeDevopscomponents",
+          "kind": "function",
+          "line": 1023,
+          "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -4326,7 +4350,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 245,
+          "line": 257,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -14547,7 +14571,7 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 39,
+          "line": 43,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
@@ -14555,172 +14579,192 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 40
+              "line": 44
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 41
+              "line": 45
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 42
+              "line": 46
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 43
+              "line": 47
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 44
+              "line": 48
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 45
+              "line": 49
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 46
+              "line": 50
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 48
+              "line": 52
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 50
+              "line": 54
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 52
+              "line": 56
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 54
+              "line": 58
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 56
+              "line": 60
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 58
+              "line": 62
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 60
+              "line": 64
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 62
+              "line": 66
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 64
+              "line": 68
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 66
+              "line": 70
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 68
+              "line": 72
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 70
+              "line": 74
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 72
+              "line": 76
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 74
+              "line": 78
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 76
+              "line": 80
             },
             {
               "name": "applicationRole",
               "kind": "property",
-              "line": 78
+              "line": 82
             },
             {
               "name": "dataPolicy",
               "kind": "property",
-              "line": 80
+              "line": 84
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 82
+              "line": 86
             },
             {
               "name": "statusCategory",
               "kind": "property",
-              "line": 84
+              "line": 88
             },
             {
               "name": "serverInfo",
               "kind": "property",
-              "line": 86
+              "line": 90
             },
             {
               "name": "instance",
               "kind": "property",
-              "line": 88
+              "line": 92
             },
             {
               "name": "myPermissions",
               "kind": "property",
-              "line": 90
+              "line": 94
             },
             {
               "name": "auditing",
               "kind": "property",
-              "line": 92
+              "line": 96
             },
             {
               "name": "events",
               "kind": "property",
-              "line": 94
+              "line": 98
             },
             {
               "name": "changelog",
               "kind": "property",
-              "line": 96
+              "line": 100
             },
             {
               "name": "forge",
               "kind": "property",
-              "line": 98
+              "line": 102
+            },
+            {
+              "name": "incidents",
+              "kind": "property",
+              "line": 104
+            },
+            {
+              "name": "postIncidentReviews",
+              "kind": "property",
+              "line": 106
+            },
+            {
+              "name": "vulnerability",
+              "kind": "property",
+              "line": 108
+            },
+            {
+              "name": "devopscomponents",
+              "kind": "property",
+              "line": 110
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 100
+              "line": 112
             }
           ]
         }
@@ -14738,11 +14782,13 @@
         "./resources/changelog.js",
         "./resources/dashboards.js",
         "./resources/data-policy.js",
+        "./resources/devopscomponents.js",
         "./resources/epic.js",
         "./resources/events.js",
         "./resources/fields.js",
         "./resources/filters.js",
         "./resources/forge.js",
+        "./resources/incidents.js",
         "./resources/instance.js",
         "./resources/issue-attachments.js",
         "./resources/issue-comments.js",
@@ -14751,6 +14797,7 @@
         "./resources/jql.js",
         "./resources/labels.js",
         "./resources/mypermissions.js",
+        "./resources/post-incident-reviews.js",
         "./resources/priorities.js",
         "./resources/projects.js",
         "./resources/search.js",
@@ -14760,6 +14807,7 @@
         "./resources/status.js",
         "./resources/statuses.js",
         "./resources/users.js",
+        "./resources/vulnerability.js",
         "./resources/webhooks.js",
         "./resources/workflows.js"
       ]
@@ -15043,6 +15091,28 @@
         },
         {
           "kind": "named",
+          "from": "./resources/devopscomponents.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "DevopsComponent",
+              "original": "DevopsComponent"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/devopscomponents.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "DevopscomponentsResource",
+              "original": "DevopscomponentsResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/events.js",
           "typeOnly": true,
           "names": [
@@ -15162,6 +15232,28 @@
             {
               "exported": "ForgeResource",
               "original": "ForgeResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/incidents.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "Incident",
+              "original": "Incident"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/incidents.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "IncidentsResource",
+              "original": "IncidentsResource"
             }
           ]
         },
@@ -15336,6 +15428,28 @@
         },
         {
           "kind": "named",
+          "from": "./resources/post-incident-reviews.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "PostIncidentReview",
+              "original": "PostIncidentReview"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/post-incident-reviews.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "PostIncidentReviewsResource",
+              "original": "PostIncidentReviewsResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/priorities.js",
           "typeOnly": false,
           "names": [
@@ -15494,6 +15608,28 @@
             {
               "exported": "UsersResource",
               "original": "UsersResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/vulnerability.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "Vulnerability",
+              "original": "Vulnerability"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/vulnerability.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "VulnerabilityResource",
+              "original": "VulnerabilityResource"
             }
           ]
         },
@@ -16492,6 +16628,47 @@
       ]
     },
     {
+      "path": "src/jira/resources/devopscomponents.ts",
+      "symbols": [
+        {
+          "name": "DevopsComponent",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface DevopsComponent { readonly id: string; readonly name?: string; readonly description?: string; readonly …",
+          "jsdoc": "A Jira DevOps component record."
+        },
+        {
+          "name": "DevopscomponentsResource",
+          "kind": "class",
+          "line": 24,
+          "exported": true,
+          "signature": "export class DevopscomponentsResource",
+          "jsdoc": "Jira DevOps Components resource — DELETE and GET /rest/devopscomponents/1.0/devopscomponents/{componentId}.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 25
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 34
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 45
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/epic.ts",
       "symbols": [
         {
@@ -16825,6 +17002,47 @@
               "name": "bulkPanelAction",
               "kind": "method",
               "line": 55
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/incidents.ts",
+      "symbols": [
+        {
+          "name": "Incident",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface Incident { readonly id: string; readonly name?: string; readonly status?: string; readonly createdAt?: …",
+          "jsdoc": "A Jira Operations incident record."
+        },
+        {
+          "name": "IncidentsResource",
+          "kind": "class",
+          "line": 24,
+          "exported": true,
+          "signature": "export class IncidentsResource",
+          "jsdoc": "Jira Incidents resource — DELETE and GET /rest/operations/1.0/incidents/{incidentId}.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 25
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 34
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 45
             }
           ]
         }
@@ -17603,6 +17821,47 @@
       ]
     },
     {
+      "path": "src/jira/resources/post-incident-reviews.ts",
+      "symbols": [
+        {
+          "name": "PostIncidentReview",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface PostIncidentReview { readonly id: string; readonly name?: string; readonly status?: string; readonly in…",
+          "jsdoc": "A Jira Operations post-incident review record."
+        },
+        {
+          "name": "PostIncidentReviewsResource",
+          "kind": "class",
+          "line": 25,
+          "exported": true,
+          "signature": "export class PostIncidentReviewsResource",
+          "jsdoc": "Jira Post-Incident Reviews resource — DELETE and GET /rest/operations/1.0/post-incident-reviews/{reviewId}.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 26
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 35
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 46
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/priorities.ts",
       "symbols": [
         {
@@ -18048,6 +18307,47 @@
       "imports": [
         "../../core/types.js",
         "../types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/vulnerability.ts",
+      "symbols": [
+        {
+          "name": "Vulnerability",
+          "kind": "interface",
+          "line": 9,
+          "exported": true,
+          "signature": "export interface Vulnerability { readonly id: string; readonly displayName?: string; readonly description?: string; read…",
+          "jsdoc": "A Jira Security vulnerability record."
+        },
+        {
+          "name": "VulnerabilityResource",
+          "kind": "class",
+          "line": 27,
+          "exported": true,
+          "signature": "export class VulnerabilityResource",
+          "jsdoc": "Jira Vulnerability resource — DELETE and GET /rest/security/1.0/vulnerability/{vulnerabilityId}.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 28
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 37
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 48
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
       ]
     },
     {

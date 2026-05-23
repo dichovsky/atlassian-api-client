@@ -2027,10 +2027,10 @@
 - [ ] 🔴 🧩 API: B968 Jira: expose DELETE /rest/devopscomponents/1.0/bulkByProperties
   - files: `src/jira/resources/bulk-by-properties.ts`, `test/jira/bulk-by-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B969 Jira: expose DELETE /rest/devopscomponents/1.0/devopscomponents/{componentId}
+- [x] 🔴 🧩 API: B969 Jira: expose DELETE /rest/devopscomponents/1.0/devopscomponents/{componentId}
   - files: `src/jira/resources/devopscomponents.ts`, `test/jira/devopscomponents.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B970 Jira: expose GET /rest/devopscomponents/1.0/devopscomponents/{componentId}
+- [x] 🔴 🧩 API: B970 Jira: expose GET /rest/devopscomponents/1.0/devopscomponents/{componentId}
   - files: `src/jira/resources/devopscomponents.ts`, `test/jira/devopscomponents.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B971 Jira: expose POST /rest/featureflags/0.1/bulk
@@ -2066,10 +2066,10 @@
 - [ ] 🔴 🧩 API: B981 Jira: expose DELETE /rest/operations/1.0/bulkByProperties
   - files: `src/jira/resources/bulk-by-properties.ts`, `test/jira/bulk-by-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B982 Jira: expose DELETE /rest/operations/1.0/incidents/{incidentId}
+- [x] 🔴 🧩 API: B982 Jira: expose DELETE /rest/operations/1.0/incidents/{incidentId}
   - files: `src/jira/resources/incidents.ts`, `test/jira/incidents.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B983 Jira: expose GET /rest/operations/1.0/incidents/{incidentId}
+- [x] 🔴 🧩 API: B983 Jira: expose GET /rest/operations/1.0/incidents/{incidentId}
   - files: `src/jira/resources/incidents.ts`, `test/jira/incidents.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B984 Jira: expose GET /rest/operations/1.0/linkedWorkspaces
@@ -2081,10 +2081,10 @@
 - [ ] 🔴 🧩 API: B986 Jira: expose POST /rest/operations/1.0/linkedWorkspaces/bulk
   - files: `src/jira/resources/linked-workspaces.ts`, `test/jira/linked-workspaces.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B987 Jira: expose DELETE /rest/operations/1.0/post-incident-reviews/{reviewId}
+- [x] 🔴 🧩 API: B987 Jira: expose DELETE /rest/operations/1.0/post-incident-reviews/{reviewId}
   - files: `src/jira/resources/post-incident-reviews.ts`, `test/jira/post-incident-reviews.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B988 Jira: expose GET /rest/operations/1.0/post-incident-reviews/{reviewId}
+- [x] 🔴 🧩 API: B988 Jira: expose GET /rest/operations/1.0/post-incident-reviews/{reviewId}
   - files: `src/jira/resources/post-incident-reviews.ts`, `test/jira/post-incident-reviews.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B989 Jira: expose POST /rest/remotelinks/1.0/bulk
@@ -2117,10 +2117,10 @@
 - [ ] 🔴 🧩 API: B998 Jira: expose POST /rest/security/1.0/linkedWorkspaces/bulk
   - files: `src/jira/resources/linked-workspaces.ts`, `test/jira/linked-workspaces.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B999 Jira: expose DELETE /rest/security/1.0/vulnerability/{vulnerabilityId}
+- [x] 🔴 🧩 API: B999 Jira: expose DELETE /rest/security/1.0/vulnerability/{vulnerabilityId}
   - files: `src/jira/resources/vulnerability.ts`, `test/jira/vulnerability.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B1000 Jira: expose GET /rest/security/1.0/vulnerability/{vulnerabilityId}
+- [x] 🔴 🧩 API: B1000 Jira: expose GET /rest/security/1.0/vulnerability/{vulnerabilityId}
   - files: `src/jira/resources/vulnerability.ts`, `test/jira/vulnerability.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B1001 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog

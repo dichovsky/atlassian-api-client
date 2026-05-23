@@ -128,6 +128,10 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'events',
           'changelog',
           'forge',
+          'incidents',
+          'post-incident-reviews',
+          'vulnerability',
+          'devopscomponents',
         ]).toContain(parsed.resource);
       }
     });
@@ -206,6 +210,10 @@ describe('Resource coverage drift check', () => {
     'events',
     'changelog',
     'forge',
+    'incidents',
+    'post-incident-reviews',
+    'vulnerability',
+    'devopscomponents',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {
