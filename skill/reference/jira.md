@@ -19,6 +19,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `backlog`             | `move`                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `announcement-banner` | `get`, `update`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `application-role`    | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `data-policy`         | `get-workspace`, `list-projects`                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ## `application-role`
 
@@ -33,6 +34,32 @@ atlas jira application-role list
 
 # Get a specific application role by key
 atlas jira application-role get --key jira-software
+```
+
+## `data-policy`
+
+| Action          | Positional | Required flags | Optional flags                         |
+| --------------- | ---------- | -------------- | -------------------------------------- |
+| `get-workspace` | —          | —              | —                                      |
+| `list-projects` | —          | —              | `--ids`, `--start-at`, `--max-results` |
+
+- `get-workspace` returns `{ anyContentBlocked: boolean }` for the entire Jira workspace.
+- `list-projects` returns a paginated list of per-project data policy entries. Each entry has `projectId` and `anyContentBlocked`.
+- `--ids` is a **comma-separated** list of project IDs to filter by. Omit to return all projects.
+- `--start-at` and `--max-results` control offset-based pagination.
+
+```sh
+# Check whether any content is blocked at workspace level
+atlas jira data-policy get-workspace
+
+# List data policies for all projects
+atlas jira data-policy list-projects
+
+# List data policies for specific projects
+atlas jira data-policy list-projects --ids 10001,10002
+
+# Paginate through project data policies
+atlas jira data-policy list-projects --start-at 0 --max-results 50
 ```
 
 ## `announcement-banner`

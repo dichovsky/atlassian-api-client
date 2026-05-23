@@ -36,6 +36,8 @@ export async function executeJiraCommand(
       return executeAnnouncementBanner(client, cmd);
     case 'application-role':
       return executeApplicationRole(client, cmd);
+    case 'data-policy':
+      return executeDataPolicy(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -675,6 +677,33 @@ async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand)
     }
     default:
       throw new Error(`Unknown announcement-banner action: ${cmd.action}. Actions: get, update`);
+  }
+}
+
+async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-workspace':
+      return client.dataPolicy.getWorkspacePolicy();
+    case 'list-projects': {
+      const idsRaw = asString(opts['ids']);
+      const ids = idsRaw
+        ? idsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      return client.dataPolicy.listProjectPolicies({
+        ids,
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown data-policy action: ${cmd.action}. Actions: get-workspace, list-projects`,
+      );
   }
 }
 
