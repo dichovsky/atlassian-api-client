@@ -132,6 +132,9 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'post-incident-reviews',
           'vulnerability',
           'devopscomponents',
+          'groups',
+          'group-user-picker',
+          'security-level',
         ]).toContain(parsed.resource);
       }
     });
@@ -214,6 +217,9 @@ describe('Resource coverage drift check', () => {
     'post-incident-reviews',
     'vulnerability',
     'devopscomponents',
+    'groups',
+    'group-user-picker',
+    'security-level',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

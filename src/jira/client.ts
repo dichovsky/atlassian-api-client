@@ -38,6 +38,9 @@ import { IncidentsResource } from './resources/incidents.js';
 import { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
 import { VulnerabilityResource } from './resources/vulnerability.js';
 import { DevopscomponentsResource } from './resources/devopscomponents.js';
+import { GroupsResource } from './resources/groups.js';
+import { GroupUserPickerResource } from './resources/group-user-picker.js';
+import { SecurityLevelResource } from './resources/security-level.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -108,6 +111,12 @@ export class JiraClient {
   readonly vulnerability: VulnerabilityResource;
   /** Jira DevOps components resource (base: /rest/devopscomponents/1.0). */
   readonly devopscomponents: DevopscomponentsResource;
+  /** Group picker autocomplete resource. */
+  readonly groups: GroupsResource;
+  /** Combined group+user picker autocomplete resource. */
+  readonly groupUserPicker: GroupUserPickerResource;
+  /** Issue security level resource. */
+  readonly securityLevel: SecurityLevelResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -155,5 +164,8 @@ export class JiraClient {
     this.postIncidentReviews = new PostIncidentReviewsResource(transport, operationsBaseUrl);
     this.vulnerability = new VulnerabilityResource(transport, securityBaseUrl);
     this.devopscomponents = new DevopscomponentsResource(transport, devopscomponentsBaseUrl);
+    this.groups = new GroupsResource(transport, baseUrl);
+    this.groupUserPicker = new GroupUserPickerResource(transport, baseUrl);
+    this.securityLevel = new SecurityLevelResource(transport, baseUrl);
   }
 }

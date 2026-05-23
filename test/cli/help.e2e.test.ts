@@ -105,6 +105,9 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'post-incident-reviews': 'executePostIncidentReviews',
   vulnerability: 'executeVulnerability',
   devopscomponents: 'executeDevopscomponents',
+  groups: 'executeGroups',
+  'group-user-picker': 'executeGroupUserPicker',
+  'security-level': 'executeSecurityLevel',
 };
 
 /**

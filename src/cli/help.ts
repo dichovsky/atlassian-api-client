@@ -237,6 +237,9 @@ RESOURCES:
   post-incident-reviews  get, delete
   vulnerability          get, delete
   devopscomponents       get, delete
+  groups                 picker
+  group-user-picker      pick
+  security-level         get
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -251,6 +254,9 @@ EXAMPLES:
   atlas jira vulnerability delete VULN-789
   atlas jira devopscomponents get COMP-101
   atlas jira devopscomponents delete COMP-101
+  atlas jira groups picker --query dev --max-results 10
+  atlas jira group-user-picker pick --query alice --show-avatar
+  atlas jira security-level get 10001
 `;
 
 /** Get help text for the given level. */

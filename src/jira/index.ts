@@ -167,3 +167,16 @@ export type { Vulnerability } from './resources/vulnerability.js';
 export { VulnerabilityResource } from './resources/vulnerability.js';
 export type { DevopsComponent } from './resources/devopscomponents.js';
 export { DevopscomponentsResource } from './resources/devopscomponents.js';
+export type { GroupMatch, GroupPickerResponse, GroupPickerParams } from './resources/groups.js';
+export { GroupsResource } from './resources/groups.js';
+export type {
+  GroupSuggestion,
+  UserSuggestion,
+  GroupSuggestionsSection,
+  UserSuggestionsSection,
+  GroupUserPickerResponse,
+  GroupUserPickerParams,
+} from './resources/group-user-picker.js';
+export { GroupUserPickerResource } from './resources/group-user-picker.js';
+export type { SecurityLevel } from './resources/security-level.js';
+export { SecurityLevelResource } from './resources/security-level.js';
