@@ -461,6 +461,22 @@ const jiraChangelogMock = {
 const jiraForgeMock = {
   bulkPanelAction: vi.fn(),
 };
+const jiraIncidentsMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+const jiraPostIncidentReviewsMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+const jiraVulnerabilityMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+const jiraDevopscomponentsMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -489,6 +505,10 @@ vi.mock('../../src/jira/client.js', () => {
       events: jiraEventsMock,
       changelog: jiraChangelogMock,
       forge: jiraForgeMock,
+      incidents: jiraIncidentsMock,
+      postIncidentReviews: jiraPostIncidentReviewsMock,
+      vulnerability: jiraVulnerabilityMock,
+      devopscomponents: jiraDevopscomponentsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9687,6 +9707,203 @@ describe('executeJiraCommand', () => {
     it('forge unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('forge', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown forge action',
+      );
+    });
+  });
+
+  // ── incidents ─────────────────────────────────────────────────────────────
+
+  describe('incidents resource', () => {
+    it('incidents get calls client.incidents.get() with incidentId', async () => {
+      // Arrange
+      const incident = { id: 'INC-1', name: 'DB outage', status: 'active' };
+      jiraIncidentsMock.get.mockResolvedValue(incident);
+
+      // Act
+      const result = await executeJiraCommand(cmd('incidents', 'get', ['INC-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(incident);
+      expect(jiraIncidentsMock.get).toHaveBeenCalledWith('INC-1');
+    });
+
+    it('incidents get throws when incidentId is missing', async () => {
+      await expect(executeJiraCommand(cmd('incidents', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: incidentId',
+      );
+    });
+
+    it('incidents delete calls client.incidents.delete() and returns { deleted: true }', async () => {
+      // Arrange
+      jiraIncidentsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('incidents', 'delete', ['INC-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual({ deleted: true });
+      expect(jiraIncidentsMock.delete).toHaveBeenCalledWith('INC-1');
+    });
+
+    it('incidents delete throws when incidentId is missing', async () => {
+      await expect(executeJiraCommand(cmd('incidents', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: incidentId',
+      );
+    });
+
+    it('incidents unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('incidents', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown incidents action',
+      );
+    });
+  });
+
+  // ── post-incident-reviews ─────────────────────────────────────────────────
+
+  describe('post-incident-reviews resource', () => {
+    it('post-incident-reviews get calls client.postIncidentReviews.get() with reviewId', async () => {
+      // Arrange
+      const review = { id: 'PIR-1', name: 'Post-mortem', incidentId: 'INC-1' };
+      jiraPostIncidentReviewsMock.get.mockResolvedValue(review);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('post-incident-reviews', 'get', ['PIR-1']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual(review);
+      expect(jiraPostIncidentReviewsMock.get).toHaveBeenCalledWith('PIR-1');
+    });
+
+    it('post-incident-reviews get throws when reviewId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('post-incident-reviews', 'get', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: reviewId');
+    });
+
+    it('post-incident-reviews delete calls client.postIncidentReviews.delete() and returns { deleted: true }', async () => {
+      // Arrange
+      jiraPostIncidentReviewsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('post-incident-reviews', 'delete', ['PIR-1']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual({ deleted: true });
+      expect(jiraPostIncidentReviewsMock.delete).toHaveBeenCalledWith('PIR-1');
+    });
+
+    it('post-incident-reviews delete throws when reviewId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('post-incident-reviews', 'delete', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: reviewId');
+    });
+
+    it('post-incident-reviews unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('post-incident-reviews', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown post-incident-reviews action');
+    });
+  });
+
+  // ── vulnerability ─────────────────────────────────────────────────────────
+
+  describe('vulnerability resource', () => {
+    it('vulnerability get calls client.vulnerability.get() with vulnerabilityId', async () => {
+      // Arrange
+      const vuln = { id: 'VULN-1', displayName: 'SQL Injection', severity: 'HIGH' };
+      jiraVulnerabilityMock.get.mockResolvedValue(vuln);
+
+      // Act
+      const result = await executeJiraCommand(cmd('vulnerability', 'get', ['VULN-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(vuln);
+      expect(jiraVulnerabilityMock.get).toHaveBeenCalledWith('VULN-1');
+    });
+
+    it('vulnerability get throws when vulnerabilityId is missing', async () => {
+      await expect(executeJiraCommand(cmd('vulnerability', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: vulnerabilityId',
+      );
+    });
+
+    it('vulnerability delete calls client.vulnerability.delete() and returns { deleted: true }', async () => {
+      // Arrange
+      jiraVulnerabilityMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('vulnerability', 'delete', ['VULN-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual({ deleted: true });
+      expect(jiraVulnerabilityMock.delete).toHaveBeenCalledWith('VULN-1');
+    });
+
+    it('vulnerability delete throws when vulnerabilityId is missing', async () => {
+      await expect(executeJiraCommand(cmd('vulnerability', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: vulnerabilityId',
+      );
+    });
+
+    it('vulnerability unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('vulnerability', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown vulnerability action',
+      );
+    });
+  });
+
+  // ── devopscomponents ──────────────────────────────────────────────────────
+
+  describe('devopscomponents resource', () => {
+    it('devopscomponents get calls client.devopscomponents.get() with componentId', async () => {
+      // Arrange
+      const component = { id: 'COMP-1', name: 'Deploy pipeline', url: 'https://example.com' };
+      jiraDevopscomponentsMock.get.mockResolvedValue(component);
+
+      // Act
+      const result = await executeJiraCommand(cmd('devopscomponents', 'get', ['COMP-1']), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(component);
+      expect(jiraDevopscomponentsMock.get).toHaveBeenCalledWith('COMP-1');
+    });
+
+    it('devopscomponents get throws when componentId is missing', async () => {
+      await expect(executeJiraCommand(cmd('devopscomponents', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: componentId',
+      );
+    });
+
+    it('devopscomponents delete calls client.devopscomponents.delete() and returns { deleted: true }', async () => {
+      // Arrange
+      jiraDevopscomponentsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('devopscomponents', 'delete', ['COMP-1']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(result).toEqual({ deleted: true });
+      expect(jiraDevopscomponentsMock.delete).toHaveBeenCalledWith('COMP-1');
+    });
+
+    it('devopscomponents delete throws when componentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('devopscomponents', 'delete', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: componentId');
+    });
+
+    it('devopscomponents unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('devopscomponents', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown devopscomponents action',
       );
     });
   });

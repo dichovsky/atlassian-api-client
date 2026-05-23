@@ -101,6 +101,10 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   events: 'executeEvents',
   changelog: 'executeChangelog',
   forge: 'executeForge',
+  incidents: 'executeIncidents',
+  'post-incident-reviews': 'executePostIncidentReviews',
+  vulnerability: 'executeVulnerability',
+  devopscomponents: 'executeDevopscomponents',
 };
 
 /**

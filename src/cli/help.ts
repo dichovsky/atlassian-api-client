@@ -233,12 +233,24 @@ RESOURCES:
   events                 list
   changelog              bulk-fetch
   forge                  bulk-panel-action
+  incidents              get, delete
+  post-incident-reviews  get, delete
+  vulnerability          get, delete
+  devopscomponents       get, delete
 
 EXAMPLES:
   atlas jira issues get PROJ-123
   atlas jira issues create --project PROJ --type Bug --summary "Fix this"
   atlas jira search --jql "project = PROJ AND status = Open"
   atlas jira projects list
+  atlas jira incidents get INC-123
+  atlas jira incidents delete INC-123
+  atlas jira post-incident-reviews get PIR-456
+  atlas jira post-incident-reviews delete PIR-456
+  atlas jira vulnerability get VULN-789
+  atlas jira vulnerability delete VULN-789
+  atlas jira devopscomponents get COMP-101
+  atlas jira devopscomponents delete COMP-101
 `;
 
 /** Get help text for the given level. */
