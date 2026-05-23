@@ -38,6 +38,10 @@ export async function executeJiraCommand(
       return executeApplicationRole(client, cmd);
     case 'data-policy':
       return executeDataPolicy(client, cmd);
+    case 'status':
+      return executeStatus(client, cmd);
+    case 'status-category':
+      return executeStatusCategory(client, cmd);
     case 'webhooks':
       return executeWebhooks(client, cmd);
     default:
@@ -810,5 +814,27 @@ async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): P
       return client.applicationRole.get(requireOpt(opts['key'], '--key'));
     default:
       throw new Error(`Unknown application-role action: ${cmd.action}. Actions: list, get`);
+  }
+}
+
+async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list':
+      return client.status.list();
+    case 'get':
+      return client.status.get(requireArg(cmd.positionalArgs[0], 'idOrName'));
+    default:
+      throw new Error(`Unknown status action: ${cmd.action}. Actions: list, get`);
+  }
+}
+
+async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'list':
+      return client.statusCategory.list();
+    case 'get':
+      return client.statusCategory.get(requireArg(cmd.positionalArgs[0], 'idOrKey'));
+    default:
+      throw new Error(`Unknown status-category action: ${cmd.action}. Actions: list, get`);
   }
 }

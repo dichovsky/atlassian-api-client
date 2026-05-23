@@ -92,6 +92,8 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'application-role': 'executeApplicationRole',
   'data-policy': 'executeDataPolicy',
   webhooks: 'executeWebhooks',
+  status: 'executeStatus',
+  'status-category': 'executeStatusCategory',
 };
 
 /**

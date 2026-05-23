@@ -21,6 +21,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `application-role`    | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `data-policy`         | `get-workspace`, `list-projects`                                                                                                                                                                                                                                                                                                                                                                                         |
 | `webhooks`            | `list-failed`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `status`              | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `status-category`     | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## `application-role`
 
@@ -544,6 +546,44 @@ atlas jira webhooks list-failed --after 1700000000000
 
 # Limit the result set
 atlas jira webhooks list-failed --max-results 20
+```
+
+## `status`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+| `get`  | `idOrName` | —              | —              |
+
+```sh
+# List all workflow statuses
+atlas jira status list
+
+# Get a specific status by id or name
+atlas jira status get 10001
+atlas jira status get "In Progress"
+```
+
+## `status-category`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+| `get`  | `idOrKey`  | —              | —              |
+
+**Notes:**
+
+- `idOrKey` accepts either the numeric id (e.g. `2`) or the category key (e.g. `new`, `indeterminate`, `done`).
+
+```sh
+# List all status categories
+atlas jira status-category list
+
+# Get a specific status category by id
+atlas jira status-category get 2
+
+# Get a specific status category by key
+atlas jira status-category get done
 ```
 
 ## Errors specific to Jira

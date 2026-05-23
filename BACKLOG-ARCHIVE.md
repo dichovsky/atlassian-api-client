@@ -758,3 +758,15 @@
 - ⚠️ 🔴 🧩 API: B735 Jira: expose PUT /rest/api/3/rest/forge/1/app/properties/{propertyKey} _(removed: endpoint no longer in current OpenAPI spec)_
 - ⚠️ 🔴 🧩 API: B736 Jira: expose POST /rest/api/3/rest/internal/api/latest/worklog/bulk _(removed: endpoint no longer in current OpenAPI spec)_
 - ⚠️ 🟡 🖥️ API: B894 Jira: add CLI + skill for GET /rest/api/3/workflow _(removed: endpoint no longer in current OpenAPI spec)_
+- [x] ✅ 🧩 API: B773 Jira: expose GET /rest/api/3/status
+      **Impl:** `src/jira/resources/status.ts` (`StatusResource.list()`) · `test/jira/status.test.ts`
+      **Rat:** Read-only list of all workflow statuses; bundled with B774 in one PR.
+- [x] ✅ 🧩 API: B774 Jira: expose GET /rest/api/3/status/{idOrName}
+      **Impl:** `src/jira/resources/status.ts` (`StatusResource.get()`) · CLI `atlas jira status get <idOrName>` · positional argument (no flag)
+      **Rat:** Complements B773; uses positional `idOrName` argument matching the established pattern (epic, projects, priorities, issue-types).
+- [x] ✅ 🧩 API: B775 Jira: expose GET /rest/api/3/statuscategory
+      **Impl:** `src/jira/resources/status-category.ts` (`StatusCategoryResource.list()`) · `test/jira/status-category.test.ts`
+      **Rat:** Read-only list of all status categories; bundled with B776 in same PR.
+- [x] ✅ 🧩 API: B776 Jira: expose GET /rest/api/3/statuscategory/{idOrKey}
+      **Impl:** `src/jira/resources/status-category.ts` (`StatusCategoryResource.get()`) · CLI `atlas jira status-category get <idOrKey>` · file uses kebab-case `status-category.ts` (BACKLOG listed wrong name `statuscategory.ts`)
+      **Rat:** Complements B775; positional `idOrKey` argument (spec name), matching established positional pattern.
