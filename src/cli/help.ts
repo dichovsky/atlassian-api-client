@@ -222,6 +222,7 @@ RESOURCES:
   backlog                move
   announcement-banner    get, update
   application-role       list, get
+  data-policy            get-workspace, list-projects
 
 EXAMPLES:
   atlas jira issues get PROJ-123

@@ -24,6 +24,7 @@ import { EpicResource } from './resources/epic.js';
 import { BacklogResource } from './resources/backlog.js';
 import { AnnouncementBannerResource } from './resources/announcement-banner.js';
 import { ApplicationRoleResource } from './resources/application-role.js';
+import { DataPolicyResource } from './resources/data-policy.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -66,6 +67,8 @@ export class JiraClient {
   readonly announcementBanner: AnnouncementBannerResource;
   /** Application role resource. */
   readonly applicationRole: ApplicationRoleResource;
+  /** App data policies resource. */
+  readonly dataPolicy: DataPolicyResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -96,5 +99,6 @@ export class JiraClient {
     this.backlog = new BacklogResource(transport, agileBaseUrl);
     this.announcementBanner = new AnnouncementBannerResource(transport, baseUrl);
     this.applicationRole = new ApplicationRoleResource(transport, baseUrl);
+    this.dataPolicy = new DataPolicyResource(transport, baseUrl);
   }
 }

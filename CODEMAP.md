@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "6208845b35da6530ac7e043677dd44db5aa6b7e4cfd9b5cc5fb8e91ecd25b4b6",
+  "sourceHash": "1ef71081f572ebb685e242c6415a0931c995251098d90df5702a46b13ce0bd6f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4108,70 +4108,70 @@
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "asAnnouncementBannerVisibility",
+          "name": "executeDataPolicy",
           "kind": "function",
           "line": 681,
+          "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "asAnnouncementBannerVisibility",
+          "kind": "function",
+          "line": 708,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 690,
+          "line": 717,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 699,
+          "line": 726,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 704,
+          "line": 731,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 709,
+          "line": 736,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 713,
+          "line": 740,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 722,
+          "line": 749,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 730,
+          "line": 757,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 739,
+          "line": 766,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 746,
+          "line": 773,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
-        },
-        {
-          "name": "executeApplicationRole",
-          "kind": "function",
-          "line": 754,
-          "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -14597,7 +14597,7 @@
               "line": 66
             },
             {
-              "name": "applicationRole",
+              "name": "dataPolicy",
               "kind": "property",
               "line": 68
             },
@@ -14614,11 +14614,11 @@
         "../core/transport.js",
         "../core/types.js",
         "./resources/announcement-banner.js",
-        "./resources/application-role.js",
         "./resources/backlog.js",
         "./resources/boards.js",
         "./resources/bulk.js",
         "./resources/dashboards.js",
+        "./resources/data-policy.js",
         "./resources/epic.js",
         "./resources/fields.js",
         "./resources/filters.js",
@@ -14686,28 +14686,6 @@
             {
               "exported": "AnnouncementBannerResource",
               "original": "AnnouncementBannerResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/application-role.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "ApplicationRole",
-              "original": "ApplicationRole"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/application-role.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ApplicationRoleResource",
-              "original": "ApplicationRoleResource"
             }
           ]
         },
@@ -14814,6 +14792,36 @@
             {
               "exported": "UpdateDashboardData",
               "original": "UpdateDashboardData"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/data-policy.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "WorkspaceDataPolicy",
+              "original": "WorkspaceDataPolicy"
+            },
+            {
+              "exported": "ProjectDataPolicy",
+              "original": "ProjectDataPolicy"
+            },
+            {
+              "exported": "ListProjectDataPoliciesParams",
+              "original": "ListProjectDataPoliciesParams"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/data-policy.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "DataPolicyResource",
+              "original": "DataPolicyResource"
             }
           ]
         },
@@ -15307,47 +15315,6 @@
             },
             {
               "name": "update",
-              "kind": "method",
-              "line": 36
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/application-role.ts",
-      "symbols": [
-        {
-          "name": "ApplicationRole",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface ApplicationRole { readonly key: string; readonly groups: string[]; readonly name: string; readonly defa…",
-          "jsdoc": "A Jira application role."
-        },
-        {
-          "name": "ApplicationRoleResource",
-          "kind": "class",
-          "line": 20,
-          "exported": true,
-          "signature": "export class ApplicationRoleResource",
-          "jsdoc": "Jira Application Role resource — GET /rest/api/3/applicationrole.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 21
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 27
-            },
-            {
-              "name": "get",
               "kind": "method",
               "line": 36
             }
@@ -15884,6 +15851,69 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/data-policy.ts",
+      "symbols": [
+        {
+          "name": "WorkspaceDataPolicy",
+          "kind": "interface",
+          "line": 7,
+          "exported": true,
+          "signature": "export interface WorkspaceDataPolicy { readonly anyContentBlocked: boolean; }",
+          "jsdoc": "Workspace-level data policy status."
+        },
+        {
+          "name": "ProjectDataPolicy",
+          "kind": "interface",
+          "line": 12,
+          "exported": true,
+          "signature": "export interface ProjectDataPolicy { readonly projectId: string; readonly anyContentBlocked: boolean; }",
+          "jsdoc": "A single project data policy entry."
+        },
+        {
+          "name": "ListProjectDataPoliciesParams",
+          "kind": "interface",
+          "line": 18,
+          "exported": true,
+          "signature": "export interface ListProjectDataPoliciesParams { readonly ids?: string[]; readonly startAt?: number; readonly maxResults…",
+          "jsdoc": "Parameters for listing project data policies."
+        },
+        {
+          "name": "DataPolicyResource",
+          "kind": "class",
+          "line": 26,
+          "exported": true,
+          "signature": "export class DataPolicyResource",
+          "jsdoc": "Jira App Data Policies resource — GET /rest/api/3/data-policy and GET /rest/api/3/data-policy/project.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 27
+            },
+            {
+              "name": "getWorkspacePolicy",
+              "kind": "method",
+              "line": 33
+            },
+            {
+              "name": "listProjectPolicies",
+              "kind": "method",
+              "line": 42
+            },
+            {
+              "name": "listAllProjectPolicies",
+              "kind": "method",
+              "line": 63
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
         "../../core/types.js"
       ]
     },

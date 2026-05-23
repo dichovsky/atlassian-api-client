@@ -115,3 +115,9 @@ export type {
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
 export type { ApplicationRole } from './resources/application-role.js';
 export { ApplicationRoleResource } from './resources/application-role.js';
+export type {
+  WorkspaceDataPolicy,
+  ProjectDataPolicy,
+  ListProjectDataPoliciesParams,
+} from './resources/data-policy.js';
+export { DataPolicyResource } from './resources/data-policy.js';

@@ -604,6 +604,12 @@
 
 ## 🧩 Jira
 
+- [x] 🔴 🧩 API: B406 Jira: expose GET /rest/api/3/data-policy
+  - **Impl:** Branch `feat/jira-data-policy`; new `DataPolicyResource` (`src/jira/resources/data-policy.ts`) exposes `getWorkspacePolicy()` mapped to `GET /rest/api/3/data-policy`, returning `WorkspaceDataPolicy` (`anyContentBlocked`). Wired as `JiraClient.dataPolicy`; types exported from `src/jira/index.ts`. CLI: `atlas jira data-policy get-workspace`. Covered by `test/jira/data-policy.test.ts` and CLI command tests.
+  - **Rat:** Allows automation to check whether any data policies are blocking content across the entire Jira workspace — useful for compliance audits and policy enforcement.
+- [x] 🔴 🧩 API: B407 Jira: expose GET /rest/api/3/data-policy/project
+  - **Impl:** Branch `feat/jira-data-policy`; `DataPolicyResource.listProjectPolicies(params?)` issues `GET /rest/api/3/data-policy/project` returning `OffsetPaginatedResponse<ProjectDataPolicy>`; `listAllProjectPolicies()` async generator auto-paginates via `paginateOffset`. `--ids` (comma-separated project IDs), `--start-at`, and `--max-results` flags. CLI: `atlas jira data-policy list-projects [--ids 10001,10002] [--start-at N] [--max-results N]`.
+  - **Rat:** Enables per-project data policy inspection — organizations can enumerate which specific projects have blocked content without polling each project individually.
 - [x] 🔴 🧩 API: B324 Jira: expose GET /rest/api/3/announcementBanner
   - **Impl:** Branch `feat/jira-announcement-banner`; new `AnnouncementBannerResource` (`src/jira/resources/announcement-banner.ts`) exposes `get()` mapped to `GET /rest/api/3/announcementBanner`, returning `AnnouncementBanner` (`isDismissible`, `isEnabled`, `message`, `visibility`). Wired as `JiraClient.announcementBanner`; types exported from `src/jira/types.ts` + `src/jira/index.ts`. CLI: `atlas jira announcement-banner get`. Covered by `test/jira/announcement-banner.test.ts` and CLI command tests.
   - **Rat:** First Jira resource PR of the API coverage campaign — establishes the new-resource pattern (kebab-case filename, injectable transport, types in types.ts, CLI action, skill ref update) for ~70 future PRs.

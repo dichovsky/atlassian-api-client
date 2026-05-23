@@ -419,6 +419,10 @@ const jiraApplicationRoleMock = {
   list: vi.fn(),
   get: vi.fn(),
 };
+const jiraDataPolicyMock = {
+  getWorkspacePolicy: vi.fn(),
+  listProjectPolicies: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -436,6 +440,7 @@ vi.mock('../../src/jira/client.js', () => {
       backlog: jiraBacklogMock,
       announcementBanner: jiraAnnouncementBannerMock,
       applicationRole: jiraApplicationRoleMock,
+      dataPolicy: jiraDataPolicyMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9045,6 +9050,90 @@ describe('executeJiraCommand', () => {
     it('application-role unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('application-role', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown application-role action',
+      );
+    });
+  });
+
+  // ── data-policy ───────────────────────────────────────────────────────────
+
+  describe('data-policy resource', () => {
+    it('data-policy get-workspace calls client.dataPolicy.getWorkspacePolicy()', async () => {
+      // Arrange
+      const policy = { anyContentBlocked: false };
+      jiraDataPolicyMock.getWorkspacePolicy.mockResolvedValue(policy);
+
+      // Act
+      const result = await executeJiraCommand(cmd('data-policy', 'get-workspace'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(policy);
+      expect(jiraDataPolicyMock.getWorkspacePolicy).toHaveBeenCalledOnce();
+    });
+
+    it('data-policy list-projects calls client.dataPolicy.listProjectPolicies() with no params', async () => {
+      // Arrange
+      const response = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue(response);
+
+      // Act
+      const result = await executeJiraCommand(cmd('data-policy', 'list-projects'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(response);
+      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith({
+        ids: undefined,
+        startAt: undefined,
+        maxResults: undefined,
+      });
+    });
+
+    it('data-policy list-projects passes --ids as array', async () => {
+      // Arrange
+      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('data-policy', 'list-projects', [], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: ['10001', '10002'] }),
+      );
+    });
+
+    it('data-policy list-projects passes --start-at and --max-results', async () => {
+      // Arrange
+      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue({
+        values: [],
+        startAt: 10,
+        maxResults: 25,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('data-policy', 'list-projects', [], { 'start-at': '10', 'max-results': '25' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 10, maxResults: 25 }),
+      );
+    });
+
+    it('data-policy unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('data-policy', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown data-policy action',
       );
     });
   });
