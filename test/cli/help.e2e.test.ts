@@ -94,6 +94,9 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   webhooks: 'executeWebhooks',
   status: 'executeStatus',
   'status-category': 'executeStatusCategory',
+  'server-info': 'executeServerInfo',
+  instance: 'executeInstance',
+  mypermissions: 'executeMyPermissions',
 };
 
 /**

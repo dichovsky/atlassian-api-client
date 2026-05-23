@@ -127,3 +127,13 @@ export type { JiraStatus, JiraStatusCategoryRef } from './resources/status.js';
 export { StatusResource } from './resources/status.js';
 export type { JiraStatusCategory } from './resources/status-category.js';
 export { StatusCategoryResource } from './resources/status-category.js';
+export type { ServerInfo, ServerHealthCheck } from './resources/serverinfo.js';
+export { ServerInfoResource } from './resources/serverinfo.js';
+export type { InstanceLicense, LicensedApplication } from './resources/instance.js';
+export { InstanceResource } from './resources/instance.js';
+export type {
+  MyPermissions,
+  Permission,
+  GetMyPermissionsParams,
+} from './resources/mypermissions.js';
+export { MyPermissionsResource } from './resources/mypermissions.js';

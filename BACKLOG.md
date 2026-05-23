@@ -743,9 +743,6 @@
 - [ ] 🔴 🧩 API: B475 Jira: expose GET /rest/api/3/groupuserpicker
   - files: `src/jira/resources/groupuserpicker.ts`, `test/jira/groupuserpicker.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B476 Jira: expose GET /rest/api/3/instance/license
-  - files: `src/jira/resources/instance.ts`, `test/jira/instance.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B478 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/assignee
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -1096,9 +1093,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B599 Jira: expose GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}
   - files: `src/jira/resources/license.ts`, `test/jira/license.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B600 Jira: expose GET /rest/api/3/mypermissions
-  - files: `src/jira/resources/mypermissions.ts`, `test/jira/mypermissions.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B601 Jira: expose DELETE /rest/api/3/mypreferences
   - files: `src/jira/resources/mypreferences.ts`, `test/jira/mypreferences.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
@@ -1576,9 +1570,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
   - files: `src/jira/resources/securitylevel.ts`, `test/jira/securitylevel.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B770 Jira: expose GET /rest/api/3/serverInfo
-  - files: `src/jira/resources/serverinfo.ts`, `test/jira/serverinfo.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
   - files: `src/jira/resources/settings.ts`, `test/jira/settings.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

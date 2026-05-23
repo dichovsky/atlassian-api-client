@@ -121,6 +121,9 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'webhooks',
           'status',
           'status-category',
+          'server-info',
+          'instance',
+          'mypermissions',
         ]).toContain(parsed.resource);
       }
     });
@@ -192,6 +195,9 @@ describe('Resource coverage drift check', () => {
     'webhooks',
     'status',
     'status-category',
+    'server-info',
+    'instance',
+    'mypermissions',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

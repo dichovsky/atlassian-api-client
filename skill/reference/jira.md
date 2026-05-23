@@ -23,6 +23,9 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `webhooks`            | `list-failed`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `status`              | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `status-category`     | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `server-info`         | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `instance`            | `get-license`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `mypermissions`       | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## `application-role`
 
@@ -584,6 +587,53 @@ atlas jira status-category get 2
 
 # Get a specific status category by key
 atlas jira status-category get done
+```
+
+## `server-info`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `get`  | —          | —              | —              |
+
+- Returns Jira version, build number, server time, deployment type, and optional health checks.
+
+```sh
+# Get Jira server info
+atlas jira server-info get
+```
+
+## `instance`
+
+| Action        | Positional | Required flags | Optional flags |
+| ------------- | ---------- | -------------- | -------------- |
+| `get-license` | —          | —              | —              |
+
+- Returns the instance license with a list of licensed applications and their plans (`FREE`, `STANDARD`, `PREMIUM`, `ENTERPRISE`).
+
+```sh
+# Get instance license information
+atlas jira instance get-license
+```
+
+## `mypermissions`
+
+| Action | Positional | Required flags | Optional flags                                                                                                                                  |
+| ------ | ---------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get`  | —          | —              | `--project-id`, `--project-key`, `--issue-id`, `--issue-key`, `--permissions`, `--project-uuid`, `--project-configuration-uuid`, `--comment-id` |
+
+- Without any scope flags, returns all permissions for the current user globally.
+- Use `--permissions` with a **comma-separated** list of permission keys to filter results (e.g. `BROWSE_PROJECTS,CREATE_ISSUES`).
+- Scope flags narrow the check to a specific project or issue context.
+
+```sh
+# Get all permissions for the current user
+atlas jira mypermissions get
+
+# Check permissions in a specific project by key
+atlas jira mypermissions get --project-key PROJ
+
+# Check specific permissions for an issue
+atlas jira mypermissions get --issue-key PROJ-42 --permissions BROWSE_PROJECTS,EDIT_ISSUES
 ```
 
 ## Errors specific to Jira

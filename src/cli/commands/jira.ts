@@ -44,6 +44,12 @@ export async function executeJiraCommand(
       return executeStatusCategory(client, cmd);
     case 'webhooks':
       return executeWebhooks(client, cmd);
+    case 'server-info':
+      return executeServerInfo(client, cmd);
+    case 'instance':
+      return executeInstance(client, cmd);
+    case 'mypermissions':
+      return executeMyPermissions(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -836,5 +842,43 @@ async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Pr
       return client.statusCategory.get(requireArg(cmd.positionalArgs[0], 'idOrKey'));
     default:
       throw new Error(`Unknown status-category action: ${cmd.action}. Actions: list, get`);
+  }
+}
+
+async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.serverInfo.get();
+    default:
+      throw new Error(`Unknown server-info action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get-license':
+      return client.instance.getLicense();
+    default:
+      throw new Error(`Unknown instance action: ${cmd.action}. Actions: get-license`);
+  }
+}
+
+async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.myPermissions.get({
+        projectId: asString(opts['project-id']),
+        projectKey: asString(opts['project-key']),
+        issueId: asString(opts['issue-id']),
+        issueKey: asString(opts['issue-key']),
+        permissions: asString(opts['permissions']),
+        projectUuid: asString(opts['project-uuid']),
+        projectConfigurationUuid: asString(opts['project-configuration-uuid']),
+        commentId: asString(opts['comment-id']),
+      });
+    default:
+      throw new Error(`Unknown mypermissions action: ${cmd.action}. Actions: get`);
   }
 }
