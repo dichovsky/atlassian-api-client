@@ -20,6 +20,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `announcement-banner` | `get`, `update`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `application-role`    | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `data-policy`         | `get-workspace`, `list-projects`                                                                                                                                                                                                                                                                                                                                                                                         |
+| `webhooks`            | `list-failed`                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ## `application-role`
 
@@ -519,6 +520,30 @@ atlas jira backlog move --board-id 1 --issues PROJ-1,PROJ-2
 
 # Move issues to the global backlog (no board scope) (B236)
 atlas jira backlog move --issues PROJ-3,PROJ-4
+```
+
+## `webhooks`
+
+| Action        | Positionals | Required flags | Optional flags             |
+| ------------- | ----------- | -------------- | -------------------------- |
+| `list-failed` | —           | —              | `--max-results`, `--after` |
+
+**Notes:**
+
+- `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
+- `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
+- `--max-results` caps the number of results in a single page.
+- The SDK exposes `listFailed()` (single page) and `listAllFailed()` (async generator) on `client.webhooks`.
+
+```sh
+# List failed webhook deliveries (default page size)
+atlas jira webhooks list-failed
+
+# List failed webhooks since a specific timestamp
+atlas jira webhooks list-failed --after 1700000000000
+
+# Limit the result set
+atlas jira webhooks list-failed --max-results 20
 ```
 
 ## Errors specific to Jira

@@ -118,6 +118,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'announcement-banner',
           'application-role',
           'data-policy',
+          'webhooks',
         ]).toContain(parsed.resource);
       }
     });
@@ -186,6 +187,7 @@ describe('Resource coverage drift check', () => {
     'announcement-banner',
     'application-role',
     'data-policy',
+    'webhooks',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

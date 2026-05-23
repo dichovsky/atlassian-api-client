@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "86adf16a833e5350d4b4a95c96a2e4296209255bdc1dfcf85a612d7f85e55c30",
+  "sourceHash": "9e037aa4751eed112be0d798938cb7c02e2f6e3f708d7f93e2f4bdcb51f9f41f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4038,145 +4038,151 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 46,
+          "line": 48,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 127,
+          "line": 129,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 140,
+          "line": 142,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 154,
+          "line": 156,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 170,
+          "line": 172,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 181,
+          "line": 183,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 192,
+          "line": 194,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 201,
+          "line": 203,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 410,
+          "line": 412,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 548,
+          "line": 550,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 620,
+          "line": 622,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 644,
+          "line": 646,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-          "line": 683,
+          "line": 685,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeWebhooks",
+          "kind": "function",
+          "line": 712,
+          "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 710,
+          "line": 730,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 719,
+          "line": 739,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 728,
+          "line": 748,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 733,
+          "line": 753,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 738,
+          "line": 758,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 742,
+          "line": 762,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 751,
+          "line": 771,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 759,
+          "line": 779,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 768,
+          "line": 788,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 775,
+          "line": 795,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-          "line": 783,
+          "line": 803,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -4266,7 +4272,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 235,
+          "line": 236,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -15164,6 +15170,14 @@
             {
               "exported": "ListWebhooksParams",
               "original": "ListWebhooksParams"
+            },
+            {
+              "exported": "FailedWebhook",
+              "original": "FailedWebhook"
+            },
+            {
+              "exported": "ListFailedWebhooksParams",
+              "original": "ListFailedWebhooksParams"
             }
           ]
         },
@@ -17279,36 +17293,61 @@
           "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
+          "name": "FailedWebhook",
+          "kind": "interface",
+          "line": 42,
+          "exported": true,
+          "signature": "export interface FailedWebhook { readonly id: string; readonly body?: string; readonly url: string; readonly failureTime…",
+          "jsdoc": "A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed."
+        },
+        {
+          "name": "ListFailedWebhooksParams",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface ListFailedWebhooksParams { readonly maxResults?: number; readonly after?: number; }"
+        },
+        {
           "name": "WebhooksResource",
           "kind": "class",
-          "line": 41,
+          "line": 59,
           "exported": true,
           "signature": "export class WebhooksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 42
+              "line": 60
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 48
+              "line": 66
             },
             {
               "name": "register",
               "kind": "method",
-              "line": 65
+              "line": 83
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 75
+              "line": 93
             },
             {
               "name": "refresh",
               "kind": "method",
-              "line": 84
+              "line": 102
+            },
+            {
+              "name": "listFailed",
+              "kind": "method",
+              "line": 111
+            },
+            {
+              "name": "listAllFailed",
+              "kind": "method",
+              "line": 134
             }
           ]
         }

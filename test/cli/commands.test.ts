@@ -423,6 +423,14 @@ const jiraDataPolicyMock = {
   getWorkspacePolicy: vi.fn(),
   listProjectPolicies: vi.fn(),
 };
+const jiraWebhooksMock = {
+  list: vi.fn(),
+  register: vi.fn(),
+  delete: vi.fn(),
+  refresh: vi.fn(),
+  listFailed: vi.fn(),
+  listAllFailed: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -441,6 +449,7 @@ vi.mock('../../src/jira/client.js', () => {
       announcementBanner: jiraAnnouncementBannerMock,
       applicationRole: jiraApplicationRoleMock,
       dataPolicy: jiraDataPolicyMock,
+      webhooks: jiraWebhooksMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9174,6 +9183,72 @@ describe('executeJiraCommand', () => {
     it('throws when --jql flag is missing', async () => {
       await expect(executeJiraCommand(cmd('search', 'query', [], {}), GLOBALS)).rejects.toThrow(
         'Missing --jql option for search',
+      );
+    });
+  });
+
+  // ── webhooks ──────────────────────────────────────────────────────────────
+
+  describe('webhooks resource', () => {
+    it('list-failed calls client.webhooks.listFailed() and returns result', async () => {
+      // Arrange
+      const page = {
+        values: [{ id: '1', url: 'https://example.com/hook', failureTime: 1700000000000 }],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      };
+      jiraWebhooksMock.listFailed.mockResolvedValue(page);
+
+      // Act
+      const result = await executeJiraCommand(cmd('webhooks', 'list-failed'), GLOBALS);
+
+      // Assert
+      expect(jiraWebhooksMock.listFailed).toHaveBeenCalledWith({});
+      expect(result).toEqual(page);
+    });
+
+    it('list-failed passes --max-results', async () => {
+      // Arrange
+      jiraWebhooksMock.listFailed.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 10,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'list-failed', [], { 'max-results': '10' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.listFailed).toHaveBeenCalledWith({ maxResults: 10 });
+    });
+
+    it('list-failed passes --after as a number', async () => {
+      // Arrange
+      jiraWebhooksMock.listFailed.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'list-failed', [], { after: '1700000000000' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.listFailed).toHaveBeenCalledWith({ after: 1700000000000 });
+    });
+
+    it('throws on unknown webhooks action', async () => {
+      await expect(executeJiraCommand(cmd('webhooks', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown webhooks action',
       );
     });
   });

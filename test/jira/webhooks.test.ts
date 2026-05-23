@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WebhooksResource } from '../../src/jira/resources/webhooks.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import type { Webhook } from '../../src/jira/resources/webhooks.js';
+import type { Webhook, FailedWebhook } from '../../src/jira/resources/webhooks.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -9,6 +9,12 @@ const makeWebhook = (id: number): Webhook => ({
   id,
   jqlFilter: 'project = TEST',
   events: ['jira:issue_created', 'jira:issue_updated'],
+});
+
+const makeFailedWebhook = (id: string, failureTime: number): FailedWebhook => ({
+  id,
+  url: 'https://example.com/webhook',
+  failureTime,
 });
 
 describe('WebhooksResource', () => {
@@ -178,6 +184,187 @@ describe('WebhooksResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.body).toEqual({ webhookIds: [99] });
+    });
+  });
+
+  // ── listFailed ────────────────────────────────────────────────────────────
+
+  describe('listFailed()', () => {
+    it('calls GET /webhook/failed with no params', async () => {
+      // Arrange
+      const page = {
+        values: [makeFailedWebhook('1', 1700000000000)],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      };
+      transport.respondWith(page);
+
+      // Act
+      const result = await webhooks.listFailed();
+
+      // Assert
+      expect(result).toEqual(page);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/webhook/failed`,
+      });
+    });
+
+    it('passes maxResults to query', async () => {
+      // Arrange
+      transport.respondWith({ values: [], startAt: 0, maxResults: 10, isLast: true });
+
+      // Act
+      await webhooks.listFailed({ maxResults: 10 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 10 });
+    });
+
+    it('passes after to query', async () => {
+      // Arrange
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, isLast: true });
+
+      // Act
+      await webhooks.listFailed({ after: 1700000000000 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ after: 1700000000000 });
+    });
+
+    it('does not set maxResults or after in query when params omits them', async () => {
+      // Arrange
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, isLast: true });
+
+      // Act
+      await webhooks.listFailed({});
+
+      // Assert
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['maxResults']).toBeUndefined();
+      expect(query['after']).toBeUndefined();
+    });
+
+    it.each([0, -1, 1.5, Infinity])(
+      'throws RangeError for invalid maxResults: %s',
+      async (maxResults) => {
+        await expect(webhooks.listFailed({ maxResults })).rejects.toThrow(RangeError);
+        expect(transport.calls).toHaveLength(0);
+      },
+    );
+  });
+
+  // ── listAllFailed ─────────────────────────────────────────────────────────
+
+  describe('listAllFailed()', () => {
+    it('yields all items from a single page when isLast is true', async () => {
+      // Arrange
+      const page = {
+        values: [makeFailedWebhook('1', 1700000000000), makeFailedWebhook('2', 1700000001000)],
+        startAt: 0,
+        maxResults: 50,
+        isLast: true,
+      };
+      transport.respondWith(page);
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed()) {
+        results.push(item);
+      }
+
+      // Assert
+      expect(results).toHaveLength(2);
+      expect(results[0]!.id).toBe('1');
+      expect(results[1]!.id).toBe('2');
+    });
+
+    it('stops when values is empty', async () => {
+      // Arrange
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50 });
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed()) {
+        results.push(item);
+      }
+
+      // Assert
+      expect(results).toHaveLength(0);
+      expect(transport.calls).toHaveLength(1);
+    });
+
+    it('passes maxResults on each page request', async () => {
+      // Arrange
+      transport.respondWith({
+        values: [makeFailedWebhook('1', 1700000000000)],
+        startAt: 0,
+        maxResults: 5,
+        isLast: true,
+      });
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed({ maxResults: 5 })) {
+        results.push(item);
+      }
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 5 });
+    });
+
+    it('paginates across multiple pages using failureTime as cursor', async () => {
+      // Arrange — page 1 has isLast: false, page 2 has isLast: true
+      transport
+        .respondWith({
+          values: [makeFailedWebhook('1', 1700000000000), makeFailedWebhook('2', 1700000001000)],
+          startAt: 0,
+          maxResults: 2,
+          isLast: false,
+        })
+        .respondWith({
+          values: [makeFailedWebhook('3', 1700000002000)],
+          startAt: 2,
+          maxResults: 2,
+          isLast: true,
+        });
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed({ maxResults: 2 })) {
+        results.push(item);
+      }
+
+      // Assert — all 3 items collected across 2 pages
+      expect(results).toHaveLength(3);
+      expect(results.map((r) => r.id)).toEqual(['1', '2', '3']);
+      // Second call advances the 'after' cursor to the last failureTime of page 1
+      expect(transport.calls[1]?.options.query).toMatchObject({ after: 1700000001000 });
+    });
+
+    it('breaks the loop when the cursor advance value is not a finite number', async () => {
+      // Arrange — server returns a malformed failureTime on the last item; client must not loop forever
+      const malformed = {
+        ...makeFailedWebhook('bad', 0),
+        failureTime: Number.NaN as unknown as number,
+      };
+      transport.respondWith({
+        values: [makeFailedWebhook('1', 1700000000000), malformed],
+        startAt: 0,
+        maxResults: 2,
+        isLast: false,
+      });
+
+      // Act
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed()) {
+        results.push(item);
+      }
+
+      // Assert — first page items are yielded, then the defensive guard halts iteration
+      expect(results).toHaveLength(2);
+      expect(transport.calls).toHaveLength(1);
     });
   });
 });
