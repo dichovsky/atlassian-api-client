@@ -642,12 +642,12 @@ atlas jira mypermissions get --issue-key PROJ-42 --permissions BROWSE_PROJECTS,E
 
 ## `auditing`
 
-| Action | Positional | Required flags | Optional flags                                            |
-| ------ | ---------- | -------------- | --------------------------------------------------------- |
-| `list` | —          | —              | `--offset`, `--limit-count`, `--filter`, `--from`, `--to` |
+| Action | Positional | Required flags | Optional flags                                      |
+| ------ | ---------- | -------------- | --------------------------------------------------- |
+| `list` | —          | —              | `--offset`, `--limit`, `--filter`, `--from`, `--to` |
 
 - `--offset` — zero-based pagination offset (default 0).
-- `--limit-count` — maximum records per page (1–1000; default 1000 per Jira).
+- `--limit` — maximum records per page (1–1000; default 1000 per Jira).
 - `--filter` — fuzzy-text filter applied to `summary` and `category`.
 - `--from` / `--to` — ISO-8601 datetimes bounding the `created` timestamp range.
 - Requires **Jira Administrator** global permission; 403 for non-admins.
@@ -660,7 +660,7 @@ atlas jira auditing list
 atlas jira auditing list --filter "project" --from 2024-01-01T00:00:00+00:00 --to 2024-12-31T23:59:59+00:00
 
 # Paginate
-atlas jira auditing list --offset 100 --limit-count 50
+atlas jira auditing list --offset 100 --limit 50
 ```
 
 ## `events`

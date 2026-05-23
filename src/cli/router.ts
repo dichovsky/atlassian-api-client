@@ -165,7 +165,6 @@ const GLOBAL_OPTIONS = {
   'comment-id': { type: 'string' as const },
   // auditing options (B343)
   offset: { type: 'string' as const },
-  'limit-count': { type: 'string' as const },
   filter: { type: 'string' as const },
   from: { type: 'string' as const },
   to: { type: 'string' as const },

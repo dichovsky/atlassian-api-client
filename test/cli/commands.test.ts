@@ -9525,13 +9525,13 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('auditing list passes --offset and --limit-count', async () => {
+    it('auditing list passes --offset and --limit', async () => {
       // Arrange
       jiraAuditingMock.list.mockResolvedValue({ offset: 100, limit: 50, total: 0, records: [] });
 
       // Act
       await executeJiraCommand(
-        cmd('auditing', 'list', [], { offset: '100', 'limit-count': '50' }),
+        cmd('auditing', 'list', [], { offset: '100', limit: '50' }),
         GLOBALS,
       );
 
