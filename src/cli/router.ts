@@ -181,6 +181,9 @@ const GLOBAL_OPTIONS = {
   'user-name': { type: 'string' as const },
   // settings/columns options (B772)
   columns: { type: 'string' as const },
+  // exists-by-properties options (B963)
+  'entity-id': { type: 'string' as const },
+  'entity-type': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

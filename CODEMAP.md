@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "2b9250eb0313c11c984c4be337cfdcc122e624bdf2fcc925005c1bea2779aeb8",
+  "sourceHash": "6b06784b6433c1306666ea93701852db615c8a6fecd8da316c6a76ab6cfd118a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4553,7 +4553,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 177,
+          "line": 180,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -15013,12 +15013,12 @@
           "typeOnly": true,
           "names": [
             {
-              "exported": "JiraAvatar",
-              "original": "JiraAvatar"
+              "exported": "Avatar",
+              "original": "Avatar"
             },
             {
-              "exported": "JiraAvatarSystemResponse",
-              "original": "JiraAvatarSystemResponse"
+              "exported": "AvatarSystemResponse",
+              "original": "AvatarSystemResponse"
             }
           ]
         },
@@ -16240,19 +16240,19 @@
       "path": "src/jira/resources/avatar.ts",
       "symbols": [
         {
-          "name": "JiraAvatar",
+          "name": "Avatar",
           "kind": "interface",
           "line": 4,
           "exported": true,
-          "signature": "export interface JiraAvatar { readonly id: string; readonly isSystemAvatar: boolean; readonly isSelected: boolean; reado…",
+          "signature": "export interface Avatar { readonly id: string; readonly isSystemAvatar: boolean; readonly isSelected: boolean; readonly …",
           "jsdoc": "A Jira avatar (icon) object."
         },
         {
-          "name": "JiraAvatarSystemResponse",
+          "name": "AvatarSystemResponse",
           "kind": "interface",
           "line": 14,
           "exported": true,
-          "signature": "export interface JiraAvatarSystemResponse { readonly system: JiraAvatar[]; }",
+          "signature": "export interface AvatarSystemResponse { readonly system: Avatar[]; }",
           "jsdoc": "Response for system avatar listing."
         },
         {

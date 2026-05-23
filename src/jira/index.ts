@@ -193,7 +193,7 @@ export type { FeatureFlag } from './resources/flag.js';
 export { FlagResource } from './resources/flag.js';
 export type { Task } from './resources/task.js';
 export { TaskResource } from './resources/task.js';
-export type { JiraAvatar, JiraAvatarSystemResponse } from './resources/avatar.js';
+export type { Avatar, AvatarSystemResponse } from './resources/avatar.js';
 export { AvatarResource } from './resources/avatar.js';
 export type { CustomFieldOption } from './resources/custom-field-option.js';
 export { CustomFieldOptionResource } from './resources/custom-field-option.js';

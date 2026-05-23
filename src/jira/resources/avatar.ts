@@ -1,7 +1,7 @@
 import type { Transport } from '../../core/types.js';
 
 /** A Jira avatar (icon) object. */
-export interface JiraAvatar {
+export interface Avatar {
   readonly id: string;
   readonly isSystemAvatar: boolean;
   readonly isSelected: boolean;
@@ -11,8 +11,8 @@ export interface JiraAvatar {
 }
 
 /** Response for system avatar listing. */
-export interface JiraAvatarSystemResponse {
-  readonly system: JiraAvatar[];
+export interface AvatarSystemResponse {
+  readonly system: Avatar[];
 }
 
 /**
@@ -30,8 +30,8 @@ export class AvatarResource {
    * List all system avatars of the given type.
    * GET /rest/api/3/avatar/{type}/system
    */
-  async listSystem(type: string): Promise<JiraAvatarSystemResponse> {
-    const response = await this.transport.request<JiraAvatarSystemResponse>({
+  async listSystem(type: string): Promise<AvatarSystemResponse> {
+    const response = await this.transport.request<AvatarSystemResponse>({
       method: 'GET',
       path: `${this.baseUrl}/avatar/${encodeURIComponent(type)}/system`,
     });
