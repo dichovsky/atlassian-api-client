@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "4935e7628c99d83f5064bff8c439510b68e9a508977029cbc91577c064cc1bf1",
+  "sourceHash": "e5756a03b3b0e14512cb7392b421c2975c5baf909cdcca9c9ff325c324e6e653",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -14684,7 +14684,7 @@
         "./resources/priorities.js",
         "./resources/projects.js",
         "./resources/search.js",
-        "./resources/serverinfo.js",
+        "./resources/server-info.js",
         "./resources/sprints.js",
         "./resources/statuses.js",
         "./resources/users.js",
@@ -15177,7 +15177,7 @@
         },
         {
           "kind": "named",
-          "from": "./resources/serverinfo.js",
+          "from": "./resources/server-info.js",
           "typeOnly": true,
           "names": [
             {
@@ -15192,7 +15192,7 @@
         },
         {
           "kind": "named",
-          "from": "./resources/serverinfo.js",
+          "from": "./resources/server-info.js",
           "typeOnly": false,
           "names": [
             {
@@ -17261,7 +17261,7 @@
       ]
     },
     {
-      "path": "src/jira/resources/serverinfo.ts",
+      "path": "src/jira/resources/server-info.ts",
       "symbols": [
         {
           "name": "ServerInfo",

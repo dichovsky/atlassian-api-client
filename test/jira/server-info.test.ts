@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ServerInfoResource } from '../../src/jira/resources/serverinfo.js';
+import { ServerInfoResource } from '../../src/jira/resources/server-info.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';

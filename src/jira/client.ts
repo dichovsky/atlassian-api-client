@@ -27,7 +27,7 @@ import { ApplicationRoleResource } from './resources/application-role.js';
 import { DataPolicyResource } from './resources/data-policy.js';
 import { StatusResource } from './resources/status.js';
 import { StatusCategoryResource } from './resources/status-category.js';
-import { ServerInfoResource } from './resources/serverinfo.js';
+import { ServerInfoResource } from './resources/server-info.js';
 import { InstanceResource } from './resources/instance.js';
 import { MyPermissionsResource } from './resources/mypermissions.js';
 
