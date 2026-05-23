@@ -431,6 +431,14 @@ const jiraWebhooksMock = {
   listFailed: vi.fn(),
   listAllFailed: vi.fn(),
 };
+const jiraStatusMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+};
+const jiraStatusCategoryMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -450,6 +458,8 @@ vi.mock('../../src/jira/client.js', () => {
       applicationRole: jiraApplicationRoleMock,
       dataPolicy: jiraDataPolicyMock,
       webhooks: jiraWebhooksMock,
+      status: jiraStatusMock,
+      statusCategory: jiraStatusCategoryMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9249,6 +9259,94 @@ describe('executeJiraCommand', () => {
     it('throws on unknown webhooks action', async () => {
       await expect(executeJiraCommand(cmd('webhooks', 'unknown-action'), GLOBALS)).rejects.toThrow(
         'Unknown webhooks action',
+      );
+    });
+  });
+
+  // ── status ────────────────────────────────────────────────────────────────
+
+  describe('status resource', () => {
+    it('status list calls client.status.list()', async () => {
+      // Arrange
+      const statuses = [{ id: '10001', name: 'To Do' }];
+      jiraStatusMock.list.mockResolvedValue(statuses);
+
+      // Act
+      const result = await executeJiraCommand(cmd('status', 'list'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(statuses);
+      expect(jiraStatusMock.list).toHaveBeenCalledOnce();
+    });
+
+    it('status get calls client.status.get() with --id-or-name', async () => {
+      // Arrange
+      const single = { id: '10001', name: 'To Do' };
+      jiraStatusMock.get.mockResolvedValue(single);
+      const parsed = cmd('status', 'get', [], { 'id-or-name': '10001' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(result).toEqual(single);
+      expect(jiraStatusMock.get).toHaveBeenCalledWith('10001');
+    });
+
+    it('status get throws when --id-or-name is missing', async () => {
+      const parsed = cmd('status', 'get', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --id-or-name',
+      );
+    });
+
+    it('status unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('status', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown status action',
+      );
+    });
+  });
+
+  // ── status-category ───────────────────────────────────────────────────────
+
+  describe('status-category resource', () => {
+    it('status-category list calls client.statusCategory.list()', async () => {
+      // Arrange
+      const categories = [{ id: 2, key: 'new', name: 'To Do' }];
+      jiraStatusCategoryMock.list.mockResolvedValue(categories);
+
+      // Act
+      const result = await executeJiraCommand(cmd('status-category', 'list'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(categories);
+      expect(jiraStatusCategoryMock.list).toHaveBeenCalledOnce();
+    });
+
+    it('status-category get calls client.statusCategory.get() with --id-or-name', async () => {
+      // Arrange
+      const category = { id: 2, key: 'new', name: 'To Do' };
+      jiraStatusCategoryMock.get.mockResolvedValue(category);
+      const parsed = cmd('status-category', 'get', [], { 'id-or-name': '2' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(result).toEqual(category);
+      expect(jiraStatusCategoryMock.get).toHaveBeenCalledWith('2');
+    });
+
+    it('status-category get throws when --id-or-name is missing', async () => {
+      const parsed = cmd('status-category', 'get', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --id-or-name',
+      );
+    });
+
+    it('status-category unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('status-category', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown status-category action',
       );
     });
   });

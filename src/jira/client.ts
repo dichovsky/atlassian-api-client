@@ -25,6 +25,8 @@ import { BacklogResource } from './resources/backlog.js';
 import { AnnouncementBannerResource } from './resources/announcement-banner.js';
 import { ApplicationRoleResource } from './resources/application-role.js';
 import { DataPolicyResource } from './resources/data-policy.js';
+import { StatusResource } from './resources/status.js';
+import { StatusCategoryResource } from './resources/status-category.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -69,6 +71,10 @@ export class JiraClient {
   readonly applicationRole: ApplicationRoleResource;
   /** App data policies resource. */
   readonly dataPolicy: DataPolicyResource;
+  /** Workflow status resource (GET /rest/api/3/status). */
+  readonly status: StatusResource;
+  /** Workflow status category resource (GET /rest/api/3/statuscategory). */
+  readonly statusCategory: StatusCategoryResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -100,5 +106,7 @@ export class JiraClient {
     this.announcementBanner = new AnnouncementBannerResource(transport, baseUrl);
     this.applicationRole = new ApplicationRoleResource(transport, baseUrl);
     this.dataPolicy = new DataPolicyResource(transport, baseUrl);
+    this.status = new StatusResource(transport, baseUrl);
+    this.statusCategory = new StatusCategoryResource(transport, baseUrl);
   }
 }

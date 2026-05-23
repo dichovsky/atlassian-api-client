@@ -123,3 +123,7 @@ export type {
   ListProjectDataPoliciesParams,
 } from './resources/data-policy.js';
 export { DataPolicyResource } from './resources/data-policy.js';
+export type { JiraStatus, JiraStatusCategoryRef } from './resources/status.js';
+export { StatusResource } from './resources/status.js';
+export type { JiraStatusCategory } from './resources/status-category.js';
+export { StatusCategoryResource } from './resources/status-category.js';
