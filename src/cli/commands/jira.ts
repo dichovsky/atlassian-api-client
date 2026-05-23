@@ -38,6 +38,8 @@ export async function executeJiraCommand(
       return executeApplicationRole(client, cmd);
     case 'data-policy':
       return executeDataPolicy(client, cmd);
+    case 'webhooks':
+      return executeWebhooks(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -704,6 +706,24 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
       throw new Error(
         `Unknown data-policy action: ${cmd.action}. Actions: get-workspace, list-projects`,
       );
+  }
+}
+
+async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-failed': {
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const afterStr = asString(opts['after']);
+      const after = afterStr !== undefined ? parsePositiveIntArg(afterStr, '--after') : undefined;
+      return client.webhooks.listFailed({
+        ...(maxResults !== undefined && { maxResults }),
+        ...(after !== undefined && { after }),
+      });
+    }
+    default:
+      throw new Error(`Unknown webhooks action: ${cmd.action}. Actions: list-failed`);
   }
 }
 

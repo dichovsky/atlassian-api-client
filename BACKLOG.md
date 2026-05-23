@@ -1772,9 +1772,6 @@
 - [ ] 🟡 🖥️ API: B834 Jira: add CLI + skill for POST /rest/api/3/webhook
   - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B835 Jira: expose GET /rest/api/3/webhook/failed
-  - files: `src/jira/resources/webhook.ts`, `test/jira/webhook.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🟡 🖥️ API: B836 Jira: add CLI + skill for PUT /rest/api/3/webhook/refresh
   - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

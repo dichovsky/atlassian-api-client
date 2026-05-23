@@ -223,6 +223,7 @@ RESOURCES:
   announcement-banner    get, update
   application-role       list, get
   data-policy            get-workspace, list-projects
+  webhooks               list-failed
 
 EXAMPLES:
   atlas jira issues get PROJ-123

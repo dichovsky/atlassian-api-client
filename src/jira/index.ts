@@ -91,6 +91,8 @@ export type {
   RegisterWebhookData,
   RegisteredWebhooks,
   ListWebhooksParams,
+  FailedWebhook,
+  ListFailedWebhooksParams,
 } from './resources/webhooks.js';
 export { JqlResource } from './resources/jql.js';
 export type {

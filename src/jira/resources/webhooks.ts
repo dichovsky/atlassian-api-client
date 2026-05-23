@@ -38,6 +38,24 @@ export interface ListWebhooksParams {
   readonly maxResults?: number;
 }
 
+/** A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed. */
+export interface FailedWebhook {
+  /** The webhook ID. */
+  readonly id: string;
+  /** The webhook body. */
+  readonly body?: string;
+  /** The URL of the webhook. */
+  readonly url: string;
+  /** The time the webhook was added to the list of failed webhooks (milliseconds since epoch). */
+  readonly failureTime: number;
+}
+
+export interface ListFailedWebhooksParams {
+  readonly maxResults?: number;
+  /** Only webhooks with a failure time after this timestamp (milliseconds since epoch) are returned. */
+  readonly after?: number;
+}
+
 export class WebhooksResource {
   constructor(
     private readonly transport: Transport,
@@ -87,5 +105,43 @@ export class WebhooksResource {
       path: `${this.baseUrl}/webhook/refresh`,
       body: { webhookIds },
     });
+  }
+
+  /** List failed webhook deliveries (paginated by timestamp cursor). */
+  async listFailed(
+    params?: ListFailedWebhooksParams,
+  ): Promise<OffsetPaginatedResponse<FailedWebhook>> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params?.after !== undefined) query['after'] = params.after;
+
+    const response = await this.transport.request<OffsetPaginatedResponse<FailedWebhook>>({
+      method: 'GET',
+      path: `${this.baseUrl}/webhook/failed`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Iterate over all failed webhook deliveries, optionally filtering by timestamp. */
+  async *listAllFailed(params?: ListFailedWebhooksParams): AsyncGenerator<FailedWebhook> {
+    let after = params?.after;
+    const maxResults = params?.maxResults;
+
+    for (;;) {
+      const page = await this.listFailed({
+        ...(maxResults !== undefined && { maxResults }),
+        after,
+      });
+      for (const item of page.values) {
+        yield item;
+      }
+      if (page.isLast || page.values.length === 0) break;
+      // Advance the cursor using the failureTime of the last item.
+      // Non-null assertion is safe: values.length === 0 is guarded above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      after = page.values[page.values.length - 1]!.failureTime;
+    }
   }
 }

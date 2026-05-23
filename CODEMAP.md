@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "86adf16a833e5350d4b4a95c96a2e4296209255bdc1dfcf85a612d7f85e55c30",
+  "sourceHash": "edb6f324d4a608d10deb911b035fcadcacf18c7c78bb23e91160f9c32655c02a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1470,7 +1470,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 30,
+      "line": 28,
       "signature": "export class JiraClient",
       "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
     },
@@ -4038,146 +4038,140 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 46,
+          "line": 44,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 127,
+          "line": 125,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 140,
+          "line": 138,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 154,
+          "line": 152,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 170,
+          "line": 168,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 181,
+          "line": 179,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 192,
+          "line": 190,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 201,
+          "line": 199,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 410,
+          "line": 408,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 548,
+          "line": 546,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 620,
+          "line": 618,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 644,
+          "line": 642,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeDataPolicy",
+          "name": "executeWebhooks",
           "kind": "function",
-          "line": 683,
-          "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "line": 681,
+          "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 710,
+          "line": 699,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 719,
+          "line": 708,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 728,
+          "line": 717,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 733,
+          "line": 722,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 738,
+          "line": 727,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 742,
+          "line": 731,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 751,
+          "line": 740,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 759,
+          "line": 748,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 768,
+          "line": 757,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 775,
+          "line": 764,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
-        },
-        {
-          "name": "executeApplicationRole",
-          "kind": "function",
-          "line": 783,
-          "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -4266,7 +4260,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 235,
+          "line": 234,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -14487,7 +14481,7 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 30,
+          "line": 28,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
@@ -14495,127 +14489,117 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 31
+              "line": 29
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 32
+              "line": 30
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 33
+              "line": 31
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 34
+              "line": 32
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 35
+              "line": 33
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 36
+              "line": 34
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 37
+              "line": 35
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 39
+              "line": 37
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 41
+              "line": 39
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 43
+              "line": 41
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 45
+              "line": 43
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 47
+              "line": 45
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 49
+              "line": 47
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 51
+              "line": 49
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 53
+              "line": 51
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 55
+              "line": 53
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 57
+              "line": 55
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 59
+              "line": 57
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 61
+              "line": 59
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 63
+              "line": 61
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 65
+              "line": 63
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 67
-            },
-            {
-              "name": "applicationRole",
-              "kind": "property",
-              "line": 69
-            },
-            {
-              "name": "dataPolicy",
-              "kind": "property",
-              "line": 71
+              "line": 65
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 73
+              "line": 67
             }
           ]
         }
@@ -14625,12 +14609,10 @@
         "../core/transport.js",
         "../core/types.js",
         "./resources/announcement-banner.js",
-        "./resources/application-role.js",
         "./resources/backlog.js",
         "./resources/boards.js",
         "./resources/bulk.js",
         "./resources/dashboards.js",
-        "./resources/data-policy.js",
         "./resources/epic.js",
         "./resources/fields.js",
         "./resources/filters.js",
@@ -14698,28 +14680,6 @@
             {
               "exported": "AnnouncementBannerResource",
               "original": "AnnouncementBannerResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/application-role.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "ApplicationRole",
-              "original": "ApplicationRole"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/application-role.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ApplicationRoleResource",
-              "original": "ApplicationRoleResource"
             }
           ]
         },
@@ -14826,36 +14786,6 @@
             {
               "exported": "UpdateDashboardData",
               "original": "UpdateDashboardData"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/data-policy.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "WorkspaceDataPolicy",
-              "original": "WorkspaceDataPolicy"
-            },
-            {
-              "exported": "ProjectDataPolicy",
-              "original": "ProjectDataPolicy"
-            },
-            {
-              "exported": "ListProjectDataPoliciesParams",
-              "original": "ListProjectDataPoliciesParams"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/data-policy.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "DataPolicyResource",
-              "original": "DataPolicyResource"
             }
           ]
         },
@@ -15164,6 +15094,14 @@
             {
               "exported": "ListWebhooksParams",
               "original": "ListWebhooksParams"
+            },
+            {
+              "exported": "FailedWebhook",
+              "original": "FailedWebhook"
+            },
+            {
+              "exported": "ListFailedWebhooksParams",
+              "original": "ListFailedWebhooksParams"
             }
           ]
         },
@@ -15349,47 +15287,6 @@
             },
             {
               "name": "update",
-              "kind": "method",
-              "line": 36
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/application-role.ts",
-      "symbols": [
-        {
-          "name": "ApplicationRole",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface ApplicationRole { readonly key: string; readonly groups: string[]; readonly name: string; readonly defa…",
-          "jsdoc": "A Jira application role."
-        },
-        {
-          "name": "ApplicationRoleResource",
-          "kind": "class",
-          "line": 20,
-          "exported": true,
-          "signature": "export class ApplicationRoleResource",
-          "jsdoc": "Jira Application Role resource — GET /rest/api/3/applicationrole.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 21
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 27
-            },
-            {
-              "name": "get",
               "kind": "method",
               "line": 36
             }
@@ -15926,69 +15823,6 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/data-policy.ts",
-      "symbols": [
-        {
-          "name": "WorkspaceDataPolicy",
-          "kind": "interface",
-          "line": 6,
-          "exported": true,
-          "signature": "export interface WorkspaceDataPolicy { readonly anyContentBlocked: boolean; }",
-          "jsdoc": "Workspace-level data policy status."
-        },
-        {
-          "name": "ProjectDataPolicy",
-          "kind": "interface",
-          "line": 11,
-          "exported": true,
-          "signature": "export interface ProjectDataPolicy { readonly projectId: string; readonly anyContentBlocked: boolean; }",
-          "jsdoc": "A single project data policy entry."
-        },
-        {
-          "name": "ListProjectDataPoliciesParams",
-          "kind": "interface",
-          "line": 17,
-          "exported": true,
-          "signature": "export interface ListProjectDataPoliciesParams { readonly ids?: string[]; readonly startAt?: number; readonly maxResults…",
-          "jsdoc": "Parameters for listing project data policies."
-        },
-        {
-          "name": "DataPolicyResource",
-          "kind": "class",
-          "line": 25,
-          "exported": true,
-          "signature": "export class DataPolicyResource",
-          "jsdoc": "Jira App Data Policies resource — GET /rest/api/3/data-policy and GET /rest/api/3/data-policy/project.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 26
-            },
-            {
-              "name": "getWorkspacePolicy",
-              "kind": "method",
-              "line": 32
-            },
-            {
-              "name": "listProjectPolicies",
-              "kind": "method",
-              "line": 41
-            },
-            {
-              "name": "listAllProjectPolicies",
-              "kind": "method",
-              "line": 62
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/pagination.js",
         "../../core/types.js"
       ]
     },
@@ -17279,36 +17113,61 @@
           "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
+          "name": "FailedWebhook",
+          "kind": "interface",
+          "line": 42,
+          "exported": true,
+          "signature": "export interface FailedWebhook { readonly id: string; readonly body?: string; readonly url: string; readonly failureTime…",
+          "jsdoc": "A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed."
+        },
+        {
+          "name": "ListFailedWebhooksParams",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface ListFailedWebhooksParams { readonly maxResults?: number; readonly after?: number; }"
+        },
+        {
           "name": "WebhooksResource",
           "kind": "class",
-          "line": 41,
+          "line": 59,
           "exported": true,
           "signature": "export class WebhooksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 42
+              "line": 60
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 48
+              "line": 66
             },
             {
               "name": "register",
               "kind": "method",
-              "line": 65
+              "line": 83
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 75
+              "line": 93
             },
             {
               "name": "refresh",
               "kind": "method",
-              "line": 84
+              "line": 102
+            },
+            {
+              "name": "listFailed",
+              "kind": "method",
+              "line": 111
+            },
+            {
+              "name": "listAllFailed",
+              "kind": "method",
+              "line": 128
             }
           ]
         }
