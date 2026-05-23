@@ -154,6 +154,15 @@ const GLOBAL_OPTIONS = {
   visibility: { type: 'string' as const },
   dismissible: { type: 'boolean' as const },
   enabled: { type: 'boolean' as const },
+  // mypermissions options (B600)
+  'project-id': { type: 'string' as const },
+  'project-key': { type: 'string' as const },
+  'issue-id': { type: 'string' as const },
+  'issue-key': { type: 'string' as const },
+  permissions: { type: 'string' as const },
+  'project-uuid': { type: 'string' as const },
+  'project-configuration-uuid': { type: 'string' as const },
+  'comment-id': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */

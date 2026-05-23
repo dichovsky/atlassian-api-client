@@ -226,6 +226,9 @@ RESOURCES:
   application-role       list, get
   data-policy            get-workspace, list-projects
   webhooks               list-failed
+  server-info            get
+  instance               get-license
+  mypermissions          get
 
 EXAMPLES:
   atlas jira issues get PROJ-123

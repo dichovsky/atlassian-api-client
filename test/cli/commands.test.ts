@@ -439,6 +439,15 @@ const jiraStatusCategoryMock = {
   list: vi.fn(),
   get: vi.fn(),
 };
+const jiraServerInfoMock = {
+  get: vi.fn(),
+};
+const jiraInstanceMock = {
+  getLicense: vi.fn(),
+};
+const jiraMyPermissionsMock = {
+  get: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -460,6 +469,9 @@ vi.mock('../../src/jira/client.js', () => {
       webhooks: jiraWebhooksMock,
       status: jiraStatusMock,
       statusCategory: jiraStatusCategoryMock,
+      serverInfo: jiraServerInfoMock,
+      instance: jiraInstanceMock,
+      myPermissions: jiraMyPermissionsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9348,6 +9360,106 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('status-category', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown status-category action',
       );
+    });
+  });
+
+  // ── server-info ───────────────────────────────────────────────────────────
+
+  describe('server-info resource', () => {
+    it('server-info get calls client.serverInfo.get()', async () => {
+      // Arrange
+      const info = { baseUrl: 'https://test.atlassian.net', version: '9.0.0' };
+      jiraServerInfoMock.get.mockResolvedValue(info);
+
+      // Act
+      const result = await executeJiraCommand(cmd('server-info', 'get'), GLOBALS);
+
+      // Assert
+      expect(jiraServerInfoMock.get).toHaveBeenCalledWith();
+      expect(result).toEqual(info);
+    });
+
+    it('throws on unknown server-info action', async () => {
+      await expect(
+        executeJiraCommand(cmd('server-info', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown server-info action');
+    });
+  });
+
+  // ── instance ──────────────────────────────────────────────────────────────
+
+  describe('instance resource', () => {
+    it('instance get-license calls client.instance.getLicense()', async () => {
+      // Arrange
+      const license = { applications: [{ id: 'jira-software', plan: 'STANDARD' }] };
+      jiraInstanceMock.getLicense.mockResolvedValue(license);
+
+      // Act
+      const result = await executeJiraCommand(cmd('instance', 'get-license'), GLOBALS);
+
+      // Assert
+      expect(jiraInstanceMock.getLicense).toHaveBeenCalledWith();
+      expect(result).toEqual(license);
+    });
+
+    it('throws on unknown instance action', async () => {
+      await expect(executeJiraCommand(cmd('instance', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown instance action',
+      );
+    });
+  });
+
+  // ── mypermissions ─────────────────────────────────────────────────────────
+
+  describe('mypermissions resource', () => {
+    it('mypermissions get calls client.myPermissions.get() with no params', async () => {
+      // Arrange
+      const perms = { permissions: { BROWSE_PROJECTS: { havePermission: true } } };
+      jiraMyPermissionsMock.get.mockResolvedValue(perms);
+
+      // Act
+      const result = await executeJiraCommand(cmd('mypermissions', 'get'), GLOBALS);
+
+      // Assert
+      expect(jiraMyPermissionsMock.get).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: undefined }),
+      );
+      expect(result).toEqual(perms);
+    });
+
+    it('mypermissions get passes --project-id', async () => {
+      // Arrange
+      jiraMyPermissionsMock.get.mockResolvedValue({ permissions: {} });
+
+      // Act
+      await executeJiraCommand(cmd('mypermissions', 'get', [], { 'project-id': '10001' }), GLOBALS);
+
+      // Assert
+      expect(jiraMyPermissionsMock.get).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: '10001' }),
+      );
+    });
+
+    it('mypermissions get passes --permissions', async () => {
+      // Arrange
+      jiraMyPermissionsMock.get.mockResolvedValue({ permissions: {} });
+
+      // Act
+      await executeJiraCommand(
+        cmd('mypermissions', 'get', [], { permissions: 'BROWSE_PROJECTS,CREATE_ISSUES' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMyPermissionsMock.get).toHaveBeenCalledWith(
+        expect.objectContaining({ permissions: 'BROWSE_PROJECTS,CREATE_ISSUES' }),
+      );
+    });
+
+    it('throws on unknown mypermissions action', async () => {
+      await expect(
+        executeJiraCommand(cmd('mypermissions', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown mypermissions action');
     });
   });
 });

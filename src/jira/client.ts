@@ -27,6 +27,9 @@ import { ApplicationRoleResource } from './resources/application-role.js';
 import { DataPolicyResource } from './resources/data-policy.js';
 import { StatusResource } from './resources/status.js';
 import { StatusCategoryResource } from './resources/status-category.js';
+import { ServerInfoResource } from './resources/server-info.js';
+import { InstanceResource } from './resources/instance.js';
+import { MyPermissionsResource } from './resources/mypermissions.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -75,6 +78,12 @@ export class JiraClient {
   readonly status: StatusResource;
   /** Workflow status category resource (GET /rest/api/3/statuscategory). */
   readonly statusCategory: StatusCategoryResource;
+  /** Server info resource. */
+  readonly serverInfo: ServerInfoResource;
+  /** Instance information resource. */
+  readonly instance: InstanceResource;
+  /** My permissions resource. */
+  readonly myPermissions: MyPermissionsResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -108,5 +117,8 @@ export class JiraClient {
     this.dataPolicy = new DataPolicyResource(transport, baseUrl);
     this.status = new StatusResource(transport, baseUrl);
     this.statusCategory = new StatusCategoryResource(transport, baseUrl);
+    this.serverInfo = new ServerInfoResource(transport, baseUrl);
+    this.instance = new InstanceResource(transport, baseUrl);
+    this.myPermissions = new MyPermissionsResource(transport, baseUrl);
   }
 }
