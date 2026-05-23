@@ -610,6 +610,12 @@
 - [x] 🔴 🧩 API: B325 Jira: expose PUT /rest/api/3/announcementBanner
   - **Impl:** Branch `feat/jira-announcement-banner`; `AnnouncementBannerResource.update(data: UpdateAnnouncementBannerData)` issues `PUT /rest/api/3/announcementBanner` with optional `isDismissible`, `isEnabled`, `message`, `visibility` fields; returns `void`. CLI: `atlas jira announcement-banner update --message <msg> --visibility PUBLIC|PRIVATE`; `--visibility` validated to `PUBLIC` | `PRIVATE`; all fields optional. `--message` / `--visibility` options added to `src/cli/router.ts` global option set.
   - **Rat:** Symmetric update for B324 — lets automation enable/disable the banner and set its content without manual UI access.
+- [x] 🔴 🧩 API: B334 Jira: expose GET /rest/api/3/applicationrole
+  - **Impl:** Branch `feat/jira-application-role`; new `ApplicationRoleResource` (`src/jira/resources/application-role.ts`) exposes `list()` mapped to `GET /rest/api/3/applicationrole`, returning `ApplicationRole[]`. Wired as `JiraClient.applicationRole`; interface exported from resource file + `src/jira/index.ts`. CLI: `atlas jira application-role list`. Covered by `test/jira/application-role.test.ts` and CLI command/skill-content tests.
+  - **Rat:** Read-only resource exposing all application roles; prerequisite for any automation that needs to enumerate or validate seat assignments.
+- [x] 🔴 🧩 API: B335 Jira: expose GET /rest/api/3/applicationrole/{key}
+  - **Impl:** Branch `feat/jira-application-role`; `ApplicationRoleResource.get(key: string)` issues `GET /rest/api/3/applicationrole/{key}` with URL-encoded key, returning a single `ApplicationRole`. CLI: `atlas jira application-role get --key <KEY>`. Covered by `test/jira/application-role.test.ts`.
+  - **Rat:** Complements B334 — allows targeted lookup of a specific role without fetching the full list; `--key` flag reuses the existing global router option.
 
 - [x] 🔴 🐛 Jira: B033 `DashboardsResource.listAll` infinite pagination
   - **Impl:** Branch `fix/ctf-phase8-p0p1` (2026-05-16); dashboard pagination now uses a `maxPages` cap plus warning path instead of looping forever.

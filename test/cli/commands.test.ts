@@ -415,6 +415,10 @@ const jiraAnnouncementBannerMock = {
   get: vi.fn(),
   update: vi.fn(),
 };
+const jiraApplicationRoleMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -431,6 +435,7 @@ vi.mock('../../src/jira/client.js', () => {
       epic: jiraEpicMock,
       backlog: jiraBacklogMock,
       announcementBanner: jiraAnnouncementBannerMock,
+      applicationRole: jiraApplicationRoleMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -8996,6 +9001,50 @@ describe('executeJiraCommand', () => {
     it('announcement-banner unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('announcement-banner', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown announcement-banner action',
+      );
+    });
+  });
+
+  // ── application-role ──────────────────────────────────────────────────────
+
+  describe('application-role resource', () => {
+    it('application-role list calls client.applicationRole.list()', async () => {
+      // Arrange
+      const roles = [{ key: 'jira-software', name: 'Jira Software' }];
+      jiraApplicationRoleMock.list.mockResolvedValue(roles);
+
+      // Act
+      const result = await executeJiraCommand(cmd('application-role', 'list'), GLOBALS);
+
+      // Assert
+      expect(result).toEqual(roles);
+      expect(jiraApplicationRoleMock.list).toHaveBeenCalledOnce();
+    });
+
+    it('application-role get calls client.applicationRole.get() with --key', async () => {
+      // Arrange
+      const role = { key: 'jira-software', name: 'Jira Software' };
+      jiraApplicationRoleMock.get.mockResolvedValue(role);
+      const parsed = cmd('application-role', 'get', [], { key: 'jira-software' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(result).toEqual(role);
+      expect(jiraApplicationRoleMock.get).toHaveBeenCalledWith('jira-software');
+    });
+
+    it('application-role get throws when --key is missing', async () => {
+      const parsed = cmd('application-role', 'get', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required option: --key',
+      );
+    });
+
+    it('application-role unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('application-role', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown application-role action',
       );
     });
   });

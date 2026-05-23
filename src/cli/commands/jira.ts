@@ -34,6 +34,8 @@ export async function executeJiraCommand(
       return executeBacklog(client, cmd);
     case 'announcement-banner':
       return executeAnnouncementBanner(client, cmd);
+    case 'application-role':
+      return executeApplicationRole(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -747,4 +749,17 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`expected 'true' or 'false', got: ${value}`);
+}
+
+async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.applicationRole.list();
+    case 'get':
+      return client.applicationRole.get(requireOpt(opts['key'], '--key'));
+    default:
+      throw new Error(`Unknown application-role action: ${cmd.action}. Actions: list, get`);
+  }
 }

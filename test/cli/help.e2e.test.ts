@@ -89,6 +89,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   epic: 'executeEpic',
   backlog: 'executeBacklog',
   'announcement-banner': 'executeAnnouncementBanner',
+  'application-role': 'executeApplicationRole',
 };
 
 /**

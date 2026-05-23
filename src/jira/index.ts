@@ -113,3 +113,5 @@ export type {
   BulkDeleteIssuePropertyData,
 } from './resources/bulk.js';
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
+export type { ApplicationRole } from './resources/application-role.js';
+export { ApplicationRoleResource } from './resources/application-role.js';

@@ -221,6 +221,7 @@ RESOURCES:
   epic                   get, update, issues, move-issues, rank, issues-none, remove-issues
   backlog                move
   announcement-banner    get, update
+  application-role       list, get
 
 EXAMPLES:
   atlas jira issues get PROJ-123

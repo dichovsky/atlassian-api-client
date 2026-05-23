@@ -116,6 +116,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'epic',
           'backlog',
           'announcement-banner',
+          'application-role',
         ]).toContain(parsed.resource);
       }
     });
@@ -182,6 +183,7 @@ describe('Resource coverage drift check', () => {
     'epic',
     'backlog',
     'announcement-banner',
+    'application-role',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {
