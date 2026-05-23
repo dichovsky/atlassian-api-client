@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "c51e3aeb0ac7b6038c0373a2102ba627adb584a4f48d27a22b0951c9f2023728",
+  "sourceHash": "193e64fb1ad9976e7fabc13bb80d4e1dbaa381d863db01bc412825379579fca5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1470,7 +1470,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 35,
+      "line": 34,
       "signature": "export class JiraClient",
       "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
     },
@@ -4038,182 +4038,176 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 58,
+          "line": 56,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 139,
+          "line": 137,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 152,
+          "line": 150,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 166,
+          "line": 164,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 182,
+          "line": 180,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 193,
+          "line": 191,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 204,
+          "line": 202,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 213,
+          "line": 211,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 422,
+          "line": 420,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 560,
+          "line": 558,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 632,
+          "line": 630,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 656,
+          "line": 654,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-          "line": 695,
+          "line": 693,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-          "line": 722,
+          "line": 720,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 740,
+          "line": 738,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 749,
+          "line": 747,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 758,
+          "line": 756,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 763,
+          "line": 761,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 768,
+          "line": 766,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 772,
+          "line": 770,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 781,
+          "line": 779,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 789,
+          "line": 787,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 798,
+          "line": 796,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 805,
+          "line": 803,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-          "line": 813,
+          "line": 811,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeStatus",
+          "name": "executeAuditing",
           "kind": "function",
-          "line": 826,
-          "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "line": 824,
+          "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeStatusCategory",
+          "name": "executeEvents",
           "kind": "function",
-          "line": 837,
-          "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "line": 841,
+          "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeServerInfo",
+          "name": "executeChangelog",
           "kind": "function",
-          "line": 848,
-          "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "line": 850,
+          "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executeInstance",
+          "name": "executeForge",
           "kind": "function",
-          "line": 857,
-          "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
-        },
-        {
-          "name": "executeMyPermissions",
-          "kind": "function",
-          "line": 866,
-          "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "line": 887,
+          "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -4302,7 +4296,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 241,
+          "line": 240,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -14523,7 +14517,7 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 35,
+          "line": 34,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
@@ -14531,152 +14525,147 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 36
+              "line": 35
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 37
+              "line": 36
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 38
+              "line": 37
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 39
+              "line": 38
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 40
+              "line": 39
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 41
+              "line": 40
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 42
+              "line": 41
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 44
+              "line": 43
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 46
+              "line": 45
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 48
+              "line": 47
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 50
+              "line": 49
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 52
+              "line": 51
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 54
+              "line": 53
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 56
+              "line": 55
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 58
+              "line": 57
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 60
+              "line": 59
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 62
+              "line": 61
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 64
+              "line": 63
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 66
+              "line": 65
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 68
+              "line": 67
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 70
+              "line": 69
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 72
+              "line": 71
             },
             {
               "name": "applicationRole",
               "kind": "property",
-              "line": 74
+              "line": 73
             },
             {
               "name": "dataPolicy",
               "kind": "property",
-              "line": 76
+              "line": 75
             },
             {
-              "name": "status",
+              "name": "auditing",
               "kind": "property",
-              "line": 78
+              "line": 77
             },
             {
-              "name": "statusCategory",
+              "name": "events",
               "kind": "property",
-              "line": 80
+              "line": 79
             },
             {
-              "name": "serverInfo",
+              "name": "changelog",
               "kind": "property",
-              "line": 82
+              "line": 81
             },
             {
-              "name": "instance",
+              "name": "forge",
               "kind": "property",
-              "line": 84
-            },
-            {
-              "name": "myPermissions",
-              "kind": "property",
-              "line": 86
+              "line": 83
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 88
+              "line": 85
             }
           ]
         }
@@ -14687,29 +14676,28 @@
         "../core/types.js",
         "./resources/announcement-banner.js",
         "./resources/application-role.js",
+        "./resources/auditing.js",
         "./resources/backlog.js",
         "./resources/boards.js",
         "./resources/bulk.js",
+        "./resources/changelog.js",
         "./resources/dashboards.js",
         "./resources/data-policy.js",
         "./resources/epic.js",
+        "./resources/events.js",
         "./resources/fields.js",
         "./resources/filters.js",
-        "./resources/instance.js",
+        "./resources/forge.js",
         "./resources/issue-attachments.js",
         "./resources/issue-comments.js",
         "./resources/issue-types.js",
         "./resources/issues.js",
         "./resources/jql.js",
         "./resources/labels.js",
-        "./resources/mypermissions.js",
         "./resources/priorities.js",
         "./resources/projects.js",
         "./resources/search.js",
-        "./resources/server-info.js",
         "./resources/sprints.js",
-        "./resources/status-category.js",
-        "./resources/status.js",
         "./resources/statuses.js",
         "./resources/users.js",
         "./resources/webhooks.js",
@@ -14791,6 +14779,44 @@
         },
         {
           "kind": "named",
+          "from": "./resources/auditing.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "AuditRecord",
+              "original": "AuditRecord"
+            },
+            {
+              "exported": "AuditRecordsResponse",
+              "original": "AuditRecordsResponse"
+            },
+            {
+              "exported": "AuditRecordChangedValue",
+              "original": "AuditRecordChangedValue"
+            },
+            {
+              "exported": "AuditRecordAssociatedItem",
+              "original": "AuditRecordAssociatedItem"
+            },
+            {
+              "exported": "ListAuditRecordsParams",
+              "original": "ListAuditRecordsParams"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/auditing.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "AuditingResource",
+              "original": "AuditingResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/boards.js",
           "typeOnly": false,
           "names": [
@@ -14859,6 +14885,36 @@
         },
         {
           "kind": "named",
+          "from": "./resources/changelog.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "ChangelogEntry",
+              "original": "ChangelogEntry"
+            },
+            {
+              "exported": "ChangelogItem",
+              "original": "ChangelogItem"
+            },
+            {
+              "exported": "BulkFetchChangelogData",
+              "original": "BulkFetchChangelogData"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/changelog.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "ChangelogResource",
+              "original": "ChangelogResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/dashboards.js",
           "typeOnly": false,
           "names": [
@@ -14922,6 +14978,28 @@
             {
               "exported": "DataPolicyResource",
               "original": "DataPolicyResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/events.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "JiraEvent",
+              "original": "JiraEvent"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/events.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "EventsResource",
+              "original": "EventsResource"
             }
           ]
         },
@@ -14999,27 +15077,31 @@
         },
         {
           "kind": "named",
-          "from": "./resources/instance.js",
+          "from": "./resources/forge.js",
           "typeOnly": true,
           "names": [
             {
-              "exported": "InstanceLicense",
-              "original": "InstanceLicense"
+              "exported": "ForgePanelAction",
+              "original": "ForgePanelAction"
             },
             {
-              "exported": "LicensedApplication",
-              "original": "LicensedApplication"
+              "exported": "BulkForgeActionData",
+              "original": "BulkForgeActionData"
+            },
+            {
+              "exported": "BulkForgeActionResponse",
+              "original": "BulkForgeActionResponse"
             }
           ]
         },
         {
           "kind": "named",
-          "from": "./resources/instance.js",
+          "from": "./resources/forge.js",
           "typeOnly": false,
           "names": [
             {
-              "exported": "InstanceResource",
-              "original": "InstanceResource"
+              "exported": "ForgeResource",
+              "original": "ForgeResource"
             }
           ]
         },
@@ -15138,36 +15220,6 @@
         },
         {
           "kind": "named",
-          "from": "./resources/mypermissions.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "MyPermissions",
-              "original": "MyPermissions"
-            },
-            {
-              "exported": "Permission",
-              "original": "Permission"
-            },
-            {
-              "exported": "GetMyPermissionsParams",
-              "original": "GetMyPermissionsParams"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/mypermissions.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "MyPermissionsResource",
-              "original": "MyPermissionsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
           "from": "./resources/priorities.js",
           "typeOnly": false,
           "names": [
@@ -15196,32 +15248,6 @@
             {
               "exported": "SearchResource",
               "original": "SearchResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/server-info.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "ServerInfo",
-              "original": "ServerInfo"
-            },
-            {
-              "exported": "ServerHealthCheck",
-              "original": "ServerHealthCheck"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/server-info.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ServerInfoResource",
-              "original": "ServerInfoResource"
             }
           ]
         },
@@ -15256,54 +15282,6 @@
             {
               "exported": "ListSprintIssuesParams",
               "original": "ListSprintIssuesParams"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/status-category.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "JiraStatusCategory",
-              "original": "JiraStatusCategory"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/status-category.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "StatusCategoryResource",
-              "original": "StatusCategoryResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/status.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "JiraStatus",
-              "original": "JiraStatus"
-            },
-            {
-              "exported": "JiraStatusCategoryRef",
-              "original": "JiraStatusCategoryRef"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./resources/status.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "StatusResource",
-              "original": "StatusResource"
             }
           ]
         },
@@ -15601,6 +15579,80 @@
         }
       ],
       "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/auditing.ts",
+      "symbols": [
+        {
+          "name": "AuditRecordChangedValue",
+          "kind": "interface",
+          "line": 5,
+          "exported": true,
+          "signature": "export interface AuditRecordChangedValue { readonly fieldName: string; readonly changedFrom: string; readonly changedTo:…",
+          "jsdoc": "A single field change within an audit record."
+        },
+        {
+          "name": "AuditRecordAssociatedItem",
+          "kind": "interface",
+          "line": 12,
+          "exported": true,
+          "signature": "export interface AuditRecordAssociatedItem { readonly id: string; readonly name: string; readonly typeName: string; read…",
+          "jsdoc": "Object associated with an audit record (e.g. the affected issue or project)."
+        },
+        {
+          "name": "AuditRecord",
+          "kind": "interface",
+          "line": 21,
+          "exported": true,
+          "signature": "export interface AuditRecord { readonly id: number; readonly summary: string; readonly remoteAddress?: string; readonly …",
+          "jsdoc": "A single Jira audit log record."
+        },
+        {
+          "name": "AuditRecordsResponse",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface AuditRecordsResponse { readonly offset: number; readonly limit: number; readonly total: number; readonl…",
+          "jsdoc": "Paginated response shape from GET /rest/api/3/auditing/record."
+        },
+        {
+          "name": "ListAuditRecordsParams",
+          "kind": "interface",
+          "line": 43,
+          "exported": true,
+          "signature": "export interface ListAuditRecordsParams { readonly offset?: number; readonly limit?: number; readonly filter?: string; r…",
+          "jsdoc": "Parameters for listing audit records."
+        },
+        {
+          "name": "AuditingResource",
+          "kind": "class",
+          "line": 57,
+          "exported": true,
+          "signature": "export class AuditingResource",
+          "jsdoc": "Jira Auditing resource — GET /rest/api/3/auditing/record.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 58
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 64
+            },
+            {
+              "name": "listAll",
+              "kind": "method",
+              "line": 83
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
         "../../core/types.js"
       ]
     },
@@ -16039,6 +16091,59 @@
       ]
     },
     {
+      "path": "src/jira/resources/changelog.ts",
+      "symbols": [
+        {
+          "name": "ChangelogItem",
+          "kind": "interface",
+          "line": 5,
+          "exported": true,
+          "signature": "export interface ChangelogItem { readonly field: string; readonly fieldtype: string; readonly fieldId?: string; readonly…",
+          "jsdoc": "A field change in a changelog entry."
+        },
+        {
+          "name": "ChangelogEntry",
+          "kind": "interface",
+          "line": 16,
+          "exported": true,
+          "signature": "export interface ChangelogEntry { readonly id: string; readonly author: { readonly accountId: string; readonly displayNa…",
+          "jsdoc": "A single changelog entry for an issue."
+        },
+        {
+          "name": "BulkFetchChangelogData",
+          "kind": "interface",
+          "line": 29,
+          "exported": true,
+          "signature": "export interface BulkFetchChangelogData { readonly issueIdsOrKeys: string[]; readonly filterByAuthorAccountId?: string[]…",
+          "jsdoc": "Request body for bulk-fetching changelogs."
+        },
+        {
+          "name": "ChangelogResource",
+          "kind": "class",
+          "line": 41,
+          "exported": true,
+          "signature": "export class ChangelogResource",
+          "jsdoc": "Jira Changelog resource — POST /rest/api/3/changelog/bulkfetch.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 42
+            },
+            {
+              "name": "bulkFetch",
+              "kind": "method",
+              "line": 51
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/pagination.js",
+        "../../core/types.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/dashboards.ts",
       "symbols": [
         {
@@ -16285,6 +16390,42 @@
       ]
     },
     {
+      "path": "src/jira/resources/events.ts",
+      "symbols": [
+        {
+          "name": "JiraEvent",
+          "kind": "interface",
+          "line": 4,
+          "exported": true,
+          "signature": "export interface JiraEvent { readonly id: number; readonly name: string; }",
+          "jsdoc": "A Jira event (issue link type or workflow event)."
+        },
+        {
+          "name": "EventsResource",
+          "kind": "class",
+          "line": 10,
+          "exported": true,
+          "signature": "export class EventsResource",
+          "jsdoc": "Jira Events resource — GET /rest/api/3/events.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 11
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "line": 17
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/fields.ts",
       "symbols": [
         {
@@ -16447,6 +16588,58 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/forge.ts",
+      "symbols": [
+        {
+          "name": "ForgePanelAction",
+          "kind": "interface",
+          "line": 10,
+          "exported": true,
+          "signature": "export interface ForgePanelAction { readonly issueId: string; readonly moduleKey: string; readonly payload?: Record<stri…",
+          "jsdoc": "A single panel action to be invoked in bulk."
+        },
+        {
+          "name": "BulkForgeActionData",
+          "kind": "interface",
+          "line": 20,
+          "exported": true,
+          "signature": "export interface BulkForgeActionData { readonly actions: ForgePanelAction[]; }",
+          "jsdoc": "Request body for triggering Forge panel actions in bulk (async)."
+        },
+        {
+          "name": "BulkForgeActionResponse",
+          "kind": "interface",
+          "line": 29,
+          "exported": true,
+          "signature": "export interface BulkForgeActionResponse { readonly taskId: string; }",
+          "jsdoc": "Response from POST /rest/api/3/forge/panel/action/bulk/async. Returns a task ID that can be polled for completion status."
+        },
+        {
+          "name": "ForgeResource",
+          "kind": "class",
+          "line": 45,
+          "exported": true,
+          "signature": "export class ForgeResource",
+          "jsdoc": "Jira Forge resource — POST /rest/api/3/forge/panel/action/bulk/async.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 46
+            },
+            {
+              "name": "bulkPanelAction",
+              "kind": "method",
+              "line": 55
+            }
+          ]
+        }
+      ],
+      "imports": [
         "../../core/types.js"
       ]
     },
@@ -16684,50 +16877,6 @@
             }
           ]
         }
-      ]
-    },
-    {
-      "path": "src/jira/resources/instance.ts",
-      "symbols": [
-        {
-          "name": "InstanceLicense",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface InstanceLicense { readonly applications: readonly LicensedApplication[]; }",
-          "jsdoc": "Jira instance license information."
-        },
-        {
-          "name": "LicensedApplication",
-          "kind": "interface",
-          "line": 9,
-          "exported": true,
-          "signature": "export interface LicensedApplication { readonly id: string; readonly plan: 'FREE' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE…",
-          "jsdoc": "A licensed Jira application."
-        },
-        {
-          "name": "InstanceResource",
-          "kind": "class",
-          "line": 15,
-          "exported": true,
-          "signature": "export class InstanceResource",
-          "jsdoc": "Jira Instance Information resource — GET /rest/api/3/instance/license.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 16
-            },
-            {
-              "name": "getLicense",
-              "kind": "method",
-              "line": 22
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
       ]
     },
     {
@@ -17168,58 +17317,6 @@
       ]
     },
     {
-      "path": "src/jira/resources/mypermissions.ts",
-      "symbols": [
-        {
-          "name": "MyPermissions",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface MyPermissions { readonly permissions: Record<string, Permission>; }",
-          "jsdoc": "The set of permissions returned for the current user."
-        },
-        {
-          "name": "Permission",
-          "kind": "interface",
-          "line": 9,
-          "exported": true,
-          "signature": "export interface Permission { readonly id: string; readonly key: string; readonly name: string; readonly type: string; r…",
-          "jsdoc": "A single permission entry."
-        },
-        {
-          "name": "GetMyPermissionsParams",
-          "kind": "interface",
-          "line": 20,
-          "exported": true,
-          "signature": "export interface GetMyPermissionsParams { readonly projectId?: string; readonly projectKey?: string; readonly issueId?: …",
-          "jsdoc": "Parameters for getting current user permissions."
-        },
-        {
-          "name": "MyPermissionsResource",
-          "kind": "class",
-          "line": 40,
-          "exported": true,
-          "signature": "export class MyPermissionsResource",
-          "jsdoc": "Jira My Permissions resource — GET /rest/api/3/mypermissions.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 41
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 47
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
-      ]
-    },
-    {
       "path": "src/jira/resources/priorities.ts",
       "symbols": [
         {
@@ -17330,50 +17427,6 @@
         "../../core/pagination.js",
         "../../core/types.js",
         "../types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/server-info.ts",
-      "symbols": [
-        {
-          "name": "ServerInfo",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface ServerInfo { readonly baseUrl: string; readonly version: string; readonly versionNumbers: readonly numb…",
-          "jsdoc": "Jira server information."
-        },
-        {
-          "name": "ServerHealthCheck",
-          "kind": "interface",
-          "line": 18,
-          "exported": true,
-          "signature": "export interface ServerHealthCheck { readonly name: string; readonly description: string; readonly passed: boolean; }",
-          "jsdoc": "A single server health check result."
-        },
-        {
-          "name": "ServerInfoResource",
-          "kind": "class",
-          "line": 25,
-          "exported": true,
-          "signature": "export class ServerInfoResource",
-          "jsdoc": "Jira Server Info resource — GET /rest/api/3/serverInfo.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 26
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 32
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
       ]
     },
     {
@@ -17509,96 +17562,6 @@
         "../../core/path.js",
         "../../core/types.js",
         "./boards.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/status-category.ts",
-      "symbols": [
-        {
-          "name": "JiraStatusCategory",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface JiraStatusCategory { readonly id: number; readonly key: string; readonly name: string; readonly colorNa…",
-          "jsdoc": "A Jira status category returned by GET /rest/api/3/statuscategory."
-        },
-        {
-          "name": "StatusCategoryResource",
-          "kind": "class",
-          "line": 13,
-          "exported": true,
-          "signature": "export class StatusCategoryResource",
-          "jsdoc": "Jira Status Category resource — GET /rest/api/3/statuscategory.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 14
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 20
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 29
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/status.ts",
-      "symbols": [
-        {
-          "name": "JiraStatusCategoryRef",
-          "kind": "interface",
-          "line": 4,
-          "exported": true,
-          "signature": "export interface JiraStatusCategoryRef { readonly id: number; readonly key: string; readonly name: string; readonly colo…",
-          "jsdoc": "A Jira status category reference embedded in a workflow status."
-        },
-        {
-          "name": "JiraStatus",
-          "kind": "interface",
-          "line": 13,
-          "exported": true,
-          "signature": "export interface JiraStatus { readonly id: string; readonly name: string; readonly self?: string; readonly description?:…",
-          "jsdoc": "A Jira workflow status returned by GET /rest/api/3/status."
-        },
-        {
-          "name": "StatusResource",
-          "kind": "class",
-          "line": 25,
-          "exported": true,
-          "signature": "export class StatusResource",
-          "jsdoc": "Jira Status resource — GET /rest/api/3/status.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 26
-            },
-            {
-              "name": "list",
-              "kind": "method",
-              "line": 32
-            },
-            {
-              "name": "get",
-              "kind": "method",
-              "line": 41
-            }
-          ]
-        }
-      ],
-      "imports": [
-        "../../core/types.js"
       ]
     },
     {

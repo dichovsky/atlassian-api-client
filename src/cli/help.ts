@@ -229,6 +229,10 @@ RESOURCES:
   server-info            get
   instance               get-license
   mypermissions          get
+  auditing               list
+  events                 list
+  changelog              bulk-fetch
+  forge                  bulk-panel-action
 
 EXAMPLES:
   atlas jira issues get PROJ-123

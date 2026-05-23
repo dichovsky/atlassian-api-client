@@ -137,3 +137,25 @@ export type {
   GetMyPermissionsParams,
 } from './resources/mypermissions.js';
 export { MyPermissionsResource } from './resources/mypermissions.js';
+export type {
+  AuditRecord,
+  AuditRecordsResponse,
+  AuditRecordChangedValue,
+  AuditRecordAssociatedItem,
+  ListAuditRecordsParams,
+} from './resources/auditing.js';
+export { AuditingResource } from './resources/auditing.js';
+export type { JiraEvent } from './resources/events.js';
+export { EventsResource } from './resources/events.js';
+export type {
+  ChangelogEntry,
+  ChangelogItem,
+  BulkFetchChangelogData,
+} from './resources/changelog.js';
+export { ChangelogResource } from './resources/changelog.js';
+export type {
+  ForgePanelAction,
+  BulkForgeActionData,
+  BulkForgeActionResponse,
+} from './resources/forge.js';
+export { ForgeResource } from './resources/forge.js';

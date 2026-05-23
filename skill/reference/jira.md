@@ -26,6 +26,10 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `server-info`         | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `instance`            | `get-license`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `mypermissions`       | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `auditing`            | `list`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `events`              | `list`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `changelog`           | `bulk-fetch`                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `forge`               | `bulk-panel-action`                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `application-role`
 
@@ -634,6 +638,83 @@ atlas jira mypermissions get --project-key PROJ
 
 # Check specific permissions for an issue
 atlas jira mypermissions get --issue-key PROJ-42 --permissions BROWSE_PROJECTS,EDIT_ISSUES
+```
+
+## `auditing`
+
+| Action | Positional | Required flags | Optional flags                                            |
+| ------ | ---------- | -------------- | --------------------------------------------------------- |
+| `list` | —          | —              | `--offset`, `--limit-count`, `--filter`, `--from`, `--to` |
+
+- `--offset` — zero-based pagination offset (default 0).
+- `--limit-count` — maximum records per page (1–1000; default 1000 per Jira).
+- `--filter` — fuzzy-text filter applied to `summary` and `category`.
+- `--from` / `--to` — ISO-8601 datetimes bounding the `created` timestamp range.
+- Requires **Jira Administrator** global permission; 403 for non-admins.
+
+```sh
+# List recent audit records
+atlas jira auditing list
+
+# Filter by keyword and date range
+atlas jira auditing list --filter "project" --from 2024-01-01T00:00:00+00:00 --to 2024-12-31T23:59:59+00:00
+
+# Paginate
+atlas jira auditing list --offset 100 --limit-count 50
+```
+
+## `events`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+
+- Returns all Jira issue events — the named event types used in workflow conditions, validators, and post-functions.
+- Each event has `id` (number) and `name` (string).
+
+```sh
+# List all Jira events
+atlas jira events list
+```
+
+## `changelog`
+
+| Action       | Positional | Required flags | Optional flags                                               |
+| ------------ | ---------- | -------------- | ------------------------------------------------------------ |
+| `bulk-fetch` | —          | `--issues`     | `--author-ids`, `--field-ids`, `--start-at`, `--max-results` |
+
+- `--issues` — **comma-separated** list of issue IDs or keys (e.g. `PROJ-1,PROJ-2,10001`). Required.
+- `--author-ids` — **comma-separated** account IDs to filter changelog entries by author.
+- `--field-ids` — **comma-separated** field IDs; only entries containing changes to these fields are returned.
+- `--start-at` / `--max-results` — standard offset pagination controls.
+- Endpoint: `POST /rest/api/3/changelog/bulkfetch`.
+
+```sh
+# Fetch changelogs for two issues
+atlas jira changelog bulk-fetch --issues PROJ-1,PROJ-2
+
+# Filter to status changes only
+atlas jira changelog bulk-fetch --issues PROJ-1,PROJ-2 --field-ids status
+
+# Paginate through a large result set
+atlas jira changelog bulk-fetch --issues PROJ-1 --start-at 0 --max-results 50
+```
+
+## `forge`
+
+| Action              | Positional | Required flags | Optional flags |
+| ------------------- | ---------- | -------------- | -------------- |
+| `bulk-panel-action` | —          | `--value`      | —              |
+
+- `--value` — JSON array of panel action objects; each must have `issueId` (string) and `moduleKey` (string), and optionally `payload` (object).
+- **Auth:** Requires OAuth 2.0 (3LO) with `manage:jira-configuration` scope. Basic auth (API token) is NOT accepted. Use `--auth-type bearer --token <OAUTH_TOKEN>`.
+- **URL base:** `POST /rest/api/3/forge/panel/action/bulk/async` — uses the standard REST API base, not a Forge tunnel.
+- Returns a `taskId` that can be used to poll for task completion.
+- The Forge app must be installed on the Jira site before this endpoint is usable.
+
+```sh
+# Trigger a Forge panel action asynchronously for two issues
+atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-app:my-panel"},{"issueId":"10002","moduleKey":"my-app:my-panel"}]'
 ```
 
 ## Errors specific to Jira

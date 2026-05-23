@@ -635,6 +635,19 @@
   - **Impl:** Branch `feat/jira-application-role`; `ApplicationRoleResource.get(key: string)` issues `GET /rest/api/3/applicationrole/{key}` with URL-encoded key, returning a single `ApplicationRole`. CLI: `atlas jira application-role get --key <KEY>`. Covered by `test/jira/application-role.test.ts`.
   - **Rat:** Complements B334 — allows targeted lookup of a specific role without fetching the full list; `--key` flag reuses the existing global router option.
 
+- [x] 🔴 🧩 API: B343 Jira: expose GET /rest/api/3/auditing/record
+  - **Impl:** Branch `feat/jira-audit-events-bundle`; new `AuditingResource` (`src/jira/resources/auditing.ts`) exposes `list(params?)` returning `AuditRecordsResponse` (`offset`, `limit`, `total`, `records[]`) and `listAll()` async generator. Auditing API uses `offset`/`limit` not standard `startAt`/`maxResults` so the generator is hand-rolled. Optional query params: `--offset`, `--limit-count`, `--filter`, `--from`, `--to`. CLI: `atlas jira auditing list [--offset N] [--limit-count N] [--filter TEXT] [--from DATE] [--to DATE]`. Wired as `JiraClient.auditing`; types exported from `src/jira/index.ts`.
+  - **Rat:** Exposes Jira audit log records for compliance and security review via SDK and CLI; date-range filtering enables targeted auditing without pulling all records.
+- [x] 🔴 🧩 API: B408 Jira: expose GET /rest/api/3/events
+  - **Impl:** Branch `feat/jira-audit-events-bundle`; new `EventsResource` (`src/jira/resources/events.ts`) exposes `list()` returning `JiraEvent[]` (`id: number`, `name: string`). Single GET endpoint, no parameters. CLI: `atlas jira events list`. Wired as `JiraClient.events`; type exported from `src/jira/index.ts`.
+  - **Rat:** Exposes Jira issue event types used in workflow conditions, validators, and post-functions; useful for discovering valid event names when configuring automation rules.
+- [x] 🔴 🧩 API: B354 Jira: expose POST /rest/api/3/changelog/bulkfetch
+  - **Impl:** Branch `feat/jira-audit-events-bundle`; new `ChangelogResource` (`src/jira/resources/changelog.ts`) exposes `bulkFetch(data)` issuing `POST /rest/api/3/changelog/bulkfetch`. Required: `issueIdsOrKeys` (string[]). Optional: `filterByAuthorAccountId`, `filterByFieldId`, `startAt`, `maxResults`. Returns `OffsetPaginatedResponse<ChangelogEntry>`. CLI: `atlas jira changelog bulk-fetch --issues PROJ-1,PROJ-2 [--author-ids acc-1,acc-2] [--field-ids status,priority] [--start-at N] [--max-results N]`. New router flags: `--author-ids`, `--field-ids`. Wired as `JiraClient.changelog`; types exported from `src/jira/index.ts`.
+  - **Rat:** Enables bulk changelog retrieval across many issues in a single request; filtering by field and author enables targeted change analysis.
+- [x] 🔴 🧩 API: B467 Jira: expose POST /rest/api/3/forge/panel/action/bulk/async
+  - **Impl:** Branch `feat/jira-audit-events-bundle`; new `ForgeResource` (`src/jira/resources/forge.ts`) exposes `bulkPanelAction(data)` issuing `POST /rest/api/3/forge/panel/action/bulk/async`. Accepts `actions[]` (each with `issueId`, `moduleKey`, optional `payload`). Returns `{ taskId: string }` for async polling. CLI: `atlas jira forge bulk-panel-action --value '<JSON-array>'`. URL base is standard `/rest/api/3` (not a separate Forge tunnel). Auth: requires OAuth 2.0 bearer token with `manage:jira-configuration` scope; basic auth not accepted. Documented with auth requirements in skill reference.
+  - **Rat:** Exposes Forge panel action invocation for batch issue processing; async design returns a task ID for polling, suitable for long-running Forge app operations.
+
 - [x] 🔴 🐛 Jira: B033 `DashboardsResource.listAll` infinite pagination
   - **Impl:** Branch `fix/ctf-phase8-p0p1` (2026-05-16); dashboard pagination now uses a `maxPages` cap plus warning path instead of looping forever.
   - **Rat:** Bound dashboard listing against pathological server responses.

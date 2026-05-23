@@ -30,6 +30,10 @@ import { StatusCategoryResource } from './resources/status-category.js';
 import { ServerInfoResource } from './resources/server-info.js';
 import { InstanceResource } from './resources/instance.js';
 import { MyPermissionsResource } from './resources/mypermissions.js';
+import { AuditingResource } from './resources/auditing.js';
+import { EventsResource } from './resources/events.js';
+import { ChangelogResource } from './resources/changelog.js';
+import { ForgeResource } from './resources/forge.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -84,6 +88,14 @@ export class JiraClient {
   readonly instance: InstanceResource;
   /** My permissions resource. */
   readonly myPermissions: MyPermissionsResource;
+  /** Audit log records resource. */
+  readonly auditing: AuditingResource;
+  /** Jira events (issue events) resource. */
+  readonly events: EventsResource;
+  /** Issue changelog bulk-fetch resource. */
+  readonly changelog: ChangelogResource;
+  /** Forge panel actions resource. */
+  readonly forge: ForgeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -120,5 +132,9 @@ export class JiraClient {
     this.serverInfo = new ServerInfoResource(transport, baseUrl);
     this.instance = new InstanceResource(transport, baseUrl);
     this.myPermissions = new MyPermissionsResource(transport, baseUrl);
+    this.auditing = new AuditingResource(transport, baseUrl);
+    this.events = new EventsResource(transport, baseUrl);
+    this.changelog = new ChangelogResource(transport, baseUrl);
+    this.forge = new ForgeResource(transport, baseUrl);
   }
 }
