@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "1ef71081f572ebb685e242c6415a0931c995251098d90df5702a46b13ce0bd6f",
+  "sourceHash": "95ee4f113612ba7371e2a2b5fd4a050047f31017aae3dc686d7718dec6bddf36",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -15860,7 +15860,7 @@
         {
           "name": "WorkspaceDataPolicy",
           "kind": "interface",
-          "line": 7,
+          "line": 6,
           "exported": true,
           "signature": "export interface WorkspaceDataPolicy { readonly anyContentBlocked: boolean; }",
           "jsdoc": "Workspace-level data policy status."
@@ -15868,7 +15868,7 @@
         {
           "name": "ProjectDataPolicy",
           "kind": "interface",
-          "line": 12,
+          "line": 11,
           "exported": true,
           "signature": "export interface ProjectDataPolicy { readonly projectId: string; readonly anyContentBlocked: boolean; }",
           "jsdoc": "A single project data policy entry."
@@ -15876,7 +15876,7 @@
         {
           "name": "ListProjectDataPoliciesParams",
           "kind": "interface",
-          "line": 18,
+          "line": 17,
           "exported": true,
           "signature": "export interface ListProjectDataPoliciesParams { readonly ids?: string[]; readonly startAt?: number; readonly maxResults…",
           "jsdoc": "Parameters for listing project data policies."
@@ -15884,7 +15884,7 @@
         {
           "name": "DataPolicyResource",
           "kind": "class",
-          "line": 26,
+          "line": 25,
           "exported": true,
           "signature": "export class DataPolicyResource",
           "jsdoc": "Jira App Data Policies resource — GET /rest/api/3/data-policy and GET /rest/api/3/data-policy/project.",
@@ -15892,22 +15892,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 26
             },
             {
               "name": "getWorkspacePolicy",
               "kind": "method",
-              "line": 33
+              "line": 32
             },
             {
               "name": "listProjectPolicies",
               "kind": "method",
-              "line": 42
+              "line": 41
             },
             {
               "name": "listAllProjectPolicies",
               "kind": "method",
-              "line": 63
+              "line": 62
             }
           ]
         }

@@ -1,6 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import { paginateOffset } from '../../core/pagination.js';
-import { validatePageSize } from '../../core/pagination.js';
+import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 
 /** Workspace-level data policy status. */
@@ -16,7 +15,7 @@ export interface ProjectDataPolicy {
 
 /** Parameters for listing project data policies. */
 export interface ListProjectDataPoliciesParams {
-  /** Comma-separated project IDs to filter by. */
+  /** Project IDs to filter by (sent as comma-separated query param). */
   readonly ids?: string[];
   readonly startAt?: number;
   readonly maxResults?: number;
