@@ -140,6 +140,13 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'redact',
           'flag',
           'task',
+          'avatar',
+          'custom-field-option',
+          'classification-levels',
+          'latest',
+          'remote-link',
+          'service-registry',
+          'exists-by-properties',
         ]).toContain(parsed.resource);
       }
     });
@@ -230,6 +237,13 @@ describe('Resource coverage drift check', () => {
     'redact',
     'flag',
     'task',
+    'avatar',
+    'custom-field-option',
+    'classification-levels',
+    'latest',
+    'remote-link',
+    'service-registry',
+    'exists-by-properties',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

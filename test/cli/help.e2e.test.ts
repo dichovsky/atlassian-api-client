@@ -113,6 +113,12 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   redact: 'executeRedact',
   flag: 'executeFlag',
   task: 'executeTask',
+  avatar: 'executeAvatar',
+  'custom-field-option': 'executeCustomFieldOption',
+  latest: 'executeLatest',
+  'remote-link': 'executeRemoteLink',
+  'service-registry': 'executeServiceRegistry',
+  'exists-by-properties': 'executeExistsByProperties',
 };
 
 /**

@@ -507,6 +507,35 @@ const jiraTaskMock = {
   cancel: vi.fn(),
 };
 
+const jiraAvatarMock = {
+  listSystem: vi.fn(),
+};
+
+const jiraCustomFieldOptionMock = {
+  get: vi.fn(),
+};
+
+const jiraClassificationLevelsMock = {
+  list: vi.fn(),
+};
+
+const jiraLatestMock = {
+  bulkWorklog: vi.fn(),
+};
+
+const jiraRemoteLinkMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+
+const jiraServiceRegistryMock = {
+  get: vi.fn(),
+};
+
+const jiraExistsByPropertiesMock = {
+  get: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -546,6 +575,13 @@ vi.mock('../../src/jira/client.js', () => {
       redact: jiraRedactMock,
       flag: jiraFlagMock,
       task: jiraTaskMock,
+      avatar: jiraAvatarMock,
+      customFieldOption: jiraCustomFieldOptionMock,
+      classificationLevels: jiraClassificationLevelsMock,
+      latest: jiraLatestMock,
+      remoteLink: jiraRemoteLinkMock,
+      serviceRegistry: jiraServiceRegistryMock,
+      existsByProperties: jiraExistsByPropertiesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -10368,6 +10404,218 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('task', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown task action',
       );
+    });
+  });
+
+  // ── avatar ────────────────────────────────────────────────────────────────
+
+  describe('avatar resource', () => {
+    it('avatar list-system calls client.avatar.listSystem() with type positional', async () => {
+      const response = {
+        system: [{ id: '1', isSystemAvatar: true, isSelected: true, isDeletable: false }],
+      };
+      jiraAvatarMock.listSystem.mockResolvedValue(response);
+
+      const result = await executeJiraCommand(cmd('avatar', 'list-system', ['issuetype']), GLOBALS);
+
+      expect(result).toEqual(response);
+      expect(jiraAvatarMock.listSystem).toHaveBeenCalledWith('issuetype');
+    });
+
+    it('avatar list-system throws when type is missing', async () => {
+      await expect(executeJiraCommand(cmd('avatar', 'list-system', []), GLOBALS)).rejects.toThrow(
+        'type',
+      );
+    });
+
+    it('avatar unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('avatar', 'nope', ['project']), GLOBALS)).rejects.toThrow(
+        'Unknown avatar action',
+      );
+    });
+  });
+
+  // ── custom-field-option ───────────────────────────────────────────────────
+
+  describe('custom-field-option resource', () => {
+    it('custom-field-option get calls client.customFieldOption.get() with id positional', async () => {
+      const option = { self: 'https://example.com', value: 'In Progress', id: '10001' };
+      jiraCustomFieldOptionMock.get.mockResolvedValue(option);
+
+      const result = await executeJiraCommand(
+        cmd('custom-field-option', 'get', ['10001']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(option);
+      expect(jiraCustomFieldOptionMock.get).toHaveBeenCalledWith('10001');
+    });
+
+    it('custom-field-option get throws when id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('custom-field-option', 'get', []), GLOBALS),
+      ).rejects.toThrow('id');
+    });
+
+    it('custom-field-option unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('custom-field-option', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown custom-field-option action',
+      );
+    });
+  });
+
+  // ── classification-levels ─────────────────────────────────────────────────
+
+  describe('classification-levels resource', () => {
+    it('classification-levels list calls client.classificationLevels.list()', async () => {
+      const levels = [{ id: 'cl-1', name: 'Public' }];
+      jiraClassificationLevelsMock.list.mockResolvedValue(levels);
+
+      const result = await executeJiraCommand(cmd('classification-levels', 'list'), GLOBALS);
+
+      expect(result).toEqual(levels);
+      expect(jiraClassificationLevelsMock.list).toHaveBeenCalled();
+    });
+
+    it('classification-levels unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('classification-levels', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown classification-levels action');
+    });
+  });
+
+  // ── latest ────────────────────────────────────────────────────────────────
+
+  describe('latest resource', () => {
+    it('latest bulk-worklog calls client.latest.bulkWorklog() with parsed JSON value', async () => {
+      const worklogs = [
+        { issueIdOrKey: 'PROJ-1', timeSpentSeconds: 3600, started: '2024-01-01T09:00:00.000+0000' },
+      ];
+      const response = { submittedWorklogs: worklogs };
+      jiraLatestMock.bulkWorklog.mockResolvedValue(response);
+
+      const result = await executeJiraCommand(
+        cmd('latest', 'bulk-worklog', [], { value: JSON.stringify(worklogs) }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(response);
+      expect(jiraLatestMock.bulkWorklog).toHaveBeenCalledWith({ worklogs });
+    });
+
+    it('latest bulk-worklog throws when --value is missing', async () => {
+      await expect(executeJiraCommand(cmd('latest', 'bulk-worklog'), GLOBALS)).rejects.toThrow(
+        '--value',
+      );
+    });
+
+    it('latest bulk-worklog throws when --value is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('latest', 'bulk-worklog', [], { value: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('valid JSON');
+    });
+
+    it('latest unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('latest', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown latest action',
+      );
+    });
+  });
+
+  // ── remote-link ───────────────────────────────────────────────────────────
+
+  describe('remote-link resource', () => {
+    it('remote-link get calls client.remoteLink.get() with remoteLinkId positional', async () => {
+      const link = { id: 'rl-1', url: 'https://github.com/pr/1', title: 'PR #1' };
+      jiraRemoteLinkMock.get.mockResolvedValue(link);
+
+      const result = await executeJiraCommand(cmd('remote-link', 'get', ['rl-1']), GLOBALS);
+
+      expect(result).toEqual(link);
+      expect(jiraRemoteLinkMock.get).toHaveBeenCalledWith('rl-1');
+    });
+
+    it('remote-link get throws when remoteLinkId is missing', async () => {
+      await expect(executeJiraCommand(cmd('remote-link', 'get', []), GLOBALS)).rejects.toThrow(
+        'remoteLinkId',
+      );
+    });
+
+    it('remote-link delete calls client.remoteLink.delete() and returns { deleted: true }', async () => {
+      jiraRemoteLinkMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('remote-link', 'delete', ['rl-1']), GLOBALS);
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraRemoteLinkMock.delete).toHaveBeenCalledWith('rl-1');
+    });
+
+    it('remote-link delete throws when remoteLinkId is missing', async () => {
+      await expect(executeJiraCommand(cmd('remote-link', 'delete', []), GLOBALS)).rejects.toThrow(
+        'remoteLinkId',
+      );
+    });
+
+    it('remote-link unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('remote-link', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown remote-link action',
+      );
+    });
+  });
+
+  // ── service-registry ──────────────────────────────────────────────────────
+
+  describe('service-registry resource', () => {
+    it('service-registry get calls client.serviceRegistry.get()', async () => {
+      const entries = [{ key: 'com.example.app', name: 'My App' }];
+      jiraServiceRegistryMock.get.mockResolvedValue(entries);
+
+      const result = await executeJiraCommand(cmd('service-registry', 'get'), GLOBALS);
+
+      expect(result).toEqual(entries);
+      expect(jiraServiceRegistryMock.get).toHaveBeenCalled();
+    });
+
+    it('service-registry unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('service-registry', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown service-registry action',
+      );
+    });
+  });
+
+  // ── exists-by-properties ──────────────────────────────────────────────────
+
+  describe('exists-by-properties resource', () => {
+    it('exists-by-properties get calls client.existsByProperties.get() with no params', async () => {
+      jiraExistsByPropertiesMock.get.mockResolvedValue({ exists: true });
+
+      const result = await executeJiraCommand(cmd('exists-by-properties', 'get'), GLOBALS);
+
+      expect(result).toEqual({ exists: true });
+      expect(jiraExistsByPropertiesMock.get).toHaveBeenCalledWith({
+        entityType: undefined,
+        entityId: undefined,
+      });
+    });
+
+    it('exists-by-properties get passes entity-type flag', async () => {
+      jiraExistsByPropertiesMock.get.mockResolvedValue({ exists: false });
+
+      await executeJiraCommand(
+        cmd('exists-by-properties', 'get', [], { 'entity-type': 'repository' }),
+        GLOBALS,
+      );
+
+      expect(jiraExistsByPropertiesMock.get).toHaveBeenCalledWith({
+        entityType: 'repository',
+        entityId: undefined,
+      });
+    });
+
+    it('exists-by-properties unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('exists-by-properties', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown exists-by-properties action');
     });
   });
 });

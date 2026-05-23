@@ -42,6 +42,13 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `redact`                | `start`, `get-status`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `flag`                  | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `task`                  | `get`, `cancel`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `avatar`                | `list-system`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `custom-field-option`   | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `classification-levels` | `list`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `latest`                | `bulk-worklog`                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `remote-link`           | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `service-registry`      | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `exists-by-properties`  | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## `incidents`
 
@@ -961,6 +968,113 @@ atlas jira task get task-123
 
 # Cancel a running task
 atlas jira task cancel task-123
+```
+
+## `avatar`
+
+| Action        | Positional | Required flags | Optional flags |
+| ------------- | ---------- | -------------- | -------------- |
+| `list-system` | `<type>`   | —              | —              |
+
+- `<type>` is one of `issuetype`, `project`, or `user`.
+- Returns all system (built-in) avatars for the given type.
+
+```sh
+# List system avatars for issue types
+atlas jira avatar list-system issuetype
+
+# List system avatars for projects
+atlas jira avatar list-system project
+```
+
+## `custom-field-option`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `get`  | `<id>`     | —              | —              |
+
+```sh
+# Get a custom field option by ID
+atlas jira custom-field-option get 10001
+```
+
+## `classification-levels`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `list` | —          | —              | —              |
+
+```sh
+# List all data classification levels
+atlas jira classification-levels list
+```
+
+## `latest`
+
+**URL base:** `/rest/internal/api/latest` (Jira Internal API — not `/rest/api/3`).
+
+This resource exposes the internal worklog bulk endpoint. Stability is not guaranteed by Atlassian.
+
+| Action         | Positional | Required flags | Optional flags |
+| -------------- | ---------- | -------------- | -------------- |
+| `bulk-worklog` | —          | `--value`      | —              |
+
+- `--value` must be a JSON array of worklog objects, each with `issueIdOrKey`, `timeSpentSeconds`, `started`, and optional `comment` / `authorAccountId`.
+
+```sh
+# Bulk-create worklogs via the internal API
+atlas jira latest bulk-worklog --value '[{"issueIdOrKey":"PROJ-1","timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}]'
+```
+
+## `remote-link`
+
+**URL base:** `/rest/remotelinks/1.0` (Jira Remote Links integration API — not `/rest/api/3`).
+
+This is distinct from issue-scoped remote links (`/rest/api/3/issue/{issueIdOrKey}/remotelink`).
+
+| Action   | Positional       | Required flags | Optional flags |
+| -------- | ---------------- | -------------- | -------------- |
+| `get`    | `<remoteLinkId>` | —              | —              |
+| `delete` | `<remoteLinkId>` | —              | —              |
+
+```sh
+# Get a remote link by ID
+atlas jira remote-link get rl-123
+
+# Delete a remote link by ID
+atlas jira remote-link delete rl-123
+```
+
+## `service-registry`
+
+**URL base:** `/rest/atlassian-connect/1` (Atlassian Connect API — not `/rest/api/3`).
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `get`  | —          | —              | —              |
+
+```sh
+# Get the Connect service registry (installed apps)
+atlas jira service-registry get
+```
+
+## `exists-by-properties`
+
+**URL base:** `/rest/devinfo/0.10` (Jira Development Information API — not `/rest/api/3`).
+
+| Action | Positional | Required flags | Optional flags                 |
+| ------ | ---------- | -------------- | ------------------------------ |
+| `get`  | —          | —              | `--entity-type`, `--entity-id` |
+
+```sh
+# Check if any dev info entities exist
+atlas jira exists-by-properties get
+
+# Check by entity type
+atlas jira exists-by-properties get --entity-type repository
+
+# Check by entity type and ID
+atlas jira exists-by-properties get --entity-type repository --entity-id repo-1
 ```
 
 ## Errors specific to Jira

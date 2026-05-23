@@ -46,6 +46,13 @@ import { SettingsResource } from './resources/settings.js';
 import { RedactResource } from './resources/redact.js';
 import { FlagResource } from './resources/flag.js';
 import { TaskResource } from './resources/task.js';
+import { AvatarResource } from './resources/avatar.js';
+import { CustomFieldOptionResource } from './resources/custom-field-option.js';
+import { ClassificationLevelsResource } from './resources/classification-levels.js';
+import { LatestResource } from './resources/latest.js';
+import { RemoteLinkResource } from './resources/remote-link.js';
+import { ServiceRegistryResource } from './resources/service-registry.js';
+import { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -132,6 +139,20 @@ export class JiraClient {
   readonly flag: FlagResource;
   /** Jira long-running task resource. */
   readonly task: TaskResource;
+  /** Jira avatar resource — system avatars. */
+  readonly avatar: AvatarResource;
+  /** Jira custom field option resource. */
+  readonly customFieldOption: CustomFieldOptionResource;
+  /** Jira data classification levels resource. */
+  readonly classificationLevels: ClassificationLevelsResource;
+  /** Jira internal worklog bulk resource (base: /rest/internal/api/latest). */
+  readonly latest: LatestResource;
+  /** Jira remote link resource (base: /rest/remotelinks/1.0). */
+  readonly remoteLink: RemoteLinkResource;
+  /** Atlassian Connect service registry resource (base: /rest/atlassian-connect/1). */
+  readonly serviceRegistry: ServiceRegistryResource;
+  /** Jira DevInfo exists-by-properties resource (base: /rest/devinfo/0.10). */
+  readonly existsByProperties: ExistsByPropertiesResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -141,6 +162,10 @@ export class JiraClient {
     const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
     const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
     const featureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
+    const latestBaseUrl = `${resolved.baseUrl}/rest/internal/api/latest`;
+    const remoteLinkBaseUrl = `${resolved.baseUrl}/rest/remotelinks/1.0`;
+    const serviceRegistryBaseUrl = `${resolved.baseUrl}/rest/atlassian-connect/1`;
+    const devInfoBaseUrl = `${resolved.baseUrl}/rest/devinfo/0.10`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
@@ -188,5 +213,12 @@ export class JiraClient {
     this.redact = new RedactResource(transport, baseUrl);
     this.flag = new FlagResource(transport, featureFlagsBaseUrl);
     this.task = new TaskResource(transport, baseUrl);
+    this.avatar = new AvatarResource(transport, baseUrl);
+    this.customFieldOption = new CustomFieldOptionResource(transport, baseUrl);
+    this.classificationLevels = new ClassificationLevelsResource(transport, baseUrl);
+    this.latest = new LatestResource(transport, latestBaseUrl);
+    this.remoteLink = new RemoteLinkResource(transport, remoteLinkBaseUrl);
+    this.serviceRegistry = new ServiceRegistryResource(transport, serviceRegistryBaseUrl);
+    this.existsByProperties = new ExistsByPropertiesResource(transport, devInfoBaseUrl);
   }
 }
