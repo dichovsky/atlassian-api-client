@@ -41,6 +41,11 @@ import { DevopscomponentsResource } from './resources/devopscomponents.js';
 import { GroupsResource } from './resources/groups.js';
 import { GroupUserPickerResource } from './resources/group-user-picker.js';
 import { SecurityLevelResource } from './resources/security-level.js';
+import { LicenseResource } from './resources/license.js';
+import { SettingsResource } from './resources/settings.js';
+import { RedactResource } from './resources/redact.js';
+import { FlagResource } from './resources/flag.js';
+import { TaskResource } from './resources/task.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -117,6 +122,16 @@ export class JiraClient {
   readonly groupUserPicker: GroupUserPickerResource;
   /** Issue security level resource. */
   readonly securityLevel: SecurityLevelResource;
+  /** Jira license approximate count resource. */
+  readonly license: LicenseResource;
+  /** Jira issue navigator settings (columns) resource. */
+  readonly settings: SettingsResource;
+  /** Jira issue redaction resource (admin-only). */
+  readonly redact: RedactResource;
+  /** Jira feature flags resource (base: /rest/featureflags/0.1). */
+  readonly flag: FlagResource;
+  /** Jira long-running task resource. */
+  readonly task: TaskResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -125,6 +140,7 @@ export class JiraClient {
     const operationsBaseUrl = `${resolved.baseUrl}/rest/operations/1.0`;
     const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
     const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
+    const featureFlagsBaseUrl = `${resolved.baseUrl}/rest/featureflags/0.1`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
@@ -167,5 +183,10 @@ export class JiraClient {
     this.groups = new GroupsResource(transport, baseUrl);
     this.groupUserPicker = new GroupUserPickerResource(transport, baseUrl);
     this.securityLevel = new SecurityLevelResource(transport, baseUrl);
+    this.license = new LicenseResource(transport, baseUrl);
+    this.settings = new SettingsResource(transport, baseUrl);
+    this.redact = new RedactResource(transport, baseUrl);
+    this.flag = new FlagResource(transport, featureFlagsBaseUrl);
+    this.task = new TaskResource(transport, baseUrl);
   }
 }

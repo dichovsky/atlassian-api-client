@@ -240,6 +240,11 @@ RESOURCES:
   groups                 picker
   group-user-picker      pick
   security-level         get
+  license                get-approximate-count, get-approximate-count-for-product
+  settings               get-columns, set-columns
+  redact                 start, get-status
+  flag                   get, delete
+  task                   get, cancel
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -257,6 +262,16 @@ EXAMPLES:
   atlas jira groups picker --query dev --max-results 10
   atlas jira group-user-picker pick --query alice --show-avatar
   atlas jira security-level get 10001
+  atlas jira license get-approximate-count
+  atlas jira license get-approximate-count-for-product --application-key jira-software
+  atlas jira settings get-columns
+  atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"}]'
+  atlas jira redact start --jql "project = PROJ AND summary ~ secret"
+  atlas jira redact get-status job-abc123
+  atlas jira flag get flag-xyz
+  atlas jira flag delete flag-xyz
+  atlas jira task get task-123
+  atlas jira task cancel task-123
 `;
 
 /** Get help text for the given level. */

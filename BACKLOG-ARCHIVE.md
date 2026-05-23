@@ -801,3 +801,33 @@
 - [x] ✅ 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
       **Impl:** `src/jira/resources/security-level.ts` (`SecurityLevelResource.get()`) · CLI `atlas jira security-level get <id>` · positional id argument · BACKLOG listed filename as `securitylevel.ts`; renamed to `security-level.ts` per kebab-case rule · `test/jira/security-level.test.ts`
       **Rat:** Issue security level detail lookup; positional id matches established pattern (status, priorities, issue-types, etc.); kebab rename applied for consistency.
+- [x] ✅ 🧩 API: B598 Jira: expose GET /rest/api/3/license/approximateLicenseCount
+      **Impl:** `src/jira/resources/license.ts` (`LicenseResource.getApproximateCount()`) · CLI `atlas jira license get-approximate-count` · `test/jira/license.test.ts`
+      **Rat:** Expose license count endpoint for admin capacity planning; bundled with B599 in same resource file.
+- [x] ✅ 🧩 API: B599 Jira: expose GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}
+      **Impl:** `src/jira/resources/license.ts` (`LicenseResource.getApproximateCountForProduct()`) · CLI `atlas jira license get-approximate-count-for-product --application-key <key>` · positional path param encoded in URL
+      **Rat:** Per-product breakdown; `--application-key` flag (query/path param, not positional) because the endpoint differs in structure from simple ID lookups.
+- [x] ✅ 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
+      **Impl:** `src/jira/resources/settings.ts` (`SettingsResource.getColumns()`) · CLI `atlas jira settings get-columns` · `test/jira/settings.test.ts`
+      **Rat:** Read default issue navigator column config; admin diagnostic tool.
+- [x] ✅ 🧩 API: B772 Jira: expose PUT /rest/api/3/settings/columns
+      **Impl:** `src/jira/resources/settings.ts` (`SettingsResource.setColumns()`) · CLI `atlas jira settings set-columns --columns <JSON>` · `--columns` takes JSON array of `{label, value}` objects
+      **Rat:** Mutating counterpart to B771; `--columns` JSON flag exposes all body fields per CLI completeness rule.
+- [x] ✅ 🧩 API: B710 Jira: expose POST /rest/api/3/redact
+      **Impl:** `src/jira/resources/redact.ts` (`RedactResource.start()`) · CLI `atlas jira redact start --jql <jql> [--field-ids <csv>]` · returns `{jobId}` for polling · `test/jira/redact.test.ts`
+      **Rat:** Admin-only async job; exposes `--jql` (required) and `--field-ids` (optional csv) per CLI completeness rule.
+- [x] ✅ 🧩 API: B711 Jira: expose GET /rest/api/3/redact/status/{jobId}
+      **Impl:** `src/jira/resources/redact.ts` (`RedactResource.getStatus()`) · CLI `atlas jira redact get-status <jobId>` · positional `jobId`
+      **Rat:** Polling companion to B710; positional arg for path param per pattern rule.
+- [x] ✅ 🧩 API: B973 Jira: expose DELETE /rest/featureflags/0.1/flag/{featureFlagId}
+      **Impl:** `src/jira/resources/flag.ts` (`FlagResource.delete()`) · CLI `atlas jira flag delete <featureFlagId>` · base URL `/rest/featureflags/0.1` (not `/rest/api/3`) · `test/jira/flag.test.ts`
+      **Rat:** Feature flag DevInfo API uses a dedicated base URL; bundled with B974 in same resource.
+- [x] ✅ 🧩 API: B974 Jira: expose GET /rest/featureflags/0.1/flag/{featureFlagId}
+      **Impl:** `src/jira/resources/flag.ts` (`FlagResource.get()`) · CLI `atlas jira flag get <featureFlagId>` · positional path param
+      **Rat:** Read counterpart to B973; positional `featureFlagId` per pattern rule.
+- [x] ✅ 🧩 API: B785 Jira: expose GET /rest/api/3/task/{taskId}
+      **Impl:** `src/jira/resources/task.ts` (`TaskResource.get()`) · CLI `atlas jira task get <taskId>` · type named `JiraTask` (future-proofing collision guard) · `test/jira/task.test.ts`
+      **Rat:** Long-running async task polling; used after bulk field update operations.
+- [x] ✅ 🧩 API: B786 Jira: expose POST /rest/api/3/task/{taskId}/cancel
+      **Impl:** `src/jira/resources/task.ts` (`TaskResource.cancel()`) · CLI `atlas jira task cancel <taskId>` · returns `{cancelled: true}` · positional `taskId`
+      **Rat:** Cancel counterpart to B785; only applicable to RUNNING/ENQUEUED tasks per spec.

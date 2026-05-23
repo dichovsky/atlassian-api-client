@@ -37,6 +37,11 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `groups`                | `picker`                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `group-user-picker`     | `pick`                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `security-level`        | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `license`               | `get-approximate-count`, `get-approximate-count-for-product`                                                                                                                                                                                                                                                                                                                                                             |
+| `settings`              | `get-columns`, `set-columns`                                                                                                                                                                                                                                                                                                                                                                                             |
+| `redact`                | `start`, `get-status`                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `flag`                  | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `task`                  | `get`, `cancel`                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## `incidents`
 
@@ -855,6 +860,107 @@ atlas jira group-user-picker pick --query eng --project-id 10001
 ```sh
 # Get a security level by ID
 atlas jira security-level get 10001
+```
+
+## `license`
+
+| Action                              | Positional | Required flags      | Optional flags |
+| ----------------------------------- | ---------- | ------------------- | -------------- |
+| `get-approximate-count`             | —          | —                   | —              |
+| `get-approximate-count-for-product` | —          | `--application-key` | —              |
+
+- `get-approximate-count` calls `GET /rest/api/3/license/approximateLicenseCount` and returns the approximate user count across all Jira products.
+- `get-approximate-count-for-product` calls `GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}` for a specific product. Common application keys: `jira-software`, `jira-servicedesk`, `jira-core`.
+- Requires **Jira administrator** global permission.
+
+```sh
+# Get approximate license count across all Jira products
+atlas jira license get-approximate-count
+
+# Get approximate count for Jira Software specifically
+atlas jira license get-approximate-count-for-product --application-key jira-software
+```
+
+## `settings`
+
+| Action        | Positional | Required flags | Optional flags |
+| ------------- | ---------- | -------------- | -------------- |
+| `get-columns` | —          | —              | —              |
+| `set-columns` | —          | `--columns`    | —              |
+
+- `get-columns` calls `GET /rest/api/3/settings/columns` and returns the default issue navigator columns.
+- `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission.
+- `--columns` is a **JSON array** of `{label, value}` objects where `value` is the column field key. Example: `[{"label":"Key","value":"issuekey"},{"label":"Summary","value":"summary"}]`.
+
+```sh
+# Get the current default issue navigator columns
+atlas jira settings get-columns
+
+# Set the default columns to Key and Summary
+atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"},{"label":"Summary","value":"summary"}]'
+```
+
+## `redact`
+
+| Action       | Positional | Required flags | Optional flags |
+| ------------ | ---------- | -------------- | -------------- |
+| `start`      | —          | `--jql`        | `--field-ids`  |
+| `get-status` | `<jobId>`  | —              | —              |
+
+- `start` calls `POST /rest/api/3/redact` to begin an asynchronous issue redaction job. Returns a `jobId` for polling. **Admin-only endpoint.**
+- `get-status` calls `GET /rest/api/3/redact/status/{jobId}` to check progress. Returns status: `IN_PROGRESS`, `COMPLETE`, or `FAILED`.
+- `--jql` — JQL query identifying issues to redact. Required.
+- `--field-ids` — **comma-separated** field IDs to redact. When omitted, all text fields are redacted.
+
+```sh
+# Start a redaction job for issues matching a JQL query
+atlas jira redact start --jql "project = PROJ AND summary ~ secret"
+
+# Redact specific fields only
+atlas jira redact start --jql "project = PROJ" --field-ids summary,description
+
+# Check the status of a running redaction job
+atlas jira redact get-status job-abc123
+```
+
+## `flag`
+
+**URL base:** `/rest/featureflags/0.1` (Jira Software DevInfo Feature Flags API — not `/rest/api/3`).
+
+| Action   | Positional        | Required flags | Optional flags |
+| -------- | ----------------- | -------------- | -------------- |
+| `get`    | `<featureFlagId>` | —              | —              |
+| `delete` | `<featureFlagId>` | —              | —              |
+
+- Feature flag entities are stored via the Jira DevInfo API when CI/CD tools push flag state to Jira.
+- Requires a **Connect app** or **OAuth 2.0 (M2M)** token with the `FEATURE_FLAGS` scope; basic auth (API token) is typically not accepted.
+
+```sh
+# Get a feature flag entity by ID
+atlas jira flag get flag-xyz
+
+# Delete a feature flag entity by ID
+atlas jira flag delete flag-xyz
+```
+
+## `task`
+
+| Action   | Positional | Required flags | Optional flags |
+| -------- | ---------- | -------------- | -------------- |
+| `get`    | `<taskId>` | —              | —              |
+| `cancel` | `<taskId>` | —              | —              |
+
+- `get` calls `GET /rest/api/3/task/{taskId}` to retrieve the status of a long-running async Jira task. Tasks are created by operations such as bulk field updates.
+- `cancel` calls `POST /rest/api/3/task/{taskId}/cancel` to request cancellation of a running task. Only tasks with status `RUNNING` or `ENQUEUED` can be cancelled.
+- Task status values: `ENQUEUED`, `RUNNING`, `COMPLETE`, `FAILED`, `CANCEL_REQUESTED`, `CANCELLED`, `DEAD`.
+- `progress` is a 0–100 percentage; `elapsedRuntime`, `submitted`, `started`, `finished`, and `lastUpdate` are Unix timestamps in milliseconds.
+
+```sh
+# Get the status of a long-running task
+atlas jira task get task-123
+
+# Cancel a running task
+atlas jira task cancel task-123
 ```
 
 ## Errors specific to Jira

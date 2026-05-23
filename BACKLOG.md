@@ -1084,12 +1084,6 @@
 - [ ] 🟡 🖥️ API: B596 Jira: add CLI + skill for POST /rest/api/3/jql/sanitize
   - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B598 Jira: expose GET /rest/api/3/license/approximateLicenseCount
-  - files: `src/jira/resources/license.ts`, `test/jira/license.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B599 Jira: expose GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}
-  - files: `src/jira/resources/license.ts`, `test/jira/license.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B601 Jira: expose DELETE /rest/api/3/mypreferences
   - files: `src/jira/resources/mypreferences.ts`, `test/jira/mypreferences.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -1435,12 +1429,6 @@
 - [ ] 🔴 🧩 API: B709 Jira: expose GET /rest/api/3/projectvalidate/validProjectName
   - files: `src/jira/resources/projectvalidate.ts`, `test/jira/projectvalidate.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B710 Jira: expose POST /rest/api/3/redact
-  - files: `src/jira/resources/redact.ts`, `test/jira/redact.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B711 Jira: expose GET /rest/api/3/redact/status/{jobId}
-  - files: `src/jira/resources/redact.ts`, `test/jira/redact.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B931 Jira: expose GET /rest/api/3/resolution
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -1565,12 +1553,8 @@
   - files: `src/jira/resources/search.ts`, `test/jira/search.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [x] ✅ 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
-- [ ] 🔴 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
-  - files: `src/jira/resources/settings.ts`, `test/jira/settings.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B772 Jira: expose PUT /rest/api/3/settings/columns
-  - files: `src/jira/resources/settings.ts`, `test/jira/settings.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
+- [x] ✅ 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
+- [x] ✅ 🧩 API: B772 Jira: expose PUT /rest/api/3/settings/columns
 - [ ] 🔴 🧩 API: B777 Jira: expose DELETE /rest/api/3/statuses
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -1594,12 +1578,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B784 Jira: expose GET /rest/api/3/statuses/search
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B785 Jira: expose GET /rest/api/3/task/{taskId}
-  - files: `src/jira/resources/task.ts`, `test/jira/task.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B786 Jira: expose POST /rest/api/3/task/{taskId}/cancel
-  - files: `src/jira/resources/task.ts`, `test/jira/task.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B787 Jira: expose GET /rest/api/3/uiModifications
   - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
@@ -2032,12 +2010,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B972 Jira: expose DELETE /rest/featureflags/0.1/bulkByProperties
   - files: `src/jira/resources/bulk-by-properties.ts`, `test/jira/bulk-by-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B973 Jira: expose DELETE /rest/featureflags/0.1/flag/{featureFlagId}
-  - files: `src/jira/resources/flag.ts`, `test/jira/flag.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B974 Jira: expose GET /rest/featureflags/0.1/flag/{featureFlagId}
-  - files: `src/jira/resources/flag.ts`, `test/jira/flag.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B975 Jira: expose GET /rest/forge/1/app/properties
   - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

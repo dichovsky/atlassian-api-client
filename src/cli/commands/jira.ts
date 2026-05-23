@@ -72,6 +72,16 @@ export async function executeJiraCommand(
       return executeGroupUserPicker(client, cmd);
     case 'security-level':
       return executeSecurityLevel(client, cmd);
+    case 'license':
+      return executeLicense(client, cmd);
+    case 'settings':
+      return executeSettings(client, cmd);
+    case 'redact':
+      return executeRedact(client, cmd);
+    case 'flag':
+      return executeFlag(client, cmd);
+    case 'task':
+      return executeTask(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1103,5 +1113,92 @@ async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Pro
       return client.securityLevel.get(requireArg(cmd.positionalArgs[0], 'id'));
     default:
       throw new Error(`Unknown security-level action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-approximate-count':
+      return client.license.getApproximateCount();
+    case 'get-approximate-count-for-product':
+      return client.license.getApproximateCountForProduct(
+        requireOpt(opts['application-key'], '--application-key'),
+      );
+    default:
+      throw new Error(
+        `Unknown license action: ${cmd.action}. Actions: get-approximate-count, get-approximate-count-for-product`,
+      );
+  }
+}
+
+async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-columns':
+      return client.settings.getColumns();
+    case 'set-columns': {
+      const rawColumns = requireOpt(opts['columns'], '--columns');
+      let columns: { label?: string; value?: string }[];
+      try {
+        columns = JSON.parse(rawColumns) as typeof columns;
+      } catch {
+        throw new Error('--columns must be valid JSON (array of {label, value} objects)');
+      }
+      await client.settings.setColumns({ columns });
+      return { updated: true };
+    }
+    default:
+      throw new Error(`Unknown settings action: ${cmd.action}. Actions: get-columns, set-columns`);
+  }
+}
+
+async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'start': {
+      const fieldIdsRaw = asString(opts['field-ids']);
+      const fieldIds = fieldIdsRaw
+        ? fieldIdsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      return client.redact.start({
+        jql: requireOpt(opts['jql'], '--jql'),
+        ...(fieldIds !== undefined && { fieldIds }),
+      });
+    }
+    case 'get-status':
+      return client.redact.getStatus(requireArg(cmd.positionalArgs[0], 'jobId'));
+    default:
+      throw new Error(`Unknown redact action: ${cmd.action}. Actions: start, get-status`);
+  }
+}
+
+async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.flag.get(requireArg(cmd.positionalArgs[0], 'featureFlagId'));
+    case 'delete':
+      await client.flag.delete(requireArg(cmd.positionalArgs[0], 'featureFlagId'));
+      return { deleted: true };
+    default:
+      throw new Error(`Unknown flag action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.task.get(requireArg(cmd.positionalArgs[0], 'taskId'));
+    case 'cancel':
+      await client.task.cancel(requireArg(cmd.positionalArgs[0], 'taskId'));
+      return { cancelled: true };
+    default:
+      throw new Error(`Unknown task action: ${cmd.action}. Actions: get, cancel`);
   }
 }
