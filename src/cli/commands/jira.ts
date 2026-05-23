@@ -66,6 +66,12 @@ export async function executeJiraCommand(
       return executeVulnerability(client, cmd);
     case 'devopscomponents':
       return executeDevopscomponents(client, cmd);
+    case 'groups':
+      return executeGroups(client, cmd);
+    case 'group-user-picker':
+      return executeGroupUserPicker(client, cmd);
+    case 'security-level':
+      return executeSecurityLevel(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1029,5 +1035,73 @@ async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): 
       return { deleted: true };
     default:
       throw new Error(`Unknown devopscomponents action: ${cmd.action}. Actions: get, delete`);
+  }
+}
+
+async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'picker': {
+      const excludeRaw = asString(opts['exclude']);
+      const exclude = excludeRaw
+        ? excludeRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      return client.groups.picker({
+        query: asString(opts['query']),
+        exclude,
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        excludeInactive: asBoolFlag(opts['exclude-inactive']),
+        userName: asString(opts['user-name']),
+      });
+    }
+    default:
+      throw new Error(`Unknown groups action: ${cmd.action}. Actions: picker`);
+  }
+}
+
+async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'pick': {
+      const projectIdRaw = asString(opts['project-id']);
+      const projectId = projectIdRaw
+        ? projectIdRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      const excludeAccountIdsRaw = asString(opts['exclude-account-ids']);
+      const excludeAccountIds = excludeAccountIdsRaw
+        ? excludeAccountIdsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : undefined;
+      return client.groupUserPicker.pick({
+        query: asString(opts['query']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        showAvatar: asBoolFlag(opts['show-avatar']),
+        projectId,
+        projectRole: asString(opts['project-role']),
+        excludeAccountIds,
+        excludeConnectUsers: asBoolFlag(opts['exclude-connect-users']),
+      });
+    }
+    default:
+      throw new Error(`Unknown group-user-picker action: ${cmd.action}. Actions: pick`);
+  }
+}
+
+async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get':
+      return client.securityLevel.get(requireArg(cmd.positionalArgs[0], 'id'));
+    default:
+      throw new Error(`Unknown security-level action: ${cmd.action}. Actions: get`);
   }
 }

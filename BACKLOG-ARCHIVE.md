@@ -792,3 +792,12 @@
 - [x] ✅ 🧩 API: B776 Jira: expose GET /rest/api/3/statuscategory/{idOrKey}
       **Impl:** `src/jira/resources/status-category.ts` (`StatusCategoryResource.get()`) · CLI `atlas jira status-category get <idOrKey>` · file uses kebab-case `status-category.ts` (BACKLOG listed wrong name `statuscategory.ts`)
       **Rat:** Complements B775; positional `idOrKey` argument (spec name), matching established positional pattern.
+- [x] ✅ 🧩 API: B474 Jira: expose GET /rest/api/3/groups/picker
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.picker()`) · CLI `atlas jira groups picker` · query/filter params as flags · `test/jira/groups.test.ts`
+      **Rat:** Group picker autocomplete; all query params exposed as CLI flags (`--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name`).
+- [x] ✅ 🧩 API: B475 Jira: expose GET /rest/api/3/groupuserpicker
+      **Impl:** `src/jira/resources/group-user-picker.ts` (`GroupUserPickerResource.pick()`) · CLI `atlas jira group-user-picker pick` · BACKLOG listed filename as `groupuserpicker.ts`; renamed to `group-user-picker.ts` per kebab-case rule · `test/jira/group-user-picker.test.ts`
+      **Rat:** Combined group+user autocomplete picker; kebab rename keeps filenames consistent with project-jira-pattern.md rule (same rename applied to `securitylevel.ts` → `security-level.ts`).
+- [x] ✅ 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
+      **Impl:** `src/jira/resources/security-level.ts` (`SecurityLevelResource.get()`) · CLI `atlas jira security-level get <id>` · positional id argument · BACKLOG listed filename as `securitylevel.ts`; renamed to `security-level.ts` per kebab-case rule · `test/jira/security-level.test.ts`
+      **Rat:** Issue security level detail lookup; positional id matches established pattern (status, priorities, issue-types, etc.); kebab rename applied for consistency.

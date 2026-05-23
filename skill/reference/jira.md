@@ -34,6 +34,9 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `post-incident-reviews` | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `vulnerability`         | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `devopscomponents`      | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `groups`                | `picker`                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `group-user-picker`     | `pick`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `security-level`        | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## `incidents`
 
@@ -787,6 +790,71 @@ atlas jira changelog bulk-fetch --issues PROJ-1 --start-at 0 --max-results 50
 ```sh
 # Trigger a Forge panel action asynchronously for two issues
 atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-app:my-panel"},{"issueId":"10002","moduleKey":"my-app:my-panel"}]'
+```
+
+## `groups`
+
+| Action   | Positional | Required flags | Optional flags                                                               |
+| -------- | ---------- | -------------- | ---------------------------------------------------------------------------- |
+| `picker` | —          | —              | `--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name` |
+
+- `--query` — fuzzy string to match against group names.
+- `--exclude` — **comma-separated** list of group IDs to exclude from results.
+- `--max-results` — maximum number of groups returned (default 20).
+- `--exclude-inactive` — when `true`, inactive groups are omitted.
+- `--user-name` — account ID of a user whose groups should be excluded.
+- Endpoint: `GET /rest/api/3/groups/picker`.
+
+```sh
+# Find groups matching "dev"
+atlas jira groups picker --query dev
+
+# Find up to 10 groups excluding a specific group
+atlas jira groups picker --query dev --max-results 10 --exclude grp-99
+
+# Exclude inactive groups
+atlas jira groups picker --exclude-inactive
+```
+
+## `group-user-picker`
+
+| Action | Positional | Required flags | Optional flags                                                                                                                    |
+| ------ | ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `pick` | —          | —              | `--query`, `--max-results`, `--show-avatar`, `--project-id`, `--project-role`, `--exclude-account-ids`, `--exclude-connect-users` |
+
+- `--query` — string to match against both group names and user display names.
+- `--max-results` — maximum results per section (default 50).
+- `--show-avatar` — when `true`, avatar URLs are included in user results.
+- `--project-id` — **comma-separated** project IDs to scope user results to project members.
+- `--project-role` — case-sensitive project role name to filter user results.
+- `--exclude-account-ids` — **comma-separated** account IDs to exclude from user suggestions.
+- `--exclude-connect-users` — when `true`, Atlassian Connect users are excluded.
+- Endpoint: `GET /rest/api/3/groupuserpicker`.
+
+```sh
+# Find groups and users matching "alice"
+atlas jira group-user-picker pick --query alice
+
+# Include avatar URLs and limit results
+atlas jira group-user-picker pick --query dev --show-avatar --max-results 25
+
+# Scope to a specific project
+atlas jira group-user-picker pick --query eng --project-id 10001
+```
+
+## `security-level`
+
+| Action | Positional | Required flags | Optional flags |
+| ------ | ---------- | -------------- | -------------- |
+| `get`  | `<id>`     | —              | —              |
+
+- `<id>` — numeric ID of the issue security level (positional, not a flag).
+- Endpoint: `GET /rest/api/3/securitylevel/{id}`.
+- Returns `id`, `name`, `description`, `issueSecuritySchemeId`, and `self`.
+
+```sh
+# Get a security level by ID
+atlas jira security-level get 10001
 ```
 
 ## Errors specific to Jira

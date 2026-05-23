@@ -737,12 +737,8 @@
 - [ ] 🔴 🧩 API: B473 Jira: expose POST /rest/api/3/group/user
   - files: `src/jira/resources/group.ts`, `test/jira/group.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B474 Jira: expose GET /rest/api/3/groups/picker
-  - files: `src/jira/resources/groups.ts`, `test/jira/groups.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B475 Jira: expose GET /rest/api/3/groupuserpicker
-  - files: `src/jira/resources/groupuserpicker.ts`, `test/jira/groupuserpicker.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
+- [x] ✅ 🧩 API: B474 Jira: expose GET /rest/api/3/groups/picker
+- [x] ✅ 🧩 API: B475 Jira: expose GET /rest/api/3/groupuserpicker
 - [ ] 🔴 🧩 API: B478 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/assignee
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -1568,9 +1564,7 @@
 - [ ] 🔴 🧩 API: B768 Jira: expose POST /rest/api/3/search/jql
   - files: `src/jira/resources/search.ts`, `test/jira/search.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
-  - files: `src/jira/resources/securitylevel.ts`, `test/jira/securitylevel.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
+- [x] ✅ 🧩 API: B769 Jira: expose GET /rest/api/3/securitylevel/{id}
 - [ ] 🔴 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
   - files: `src/jira/resources/settings.ts`, `test/jira/settings.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

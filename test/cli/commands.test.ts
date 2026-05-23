@@ -477,6 +477,15 @@ const jiraDevopscomponentsMock = {
   get: vi.fn(),
   delete: vi.fn(),
 };
+const jiraGroupsMock = {
+  picker: vi.fn(),
+};
+const jiraGroupUserPickerMock = {
+  pick: vi.fn(),
+};
+const jiraSecurityLevelMock = {
+  get: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -509,6 +518,9 @@ vi.mock('../../src/jira/client.js', () => {
       postIncidentReviews: jiraPostIncidentReviewsMock,
       vulnerability: jiraVulnerabilityMock,
       devopscomponents: jiraDevopscomponentsMock,
+      groups: jiraGroupsMock,
+      groupUserPicker: jiraGroupUserPickerMock,
+      securityLevel: jiraSecurityLevelMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -9904,6 +9916,172 @@ describe('executeJiraCommand', () => {
     it('devopscomponents unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('devopscomponents', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown devopscomponents action',
+      );
+    });
+  });
+
+  // ── groups ────────────────────────────────────────────────────────────────
+
+  describe('groups resource', () => {
+    it('groups picker calls client.groups.picker() with no params', async () => {
+      // Arrange
+      jiraGroupsMock.picker.mockResolvedValue({ header: '', total: 0, groups: [] });
+
+      // Act
+      const result = await executeJiraCommand(cmd('groups', 'picker', [], {}), GLOBALS);
+
+      // Assert
+      expect(jiraGroupsMock.picker).toHaveBeenCalled();
+      expect(result).toEqual({ header: '', total: 0, groups: [] });
+    });
+
+    it('groups picker forwards query and max-results', async () => {
+      // Arrange
+      jiraGroupsMock.picker.mockResolvedValue({ header: '', total: 1, groups: [] });
+
+      // Act
+      await executeJiraCommand(
+        cmd('groups', 'picker', [], { query: 'dev', 'max-results': '10' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraGroupsMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'dev', maxResults: 10 }),
+      );
+    });
+
+    it('groups picker forwards exclude-inactive flag', async () => {
+      // Arrange
+      jiraGroupsMock.picker.mockResolvedValue({ header: '', total: 0, groups: [] });
+
+      // Act
+      await executeJiraCommand(cmd('groups', 'picker', [], { 'exclude-inactive': true }), GLOBALS);
+
+      // Assert
+      expect(jiraGroupsMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({ excludeInactive: true }),
+      );
+    });
+
+    it('groups picker forwards exclude as split array', async () => {
+      // Arrange
+      jiraGroupsMock.picker.mockResolvedValue({ header: '', total: 0, groups: [] });
+
+      // Act
+      await executeJiraCommand(cmd('groups', 'picker', [], { exclude: 'grp-1,grp-2' }), GLOBALS);
+
+      // Assert
+      expect(jiraGroupsMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({ exclude: ['grp-1', 'grp-2'] }),
+      );
+    });
+
+    it('groups unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('groups', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown groups action',
+      );
+    });
+  });
+
+  // ── group-user-picker ─────────────────────────────────────────────────────
+
+  describe('group-user-picker resource', () => {
+    it('group-user-picker pick calls client.groupUserPicker.pick() with no params', async () => {
+      // Arrange
+      const response = {
+        groups: { label: '', sub: '', id: '', msg: '', groups: [] },
+        users: { label: '', sub: '', id: '', msg: '', users: [] },
+      };
+      jiraGroupUserPickerMock.pick.mockResolvedValue(response);
+
+      // Act
+      const result = await executeJiraCommand(cmd('group-user-picker', 'pick', [], {}), GLOBALS);
+
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalled();
+      expect(result).toEqual(response);
+    });
+
+    it('group-user-picker pick forwards query and max-results', async () => {
+      // Arrange
+      jiraGroupUserPickerMock.pick.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], { query: 'alice', 'max-results': '25' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'alice', maxResults: 25 }),
+      );
+    });
+
+    it('group-user-picker pick forwards project-id as split array', async () => {
+      // Arrange
+      jiraGroupUserPickerMock.pick.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], { 'project-id': '10001,10002' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: ['10001', '10002'] }),
+      );
+    });
+
+    it('group-user-picker pick forwards exclude-account-ids as split array', async () => {
+      // Arrange
+      jiraGroupUserPickerMock.pick.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], { 'exclude-account-ids': 'acc-1,acc-2' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({ excludeAccountIds: ['acc-1', 'acc-2'] }),
+      );
+    });
+
+    it('group-user-picker unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('group-user-picker', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown group-user-picker action',
+      );
+    });
+  });
+
+  // ── security-level ────────────────────────────────────────────────────────
+
+  describe('security-level resource', () => {
+    it('security-level get calls client.securityLevel.get() with positional id', async () => {
+      // Arrange
+      jiraSecurityLevelMock.get.mockResolvedValue({ id: '10001', name: 'Confidential' });
+
+      // Act
+      const result = await executeJiraCommand(cmd('security-level', 'get', ['10001']), GLOBALS);
+
+      // Assert
+      expect(jiraSecurityLevelMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ id: '10001', name: 'Confidential' });
+    });
+
+    it('security-level get throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('security-level', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: id',
+      );
+    });
+
+    it('security-level unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('security-level', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown security-level action',
       );
     });
   });
