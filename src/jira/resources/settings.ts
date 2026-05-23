@@ -1,19 +1,14 @@
 import type { Transport } from '../../core/types.js';
 
-/**
- * A Jira column (navigator column configuration).
- *
- * Note: `JiraColumn` is used to avoid collision if a generic `Column` type is
- * added to types.ts in the future.
- */
-export interface JiraColumn {
+/** A Jira column (navigator column configuration). */
+export interface Column {
   readonly label?: string;
   readonly value?: string;
 }
 
 /** Request body for setting default navigator columns. */
 export interface SetSettingsColumnsData {
-  readonly columns: JiraColumn[];
+  readonly columns: Column[];
 }
 
 /** Jira Settings resource — GET and PUT /rest/api/3/settings/columns. */
@@ -24,8 +19,8 @@ export class SettingsResource {
   ) {}
 
   /** Get the default issue navigator columns. */
-  async getColumns(): Promise<JiraColumn[]> {
-    const response = await this.transport.request<JiraColumn[]>({
+  async getColumns(): Promise<Column[]> {
+    const response = await this.transport.request<Column[]>({
       method: 'GET',
       path: `${this.baseUrl}/settings/columns`,
     });

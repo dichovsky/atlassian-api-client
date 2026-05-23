@@ -805,8 +805,8 @@
       **Impl:** `src/jira/resources/license.ts` (`LicenseResource.getApproximateCount()`) · CLI `atlas jira license get-approximate-count` · `test/jira/license.test.ts`
       **Rat:** Expose license count endpoint for admin capacity planning; bundled with B599 in same resource file.
 - [x] ✅ 🧩 API: B599 Jira: expose GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}
-      **Impl:** `src/jira/resources/license.ts` (`LicenseResource.getApproximateCountForProduct()`) · CLI `atlas jira license get-approximate-count-for-product --application-key <key>` · positional path param encoded in URL
-      **Rat:** Per-product breakdown; `--application-key` flag (query/path param, not positional) because the endpoint differs in structure from simple ID lookups.
+      **Impl:** `src/jira/resources/license.ts` (`LicenseResource.getApproximateCountForProduct()`) · CLI `atlas jira license get-approximate-count-for-product <applicationKey>` · positional path param encoded in URL
+      **Rat:** Per-product breakdown; uses positional arg per pattern rule (path params = positional, not flags).
 - [x] ✅ 🧩 API: B771 Jira: expose GET /rest/api/3/settings/columns
       **Impl:** `src/jira/resources/settings.ts` (`SettingsResource.getColumns()`) · CLI `atlas jira settings get-columns` · `test/jira/settings.test.ts`
       **Rat:** Read default issue navigator column config; admin diagnostic tool.

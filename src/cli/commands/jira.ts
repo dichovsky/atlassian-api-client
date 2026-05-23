@@ -1117,14 +1117,12 @@ async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Pro
 }
 
 async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const opts = cmd.options;
-
   switch (cmd.action) {
     case 'get-approximate-count':
       return client.license.getApproximateCount();
     case 'get-approximate-count-for-product':
       return client.license.getApproximateCountForProduct(
-        requireOpt(opts['application-key'], '--application-key'),
+        requireArg(cmd.positionalArgs[0], 'applicationKey'),
       );
     default:
       throw new Error(

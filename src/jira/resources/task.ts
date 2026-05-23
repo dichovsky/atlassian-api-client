@@ -1,13 +1,8 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/**
- * A Jira long-running task.
- *
- * Note: `JiraTask` is used to avoid collision with any generic `Task` type
- * that may be added to types.ts in the future.
- */
-export interface JiraTask {
+/** A Jira long-running task. */
+export interface Task {
   readonly id: string;
   readonly self: string;
   readonly description?: string;
@@ -40,8 +35,8 @@ export class TaskResource {
    * Get the status of a long-running async task by task ID.
    * Tasks are created by operations like bulk field updates.
    */
-  async get(taskId: string): Promise<JiraTask> {
-    const response = await this.transport.request<JiraTask>({
+  async get(taskId: string): Promise<Task> {
+    const response = await this.transport.request<Task>({
       method: 'GET',
       path: `${this.baseUrl}/task/${encodePathSegment(taskId)}`,
     });

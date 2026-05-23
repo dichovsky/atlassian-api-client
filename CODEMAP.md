@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "c7349432ba4cc3066217f23b51ca975610bc58ae2bf11fbd3f72b8b8c218b9e5",
+  "sourceHash": "6f6f53a69574e4833aab26a142b8cb5b37187185a81b09681c108e4df26beeb6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4272,25 +4272,25 @@
         {
           "name": "executeSettings",
           "kind": "function",
-          "line": 1062,
+          "line": 1060,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-          "line": 1084,
+          "line": 1082,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-          "line": 1108,
+          "line": 1106,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-          "line": 1120,
+          "line": 1118,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -4541,7 +4541,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 177,
+          "line": 179,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }",
           "jsdoc": "Parse process.argv into a structured command."
@@ -15651,8 +15651,8 @@
           "typeOnly": true,
           "names": [
             {
-              "exported": "JiraColumn",
-              "original": "JiraColumn"
+              "exported": "Column",
+              "original": "Column"
             },
             {
               "exported": "SetSettingsColumnsData",
@@ -15770,8 +15770,8 @@
           "typeOnly": true,
           "names": [
             {
-              "exported": "JiraTask",
-              "original": "JiraTask"
+              "exported": "Task",
+              "original": "Task"
             }
           ]
         },
@@ -18237,13 +18237,13 @@
           "kind": "interface",
           "line": 19,
           "exported": true,
-          "signature": "export interface RedactJobStatus { readonly jobId: string; readonly status: 'IN_PROGRESS' | 'COMPLETE' | 'FAILED'; reado…",
+          "signature": "export interface RedactJobStatus { readonly jobId: string; readonly status: string; readonly progress?: number; readonly…",
           "jsdoc": "Status of a running or completed redaction job."
         },
         {
           "name": "RedactResource",
           "kind": "class",
-          "line": 27,
+          "line": 34,
           "exported": true,
           "signature": "export class RedactResource",
           "jsdoc": "Jira Redact resource — POST /rest/api/3/redact and GET /rest/api/3/redact/status/{jobId}.",
@@ -18251,17 +18251,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 28
+              "line": 35
             },
             {
               "name": "start",
               "kind": "method",
-              "line": 37
+              "line": 44
             },
             {
               "name": "getStatus",
               "kind": "method",
-              "line": 50
+              "line": 57
             }
           ]
         }
@@ -18358,25 +18358,25 @@
       "path": "src/jira/resources/settings.ts",
       "symbols": [
         {
-          "name": "JiraColumn",
+          "name": "Column",
           "kind": "interface",
-          "line": 9,
+          "line": 4,
           "exported": true,
-          "signature": "export interface JiraColumn { readonly label?: string; readonly value?: string; }",
+          "signature": "export interface Column { readonly label?: string; readonly value?: string; }",
           "jsdoc": "A Jira column (navigator column configuration)."
         },
         {
           "name": "SetSettingsColumnsData",
           "kind": "interface",
-          "line": 15,
+          "line": 10,
           "exported": true,
-          "signature": "export interface SetSettingsColumnsData { readonly columns: JiraColumn[]; }",
+          "signature": "export interface SetSettingsColumnsData { readonly columns: Column[]; }",
           "jsdoc": "Request body for setting default navigator columns."
         },
         {
           "name": "SettingsResource",
           "kind": "class",
-          "line": 20,
+          "line": 15,
           "exported": true,
           "signature": "export class SettingsResource",
           "jsdoc": "Jira Settings resource — GET and PUT /rest/api/3/settings/columns.",
@@ -18384,17 +18384,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 21
+              "line": 16
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 27
+              "line": 22
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 39
+              "line": 34
             }
           ]
         }
@@ -18660,17 +18660,17 @@
       "path": "src/jira/resources/task.ts",
       "symbols": [
         {
-          "name": "JiraTask",
+          "name": "Task",
           "kind": "interface",
-          "line": 10,
+          "line": 5,
           "exported": true,
-          "signature": "export interface JiraTask { readonly id: string; readonly self: string; readonly description?: string; readonly status: …",
+          "signature": "export interface Task { readonly id: string; readonly self: string; readonly description?: string; readonly status: | 'E…",
           "jsdoc": "A Jira long-running task."
         },
         {
           "name": "TaskResource",
           "kind": "class",
-          "line": 33,
+          "line": 28,
           "exported": true,
           "signature": "export class TaskResource",
           "jsdoc": "Jira Task resource — GET and POST /rest/api/3/task endpoints.",
@@ -18678,17 +18678,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 34
+              "line": 29
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 43
+              "line": 38
             },
             {
               "name": "cancel",
               "kind": "method",
-              "line": 55
+              "line": 50
             }
           ]
         }

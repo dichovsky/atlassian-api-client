@@ -864,10 +864,10 @@ atlas jira security-level get 10001
 
 ## `license`
 
-| Action                              | Positional | Required flags      | Optional flags |
-| ----------------------------------- | ---------- | ------------------- | -------------- |
-| `get-approximate-count`             | —          | —                   | —              |
-| `get-approximate-count-for-product` | —          | `--application-key` | —              |
+| Action                              | Positional         | Required flags | Optional flags |
+| ----------------------------------- | ------------------ | -------------- | -------------- |
+| `get-approximate-count`             | —                  | —              | —              |
+| `get-approximate-count-for-product` | `<applicationKey>` | —              | —              |
 
 - `get-approximate-count` calls `GET /rest/api/3/license/approximateLicenseCount` and returns the approximate user count across all Jira products.
 - `get-approximate-count-for-product` calls `GET /rest/api/3/license/approximateLicenseCount/product/{applicationKey}` for a specific product. Common application keys: `jira-software`, `jira-servicedesk`, `jira-core`.
@@ -878,7 +878,7 @@ atlas jira security-level get 10001
 atlas jira license get-approximate-count
 
 # Get approximate count for Jira Software specifically
-atlas jira license get-approximate-count-for-product --application-key jira-software
+atlas jira license get-approximate-count-for-product jira-software
 ```
 
 ## `settings`

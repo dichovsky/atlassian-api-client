@@ -263,7 +263,7 @@ EXAMPLES:
   atlas jira group-user-picker pick --query alice --show-avatar
   atlas jira security-level get 10001
   atlas jira license get-approximate-count
-  atlas jira license get-approximate-count-for-product --application-key jira-software
+  atlas jira license get-approximate-count-for-product jira-software
   atlas jira settings get-columns
   atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"}]'
   atlas jira redact start --jql "project = PROJ AND summary ~ secret"

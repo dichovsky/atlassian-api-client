@@ -185,11 +185,11 @@ export type {
   ApproximateProductLicenseCount,
 } from './resources/license.js';
 export { LicenseResource } from './resources/license.js';
-export type { JiraColumn, SetSettingsColumnsData } from './resources/settings.js';
+export type { Column, SetSettingsColumnsData } from './resources/settings.js';
 export { SettingsResource } from './resources/settings.js';
 export type { RedactIssueData, RedactJobStarted, RedactJobStatus } from './resources/redact.js';
 export { RedactResource } from './resources/redact.js';
 export type { FeatureFlag } from './resources/flag.js';
 export { FlagResource } from './resources/flag.js';
-export type { JiraTask } from './resources/task.js';
+export type { Task } from './resources/task.js';
 export { TaskResource } from './resources/task.js';

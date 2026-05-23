@@ -18,7 +18,14 @@ export interface RedactJobStarted {
 /** Status of a running or completed redaction job. */
 export interface RedactJobStatus {
   readonly jobId: string;
-  readonly status: 'IN_PROGRESS' | 'COMPLETE' | 'FAILED';
+  /**
+   * Status of the redaction job.
+   *
+   * Atlassian docs list IN_PROGRESS / COMPLETE / FAILED but the endpoint
+   * is admin-async and undocumented for other states (e.g. PENDING / CANCELLED).
+   * Typed as string to avoid silently misclassifying unknown server responses.
+   */
+  readonly status: string;
   readonly progress?: number;
   readonly errors?: string[];
 }

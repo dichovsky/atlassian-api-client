@@ -10127,16 +10127,14 @@ describe('executeJiraCommand', () => {
       expect(jiraLicenseMock.getApproximateCount).toHaveBeenCalled();
     });
 
-    it('license get-approximate-count-for-product calls client.license.getApproximateCountForProduct() with --application-key', async () => {
+    it('license get-approximate-count-for-product calls client.license.getApproximateCountForProduct() with positional applicationKey', async () => {
       // Arrange
       const payload = { count: 25 };
       jiraLicenseMock.getApproximateCountForProduct.mockResolvedValue(payload);
 
       // Act
       const result = await executeJiraCommand(
-        cmd('license', 'get-approximate-count-for-product', [], {
-          'application-key': 'jira-software',
-        }),
+        cmd('license', 'get-approximate-count-for-product', ['jira-software'], {}),
         GLOBALS,
       );
 
@@ -10145,10 +10143,10 @@ describe('executeJiraCommand', () => {
       expect(jiraLicenseMock.getApproximateCountForProduct).toHaveBeenCalledWith('jira-software');
     });
 
-    it('license get-approximate-count-for-product throws when --application-key is missing', async () => {
+    it('license get-approximate-count-for-product throws when applicationKey is missing', async () => {
       await expect(
         executeJiraCommand(cmd('license', 'get-approximate-count-for-product'), GLOBALS),
-      ).rejects.toThrow('Missing required option: --application-key');
+      ).rejects.toThrow('Missing required argument: applicationKey');
     });
 
     it('license unknown action throws', async () => {
