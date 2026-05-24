@@ -651,6 +651,168 @@
 - [x] 🔴 🐛 Jira: B033 `DashboardsResource.listAll` infinite pagination
   - **Impl:** Branch `fix/ctf-phase8-p0p1` (2026-05-16); dashboard pagination now uses a `maxPages` cap plus warning path instead of looping forever.
   - **Rat:** Bound dashboard listing against pathological server responses.
+- [x] 🔴 🧩 API: B257 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint
+  - **Impl:** Branch `feat/jira-board-sprints`; `BoardsResource.listSprints(boardId, params?)` (`src/jira/resources/boards.ts`) issues `GET /rest/agile/1.0/board/{boardId}/sprint` returning `OffsetPaginatedResponse<Sprint>` (reusing `Sprint` from `sprints.ts`). Supports optional `state` (`active|closed|future`), `startAt`, `maxResults`. CLI: `atlas jira boards list-sprints <boardId> [--state ...] [--start-at N] [--max-results N]`. New `--state` flag added to router.
+  - **Rat:** Enables listing sprints scoped to a specific board — essential for board-aware automation, sprint reports, and migration tooling that must filter sprints by board context.
+- [x] 🔴 🧩 API: B900 Jira: expose GET /rest/agile/1.0/board/{boardId}/sprint/{sprintId}/issue
+  - **Impl:** Branch `feat/jira-board-sprints`; `BoardsResource.getSprintIssues(boardId, sprintId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/sprint/{sprintId}/issue` with optional `jql`, `fields`, `startAt`, `maxResults`; returns `OffsetPaginatedResponse<BoardIssue>`. CLI: `atlas jira boards sprint-issues <boardId> <sprintId> [--jql ...] [--fields ...]`.
+  - **Rat:** Lets agents enumerate the issues currently in a sprint scoped to a board — board scoping prevents cross-board pollution when boards share sprint IDs via shared filters.
+- [x] 🔴 🧩 API: B316 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}
+  - **Impl:** Branch `feat/jira-sprint-mutations`; `SprintsResource.partialUpdate(sprintId, data)` (`src/jira/resources/sprints.ts`) issues `POST /rest/agile/1.0/sprint/{sprintId}` (Atlassian Agile patch semantics), distinct from existing `update()` (PUT, full replace). Accepts partial `name`, `startDate`, `endDate`, `state`, `completeDate`, `goal`. CLI: `atlas jira sprints partial-update <sprintId> [--name ...] [--state ...] ...`.
+  - **Rat:** Patch semantics let automation toggle individual sprint fields (e.g. close a sprint, edit goal) without supplying the full object — safer for concurrent edits than PUT.
+- [x] 🔴 🧩 API: B318 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}/issue
+  - **Impl:** Branch `feat/jira-sprint-mutations`; `SprintsResource.moveIssues(sprintId, issues)` issues `POST /rest/agile/1.0/sprint/{sprintId}/issue`. Client validates: non-empty array, ≤ 50 entries, all non-empty strings; throws `ValidationError` before round-trip. CLI: `atlas jira sprints move-issues <sprintId> --issues KEY-1,KEY-2`.
+  - **Rat:** Bulk-assigns issues to a sprint — fundamental for sprint planning automation; 50-issue cap matches Atlassian server limit and surfaces errors fast.
+- [x] 🔴 🧩 API: B903 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/issue
+  - **Impl:** Branch `feat/jira-sprint-mutations`; `SprintsResource.getIssues()` was previously implemented; this PR fills the CLI surface: `atlas jira sprints get-issues <sprintId> [--jql ...] [--fields ...] [--start-at N] [--max-results N]` and adds skill reference documentation.
+  - **Rat:** Closes the SDK/CLI parity gap so agents can list sprint issues from the CLI without writing wrapper scripts.
+- [x] 🔴 🧩 API: B319 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/properties
+  - **Impl:** Branch `feat/jira-sprint-properties`; `SprintsResource.listProperties(sprintId)` (`src/jira/resources/sprints.ts`) issues `GET /rest/agile/1.0/sprint/{sprintId}/properties` returning `{ keys: SprintPropertyKey[] }`. CLI: `atlas jira sprints list-properties <sprintId>`.
+  - **Rat:** Enumerates custom property keys attached to a sprint — required before clients can fetch property values or audit sprint metadata.
+- [x] 🔴 🧩 API: B320 Jira: expose DELETE /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-sprint-properties`; `SprintsResource.deleteProperty(sprintId, key)` issues `DELETE /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}` with `encodePathSegment` for safe keys. CLI: `atlas jira sprints delete-property <sprintId> <key>`.
+  - **Rat:** Symmetric delete for sprint custom properties — supports cleanup workflows and app uninstall hooks.
+- [x] 🔴 🧩 API: B321 Jira: expose GET /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-sprint-properties`; `SprintsResource.getProperty(sprintId, key)` issues `GET /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}` returning `SprintProperty` (`key: string`, `value: unknown`). CLI: `atlas jira sprints get-property <sprintId> <key>`.
+  - **Rat:** Fetches a single sprint property by key — `value: unknown` forces callers to narrow types and avoids `any` leakage.
+- [x] 🔴 🧩 API: B322 Jira: expose PUT /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-sprint-properties`; `SprintsResource.setProperty(sprintId, key, value: unknown)` issues `PUT /rest/agile/1.0/sprint/{sprintId}/properties/{propertyKey}` with arbitrary JSON value. CLI: `atlas jira sprints set-property <sprintId> <key> --value '<JSON>'`; non-JSON `--value` throws.
+  - **Rat:** Lets apps stash arbitrary structured metadata on sprints; strict JSON CLI parsing prevents accidental string-typed values.
+- [x] 🔴 🧩 API: B323 Jira: expose POST /rest/agile/1.0/sprint/{sprintId}/swap
+  - **Impl:** Branch `feat/jira-sprint-properties`; `SprintsResource.swap(sprintId, sprintToSwapWith)` issues `POST /rest/agile/1.0/sprint/{sprintId}/swap`. Client-side rejects self-swap (`sprintId === sprintToSwapWith` → `ValidationError`). CLI: `atlas jira sprints swap <sprintId> --with <otherSprintId>`.
+  - **Rat:** Lets automation reorder sprints (e.g. swap positions of two future sprints) without manual UI clicks; self-swap guard avoids server-side error.
+- [x] 🔴 🧩 API: B260 Jira: expose GET /rest/agile/1.0/epic/{epicIdOrKey}
+  - **Impl:** Branch `feat/jira-agile-epic`; New `EpicResource` (`src/jira/resources/epic.ts`) exposes `get(epicIdOrKey)` issuing `GET /rest/agile/1.0/epic/{epicIdOrKey}`; accepts both numeric IDs and issue keys (e.g. `"42"` or `"PROJ-42"`), URL-encoded. Wired as `JiraClient.epic`. CLI: `atlas jira epic get <epicIdOrKey>`.
+  - **Rat:** First epic-resource method — foundation for the 7-endpoint epic API surface; ID-or-key flexibility matches Atlassian conventions.
+- [x] 🔴 🧩 API: B261 Jira: expose POST /rest/agile/1.0/epic/{epicIdOrKey}
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.partialUpdate(epicIdOrKey, data: UpdateEpicData)` issues `POST /rest/agile/1.0/epic/{epicIdOrKey}` (Agile patch semantics). All `UpdateEpicData` fields optional (`name`, `summary`, `color`, `done`). CLI: `atlas jira epic update <epicIdOrKey> [--name ...] [--color ...] [--done]`. New router flags: `--color`, `--done`.
+  - **Rat:** Patch-style updates let automation toggle epic completion or rename without sending the full epic body — critical for incremental sync flows.
+- [x] 🔴 🧩 API: B262 Jira: expose POST /rest/agile/1.0/epic/{epicIdOrKey}/issue
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.moveIssues(epicIdOrKey, issues)` issues `POST /rest/agile/1.0/epic/{epicIdOrKey}/issue`. CLI: `atlas jira epic move-issues <epicIdOrKey> --issues KEY-1,KEY-2`.
+  - **Rat:** Bulk-assigns issues to an epic; complement to `removeIssuesFromEpic` for full epic-membership management.
+- [x] 🔴 🧩 API: B263 Jira: expose PUT /rest/agile/1.0/epic/{epicIdOrKey}/rank
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.rank(epicIdOrKey, data)` issues `PUT /rest/agile/1.0/epic/{epicIdOrKey}/rank`. Validates mutual exclusivity of `rankBeforeEpic` / `rankAfterEpic` at the resource layer. CLI: `atlas jira epic rank <epicIdOrKey> --before <epicKey> | --after <epicKey> [--custom-field <id>]`. New router flags: `--before`, `--after`, `--custom-field`.
+  - **Rat:** Lets automation reorder the epic backlog by inserting an epic relative to another — required for portfolio prioritization workflows.
+- [x] 🔴 🧩 API: B264 Jira: expose POST /rest/agile/1.0/epic/none/issue
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.removeIssuesFromEpic(issues)` issues `POST /rest/agile/1.0/epic/none/issue` with `readonly string[]` of issue keys. CLI: `atlas jira epic remove-issues --issues KEY-1,KEY-2`.
+  - **Rat:** Strips issues from any epic in one call — needed for re-org workflows and for unblocking issues stuck in deleted/archived epics.
+- [x] 🔴 🧩 API: B901 Jira: expose GET /rest/agile/1.0/epic/{epicIdOrKey}/issue
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.getIssues(epicIdOrKey, params?)` issues `GET /rest/agile/1.0/epic/{epicIdOrKey}/issue` returning `OffsetPaginatedResponse<BoardIssue>`. Supports `jql`, `fields`, `startAt`, `maxResults`; uses `validatePageSize`. CLI: `atlas jira epic issues <epicIdOrKey> [--jql ...] [--fields ...]`.
+  - **Rat:** Lists every issue under an epic — primary read path for epic-scoped reporting and burndown analytics.
+- [x] 🔴 🧩 API: B902 Jira: expose GET /rest/agile/1.0/epic/none/issue
+  - **Impl:** Branch `feat/jira-agile-epic`; `EpicResource.getIssuesWithoutEpic(params?)` issues `GET /rest/agile/1.0/epic/none/issue` returning `OffsetPaginatedResponse<BoardIssue>`. CLI: `atlas jira epic issues-none [--jql ...] [--fields ...]`.
+  - **Rat:** Finds issues not yet assigned to any epic — useful for grooming-mode automation that triages orphan issues.
+- [x] 🟡 🖥️ API: B237 Jira: add CLI + skill for GET /rest/agile/1.0/board
+  - **Impl:** Branch `feat/jira-agile-boards-core`; CLI + skill surface for existing `BoardsResource.list()` (`GET /rest/agile/1.0/board`). CLI: `atlas jira boards list [--type ...] [--name ...] [--project-key-or-id ...] [--start-at N] [--max-results N]`. Added to `executeBoards` dispatcher and skill reference.
+  - **Rat:** Closes the SDK-to-CLI gap for top-level board enumeration — first CLI surface in the boards-core PR series.
+- [x] 🔴 🧩 API: B238 Jira: expose POST /rest/agile/1.0/board
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.create(data: CreateBoardData)` (`src/jira/resources/boards.ts`) issues `POST /rest/agile/1.0/board`. CLI: `atlas jira boards create --name ... --type ... --filter-id N [--location ...]`.
+  - **Rat:** Programmatic board provisioning — supports tenant onboarding automation and template-driven team setup.
+- [x] 🔴 🧩 API: B239 Jira: expose DELETE /rest/agile/1.0/board/{boardId}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.delete(boardId)` issues `DELETE /rest/agile/1.0/board/{boardId}` with positive-integer validation. CLI: `atlas jira boards delete <boardId>`.
+  - **Rat:** Symmetric delete for `create` — required for full board lifecycle automation.
+- [x] 🔴 🧩 API: B242 Jira: expose GET /rest/agile/1.0/board/{boardId}/configuration
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getConfiguration(boardId)` issues `GET /rest/agile/1.0/board/{boardId}/configuration` returning `BoardConfiguration` (readonly: `id`, `name`, `type`, `self`, `location`, `filter`, `subQuery`, `columnConfig`, `estimation`, `ranking`). CLI: `atlas jira boards configuration <boardId>`.
+  - **Rat:** Exposes column setup, filter, and estimation rules of a board — needed by tooling that mirrors/migrates board structure.
+- [x] 🔴 🧩 API: B243 Jira: expose GET /rest/agile/1.0/board/{boardId}/epic
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listEpics(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/epic`; supports `done` filter, `startAt`, `maxResults`. CLI: `atlas jira boards list-epics <boardId> [--done] [--start-at N] [--max-results N]`.
+  - **Rat:** Board-scoped epic listing for sprint planning and roadmap UIs — `done` filter focuses planning on active epics.
+- [x] 🔴 🧩 API: B244 Jira: expose GET /rest/agile/1.0/board/{boardId}/features
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getFeatures(boardId)` issues `GET /rest/agile/1.0/board/{boardId}/features` returning `BoardFeature[]`. CLI: `atlas jira boards get-features <boardId>`.
+  - **Rat:** Lists feature flags (estimation, sprints, etc.) for a board — required before toggling a feature to avoid unsupported-feature errors.
+- [x] 🔴 🧩 API: B245 Jira: expose PUT /rest/agile/1.0/board/{boardId}/features
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.toggleFeature(boardId, data)` issues `PUT /rest/agile/1.0/board/{boardId}/features`. CLI: `atlas jira boards toggle-feature <boardId> --feature-key ... --enabling`.
+  - **Rat:** Programmatic feature toggling on boards — completes the read/write loop with `getFeatures` for board configuration automation.
+- [x] 🔴 🧩 API: B246 Jira: expose POST /rest/agile/1.0/board/{boardId}/issue
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.moveIssues(boardId, issues, rank?)` issues `POST /rest/agile/1.0/board/{boardId}/issue`; enforces 50-issue limit (parity with sprints/backlog). Body built with immutable spread. CLI: `atlas jira boards move-issues <boardId> --issues KEY-1,KEY-2 [--rank-before KEY] [--rank-after KEY]`.
+  - **Rat:** Bulk-moves issues onto a board with optional ranking — supports cross-board reorganization and rebalancing workflows.
+- [x] 🔴 🧩 API: B248 Jira: expose GET /rest/agile/1.0/board/{boardId}/project
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listProjects(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/project` returning `OffsetPaginatedResponse<BoardProject>`. CLI: `atlas jira boards list-projects <boardId>`.
+  - **Rat:** Lists projects backing a board (cross-project boards can span many projects) — needed for permission/audit tooling.
+- [x] 🔴 🧩 API: B249 Jira: expose GET /rest/agile/1.0/board/{boardId}/project/full
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listProjectsFull(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/project/full` returning the non-paginated full project list. CLI: `atlas jira boards list-projects-full <boardId>`.
+  - **Rat:** Non-paginated variant for small board project counts — avoids pagination overhead for typical 1–5 project boards.
+- [x] 🔴 🧩 API: B250 Jira: expose GET /rest/agile/1.0/board/{boardId}/properties
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listProperties(boardId)` issues `GET /rest/agile/1.0/board/{boardId}/properties`. CLI: `atlas jira boards list-properties <boardId>`.
+  - **Rat:** Enumerates custom-property keys on a board — entry point for board-property-based app metadata.
+- [x] 🔴 🧩 API: B251 Jira: expose DELETE /rest/agile/1.0/board/{boardId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.deleteProperty(boardId, key)` issues `DELETE /rest/agile/1.0/board/{boardId}/properties/{propertyKey}` with `encodePathSegment`. CLI: `atlas jira boards delete-property <boardId> <key>`.
+  - **Rat:** Symmetric delete for board custom properties — supports app-uninstall cleanup.
+- [x] 🔴 🧩 API: B252 Jira: expose GET /rest/agile/1.0/board/{boardId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getProperty(boardId, key)` issues `GET /rest/agile/1.0/board/{boardId}/properties/{propertyKey}` returning `{ key: string; value: unknown }`. CLI: `atlas jira boards get-property <boardId> <key>`.
+  - **Rat:** Fetches a single board property by key — pairs with `setProperty` for app-state storage.
+- [x] 🔴 🧩 API: B253 Jira: expose PUT /rest/agile/1.0/board/{boardId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.setProperty(boardId, key, value: unknown)` issues `PUT /rest/agile/1.0/board/{boardId}/properties/{propertyKey}`. CLI: `atlas jira boards set-property <boardId> <key> --value '<JSON>'`.
+  - **Rat:** Writes arbitrary structured metadata to a board property; `unknown` typing forces caller narrowing.
+- [x] 🔴 🧩 API: B254 Jira: expose GET /rest/agile/1.0/board/{boardId}/quickfilter
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listQuickFilters(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/quickfilter` returning `OffsetPaginatedResponse<QuickFilter>`. CLI: `atlas jira boards list-quick-filters <boardId>`.
+  - **Rat:** Lists JQL-based quick filters attached to a board — needed for tooling that mirrors filters across environments.
+- [x] 🔴 🧩 API: B255 Jira: expose GET /rest/agile/1.0/board/{boardId}/quickfilter/{quickFilterId}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getQuickFilter(boardId, quickFilterId)` issues `GET /rest/agile/1.0/board/{boardId}/quickfilter/{quickFilterId}` returning `QuickFilter`. CLI: `atlas jira boards get-quick-filter <boardId> <quickFilterId>`.
+  - **Rat:** Single-record lookup for a board quick filter — avoids paginated listing when the ID is known.
+- [x] 🔴 🧩 API: B256 Jira: expose GET /rest/agile/1.0/board/{boardId}/reports
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getReports(boardId)` issues `GET /rest/agile/1.0/board/{boardId}/reports`. CLI: `atlas jira boards get-reports <boardId>`.
+  - **Rat:** Returns the set of report types available on a board — supports discovery of which Agile reports an app can render.
+- [x] 🔴 🧩 API: B258 Jira: expose GET /rest/agile/1.0/board/{boardId}/version
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listVersions(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/version` returning `OffsetPaginatedResponse<BoardVersion>`. CLI: `atlas jira boards list-versions <boardId> [--released] [--start-at N] [--max-results N]`.
+  - **Rat:** Lists versions (fix versions) attached to a board — needed for release-train automation.
+- [x] 🔴 🧩 API: B259 Jira: expose GET /rest/agile/1.0/board/filter/{filterId}
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.listByFilter(filterId, params?)` issues `GET /rest/agile/1.0/board/filter/{filterId}` returning `OffsetPaginatedResponse<Board>`. CLI: `atlas jira boards list-by-filter <filterId>`.
+  - **Rat:** Reverse lookup: finds every board backed by a given filter — required by automation that disables filters to know which boards will break.
+- [x] 🔴 🧩 API: B896 Jira: expose GET /rest/agile/1.0/board/{boardId}/backlog
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getBacklog(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/backlog`; supports `jql`, `fields`, `startAt`, `maxResults`. CLI: `atlas jira boards backlog <boardId> [--jql ...]`.
+  - **Rat:** Returns board backlog issues — primary read path for backlog-grooming and prioritization automation.
+- [x] 🔴 🧩 API: B897 Jira: expose GET /rest/agile/1.0/board/{boardId}/epic/{epicId}/issue
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getEpicIssues(boardId, epicId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/epic/{epicId}/issue`. CLI: `atlas jira boards epic-issues <boardId> <epicId>`.
+  - **Rat:** Board-scoped epic-issue listing — narrows results to the board's filter, avoiding cross-board pollution.
+- [x] 🔴 🧩 API: B898 Jira: expose GET /rest/agile/1.0/board/{boardId}/epic/none/issue
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getIssuesWithoutEpic(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/epic/none/issue`. CLI: `atlas jira boards issues-without-epic <boardId>`.
+  - **Rat:** Finds board issues with no epic — grooming-mode automation can re-parent them or flag for triage.
+- [x] 🔴 🧩 API: B899 Jira: expose GET /rest/agile/1.0/board/{boardId}/issue
+  - **Impl:** Branch `feat/jira-agile-boards-core`; `BoardsResource.getIssues(boardId, params?)` issues `GET /rest/agile/1.0/board/{boardId}/issue` returning `OffsetPaginatedResponse<BoardIssue>`. CLI: `atlas jira boards get-issues <boardId> [--jql ...] [--fields ...]`.
+  - **Rat:** Generic board-issue listing — workhorse query used by sprint planning, kanban tooling, and dashboard widgets.
+- [x] 🔴 🧩 API: B265 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}
+  - **Impl:** Branch `feat/jira-agile-issue`; `IssuesResource.getAgile(issueIdOrKey)` (`src/jira/resources/issues.ts`) issues `GET /rest/agile/1.0/issue/{issueIdOrKey}` via injected `agileBaseUrl`; `requireAgileBaseUrl()` guard throws `ValidationError` on v3-only clients. CLI: `atlas jira issues get-agile <issueIdOrKey>`.
+  - **Rat:** Exposes the Agile-API issue payload (epic link, sprint, ranking) distinct from the v3 issue payload — required for agile reporting.
+- [x] 🔴 🧩 API: B266 Jira: expose GET /rest/agile/1.0/issue/{issueIdOrKey}/estimation
+  - **Impl:** Branch `feat/jira-agile-issue`; `IssuesResource.getEstimation(issueIdOrKey, boardId)` issues `GET /rest/agile/1.0/issue/{issueIdOrKey}/estimation?boardId=...`. Uses `buildBoardIdQuery()` helper. CLI: `atlas jira issues get-estimation <issueIdOrKey> --board-id N`.
+  - **Rat:** Returns the issue's estimation field value relative to a board's estimation config — board scoping required since estimation can differ across boards.
+- [x] 🔴 🧩 API: B267 Jira: expose PUT /rest/agile/1.0/issue/{issueIdOrKey}/estimation
+  - **Impl:** Branch `feat/jira-agile-issue`; `IssuesResource.setEstimation(issueIdOrKey, boardId, value: string | null)` issues `PUT /rest/agile/1.0/issue/{issueIdOrKey}/estimation`. `value: null` clears estimation. CLI: `atlas jira issues set-estimation <issueIdOrKey> --board-id N --value <num|null>`.
+  - **Rat:** Writes (or clears) an issue's estimation in a board's units — needed for sprint planning automation that revises estimates after grooming.
+- [x] 🔴 🧩 API: B268 Jira: expose PUT /rest/agile/1.0/issue/rank
+  - **Impl:** Branch `feat/jira-agile-issue`; `IssuesResource.rank(data)` issues `PUT /rest/agile/1.0/issue/rank`; enforces mutual exclusivity of `rankBeforeIssue` / `rankAfterIssue`. CLI: `atlas jira issues rank --issues KEY-1,KEY-2 [--before KEY|--after KEY] [--custom-field N]`.
+  - **Rat:** Bulk ranks issues relative to an anchor issue — fundamental for backlog-ordering automation.
+- [x] 🔴 🧩 API: B235 Jira: expose POST /rest/agile/1.0/backlog/{boardId}/issue
+  - **Impl:** Branch `feat/jira-agile-backlog`; New `BacklogResource` (`src/jira/resources/backlog.ts`) exposes `moveIssuesToBoardBacklog(boardId, issues)` issuing `POST /rest/agile/1.0/backlog/{boardId}/issue`. Validates `boardId` positive integer, `issues` non-empty array (≤50). Wired as `JiraClient.backlog`. CLI: `atlas jira backlog move --issues KEY-1,KEY-2 --board-id N`.
+  - **Rat:** Moves issues into a board-scoped backlog — required when removing issues from sprints and returning them to a specific board's backlog.
+- [x] 🔴 🧩 API: B236 Jira: expose POST /rest/agile/1.0/backlog/issue
+  - **Impl:** Branch `feat/jira-agile-backlog`; `BacklogResource.moveIssuesToBacklog(issues)` issues `POST /rest/agile/1.0/backlog/issue` (no board scope). CLI: `atlas jira backlog move --issues KEY-1,KEY-2` (omit `--board-id`).
+  - **Rat:** Cross-board backlog move — useful when issues should leave their current sprint without anchoring to a specific board's backlog.
+- [x] 🔴 🧩 API: B969 Jira: expose DELETE /rest/devopscomponents/1.0/devopscomponents/{componentId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; New `DevopsComponentsResource` (`src/jira/resources/devopscomponents.ts`) exposes `delete(componentId)` issuing `DELETE /rest/devopscomponents/1.0/devopscomponents/{componentId}` via injected `devopscomponentsBaseUrl`. Returns `void` (204). CLI: `atlas jira devopscomponents delete <componentId>`.
+  - **Rat:** Lets automation purge DevOps component records — needed for tenant cleanup and stale-data eviction in CI/CD integrations.
+- [x] 🔴 🧩 API: B970 Jira: expose GET /rest/devopscomponents/1.0/devopscomponents/{componentId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; `DevopsComponentsResource.get(componentId)` issues `GET /rest/devopscomponents/1.0/devopscomponents/{componentId}` returning `DevopsComponent` (only `id` required; all other fields optional to tolerate shape drift). CLI: `atlas jira devopscomponents get <componentId>`.
+  - **Rat:** Reads a single DevOps component by ID — defensive optional-everything typing avoids breakage since Atlassian doesn't publish a canonical schema.
+- [x] 🔴 🧩 API: B982 Jira: expose DELETE /rest/operations/1.0/incidents/{incidentId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; New `IncidentsResource` (`src/jira/resources/incidents.ts`) exposes `delete(incidentId)` issuing `DELETE /rest/operations/1.0/incidents/{incidentId}` via `operationsBaseUrl`. CLI: `atlas jira incidents delete <incidentId>`.
+  - **Rat:** Removes incident records — required for incident-data retention policies and test-environment cleanup.
+- [x] 🔴 🧩 API: B983 Jira: expose GET /rest/operations/1.0/incidents/{incidentId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; `IncidentsResource.get(incidentId)` issues `GET /rest/operations/1.0/incidents/{incidentId}` returning `Incident` (only `id` required). CLI: `atlas jira incidents get <incidentId>`.
+  - **Rat:** Reads a single incident record — foundation for incident-aware automation (SLA tracking, runbook lookup).
+- [x] 🔴 🧩 API: B987 Jira: expose DELETE /rest/operations/1.0/post-incident-reviews/{reviewId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; New `PostIncidentReviewsResource` (`src/jira/resources/post-incident-reviews.ts`) exposes `delete(reviewId)` issuing `DELETE /rest/operations/1.0/post-incident-reviews/{reviewId}`. CLI: `atlas jira post-incident-reviews delete <reviewId>`.
+  - **Rat:** Lets automation remove PIR records — supports retention policies and pruning of duplicate/test reviews.
+- [x] 🔴 🧩 API: B988 Jira: expose GET /rest/operations/1.0/post-incident-reviews/{reviewId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; `PostIncidentReviewsResource.get(reviewId)` issues `GET /rest/operations/1.0/post-incident-reviews/{reviewId}` returning `PostIncidentReview` (only `id` required). CLI: `atlas jira post-incident-reviews get <reviewId>`.
+  - **Rat:** Reads a single PIR — foundation for compliance reporting and learning-from-incident workflows.
+- [x] 🔴 🧩 API: B999 Jira: expose DELETE /rest/security/1.0/vulnerability/{vulnerabilityId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; New `VulnerabilityResource` (`src/jira/resources/vulnerability.ts`) exposes `delete(vulnerabilityId)` issuing `DELETE /rest/security/1.0/vulnerability/{vulnerabilityId}` via `securityBaseUrl`. CLI: `atlas jira vulnerability delete <vulnerabilityId>`.
+  - **Rat:** Removes a vulnerability record — supports remediation workflows that close out resolved findings.
+- [x] 🔴 🧩 API: B1000 Jira: expose GET /rest/security/1.0/vulnerability/{vulnerabilityId}
+  - **Impl:** Branch `feat/jira-incident-bundle`; `VulnerabilityResource.get(vulnerabilityId)` issues `GET /rest/security/1.0/vulnerability/{vulnerabilityId}` returning `Vulnerability` (only `id` required). CLI: `atlas jira vulnerability get <vulnerabilityId>`.
+  - **Rat:** Reads a single vulnerability record — foundation for security-posture dashboards and SLA tracking on findings.
 
 ## 🖥️ CLI
 
