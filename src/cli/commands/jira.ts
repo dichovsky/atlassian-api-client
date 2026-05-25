@@ -20,6 +20,8 @@ export async function executeJiraCommand(
       return executeUsers(client, cmd);
     case 'issue-types':
       return executeIssueTypes(client, cmd);
+    case 'issuetype':
+      return executeIssueType(client, cmd);
     case 'priorities':
       return executePriorities(client, cmd);
     case 'statuses':
@@ -1307,6 +1309,122 @@ async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand)
   }
 }
 
+async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const type = asIssueTypeKind(opts['type']);
+      const hierarchyLevelRaw = asString(opts['hierarchy-level']);
+      const hierarchyLevel =
+        hierarchyLevelRaw !== undefined
+          ? parseIntArg(hierarchyLevelRaw, '--hierarchy-level')
+          : undefined;
+      const body = {
+        name,
+        ...(description !== undefined && { description }),
+        ...(type !== undefined && { type }),
+        ...(hierarchyLevel !== undefined && { hierarchyLevel }),
+      };
+      return client.issueType.create(body);
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const alternativeIssueTypeId = asString(opts['alternative-id']);
+      await client.issueType.delete(id, alternativeIssueTypeId);
+      return { deleted: true };
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const avatarIdRaw = asString(opts['avatar-id']);
+      const avatarId =
+        avatarIdRaw !== undefined ? parsePositiveIntArg(avatarIdRaw, '--avatar-id') : undefined;
+
+      if (name === undefined && description === undefined && avatarId === undefined) {
+        throw new Error('update requires at least one of: --name, --description, --avatar-id');
+      }
+
+      const body = {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(avatarId !== undefined && { avatarId }),
+      };
+      return client.issueType.update(id, body);
+    }
+    case 'list-alternatives': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.issueType.listAlternatives(id);
+    }
+    case 'load-avatar': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const filePath = requireOpt(opts['file'], '--file');
+      const size = parsePositiveIntArg(requireOpt(opts['size'], '--size'), '--size');
+      const xRaw = asString(opts['x']);
+      const yRaw = asString(opts['y']);
+      const x = xRaw !== undefined ? parseNonNegativeIntArg(xRaw, '--x') : undefined;
+      const y = yRaw !== undefined ? parseNonNegativeIntArg(yRaw, '--y') : undefined;
+      const { readFile } = await import('node:fs/promises');
+      const buffer = await readFile(filePath);
+      const blob = new Blob([new Uint8Array(buffer)]);
+      return client.issueType.loadAvatar(id, blob, {
+        size,
+        ...(x !== undefined && { x }),
+        ...(y !== undefined && { y }),
+      });
+    }
+    case 'list-properties': {
+      const issueTypeId = requireArg(cmd.positionalArgs[0], 'issueTypeId');
+      return client.issueType.listProperties(issueTypeId);
+    }
+    case 'delete-property': {
+      const issueTypeId = requireArg(cmd.positionalArgs[0], 'issueTypeId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      await client.issueType.deleteProperty(issueTypeId, propertyKey);
+      return { deleted: true };
+    }
+    case 'get-property': {
+      const issueTypeId = requireArg(cmd.positionalArgs[0], 'issueTypeId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      return client.issueType.getProperty(issueTypeId, propertyKey);
+    }
+    case 'set-property': {
+      const issueTypeId = requireArg(cmd.positionalArgs[0], 'issueTypeId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let value: unknown;
+      try {
+        value = JSON.parse(valueRaw);
+      } catch {
+        throw new Error('--value must be valid JSON');
+      }
+      await client.issueType.setProperty(issueTypeId, propertyKey, value);
+      return { set: true };
+    }
+    case 'list-for-project': {
+      const projectId = parsePositiveIntArg(
+        requireOpt(opts['project-id'], '--project-id'),
+        '--project-id',
+      );
+      return client.issueType.listForProject(projectId);
+    }
+    default:
+      throw new Error(
+        `Unknown issuetype action: ${cmd.action}. Actions: create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project`,
+      );
+  }
+}
+
+function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'subtask' || s === 'standard') return s;
+  throw new Error(`--type must be one of: subtask, standard. Got: ${s}`);
+}
+
 async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -1430,4 +1548,20 @@ function parseCsv(value: string | boolean | undefined): string[] | undefined {
     .map((x) => x.trim())
     .filter((x) => x.length > 0);
   return arr.length > 0 ? arr : undefined;
+}
+
+function parseIntArg(value: string, name: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n)) {
+    throw new Error(`${name} must be an integer, got: ${value}`);
+  }
+  return n;
+}
+
+function parseNonNegativeIntArg(value: string, name: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`${name} must be a non-negative integer, got: ${value}`);
+  }
+  return n;
 }

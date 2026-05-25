@@ -36,6 +36,17 @@ export { ProjectsResource } from './resources/projects.js';
 export { SearchResource } from './resources/search.js';
 export { UsersResource } from './resources/users.js';
 export { IssueTypesResource } from './resources/issue-types.js';
+export { IssueTypeResource } from './resources/issuetype.js';
+export type {
+  CreateIssueTypeData,
+  UpdateIssueTypeData,
+  IssueTypeAvatar,
+  LoadIssueTypeAvatarParams,
+  IssueTypePropertyKey,
+  IssueTypePropertyKeys,
+  IssueTypeProperty,
+  IssueTypesForProject,
+} from './resources/issuetype.js';
 export { PrioritiesResource } from './resources/priorities.js';
 export { StatusesResource } from './resources/statuses.js';
 export { IssueCommentsResource } from './resources/issue-comments.js';

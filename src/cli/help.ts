@@ -214,6 +214,7 @@ RESOURCES:
   search        search (via JQL)
   users         get, me, search
   issue-types   list, get
+  issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
   priorities    list, get
   statuses      list
   status        list, get
@@ -288,6 +289,7 @@ EXAMPLES:
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
   atlas jira exists-by-properties get --entity-type repository
+<<<<<<< HEAD
   atlas jira app get-field-context-configuration customfield_10042
   atlas jira app update-field-context-configuration customfield_10042 --configuration '{"foo":true}'
   atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'
@@ -300,6 +302,18 @@ EXAMPLES:
   atlas jira app get-forge-property my-key
   atlas jira app set-forge-property my-key --value '{"on":true}'
   atlas jira app delete-forge-property my-key
+=======
+  atlas jira issuetype create --name "Spike" --description "Investigation task" --hierarchy-level 0
+  atlas jira issuetype update 10001 --name "Spike v2" --avatar-id 10300
+  atlas jira issuetype delete 10001 --alternative-id 10000
+  atlas jira issuetype list-alternatives 10001
+  atlas jira issuetype load-avatar 10001 --file ./icon.png --size 48 --x 0 --y 0
+  atlas jira issuetype list-properties 10001
+  atlas jira issuetype get-property 10001 reviewed
+  atlas jira issuetype set-property 10001 reviewed --value true
+  atlas jira issuetype delete-property 10001 reviewed
+  atlas jira issuetype list-for-project --project-id 10000
+>>>>>>> a2d5bcf (feat(jira): issuetype API coverage (B556-B565))
 `;
 
 /** Get help text for the given level. */

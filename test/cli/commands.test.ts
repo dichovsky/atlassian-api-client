@@ -349,6 +349,18 @@ const jiraIssueTypesMock = {
   list: vi.fn(),
   get: vi.fn(),
 };
+const jiraIssueTypeMock = {
+  create: vi.fn(),
+  delete: vi.fn(),
+  update: vi.fn(),
+  listAlternatives: vi.fn(),
+  loadAvatar: vi.fn(),
+  listProperties: vi.fn(),
+  deleteProperty: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  listForProject: vi.fn(),
+};
 const jiraPrioritiesMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -559,6 +571,7 @@ vi.mock('../../src/jira/client.js', () => {
       search: jiraSearchMock,
       users: jiraUsersMock,
       issueTypes: jiraIssueTypesMock,
+      issueType: jiraIssueTypeMock,
       priorities: jiraPrioritiesMock,
       statuses: jiraStatusesMock,
       boards: jiraBoardsMock,
@@ -7490,6 +7503,296 @@ describe('executeJiraCommand', () => {
     it('issue-types unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('issue-types', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issue-types action',
+      );
+    });
+  });
+
+  // ── issuetype (B556-B565) ─────────────────────────────────────────────────
+
+  describe('issuetype resource', () => {
+    it('issuetype create calls client.issueType.create with body fields', async () => {
+      jiraIssueTypeMock.create.mockResolvedValue({ id: '10100', name: 'Spike' });
+      const parsed = cmd('issuetype', 'create', [], {
+        name: 'Spike',
+        description: 'Investigation',
+        type: 'standard',
+        'hierarchy-level': '0',
+      });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraIssueTypeMock.create).toHaveBeenCalledWith({
+        name: 'Spike',
+        description: 'Investigation',
+        type: 'standard',
+        hierarchyLevel: 0,
+      });
+      expect(result).toMatchObject({ id: '10100' });
+    });
+
+    it('issuetype create with only --name omits optional fields', async () => {
+      jiraIssueTypeMock.create.mockResolvedValue({ id: 'x' });
+      await executeJiraCommand(cmd('issuetype', 'create', [], { name: 'X' }), GLOBALS);
+      expect(jiraIssueTypeMock.create).toHaveBeenCalledWith({ name: 'X' });
+    });
+
+    it('issuetype create throws when --name is missing', async () => {
+      await expect(executeJiraCommand(cmd('issuetype', 'create'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('issuetype create rejects invalid --type values', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'create', [], { name: 'X', type: 'invalid' }), GLOBALS),
+      ).rejects.toThrow('--type must be one of: subtask, standard');
+    });
+
+    it('issuetype create rejects non-integer --hierarchy-level', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuetype', 'create', [], { name: 'X', 'hierarchy-level': 'abc' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--hierarchy-level must be an integer');
+    });
+
+    it('issuetype delete calls client.issueType.delete with positional id', async () => {
+      jiraIssueTypeMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issuetype', 'delete', ['10001']), GLOBALS);
+      expect(jiraIssueTypeMock.delete).toHaveBeenCalledWith('10001', undefined);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issuetype delete passes --alternative-id when provided', async () => {
+      jiraIssueTypeMock.delete.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issuetype', 'delete', ['10001'], { 'alternative-id': '10000' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.delete).toHaveBeenCalledWith('10001', '10000');
+    });
+
+    it('issuetype delete throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('issuetype', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: id',
+      );
+    });
+
+    it('issuetype update calls client.issueType.update with the patch body', async () => {
+      jiraIssueTypeMock.update.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('issuetype', 'update', ['10001'], {
+          name: 'New',
+          description: 'Updated',
+          'avatar-id': '10300',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.update).toHaveBeenCalledWith('10001', {
+        name: 'New',
+        description: 'Updated',
+        avatarId: 10300,
+      });
+    });
+
+    it('issuetype update requires at least one mutable field', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of: --name, --description, --avatar-id');
+    });
+
+    it('issuetype update throws when id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: id');
+    });
+
+    it('issuetype update rejects non-positive --avatar-id', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'update', ['10001'], { 'avatar-id': '0' }), GLOBALS),
+      ).rejects.toThrow('--avatar-id must be a positive integer');
+    });
+
+    it('issuetype list-alternatives calls client.issueType.listAlternatives', async () => {
+      jiraIssueTypeMock.listAlternatives.mockResolvedValue([{ id: '10002' }]);
+      const result = await executeJiraCommand(
+        cmd('issuetype', 'list-alternatives', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.listAlternatives).toHaveBeenCalledWith('10001');
+      expect(result).toEqual([{ id: '10002' }]);
+    });
+
+    it('issuetype list-alternatives throws when id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'list-alternatives', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: id');
+    });
+
+    it('issuetype load-avatar reads file and calls client.issueType.loadAvatar', async () => {
+      // Use the actual fs module to write a temp file, then dispatch.
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'issuetype-avatar-'));
+      const filePath = join(dir, 'icon.png');
+      await writeFile(filePath, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+      jiraIssueTypeMock.loadAvatar.mockResolvedValue({
+        id: '10300',
+        isSystemAvatar: false,
+        isSelected: true,
+        isDeletable: true,
+      });
+
+      try {
+        await executeJiraCommand(
+          cmd('issuetype', 'load-avatar', ['10001'], {
+            file: filePath,
+            size: '48',
+            x: '0',
+            y: '0',
+          }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+
+      expect(jiraIssueTypeMock.loadAvatar).toHaveBeenCalledTimes(1);
+      const call = jiraIssueTypeMock.loadAvatar.mock.calls[0]!;
+      const [idArg, blobArg, paramsArg] = call;
+      expect(idArg).toBe('10001');
+      expect(blobArg).toBeInstanceOf(Blob);
+      expect(paramsArg).toEqual({ size: 48, x: 0, y: 0 });
+    });
+
+    it('issuetype load-avatar omits x/y when not supplied', async () => {
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'issuetype-avatar-'));
+      const filePath = join(dir, 'icon.png');
+      await writeFile(filePath, Buffer.from([0]));
+
+      jiraIssueTypeMock.loadAvatar.mockResolvedValue({});
+      try {
+        await executeJiraCommand(
+          cmd('issuetype', 'load-avatar', ['10001'], { file: filePath, size: '48' }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      const call2 = jiraIssueTypeMock.loadAvatar.mock.calls[0]!;
+      const [, , paramsArg] = call2;
+      expect(paramsArg).toEqual({ size: 48 });
+    });
+
+    it('issuetype load-avatar throws when --file is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'load-avatar', ['10001'], { size: '48' }), GLOBALS),
+      ).rejects.toThrow('Missing required option: --file');
+    });
+
+    it('issuetype load-avatar rejects negative --x', async () => {
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'issuetype-avatar-'));
+      const filePath = join(dir, 'icon.png');
+      await writeFile(filePath, Buffer.from([0]));
+      try {
+        await expect(
+          executeJiraCommand(
+            cmd('issuetype', 'load-avatar', ['10001'], { file: filePath, size: '48', x: '-1' }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--x must be a non-negative integer');
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('issuetype list-properties calls client.issueType.listProperties', async () => {
+      jiraIssueTypeMock.listProperties.mockResolvedValue({ keys: [] });
+      await executeJiraCommand(cmd('issuetype', 'list-properties', ['10001']), GLOBALS);
+      expect(jiraIssueTypeMock.listProperties).toHaveBeenCalledWith('10001');
+    });
+
+    it('issuetype list-properties throws when issueTypeId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issueTypeId');
+    });
+
+    it('issuetype get-property calls client.issueType.getProperty', async () => {
+      jiraIssueTypeMock.getProperty.mockResolvedValue({ key: 'k', value: 1 });
+      await executeJiraCommand(cmd('issuetype', 'get-property', ['10001', 'k']), GLOBALS);
+      expect(jiraIssueTypeMock.getProperty).toHaveBeenCalledWith('10001', 'k');
+    });
+
+    it('issuetype get-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'get-property', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('issuetype set-property parses --value as JSON and calls client.issueType.setProperty', async () => {
+      jiraIssueTypeMock.setProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuetype', 'set-property', ['10001', 'cfg'], { value: '{"n":1}' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.setProperty).toHaveBeenCalledWith('10001', 'cfg', { n: 1 });
+      expect(result).toEqual({ set: true });
+    });
+
+    it('issuetype set-property throws on invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuetype', 'set-property', ['10001', 'cfg'], { value: 'not-json{' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('issuetype delete-property calls client.issueType.deleteProperty', async () => {
+      jiraIssueTypeMock.deleteProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuetype', 'delete-property', ['10001', 'k']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.deleteProperty).toHaveBeenCalledWith('10001', 'k');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issuetype list-for-project calls client.issueType.listForProject with parsed --project-id', async () => {
+      jiraIssueTypeMock.listForProject.mockResolvedValue([{ id: '1' }]);
+      await executeJiraCommand(
+        cmd('issuetype', 'list-for-project', [], { 'project-id': '10000' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeMock.listForProject).toHaveBeenCalledWith(10000);
+    });
+
+    it('issuetype list-for-project throws when --project-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuetype', 'list-for-project'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --project-id');
+    });
+
+    it('issuetype list-for-project rejects non-positive --project-id', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuetype', 'list-for-project', [], { 'project-id': '0' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--project-id must be a positive integer');
+    });
+
+    it('issuetype unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('issuetype', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown issuetype action',
       );
     });
   });
