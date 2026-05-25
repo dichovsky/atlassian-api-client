@@ -859,6 +859,23 @@ describe('DashboardsResource', () => {
     it.each([0, -1, 1.5, Infinity])('rejects bad maxResults: %s', async (maxResults) => {
       await expect(dashboards.search({ maxResults })).rejects.toThrow(RangeError);
     });
+
+    it('PR review: returns total as undefined when server omits it', async () => {
+      // OffsetPaginatedResponse.total is optional and Jira /dashboard/search
+      // can omit it. Verify search() propagates the missing field rather
+      // than asserting a number is always present.
+      transport.respondWith({
+        values: [makeDashboard('1', 'D1')],
+        startAt: 0,
+        maxResults: 50,
+        // total deliberately omitted
+      });
+      const result = await dashboards.search({ accountId: 'acc-1' });
+      expect(result.total).toBeUndefined();
+      expect(result.values).toHaveLength(1);
+      // Exercise the dashboardName-omitted branch in the query builder.
+      expect(transport.lastCall?.options.query).toEqual({ accountId: 'acc-1' });
+    });
   });
 
   // ── B405: searchAll ──────────────────────────────────────────────────────
@@ -930,26 +947,46 @@ describe('DashboardsResource', () => {
       await expect(iterator.next()).rejects.toBeInstanceOf(RangeError);
     });
 
-    it('does NOT warn() when maxPages is intentionally small (1 or 2)', async () => {
+    it('passes the full filter set as query params', async () => {
+      // searchAll delegates to paginateOffset, which uses values.length for
+      // advancement (PR review [[B037]]). Verify every filter is forwarded
+      // to the underlying GET /dashboard/search request.
       transport.respondWith({
         values: [makeDashboard('1', 'D1')],
         startAt: 0,
-        maxResults: 1,
+        maxResults: 50,
       });
-      const warnings: string[] = [];
-      const noop = (): void => undefined;
-      const logger = {
-        debug: noop,
-        info: noop,
-        warn: (msg: string): void => {
-          warnings.push(msg);
-        },
-        error: noop,
-      };
-      for await (const _ of dashboards.searchAll(undefined, { maxPages: 1, logger })) {
-        // consume
+      const items: unknown[] = [];
+      for await (const d of dashboards.searchAll({
+        dashboardName: 'Sprint',
+        accountId: 'acc-1',
+        owner: 'acc-2',
+        groupname: 'devs',
+        groupId: 'grp-1',
+        projectId: 100,
+        orderBy: 'name',
+        status: 'active',
+        expand: 'owner',
+        maxResults: 50,
+      })) {
+        items.push(d);
       }
-      expect(warnings).toEqual([]);
+      expect(items).toHaveLength(1);
+      // paginateOffset injects startAt + maxResults itself; verify the
+      // resource-level params surface alongside them.
+      expect(transport.calls[0]?.options.query).toMatchObject({
+        dashboardName: 'Sprint',
+        accountId: 'acc-1',
+        owner: 'acc-2',
+        groupname: 'devs',
+        groupId: 'grp-1',
+        projectId: 100,
+        orderBy: 'name',
+        status: 'active',
+        expand: 'owner',
+        startAt: 0,
+        maxResults: 50,
+      });
     });
 
     it('emits warn() at 80% of maxPages', async () => {

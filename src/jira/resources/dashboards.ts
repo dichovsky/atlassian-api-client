@@ -2,7 +2,7 @@ import type { Transport, Logger } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
-import { validatePageSize } from '../../core/pagination.js';
+import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
 export interface DashboardSharePermission {
   readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user';
@@ -472,7 +472,7 @@ export class DashboardsResource {
       values: Dashboard[];
       startAt: number;
       maxResults: number;
-      total: number;
+      total?: number;
     }>({
       method: 'GET',
       path: `${this.baseUrl}/dashboard/search`,
@@ -487,48 +487,42 @@ export class DashboardsResource {
   }
 
   /**
-   * Iterate every dashboard returned by `/dashboard/search`. Mirrors the
-   * `listAll()` safety guards (maxPages cap + 80 % warn) used by the
-   * `list()` paginator.
+   * Iterate every dashboard returned by `/dashboard/search`. Delegates to
+   * {@link paginateOffset} so advancement uses `values.length` (PR review
+   * [[B037]] — never the server-echoed `maxResults`) and the standard
+   * `maxPages` cap + 80 % warn safety guards apply.
    */
   async *searchAll(
     params?: Omit<SearchDashboardsParams, 'startAt'>,
     options?: { readonly maxPages?: number; readonly logger?: Logger },
   ): AsyncGenerator<Dashboard> {
-    let startAt = 0;
     const maxResults = params?.maxResults ?? 50;
     validatePageSize(maxResults, 'maxResults');
 
-    const maxPages = options?.maxPages ?? DEFAULT_MAX_PAGES;
-    if (!Number.isFinite(maxPages) || !Number.isInteger(maxPages) || maxPages <= 0) {
-      throw new RangeError(`maxPages must be a positive integer, got: ${maxPages}`);
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.dashboardName !== undefined) query['dashboardName'] = params.dashboardName;
+      if (params.accountId !== undefined) query['accountId'] = params.accountId;
+      if (params.owner !== undefined) query['owner'] = params.owner;
+      if (params.groupname !== undefined) query['groupname'] = params.groupname;
+      if (params.groupId !== undefined) query['groupId'] = params.groupId;
+      if (params.projectId !== undefined) query['projectId'] = params.projectId;
+      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.status !== undefined) query['status'] = params.status;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
-    const warnThreshold = maxPages < 3 ? Number.POSITIVE_INFINITY : Math.ceil(maxPages * 0.8);
-    const logger = options?.logger;
 
-    let pageCount = 0;
-    let warned = false;
+    const paginateOptions: { maxPages?: number; logger?: Logger } = {};
+    if (options?.maxPages !== undefined) paginateOptions.maxPages = options.maxPages;
+    if (options?.logger !== undefined) paginateOptions.logger = options.logger;
 
-    while (true) {
-      const page = await this.search({ ...params, startAt, maxResults });
-      for (const item of page.values) yield item;
-
-      pageCount += 1;
-      if (!warned && pageCount >= warnThreshold) {
-        logger?.warn('DashboardsResource.searchAll: nearing maxPages limit', {
-          pageCount,
-          maxPages,
-        });
-        warned = true;
-      }
-      if (pageCount >= maxPages) return;
-
-      if (page.values.length === 0) return;
-      if (page.total !== undefined && startAt + maxResults >= page.total) return;
-      if (page.values.length < maxResults) return;
-
-      startAt += maxResults;
-    }
+    yield* paginateOffset<Dashboard>(
+      this.transport,
+      `${this.baseUrl}/dashboard/search`,
+      query,
+      maxResults,
+      paginateOptions,
+    );
   }
 
   /**
