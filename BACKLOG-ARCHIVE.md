@@ -1116,3 +1116,21 @@
 - [x] 🔴 🧩 API: B342 Jira: expose GET /rest/api/3/attachment/thumbnail/{id}
   - **Impl:** `IssueAttachmentsResource.downloadThumbnail(attachmentId, { redirect?, fallbackToDefault?, width?, height? })` returns `ArrayBuffer`. CLI `atlas jira issue-attachments download-thumbnail <attachmentId> [--redirect true|false] [--fallback-to-default true|false] [--width N] [--height N]` prints `{ bytes: N }` summary.
   - **Rat:** Thumbnail preview rendering sibling of B340; `--fallback-to-default` lets the caller opt into a generic placeholder instead of a 404 when the attachment has no renderable preview.
+- [x] 🔴 🧩 API: B361 Jira: expose GET /rest/api/3/component
+  - **Impl:** `ComponentResource.list(params)` returns `OffsetPaginatedResponse<Component>`; `ComponentResource.listAll(params, opts)` async generator wraps `paginateOffset`. CLI `atlas jira component list --project-ids-or-keys HSP,PROJ --max-results 25`.
+  - **Rat:** Flat `/component` paginated surface; `listAll` mirrors existing `dashboards.listAll` pattern.
+- [x] 🔴 🧩 API: B362 Jira: expose POST /rest/api/3/component
+  - **Impl:** `ComponentResource.create(data)` returns `Component`. CLI `atlas jira component create --name Auth --project HSP --lead-account-id <id> --assignee-type PROJECT_LEAD`.
+  - **Rat:** Every API body field exposed as a CLI flag (`--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`, `--is-assignee-type-valid`, `--project`, `--project-id`); `--assignee-type` enum guarded.
+- [x] 🔴 🧩 API: B363 Jira: expose DELETE /rest/api/3/component/{id}
+  - **Impl:** `ComponentResource.delete(id, params?)` returns `void` (204). CLI `atlas jira component delete 10000 [--move-issues-to 10001]`.
+  - **Rat:** Optional `moveIssuesTo` query reassigns issues; positional `id` per CLI convention; returns `{deleted: true}`.
+- [x] 🔴 🧩 API: B364 Jira: expose GET /rest/api/3/component/{id}
+  - **Impl:** `ComponentResource.get(id)` returns `Component`. CLI `atlas jira component get 10000`.
+  - **Rat:** Standard read-by-id; encodePathSegment + dot-segment guard.
+- [x] 🔴 🧩 API: B365 Jira: expose PUT /rest/api/3/component/{id}
+  - **Impl:** `ComponentResource.update(id, data)` returns `Component`. CLI `atlas jira component update 10000 --name "Auth"`; update requires ≥1 of `--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`.
+  - **Rat:** Strip-undefined body builder; empty-body error matches announcement-banner pattern.
+- [x] 🔴 🧩 API: B366 Jira: expose GET /rest/api/3/component/{id}/relatedIssueCounts
+  - **Impl:** `ComponentResource.getRelatedIssueCounts(id)` returns `ComponentRelatedIssueCounts`. CLI `atlas jira component related-issue-counts 10000`.
+  - **Rat:** Read-only count sub-resource; kebab-case action mirrors API name.

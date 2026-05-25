@@ -104,6 +104,8 @@ export async function executeJiraCommand(
       return executeBulk(client, cmd);
     case 'issue-attachments':
       return executeIssueAttachments(client, cmd);
+    case 'component':
+      return executeComponent(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1793,4 +1795,109 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
         `Unknown issue-attachments action: ${cmd.action}. Actions: list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload`,
       );
   }
+}
+async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const projectIdsOrKeys = parseCsv(opts['project-ids-or-keys']);
+      return client.component.list({
+        ...(projectIdsOrKeys !== undefined && { projectIdsOrKeys }),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(asString(opts['order-by']) !== undefined && {
+          orderBy: asString(opts['order-by']) as string,
+        }),
+        ...(asString(opts['query']) !== undefined && { query: asString(opts['query']) as string }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const leadAccountId = asString(opts['lead-account-id']);
+      const leadUserName = asString(opts['lead-user-name']);
+      const assigneeType = asComponentAssigneeType(opts['assignee-type']);
+      const isAssigneeTypeValid =
+        opts['is-assignee-type-valid'] !== undefined
+          ? asBoolFlag(opts['is-assignee-type-valid'])
+          : undefined;
+      const project = asString(opts['project']);
+      const projectIdStr = asString(opts['project-id']);
+      const projectId =
+        projectIdStr !== undefined ? parsePositiveIntArg(projectIdStr, '--project-id') : undefined;
+      return client.component.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(leadAccountId !== undefined && { leadAccountId }),
+        ...(leadUserName !== undefined && { leadUserName }),
+        ...(assigneeType !== undefined && { assigneeType }),
+        ...(isAssigneeTypeValid !== undefined && { isAssigneeTypeValid }),
+        ...(project !== undefined && { project }),
+        ...(projectId !== undefined && { projectId }),
+      });
+    }
+    case 'get':
+      return client.component.get(requireArg(cmd.positionalArgs[0], 'component id'));
+    case 'update': {
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const leadAccountId = asString(opts['lead-account-id']);
+      const leadUserName = asString(opts['lead-user-name']);
+      const assigneeType = asComponentAssigneeType(opts['assignee-type']);
+      if (
+        name === undefined &&
+        description === undefined &&
+        leadAccountId === undefined &&
+        leadUserName === undefined &&
+        assigneeType === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+        );
+      }
+      return client.component.update(requireArg(cmd.positionalArgs[0], 'component id'), {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(leadAccountId !== undefined && { leadAccountId }),
+        ...(leadUserName !== undefined && { leadUserName }),
+        ...(assigneeType !== undefined && { assigneeType }),
+      });
+    }
+    case 'delete': {
+      const moveIssuesTo = asString(opts['move-issues-to']);
+      await client.component.delete(requireArg(cmd.positionalArgs[0], 'component id'), {
+        ...(moveIssuesTo !== undefined && { moveIssuesTo }),
+      });
+      return { deleted: true };
+    }
+    case 'related-issue-counts':
+      return client.component.getRelatedIssueCounts(
+        requireArg(cmd.positionalArgs[0], 'component id'),
+      );
+    default:
+      throw new Error(
+        `Unknown component action: ${cmd.action}. Actions: list, create, get, update, delete, related-issue-counts`,
+      );
+  }
+}
+
+const COMPONENT_ASSIGNEE_TYPES = [
+  'PROJECT_DEFAULT',
+  'COMPONENT_LEAD',
+  'PROJECT_LEAD',
+  'UNASSIGNED',
+] as const;
+
+function asComponentAssigneeType(
+  value: string | boolean | undefined,
+): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJECT_LEAD' | 'UNASSIGNED' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if ((COMPONENT_ASSIGNEE_TYPES as readonly string[]).includes(s)) {
+    return s as (typeof COMPONENT_ASSIGNEE_TYPES)[number];
+  }
+  throw new Error(
+    `--assignee-type must be one of: ${COMPONENT_ASSIGNEE_TYPES.join(', ')}. Got: ${s}`,
+  );
 }

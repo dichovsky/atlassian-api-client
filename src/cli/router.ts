@@ -205,6 +205,14 @@ const GLOBAL_OPTIONS = {
   // and `media-type` reuse existing global flags above.
   redirect: { type: 'boolean' as const },
   'fallback-to-default': { type: 'boolean' as const },
+  // component options (B361-B366)
+  'project-ids-or-keys': { type: 'string' as const },
+  'order-by': { type: 'string' as const },
+  'lead-account-id': { type: 'string' as const },
+  'lead-user-name': { type: 'string' as const },
+  'assignee-type': { type: 'string' as const },
+  'is-assignee-type-valid': { type: 'boolean' as const },
+  'move-issues-to': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

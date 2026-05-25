@@ -52,6 +52,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `app`                   | `get-field-context-configuration`, `update-field-context-configuration`, `update-field-value`, `list-field-context-configurations`, `bulk-update-field-value`, `get-dynamic-modules`, `register-dynamic-modules`, `delete-dynamic-modules`, `list-forge-properties`, `get-forge-property`, `set-forge-property`, `delete-forge-property`                                                                                 |
 | `dashboards`            | `list`, `get`, `create`, `update`, `delete`, `list-gadgets`, `add-gadget`, `update-gadget`, `remove-gadget`, `list-item-properties`, `get-item-property`, `set-item-property`, `delete-item-property`, `copy`, `bulk-edit`, `list-available-gadgets`, `search`, `search-all`                                                                                                                                             |
 | `issue-attachments`     | `list`, `get`, `delete`, `expand-human`, `expand-raw`, `download-content`, `get-meta`, `download-thumbnail`, `upload`                                                                                                                                                                                                                                                                                                    |
+| `component`             | `list`, `create`, `get`, `update`, `delete`, `related-issue-counts`                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `app`
 
@@ -316,6 +317,45 @@ atlas jira announcement-banner update --message "Scheduled maintenance tonight a
 
 # Set the banner to private and change message
 atlas jira announcement-banner update --message "Internal notice" --visibility PRIVATE
+```
+
+## `component`
+
+Jira project components — flat `/rest/api/3/component` surface (B361–B366).
+
+| Action                 | Positional      | Required flags                                                                                        | Optional flags                                                                                                                       |
+| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`                 | —               | —                                                                                                     | `--project-ids-or-keys`, `--start-at`, `--max-results`, `--order-by`, `--query`                                                      |
+| `create`               | —               | `--name`                                                                                              | `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type`, `--is-assignee-type-valid`, `--project`, `--project-id` |
+| `get`                  | `<componentId>` | —                                                                                                     | —                                                                                                                                    |
+| `update`               | `<componentId>` | at least one of `--name`, `--description`, `--lead-account-id`, `--lead-user-name`, `--assignee-type` | —                                                                                                                                    |
+| `delete`               | `<componentId>` | —                                                                                                     | `--move-issues-to`                                                                                                                   |
+| `related-issue-counts` | `<componentId>` | —                                                                                                     | —                                                                                                                                    |
+
+- `--project-ids-or-keys` is comma-separated (e.g. `--project-ids-or-keys HSP,PROJ`).
+- `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
+- `--lead-user-name` is deprecated by Atlassian — prefer `--lead-account-id`.
+- `create` requires either `--project` (project key) or `--project-id` (numeric id) for the component owner.
+- `delete --move-issues-to <id>` reassigns issues currently using the deleted component to another component instead of leaving them component-less.
+
+```sh
+# List all components across two projects, paginated
+atlas jira component list --project-ids-or-keys HSP,PROJ --max-results 25
+
+# Create a component owned by project HSP
+atlas jira component create --name "Auth" --project HSP --lead-account-id 5b10a2844c20165700ede21g --assignee-type PROJECT_LEAD
+
+# Get a single component
+atlas jira component get 10000
+
+# Rename a component
+atlas jira component update 10000 --name "Authentication"
+
+# Delete a component and reassign its issues to another component
+atlas jira component delete 10000 --move-issues-to 10001
+
+# Get the open-issue count for a component
+atlas jira component related-issue-counts 10000
 ```
 
 ## `issues`

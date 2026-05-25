@@ -256,6 +256,7 @@ RESOURCES:
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
   bulk                   delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
   issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
+  component              list, create, get, update, delete, related-issue-counts
 
 EXAMPLES:
   atlas jira issues get PROJ-123

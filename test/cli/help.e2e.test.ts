@@ -123,6 +123,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   dashboards: 'executeDashboards',
   bulk: 'executeBulk',
   'issue-attachments': 'executeIssueAttachments',
+  component: 'executeComponent',
 };
 
 /**
