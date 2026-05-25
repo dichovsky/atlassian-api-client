@@ -252,6 +252,7 @@ RESOURCES:
   remote-link            get, delete
   service-registry       get
   exists-by-properties   get
+  app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -287,6 +288,18 @@ EXAMPLES:
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
   atlas jira exists-by-properties get --entity-type repository
+  atlas jira app get-field-context-configuration customfield_10042
+  atlas jira app update-field-context-configuration customfield_10042 --configuration '{"foo":true}'
+  atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'
+  atlas jira app list-field-context-configurations --field-ids-or-keys customfield_10042
+  atlas jira app bulk-update-field-value --value '[{"fieldIdOrKey":"customfield_10042","updates":[{"issueIds":[10001],"value":"hi"}]}]'
+  atlas jira app get-dynamic-modules
+  atlas jira app register-dynamic-modules --value '[{"key":"my-module","type":"webhook"}]'
+  atlas jira app delete-dynamic-modules --module-keys my-module,other-module
+  atlas jira app list-forge-properties
+  atlas jira app get-forge-property my-key
+  atlas jira app set-forge-property my-key --value '{"on":true}'
+  atlas jira app delete-forge-property my-key
 `;
 
 /** Get help text for the given level. */

@@ -49,6 +49,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `remote-link`           | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `service-registry`      | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `exists-by-properties`  | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `app`                   | `get-field-context-configuration`, `update-field-context-configuration`, `update-field-value`, `list-field-context-configurations`, `bulk-update-field-value`, `get-dynamic-modules`, `register-dynamic-modules`, `delete-dynamic-modules`, `list-forge-properties`, `get-forge-property`, `set-forge-property`, `delete-forge-property`                                                                                 |
 
 ## `incidents`
 
@@ -1075,6 +1076,76 @@ atlas jira exists-by-properties get --entity-type repository
 
 # Check by entity type and ID
 atlas jira exists-by-properties get --entity-type repository --entity-id repo-1
+```
+
+## `app`
+
+App-scoped resource grouping three distinct API surfaces used by Forge and Atlassian Connect apps:
+
+- **`/rest/api/3/app/field/...`** — app-defined custom field context/value (B326–B330).
+- **`/rest/atlassian-connect/1/app/module/dynamic`** — Connect dynamic modules (B943–B945).
+- **`/rest/forge/1/app/properties`** — Forge app-scoped property storage (B975–B978).
+
+Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or Connect JWT). Basic auth with an API token will return `401`/`403` on every action.
+
+| Action                               | Positional       | Required flags                                         | Optional flags  |
+| ------------------------------------ | ---------------- | ------------------------------------------------------ | --------------- |
+| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                                                      | —               |
+| `update-field-context-configuration` | `<fieldIdOrKey>` | at least one of `--configuration`, `--schema`          | —               |
+| `update-field-value`                 | `<fieldIdOrKey>` | `--value`                                              | —               |
+| `list-field-context-configurations`  | —                | at least one of `--field-ids-or-keys`, `--context-ids` | —               |
+| `bulk-update-field-value`            | —                | `--value`                                              | —               |
+| `get-dynamic-modules`                | —                | —                                                      | —               |
+| `register-dynamic-modules`           | —                | `--value`                                              | —               |
+| `delete-dynamic-modules`             | —                | —                                                      | `--module-keys` |
+| `list-forge-properties`              | —                | —                                                      | —               |
+| `get-forge-property`                 | `<propertyKey>`  | —                                                      | —               |
+| `set-forge-property`                 | `<propertyKey>`  | `--value`                                              | —               |
+| `delete-forge-property`              | `<propertyKey>`  | —                                                      | —               |
+
+- `--configuration` and `--schema` accept opaque JSON; the server stores them verbatim. At least one of the two must be supplied.
+- `--value` for `update-field-value` is a JSON array of `{ issueIds | issueIdsOrKeys | issueKeys, value }` entries.
+- `--value` for `bulk-update-field-value` is a JSON array of `{ fieldIdOrKey, updates: [...] }` entries.
+- `--value` for `register-dynamic-modules` is a JSON array of Connect module descriptors (each `{ key, type, ... }`).
+- `--value` for `set-forge-property` is any JSON value (stored verbatim and returned as-is by `get-forge-property`).
+- `--module-keys` is comma-separated. When omitted, `delete-dynamic-modules` removes every dynamic module registered by the calling app.
+- `--field-ids-or-keys` and `--context-ids` are comma-separated. At least one must be supplied for `list-field-context-configurations`.
+
+```sh
+# Read the configuration the app stored for one of its custom fields
+atlas jira app get-field-context-configuration customfield_10042
+
+# Update the configuration JSON (and optionally the schema)
+atlas jira app update-field-context-configuration customfield_10042 \
+  --configuration '{"foo":true}' --schema '{"type":"object"}'
+
+# Set a single field on a batch of issues
+atlas jira app update-field-value customfield_10042 \
+  --value '[{"issueIds":[10001,10002],"value":"hello"}]'
+
+# Fetch configurations for a set of (field, context) pairs
+atlas jira app list-field-context-configurations \
+  --field-ids-or-keys customfield_10042 --context-ids 10100,10101
+
+# Bulk-update many fields in one request
+atlas jira app bulk-update-field-value \
+  --value '[{"fieldIdOrKey":"customfield_10042","updates":[{"issueIds":[10001],"value":"hi"}]}]'
+
+# List dynamic Connect modules registered by the calling app
+atlas jira app get-dynamic-modules
+
+# Register dynamic Connect modules
+atlas jira app register-dynamic-modules \
+  --value '[{"key":"my-module","type":"webhook"}]'
+
+# Delete specific dynamic Connect modules (omit --module-keys to delete all)
+atlas jira app delete-dynamic-modules --module-keys my-module,other-module
+
+# Forge app property storage
+atlas jira app list-forge-properties
+atlas jira app get-forge-property my-key
+atlas jira app set-forge-property my-key --value '{"on":true}'
+atlas jira app delete-forge-property my-key
 ```
 
 ## Errors specific to Jira

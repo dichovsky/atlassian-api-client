@@ -53,6 +53,7 @@ import { LatestResource } from './resources/latest.js';
 import { RemoteLinkResource } from './resources/remote-link.js';
 import { ServiceRegistryResource } from './resources/service-registry.js';
 import { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
+import { AppResource } from './resources/app.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -153,6 +154,12 @@ export class JiraClient {
   readonly serviceRegistry: ServiceRegistryResource;
   /** Jira DevInfo exists-by-properties resource (base: /rest/devinfo/0.10). */
   readonly existsByProperties: ExistsByPropertiesResource;
+  /**
+   * App-scoped resource — Forge custom field context/value, Connect dynamic
+   * modules, and Forge app properties. Mixes three API bases:
+   * `/rest/api/3`, `/rest/atlassian-connect/1`, `/rest/forge/1`.
+   */
+  readonly app: AppResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -166,6 +173,7 @@ export class JiraClient {
     const remoteLinkBaseUrl = `${resolved.baseUrl}/rest/remotelinks/1.0`;
     const serviceRegistryBaseUrl = `${resolved.baseUrl}/rest/atlassian-connect/1`;
     const devInfoBaseUrl = `${resolved.baseUrl}/rest/devinfo/0.10`;
+    const forgeBaseUrl = `${resolved.baseUrl}/rest/forge/1`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
@@ -220,5 +228,6 @@ export class JiraClient {
     this.remoteLink = new RemoteLinkResource(transport, remoteLinkBaseUrl);
     this.serviceRegistry = new ServiceRegistryResource(transport, serviceRegistryBaseUrl);
     this.existsByProperties = new ExistsByPropertiesResource(transport, devInfoBaseUrl);
+    this.app = new AppResource(transport, baseUrl, serviceRegistryBaseUrl, forgeBaseUrl);
   }
 }
