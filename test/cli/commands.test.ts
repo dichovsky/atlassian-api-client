@@ -563,6 +563,26 @@ const jiraAppMock = {
   deleteForgeProperty: vi.fn(),
 };
 
+const jiraBulkMock = {
+  deleteIssuesBulk: vi.fn(),
+  getIssueFieldsBulk: vi.fn(),
+  editIssueFieldsBulk: vi.fn(),
+  moveIssuesBulk: vi.fn(),
+  getAvailableTransitionsBulk: vi.fn(),
+  transitionIssuesBulk: vi.fn(),
+  unwatchIssuesBulk: vi.fn(),
+  watchIssuesBulk: vi.fn(),
+  getBulkOperationStatus: vi.fn(),
+  submitBuilds: vi.fn(),
+  submitDeployments: vi.fn(),
+  submitDevInfo: vi.fn(),
+  submitDevopsComponents: vi.fn(),
+  submitFeatureFlags: vi.fn(),
+  submitOperations: vi.fn(),
+  submitRemoteLinks: vi.fn(),
+  submitSecurity: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -611,6 +631,7 @@ vi.mock('../../src/jira/client.js', () => {
       serviceRegistry: jiraServiceRegistryMock,
       existsByProperties: jiraExistsByPropertiesMock,
       app: jiraAppMock,
+      bulk: jiraBulkMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -11308,6 +11329,301 @@ describe('executeJiraCommand', () => {
     it('app unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('app', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown app action',
+      );
+    });
+  });
+
+  // ── bulk ──────────────────────────────────────────────────────────────────
+
+  describe('bulk resource', () => {
+    // B345
+    it('bulk delete-issues calls deleteIssuesBulk() with parsed issues + flag', async () => {
+      jiraBulkMock.deleteIssuesBulk.mockResolvedValue({ taskId: '10641' });
+
+      const result = await executeJiraCommand(
+        cmd('bulk', 'delete-issues', [], {
+          issues: '10001,10002',
+          'send-notification': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ taskId: '10641' });
+      expect(jiraBulkMock.deleteIssuesBulk).toHaveBeenCalledWith({
+        selectedIssueIdsOrKeys: ['10001', '10002'],
+        sendBulkNotification: true,
+      });
+    });
+
+    it('bulk delete-issues omits sendBulkNotification when flag absent', async () => {
+      jiraBulkMock.deleteIssuesBulk.mockResolvedValue({ taskId: 't1' });
+
+      await executeJiraCommand(cmd('bulk', 'delete-issues', [], { issues: 'A-1' }), GLOBALS);
+
+      expect(jiraBulkMock.deleteIssuesBulk).toHaveBeenCalledWith({
+        selectedIssueIdsOrKeys: ['A-1'],
+      });
+    });
+
+    it('bulk delete-issues throws when --issues missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'delete-issues'), GLOBALS)).rejects.toThrow(
+        '--issues',
+      );
+    });
+
+    // B346
+    it('bulk get-fields passes issueIdsOrKeys + paging flags through', async () => {
+      jiraBulkMock.getIssueFieldsBulk.mockResolvedValue({ fields: [] });
+
+      await executeJiraCommand(
+        cmd('bulk', 'get-fields', [], {
+          issues: 'P-1,P-2',
+          'search-text': 'sum',
+          'starting-after': 'cur-1',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.getIssueFieldsBulk).toHaveBeenCalledWith({
+        issueIdsOrKeys: 'P-1,P-2',
+        searchText: 'sum',
+        endingBefore: undefined,
+        startingAfter: 'cur-1',
+      });
+    });
+
+    it('bulk get-fields throws when --issues missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'get-fields'), GLOBALS)).rejects.toThrow(
+        '--issues',
+      );
+    });
+
+    // B347
+    it('bulk edit-fields parses --value JSON object and forwards arrays', async () => {
+      jiraBulkMock.editIssueFieldsBulk.mockResolvedValue({ taskId: 't2' });
+      const editedFieldsInput = { priority: { priorityId: '3' } };
+
+      await executeJiraCommand(
+        cmd('bulk', 'edit-fields', [], {
+          issues: '10001',
+          actions: 'priority,labels',
+          value: JSON.stringify(editedFieldsInput),
+          'send-notification': false,
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.editIssueFieldsBulk).toHaveBeenCalledWith({
+        editedFieldsInput,
+        selectedActions: ['priority', 'labels'],
+        selectedIssueIdsOrKeys: ['10001'],
+        sendBulkNotification: false,
+      });
+    });
+
+    it('bulk edit-fields rejects --value that is not a JSON object', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk', 'edit-fields', [], {
+            issues: '10001',
+            actions: 'priority',
+            value: '[1,2]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('valid JSON');
+    });
+
+    it('bulk edit-fields rejects --value that is not valid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk', 'edit-fields', [], {
+            issues: '10001',
+            actions: 'priority',
+            value: 'not-json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('valid JSON');
+    });
+
+    // B348
+    it('bulk move-issues parses --value JSON object', async () => {
+      jiraBulkMock.moveIssuesBulk.mockResolvedValue({ taskId: 't3' });
+      const targetToSourcesMapping = { 'PROJ,10001': { issueIdsOrKeys: ['ISSUE-1'] } };
+
+      await executeJiraCommand(
+        cmd('bulk', 'move-issues', [], {
+          value: JSON.stringify(targetToSourcesMapping),
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.moveIssuesBulk).toHaveBeenCalledWith({
+        targetToSourcesMapping,
+      });
+    });
+
+    it('bulk move-issues forwards --send-notification flag', async () => {
+      jiraBulkMock.moveIssuesBulk.mockResolvedValue({ taskId: 't3b' });
+
+      await executeJiraCommand(
+        cmd('bulk', 'move-issues', [], {
+          value: '{"PROJ,10001":{"issueIdsOrKeys":["I-1"]}}',
+          'send-notification': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.moveIssuesBulk).toHaveBeenCalledWith({
+        targetToSourcesMapping: { 'PROJ,10001': { issueIdsOrKeys: ['I-1'] } },
+        sendBulkNotification: true,
+      });
+    });
+
+    // B349
+    it('bulk get-transitions forwards --issues as issueIdsOrKeys query', async () => {
+      jiraBulkMock.getAvailableTransitionsBulk.mockResolvedValue({
+        availableTransitions: [],
+      });
+
+      await executeJiraCommand(
+        cmd('bulk', 'get-transitions', [], { issues: 'EPIC-1,TASK-1' }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.getAvailableTransitionsBulk).toHaveBeenCalledWith({
+        issueIdsOrKeys: 'EPIC-1,TASK-1',
+      });
+    });
+
+    // B350
+    it('bulk transition-issues parses --value JSON array', async () => {
+      jiraBulkMock.transitionIssuesBulk.mockResolvedValue({ taskId: 't4' });
+      const bulkTransitionInputs = [{ selectedIssueIdsOrKeys: ['10001'], transitionId: '11' }];
+
+      await executeJiraCommand(
+        cmd('bulk', 'transition-issues', [], {
+          value: JSON.stringify(bulkTransitionInputs),
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.transitionIssuesBulk).toHaveBeenCalledWith({
+        bulkTransitionInputs,
+      });
+    });
+
+    it('bulk transition-issues forwards --send-notification flag', async () => {
+      jiraBulkMock.transitionIssuesBulk.mockResolvedValue({ taskId: 't4b' });
+
+      await executeJiraCommand(
+        cmd('bulk', 'transition-issues', [], {
+          value: '[{"selectedIssueIdsOrKeys":["10001"],"transitionId":"11"}]',
+          'send-notification': false,
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.transitionIssuesBulk).toHaveBeenCalledWith({
+        bulkTransitionInputs: [{ selectedIssueIdsOrKeys: ['10001'], transitionId: '11' }],
+        sendBulkNotification: false,
+      });
+    });
+
+    it('bulk transition-issues rejects --value that is not a JSON array', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk', 'transition-issues', [], { value: '{"a":1}' }), GLOBALS),
+      ).rejects.toThrow('valid JSON');
+    });
+
+    // B351
+    it('bulk unwatch-issues parses --issues into selectedIssueIdsOrKeys', async () => {
+      jiraBulkMock.unwatchIssuesBulk.mockResolvedValue({ taskId: 't5' });
+
+      await executeJiraCommand(
+        cmd('bulk', 'unwatch-issues', [], { issues: '10001, 10002' }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.unwatchIssuesBulk).toHaveBeenCalledWith({
+        selectedIssueIdsOrKeys: ['10001', '10002'],
+      });
+    });
+
+    // B352
+    it('bulk watch-issues parses --issues into selectedIssueIdsOrKeys', async () => {
+      jiraBulkMock.watchIssuesBulk.mockResolvedValue({ taskId: 't6' });
+
+      await executeJiraCommand(cmd('bulk', 'watch-issues', [], { issues: '10001' }), GLOBALS);
+
+      expect(jiraBulkMock.watchIssuesBulk).toHaveBeenCalledWith({
+        selectedIssueIdsOrKeys: ['10001'],
+      });
+    });
+
+    // B353
+    it('bulk get-status forwards taskId positional', async () => {
+      jiraBulkMock.getBulkOperationStatus.mockResolvedValue({
+        taskId: '10641',
+        status: 'COMPLETE',
+      });
+
+      const result = await executeJiraCommand(cmd('bulk', 'get-status', ['10641']), GLOBALS);
+
+      expect(result).toEqual({ taskId: '10641', status: 'COMPLETE' });
+      expect(jiraBulkMock.getBulkOperationStatus).toHaveBeenCalledWith('10641');
+    });
+
+    it('bulk get-status throws when taskId missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'get-status', []), GLOBALS)).rejects.toThrow(
+        'taskId',
+      );
+    });
+
+    // DevOps bulk submit endpoints (B952, B956, B961, B967, B971, B980, B989, B993)
+    it.each([
+      ['submit-builds', 'submitBuilds'],
+      ['submit-deployments', 'submitDeployments'],
+      ['submit-devinfo', 'submitDevInfo'],
+      ['submit-devops-components', 'submitDevopsComponents'],
+      ['submit-feature-flags', 'submitFeatureFlags'],
+      ['submit-operations', 'submitOperations'],
+      ['submit-remote-links', 'submitRemoteLinks'],
+      ['submit-security', 'submitSecurity'],
+    ] as const)(
+      'bulk %s parses --value JSON and forwards to client.bulk.%s',
+      async (action, method) => {
+        (jiraBulkMock[method] as ReturnType<typeof vi.fn>).mockResolvedValue({
+          acceptedEntities: [],
+        });
+        const payload = { providerMetadata: { product: 'p' } };
+
+        const result = await executeJiraCommand(
+          cmd('bulk', action, [], { value: JSON.stringify(payload) }),
+          GLOBALS,
+        );
+
+        expect(result).toEqual({ acceptedEntities: [] });
+        expect(jiraBulkMock[method]).toHaveBeenCalledWith(payload);
+      },
+    );
+
+    it('bulk submit-builds throws when --value missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'submit-builds'), GLOBALS)).rejects.toThrow(
+        '--value',
+      );
+    });
+
+    it('bulk submit-builds rejects --value that is not valid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk', 'submit-builds', [], { value: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('valid JSON');
+    });
+
+    it('bulk unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown bulk action',
       );
     });
   });

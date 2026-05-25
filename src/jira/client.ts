@@ -177,6 +177,8 @@ export class JiraClient {
     const serviceRegistryBaseUrl = `${resolved.baseUrl}/rest/atlassian-connect/1`;
     const devInfoBaseUrl = `${resolved.baseUrl}/rest/devinfo/0.10`;
     const forgeBaseUrl = `${resolved.baseUrl}/rest/forge/1`;
+    const buildsBaseUrl = `${resolved.baseUrl}/rest/builds/0.1`;
+    const deploymentsBaseUrl = `${resolved.baseUrl}/rest/deployments/0.1`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.issues = new IssuesResource(transport, baseUrl, agileBaseUrl);
@@ -198,7 +200,16 @@ export class JiraClient {
     this.fields = new FieldsResource(transport, baseUrl);
     this.webhooks = new WebhooksResource(transport, baseUrl);
     this.jql = new JqlResource(transport, baseUrl);
-    this.bulk = new BulkResource(transport, baseUrl);
+    this.bulk = new BulkResource(transport, baseUrl, {
+      builds: buildsBaseUrl,
+      deployments: deploymentsBaseUrl,
+      devInfo: devInfoBaseUrl,
+      devopsComponents: devopscomponentsBaseUrl,
+      featureFlags: featureFlagsBaseUrl,
+      operations: operationsBaseUrl,
+      remoteLinks: remoteLinkBaseUrl,
+      security: securityBaseUrl,
+    });
     this.epic = new EpicResource(transport, agileBaseUrl);
     this.backlog = new BacklogResource(transport, agileBaseUrl);
     this.announcementBanner = new AnnouncementBannerResource(transport, baseUrl);

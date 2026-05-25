@@ -1047,3 +1047,54 @@
 - [x] ✅ 🧩 API: B565 Jira: expose GET /rest/api/3/issuetype/project
       **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.listForProject(projectId)`) · CLI `atlas jira issuetype list-for-project --project-id <int>` · type alias `IssueTypesForProject = readonly IssueType[]`
       **Rat:** `projectId` is a numeric query param (not path); validated as positive integer.
+- [x] 🔴 🧩 API: B345 Jira: expose POST /rest/api/3/bulk/issues/delete
+  - **Impl:** `BulkResource.deleteIssuesBulk(data)` returns `SubmittedBulkOperation { taskId }`. CLI `atlas jira bulk delete-issues --issues <csv> [--send-notification]`. Bundled with B346-B353 + DevOps `/bulk` ingest endpoints (B952/B956/B961/B967/B971/B980/B989/B993) in PR4.
+  - **Rat:** Core 2024 Atlassian bulk-ops API; async pattern returns `taskId`, caller polls via B353 `get-status`.
+- [x] 🔴 🧩 API: B346 Jira: expose GET /rest/api/3/bulk/issues/fields
+  - **Impl:** `BulkResource.getIssueFieldsBulk(params)` returns `BulkEditableFieldsResponse`. CLI `atlas jira bulk get-fields --issues <csv> [--search-text] [--ending-before] [--starting-after]`.
+  - **Rat:** Lists fields available for bulk-edit, gated by per-user permissions on the issues supplied.
+- [x] 🔴 🧩 API: B347 Jira: expose POST /rest/api/3/bulk/issues/fields
+  - **Impl:** `BulkResource.editIssueFieldsBulk(data)` returns `SubmittedBulkOperation`. CLI `atlas jira bulk edit-fields --issues <csv> --actions <csv> --value <JSON editedFieldsInput> [--send-notification]`. `editedFieldsInput` is `Record<string,unknown>` — Atlassian's 30+ field-type union is passed through verbatim.
+  - **Rat:** Async edit (`taskId` envelope); JSON `--value` for the heterogeneous field payload.
+- [x] 🔴 🧩 API: B348 Jira: expose POST /rest/api/3/bulk/issues/move
+  - **Impl:** `BulkResource.moveIssuesBulk(data)`. CLI `atlas jira bulk move-issues --value <JSON targetToSourcesMapping> [--send-notification]`.
+  - **Rat:** Async cross-project move; mapping keyed by `"PROJECT,issueTypeId"` is too dynamic to encode as discrete CLI flags.
+- [x] 🔴 🧩 API: B349 Jira: expose GET /rest/api/3/bulk/issues/transition
+  - **Impl:** `BulkResource.getAvailableTransitionsBulk(params)` returns `BulkAvailableTransitionsResponse`. CLI `atlas jira bulk get-transitions --issues <csv>`.
+  - **Rat:** Read-only sibling of the transition POST; useful for previewing valid transitions across mixed issue sets.
+- [x] 🔴 🧩 API: B350 Jira: expose POST /rest/api/3/bulk/issues/transition
+  - **Impl:** `BulkResource.transitionIssuesBulk(data)` returns `SubmittedBulkOperation`. CLI `atlas jira bulk transition-issues --value <JSON bulkTransitionInputs array> [--send-notification]`.
+  - **Rat:** Async batched transition; up to 1k issues per call.
+- [x] 🔴 🧩 API: B351 Jira: expose POST /rest/api/3/bulk/issues/unwatch
+  - **Impl:** `BulkResource.unwatchIssuesBulk(data)` returns `SubmittedBulkOperation`. CLI `atlas jira bulk unwatch-issues --issues <csv>`.
+  - **Rat:** Async; pair with B352 for symmetry.
+- [x] 🔴 🧩 API: B352 Jira: expose POST /rest/api/3/bulk/issues/watch
+  - **Impl:** `BulkResource.watchIssuesBulk(data)` returns `SubmittedBulkOperation`. CLI `atlas jira bulk watch-issues --issues <csv>`.
+  - **Rat:** Async bulk watch up to 1k issues.
+- [x] 🔴 🧩 API: B353 Jira: expose GET /rest/api/3/bulk/queue/{taskId}
+  - **Impl:** `BulkResource.getBulkOperationStatus(taskId)` returns `BulkOperationProgress`. CLI `atlas jira bulk get-status <taskId>` (positional `taskId`). The POST endpoints intentionally do NOT auto-poll — caller controls cadence and timeout.
+  - **Rat:** Async progress polling endpoint paired with every bulk POST in this bundle.
+- [x] 🔴 🧩 API: B952 Jira: expose POST /rest/builds/0.1/bulk
+  - **Impl:** `BulkResource.submitBuilds(data)` returns `DevopsBulkSubmitResponse`. CLI `atlas jira bulk submit-builds --value <JSON>`. Extra base URL injected via `BulkResourceBaseUrls.builds` in `JiraClient`.
+  - **Rat:** DevOps build ingest; vendor-defined payload kept as `unknown` body.
+- [x] 🔴 🧩 API: B956 Jira: expose POST /rest/deployments/0.1/bulk
+  - **Impl:** `BulkResource.submitDeployments(data)` returns `DevopsBulkSubmitResponse`. CLI `atlas jira bulk submit-deployments --value <JSON>`.
+  - **Rat:** DevOps deployment ingest; bundled with B952/B961/B967/B971/B980/B989/B993 — all share the same accept/reject envelope.
+- [x] 🔴 🧩 API: B961 Jira: expose POST /rest/devinfo/0.10/bulk
+  - **Impl:** `BulkResource.submitDevInfo(data)`. CLI `atlas jira bulk submit-devinfo --value <JSON>`.
+  - **Rat:** DevInfo (commits/PRs/branches) ingest.
+- [x] 🔴 🧩 API: B967 Jira: expose POST /rest/devopscomponents/1.0/bulk
+  - **Impl:** `BulkResource.submitDevopsComponents(data)`. CLI `atlas jira bulk submit-devops-components --value <JSON>`.
+  - **Rat:** DevOps components bulk ingest.
+- [x] 🔴 🧩 API: B971 Jira: expose POST /rest/featureflags/0.1/bulk
+  - **Impl:** `BulkResource.submitFeatureFlags(data)`. CLI `atlas jira bulk submit-feature-flags --value <JSON>`.
+  - **Rat:** Feature flag ingest sibling of existing `FlagResource` GET/DELETE.
+- [x] 🔴 🧩 API: B980 Jira: expose POST /rest/operations/1.0/bulk
+  - **Impl:** `BulkResource.submitOperations(data)`. CLI `atlas jira bulk submit-operations --value <JSON>`.
+  - **Rat:** Operations entities bulk ingest (operations API base shared with incidents/post-incident-reviews).
+- [x] 🔴 🧩 API: B989 Jira: expose POST /rest/remotelinks/1.0/bulk
+  - **Impl:** `BulkResource.submitRemoteLinks(data)`. CLI `atlas jira bulk submit-remote-links --value <JSON>`.
+  - **Rat:** Remote links bulk ingest; complements `RemoteLinkResource` get/delete singletons.
+- [x] 🔴 🧩 API: B993 Jira: expose POST /rest/security/1.0/bulk
+  - **Impl:** `BulkResource.submitSecurity(data)`. CLI `atlas jira bulk submit-security --value <JSON>`.
+  - **Rat:** Security findings bulk ingest paired with vulnerability singletons.

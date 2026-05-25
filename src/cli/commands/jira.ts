@@ -100,6 +100,8 @@ export async function executeJiraCommand(
       return executeExistsByProperties(client, cmd);
     case 'app':
       return executeApp(client, cmd);
+    case 'bulk':
+      return executeBulk(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1564,4 +1566,165 @@ function parseNonNegativeIntArg(value: string, name: string): number {
     throw new Error(`${name} must be a non-negative integer, got: ${value}`);
   }
   return n;
+}
+
+const BULK_ACTIONS = [
+  'delete-issues',
+  'get-fields',
+  'edit-fields',
+  'move-issues',
+  'get-transitions',
+  'transition-issues',
+  'unwatch-issues',
+  'watch-issues',
+  'get-status',
+  'submit-builds',
+  'submit-deployments',
+  'submit-devinfo',
+  'submit-devops-components',
+  'submit-feature-flags',
+  'submit-operations',
+  'submit-remote-links',
+  'submit-security',
+] as const;
+
+function splitCsvIds(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function parseJsonValueFlag(raw: string, label: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`--value must be valid JSON (${label})`);
+  }
+}
+
+function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown> {
+  const parsed = parseJsonValueFlag(raw, label);
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`--value must be valid JSON (${label})`);
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function parseJsonArrayFlag(raw: string, label: string): unknown[] {
+  const parsed = parseJsonValueFlag(raw, label);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`--value must be valid JSON (${label})`);
+  }
+  return parsed;
+}
+
+async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'delete-issues': {
+      const selectedIssueIdsOrKeys = splitCsvIds(requireOpt(opts['issues'], '--issues'));
+      const sendBulkNotification = asBoolFlag(opts['send-notification']);
+      return client.bulk.deleteIssuesBulk({
+        selectedIssueIdsOrKeys,
+        ...(sendBulkNotification !== undefined && { sendBulkNotification }),
+      });
+    }
+    case 'get-fields': {
+      const issueIdsOrKeys = requireOpt(opts['issues'], '--issues');
+      return client.bulk.getIssueFieldsBulk({
+        issueIdsOrKeys,
+        searchText: asString(opts['search-text']),
+        endingBefore: asString(opts['ending-before']),
+        startingAfter: asString(opts['starting-after']),
+      });
+    }
+    case 'edit-fields': {
+      const selectedIssueIdsOrKeys = splitCsvIds(requireOpt(opts['issues'], '--issues'));
+      const selectedActions = splitCsvIds(requireOpt(opts['actions'], '--actions'));
+      const editedFieldsInput = parseJsonObjectFlag(
+        requireOpt(opts['value'], '--value'),
+        'editedFieldsInput object',
+      );
+      const sendBulkNotification = asBoolFlag(opts['send-notification']);
+      return client.bulk.editIssueFieldsBulk({
+        editedFieldsInput,
+        selectedActions,
+        selectedIssueIdsOrKeys,
+        ...(sendBulkNotification !== undefined && { sendBulkNotification }),
+      });
+    }
+    case 'move-issues': {
+      const targetToSourcesMapping = parseJsonObjectFlag(
+        requireOpt(opts['value'], '--value'),
+        'targetToSourcesMapping object',
+      );
+      const sendBulkNotification = asBoolFlag(opts['send-notification']);
+      return client.bulk.moveIssuesBulk({
+        targetToSourcesMapping,
+        ...(sendBulkNotification !== undefined && { sendBulkNotification }),
+      });
+    }
+    case 'get-transitions': {
+      const issueIdsOrKeys = requireOpt(opts['issues'], '--issues');
+      return client.bulk.getAvailableTransitionsBulk({ issueIdsOrKeys });
+    }
+    case 'transition-issues': {
+      const bulkTransitionInputs = parseJsonArrayFlag(
+        requireOpt(opts['value'], '--value'),
+        'array of bulkTransitionInputs',
+      ) as { selectedIssueIdsOrKeys: string[]; transitionId: string }[];
+      const sendBulkNotification = asBoolFlag(opts['send-notification']);
+      return client.bulk.transitionIssuesBulk({
+        bulkTransitionInputs,
+        ...(sendBulkNotification !== undefined && { sendBulkNotification }),
+      });
+    }
+    case 'unwatch-issues': {
+      const selectedIssueIdsOrKeys = splitCsvIds(requireOpt(opts['issues'], '--issues'));
+      return client.bulk.unwatchIssuesBulk({ selectedIssueIdsOrKeys });
+    }
+    case 'watch-issues': {
+      const selectedIssueIdsOrKeys = splitCsvIds(requireOpt(opts['issues'], '--issues'));
+      return client.bulk.watchIssuesBulk({ selectedIssueIdsOrKeys });
+    }
+    case 'get-status': {
+      return client.bulk.getBulkOperationStatus(requireArg(cmd.positionalArgs[0], 'taskId'));
+    }
+    case 'submit-builds':
+      return client.bulk.submitBuilds(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'builds payload'),
+      );
+    case 'submit-deployments':
+      return client.bulk.submitDeployments(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'deployments payload'),
+      );
+    case 'submit-devinfo':
+      return client.bulk.submitDevInfo(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'devinfo payload'),
+      );
+    case 'submit-devops-components':
+      return client.bulk.submitDevopsComponents(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'devops-components payload'),
+      );
+    case 'submit-feature-flags':
+      return client.bulk.submitFeatureFlags(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'feature-flags payload'),
+      );
+    case 'submit-operations':
+      return client.bulk.submitOperations(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'operations payload'),
+      );
+    case 'submit-remote-links':
+      return client.bulk.submitRemoteLinks(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'remote-links payload'),
+      );
+    case 'submit-security':
+      return client.bulk.submitSecurity(
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'security payload'),
+      );
+    default:
+      throw new Error(`Unknown bulk action: ${cmd.action}. Actions: ${BULK_ACTIONS.join(', ')}`);
+  }
 }

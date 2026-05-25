@@ -191,6 +191,12 @@ const GLOBAL_OPTIONS = {
   size: { type: 'string' as const },
   x: { type: 'string' as const },
   y: { type: 'string' as const },
+  // bulk options (B345-B353 + DevOps bulk POST variants)
+  'send-notification': { type: 'boolean' as const },
+  'search-text': { type: 'string' as const },
+  'ending-before': { type: 'string' as const },
+  'starting-after': { type: 'string' as const },
+  actions: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
