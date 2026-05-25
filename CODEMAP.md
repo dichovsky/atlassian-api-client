@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "ef8c83415d22c1e85ef27ad6b9fae33686370a04929bc291164e084d202151ee",
+  "sourceHash": "5298f2167e0db27109d6b1a7a4a403b8f0ef550d515b31b86d49c3eae966fa01",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -582,7 +582,7 @@
       "name": "CreateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 35,
+      "line": 36,
       "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
       "typeOnly": true
     },
@@ -839,7 +839,7 @@
       "name": "Dashboard",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 14,
+      "line": 15,
       "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
       "typeOnly": true
     },
@@ -847,7 +847,7 @@
       "name": "DashboardSharePermission",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 6,
+      "line": 7,
       "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…",
       "typeOnly": true
     },
@@ -1789,7 +1789,7 @@
       "name": "ListDashboardsParams",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 27,
+      "line": 28,
       "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
       "typeOnly": true
     },
@@ -2921,7 +2921,7 @@
       "name": "UpdateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 42,
+      "line": 43,
       "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
       "typeOnly": true
     },
@@ -15431,6 +15431,78 @@
             {
               "exported": "UpdateDashboardData",
               "original": "UpdateDashboardData"
+            },
+            {
+              "exported": "DashboardGadget",
+              "original": "DashboardGadget"
+            },
+            {
+              "exported": "DashboardGadgetPosition",
+              "original": "DashboardGadgetPosition"
+            },
+            {
+              "exported": "DashboardGadgetsResponse",
+              "original": "DashboardGadgetsResponse"
+            },
+            {
+              "exported": "AddDashboardGadgetData",
+              "original": "AddDashboardGadgetData"
+            },
+            {
+              "exported": "UpdateDashboardGadgetData",
+              "original": "UpdateDashboardGadgetData"
+            },
+            {
+              "exported": "DashboardItemPropertyKey",
+              "original": "DashboardItemPropertyKey"
+            },
+            {
+              "exported": "DashboardItemPropertyKeys",
+              "original": "DashboardItemPropertyKeys"
+            },
+            {
+              "exported": "DashboardItemProperty",
+              "original": "DashboardItemProperty"
+            },
+            {
+              "exported": "CopyDashboardData",
+              "original": "CopyDashboardData"
+            },
+            {
+              "exported": "BulkEditDashboardAction",
+              "original": "BulkEditDashboardAction"
+            },
+            {
+              "exported": "BulkEditDashboardsData",
+              "original": "BulkEditDashboardsData"
+            },
+            {
+              "exported": "BulkEditDashboardsResponse",
+              "original": "BulkEditDashboardsResponse"
+            },
+            {
+              "exported": "AvailableDashboardGadget",
+              "original": "AvailableDashboardGadget"
+            },
+            {
+              "exported": "AvailableDashboardGadgetsResponse",
+              "original": "AvailableDashboardGadgetsResponse"
+            },
+            {
+              "exported": "ListAvailableGadgetsParams",
+              "original": "ListAvailableGadgetsParams"
+            },
+            {
+              "exported": "SearchDashboardsOrderBy",
+              "original": "SearchDashboardsOrderBy"
+            },
+            {
+              "exported": "SearchDashboardsStatus",
+              "original": "SearchDashboardsStatus"
+            },
+            {
+              "exported": "SearchDashboardsParams",
+              "original": "SearchDashboardsParams"
             }
           ]
         },
@@ -17539,90 +17611,288 @@
         {
           "name": "DashboardSharePermission",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
           "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…"
         },
         {
           "name": "Dashboard",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …"
         },
         {
           "name": "ListDashboardsParams",
           "kind": "interface",
-          "line": 27,
+          "line": 28,
           "exported": true,
           "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …"
         },
         {
           "name": "CreateDashboardData",
           "kind": "interface",
-          "line": 35,
+          "line": 36,
           "exported": true,
           "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …"
         },
         {
           "name": "UpdateDashboardData",
           "kind": "interface",
-          "line": 42,
+          "line": 43,
           "exported": true,
           "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …"
         },
         {
+          "name": "DashboardGadgetPosition",
+          "kind": "interface",
+          "line": 51,
+          "exported": true,
+          "signature": "export interface DashboardGadgetPosition { readonly row: number; readonly column: number; }",
+          "jsdoc": "Position of a gadget on its dashboard."
+        },
+        {
+          "name": "DashboardGadget",
+          "kind": "interface",
+          "line": 57,
+          "exported": true,
+          "signature": "export interface DashboardGadget { readonly id: number; readonly moduleKey?: string; readonly uri?: string; readonly col…",
+          "jsdoc": "A gadget instance attached to a dashboard."
+        },
+        {
+          "name": "DashboardGadgetsResponse",
+          "kind": "interface",
+          "line": 66,
+          "exported": true,
+          "signature": "export interface DashboardGadgetsResponse { readonly gadgets: DashboardGadget[]; }"
+        },
+        {
+          "name": "AddDashboardGadgetData",
+          "kind": "interface",
+          "line": 70,
+          "exported": true,
+          "signature": "export interface AddDashboardGadgetData { readonly moduleKey?: string; readonly uri?: string; readonly color?: string; r…"
+        },
+        {
+          "name": "UpdateDashboardGadgetData",
+          "kind": "interface",
+          "line": 79,
+          "exported": true,
+          "signature": "export interface UpdateDashboardGadgetData { readonly title?: string; readonly color?: string; readonly position?: Dashb…"
+        },
+        {
+          "name": "DashboardItemPropertyKey",
+          "kind": "interface",
+          "line": 85,
+          "exported": true,
+          "signature": "export interface DashboardItemPropertyKey { readonly self: string; readonly key: string; }"
+        },
+        {
+          "name": "DashboardItemPropertyKeys",
+          "kind": "interface",
+          "line": 90,
+          "exported": true,
+          "signature": "export interface DashboardItemPropertyKeys { readonly keys: readonly DashboardItemPropertyKey[]; }"
+        },
+        {
+          "name": "DashboardItemProperty",
+          "kind": "interface",
+          "line": 94,
+          "exported": true,
+          "signature": "export interface DashboardItemProperty { readonly key: string; readonly value: unknown; }"
+        },
+        {
+          "name": "CopyDashboardData",
+          "kind": "interface",
+          "line": 99,
+          "exported": true,
+          "signature": "export interface CopyDashboardData { readonly name?: string; readonly description?: string; readonly sharePermissions?: …"
+        },
+        {
+          "name": "BulkEditDashboardAction",
+          "kind": "type",
+          "line": 107,
+          "exported": true,
+          "signature": "export type BulkEditDashboardAction = | 'changeOwner' | 'changePermission' | 'addPermission' | 'removePermission' | 'cha…",
+          "jsdoc": "Action verb accepted by `PUT /dashboard/bulk/edit`."
+        },
+        {
+          "name": "BulkEditDashboardsData",
+          "kind": "interface",
+          "line": 115,
+          "exported": true,
+          "signature": "export interface BulkEditDashboardsData { readonly entityIds: readonly string[]; readonly action: BulkEditDashboardActio…"
+        },
+        {
+          "name": "BulkEditDashboardsResponse",
+          "kind": "interface",
+          "line": 129,
+          "exported": true,
+          "signature": "export interface BulkEditDashboardsResponse { readonly taskId?: string; readonly status?: string; }"
+        },
+        {
+          "name": "AvailableDashboardGadget",
+          "kind": "interface",
+          "line": 135,
+          "exported": true,
+          "signature": "export interface AvailableDashboardGadget { readonly moduleKey?: string; readonly uri?: string; readonly title: string; …",
+          "jsdoc": "A descriptor for an available (catalogue) gadget — `GET /dashboard/gadgets`."
+        },
+        {
+          "name": "AvailableDashboardGadgetsResponse",
+          "kind": "interface",
+          "line": 141,
+          "exported": true,
+          "signature": "export interface AvailableDashboardGadgetsResponse { readonly gadgets: AvailableDashboardGadget[]; }"
+        },
+        {
+          "name": "ListAvailableGadgetsParams",
+          "kind": "interface",
+          "line": 145,
+          "exported": true,
+          "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: readonly string[]; readonly uri?: readonly string[]; …"
+        },
+        {
+          "name": "SearchDashboardsOrderBy",
+          "kind": "type",
+          "line": 153,
+          "exported": true,
+          "signature": "export type SearchDashboardsOrderBy = | 'description' | '-description' | '+description' | 'favorite_count' | '-favorite_…",
+          "jsdoc": "Sort orders accepted by `GET /dashboard/search`."
+        },
+        {
+          "name": "SearchDashboardsStatus",
+          "kind": "type",
+          "line": 174,
+          "exported": true,
+          "signature": "export type SearchDashboardsStatus = 'active' | 'archived' | 'deleted';",
+          "jsdoc": "Status filter for `GET /dashboard/search`."
+        },
+        {
+          "name": "SearchDashboardsParams",
+          "kind": "interface",
+          "line": 176,
+          "exported": true,
+          "signature": "export interface SearchDashboardsParams { readonly dashboardName?: string; readonly accountId?: string; readonly owner?:…"
+        },
+        {
           "name": "DashboardsResource",
           "kind": "class",
-          "line": 49,
+          "line": 190,
           "exported": true,
           "signature": "export class DashboardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 50
+              "line": 191
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 56
+              "line": 197
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 87
+              "line": 228
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 96
+              "line": 237
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 106
+              "line": 247
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 116
+              "line": 257
+            },
+            {
+              "name": "listGadgets",
+              "kind": "method",
+              "line": 265
+            },
+            {
+              "name": "addGadget",
+              "kind": "method",
+              "line": 274
+            },
+            {
+              "name": "updateGadget",
+              "kind": "method",
+              "line": 293
+            },
+            {
+              "name": "removeGadget",
+              "kind": "method",
+              "line": 313
+            },
+            {
+              "name": "listItemProperties",
+              "kind": "method",
+              "line": 324
+            },
+            {
+              "name": "getItemProperty",
+              "kind": "method",
+              "line": 338
+            },
+            {
+              "name": "setItemProperty",
+              "kind": "method",
+              "line": 356
+            },
+            {
+              "name": "deleteItemProperty",
+              "kind": "method",
+              "line": 375
+            },
+            {
+              "name": "copy",
+              "kind": "method",
+              "line": 392
+            },
+            {
+              "name": "bulkEdit",
+              "kind": "method",
+              "line": 407
+            },
+            {
+              "name": "listAvailableGadgets",
+              "kind": "method",
+              "line": 434
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "line": 455
+            },
+            {
+              "name": "searchAll",
+              "kind": "method",
+              "line": 495
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 133
+              "line": 538
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 185,
+          "line": 590,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js"
