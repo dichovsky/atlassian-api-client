@@ -1090,6 +1090,8 @@ async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): 
 
 async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  const groupName = asString(opts['group-name']);
+  const groupId = asString(opts['group-id']);
 
   switch (cmd.action) {
     case 'picker': {
@@ -1108,9 +1110,86 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         userName: asString(opts['user-name']),
       });
     }
+    case 'get': {
+      const expand = asString(opts['expand']);
+      return client.groups.get({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        ...(expand !== undefined ? { expand } : {}),
+      });
+    }
+    case 'create': {
+      const name = asString(opts['name']);
+      if (!name) throw new Error('create requires --name');
+      return client.groups.create({ name });
+    }
+    case 'delete': {
+      const swapGroup = asString(opts['swap-group']);
+      const swapGroupId = asString(opts['swap-group-id']);
+      await client.groups.delete({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        ...(swapGroup !== undefined ? { swapGroup } : {}),
+        ...(swapGroupId !== undefined ? { swapGroupId } : {}),
+      });
+      return { deleted: true };
+    }
+    case 'list-bulk': {
+      const groupIds = splitCsv(asString(opts['group-ids']));
+      const groupNames = splitCsv(asString(opts['group-names']));
+      const accessType = asString(opts['access-type']);
+      const applicationKey = asString(opts['application-key']);
+      return client.groups.listBulk({
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(groupIds !== undefined ? { groupId: groupIds } : {}),
+        ...(groupNames !== undefined ? { groupName: groupNames } : {}),
+        ...(accessType !== undefined ? { accessType } : {}),
+        ...(applicationKey !== undefined ? { applicationKey } : {}),
+      });
+    }
+    case 'list-members': {
+      return client.groups.listMembers({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        includeInactiveUsers: asBoolFlag(opts['include-inactive-users']),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'remove-user': {
+      const accountId = asString(opts['account-id']);
+      if (!accountId) throw new Error('remove-user requires --account-id');
+      await client.groups.removeUser({
+        accountId,
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+      });
+      return { removed: true };
+    }
+    case 'add-user': {
+      const accountId = asString(opts['account-id']);
+      if (!accountId) throw new Error('add-user requires --account-id');
+      return client.groups.addUser({
+        accountId,
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+      });
+    }
     default:
-      throw new Error(`Unknown groups action: ${cmd.action}. Actions: picker`);
+      throw new Error(
+        `Unknown groups action: ${cmd.action}. Actions: picker, get, create, delete, list-bulk, list-members, remove-user, add-user`,
+      );
   }
+}
+
+function splitCsv(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const parts = value
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return parts.length > 0 ? parts : undefined;
 }
 
 async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {

@@ -238,7 +238,7 @@ RESOURCES:
   post-incident-reviews  get, delete
   vulnerability          get, delete
   devopscomponents       get, delete
-  groups                 picker
+  groups                 picker, get, create, delete, list-bulk, list-members, remove-user, add-user
   group-user-picker      pick
   security-level         get
   license                get-approximate-count, get-approximate-count-for-product
@@ -275,6 +275,13 @@ EXAMPLES:
   atlas jira devopscomponents get COMP-101
   atlas jira devopscomponents delete COMP-101
   atlas jira groups picker --query dev --max-results 10
+  atlas jira groups get --group-id grp-1 --expand users
+  atlas jira groups create --name developers
+  atlas jira groups delete --group-id grp-1 --swap-group-id grp-2
+  atlas jira groups list-bulk --group-ids grp-1,grp-2 --max-results 50
+  atlas jira groups list-members --group-id grp-1 --include-inactive-users
+  atlas jira groups add-user --group-id grp-1 --account-id 5b10ac...
+  atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac...
   atlas jira group-user-picker pick --query alice --show-avatar
   atlas jira security-level get 10001
   atlas jira license get-approximate-count

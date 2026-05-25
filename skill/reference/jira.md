@@ -36,7 +36,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `post-incident-reviews`  | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `vulnerability`          | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `devopscomponents`       | `get`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `groups`                 | `picker`                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `groups`                 | `picker`, `get`, `create`, `delete`, `list-bulk`, `list-members`, `add-user`, `remove-user`                                                                                                                                                                                                                                                                                                                              |
 | `group-user-picker`      | `pick`                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `security-level`         | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `license`                | `get-approximate-count`, `get-approximate-count-for-product`                                                                                                                                                                                                                                                                                                                                                             |
@@ -1063,9 +1063,18 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 
 ## `groups`
 
-| Action   | Positional | Required flags | Optional flags                                                               |
-| -------- | ---------- | -------------- | ---------------------------------------------------------------------------- |
-| `picker` | —          | —              | `--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name` |
+| Action         | Positional | Required flags | Optional flags                                                                                      |
+| -------------- | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| `picker`       | —          | —              | `--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name`                        |
+| `get`          | —          | —              | `--group-name`, `--group-id`, `--expand`                                                            |
+| `create`       | —          | `--name`       | —                                                                                                   |
+| `delete`       | —          | —              | `--group-name`, `--group-id`, `--swap-group`, `--swap-group-id`                                     |
+| `list-bulk`    | —          | —              | `--start-at`, `--max-results`, `--group-ids`, `--group-names`, `--access-type`, `--application-key` |
+| `list-members` | —          | —              | `--group-name`, `--group-id`, `--include-inactive-users`, `--start-at`, `--max-results`             |
+| `add-user`     | —          | `--account-id` | `--group-name`, `--group-id`                                                                        |
+| `remove-user`  | —          | `--account-id` | `--group-name`, `--group-id`                                                                        |
+
+### `picker`
 
 - `--query` — fuzzy string to match against group names.
 - `--exclude` — **comma-separated** list of group IDs to exclude from results.
@@ -1073,6 +1082,37 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 - `--exclude-inactive` — when `true`, inactive groups are omitted.
 - `--user-name` — account ID of a user whose groups should be excluded.
 - Endpoint: `GET /rest/api/3/groups/picker`.
+
+### `get`, `create`, `delete`
+
+- `--group-name` — group name (Atlassian deprecates this in favour of `--group-id`).
+- `--group-id` — stable group identifier; preferred over `--group-name`.
+- `--expand` (`get` only) — comma-separated expand keys; `users` inlines the first member page.
+- `--name` (`create` only) — name of the new group; **required**.
+- `--swap-group` / `--swap-group-id` (`delete` only) — reassign deleted group's restrictions to the swap target.
+- Endpoints: `GET /rest/api/3/group`, `POST /rest/api/3/group`, `DELETE /rest/api/3/group`.
+
+### `list-bulk`
+
+- `--group-ids` — **comma-separated** group IDs to filter the result set.
+- `--group-names` — **comma-separated** group names to filter the result set.
+- `--access-type` — restrict to groups providing a given access type (`application`, `site-admin`, `admin`).
+- `--application-key` — application key used with `--access-type`.
+- `--start-at`, `--max-results` — offset pagination controls.
+- Endpoint: `GET /rest/api/3/group/bulk`.
+
+### `list-members`
+
+- `--group-name` / `--group-id` — identify the group whose members are listed.
+- `--include-inactive-users` — when `true`, deactivated users are included.
+- `--start-at`, `--max-results` — offset pagination controls.
+- Endpoint: `GET /rest/api/3/group/member`.
+
+### `add-user`, `remove-user`
+
+- `--account-id` — **required**; Atlassian account ID of the user to add or remove.
+- `--group-name` / `--group-id` — identify the target group.
+- Endpoints: `POST /rest/api/3/group/user`, `DELETE /rest/api/3/group/user`.
 
 ```sh
 # Find groups matching "dev"
@@ -1083,6 +1123,27 @@ atlas jira groups picker --query dev --max-results 10 --exclude grp-99
 
 # Exclude inactive groups
 atlas jira groups picker --exclude-inactive
+
+# Fetch a group and inline its first page of users
+atlas jira groups get --group-id grp-1 --expand users
+
+# Create a new group
+atlas jira groups create --name developers
+
+# Delete a group and swap its restrictions onto another group
+atlas jira groups delete --group-id grp-old --swap-group-id grp-new
+
+# Bulk-list groups providing application access
+atlas jira groups list-bulk --access-type application --application-key jira-software
+
+# List members of a group, including deactivated users
+atlas jira groups list-members --group-id grp-1 --include-inactive-users
+
+# Add a user to a group
+atlas jira groups add-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d4ef5
+
+# Remove a user from a group
+atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d4ef5
 ```
 
 ## `group-user-picker`
