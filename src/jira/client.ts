@@ -56,6 +56,8 @@ import { ServiceRegistryResource } from './resources/service-registry.js';
 import { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
 import { AppResource } from './resources/app.js';
 import { ComponentResource } from './resources/component.js';
+import { ApplicationPropertiesResource } from './resources/application-properties.js';
+import { ConfigurationResource } from './resources/configuration.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -166,6 +168,10 @@ export class JiraClient {
   readonly app: AppResource;
   /** Jira project components resource (flat `/component` surface). */
   readonly component: ComponentResource;
+  /** Jira application properties resource (B331-B333). */
+  readonly applicationProperties: ApplicationPropertiesResource;
+  /** Jira global + time-tracking configuration resource (B382-B387). */
+  readonly configuration: ConfigurationResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -248,5 +254,7 @@ export class JiraClient {
     this.existsByProperties = new ExistsByPropertiesResource(transport, devInfoBaseUrl);
     this.app = new AppResource(transport, baseUrl, serviceRegistryBaseUrl, forgeBaseUrl);
     this.component = new ComponentResource(transport, baseUrl);
+    this.applicationProperties = new ApplicationPropertiesResource(transport, baseUrl);
+    this.configuration = new ConfigurationResource(transport, baseUrl);
   }
 }

@@ -213,6 +213,15 @@ const GLOBAL_OPTIONS = {
   'assignee-type': { type: 'string' as const },
   'is-assignee-type-valid': { type: 'boolean' as const },
   'move-issues-to': { type: 'string' as const },
+  // application-properties options (B331-B333)
+  'permission-level': { type: 'string' as const },
+  'key-filter': { type: 'string' as const },
+  // configuration / timetracking options (B384, B387)
+  url: { type: 'string' as const },
+  'working-hours-per-day': { type: 'string' as const },
+  'working-days-per-week': { type: 'string' as const },
+  'time-format': { type: 'string' as const },
+  'default-unit': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

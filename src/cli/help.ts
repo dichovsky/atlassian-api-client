@@ -254,6 +254,8 @@ RESOURCES:
   service-registry       get
   exists-by-properties   get
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
+  application-properties list, set, list-advanced-settings
+  configuration          get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options
   bulk                   delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
   issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
   component              list, create, get, update, delete, related-issue-counts
@@ -322,6 +324,15 @@ EXAMPLES:
   atlas jira issue-attachments get-meta
   atlas jira issue-attachments download-thumbnail 10001 --width 200 --height 200 --fallback-to-default true
   atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
+  atlas jira application-properties list --key jira.home
+  atlas jira application-properties set jira.title --value "My Jira"
+  atlas jira application-properties list-advanced-settings
+  atlas jira configuration get
+  atlas jira configuration get-timetracking
+  atlas jira configuration select-timetracking --key JIRA
+  atlas jira configuration list-timetracking-providers
+  atlas jira configuration get-timetracking-options
+  atlas jira configuration update-timetracking-options --working-hours-per-day 8 --time-format pretty
 `;
 
 /** Get help text for the given level. */

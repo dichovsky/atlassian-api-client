@@ -603,6 +603,21 @@ const jiraBulkMock = {
   submitSecurity: vi.fn(),
 };
 
+const jiraApplicationPropertiesMock = {
+  list: vi.fn(),
+  update: vi.fn(),
+  listAdvancedSettings: vi.fn(),
+};
+
+const jiraConfigurationMock = {
+  get: vi.fn(),
+  getTimeTracking: vi.fn(),
+  selectTimeTracking: vi.fn(),
+  listTimeTrackingProviders: vi.fn(),
+  getTimeTrackingOptions: vi.fn(),
+  updateTimeTrackingOptions: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -651,6 +666,8 @@ vi.mock('../../src/jira/client.js', () => {
       serviceRegistry: jiraServiceRegistryMock,
       existsByProperties: jiraExistsByPropertiesMock,
       app: jiraAppMock,
+      applicationProperties: jiraApplicationPropertiesMock,
+      configuration: jiraConfigurationMock,
       bulk: jiraBulkMock,
       issueAttachments: jiraIssueAttachmentsMock,
       component: jiraComponentMock,
@@ -12122,6 +12139,310 @@ describe('executeJiraCommand', () => {
     it('component unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('component', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown component action',
+      );
+    });
+  });
+
+  // ── application-properties ────────────────────────────────────────────────
+
+  describe('application-properties resource', () => {
+    it('application-properties list calls client.applicationProperties.list() with no params', async () => {
+      // Arrange
+      const props = [{ id: 'jira.title', key: 'jira.title', value: 'Jira' }];
+      jiraApplicationPropertiesMock.list.mockResolvedValue(props);
+
+      // Act
+      const result = await executeJiraCommand(cmd('application-properties', 'list'), GLOBALS);
+
+      // Assert
+      expect(jiraApplicationPropertiesMock.list).toHaveBeenCalledWith({});
+      expect(result).toEqual(props);
+    });
+
+    it('application-properties list passes positional id as --key shorthand', async () => {
+      // Arrange
+      jiraApplicationPropertiesMock.list.mockResolvedValue([]);
+      const parsed = cmd('application-properties', 'list', ['jira.home']);
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraApplicationPropertiesMock.list).toHaveBeenCalledWith({ key: 'jira.home' });
+    });
+
+    it('application-properties list passes --key, --permission-level, --key-filter', async () => {
+      // Arrange
+      jiraApplicationPropertiesMock.list.mockResolvedValue([]);
+      const parsed = cmd('application-properties', 'list', [], {
+        key: 'jira.title',
+        'permission-level': 'SYSADMIN',
+        'key-filter': '^jira\\.',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraApplicationPropertiesMock.list).toHaveBeenCalledWith({
+        key: 'jira.title',
+        permissionLevel: 'SYSADMIN',
+        keyFilter: '^jira\\.',
+      });
+    });
+
+    it('application-properties set requires positional id', async () => {
+      const parsed = cmd('application-properties', 'set', [], { value: 'x' });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required argument: id',
+      );
+    });
+
+    it('application-properties set requires --value', async () => {
+      const parsed = cmd('application-properties', 'set', ['jira.title']);
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow('--value');
+    });
+
+    it('application-properties set calls client.applicationProperties.update() with the id+value body', async () => {
+      // Arrange
+      const updated = { id: 'jira.title', key: 'jira.title', value: 'New Title' };
+      jiraApplicationPropertiesMock.update.mockResolvedValue(updated);
+      const parsed = cmd('application-properties', 'set', ['jira.title'], { value: 'New Title' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraApplicationPropertiesMock.update).toHaveBeenCalledWith('jira.title', {
+        id: 'jira.title',
+        value: 'New Title',
+      });
+      expect(result).toEqual(updated);
+    });
+
+    it('application-properties list-advanced-settings calls client.applicationProperties.listAdvancedSettings()', async () => {
+      // Arrange
+      const props = [
+        { id: 'jira.option.allowunassigned', key: 'jira.option.allowunassigned', value: 'true' },
+      ];
+      jiraApplicationPropertiesMock.listAdvancedSettings.mockResolvedValue(props);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('application-properties', 'list-advanced-settings'),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraApplicationPropertiesMock.listAdvancedSettings).toHaveBeenCalledOnce();
+      expect(result).toEqual(props);
+    });
+
+    it('application-properties unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('application-properties', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown application-properties action');
+    });
+  });
+
+  // ── configuration ─────────────────────────────────────────────────────────
+
+  describe('configuration resource', () => {
+    it('configuration get calls client.configuration.get()', async () => {
+      // Arrange
+      const config = {
+        votingEnabled: true,
+        watchingEnabled: true,
+        unassignedIssuesAllowed: false,
+        subTasksEnabled: true,
+        issueLinkingEnabled: true,
+        timeTrackingEnabled: true,
+        attachmentsEnabled: true,
+      };
+      jiraConfigurationMock.get.mockResolvedValue(config);
+
+      // Act
+      const result = await executeJiraCommand(cmd('configuration', 'get'), GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.get).toHaveBeenCalledOnce();
+      expect(result).toEqual(config);
+    });
+
+    it('configuration get-timetracking calls client.configuration.getTimeTracking()', async () => {
+      // Arrange
+      const provider = { key: 'JIRA', name: 'Built-in' };
+      jiraConfigurationMock.getTimeTracking.mockResolvedValue(provider);
+
+      // Act
+      const result = await executeJiraCommand(cmd('configuration', 'get-timetracking'), GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.getTimeTracking).toHaveBeenCalledOnce();
+      expect(result).toEqual(provider);
+    });
+
+    it('configuration select-timetracking requires --key', async () => {
+      const parsed = cmd('configuration', 'select-timetracking', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow('--key');
+    });
+
+    it('configuration select-timetracking calls selectTimeTracking with key only', async () => {
+      // Arrange
+      jiraConfigurationMock.selectTimeTracking.mockResolvedValue(undefined);
+      const parsed = cmd('configuration', 'select-timetracking', [], { key: 'JIRA' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.selectTimeTracking).toHaveBeenCalledWith({ key: 'JIRA' });
+      expect(result).toEqual({ selected: true });
+    });
+
+    it('configuration select-timetracking passes name and url when supplied', async () => {
+      // Arrange
+      jiraConfigurationMock.selectTimeTracking.mockResolvedValue(undefined);
+      const parsed = cmd('configuration', 'select-timetracking', [], {
+        key: 'com.acme',
+        name: 'Acme',
+        url: 'https://acme.example/track',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.selectTimeTracking).toHaveBeenCalledWith({
+        key: 'com.acme',
+        name: 'Acme',
+        url: 'https://acme.example/track',
+      });
+    });
+
+    it('configuration list-timetracking-providers calls client.configuration.listTimeTrackingProviders()', async () => {
+      // Arrange
+      const providers = [{ key: 'JIRA' }, { key: 'com.acme' }];
+      jiraConfigurationMock.listTimeTrackingProviders.mockResolvedValue(providers);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('configuration', 'list-timetracking-providers'),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraConfigurationMock.listTimeTrackingProviders).toHaveBeenCalledOnce();
+      expect(result).toEqual(providers);
+    });
+
+    it('configuration get-timetracking-options calls client.configuration.getTimeTrackingOptions()', async () => {
+      // Arrange
+      const opts = {
+        workingHoursPerDay: 8,
+        workingDaysPerWeek: 5,
+        timeFormat: 'pretty',
+        defaultUnit: 'hour',
+      };
+      jiraConfigurationMock.getTimeTrackingOptions.mockResolvedValue(opts);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('configuration', 'get-timetracking-options'),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraConfigurationMock.getTimeTrackingOptions).toHaveBeenCalledOnce();
+      expect(result).toEqual(opts);
+    });
+
+    it('configuration update-timetracking-options requires at least one flag', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {});
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        'update-timetracking-options requires at least one of:',
+      );
+    });
+
+    it('configuration update-timetracking-options sends only working-hours-per-day when set', async () => {
+      // Arrange
+      jiraConfigurationMock.updateTimeTrackingOptions.mockResolvedValue({
+        workingHoursPerDay: 7.5,
+      });
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '7.5',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.updateTimeTrackingOptions).toHaveBeenCalledWith({
+        workingHoursPerDay: 7.5,
+      });
+    });
+
+    it('configuration update-timetracking-options accepts every flag', async () => {
+      // Arrange
+      jiraConfigurationMock.updateTimeTrackingOptions.mockResolvedValue({});
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
+        'working-days-per-week': '5',
+        'time-format': 'days',
+        'default-unit': 'day',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraConfigurationMock.updateTimeTrackingOptions).toHaveBeenCalledWith({
+        workingHoursPerDay: 8,
+        workingDaysPerWeek: 5,
+        timeFormat: 'days',
+        defaultUnit: 'day',
+      });
+    });
+
+    it('configuration update-timetracking-options rejects invalid --time-format', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'time-format': 'weird',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--time-format must be one of: pretty, days, hours',
+      );
+    });
+
+    it('configuration update-timetracking-options rejects invalid --default-unit', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'default-unit': 'fortnight',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--default-unit must be one of: minute, hour, day, week',
+      );
+    });
+
+    it('configuration update-timetracking-options rejects non-positive --working-hours-per-day', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '0',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--working-hours-per-day must be a positive number',
+      );
+    });
+
+    it('configuration update-timetracking-options rejects non-numeric --working-days-per-week', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-days-per-week': 'abc',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--working-days-per-week must be a positive number',
+      );
+    });
+
+    it('configuration unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('configuration', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown configuration action',
       );
     });
   });
