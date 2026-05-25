@@ -184,7 +184,8 @@ atlas jira dashboards bulk-edit --entity-ids 10001 --action changeOwner --new-ow
 # List gadget catalogue
 atlas jira dashboards list-available-gadgets --module-keys com.x:a,com.x:b
 ```
-| `bulk`                  | `delete-issues`, `get-fields`, `edit-fields`, `move-issues`, `get-transitions`, `transition-issues`, `unwatch-issues`, `watch-issues`, `get-status`, `submit-builds`, `submit-deployments`, `submit-devinfo`, `submit-devops-components`, `submit-feature-flags`, `submit-operations`, `submit-remote-links`, `submit-security`                                                                                          |
+
+| `bulk` | `delete-issues`, `get-fields`, `edit-fields`, `move-issues`, `get-transitions`, `transition-issues`, `unwatch-issues`, `watch-issues`, `get-status`, `submit-builds`, `submit-deployments`, `submit-devinfo`, `submit-devops-components`, `submit-feature-flags`, `submit-operations`, `submit-remote-links`, `submit-security` |
 
 ## `incidents`
 

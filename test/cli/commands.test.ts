@@ -11431,7 +11431,7 @@ describe('executeJiraCommand', () => {
           }),
           GLOBALS,
         ),
-      ).rejects.toThrow('valid JSON');
+      ).rejects.toThrow('must be a JSON object');
     });
 
     it('bulk edit-fields rejects --value that is not valid JSON', async () => {
@@ -11534,7 +11534,7 @@ describe('executeJiraCommand', () => {
     it('bulk transition-issues rejects --value that is not a JSON array', async () => {
       await expect(
         executeJiraCommand(cmd('bulk', 'transition-issues', [], { value: '{"a":1}' }), GLOBALS),
-      ).rejects.toThrow('valid JSON');
+      ).rejects.toThrow('must be a JSON array');
     });
 
     // B351

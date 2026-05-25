@@ -1606,7 +1606,7 @@ function parseJsonValueFlag(raw: string, label: string): unknown {
 function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown> {
   const parsed = parseJsonValueFlag(raw, label);
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`--value must be valid JSON (${label})`);
+    throw new Error(`--value must be a JSON object (not array/null/primitive) (${label})`);
   }
   return parsed as Record<string, unknown>;
 }
@@ -1614,7 +1614,7 @@ function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown
 function parseJsonArrayFlag(raw: string, label: string): unknown[] {
   const parsed = parseJsonValueFlag(raw, label);
   if (!Array.isArray(parsed)) {
-    throw new Error(`--value must be valid JSON (${label})`);
+    throw new Error(`--value must be a JSON array (${label})`);
   }
   return parsed;
 }
