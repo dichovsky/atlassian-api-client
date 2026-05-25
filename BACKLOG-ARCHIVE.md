@@ -1161,3 +1161,48 @@
 - [x] 🔴 🧩 API: B387 Jira: expose PUT /rest/api/3/configuration/timetracking/options
   - **Impl:** `ConfigurationResource.updateTimeTrackingOptions({...})` returns the updated `TimeTrackingConfiguration`. CLI `atlas jira configuration update-timetracking-options [--working-hours-per-day] [--working-days-per-week] [--time-format] [--default-unit]`. Update requires at least one flag; closed-enum flags validated via local guards (`asTimeFormat`, `asDefaultUnit`).
   - **Rat:** Update global time-tracking display/calculation options; partial update pattern matches other singleton PUT endpoints.
+- [x] 🔴 🧩 API: B452 Jira: expose DELETE /rest/api/3/filter/{id}/columns
+  - **Impl:** `FiltersResource.resetColumns(id)` returns `void`. CLI `atlas jira filters reset-columns <filterId>`.
+  - **Rat:** Resets a user's filter column override to the system default; symmetric with B453/B454.
+- [x] 🔴 🧩 API: B453 Jira: expose GET /rest/api/3/filter/{id}/columns
+  - **Impl:** `FiltersResource.getColumns(id)` returns `FilterColumn[]`. CLI `atlas jira filters get-columns <filterId>`.
+  - **Rat:** Read the per-user column override for a saved filter.
+- [x] 🔴 🧩 API: B454 Jira: expose PUT /rest/api/3/filter/{id}/columns
+  - **Impl:** `FiltersResource.setColumns(id, columns)` returns `void`. CLI `atlas jira filters set-columns <filterId> --columns <csv>`. Body shape `{ columns: string[] }`.
+  - **Rat:** Replace the saved column configuration.
+- [x] 🔴 🧩 API: B455 Jira: expose DELETE /rest/api/3/filter/{id}/favourite
+  - **Impl:** `FiltersResource.removeFavourite(id, params?)` returns `Filter`. CLI `atlas jira filters remove-favourite <filterId> [--expand]`.
+  - **Rat:** Symmetric with B456; both return the updated filter envelope.
+- [x] 🔴 🧩 API: B456 Jira: expose PUT /rest/api/3/filter/{id}/favourite
+  - **Impl:** `FiltersResource.addFavourite(id, params?)` returns `Filter`. CLI `atlas jira filters add-favourite <filterId> [--expand]`.
+  - **Rat:** Mark a filter as favourite for the calling user.
+- [x] 🔴 🧩 API: B457 Jira: expose PUT /rest/api/3/filter/{id}/owner
+  - **Impl:** `FiltersResource.changeOwner(id, accountId)` returns `void`. CLI `atlas jira filters change-owner <filterId> --account-id <id>`.
+  - **Rat:** Reassign filter ownership; admin-only at the API level.
+- [x] 🔴 🧩 API: B458 Jira: expose GET /rest/api/3/filter/{id}/permission
+  - **Impl:** `FiltersResource.listPermissions(id)` returns `FilterSharePermission[]`. CLI `atlas jira filters list-permissions <filterId>`.
+  - **Rat:** Enumerate share permissions for a saved filter.
+- [x] 🔴 🧩 API: B459 Jira: expose POST /rest/api/3/filter/{id}/permission
+  - **Impl:** `FiltersResource.addPermission(id, data)` returns `FilterSharePermission[]`. CLI `atlas jira filters add-permission <filterId> --share-type <kind> [--project-id|--group-name|--group-id|--role-id|--account-id|--rights]`. Local `asFilterShareType` guard.
+  - **Rat:** Grant view/edit access to a project, role, group, or user.
+- [x] 🔴 🧩 API: B460 Jira: expose DELETE /rest/api/3/filter/{id}/permission/{permissionId}
+  - **Impl:** `FiltersResource.deletePermission(id, permissionId)` returns `void`. CLI `atlas jira filters delete-permission <filterId> <permissionId>` (both positional, matching URL path order).
+  - **Rat:** Revoke a single share permission.
+- [x] 🔴 🧩 API: B461 Jira: expose GET /rest/api/3/filter/{id}/permission/{permissionId}
+  - **Impl:** `FiltersResource.getPermission(id, permissionId)` returns `FilterSharePermission`. CLI `atlas jira filters get-permission <filterId> <permissionId>`.
+  - **Rat:** Inspect a single share permission entry.
+- [x] 🔴 🧩 API: B462 Jira: expose GET /rest/api/3/filter/defaultShareScope
+  - **Impl:** `FiltersResource.getDefaultShareScope()` returns `{ scope: FilterShareScope }`. CLI `atlas jira filters get-default-share-scope`.
+  - **Rat:** Read the caller's default share scope used for newly created filters.
+- [x] 🔴 🧩 API: B463 Jira: expose PUT /rest/api/3/filter/defaultShareScope
+  - **Impl:** `FiltersResource.setDefaultShareScope(scope)` returns `{ scope }`. CLI `atlas jira filters set-default-share-scope --share-scope <GLOBAL|AUTHENTICATED|PRIVATE>`. Local `asFilterShareScope` guard.
+  - **Rat:** Persist the caller's default share scope.
+- [x] 🔴 🧩 API: B464 Jira: expose GET /rest/api/3/filter/favourite
+  - **Impl:** `FiltersResource.listFavourites(params?)` returns `Filter[]`. CLI `atlas jira filters list-favourites [--expand]`.
+  - **Rat:** List the calling user's favourite filters.
+- [x] 🔴 🧩 API: B465 Jira: expose GET /rest/api/3/filter/my
+  - **Impl:** `FiltersResource.listMy(params?)` returns `Filter[]`. CLI `atlas jira filters list-my [--expand] [--include-favourites]`.
+  - **Rat:** List filters owned by the calling user, optionally including favourites.
+- [x] 🟡 🖥️ API: B466 Jira: add CLI + skill for GET /rest/api/3/filter/search
+  - **Impl:** Existing `FiltersResource.list(params)` exposed as `atlas jira filters search` with `--start-at`, `--max-results`, `--expand`, `--ids` (CSV of numeric IDs), `--order-by`. First time `filters` is wired into the CLI dispatcher — also unlocks the previously-implemented `get`/`create`/`update`/`delete` resource methods.
+  - **Rat:** Primary discovery endpoint for saved filters; the resource implementation already existed.

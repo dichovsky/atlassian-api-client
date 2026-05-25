@@ -110,6 +110,8 @@ export async function executeJiraCommand(
       return executeIssueAttachments(client, cmd);
     case 'component':
       return executeComponent(client, cmd);
+    case 'filters':
+      return executeFilters(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2037,6 +2039,275 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
     default:
       throw new Error(
         `Unknown configuration action: ${cmd.action}. Actions: get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options`,
+      );
+  }
+}
+
+// ── filters (B448-B466) ──────────────────────────────────────────────────────
+
+const FILTERS_ACTIONS = [
+  'search',
+  'get',
+  'create',
+  'update',
+  'delete',
+  'list-favourites',
+  'list-my',
+  'add-favourite',
+  'remove-favourite',
+  'change-owner',
+  'get-columns',
+  'set-columns',
+  'reset-columns',
+  'list-permissions',
+  'add-permission',
+  'get-permission',
+  'delete-permission',
+  'get-default-share-scope',
+  'set-default-share-scope',
+];
+
+function asFilterShareScope(
+  value: string | boolean | undefined,
+): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'GLOBAL' || s === 'AUTHENTICATED' || s === 'PRIVATE') return s;
+  throw new Error(`--share-scope must be one of: GLOBAL, AUTHENTICATED, PRIVATE. Got: ${s}`);
+}
+
+function requireFilterShareScope(
+  value: string | boolean | undefined,
+): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' {
+  const s = asFilterShareScope(value);
+  if (s === undefined) throw new Error('Missing required option: --share-scope');
+  return s;
+}
+
+function asFilterShareType(
+  value: string | boolean | undefined,
+):
+  | 'user'
+  | 'group'
+  | 'project'
+  | 'projectRole'
+  | 'global'
+  | 'loggedin'
+  | 'authenticated'
+  | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (
+    s === 'user' ||
+    s === 'group' ||
+    s === 'project' ||
+    s === 'projectRole' ||
+    s === 'global' ||
+    s === 'loggedin' ||
+    s === 'authenticated'
+  ) {
+    return s;
+  }
+  throw new Error(
+    `--share-type must be one of: user, group, project, projectRole, global, loggedin, authenticated. Got: ${s}`,
+  );
+}
+
+function requireFilterShareType(
+  value: string | boolean | undefined,
+): 'user' | 'group' | 'project' | 'projectRole' | 'global' | 'loggedin' | 'authenticated' {
+  const t = asFilterShareType(value);
+  if (t === undefined) throw new Error('Missing required option: --share-type');
+  return t;
+}
+
+async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'search': {
+      const idsRaw = asString(opts['ids']);
+      const ids = idsRaw
+        ? idsRaw
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+            .map((s) => parsePositiveIntArg(s, '--ids'))
+        : undefined;
+      return client.filters.list({
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
+        ...(ids !== undefined && { id: ids }),
+        ...(asString(opts['order-by']) !== undefined && { orderBy: asString(opts['order-by']) }),
+      });
+    }
+    case 'get': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      return client.filters.get(id);
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const jql = asString(opts['jql']);
+      const favourite = asBoolFlag(opts['favourite']);
+      const sharePermissionsRaw = asString(opts['share-permissions']);
+      const editPermissionsRaw = asString(opts['edit-permissions']);
+      const sharePermissions =
+        sharePermissionsRaw !== undefined
+          ? (parseJsonArrayFlag(sharePermissionsRaw, '--share-permissions') as never)
+          : undefined;
+      const editPermissions =
+        editPermissionsRaw !== undefined
+          ? (parseJsonArrayFlag(editPermissionsRaw, '--edit-permissions') as never)
+          : undefined;
+      return client.filters.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(jql !== undefined && { jql }),
+        ...(favourite !== undefined && { favourite }),
+        ...(sharePermissions !== undefined && { sharePermissions }),
+        ...(editPermissions !== undefined && { editPermissions }),
+      });
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const jql = asString(opts['jql']);
+      const favourite = asBoolFlag(opts['favourite']);
+      const sharePermissionsRaw = asString(opts['share-permissions']);
+      const editPermissionsRaw = asString(opts['edit-permissions']);
+      const sharePermissions =
+        sharePermissionsRaw !== undefined
+          ? (parseJsonArrayFlag(sharePermissionsRaw, '--share-permissions') as never)
+          : undefined;
+      const editPermissions =
+        editPermissionsRaw !== undefined
+          ? (parseJsonArrayFlag(editPermissionsRaw, '--edit-permissions') as never)
+          : undefined;
+      if (
+        name === undefined &&
+        description === undefined &&
+        jql === undefined &&
+        favourite === undefined &&
+        sharePermissions === undefined &&
+        editPermissions === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --jql, --favourite, --share-permissions, --edit-permissions',
+        );
+      }
+      return client.filters.update(id, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(jql !== undefined && { jql }),
+        ...(favourite !== undefined && { favourite }),
+        ...(sharePermissions !== undefined && { sharePermissions }),
+        ...(editPermissions !== undefined && { editPermissions }),
+      });
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      await client.filters.delete(id);
+      return { deleted: true };
+    }
+    case 'list-favourites': {
+      const expand = asString(opts['expand']);
+      return client.filters.listFavourites(expand !== undefined ? { expand } : undefined);
+    }
+    case 'list-my': {
+      const expand = asString(opts['expand']);
+      const includeFavourites = asBoolFlag(opts['include-favourites']);
+      return client.filters.listMy({
+        ...(expand !== undefined && { expand }),
+        ...(includeFavourites !== undefined && { includeFavourites }),
+      });
+    }
+    case 'add-favourite': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const expand = asString(opts['expand']);
+      return client.filters.addFavourite(id, expand !== undefined ? { expand } : undefined);
+    }
+    case 'remove-favourite': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const expand = asString(opts['expand']);
+      return client.filters.removeFavourite(id, expand !== undefined ? { expand } : undefined);
+    }
+    case 'change-owner': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const accountId = requireOpt(opts['account-id'], '--account-id');
+      await client.filters.changeOwner(id, accountId);
+      return { ownerChanged: true };
+    }
+    case 'get-columns': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      return client.filters.getColumns(id);
+    }
+    case 'set-columns': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const columnsRaw = requireOpt(opts['columns'], '--columns');
+      const columns = columnsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      if (columns.length === 0) {
+        throw new Error('--columns must contain at least one column key');
+      }
+      await client.filters.setColumns(id, columns);
+      return { updated: true };
+    }
+    case 'reset-columns': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      await client.filters.resetColumns(id);
+      return { reset: true };
+    }
+    case 'list-permissions': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      return client.filters.listPermissions(id);
+    }
+    case 'add-permission': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const type = requireFilterShareType(opts['share-type']);
+      const projectId = asString(opts['project-id']);
+      const groupname = asString(opts['group-name']);
+      const groupId = asString(opts['group-id']);
+      const projectRoleId = asString(opts['role-id']);
+      const accountId = asString(opts['account-id']);
+      const rightsRaw = asString(opts['rights']);
+      const rights =
+        rightsRaw !== undefined ? parsePositiveIntArg(rightsRaw, '--rights') : undefined;
+      return client.filters.addPermission(id, {
+        type,
+        ...(projectId !== undefined && { projectId }),
+        ...(groupname !== undefined && { groupname }),
+        ...(groupId !== undefined && { groupId }),
+        ...(projectRoleId !== undefined && { projectRoleId }),
+        ...(accountId !== undefined && { accountId }),
+        ...(rights !== undefined && { rights }),
+      });
+    }
+    case 'get-permission': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const permissionId = requireArg(cmd.positionalArgs[1], 'permissionId');
+      return client.filters.getPermission(id, permissionId);
+    }
+    case 'delete-permission': {
+      const id = requireArg(cmd.positionalArgs[0], 'filterId');
+      const permissionId = requireArg(cmd.positionalArgs[1], 'permissionId');
+      await client.filters.deletePermission(id, permissionId);
+      return { deleted: true };
+    }
+    case 'get-default-share-scope': {
+      return client.filters.getDefaultShareScope();
+    }
+    case 'set-default-share-scope': {
+      const scope = requireFilterShareScope(opts['share-scope']);
+      return client.filters.setDefaultShareScope(scope);
+    }
+    default:
+      throw new Error(
+        `Unknown filters action: ${cmd.action}. Actions: ${FILTERS_ACTIONS.join(', ')}`,
       );
   }
 }

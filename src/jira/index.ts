@@ -113,6 +113,12 @@ export { FiltersResource } from './resources/filters.js';
 export type {
   Filter,
   FilterSharePermission,
+  FilterShareScope,
+  FilterColumn,
+  DefaultShareScopeResponse,
+  AddFilterSharePermissionData,
+  ListFavouriteFiltersParams,
+  ListMyFiltersParams,
   ListFiltersParams,
   CreateFilterData,
   UpdateFilterData,

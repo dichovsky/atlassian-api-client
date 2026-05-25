@@ -367,4 +367,301 @@ describe('FiltersResource', () => {
       expect(query['id']).toBeUndefined();
     });
   });
+
+  // ── columns (B452-B454) ───────────────────────────────────────────────────
+
+  describe('getColumns()', () => {
+    it('calls GET /filter/{id}/columns', async () => {
+      const cols = [
+        { label: 'Key', value: 'issuekey' },
+        { label: 'Summary', value: 'summary' },
+      ];
+      transport.respondWith(cols);
+
+      const result = await filters.getColumns('10001');
+
+      expect(result).toEqual(cols);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/10001/columns`,
+      });
+    });
+
+    it('rejects dot-segment id', async () => {
+      await expect(filters.getColumns('..')).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  describe('setColumns()', () => {
+    it('calls PUT /filter/{id}/columns with the body shape', async () => {
+      transport.respondWith(undefined);
+
+      await filters.setColumns('10001', ['issuekey', 'summary', 'assignee']);
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/filter/10001/columns`,
+        body: { columns: ['issuekey', 'summary', 'assignee'] },
+      });
+    });
+
+    it('encodes id in setColumns()', async () => {
+      transport.respondWith(undefined);
+      await filters.setColumns('../admin', ['x']);
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/..%2Fadmin/columns`);
+    });
+  });
+
+  describe('resetColumns()', () => {
+    it('calls DELETE /filter/{id}/columns', async () => {
+      transport.respondWith(undefined);
+
+      await filters.resetColumns('10001');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/filter/10001/columns`,
+      });
+    });
+
+    it('rejects dot-segment id', async () => {
+      await expect(filters.resetColumns('.')).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+    });
+  });
+
+  // ── favourites (B455-B456, B464) ──────────────────────────────────────────
+
+  describe('addFavourite()', () => {
+    it('calls PUT /filter/{id}/favourite', async () => {
+      const filter = makeFilter('10001', 'F');
+      transport.respondWith(filter);
+
+      const result = await filters.addFavourite('10001');
+
+      expect(result).toEqual(filter);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/filter/10001/favourite`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards --expand', async () => {
+      transport.respondWith(makeFilter('1', 'F'));
+      await filters.addFavourite('10001', { expand: 'sharePermissions' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'sharePermissions' });
+    });
+  });
+
+  describe('removeFavourite()', () => {
+    it('calls DELETE /filter/{id}/favourite', async () => {
+      const filter = makeFilter('10001', 'F');
+      transport.respondWith(filter);
+
+      const result = await filters.removeFavourite('10001');
+
+      expect(result).toEqual(filter);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/filter/10001/favourite`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards --expand', async () => {
+      transport.respondWith(makeFilter('1', 'F'));
+      await filters.removeFavourite('10001', { expand: 'owner' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'owner' });
+    });
+  });
+
+  describe('listFavourites()', () => {
+    it('calls GET /filter/favourite', async () => {
+      const list = [makeFilter('1', 'F'), makeFilter('2', 'G')];
+      transport.respondWith(list);
+
+      const result = await filters.listFavourites();
+
+      expect(result).toEqual(list);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/favourite`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards --expand', async () => {
+      transport.respondWith([]);
+      await filters.listFavourites({ expand: 'owner' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'owner' });
+    });
+  });
+
+  // ── my (B465) ─────────────────────────────────────────────────────────────
+
+  describe('listMy()', () => {
+    it('calls GET /filter/my', async () => {
+      const list = [makeFilter('1', 'Mine')];
+      transport.respondWith(list);
+
+      const result = await filters.listMy();
+
+      expect(result).toEqual(list);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/my`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards expand + includeFavourites', async () => {
+      transport.respondWith([]);
+      await filters.listMy({ expand: 'sharePermissions', includeFavourites: true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        expand: 'sharePermissions',
+        includeFavourites: true,
+      });
+    });
+  });
+
+  // ── owner (B457) ──────────────────────────────────────────────────────────
+
+  describe('changeOwner()', () => {
+    it('calls PUT /filter/{id}/owner with accountId body', async () => {
+      transport.respondWith(undefined);
+
+      await filters.changeOwner('10001', 'acc-123');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/filter/10001/owner`,
+        body: { accountId: 'acc-123' },
+      });
+    });
+
+    it('rejects dot-segment id', async () => {
+      await expect(filters.changeOwner('.', 'a')).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+    });
+  });
+
+  // ── permissions (B458-B461) ───────────────────────────────────────────────
+
+  describe('listPermissions()', () => {
+    it('calls GET /filter/{id}/permission', async () => {
+      const perms = [{ type: 'global' as const }];
+      transport.respondWith(perms);
+
+      const result = await filters.listPermissions('10001');
+
+      expect(result).toEqual(perms);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/10001/permission`,
+      });
+    });
+  });
+
+  describe('addPermission()', () => {
+    it('calls POST /filter/{id}/permission with body', async () => {
+      transport.respondWith([{ type: 'project', project: { id: '10000' } }]);
+
+      const result = await filters.addPermission('10001', {
+        type: 'project',
+        projectId: '10000',
+      });
+
+      expect(result).toEqual([{ type: 'project', project: { id: '10000' } }]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/filter/10001/permission`,
+        body: { type: 'project', projectId: '10000' },
+      });
+    });
+  });
+
+  describe('getPermission()', () => {
+    it('calls GET /filter/{id}/permission/{permissionId}', async () => {
+      const perm = { type: 'group' as const, group: { name: 'devs' } };
+      transport.respondWith(perm);
+
+      const result = await filters.getPermission('10001', '20001');
+
+      expect(result).toEqual(perm);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/10001/permission/20001`,
+      });
+    });
+
+    it('encodes both ids in getPermission()', async () => {
+      transport.respondWith({ type: 'global' });
+      await filters.getPermission('a/b', 'c/d');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/a%2Fb/permission/c%2Fd`);
+    });
+
+    it('rejects dot-segment permissionId', async () => {
+      await expect(filters.getPermission('10001', '..')).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+    });
+  });
+
+  describe('deletePermission()', () => {
+    it('calls DELETE /filter/{id}/permission/{permissionId}', async () => {
+      transport.respondWith(undefined);
+
+      await filters.deletePermission('10001', '20001');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/filter/10001/permission/20001`,
+      });
+    });
+
+    it('rejects dot-segment id', async () => {
+      await expect(filters.deletePermission('.', '20001')).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+    });
+  });
+
+  // ── default share scope (B462-B463) ───────────────────────────────────────
+
+  describe('getDefaultShareScope()', () => {
+    it('calls GET /filter/defaultShareScope', async () => {
+      const scope = { scope: 'GLOBAL' as const };
+      transport.respondWith(scope);
+
+      const result = await filters.getDefaultShareScope();
+
+      expect(result).toEqual(scope);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/filter/defaultShareScope`,
+      });
+    });
+  });
+
+  describe('setDefaultShareScope()', () => {
+    it('calls PUT /filter/defaultShareScope with scope body', async () => {
+      const scope = { scope: 'PRIVATE' as const };
+      transport.respondWith(scope);
+
+      const result = await filters.setDefaultShareScope('PRIVATE');
+
+      expect(result).toEqual(scope);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/filter/defaultShareScope`,
+        body: { scope: 'PRIVATE' },
+      });
+    });
+  });
 });

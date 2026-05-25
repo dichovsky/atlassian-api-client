@@ -618,6 +618,28 @@ const jiraConfigurationMock = {
   updateTimeTrackingOptions: vi.fn(),
 };
 
+const jiraFiltersMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  getColumns: vi.fn(),
+  setColumns: vi.fn(),
+  resetColumns: vi.fn(),
+  addFavourite: vi.fn(),
+  removeFavourite: vi.fn(),
+  listFavourites: vi.fn(),
+  listMy: vi.fn(),
+  changeOwner: vi.fn(),
+  listPermissions: vi.fn(),
+  addPermission: vi.fn(),
+  getPermission: vi.fn(),
+  deletePermission: vi.fn(),
+  getDefaultShareScope: vi.fn(),
+  setDefaultShareScope: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -671,6 +693,7 @@ vi.mock('../../src/jira/client.js', () => {
       bulk: jiraBulkMock,
       issueAttachments: jiraIssueAttachmentsMock,
       component: jiraComponentMock,
+      filters: jiraFiltersMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -12443,6 +12466,436 @@ describe('executeJiraCommand', () => {
     it('configuration unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('configuration', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown configuration action',
+      );
+    });
+  });
+
+  // ── filters (B452-B466) ───────────────────────────────────────────────────
+
+  describe('filters resource', () => {
+    it('filters search calls client.filters.list with pagination + ids + order-by', async () => {
+      jiraFiltersMock.list.mockResolvedValue({ values: [], startAt: 0, maxResults: 50, total: 0 });
+      await executeJiraCommand(
+        cmd('filters', 'search', [], {
+          'start-at': '10',
+          'max-results': '20',
+          expand: 'sharePermissions',
+          ids: '1,2,3',
+          'order-by': 'name',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.list).toHaveBeenCalledWith({
+        startAt: 10,
+        maxResults: 20,
+        expand: 'sharePermissions',
+        id: [1, 2, 3],
+        orderBy: 'name',
+      });
+    });
+
+    it('filters search with no flags passes empty options', async () => {
+      jiraFiltersMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('filters', 'search'), GLOBALS);
+      expect(jiraFiltersMock.list).toHaveBeenCalledWith({});
+    });
+
+    it('filters search rejects non-positive --ids entries', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'search', [], { ids: '1,0,2' }), GLOBALS),
+      ).rejects.toThrow('--ids must be a positive integer');
+    });
+
+    it('filters get calls client.filters.get with positional id', async () => {
+      jiraFiltersMock.get.mockResolvedValue({ id: '10001' });
+      const result = await executeJiraCommand(cmd('filters', 'get', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toMatchObject({ id: '10001' });
+    });
+
+    it('filters get throws when filterId missing', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'get'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: filterId',
+      );
+    });
+
+    it('filters create forwards body fields including JSON share/edit permissions', async () => {
+      jiraFiltersMock.create.mockResolvedValue({ id: '1' });
+      await executeJiraCommand(
+        cmd('filters', 'create', [], {
+          name: 'My Filter',
+          description: 'desc',
+          jql: 'project = PROJ',
+          favourite: true,
+          'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[{"type":"project","project":{"id":"10000"}}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.create).toHaveBeenCalledWith({
+        name: 'My Filter',
+        description: 'desc',
+        jql: 'project = PROJ',
+        favourite: true,
+        sharePermissions: [{ type: 'global' }],
+        editPermissions: [{ type: 'project', project: { id: '10000' } }],
+      });
+    });
+
+    it('filters create with only --name omits optional body fields', async () => {
+      jiraFiltersMock.create.mockResolvedValue({ id: '1' });
+      await executeJiraCommand(cmd('filters', 'create', [], { name: 'F' }), GLOBALS);
+      expect(jiraFiltersMock.create).toHaveBeenCalledWith({ name: 'F' });
+    });
+
+    it('filters create throws when --name missing', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'create'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('filters create rejects invalid JSON --share-permissions', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('filters', 'create', [], { name: 'F', 'share-permissions': 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow();
+    });
+
+    it('filters update forwards the patch body', async () => {
+      jiraFiltersMock.update.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('filters', 'update', ['10001'], { name: 'New', jql: 'project = NEW' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
+        name: 'New',
+        jql: 'project = NEW',
+      });
+    });
+
+    it('filters update with --edit-permissions forwards parsed JSON', async () => {
+      jiraFiltersMock.update.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('filters', 'update', ['10001'], {
+          favourite: false,
+          'edit-permissions': '[]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
+        favourite: false,
+        editPermissions: [],
+      });
+    });
+
+    it('filters update forwards --description and --share-permissions', async () => {
+      jiraFiltersMock.update.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('filters', 'update', ['10001'], {
+          description: 'updated',
+          'share-permissions': '[{"type":"global"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.update).toHaveBeenCalledWith('10001', {
+        description: 'updated',
+        sharePermissions: [{ type: 'global' }],
+      });
+    });
+
+    it('filters update requires at least one body flag', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('filters update throws when filterId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: filterId');
+    });
+
+    it('filters delete returns { deleted: true }', async () => {
+      jiraFiltersMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('filters', 'delete', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('filters delete throws when filterId missing', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'delete'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: filterId',
+      );
+    });
+
+    it('filters list-favourites with no flags calls listFavourites(undefined)', async () => {
+      jiraFiltersMock.listFavourites.mockResolvedValue([]);
+      await executeJiraCommand(cmd('filters', 'list-favourites'), GLOBALS);
+      expect(jiraFiltersMock.listFavourites).toHaveBeenCalledWith(undefined);
+    });
+
+    it('filters list-favourites forwards --expand', async () => {
+      jiraFiltersMock.listFavourites.mockResolvedValue([]);
+      await executeJiraCommand(cmd('filters', 'list-favourites', [], { expand: 'owner' }), GLOBALS);
+      expect(jiraFiltersMock.listFavourites).toHaveBeenCalledWith({ expand: 'owner' });
+    });
+
+    it('filters list-my with no flags calls listMy({})', async () => {
+      jiraFiltersMock.listMy.mockResolvedValue([]);
+      await executeJiraCommand(cmd('filters', 'list-my'), GLOBALS);
+      expect(jiraFiltersMock.listMy).toHaveBeenCalledWith({});
+    });
+
+    it('filters list-my forwards --expand and --include-favourites', async () => {
+      jiraFiltersMock.listMy.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('filters', 'list-my', [], { expand: 'sharePermissions', 'include-favourites': true }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.listMy).toHaveBeenCalledWith({
+        expand: 'sharePermissions',
+        includeFavourites: true,
+      });
+    });
+
+    it('filters add-favourite calls addFavourite(id, undefined) when no --expand', async () => {
+      jiraFiltersMock.addFavourite.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(cmd('filters', 'add-favourite', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.addFavourite).toHaveBeenCalledWith('10001', undefined);
+    });
+
+    it('filters add-favourite forwards --expand', async () => {
+      jiraFiltersMock.addFavourite.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('filters', 'add-favourite', ['10001'], { expand: 'owner' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.addFavourite).toHaveBeenCalledWith('10001', { expand: 'owner' });
+    });
+
+    it('filters add-favourite throws when filterId missing', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'add-favourite'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: filterId',
+      );
+    });
+
+    it('filters remove-favourite calls removeFavourite(id, undefined)', async () => {
+      jiraFiltersMock.removeFavourite.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(cmd('filters', 'remove-favourite', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.removeFavourite).toHaveBeenCalledWith('10001', undefined);
+    });
+
+    it('filters remove-favourite forwards --expand', async () => {
+      jiraFiltersMock.removeFavourite.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('filters', 'remove-favourite', ['10001'], { expand: 'owner' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.removeFavourite).toHaveBeenCalledWith('10001', { expand: 'owner' });
+    });
+
+    it('filters change-owner calls changeOwner(id, accountId)', async () => {
+      jiraFiltersMock.changeOwner.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('filters', 'change-owner', ['10001'], { 'account-id': 'acc-123' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.changeOwner).toHaveBeenCalledWith('10001', 'acc-123');
+      expect(result).toEqual({ ownerChanged: true });
+    });
+
+    it('filters change-owner throws when --account-id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'change-owner', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --account-id');
+    });
+
+    it('filters change-owner throws when filterId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'change-owner', [], { 'account-id': 'a' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: filterId');
+    });
+
+    it('filters get-columns calls getColumns', async () => {
+      jiraFiltersMock.getColumns.mockResolvedValue([]);
+      await executeJiraCommand(cmd('filters', 'get-columns', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.getColumns).toHaveBeenCalledWith('10001');
+    });
+
+    it('filters get-columns throws when filterId missing', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'get-columns'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: filterId',
+      );
+    });
+
+    it('filters set-columns splits --columns CSV and calls setColumns', async () => {
+      jiraFiltersMock.setColumns.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('filters', 'set-columns', ['10001'], { columns: 'issuekey, summary , assignee' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.setColumns).toHaveBeenCalledWith('10001', [
+        'issuekey',
+        'summary',
+        'assignee',
+      ]);
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('filters set-columns throws on empty --columns after trimming', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'set-columns', ['10001'], { columns: ' , ,' }), GLOBALS),
+      ).rejects.toThrow('--columns must contain at least one');
+    });
+
+    it('filters set-columns throws when --columns missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'set-columns', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --columns');
+    });
+
+    it('filters reset-columns calls resetColumns', async () => {
+      jiraFiltersMock.resetColumns.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('filters', 'reset-columns', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.resetColumns).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ reset: true });
+    });
+
+    it('filters list-permissions calls listPermissions', async () => {
+      jiraFiltersMock.listPermissions.mockResolvedValue([]);
+      await executeJiraCommand(cmd('filters', 'list-permissions', ['10001']), GLOBALS);
+      expect(jiraFiltersMock.listPermissions).toHaveBeenCalledWith('10001');
+    });
+
+    it('filters add-permission forwards all permission fields', async () => {
+      jiraFiltersMock.addPermission.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('filters', 'add-permission', ['10001'], {
+          'share-type': 'projectRole',
+          'project-id': '10000',
+          'role-id': '10100',
+          rights: '7',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.addPermission).toHaveBeenCalledWith('10001', {
+        type: 'projectRole',
+        projectId: '10000',
+        projectRoleId: '10100',
+        rights: 7,
+      });
+    });
+
+    it('filters add-permission supports group + user fields', async () => {
+      jiraFiltersMock.addPermission.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('filters', 'add-permission', ['10001'], {
+          'share-type': 'group',
+          'group-name': 'devs',
+          'group-id': 'g-1',
+          'account-id': 'a-1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.addPermission).toHaveBeenCalledWith('10001', {
+        type: 'group',
+        groupname: 'devs',
+        groupId: 'g-1',
+        accountId: 'a-1',
+      });
+    });
+
+    it('filters add-permission throws when --share-type missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'add-permission', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --share-type');
+    });
+
+    it('filters add-permission rejects invalid --share-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('filters', 'add-permission', ['10001'], { 'share-type': 'bogus' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--share-type must be one of');
+    });
+
+    it('filters add-permission rejects non-positive --rights', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('filters', 'add-permission', ['10001'], {
+            'share-type': 'global',
+            rights: '0',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--rights must be a positive integer');
+    });
+
+    it('filters get-permission calls getPermission with two positionals', async () => {
+      jiraFiltersMock.getPermission.mockResolvedValue({ type: 'global' });
+      await executeJiraCommand(cmd('filters', 'get-permission', ['10001', '20001']), GLOBALS);
+      expect(jiraFiltersMock.getPermission).toHaveBeenCalledWith('10001', '20001');
+    });
+
+    it('filters get-permission throws when permissionId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'get-permission', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: permissionId');
+    });
+
+    it('filters delete-permission calls deletePermission and returns { deleted: true }', async () => {
+      jiraFiltersMock.deletePermission.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('filters', 'delete-permission', ['10001', '20001']),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.deletePermission).toHaveBeenCalledWith('10001', '20001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('filters delete-permission throws when permissionId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'delete-permission', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: permissionId');
+    });
+
+    it('filters get-default-share-scope calls getDefaultShareScope', async () => {
+      jiraFiltersMock.getDefaultShareScope.mockResolvedValue({ scope: 'GLOBAL' });
+      const result = await executeJiraCommand(cmd('filters', 'get-default-share-scope'), GLOBALS);
+      expect(jiraFiltersMock.getDefaultShareScope).toHaveBeenCalledWith();
+      expect(result).toEqual({ scope: 'GLOBAL' });
+    });
+
+    it('filters set-default-share-scope forwards scope', async () => {
+      jiraFiltersMock.setDefaultShareScope.mockResolvedValue({ scope: 'PRIVATE' });
+      await executeJiraCommand(
+        cmd('filters', 'set-default-share-scope', [], { 'share-scope': 'PRIVATE' }),
+        GLOBALS,
+      );
+      expect(jiraFiltersMock.setDefaultShareScope).toHaveBeenCalledWith('PRIVATE');
+    });
+
+    it('filters set-default-share-scope throws when --share-scope missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('filters', 'set-default-share-scope'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --share-scope');
+    });
+
+    it('filters set-default-share-scope rejects invalid --share-scope', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('filters', 'set-default-share-scope', [], { 'share-scope': 'NOPE' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--share-scope must be one of');
+    });
+
+    it('filters unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('filters', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown filters action',
       );
     });
   });
