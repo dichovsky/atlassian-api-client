@@ -210,3 +210,21 @@ export type {
   ExistsByPropertiesResponse,
 } from './resources/exists-by-properties.js';
 export { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
+export type {
+  FieldContextConfiguration,
+  UpdateFieldContextConfigurationData,
+  FieldValueUpdate,
+  UpdateFieldValueData,
+  ListFieldContextConfigurationsData,
+  FieldContextConfigurationList,
+  BulkFieldValueUpdate,
+  BulkUpdateFieldValueData,
+  DynamicModule,
+  DynamicModulesResponse,
+  RegisterDynamicModulesData,
+  DeleteDynamicModulesParams,
+  ForgeAppProperty,
+  ForgeAppPropertyKey,
+  ForgeAppPropertyKeys,
+} from './resources/app.js';
+export { AppResource } from './resources/app.js';

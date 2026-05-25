@@ -147,6 +147,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'remote-link',
           'service-registry',
           'exists-by-properties',
+          'app',
         ]).toContain(parsed.resource);
       }
     });
@@ -244,6 +245,7 @@ describe('Resource coverage drift check', () => {
     'remote-link',
     'service-registry',
     'exists-by-properties',
+    'app',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

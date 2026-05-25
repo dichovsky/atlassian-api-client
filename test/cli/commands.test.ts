@@ -536,6 +536,21 @@ const jiraExistsByPropertiesMock = {
   get: vi.fn(),
 };
 
+const jiraAppMock = {
+  getFieldContextConfiguration: vi.fn(),
+  updateFieldContextConfiguration: vi.fn(),
+  updateFieldValue: vi.fn(),
+  listFieldContextConfigurations: vi.fn(),
+  bulkUpdateFieldValue: vi.fn(),
+  getDynamicModules: vi.fn(),
+  registerDynamicModules: vi.fn(),
+  deleteDynamicModules: vi.fn(),
+  listForgeProperties: vi.fn(),
+  getForgeProperty: vi.fn(),
+  setForgeProperty: vi.fn(),
+  deleteForgeProperty: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -582,6 +597,7 @@ vi.mock('../../src/jira/client.js', () => {
       remoteLink: jiraRemoteLinkMock,
       serviceRegistry: jiraServiceRegistryMock,
       existsByProperties: jiraExistsByPropertiesMock,
+      app: jiraAppMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -10616,6 +10632,380 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('exists-by-properties', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown exists-by-properties action');
+    });
+  });
+
+  // ── app ───────────────────────────────────────────────────────────────────
+
+  describe('app resource', () => {
+    it('app get-field-context-configuration calls client.app.getFieldContextConfiguration', async () => {
+      jiraAppMock.getFieldContextConfiguration.mockResolvedValue({
+        id: 'cfg-1',
+        contextId: '10100',
+      });
+
+      const result = await executeJiraCommand(
+        cmd('app', 'get-field-context-configuration', ['customfield_10042']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ id: 'cfg-1', contextId: '10100' });
+      expect(jiraAppMock.getFieldContextConfiguration).toHaveBeenCalledWith('customfield_10042');
+    });
+
+    it('app get-field-context-configuration requires fieldIdOrKey', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'get-field-context-configuration'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: fieldIdOrKey');
+    });
+
+    it('app update-field-context-configuration passes parsed configuration and schema', async () => {
+      jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          configuration: '{"foo":true}',
+          schema: '{"type":"object"}',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
+        'customfield_10042',
+        { configuration: { foo: true }, schema: { type: 'object' } },
+      );
+    });
+
+    it('app update-field-context-configuration accepts just configuration', async () => {
+      jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          configuration: '{"foo":1}',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
+        'customfield_10042',
+        { configuration: { foo: 1 } },
+      );
+    });
+
+    it('app update-field-context-configuration accepts just schema', async () => {
+      jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          schema: '{"type":"string"}',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
+        'customfield_10042',
+        { schema: { type: 'string' } },
+      );
+    });
+
+    it('app update-field-context-configuration rejects empty body', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'update-field-context-configuration', ['customfield_10042']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        'update-field-context-configuration requires at least one of: --configuration, --schema',
+      );
+    });
+
+    it('app update-field-context-configuration rejects invalid configuration JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+            configuration: 'not-json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--configuration must be valid JSON');
+    });
+
+    it('app update-field-context-configuration rejects invalid schema JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+            schema: '{not-json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--schema must be valid JSON');
+    });
+
+    it('app update-field-value passes parsed updates', async () => {
+      jiraAppMock.updateFieldValue.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'update-field-value', ['customfield_10042'], {
+          value: '[{"issueIds":[10001],"value":"hi"}]',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraAppMock.updateFieldValue).toHaveBeenCalledWith('customfield_10042', {
+        updates: [{ issueIds: [10001], value: 'hi' }],
+      });
+    });
+
+    it('app update-field-value requires --value', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'update-field-value', ['customfield_10042']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('app update-field-value rejects invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'update-field-value', ['customfield_10042'], { value: 'oops' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('app list-field-context-configurations passes both csv arrays', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+
+      await executeJiraCommand(
+        cmd('app', 'list-field-context-configurations', [], {
+          'field-ids-or-keys': 'customfield_10042, customfield_10043',
+          'context-ids': '10100,10101',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
+        fieldIdsOrKeys: ['customfield_10042', 'customfield_10043'],
+        contextIds: ['10100', '10101'],
+      });
+    });
+
+    it('app list-field-context-configurations accepts just field-ids-or-keys', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+
+      await executeJiraCommand(
+        cmd('app', 'list-field-context-configurations', [], {
+          'field-ids-or-keys': 'customfield_10042',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
+        fieldIdsOrKeys: ['customfield_10042'],
+      });
+    });
+
+    it('app list-field-context-configurations accepts just context-ids', async () => {
+      jiraAppMock.listFieldContextConfigurations.mockResolvedValue({ configurations: [] });
+
+      await executeJiraCommand(
+        cmd('app', 'list-field-context-configurations', [], { 'context-ids': '10100' }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.listFieldContextConfigurations).toHaveBeenCalledWith({
+        contextIds: ['10100'],
+      });
+    });
+
+    it('app list-field-context-configurations rejects empty body', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'list-field-context-configurations'), GLOBALS),
+      ).rejects.toThrow(
+        'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
+      );
+    });
+
+    it('app list-field-context-configurations treats blank csv as missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'list-field-context-configurations', [], {
+            'field-ids-or-keys': ' , ,',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
+      );
+    });
+
+    it('app bulk-update-field-value passes parsed updates', async () => {
+      jiraAppMock.bulkUpdateFieldValue.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'bulk-update-field-value', [], {
+          value:
+            '[{"fieldIdOrKey":"customfield_10042","updates":[{"issueIds":[10001],"value":"x"}]}]',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraAppMock.bulkUpdateFieldValue).toHaveBeenCalledWith({
+        updates: [
+          {
+            fieldIdOrKey: 'customfield_10042',
+            updates: [{ issueIds: [10001], value: 'x' }],
+          },
+        ],
+      });
+    });
+
+    it('app bulk-update-field-value requires --value', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'bulk-update-field-value'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('app bulk-update-field-value rejects invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'bulk-update-field-value', [], { value: 'oops' }), GLOBALS),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('app get-dynamic-modules calls client.app.getDynamicModules', async () => {
+      jiraAppMock.getDynamicModules.mockResolvedValue({ modules: [{ key: 'm-1' }] });
+
+      const result = await executeJiraCommand(cmd('app', 'get-dynamic-modules'), GLOBALS);
+
+      expect(result).toEqual({ modules: [{ key: 'm-1' }] });
+      expect(jiraAppMock.getDynamicModules).toHaveBeenCalled();
+    });
+
+    it('app register-dynamic-modules passes parsed modules', async () => {
+      jiraAppMock.registerDynamicModules.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'register-dynamic-modules', [], {
+          value: '[{"key":"my-module","type":"webhook"}]',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ registered: true });
+      expect(jiraAppMock.registerDynamicModules).toHaveBeenCalledWith({
+        modules: [{ key: 'my-module', type: 'webhook' }],
+      });
+    });
+
+    it('app register-dynamic-modules requires --value', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'register-dynamic-modules'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('app register-dynamic-modules rejects invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'register-dynamic-modules', [], { value: 'oops' }), GLOBALS),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('app delete-dynamic-modules without --module-keys removes all', async () => {
+      jiraAppMock.deleteDynamicModules.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('app', 'delete-dynamic-modules'), GLOBALS);
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraAppMock.deleteDynamicModules).toHaveBeenCalledWith(undefined);
+    });
+
+    it('app delete-dynamic-modules forwards --module-keys csv', async () => {
+      jiraAppMock.deleteDynamicModules.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('app', 'delete-dynamic-modules', [], { 'module-keys': 'a,b,c' }),
+        GLOBALS,
+      );
+
+      expect(jiraAppMock.deleteDynamicModules).toHaveBeenCalledWith({ moduleKey: ['a', 'b', 'c'] });
+    });
+
+    it('app list-forge-properties calls client.app.listForgeProperties', async () => {
+      jiraAppMock.listForgeProperties.mockResolvedValue({ keys: [{ key: 'k1' }] });
+
+      const result = await executeJiraCommand(cmd('app', 'list-forge-properties'), GLOBALS);
+
+      expect(result).toEqual({ keys: [{ key: 'k1' }] });
+      expect(jiraAppMock.listForgeProperties).toHaveBeenCalled();
+    });
+
+    it('app get-forge-property forwards property key', async () => {
+      jiraAppMock.getForgeProperty.mockResolvedValue({ key: 'my-key', value: { on: true } });
+
+      const result = await executeJiraCommand(
+        cmd('app', 'get-forge-property', ['my-key']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ key: 'my-key', value: { on: true } });
+      expect(jiraAppMock.getForgeProperty).toHaveBeenCalledWith('my-key');
+    });
+
+    it('app get-forge-property requires propertyKey', async () => {
+      await expect(executeJiraCommand(cmd('app', 'get-forge-property'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: propertyKey',
+      );
+    });
+
+    it('app set-forge-property forwards parsed value', async () => {
+      jiraAppMock.setForgeProperty.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'set-forge-property', ['my-key'], { value: '{"on":true}' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraAppMock.setForgeProperty).toHaveBeenCalledWith('my-key', { on: true });
+    });
+
+    it('app set-forge-property requires --value', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'set-forge-property', ['my-key']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('app set-forge-property rejects invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('app', 'set-forge-property', ['my-key'], { value: 'oops' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('app delete-forge-property forwards property key', async () => {
+      jiraAppMock.deleteForgeProperty.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('app', 'delete-forge-property', ['my-key']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraAppMock.deleteForgeProperty).toHaveBeenCalledWith('my-key');
+    });
+
+    it('app delete-forge-property requires propertyKey', async () => {
+      await expect(
+        executeJiraCommand(cmd('app', 'delete-forge-property'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('app unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('app', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown app action',
+      );
     });
   });
 });

@@ -96,6 +96,8 @@ export async function executeJiraCommand(
       return executeServiceRegistry(client, cmd);
     case 'exists-by-properties':
       return executeExistsByProperties(client, cmd);
+    case 'app':
+      return executeApp(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1303,4 +1305,129 @@ async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand)
     default:
       throw new Error(`Unknown exists-by-properties action: ${cmd.action}. Actions: get`);
   }
+}
+
+async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-field-context-configuration':
+      return client.app.getFieldContextConfiguration(
+        requireArg(cmd.positionalArgs[0], 'fieldIdOrKey'),
+      );
+    case 'update-field-context-configuration': {
+      const fieldIdOrKey = requireArg(cmd.positionalArgs[0], 'fieldIdOrKey');
+      const data: { configuration?: unknown; schema?: unknown } = {};
+      const configurationRaw = asString(opts['configuration']);
+      const schemaRaw = asString(opts['schema']);
+      if (configurationRaw !== undefined) {
+        try {
+          data.configuration = JSON.parse(configurationRaw);
+        } catch {
+          throw new Error('--configuration must be valid JSON');
+        }
+      }
+      if (schemaRaw !== undefined) {
+        try {
+          data.schema = JSON.parse(schemaRaw);
+        } catch {
+          throw new Error('--schema must be valid JSON');
+        }
+      }
+      if (Object.keys(data).length === 0) {
+        throw new Error(
+          'update-field-context-configuration requires at least one of: --configuration, --schema',
+        );
+      }
+      await client.app.updateFieldContextConfiguration(fieldIdOrKey, data);
+      return { updated: true };
+    }
+    case 'update-field-value': {
+      const fieldIdOrKey = requireArg(cmd.positionalArgs[0], 'fieldIdOrKey');
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let updates: { value: unknown }[];
+      try {
+        updates = JSON.parse(valueRaw) as typeof updates;
+      } catch {
+        throw new Error('--value must be valid JSON (array of update objects)');
+      }
+      await client.app.updateFieldValue(fieldIdOrKey, { updates });
+      return { updated: true };
+    }
+    case 'list-field-context-configurations': {
+      const fieldIdsOrKeys = parseCsv(opts['field-ids-or-keys']);
+      const contextIds = parseCsv(opts['context-ids']);
+      if (fieldIdsOrKeys === undefined && contextIds === undefined) {
+        throw new Error(
+          'list-field-context-configurations requires at least one of: --field-ids-or-keys, --context-ids',
+        );
+      }
+      const body: { fieldIdsOrKeys?: string[]; contextIds?: string[] } = {};
+      if (fieldIdsOrKeys !== undefined) body.fieldIdsOrKeys = fieldIdsOrKeys;
+      if (contextIds !== undefined) body.contextIds = contextIds;
+      return client.app.listFieldContextConfigurations(body);
+    }
+    case 'bulk-update-field-value': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let updates: { fieldIdOrKey: string; updates: { value: unknown }[] }[];
+      try {
+        updates = JSON.parse(valueRaw) as typeof updates;
+      } catch {
+        throw new Error('--value must be valid JSON (array of per-field update objects)');
+      }
+      await client.app.bulkUpdateFieldValue({ updates });
+      return { updated: true };
+    }
+    case 'get-dynamic-modules':
+      return client.app.getDynamicModules();
+    case 'register-dynamic-modules': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let modules: { key: string }[];
+      try {
+        modules = JSON.parse(valueRaw) as typeof modules;
+      } catch {
+        throw new Error('--value must be valid JSON (array of module objects)');
+      }
+      await client.app.registerDynamicModules({ modules });
+      return { registered: true };
+    }
+    case 'delete-dynamic-modules': {
+      const moduleKey = parseCsv(opts['module-keys']);
+      await client.app.deleteDynamicModules(moduleKey ? { moduleKey } : undefined);
+      return { deleted: true };
+    }
+    case 'list-forge-properties':
+      return client.app.listForgeProperties();
+    case 'get-forge-property':
+      return client.app.getForgeProperty(requireArg(cmd.positionalArgs[0], 'propertyKey'));
+    case 'set-forge-property': {
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(valueRaw);
+      } catch {
+        throw new Error('--value must be valid JSON');
+      }
+      await client.app.setForgeProperty(propertyKey, parsed);
+      return { updated: true };
+    }
+    case 'delete-forge-property':
+      await client.app.deleteForgeProperty(requireArg(cmd.positionalArgs[0], 'propertyKey'));
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown app action: ${cmd.action}. Actions: get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property`,
+      );
+  }
+}
+
+function parseCsv(value: string | boolean | undefined): string[] | undefined {
+  const s = asString(value);
+  if (!s) return undefined;
+  const arr = s
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0);
+  return arr.length > 0 ? arr : undefined;
 }

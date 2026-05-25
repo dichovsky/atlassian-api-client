@@ -1017,3 +1017,39 @@
 - [x] ✅ 🧩 API: B992 Jira: expose GET /rest/remotelinks/1.0/remotelink/{remoteLinkId}
       **Impl:** `src/jira/resources/remote-link.ts` (`RemoteLinkResource.get(remoteLinkId)`) · CLI `atlas jira remote-link get <remoteLinkId>` · bundled with B991 in same file
       **Rat:** Complements B991; positional `remoteLinkId` argument.
+- [x] ✅ 🧩 API: B326 Jira: expose GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.getFieldContextConfiguration(fieldIdOrKey)`) · CLI `atlas jira app get-field-context-configuration <fieldIdOrKey>` · `test/jira/app.test.ts`
+      **Rat:** App-defined custom field configuration read; positional path param per pattern rule. Bundled with B327-B330, B943-B945, B975-B978 in shared `AppResource` (mixed namespaces: `/rest/api/3`, `/rest/atlassian-connect/1`, `/rest/forge/1`).
+- [x] ✅ 🧩 API: B327 Jira: expose PUT /rest/api/3/app/field/{fieldIdOrKey}/context/configuration
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.updateFieldContextConfiguration(fieldIdOrKey, data)`) · CLI `atlas jira app update-field-context-configuration <fieldIdOrKey> [--configuration <JSON>] [--schema <JSON>]` · returns `{updated: true}` (PUT 204)
+      **Rat:** Mutating counterpart to B326; `--configuration` and `--schema` flags expose all body fields per CLI completeness rule. Empty body rejected with clear error.
+- [x] ✅ 🧩 API: B328 Jira: expose PUT /rest/api/3/app/field/{fieldIdOrKey}/value
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.updateFieldValue(fieldIdOrKey, data)`) · CLI `atlas jira app update-field-value <fieldIdOrKey> --value <JSON>` · `--value` is JSON array of `{issueIds | issueIdsOrKeys | issueKeys, value}` entries
+      **Rat:** Per-field bulk value update; `--value` JSON flag mirrors `redact start`/`latest bulk-worklog` pattern.
+- [x] ✅ 🧩 API: B329 Jira: expose POST /rest/api/3/app/field/context/configuration/list
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.listFieldContextConfigurations(data)`) · CLI `atlas jira app list-field-context-configurations [--field-ids-or-keys <csv>] [--context-ids <csv>]` · at least one filter required
+      **Rat:** Bulk-fetch context configurations; csv flags follow `--ids`/`--keys` convention; rejects empty body to avoid unbounded server scans.
+- [x] ✅ 🧩 API: B330 Jira: expose POST /rest/api/3/app/field/value
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.bulkUpdateFieldValue(data)`) · CLI `atlas jira app bulk-update-field-value --value <JSON>` · returns `{updated: true}`
+      **Rat:** Cross-field bulk value update; `--value` is JSON array of `{fieldIdOrKey, updates: [...]}` per-field blocks.
+- [x] ✅ 🧩 API: B943 Jira: expose DELETE /rest/atlassian-connect/1/app/module/dynamic
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.deleteDynamicModules(params)`) · CLI `atlas jira app delete-dynamic-modules [--module-keys <csv>]` · repeats `moduleKey` query param per Connect spec (transport `query` collapses duplicates, so the query string is appended directly to the path)
+      **Rat:** Omitting `--module-keys` removes every dynamic module registered by the calling app.
+- [x] ✅ 🧩 API: B944 Jira: expose GET /rest/atlassian-connect/1/app/module/dynamic
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.getDynamicModules()`) · CLI `atlas jira app get-dynamic-modules` · base URL `/rest/atlassian-connect/1`
+      **Rat:** Singleton GET for Connect dynamic module inventory; no path/query params.
+- [x] ✅ 🧩 API: B945 Jira: expose POST /rest/atlassian-connect/1/app/module/dynamic
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.registerDynamicModules(data)`) · CLI `atlas jira app register-dynamic-modules --value <JSON>` · `--value` is JSON array of Connect module descriptors
+      **Rat:** Registration counterpart to B944; module shape is Connect-spec-defined (opaque), so kept as JSON array.
+- [x] ✅ 🧩 API: B975 Jira: expose GET /rest/forge/1/app/properties
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.listForgeProperties()`) · CLI `atlas jira app list-forge-properties` · base URL `/rest/forge/1`
+      **Rat:** Forge app property key listing; singleton GET.
+- [x] ✅ 🧩 API: B976 Jira: expose DELETE /rest/forge/1/app/properties/{propertyKey}
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.deleteForgeProperty(propertyKey)`) · CLI `atlas jira app delete-forge-property <propertyKey>` · positional path param
+      **Rat:** Mirrors B975 listing; positional `propertyKey` per pattern rule.
+- [x] ✅ 🧩 API: B977 Jira: expose GET /rest/forge/1/app/properties/{propertyKey}
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.getForgeProperty(propertyKey)`) · CLI `atlas jira app get-forge-property <propertyKey>` · returns `{key, value}` (value is opaque JSON)
+      **Rat:** Per-key read; positional path param.
+- [x] ✅ 🧩 API: B978 Jira: expose PUT /rest/forge/1/app/properties/{propertyKey}
+      **Impl:** `src/jira/resources/app.ts` (`AppResource.setForgeProperty(propertyKey, value)`) · CLI `atlas jira app set-forge-property <propertyKey> --value <JSON>` · stores value verbatim
+      **Rat:** Upsert counterpart to B976/B977; `--value` accepts any JSON (object, array, primitive) — passed to server unmodified.

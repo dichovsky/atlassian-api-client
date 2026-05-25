@@ -184,6 +184,12 @@ const GLOBAL_OPTIONS = {
   // exists-by-properties options (B963)
   'entity-id': { type: 'string' as const },
   'entity-type': { type: 'string' as const },
+  // app options (B326-B330, B943-B945, B975-B978)
+  configuration: { type: 'string' as const },
+  schema: { type: 'string' as const },
+  'field-ids-or-keys': { type: 'string' as const },
+  'context-ids': { type: 'string' as const },
+  'module-keys': { type: 'string' as const },
 };
 
 /** Parse process.argv into a structured command. */
