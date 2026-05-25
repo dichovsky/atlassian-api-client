@@ -11,6 +11,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `search`                | (no sub-action; uses `--jql`)                                                                                                                                                                                                                                                                                                                                                                                            |
 | `users`                 | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `issue-types`           | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `issuetype`             | `create`, `delete`, `update`, `list-alternatives`, `load-avatar`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-for-project`                                                                                                                                                                                                                                                               |
 | `priorities`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `statuses`              | `list`                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `boards`                | `list`, `get`, `create`, `delete`, `backlog`, `configuration`, `list-epics`, `epic-issues`, `issues-without-epic`, `get-features`, `toggle-feature`, `get-issues`, `move-issues`, `list-projects`, `list-projects-full`, `list-sprints`, `list-versions`, `sprint-issues`, `list-by-filter`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports` |
@@ -276,6 +277,61 @@ atlas jira statuses list
 ```
 
 Use them to translate human-readable names into IDs when constructing issue create/update calls.
+
+## `issuetype`
+
+Singular `issuetype` resource: covers create/update/delete and the related sub-resources
+(alternatives, avatar upload, entity properties, project mapping). The read-only
+`issue-types` list/get above continues to handle the GET-by-id and list-all endpoints.
+
+| Action              | Positional                    | Required flags       | Optional flags                                                         |
+| ------------------- | ----------------------------- | -------------------- | ---------------------------------------------------------------------- |
+| `create`            | —                             | `--name`             | `--description`, `--type subtask\|standard`, `--hierarchy-level <int>` |
+| `delete`            | `<id>`                        | —                    | `--alternative-id <id>`                                                |
+| `update`            | `<id>`                        | one of below         | `--name`, `--description`, `--avatar-id <int>`                         |
+| `list-alternatives` | `<id>`                        | —                    | —                                                                      |
+| `load-avatar`       | `<id>`                        | `--file`, `--size`   | `--x <int>`, `--y <int>`                                               |
+| `list-properties`   | `<issueTypeId>`               | —                    | —                                                                      |
+| `delete-property`   | `<issueTypeId> <propertyKey>` | —                    | —                                                                      |
+| `get-property`      | `<issueTypeId> <propertyKey>` | —                    | —                                                                      |
+| `set-property`      | `<issueTypeId> <propertyKey>` | `--value <JSON>`     | —                                                                      |
+| `list-for-project`  | —                             | `--project-id <int>` | —                                                                      |
+
+```sh
+# Create a new issue type (use --hierarchy-level 0 for standard, -1 for sub-task)
+atlas jira issuetype create --name "Spike" --description "Investigation" --hierarchy-level 0
+
+# Update name and/or avatar
+atlas jira issuetype update 10001 --name "Spike v2" --avatar-id 10300
+
+# Delete; --alternative-id is required when issues of this type exist
+atlas jira issuetype delete 10001 --alternative-id 10000
+
+# Valid replacement types when migrating issues off a type
+atlas jira issuetype list-alternatives 10001
+
+# Upload a new avatar image. `--size` is the side length of the (square) crop region.
+atlas jira issuetype load-avatar 10001 --file ./icon.png --size 48 --x 0 --y 0
+
+# Entity properties (arbitrary per-issue-type key/value JSON storage)
+atlas jira issuetype list-properties 10001
+atlas jira issuetype get-property 10001 reviewed
+atlas jira issuetype set-property 10001 reviewed --value true
+atlas jira issuetype delete-property 10001 reviewed
+
+# List issue types assigned to a project (numeric --project-id, not key)
+atlas jira issuetype list-for-project --project-id 10000
+```
+
+Notes:
+
+- `load-avatar` reads `--file` from disk and POSTs the raw bytes as multipart form
+  data with `X-Atlassian-Token: no-check`. The crop region (`--size`, optional `--x`/`--y`)
+  is passed as query parameters.
+- `set-property` accepts any valid JSON (`true`, `42`, `"text"`, `{"a":1}`).
+- `list-for-project` requires a numeric `--project-id`; use `projects list` to map a
+  key to its ID first.
+- `delete` returns `{deleted: true}`; the server responds with 204 No Content.
 
 ## JQL tips
 

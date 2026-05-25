@@ -187,12 +187,12 @@ const GLOBAL_OPTIONS = {
   // app options (B326-B330, B943-B945, B975-B978)
   configuration: { type: 'string' as const },
   schema: { type: 'string' as const },
-  'field-ids-or-keys': { type: 'string' as const },
-  'context-ids': { type: 'string' as const },
-  'module-keys': { type: 'string' as const },
+  'alternative-id': { type: 'string' as const },
+  size: { type: 'string' as const },
+  x: { type: 'string' as const },
+  y: { type: 'string' as const },
 };
 
-/** Parse process.argv into a structured command. */
 export function parseCommand(argv: string[]): ParsedCommand & {
   options: Record<string, string | boolean | undefined>;
 } {

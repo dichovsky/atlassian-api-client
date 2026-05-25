@@ -6,6 +6,7 @@ import { ProjectsResource } from './resources/projects.js';
 import { SearchResource } from './resources/search.js';
 import { UsersResource } from './resources/users.js';
 import { IssueTypesResource } from './resources/issue-types.js';
+import { IssueTypeResource } from './resources/issuetype.js';
 import { PrioritiesResource } from './resources/priorities.js';
 import { StatusesResource } from './resources/statuses.js';
 import { IssueCommentsResource } from './resources/issue-comments.js';
@@ -62,6 +63,8 @@ export class JiraClient {
   readonly search: SearchResource;
   readonly users: UsersResource;
   readonly issueTypes: IssueTypesResource;
+  /** Issue type singular resource — create/update/delete + alternatives, avatar2, properties, project mapping. */
+  readonly issueType: IssueTypeResource;
   readonly priorities: PrioritiesResource;
   readonly statuses: StatusesResource;
   /** Issue comments resource. */
@@ -181,6 +184,7 @@ export class JiraClient {
     this.search = new SearchResource(transport, baseUrl);
     this.users = new UsersResource(transport, baseUrl);
     this.issueTypes = new IssueTypesResource(transport, baseUrl);
+    this.issueType = new IssueTypeResource(transport, baseUrl);
     this.priorities = new PrioritiesResource(transport, baseUrl);
     this.statuses = new StatusesResource(transport, baseUrl);
     this.issueComments = new IssueCommentsResource(transport, baseUrl);

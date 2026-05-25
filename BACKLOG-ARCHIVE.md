@@ -1017,39 +1017,33 @@
 - [x] ✅ 🧩 API: B992 Jira: expose GET /rest/remotelinks/1.0/remotelink/{remoteLinkId}
       **Impl:** `src/jira/resources/remote-link.ts` (`RemoteLinkResource.get(remoteLinkId)`) · CLI `atlas jira remote-link get <remoteLinkId>` · bundled with B991 in same file
       **Rat:** Complements B991; positional `remoteLinkId` argument.
-- [x] ✅ 🧩 API: B326 Jira: expose GET /rest/api/3/app/field/{fieldIdOrKey}/context/configuration
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.getFieldContextConfiguration(fieldIdOrKey)`) · CLI `atlas jira app get-field-context-configuration <fieldIdOrKey>` · `test/jira/app.test.ts`
-      **Rat:** App-defined custom field configuration read; positional path param per pattern rule. Bundled with B327-B330, B943-B945, B975-B978 in shared `AppResource` (mixed namespaces: `/rest/api/3`, `/rest/atlassian-connect/1`, `/rest/forge/1`).
-- [x] ✅ 🧩 API: B327 Jira: expose PUT /rest/api/3/app/field/{fieldIdOrKey}/context/configuration
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.updateFieldContextConfiguration(fieldIdOrKey, data)`) · CLI `atlas jira app update-field-context-configuration <fieldIdOrKey> [--configuration <JSON>] [--schema <JSON>]` · returns `{updated: true}` (PUT 204)
-      **Rat:** Mutating counterpart to B326; `--configuration` and `--schema` flags expose all body fields per CLI completeness rule. Empty body rejected with clear error.
-- [x] ✅ 🧩 API: B328 Jira: expose PUT /rest/api/3/app/field/{fieldIdOrKey}/value
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.updateFieldValue(fieldIdOrKey, data)`) · CLI `atlas jira app update-field-value <fieldIdOrKey> --value <JSON>` · `--value` is JSON array of `{issueIds | issueIdsOrKeys | issueKeys, value}` entries
-      **Rat:** Per-field bulk value update; `--value` JSON flag mirrors `redact start`/`latest bulk-worklog` pattern.
-- [x] ✅ 🧩 API: B329 Jira: expose POST /rest/api/3/app/field/context/configuration/list
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.listFieldContextConfigurations(data)`) · CLI `atlas jira app list-field-context-configurations [--field-ids-or-keys <csv>] [--context-ids <csv>]` · at least one filter required
-      **Rat:** Bulk-fetch context configurations; csv flags follow `--ids`/`--keys` convention; rejects empty body to avoid unbounded server scans.
-- [x] ✅ 🧩 API: B330 Jira: expose POST /rest/api/3/app/field/value
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.bulkUpdateFieldValue(data)`) · CLI `atlas jira app bulk-update-field-value --value <JSON>` · returns `{updated: true}`
-      **Rat:** Cross-field bulk value update; `--value` is JSON array of `{fieldIdOrKey, updates: [...]}` per-field blocks.
-- [x] ✅ 🧩 API: B943 Jira: expose DELETE /rest/atlassian-connect/1/app/module/dynamic
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.deleteDynamicModules(params)`) · CLI `atlas jira app delete-dynamic-modules [--module-keys <csv>]` · repeats `moduleKey` query param per Connect spec (transport `query` collapses duplicates, so the query string is appended directly to the path)
-      **Rat:** Omitting `--module-keys` removes every dynamic module registered by the calling app.
-- [x] ✅ 🧩 API: B944 Jira: expose GET /rest/atlassian-connect/1/app/module/dynamic
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.getDynamicModules()`) · CLI `atlas jira app get-dynamic-modules` · base URL `/rest/atlassian-connect/1`
-      **Rat:** Singleton GET for Connect dynamic module inventory; no path/query params.
-- [x] ✅ 🧩 API: B945 Jira: expose POST /rest/atlassian-connect/1/app/module/dynamic
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.registerDynamicModules(data)`) · CLI `atlas jira app register-dynamic-modules --value <JSON>` · `--value` is JSON array of Connect module descriptors
-      **Rat:** Registration counterpart to B944; module shape is Connect-spec-defined (opaque), so kept as JSON array.
-- [x] ✅ 🧩 API: B975 Jira: expose GET /rest/forge/1/app/properties
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.listForgeProperties()`) · CLI `atlas jira app list-forge-properties` · base URL `/rest/forge/1`
-      **Rat:** Forge app property key listing; singleton GET.
-- [x] ✅ 🧩 API: B976 Jira: expose DELETE /rest/forge/1/app/properties/{propertyKey}
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.deleteForgeProperty(propertyKey)`) · CLI `atlas jira app delete-forge-property <propertyKey>` · positional path param
-      **Rat:** Mirrors B975 listing; positional `propertyKey` per pattern rule.
-- [x] ✅ 🧩 API: B977 Jira: expose GET /rest/forge/1/app/properties/{propertyKey}
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.getForgeProperty(propertyKey)`) · CLI `atlas jira app get-forge-property <propertyKey>` · returns `{key, value}` (value is opaque JSON)
-      **Rat:** Per-key read; positional path param.
-- [x] ✅ 🧩 API: B978 Jira: expose PUT /rest/forge/1/app/properties/{propertyKey}
-      **Impl:** `src/jira/resources/app.ts` (`AppResource.setForgeProperty(propertyKey, value)`) · CLI `atlas jira app set-forge-property <propertyKey> --value <JSON>` · stores value verbatim
-      **Rat:** Upsert counterpart to B976/B977; `--value` accepts any JSON (object, array, primitive) — passed to server unmodified.
+- [x] ✅ 🧩 API: B556 Jira: expose POST /rest/api/3/issuetype
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.create(data)`) · CLI `atlas jira issuetype create --name <n> [--description <d>] [--type subtask|standard] [--hierarchy-level <int>]` · type `CreateIssueTypeData`
+      **Rat:** Singular `issuetype` resource separate from read-only `IssueTypesResource` to keep list/get GET-only and concentrate mutations.
+- [x] ✅ 🧩 API: B557 Jira: expose DELETE /rest/api/3/issuetype/{id}
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.delete(id, alternativeIssueTypeId?)`) · CLI `atlas jira issuetype delete <id> [--alternative-id <id>]` · returns `{deleted: true}` · positional `id`
+      **Rat:** `alternativeIssueTypeId` is a query param (not path), required by server only when issues of this type exist.
+- [x] ✅ 🧩 API: B558 Jira: expose PUT /rest/api/3/issuetype/{id}
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.update(id, data)`) · CLI `atlas jira issuetype update <id> [--name <n>] [--description <d>] [--avatar-id <int>]` · type `UpdateIssueTypeData` · 200-returns-entity (not 204) so update returns `IssueType`
+      **Rat:** Empty-body update rejected with `update requires at least one of: --name, --description, --avatar-id`; matches existing announcement-banner pattern.
+- [x] ✅ 🧩 API: B559 Jira: expose GET /rest/api/3/issuetype/{id}/alternatives
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.listAlternatives(id)`) · CLI `atlas jira issuetype list-alternatives <id>` · returns `IssueType[]`
+      **Rat:** Helper for B557 — surfaces valid replacement types before deletion.
+- [x] ✅ 🧩 API: B560 Jira: expose POST /rest/api/3/issuetype/{id}/avatar2
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.loadAvatar(id, content, params)`) · CLI `atlas jira issuetype load-avatar <id> --file <path> --size <int> [--x <int>] [--y <int>]` · types `IssueTypeAvatar`, `LoadIssueTypeAvatarParams` · multipart `FormData` + `X-Atlassian-Token: no-check` header (mirrors `issue-attachments.upload` pattern)
+      **Rat:** Crop region passed as query params per spec; CLI reads file from disk via dynamic `node:fs/promises` import to avoid leaking fs imports at module load.
+- [x] ✅ 🧩 API: B561 Jira: expose GET /rest/api/3/issuetype/{issueTypeId}/properties
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.listProperties(issueTypeId)`) · CLI `atlas jira issuetype list-properties <issueTypeId>` · types `IssueTypePropertyKey`, `IssueTypePropertyKeys`
+      **Rat:** Matches existing entity-property pattern (boards, sprints).
+- [x] ✅ 🧩 API: B562 Jira: expose DELETE /rest/api/3/issuetype/{issueTypeId}/properties/{propertyKey}
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.deleteProperty(issueTypeId, propertyKey)`) · CLI `atlas jira issuetype delete-property <issueTypeId> <propertyKey>` · returns `{deleted: true}`
+      **Rat:** Both path params positional per CLI convention.
+- [x] ✅ 🧩 API: B563 Jira: expose GET /rest/api/3/issuetype/{issueTypeId}/properties/{propertyKey}
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.getProperty(issueTypeId, propertyKey)`) · CLI `atlas jira issuetype get-property <issueTypeId> <propertyKey>` · type `IssueTypeProperty`
+      **Rat:** Standard property GET; value typed as `unknown` (arbitrary JSON).
+- [x] ✅ 🧩 API: B564 Jira: expose PUT /rest/api/3/issuetype/{issueTypeId}/properties/{propertyKey}
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.setProperty(issueTypeId, propertyKey, value)`) · CLI `atlas jira issuetype set-property <issueTypeId> <propertyKey> --value <JSON>` · returns `{set: true}` · value parsed via `JSON.parse(--value)` (matches boards/sprints set-property pattern)
+      **Rat:** Single `--value` flag accepts any JSON literal; alternative per-field flags would not work for arbitrary nested structures.
+- [x] ✅ 🧩 API: B565 Jira: expose GET /rest/api/3/issuetype/project
+      **Impl:** `src/jira/resources/issuetype.ts` (`IssueTypeResource.listForProject(projectId)`) · CLI `atlas jira issuetype list-for-project --project-id <int>` · type alias `IssueTypesForProject = readonly IssueType[]`
+      **Rat:** `projectId` is a numeric query param (not path); validated as positive integer.

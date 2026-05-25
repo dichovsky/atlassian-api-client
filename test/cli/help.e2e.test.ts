@@ -82,6 +82,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   search: 'executeSearch',
   users: 'executeUsers',
   'issue-types': 'executeIssueTypes',
+  issuetype: 'executeIssueType',
   priorities: 'executePriorities',
   statuses: 'executeStatuses',
   boards: 'executeBoards',
