@@ -121,6 +121,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'service-registry': 'executeServiceRegistry',
   'exists-by-properties': 'executeExistsByProperties',
   dashboards: 'executeDashboards',
+  bulk: 'executeBulk',
 };
 
 /**

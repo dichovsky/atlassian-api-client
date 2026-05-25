@@ -254,6 +254,7 @@ RESOURCES:
   service-registry       get
   exists-by-properties   get
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
+  bulk                   delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -289,7 +290,6 @@ EXAMPLES:
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
   atlas jira exists-by-properties get --entity-type repository
-<<<<<<< HEAD
   atlas jira app get-field-context-configuration customfield_10042
   atlas jira app update-field-context-configuration customfield_10042 --configuration '{"foo":true}'
   atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'
@@ -302,7 +302,6 @@ EXAMPLES:
   atlas jira app get-forge-property my-key
   atlas jira app set-forge-property my-key --value '{"on":true}'
   atlas jira app delete-forge-property my-key
-=======
   atlas jira issuetype create --name "Spike" --description "Investigation task" --hierarchy-level 0
   atlas jira issuetype update 10001 --name "Spike v2" --avatar-id 10300
   atlas jira issuetype delete 10001 --alternative-id 10000
@@ -313,7 +312,6 @@ EXAMPLES:
   atlas jira issuetype set-property 10001 reviewed --value true
   atlas jira issuetype delete-property 10001 reviewed
   atlas jira issuetype list-for-project --project-id 10000
->>>>>>> a2d5bcf (feat(jira): issuetype API coverage (B556-B565))
 `;
 
 /** Get help text for the given level. */
