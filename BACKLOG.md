@@ -138,7 +138,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 578 as of 2026-05-25. Updated by `chore/jira-backlog-reconcile` PR.
+> **Truly-missing Jira endpoints:** 539 as of 2026-05-25. Updated by `chore/jira-backlog-reconcile` PR.
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
@@ -1704,21 +1704,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B972 Jira: expose DELETE /rest/featureflags/0.1/bulkByProperties
   - files: `src/jira/resources/bulk-by-properties.ts`, `test/jira/bulk-by-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B980 Jira: expose POST /rest/operations/1.0/bulk
-  - files: `src/jira/resources/bulk.ts`, `test/jira/bulk.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B975 Jira: expose GET /rest/forge/1/app/properties
-  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B976 Jira: expose DELETE /rest/forge/1/app/properties/{propertyKey}
-  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B977 Jira: expose GET /rest/forge/1/app/properties/{propertyKey}
-  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B978 Jira: expose PUT /rest/forge/1/app/properties/{propertyKey}
-  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B981 Jira: expose DELETE /rest/operations/1.0/bulkByProperties
   - files: `src/jira/resources/bulk-by-properties.ts`, `test/jira/bulk-by-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
