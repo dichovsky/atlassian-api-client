@@ -138,7 +138,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 590 as of 2026-05-24. Updated by `chore/jira-backlog-reconcile` PR.
+> **Truly-missing Jira endpoints:** 578 as of 2026-05-25. Updated by `chore/jira-backlog-reconcile` PR.
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
@@ -297,42 +297,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B387 Jira: expose PUT /rest/api/3/configuration/timetracking/options
   - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B391 Jira: expose GET /rest/api/3/dashboard/{dashboardId}/gadget
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B392 Jira: expose POST /rest/api/3/dashboard/{dashboardId}/gadget
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B393 Jira: expose DELETE /rest/api/3/dashboard/{dashboardId}/gadget/{gadgetId}
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B394 Jira: expose PUT /rest/api/3/dashboard/{dashboardId}/gadget/{gadgetId}
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B395 Jira: expose GET /rest/api/3/dashboard/{dashboardId}/items/{itemId}/properties
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B396 Jira: expose DELETE /rest/api/3/dashboard/{dashboardId}/items/{itemId}/properties/{propertyKey}
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B397 Jira: expose GET /rest/api/3/dashboard/{dashboardId}/items/{itemId}/properties/{propertyKey}
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B398 Jira: expose PUT /rest/api/3/dashboard/{dashboardId}/items/{itemId}/properties/{propertyKey}
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B402 Jira: expose POST /rest/api/3/dashboard/{id}/copy
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B403 Jira: expose PUT /rest/api/3/dashboard/bulk/edit
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B404 Jira: expose GET /rest/api/3/dashboard/gadgets
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B405 Jira: expose GET /rest/api/3/dashboard/search
-  - files: `src/jira/resources/dashboards.ts`, `test/jira/dashboards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B409 Jira: expose POST /rest/api/3/expression/analyse
   - files: `src/jira/resources/expression.ts`, `test/jira/expression.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
