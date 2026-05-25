@@ -1088,20 +1088,20 @@ App-scoped resource grouping three distinct API surfaces used by Forge and Atlas
 
 Most actions require Forge/Connect-issued credentials (OAuth 2.0 3LO scopes or Connect JWT). Basic auth with an API token will return `401`/`403` on every action.
 
-| Action                               | Positional       | Required flags | Optional flags                         |
-| ------------------------------------ | ---------------- | -------------- | -------------------------------------- |
-| `get-field-context-configuration`    | `<fieldIdOrKey>` | —              | —                                      |
-| `update-field-context-configuration` | `<fieldIdOrKey>` | —              | `--configuration`, `--schema`          |
-| `update-field-value`                 | `<fieldIdOrKey>` | `--value`      | —                                      |
-| `list-field-context-configurations`  | —                | —              | `--field-ids-or-keys`, `--context-ids` |
-| `bulk-update-field-value`            | —                | `--value`      | —                                      |
-| `get-dynamic-modules`                | —                | —              | —                                      |
-| `register-dynamic-modules`           | —                | `--value`      | —                                      |
-| `delete-dynamic-modules`             | —                | —              | `--module-keys`                        |
-| `list-forge-properties`              | —                | —              | —                                      |
-| `get-forge-property`                 | `<propertyKey>`  | —              | —                                      |
-| `set-forge-property`                 | `<propertyKey>`  | `--value`      | —                                      |
-| `delete-forge-property`              | `<propertyKey>`  | —              | —                                      |
+| Action                               | Positional       | Required flags                                         | Optional flags  |
+| ------------------------------------ | ---------------- | ------------------------------------------------------ | --------------- |
+| `get-field-context-configuration`    | `<fieldIdOrKey>` | —                                                      | —               |
+| `update-field-context-configuration` | `<fieldIdOrKey>` | at least one of `--configuration`, `--schema`          | —               |
+| `update-field-value`                 | `<fieldIdOrKey>` | `--value`                                              | —               |
+| `list-field-context-configurations`  | —                | at least one of `--field-ids-or-keys`, `--context-ids` | —               |
+| `bulk-update-field-value`            | —                | `--value`                                              | —               |
+| `get-dynamic-modules`                | —                | —                                                      | —               |
+| `register-dynamic-modules`           | —                | `--value`                                              | —               |
+| `delete-dynamic-modules`             | —                | —                                                      | `--module-keys` |
+| `list-forge-properties`              | —                | —                                                      | —               |
+| `get-forge-property`                 | `<propertyKey>`  | —                                                      | —               |
+| `set-forge-property`                 | `<propertyKey>`  | `--value`                                              | —               |
+| `delete-forge-property`              | `<propertyKey>`  | —                                                      | —               |
 
 - `--configuration` and `--schema` accept opaque JSON; the server stores them verbatim. At least one of the two must be supplied.
 - `--value` for `update-field-value` is a JSON array of `{ issueIds | issueIdsOrKeys | issueKeys, value }` entries.
