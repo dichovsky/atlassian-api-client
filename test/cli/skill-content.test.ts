@@ -150,6 +150,7 @@ describe('Example commands in SKILL.md parse correctly', () => {
           'exists-by-properties',
           'app',
           'bulk',
+          'issue-attachments',
         ]).toContain(parsed.resource);
       }
     });
@@ -250,6 +251,7 @@ describe('Resource coverage drift check', () => {
     'exists-by-properties',
     'app',
     'bulk',
+    'issue-attachments',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

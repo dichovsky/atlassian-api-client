@@ -122,6 +122,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'exists-by-properties': 'executeExistsByProperties',
   dashboards: 'executeDashboards',
   bulk: 'executeBulk',
+  'issue-attachments': 'executeIssueAttachments',
 };
 
 /**

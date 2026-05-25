@@ -197,6 +197,14 @@ const GLOBAL_OPTIONS = {
   'ending-before': { type: 'string' as const },
   'starting-after': { type: 'string' as const },
   actions: { type: 'string' as const },
+  // issue-attachments options (B336, B338-B342). `redirect` controls whether
+  // the server replies with a 303 to a media-CDN URL (default) or the binary
+  // body directly; `fallback-to-default` only applies to the thumbnail
+  // endpoint and asks the server to return a generic placeholder instead of
+  // 404 when no preview is renderable. `width`, `height`, `file`, `filename`,
+  // and `media-type` reuse existing global flags above.
+  redirect: { type: 'boolean' as const },
+  'fallback-to-default': { type: 'boolean' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

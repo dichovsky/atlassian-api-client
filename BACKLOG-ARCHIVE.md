@@ -1098,3 +1098,21 @@
 - [x] 🔴 🧩 API: B993 Jira: expose POST /rest/security/1.0/bulk
   - **Impl:** `BulkResource.submitSecurity(data)`. CLI `atlas jira bulk submit-security --value <JSON>`.
   - **Rat:** Security findings bulk ingest paired with vulnerability singletons.
+- [x] 🔴 🧩 API: B336 Jira: expose DELETE /rest/api/3/attachment/{id}
+  - **Impl:** `IssueAttachmentsResource.delete(attachmentId)` returns `void` on the 204. CLI `atlas jira issue-attachments delete <attachmentId>` prints `{ deleted: true }`.
+  - **Rat:** Completes the attachment-singleton CRUD pair (paired with the previously-shipped GET /attachment/{id}).
+- [x] 🔴 🧩 API: B338 Jira: expose GET /rest/api/3/attachment/{id}/expand/human
+  - **Impl:** `IssueAttachmentsResource.expandHuman(attachmentId)` returns `AttachmentArchiveMetadataReadable` (entry sizes pre-formatted as strings). CLI `atlas jira issue-attachments expand-human <attachmentId>`.
+  - **Rat:** Archive-typed (zip/tar) attachments need an introspection surface; humanised sizes are preferred for direct display.
+- [x] 🔴 🧩 API: B339 Jira: expose GET /rest/api/3/attachment/{id}/expand/raw
+  - **Impl:** `IssueAttachmentsResource.expandRaw(attachmentId)` returns `AttachmentArchive` (numeric byte sizes). CLI `atlas jira issue-attachments expand-raw <attachmentId>`.
+  - **Rat:** Programmatic sibling of B338; same archive contents but with machine-friendly sizes.
+- [x] 🔴 🧩 API: B340 Jira: expose GET /rest/api/3/attachment/content/{id}
+  - **Impl:** `IssueAttachmentsResource.downloadContent(attachmentId, { redirect? })` returns `ArrayBuffer` via `responseType: 'arrayBuffer'`. CLI `atlas jira issue-attachments download-content <attachmentId> [--redirect true|false]` prints `{ bytes: N }` summary; `--redirect=false` asks the server to inline the body instead of issuing a 303 to its media-CDN.
+  - **Rat:** Binary download endpoint; mirrors `ConfluenceAttachmentsResource.downloadThumbnail` pattern (transport already enforces `maxResponseBytes` on `arrayBuffer` mode).
+- [x] 🔴 🧩 API: B341 Jira: expose GET /rest/api/3/attachment/meta
+  - **Impl:** `IssueAttachmentsResource.getMeta()` returns `AttachmentSettings { enabled, uploadLimit }`. CLI `atlas jira issue-attachments get-meta` (no positional, no flags).
+  - **Rat:** Instance-level capability discovery — clients need to know the per-file byte cap before attempting `upload`.
+- [x] 🔴 🧩 API: B342 Jira: expose GET /rest/api/3/attachment/thumbnail/{id}
+  - **Impl:** `IssueAttachmentsResource.downloadThumbnail(attachmentId, { redirect?, fallbackToDefault?, width?, height? })` returns `ArrayBuffer`. CLI `atlas jira issue-attachments download-thumbnail <attachmentId> [--redirect true|false] [--fallback-to-default true|false] [--width N] [--height N]` prints `{ bytes: N }` summary.
+  - **Rat:** Thumbnail preview rendering sibling of B340; `--fallback-to-default` lets the caller opt into a generic placeholder instead of a 404 when the attachment has no renderable preview.

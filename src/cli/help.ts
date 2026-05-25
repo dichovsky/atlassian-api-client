@@ -255,6 +255,7 @@ RESOURCES:
   exists-by-properties   get
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
   bulk                   delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
+  issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -312,6 +313,14 @@ EXAMPLES:
   atlas jira issuetype set-property 10001 reviewed --value true
   atlas jira issuetype delete-property 10001 reviewed
   atlas jira issuetype list-for-project --project-id 10000
+  atlas jira issue-attachments get 10001
+  atlas jira issue-attachments delete 10001
+  atlas jira issue-attachments expand-human 10001
+  atlas jira issue-attachments expand-raw 10001
+  atlas jira issue-attachments download-content 10001 --redirect false
+  atlas jira issue-attachments get-meta
+  atlas jira issue-attachments download-thumbnail 10001 --width 200 --height 200 --fallback-to-default true
+  atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
 `;
 
 /** Get help text for the given level. */

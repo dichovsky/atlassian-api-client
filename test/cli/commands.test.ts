@@ -563,6 +563,18 @@ const jiraAppMock = {
   deleteForgeProperty: vi.fn(),
 };
 
+const jiraIssueAttachmentsMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+  expandHuman: vi.fn(),
+  expandRaw: vi.fn(),
+  downloadContent: vi.fn(),
+  getMeta: vi.fn(),
+  downloadThumbnail: vi.fn(),
+  upload: vi.fn(),
+};
+
 const jiraBulkMock = {
   deleteIssuesBulk: vi.fn(),
   getIssueFieldsBulk: vi.fn(),
@@ -632,6 +644,7 @@ vi.mock('../../src/jira/client.js', () => {
       existsByProperties: jiraExistsByPropertiesMock,
       app: jiraAppMock,
       bulk: jiraBulkMock,
+      issueAttachments: jiraIssueAttachmentsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -11624,6 +11637,239 @@ describe('executeJiraCommand', () => {
     it('bulk unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('bulk', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown bulk action',
+      );
+    });
+  });
+
+  // ── issue-attachments (B336, B338-B342) ───────────────────────────────────
+
+  describe('issue-attachments resource', () => {
+    it('issue-attachments list dispatches with the issueIdOrKey positional', async () => {
+      jiraIssueAttachmentsMock.list.mockResolvedValue([]);
+      await executeJiraCommand(cmd('issue-attachments', 'list', ['PROJ-1']), GLOBALS);
+      expect(jiraIssueAttachmentsMock.list).toHaveBeenCalledWith('PROJ-1');
+    });
+
+    it('issue-attachments list throws when issueIdOrKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'list', []), GLOBALS),
+      ).rejects.toThrow('issueIdOrKey');
+    });
+
+    it('issue-attachments get dispatches with the attachmentId positional', async () => {
+      jiraIssueAttachmentsMock.get.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(cmd('issue-attachments', 'get', ['10001']), GLOBALS);
+      expect(jiraIssueAttachmentsMock.get).toHaveBeenCalledWith('10001');
+    });
+
+    it('issue-attachments get throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'get', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments delete dispatches and returns the deletion summary', async () => {
+      jiraIssueAttachmentsMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-attachments', 'delete', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-attachments delete throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'delete', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments expand-human dispatches with the attachmentId positional', async () => {
+      jiraIssueAttachmentsMock.expandHuman.mockResolvedValue({ totalEntryCount: 0 });
+      await executeJiraCommand(cmd('issue-attachments', 'expand-human', ['10001']), GLOBALS);
+      expect(jiraIssueAttachmentsMock.expandHuman).toHaveBeenCalledWith('10001');
+    });
+
+    it('issue-attachments expand-human throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'expand-human', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments expand-raw dispatches with the attachmentId positional', async () => {
+      jiraIssueAttachmentsMock.expandRaw.mockResolvedValue({ totalEntryCount: 0 });
+      await executeJiraCommand(cmd('issue-attachments', 'expand-raw', ['10001']), GLOBALS);
+      expect(jiraIssueAttachmentsMock.expandRaw).toHaveBeenCalledWith('10001');
+    });
+
+    it('issue-attachments expand-raw throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'expand-raw', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments download-content dispatches with no params and returns bytes summary', async () => {
+      jiraIssueAttachmentsMock.downloadContent.mockResolvedValue(new ArrayBuffer(42));
+      const result = await executeJiraCommand(
+        cmd('issue-attachments', 'download-content', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadContent).toHaveBeenCalledWith('10001', {});
+      expect(result).toEqual({ bytes: 42 });
+    });
+
+    it('issue-attachments download-content forwards --redirect=false', async () => {
+      jiraIssueAttachmentsMock.downloadContent.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('issue-attachments', 'download-content', ['10001'], { redirect: 'false' }),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadContent).toHaveBeenCalledWith('10001', {
+        redirect: false,
+      });
+    });
+
+    it('issue-attachments download-content forwards --redirect (boolean true)', async () => {
+      jiraIssueAttachmentsMock.downloadContent.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('issue-attachments', 'download-content', ['10001'], { redirect: true }),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadContent).toHaveBeenCalledWith('10001', {
+        redirect: true,
+      });
+    });
+
+    it('issue-attachments download-content throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'download-content', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments get-meta dispatches without args', async () => {
+      jiraIssueAttachmentsMock.getMeta.mockResolvedValue({ enabled: true, uploadLimit: 1 });
+      const result = await executeJiraCommand(cmd('issue-attachments', 'get-meta'), GLOBALS);
+      expect(jiraIssueAttachmentsMock.getMeta).toHaveBeenCalledWith();
+      expect(result).toEqual({ enabled: true, uploadLimit: 1 });
+    });
+
+    it('issue-attachments download-thumbnail dispatches with no params and returns bytes summary', async () => {
+      jiraIssueAttachmentsMock.downloadThumbnail.mockResolvedValue(new ArrayBuffer(99));
+      const result = await executeJiraCommand(
+        cmd('issue-attachments', 'download-thumbnail', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadThumbnail).toHaveBeenCalledWith('10001', {});
+      expect(result).toEqual({ bytes: 99 });
+    });
+
+    it('issue-attachments download-thumbnail forwards every supplied flag', async () => {
+      jiraIssueAttachmentsMock.downloadThumbnail.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('issue-attachments', 'download-thumbnail', ['10001'], {
+          redirect: 'false',
+          'fallback-to-default': 'true',
+          width: '200',
+          height: '150',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadThumbnail).toHaveBeenCalledWith('10001', {
+        redirect: false,
+        fallbackToDefault: true,
+        width: 200,
+        height: 150,
+      });
+    });
+
+    it('issue-attachments download-thumbnail rejects non-positive --width', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-attachments', 'download-thumbnail', ['10001'], { width: '0' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--width must be a positive integer');
+    });
+
+    it('issue-attachments download-thumbnail rejects non-positive --height', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-attachments', 'download-thumbnail', ['10001'], { height: '-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--height must be a positive integer');
+    });
+
+    it('issue-attachments download-thumbnail throws when attachmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'download-thumbnail', []), GLOBALS),
+      ).rejects.toThrow('attachmentId');
+    });
+
+    it('issue-attachments upload reads --file and dispatches with the basename', async () => {
+      jiraIssueAttachmentsMock.upload.mockResolvedValue([]);
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'jira-attach-'));
+      const filePath = join(dir, 'photo.png');
+      await writeFile(filePath, new Uint8Array([1, 2, 3]));
+      try {
+        await executeJiraCommand(
+          cmd('issue-attachments', 'upload', ['PROJ-1'], { file: filePath }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      expect(jiraIssueAttachmentsMock.upload).toHaveBeenCalledTimes(1);
+      const args = jiraIssueAttachmentsMock.upload.mock.calls[0]!;
+      expect(args[0]).toBe('PROJ-1');
+      expect(args[1]).toBe('photo.png');
+      expect(args[2]).toBeInstanceOf(Blob);
+      expect(args[3]).toBeUndefined();
+    });
+
+    it('issue-attachments upload honours --filename and --media-type overrides', async () => {
+      jiraIssueAttachmentsMock.upload.mockResolvedValue([]);
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'jira-attach-'));
+      const filePath = join(dir, 'raw.bin');
+      await writeFile(filePath, new Uint8Array([1, 2, 3]));
+      try {
+        await executeJiraCommand(
+          cmd('issue-attachments', 'upload', ['PROJ-1'], {
+            file: filePath,
+            filename: 'report.pdf',
+            'media-type': 'application/pdf',
+          }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      const args = jiraIssueAttachmentsMock.upload.mock.calls[0]!;
+      expect(args[1]).toBe('report.pdf');
+      expect(args[3]).toBe('application/pdf');
+    });
+
+    it('issue-attachments upload throws when --file is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'upload', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--file');
+    });
+
+    it('issue-attachments upload throws when issueIdOrKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-attachments', 'upload', []), GLOBALS),
+      ).rejects.toThrow('issueIdOrKey');
+    });
+
+    it('issue-attachments unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('issue-attachments', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown issue-attachments action',
       );
     });
   });

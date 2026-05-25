@@ -51,6 +51,16 @@ export { PrioritiesResource } from './resources/priorities.js';
 export { StatusesResource } from './resources/statuses.js';
 export { IssueCommentsResource } from './resources/issue-comments.js';
 export { IssueAttachmentsResource } from './resources/issue-attachments.js';
+export type {
+  IssueAttachmentsResponse,
+  AttachmentArchiveEntry,
+  AttachmentArchiveItemReadable,
+  AttachmentArchiveMetadataReadable,
+  AttachmentArchive,
+  AttachmentSettings,
+  DownloadAttachmentContentParams,
+  DownloadAttachmentThumbnailParams,
+} from './resources/issue-attachments.js';
 export { LabelsResource } from './resources/labels.js';
 export { BoardsResource } from './resources/boards.js';
 export type {

@@ -51,6 +51,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `exists-by-properties`  | `get`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `app`                   | `get-field-context-configuration`, `update-field-context-configuration`, `update-field-value`, `list-field-context-configurations`, `bulk-update-field-value`, `get-dynamic-modules`, `register-dynamic-modules`, `delete-dynamic-modules`, `list-forge-properties`, `get-forge-property`, `set-forge-property`, `delete-forge-property`                                                                                 |
 | `dashboards`            | `list`, `get`, `create`, `update`, `delete`, `list-gadgets`, `add-gadget`, `update-gadget`, `remove-gadget`, `list-item-properties`, `get-item-property`, `set-item-property`, `delete-item-property`, `copy`, `bulk-edit`, `list-available-gadgets`, `search`, `search-all`                                                                                                                                             |
+| `issue-attachments`     | `list`, `get`, `delete`, `expand-human`, `expand-raw`, `download-content`, `get-meta`, `download-thumbnail`, `upload`                                                                                                                                                                                                                                                                                                    |
 
 ## `app`
 
@@ -1351,6 +1352,56 @@ atlas jira bulk get-status 10641
 atlas jira bulk submit-builds --value '{"providerMetadata":{"product":"my-ci"},"builds":[]}'
 atlas jira bulk submit-deployments --value '{"deployments":[]}'
 atlas jira bulk submit-feature-flags --value '{"flags":[]}'
+```
+
+## `issue-attachments`
+
+Covers the platform's `/rest/api/3/attachment` surface (B336, B337, B338–B342) plus the issue-scoped `list` (via `GET /issue/{key}?fields=attachment`) and `upload` (`POST /issue/{key}/attachments`).
+
+| Action               | Positional       | Required flags | Optional flags                                               |
+| -------------------- | ---------------- | -------------- | ------------------------------------------------------------ |
+| `list`               | `<issueIdOrKey>` | —              | —                                                            |
+| `get`                | `<attachmentId>` | —              | —                                                            |
+| `delete`             | `<attachmentId>` | —              | —                                                            |
+| `expand-human`       | `<attachmentId>` | —              | —                                                            |
+| `expand-raw`         | `<attachmentId>` | —              | —                                                            |
+| `download-content`   | `<attachmentId>` | —              | `--redirect`                                                 |
+| `get-meta`           | —                | —              | —                                                            |
+| `download-thumbnail` | `<attachmentId>` | —              | `--redirect`, `--fallback-to-default`, `--width`, `--height` |
+| `upload`             | `<issueIdOrKey>` | `--file`       | `--filename`, `--media-type`                                 |
+
+- `expand-human` / `expand-raw` are only meaningful for archive-typed attachments (zip, tar, etc.). `human` returns each entry's `size` as a pre-formatted string (`"2.5 kB"`); `raw` returns it as a byte count.
+- `download-content` and `download-thumbnail` buffer the binary response into memory. The CLI prints a `{ "bytes": N }` summary instead of the raw bytes — use the SDK (`client.issueAttachments.downloadContent`) when you need the actual `ArrayBuffer`.
+- `--redirect=false` asks the server to return the binary body inline instead of a `303` redirect to its media-CDN. The runtime `fetch` follows the redirect transparently either way, so the CLI behaviour is identical; the flag is exposed for API parity.
+- `--fallback-to-default=true` (thumbnail only) returns a generic placeholder image when the attachment has no renderable preview, instead of `404`.
+- `upload` reads the file from disk into a `Blob` and POSTs multipart form data with `X-Atlassian-Token: no-check` (Jira requires this to bypass XSRF validation). `--filename` defaults to the basename of `--file`.
+- `get-meta` returns instance-level settings (`{ enabled, uploadLimit }`); no positional or flags.
+
+```sh
+# Get metadata for a specific attachment, then delete it
+atlas jira issue-attachments get 10001
+atlas jira issue-attachments delete 10001
+
+# List attachments on an issue
+atlas jira issue-attachments list PROJ-1
+
+# Inspect a zip attachment's contents
+atlas jira issue-attachments expand-human 10001
+atlas jira issue-attachments expand-raw 10001
+
+# Download the file bytes (CLI prints { bytes: N } — use the SDK for the buffer)
+atlas jira issue-attachments download-content 10001
+atlas jira issue-attachments download-content 10001 --redirect false
+
+# Instance-level attachment settings
+atlas jira issue-attachments get-meta
+
+# Render a 200x200 thumbnail with a placeholder fallback
+atlas jira issue-attachments download-thumbnail 10001 \
+  --width 200 --height 200 --fallback-to-default true
+
+# Upload a file from disk to an issue
+atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
 ```
 
 ## Errors specific to Jira
