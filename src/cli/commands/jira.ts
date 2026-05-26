@@ -1,5 +1,6 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
+import type { FilterSharePermission } from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -2043,7 +2044,7 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
   }
 }
 
-// ── filters (B448-B466) ──────────────────────────────────────────────────────
+// ── filters (B452-B466) ──────────────────────────────────────────────────────
 
 const FILTERS_ACTIONS = [
   'search',
@@ -2155,11 +2156,17 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
       const editPermissionsRaw = asString(opts['edit-permissions']);
       const sharePermissions =
         sharePermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(sharePermissionsRaw, '--share-permissions') as never)
+          ? (parseJsonArrayFlag(
+              sharePermissionsRaw,
+              '--share-permissions',
+            ) as FilterSharePermission[])
           : undefined;
       const editPermissions =
         editPermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(editPermissionsRaw, '--edit-permissions') as never)
+          ? (parseJsonArrayFlag(
+              editPermissionsRaw,
+              '--edit-permissions',
+            ) as FilterSharePermission[])
           : undefined;
       return client.filters.create({
         name,
@@ -2180,11 +2187,17 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
       const editPermissionsRaw = asString(opts['edit-permissions']);
       const sharePermissions =
         sharePermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(sharePermissionsRaw, '--share-permissions') as never)
+          ? (parseJsonArrayFlag(
+              sharePermissionsRaw,
+              '--share-permissions',
+            ) as FilterSharePermission[])
           : undefined;
       const editPermissions =
         editPermissionsRaw !== undefined
-          ? (parseJsonArrayFlag(editPermissionsRaw, '--edit-permissions') as never)
+          ? (parseJsonArrayFlag(
+              editPermissionsRaw,
+              '--edit-permissions',
+            ) as FilterSharePermission[])
           : undefined;
       if (
         name === undefined &&
