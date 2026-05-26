@@ -15,7 +15,7 @@ const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-s
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
 // Keep router text under 875 prompt tokens so the skill stays cheap and leaves room for task context.
-// 3.5k chars uses the standard 4 chars/token heuristic for this guard.
+// 3500 chars / 4 chars per token = 875 tokens (standard prompt-size heuristic).
 const MAX_SKILL_MD_LENGTH = 3500;
 // Ensure a practical example set across SKILL.md + examples reference.
 const MIN_EXAMPLE_COMMANDS = 10;
@@ -89,10 +89,17 @@ describe('Reference content sanity checks', () => {
 });
 
 describe('Example commands in skill docs parse correctly', () => {
-  const examples = [...extractAtlasCommands(SKILL_MD), ...extractAtlasCommands(EXAMPLES_REF)];
+  const skillExamples = extractAtlasCommands(SKILL_MD);
+  const refExamples = extractAtlasCommands(EXAMPLES_REF);
+  const examples = [...skillExamples, ...refExamples];
 
   it('finds at least 10 example commands', () => {
     expect(examples.length).toBeGreaterThanOrEqual(MIN_EXAMPLE_COMMANDS);
+  });
+
+  it('keeps examples in both router and extracted reference docs', () => {
+    expect(skillExamples.length).toBeGreaterThan(0);
+    expect(refExamples.length).toBeGreaterThan(0);
   });
 
   for (const example of examples) {
