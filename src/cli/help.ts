@@ -267,6 +267,7 @@ RESOURCES:
   roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
   expression             analyse, eval, evaluate
   issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
+  fieldconfiguration     list, create, delete, update, list-fields, update-fields
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -413,6 +414,14 @@ EXAMPLES:
   atlas jira expression analyse --expressions '["value.accountId"]' --context-variables '{"value":"User"}' --check type
   atlas jira expression eval --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}'
   atlas jira expression evaluate --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}' --expand meta.complexity
+  atlas jira fieldconfiguration list --start-at 0 --max-results 50
+  atlas jira fieldconfiguration list --ids 10000,10001 --is-default true
+  atlas jira fieldconfiguration list --query "default"
+  atlas jira fieldconfiguration create --name "My Configuration" --description "A new field configuration"
+  atlas jira fieldconfiguration update 10001 --name "Renamed" --description "Updated description"
+  atlas jira fieldconfiguration delete 10001
+  atlas jira fieldconfiguration list-fields 10001 --start-at 0 --max-results 50
+  atlas jira fieldconfiguration update-fields 10001 --field-configuration-items '[{"id":"customfield_10010","isHidden":false,"isRequired":true}]'
 `;
 
 /** Get help text for the given level. */

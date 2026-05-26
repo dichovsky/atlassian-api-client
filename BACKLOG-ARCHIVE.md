@@ -1417,3 +1417,21 @@
 - [x] 🔴 🧩 API: B360 Jira: expose POST /rest/api/3/comment/list
   - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.bulkFetch(data, params?)` returns `BulkFetchIssueCommentsResponse` (`PageBeanComment` shape: `values`, `startAt`, `maxResults`, `total`, `isLast`, optional `self`/`nextPage`). CLI: `atlas jira issue-comments bulk-fetch --ids 1001,1002,1003 [--expand renderedBody,properties]`.
   - **Rat:** API spec uses int64 IDs and returns a `PageBeanComment` (NOT `{ comments }`) — preserved exact spec field names. `--ids` and `--expand` are pre-existing flags in `GLOBAL_OPTIONS`; no new router flags required.
+- [x] 🔴 🧩 API: B908 Jira: expose GET /rest/api/3/fieldconfiguration
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; new `FieldConfigurationResource` (`src/jira/resources/fieldconfiguration.ts`) `list(params?)` and `listAll()` async generator using `paginateOffset`. Supports `startAt`, `maxResults`, `id` (number[] CSV), `isDefault`, `query`. CLI: `atlas jira fieldconfiguration list [--start-at N] [--max-results N] [--ids n1,n2] [--is-default] [--query <s>]`.
+  - **Rat:** Paginated list with filtering across all four spec query params; `listAll` auto-paginates for full-export use cases.
+- [x] 🔴 🧩 API: B909 Jira: expose POST /rest/api/3/fieldconfiguration
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.create({ name, description? })` returns the created `FieldConfiguration`. CLI: `atlas jira fieldconfiguration create --name <s> [--description <s>]`.
+  - **Rat:** Create-only body; mirrors API contract (`name` required, `description` optional).
+- [x] 🔴 🧩 API: B910 Jira: expose DELETE /rest/api/3/fieldconfiguration/{id}
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.delete(id)` issues `DELETE /rest/api/3/fieldconfiguration/{id}` returning `void` (204). CLI: `atlas jira fieldconfiguration delete <id>`.
+  - **Rat:** Idiomatic positional `id` for path param; void return matches API 204 semantics.
+- [x] 🔴 🧩 API: B911 Jira: expose PUT /rest/api/3/fieldconfiguration/{id}
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.update(id, { name, description? })` issues `PUT /rest/api/3/fieldconfiguration/{id}` returning `void` (204). CLI: `atlas jira fieldconfiguration update <id> --name <s> [--description <s>]` — `--name` required per spec.
+  - **Rat:** API spec requires `name` even on description-only updates; surfaced as `requireOpt` at the CLI to avoid opaque 400 errors.
+- [x] 🔴 🧩 API: B912 Jira: expose GET /rest/api/3/fieldconfiguration/{id}/fields
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.listFields(id, params?)` + `listAllFields(id, params?)` async generator using `paginateOffset`. CLI: `atlas jira fieldconfiguration list-fields <id> [--start-at N] [--max-results N]`.
+  - **Rat:** Sub-resource pagination for field items inside a configuration; `listAllFields` enables full enumeration without manual cursor management.
+- [x] 🔴 🧩 API: B913 Jira: expose PUT /rest/api/3/fieldconfiguration/{id}/fields
+  - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.updateFields(id, { fieldConfigurationItems })` issues `PUT /rest/api/3/fieldconfiguration/{id}/fields` returning `void` (204). CLI: `atlas jira fieldconfiguration update-fields <id> --field-configuration-items '<JSON-array>'`. Item shape: `{ id, description?, isHidden?, isRequired?, renderer? }`. New router flags: `--is-default`, `--field-configuration-items`.
+  - **Rat:** Bulk item update body must be provided as a JSON array via flag; matches B913 spec verbatim. Per Atlassian: hiding a field deletes its other properties.

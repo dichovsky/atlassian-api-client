@@ -440,3 +440,13 @@ export type {
   EvalExpressionResponse,
 } from './resources/expression.js';
 export { ExpressionResource } from './resources/expression.js';
+export type {
+  FieldConfiguration,
+  FieldConfigurationItem,
+  ListFieldConfigurationsParams,
+  ListFieldConfigurationItemsParams,
+  CreateFieldConfigurationData,
+  UpdateFieldConfigurationData,
+  UpdateFieldConfigurationItemsData,
+} from './resources/fieldconfiguration.js';
+export { FieldConfigurationResource } from './resources/fieldconfiguration.js';

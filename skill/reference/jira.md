@@ -61,6 +61,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issue-type-schemes`     | `list`, `list-mapping`, `list-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                    |
 | `roles`                  | `list`, `get`, `create`, `update`, `partial-update`, `delete`, `get-actors`, `add-actors`, `delete-actors`                                                                                                                                                                                                                                                                                                               |
 | `issue-comments`         | `list-properties`, `get-property`, `set-property`, `delete-property`, `bulk-fetch`                                                                                                                                                                                                                                                                                                                                       |
+| `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                     |
 
 ## `issue-type-schemes`
 
@@ -115,6 +116,43 @@ atlas jira issue-type-schemes list-project --project-ids 10100,10101
 
 # Assign a scheme to a project
 atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
+```
+
+## `fieldconfiguration`
+
+Issue field configuration management (B908–B913). Covers the flat `/rest/api/3/fieldconfiguration` surface. Marked deprecated by Atlassian but still operational on Jira Cloud.
+
+| Action          | Positional | Required flags                             | Optional flags                                                          |
+| --------------- | ---------- | ------------------------------------------ | ----------------------------------------------------------------------- |
+| `list`          | —          | —                                          | `--start-at`, `--max-results`, `--ids` (CSV), `--is-default`, `--query` |
+| `create`        | —          | `--name`                                   | `--description`                                                         |
+| `update`        | `<id>`     | `--name`                                   | `--description`                                                         |
+| `delete`        | `<id>`     | —                                          | —                                                                       |
+| `list-fields`   | `<id>`     | —                                          | `--start-at`, `--max-results`                                           |
+| `update-fields` | `<id>`     | `--field-configuration-items` (JSON array) | —                                                                       |
+
+```bash
+# Paginate all field configurations
+atlas jira fieldconfiguration list --start-at 0 --max-results 50
+
+# Filter by IDs, default-flag, or substring
+atlas jira fieldconfiguration list --ids 10000,10001 --is-default true
+atlas jira fieldconfiguration list --query "default"
+
+# Create a configuration
+atlas jira fieldconfiguration create --name "My Configuration" --description "A new field configuration"
+
+# Update a configuration (API requires both name and id)
+atlas jira fieldconfiguration update 10001 --name "Renamed" --description "Updated description"
+
+# Delete a configuration
+atlas jira fieldconfiguration delete 10001
+
+# Paginate field items inside a configuration
+atlas jira fieldconfiguration list-fields 10001 --start-at 0 --max-results 50
+
+# Bulk-update field items (JSON array of {id, description?, isHidden?, isRequired?, renderer?})
+atlas jira fieldconfiguration update-fields 10001 --field-configuration-items '[{"id":"customfield_10010","isHidden":false,"isRequired":true}]'
 ```
 
 ## `app`
