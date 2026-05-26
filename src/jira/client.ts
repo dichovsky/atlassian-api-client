@@ -59,6 +59,7 @@ import { ComponentResource } from './resources/component.js';
 import { ApplicationPropertiesResource } from './resources/application-properties.js';
 import { ConfigurationResource } from './resources/configuration.js';
 import { IssueTypeScreenSchemeResource } from './resources/issuetypescreenscheme.js';
+import { PermissionSchemeResource } from './resources/permissionscheme.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -175,6 +176,8 @@ export class JiraClient {
   readonly configuration: ConfigurationResource;
   /** Jira issue type screen schemes resource (B576-B586). */
   readonly issueTypeScreenSchemes: IssueTypeScreenSchemeResource;
+  /** Jira permission schemes resource (B616-B624). */
+  readonly permissionSchemes: PermissionSchemeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -260,5 +263,6 @@ export class JiraClient {
     this.applicationProperties = new ApplicationPropertiesResource(transport, baseUrl);
     this.configuration = new ConfigurationResource(transport, baseUrl);
     this.issueTypeScreenSchemes = new IssueTypeScreenSchemeResource(transport, baseUrl);
+    this.permissionSchemes = new PermissionSchemeResource(transport, baseUrl);
   }
 }

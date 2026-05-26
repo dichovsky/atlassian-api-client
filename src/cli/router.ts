@@ -233,6 +233,11 @@ const GLOBAL_OPTIONS = {
   'working-days-per-week': { type: 'string' as const },
   'time-format': { type: 'string' as const },
   'default-unit': { type: 'string' as const },
+  // permissionscheme options (B616-B624)
+  'holder-type': { type: 'string' as const },
+  'holder-parameter': { type: 'string' as const },
+  'holder-value': { type: 'string' as const },
+  permission: { type: 'string' as const },
   // filters options (B452-B466)
   'share-scope': { type: 'string' as const },
   'share-type': { type: 'string' as const },

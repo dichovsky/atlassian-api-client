@@ -665,6 +665,18 @@ const jiraIssueTypeScreenSchemesMock = {
   assignToProject: vi.fn(),
 };
 
+const jiraPermissionSchemesMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  listPermissions: vi.fn(),
+  createPermission: vi.fn(),
+  getPermission: vi.fn(),
+  deletePermission: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -720,6 +732,7 @@ vi.mock('../../src/jira/client.js', () => {
       component: jiraComponentMock,
       filters: jiraFiltersMock,
       issueTypeScreenSchemes: jiraIssueTypeScreenSchemesMock,
+      permissionSchemes: jiraPermissionSchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -13496,6 +13509,259 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('issue-type-screen-schemes', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown issue-type-screen-schemes action');
+    });
+  });
+
+  // ── permission-schemes ────────────────────────────────────────────────────
+
+  describe('permission-schemes resource', () => {
+    it('permission-schemes list calls list()', async () => {
+      jiraPermissionSchemesMock.list.mockResolvedValue({ permissionSchemes: [] });
+      const result = await executeJiraCommand(cmd('permission-schemes', 'list'), GLOBALS);
+      expect(jiraPermissionSchemesMock.list).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual({ permissionSchemes: [] });
+    });
+
+    it('permission-schemes list forwards expand', async () => {
+      jiraPermissionSchemesMock.list.mockResolvedValue({ permissionSchemes: [] });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'list', [], { expand: 'permissions' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.list).toHaveBeenCalledWith({ expand: 'permissions' });
+    });
+
+    it('permission-schemes get calls get(schemeId)', async () => {
+      const scheme = { id: 10000, name: 'Default' };
+      jiraPermissionSchemesMock.get.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(cmd('permission-schemes', 'get', ['10000']), GLOBALS);
+      expect(jiraPermissionSchemesMock.get).toHaveBeenCalledWith(10000, undefined);
+      expect(result).toEqual(scheme);
+    });
+
+    it('permission-schemes get throws when schemeId missing', async () => {
+      await expect(executeJiraCommand(cmd('permission-schemes', 'get'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: schemeId',
+      );
+    });
+
+    it('permission-schemes get forwards expand', async () => {
+      jiraPermissionSchemesMock.get.mockResolvedValue({ id: 10000, name: 'Default' });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'get', ['10000'], { expand: 'permissions' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.get).toHaveBeenCalledWith(10000, { expand: 'permissions' });
+    });
+
+    it('permission-schemes create calls create(data)', async () => {
+      const scheme = { id: 1, name: 'New' };
+      jiraPermissionSchemesMock.create.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'create', [], { name: 'New', description: 'desc' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.create).toHaveBeenCalledWith(
+        { name: 'New', description: 'desc' },
+        undefined,
+      );
+      expect(result).toEqual(scheme);
+    });
+
+    it('permission-schemes create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('permission-schemes', 'create'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('permission-schemes create forwards permissions JSON and expand', async () => {
+      jiraPermissionSchemesMock.create.mockResolvedValue({ id: 2, name: 'Full' });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'create', [], {
+          name: 'Full',
+          permissions: '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]',
+          expand: 'permissions',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.create).toHaveBeenCalledWith(
+        {
+          name: 'Full',
+          permissions: [{ holder: { type: 'anyone' }, permission: 'BROWSE_PROJECTS' }],
+        },
+        { expand: 'permissions' },
+      );
+    });
+
+    it('permission-schemes update calls update(schemeId, data)', async () => {
+      const scheme = { id: 10000, name: 'Updated' };
+      jiraPermissionSchemesMock.update.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'update', ['10000'], { name: 'Updated' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.update).toHaveBeenCalledWith(
+        10000,
+        { name: 'Updated' },
+        undefined,
+      );
+      expect(result).toEqual(scheme);
+    });
+
+    it('permission-schemes update forwards description', async () => {
+      jiraPermissionSchemesMock.update.mockResolvedValue({ id: 1, name: 'X' });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'update', ['1'], { description: 'new desc' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.update).toHaveBeenCalledWith(
+        1,
+        { description: 'new desc' },
+        undefined,
+      );
+    });
+
+    it('permission-schemes update forwards permissions JSON', async () => {
+      jiraPermissionSchemesMock.update.mockResolvedValue({ id: 1, name: 'X' });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'update', ['1'], {
+          permissions: '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]',
+          expand: 'permissions',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.update).toHaveBeenCalledWith(
+        1,
+        { permissions: [{ holder: { type: 'anyone' }, permission: 'BROWSE_PROJECTS' }] },
+        { expand: 'permissions' },
+      );
+    });
+
+    it('permission-schemes update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('permission-schemes', 'update', ['10000']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of: --name, --description, --permissions');
+    });
+
+    it('permission-schemes delete calls delete(schemeId)', async () => {
+      jiraPermissionSchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'delete', ['10000']),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.delete).toHaveBeenCalledWith(10000);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('permission-schemes list-permissions calls listPermissions(schemeId)', async () => {
+      const grants = { permissions: [] };
+      jiraPermissionSchemesMock.listPermissions.mockResolvedValue(grants);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'list-permissions', ['10000']),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.listPermissions).toHaveBeenCalledWith(10000, undefined);
+      expect(result).toEqual(grants);
+    });
+
+    it('permission-schemes list-permissions forwards expand', async () => {
+      jiraPermissionSchemesMock.listPermissions.mockResolvedValue({ permissions: [] });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'list-permissions', ['10000'], { expand: 'all' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.listPermissions).toHaveBeenCalledWith(10000, {
+        expand: 'all',
+      });
+    });
+
+    it('permission-schemes create-permission calls createPermission', async () => {
+      const grant = { id: 1, permission: 'BROWSE_PROJECTS' };
+      jiraPermissionSchemesMock.createPermission.mockResolvedValue(grant);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'create-permission', ['10000'], {
+          'holder-type': 'anyone',
+          permission: 'BROWSE_PROJECTS',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.createPermission).toHaveBeenCalledWith(
+        10000,
+        { holder: { type: 'anyone' }, permission: 'BROWSE_PROJECTS' },
+        undefined,
+      );
+      expect(result).toEqual(grant);
+    });
+
+    it('permission-schemes create-permission forwards holder-parameter and holder-value', async () => {
+      jiraPermissionSchemesMock.createPermission.mockResolvedValue({ id: 2 });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'create-permission', ['10000'], {
+          'holder-type': 'group',
+          'holder-parameter': 'dev-team',
+          'holder-value': 'gid-1',
+          expand: 'all',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.createPermission).toHaveBeenCalledWith(
+        10000,
+        { holder: { type: 'group', parameter: 'dev-team', value: 'gid-1' } },
+        { expand: 'all' },
+      );
+    });
+
+    it('permission-schemes create-permission without holder-type sends no holder', async () => {
+      jiraPermissionSchemesMock.createPermission.mockResolvedValue({ id: 3 });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'create-permission', ['10000'], {
+          permission: 'BROWSE_PROJECTS',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.createPermission).toHaveBeenCalledWith(
+        10000,
+        { permission: 'BROWSE_PROJECTS' },
+        undefined,
+      );
+    });
+
+    it('permission-schemes get-permission calls getPermission', async () => {
+      const grant = { id: 10, permission: 'BROWSE_PROJECTS' };
+      jiraPermissionSchemesMock.getPermission.mockResolvedValue(grant);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'get-permission', ['10000', '10']),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.getPermission).toHaveBeenCalledWith(10000, 10, undefined);
+      expect(result).toEqual(grant);
+    });
+
+    it('permission-schemes get-permission forwards expand', async () => {
+      jiraPermissionSchemesMock.getPermission.mockResolvedValue({ id: 10 });
+      await executeJiraCommand(
+        cmd('permission-schemes', 'get-permission', ['10000', '10'], { expand: 'field' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.getPermission).toHaveBeenCalledWith(10000, 10, {
+        expand: 'field',
+      });
+    });
+
+    it('permission-schemes delete-permission calls deletePermission', async () => {
+      jiraPermissionSchemesMock.deletePermission.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('permission-schemes', 'delete-permission', ['10000', '10']),
+        GLOBALS,
+      );
+      expect(jiraPermissionSchemesMock.deletePermission).toHaveBeenCalledWith(10000, 10);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('permission-schemes unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('permission-schemes', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown permission-schemes action',
+      );
     });
   });
 });

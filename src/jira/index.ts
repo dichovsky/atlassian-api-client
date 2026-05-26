@@ -353,3 +353,15 @@ export type {
   AssignIssueTypeScreenSchemeToProjectData,
 } from './resources/issuetypescreenscheme.js';
 export { IssueTypeScreenSchemeResource } from './resources/issuetypescreenscheme.js';
+export type {
+  PermissionScheme,
+  PermissionGrant,
+  PermissionHolder,
+  ListPermissionSchemesResponse,
+  ListPermissionGrantsResponse,
+  PermissionSchemeExpandParams,
+  CreatePermissionSchemeData,
+  UpdatePermissionSchemeData,
+  CreatePermissionGrantData,
+} from './resources/permissionscheme.js';
+export { PermissionSchemeResource } from './resources/permissionscheme.js';

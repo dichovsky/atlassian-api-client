@@ -115,6 +115,8 @@ export async function executeJiraCommand(
       return executeFilters(client, cmd);
     case 'issue-type-screen-schemes':
       return executeIssueTypeScreenSchemes(client, cmd);
+    case 'permission-schemes':
+      return executePermissionSchemes(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2546,6 +2548,167 @@ async function executeIssueTypeScreenSchemes(
     default:
       throw new Error(
         `Unknown issue-type-screen-schemes action: ${cmd.action}. Actions: ${ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── permission-schemes (B616-B624) ───────────────────────────────────────────
+
+const PERMISSION_SCHEMES_ACTIONS = [
+  'list',
+  'get',
+  'create',
+  'update',
+  'delete',
+  'list-permissions',
+  'create-permission',
+  'get-permission',
+  'delete-permission',
+] as const;
+
+async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.list(expand !== undefined ? { expand } : undefined);
+    }
+    case 'get': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.get(schemeId, expand !== undefined ? { expand } : undefined);
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const permissionsRaw = asString(opts['permissions']);
+      const permissions =
+        permissionsRaw !== undefined
+          ? (parseJsonArrayFlag(permissionsRaw, '--permissions') as {
+              holder?: { type: string; parameter?: string };
+              permission?: string;
+            }[])
+          : undefined;
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.create(
+        {
+          name,
+          ...(description !== undefined && { description }),
+          ...(permissions !== undefined && { permissions }),
+        },
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'update': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const permissionsRaw = asString(opts['permissions']);
+      const permissions =
+        permissionsRaw !== undefined
+          ? (parseJsonArrayFlag(permissionsRaw, '--permissions') as {
+              holder?: { type: string; parameter?: string };
+              permission?: string;
+            }[])
+          : undefined;
+      if (name === undefined && description === undefined && permissions === undefined) {
+        throw new Error('update requires at least one of: --name, --description, --permissions');
+      }
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.update(
+        schemeId,
+        {
+          ...(name !== undefined && { name }),
+          ...(description !== undefined && { description }),
+          ...(permissions !== undefined && { permissions }),
+        },
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'delete': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      await client.permissionSchemes.delete(schemeId);
+      return { deleted: true };
+    }
+    case 'list-permissions': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.listPermissions(
+        schemeId,
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'create-permission': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const holderType = asString(opts['holder-type']);
+      const holderParameter = asString(opts['holder-parameter']);
+      const holderValue = asString(opts['holder-value']);
+      const permission = asString(opts['permission']);
+      const expand = asString(opts['expand']);
+      const holder =
+        holderType !== undefined
+          ? {
+              type: holderType,
+              ...(holderParameter !== undefined && { parameter: holderParameter }),
+              ...(holderValue !== undefined && { value: holderValue }),
+            }
+          : undefined;
+      return client.permissionSchemes.createPermission(
+        schemeId,
+        {
+          ...(holder !== undefined && { holder }),
+          ...(permission !== undefined && { permission }),
+        },
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'get-permission': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const permissionId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'permissionId'),
+        'permissionId',
+      );
+      const expand = asString(opts['expand']);
+      return client.permissionSchemes.getPermission(
+        schemeId,
+        permissionId,
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'delete-permission': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const permissionId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'permissionId'),
+        'permissionId',
+      );
+      await client.permissionSchemes.deletePermission(schemeId, permissionId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown permission-schemes action: ${cmd.action}. Actions: ${PERMISSION_SCHEMES_ACTIONS.join(', ')}`,
       );
   }
 }
