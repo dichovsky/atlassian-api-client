@@ -11,11 +11,13 @@ source: atlassian-api-client npm package
 # atlas CLI router (Confluence v2 + Jira v3)
 
 ## Core objective
+
 - Produce correct `atlas` commands for Atlassian Cloud.
 - Minimize prompt+response tokens.
 - Preserve execution safety and reliability.
 
 ## Routing
+
 - If auth or host-validation is relevant: read `reference/auth-and-safety.md`.
 - If shaping payloads/results is relevant: read `reference/payload-rules.md`.
 - If user asks for command syntax/examples: read `reference/examples.md`.
@@ -23,6 +25,7 @@ source: atlassian-api-client npm package
 - If Jira action/flag mapping is needed: read `reference/jira.md`.
 
 ## Always-on rules
+
 - Use env-var auth only (`ATLASSIAN_BASE_URL`, `ATLASSIAN_API_TOKEN`, and `ATLASSIAN_EMAIL` for basic auth).
 - Never place secrets in CLI flags.
 - Ask user for missing auth env; do not guess.
@@ -31,6 +34,7 @@ source: atlassian-api-client npm package
 - Use SDK, not CLI, for unsupported complex updates.
 
 ## Command shape (compact schema)
+
 ```yaml
 command: atlas <api> <resource> <action> [id] [--flags]
 api: [confluence, jira]
@@ -39,6 +43,7 @@ help: atlas --help | atlas <api> --help
 ```
 
 ## Canonical quick checks
+
 ```sh
 atlas confluence pages list --space-id 123456 --limit 25 --format minimal
 atlas confluence pages get 789012
