@@ -1227,3 +1227,37 @@
 - [x] 🟡 🖥️ API: B466 Jira: add CLI + skill for GET /rest/api/3/filter/search
   - **Impl:** Existing `FiltersResource.list(params)` exposed as `atlas jira filters search` with `--start-at`, `--max-results`, `--expand`, `--ids` (CSV of numeric IDs), `--order-by`. First time `filters` is wired into the CLI dispatcher — also unlocks the previously-implemented `get`/`create`/`update`/`delete` resource methods.
   - **Rat:** Primary discovery endpoint for saved filters; the resource implementation already existed.
+
+- [x] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
+  - **Impl:** New `IssueTypeScreenSchemeResource` (`src/jira/resources/issuetypescreenscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<IssueTypeScreenScheme>`; `listAll()` async generator via `paginateOffset`. CLI `atlas jira issue-type-screen-schemes list [--ids] [--query] [--start-at] [--max-results]`.
+  - **Rat:** Primary listing surface for issue type screen schemes; supports filtering by ID or name substring.
+- [x] 🔴 🧩 API: B577 Jira: expose POST /rest/api/3/issuetypescreenscheme
+  - **Impl:** `IssueTypeScreenSchemeResource.create(data)` returns `{ id }`. CLI `atlas jira issue-type-screen-schemes create --name <name> --mappings <JSON array>`.
+  - **Rat:** Create a new issue type screen scheme with initial issue-type-to-screen-scheme mappings.
+- [x] 🔴 🧩 API: B578 Jira: expose DELETE /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
+  - **Impl:** `IssueTypeScreenSchemeResource.delete(schemeId)` returns `void`. CLI `atlas jira issue-type-screen-schemes delete <issueTypeScreenSchemeId>`.
+  - **Rat:** Remove a scheme no longer associated with any project.
+- [x] 🔴 🧩 API: B579 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
+  - **Impl:** `IssueTypeScreenSchemeResource.update(schemeId, data)` returns `void` (204). CLI `atlas jira issue-type-screen-schemes update <id> [--name] [--description]`.
+  - **Rat:** Rename or redescribe a scheme without touching its mappings.
+- [x] 🔴 🧩 API: B580 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping
+  - **Impl:** `IssueTypeScreenSchemeResource.updateMapping(schemeId, data)` returns `void`. CLI `atlas jira issue-type-screen-schemes update-mapping <id> --mappings <JSON array>`.
+  - **Rat:** Append or replace issue-type-to-screen-scheme mappings within a scheme.
+- [x] 🔴 🧩 API: B581 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/default
+  - **Impl:** `IssueTypeScreenSchemeResource.updateDefaultMapping(schemeId, data)` returns `void`. CLI `atlas jira issue-type-screen-schemes update-default-mapping <id> --screen-scheme-id <id>`.
+  - **Rat:** Change the fallback screen scheme used when no specific issue type mapping matches.
+- [x] 🔴 🧩 API: B582 Jira: expose POST /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/remove
+  - **Impl:** `IssueTypeScreenSchemeResource.removeMappings(schemeId, data)` returns `void`. CLI `atlas jira issue-type-screen-schemes remove-mappings <id> --issue-type-ids <csv>`.
+  - **Rat:** Surgically remove specific issue type mappings without affecting the rest.
+- [x] 🔴 🧩 API: B583 Jira: expose GET /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/project
+  - **Impl:** `IssueTypeScreenSchemeResource.listProject(schemeId, params?)` returns paginated projects; `listProjectAll()` async generator. CLI `atlas jira issue-type-screen-schemes get-project <id> [--start-at] [--max-results]`.
+  - **Rat:** Enumerate projects that use a given scheme, enabling impact analysis before scheme changes.
+- [x] 🔴 🧩 API: B584 Jira: expose GET /rest/api/3/issuetypescreenscheme/mapping
+  - **Impl:** `IssueTypeScreenSchemeResource.listMapping(params?)` returns paginated `IssueTypeScreenSchemeMappingDetails`; `listMappingAll()` async generator. CLI `atlas jira issue-type-screen-schemes list-mapping [--scheme-ids <csv>]`.
+  - **Rat:** Cross-scheme mapping enumeration; filter by scheme IDs to check which screen scheme handles each issue type.
+- [x] 🔴 🧩 API: B585 Jira: expose GET /rest/api/3/issuetypescreenscheme/project
+  - **Impl:** `IssueTypeScreenSchemeResource.listProjectMappings(params)` returns paginated `ProjectIssueTypeScreenSchemeMapping`; `listProjectMappingsAll()` async generator. CLI `atlas jira issue-type-screen-schemes list-project-mappings --project-ids <csv>`. `--project-ids` required.
+  - **Rat:** Reverse lookup — given a set of projects, return which issue type screen scheme each uses.
+- [x] 🔴 🧩 API: B586 Jira: expose PUT /rest/api/3/issuetypescreenscheme/project
+  - **Impl:** `IssueTypeScreenSchemeResource.assignToProject(data)` returns `void`. CLI `atlas jira issue-type-screen-schemes assign-to-project --scheme-id <id> --project-id <id>`.
+  - **Rat:** Assign or reassign a project's issue type screen scheme without navigating the admin UI.

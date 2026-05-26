@@ -127,6 +127,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'issue-attachments': 'executeIssueAttachments',
   component: 'executeComponent',
   filters: 'executeFilters',
+  'issue-type-screen-schemes': 'executeIssueTypeScreenSchemes',
 };
 
 /**

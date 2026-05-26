@@ -241,6 +241,13 @@ const GLOBAL_OPTIONS = {
   favourite: { type: 'boolean' as const },
   'edit-permissions': { type: 'string' as const },
   'share-permissions': { type: 'string' as const },
+  // issue-type-screen-schemes options (B576-B586)
+  mappings: { type: 'string' as const },
+  'scheme-id': { type: 'string' as const },
+  'screen-scheme-id': { type: 'string' as const },
+  'scheme-ids': { type: 'string' as const },
+  'issue-type-ids': { type: 'string' as const },
+  'project-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

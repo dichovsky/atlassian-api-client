@@ -1650,6 +1650,67 @@ atlas jira filters get-default-share-scope
 atlas jira filters set-default-share-scope --share-scope PRIVATE
 ```
 
+## `issue-type-screen-schemes`
+
+Issue Type Screen Schemes control which screens are shown for each issue type
+within a project. They map issue type IDs to screen scheme IDs and can be
+assigned to projects.
+
+**Actions:** `list`, `create`, `update`, `delete`, `update-mapping`,
+`update-default-mapping`, `remove-mappings`, `get-project`, `list-mapping`,
+`list-project-mappings`, `assign-to-project`
+
+| Action                   | Positional arg            | Key flags                                                      | Returns                    |
+| ------------------------ | ------------------------- | -------------------------------------------------------------- | -------------------------- |
+| `list`                   | —                         | `--ids`, `--query`, `--start-at`, `--max-results`              | paginated schemes          |
+| `create`                 | —                         | `--name` (req), `--mappings` (req JSON array), `--description` | `{ id }`                   |
+| `update`                 | `issueTypeScreenSchemeId` | `--name`, `--description`                                      | `{ updated: true }`        |
+| `delete`                 | `issueTypeScreenSchemeId` | —                                                              | `{ deleted: true }`        |
+| `update-mapping`         | `issueTypeScreenSchemeId` | `--mappings` (req JSON array)                                  | `{ updated: true }`        |
+| `update-default-mapping` | `issueTypeScreenSchemeId` | `--screen-scheme-id` (req)                                     | `{ updated: true }`        |
+| `remove-mappings`        | `issueTypeScreenSchemeId` | `--issue-type-ids` (req, CSV)                                  | `{ removed: true }`        |
+| `get-project`            | `issueTypeScreenSchemeId` | `--start-at`, `--max-results`                                  | paginated projects         |
+| `list-mapping`           | —                         | `--scheme-ids` (CSV), `--start-at`, `--max-results`            | paginated mappings         |
+| `list-project-mappings`  | —                         | `--project-ids` (req, CSV), `--start-at`, `--max-results`      | paginated project mappings |
+| `assign-to-project`      | —                         | `--scheme-id` (req), `--project-id` (req)                      | `{ assigned: true }`       |
+
+The `--mappings` flag accepts a JSON array of `{ issueTypeId, screenSchemeId }` objects.
+
+```sh
+# List all schemes
+atlas jira issue-type-screen-schemes list --max-results 50
+
+# Create a scheme
+atlas jira issue-type-screen-schemes create --name "Default" --mappings '[{"issueTypeId":"10000","screenSchemeId":"10001"}]'
+
+# Update scheme name
+atlas jira issue-type-screen-schemes update 10001 --name "Renamed"
+
+# Delete a scheme
+atlas jira issue-type-screen-schemes delete 10001
+
+# Update mappings (append/replace)
+atlas jira issue-type-screen-schemes update-mapping 10001 --mappings '[{"issueTypeId":"10000","screenSchemeId":"10002"}]'
+
+# Update the default mapping
+atlas jira issue-type-screen-schemes update-default-mapping 10001 --screen-scheme-id 10002
+
+# Remove specific issue type mappings
+atlas jira issue-type-screen-schemes remove-mappings 10001 --issue-type-ids 10000,10001
+
+# Get projects using a scheme
+atlas jira issue-type-screen-schemes get-project 10001 --max-results 25
+
+# List all issue-type-to-screen-scheme mappings
+atlas jira issue-type-screen-schemes list-mapping --scheme-ids 10001,10002
+
+# List project-to-scheme mappings
+atlas jira issue-type-screen-schemes list-project-mappings --project-ids 10001,10002
+
+# Assign a scheme to a project
+atlas jira issue-type-screen-schemes assign-to-project --scheme-id 10001 --project-id 10002
+```
+
 ## Errors specific to Jira
 
 - **401 with a known-good token** usually means the token is API-token (basic auth) but `ATLASSIAN_AUTH_TYPE=bearer` is set, or vice versa.

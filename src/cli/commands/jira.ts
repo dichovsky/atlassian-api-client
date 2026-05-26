@@ -113,6 +113,8 @@ export async function executeJiraCommand(
       return executeComponent(client, cmd);
     case 'filters':
       return executeFilters(client, cmd);
+    case 'issue-type-screen-schemes':
+      return executeIssueTypeScreenSchemes(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2403,6 +2405,147 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
     default:
       throw new Error(
         `Unknown filters action: ${cmd.action}. Actions: ${FILTERS_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── issue-type-screen-schemes (B576-B586) ─────────────────────────────────────
+
+const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [
+  'list',
+  'create',
+  'update',
+  'delete',
+  'update-mapping',
+  'update-default-mapping',
+  'remove-mappings',
+  'get-project',
+  'list-mapping',
+  'list-project-mappings',
+  'assign-to-project',
+];
+
+async function executeIssueTypeScreenSchemes(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const idsRaw = parseCsv(opts['ids']);
+      const ids =
+        idsRaw !== undefined ? idsRaw.map((s) => parsePositiveIntArg(s, '--ids')) : undefined;
+      return client.issueTypeScreenSchemes.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        id: ids,
+        queryString: asString(opts['query']),
+        orderBy: asString(opts['order-by']),
+        expand: asString(opts['expand']),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const mappingsRaw = requireOpt(opts['mappings'], '--mappings');
+      const issueTypeMappings = parseJsonArrayFlag(mappingsRaw, '--mappings') as {
+        issueTypeId: string;
+        screenSchemeId: string;
+      }[];
+      return client.issueTypeScreenSchemes.create({
+        name,
+        ...(description !== undefined && { description }),
+        issueTypeMappings,
+      });
+    }
+    case 'update': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      await client.issueTypeScreenSchemes.update(schemeId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      await client.issueTypeScreenSchemes.delete(schemeId);
+      return { deleted: true };
+    }
+    case 'update-mapping': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      const mappingsRaw = requireOpt(opts['mappings'], '--mappings');
+      const issueTypeMappings = parseJsonArrayFlag(mappingsRaw, '--mappings') as {
+        issueTypeId: string;
+        screenSchemeId: string;
+      }[];
+      await client.issueTypeScreenSchemes.updateMapping(schemeId, { issueTypeMappings });
+      return { updated: true };
+    }
+    case 'update-default-mapping': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      const screenSchemeId = requireOpt(opts['screen-scheme-id'], '--screen-scheme-id');
+      await client.issueTypeScreenSchemes.updateDefaultMapping(schemeId, { screenSchemeId });
+      return { updated: true };
+    }
+    case 'remove-mappings': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      const issueTypeIdsRaw = parseCsv(opts['issue-type-ids']);
+      if (issueTypeIdsRaw === undefined || issueTypeIdsRaw.length === 0) {
+        throw new Error('remove-mappings requires --issue-type-ids');
+      }
+      await client.issueTypeScreenSchemes.removeMappings(schemeId, {
+        issueTypeIds: issueTypeIdsRaw,
+      });
+      return { removed: true };
+    }
+    case 'get-project': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeScreenSchemeId');
+      return client.issueTypeScreenSchemes.listProject(schemeId, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'list-mapping': {
+      const schemeIdsRaw = parseCsv(opts['scheme-ids']);
+      const issueTypeScreenSchemeId =
+        schemeIdsRaw !== undefined
+          ? schemeIdsRaw.map((s) => parsePositiveIntArg(s, '--scheme-ids'))
+          : undefined;
+      return client.issueTypeScreenSchemes.listMapping({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        issueTypeScreenSchemeId,
+      });
+    }
+    case 'list-project-mappings': {
+      const projectIdsRaw = parseCsv(opts['project-ids']);
+      if (projectIdsRaw === undefined || projectIdsRaw.length === 0) {
+        throw new Error('list-project-mappings requires --project-ids');
+      }
+      return client.issueTypeScreenSchemes.listProjectMappings({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        projectId: projectIdsRaw,
+      });
+    }
+    case 'assign-to-project': {
+      const issueTypeScreenSchemeId = requireOpt(opts['scheme-id'], '--scheme-id');
+      const projectId = requireOpt(opts['project-id'], '--project-id');
+      await client.issueTypeScreenSchemes.assignToProject({
+        issueTypeScreenSchemeId,
+        projectId,
+      });
+      return { assigned: true };
+    }
+    default:
+      throw new Error(
+        `Unknown issue-type-screen-schemes action: ${cmd.action}. Actions: ${ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS.join(', ')}`,
       );
   }
 }

@@ -334,3 +334,22 @@ export type {
   UpdateTimeTrackingConfigurationData,
 } from './resources/configuration.js';
 export { ConfigurationResource } from './resources/configuration.js';
+export type {
+  IssueTypeScreenScheme,
+  IssueTypeScreenSchemeMapping,
+  IssueTypeScreenSchemeDefaultMapping,
+  IssueTypeScreenSchemeMappingDetails,
+  ProjectDetails,
+  IssueTypeScreenSchemesProjects,
+  ListIssueTypeScreenSchemesParams,
+  CreateIssueTypeScreenSchemeData,
+  UpdateIssueTypeScreenSchemeData,
+  UpdateIssueTypeScreenSchemeMappingData,
+  UpdateIssueTypeScreenSchemeDefaultMappingData,
+  RemoveIssueTypeScreenSchemeMappingData,
+  ListIssueTypeScreenSchemeProjectsParams,
+  ListIssueTypeScreenSchemeMappingParams,
+  ListIssueTypeScreenSchemeProjectMappingsParams,
+  AssignIssueTypeScreenSchemeToProjectData,
+} from './resources/issuetypescreenscheme.js';
+export { IssueTypeScreenSchemeResource } from './resources/issuetypescreenscheme.js';

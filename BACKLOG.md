@@ -629,37 +629,37 @@
 - [ ] 🔴 🧩 API: B575 Jira: expose PUT /rest/api/3/issuetypescheme/project
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
+- [x] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B577 Jira: expose POST /rest/api/3/issuetypescreenscheme
+- [x] 🔴 🧩 API: B577 Jira: expose POST /rest/api/3/issuetypescreenscheme
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B578 Jira: expose DELETE /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
+- [x] 🔴 🧩 API: B578 Jira: expose DELETE /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B579 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
+- [x] 🔴 🧩 API: B579 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B580 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping
+- [x] 🔴 🧩 API: B580 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B581 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/default
+- [x] 🔴 🧩 API: B581 Jira: expose PUT /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/default
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B582 Jira: expose POST /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/remove
+- [x] 🔴 🧩 API: B582 Jira: expose POST /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/mapping/remove
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B583 Jira: expose GET /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/project
+- [x] 🔴 🧩 API: B583 Jira: expose GET /rest/api/3/issuetypescreenscheme/{issueTypeScreenSchemeId}/project
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B584 Jira: expose GET /rest/api/3/issuetypescreenscheme/mapping
+- [x] 🔴 🧩 API: B584 Jira: expose GET /rest/api/3/issuetypescreenscheme/mapping
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B585 Jira: expose GET /rest/api/3/issuetypescreenscheme/project
+- [x] 🔴 🧩 API: B585 Jira: expose GET /rest/api/3/issuetypescreenscheme/project
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B586 Jira: expose PUT /rest/api/3/issuetypescreenscheme/project
+- [x] 🔴 🧩 API: B586 Jira: expose PUT /rest/api/3/issuetypescreenscheme/project
   - files: `src/jira/resources/issuetypescreenscheme.ts`, `test/jira/issuetypescreenscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🟡 🖥️ API: B587 Jira: add CLI + skill for GET /rest/api/3/jql/autocompletedata

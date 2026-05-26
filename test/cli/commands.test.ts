@@ -647,6 +647,24 @@ const jiraFiltersMock = {
   setDefaultShareScope: vi.fn(),
 };
 
+const jiraIssueTypeScreenSchemesMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  updateMapping: vi.fn(),
+  updateDefaultMapping: vi.fn(),
+  removeMappings: vi.fn(),
+  listProject: vi.fn(),
+  listProjectAll: vi.fn(),
+  listMapping: vi.fn(),
+  listMappingAll: vi.fn(),
+  listProjectMappings: vi.fn(),
+  listProjectMappingsAll: vi.fn(),
+  assignToProject: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -701,6 +719,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueAttachments: jiraIssueAttachmentsMock,
       component: jiraComponentMock,
       filters: jiraFiltersMock,
+      issueTypeScreenSchemes: jiraIssueTypeScreenSchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -13158,6 +13177,325 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('filters', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown filters action',
       );
+    });
+  });
+
+  // ── issue-type-screen-schemes ─────────────────────────────────────────────
+
+  describe('issue-type-screen-schemes resource', () => {
+    const PAGE = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+
+    it('list calls client.issueTypeScreenSchemes.list() with no params', async () => {
+      jiraIssueTypeScreenSchemesMock.list.mockResolvedValue(PAGE);
+      const result = await executeJiraCommand(cmd('issue-type-screen-schemes', 'list'), GLOBALS);
+      expect(jiraIssueTypeScreenSchemesMock.list).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+        id: undefined,
+        queryString: undefined,
+        orderBy: undefined,
+        expand: undefined,
+      });
+      expect(result).toEqual(PAGE);
+    });
+
+    it('list forwards ids, queryString, start-at, max-results', async () => {
+      jiraIssueTypeScreenSchemesMock.list.mockResolvedValue(PAGE);
+      await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'list', [], {
+          ids: '1,2',
+          query: 'Default',
+          'start-at': '0',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.list).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 25,
+        id: [1, 2],
+        queryString: 'Default',
+        orderBy: undefined,
+        expand: undefined,
+      });
+    });
+
+    it('list forwards order-by and expand flags', async () => {
+      jiraIssueTypeScreenSchemesMock.list.mockResolvedValue(PAGE);
+      await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'list', [], {
+          'order-by': 'name',
+          expand: 'projects',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: 'name',
+          expand: 'projects',
+        }),
+      );
+    });
+
+    it('create calls client.issueTypeScreenSchemes.create() with required fields', async () => {
+      jiraIssueTypeScreenSchemesMock.create.mockResolvedValue({ id: '10001' });
+      const mappings = JSON.stringify([{ issueTypeId: '10000', screenSchemeId: '10001' }]);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'create', [], { name: 'My Scheme', mappings }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.create).toHaveBeenCalledWith({
+        name: 'My Scheme',
+        issueTypeMappings: [{ issueTypeId: '10000', screenSchemeId: '10001' }],
+      });
+      expect(result).toEqual({ id: '10001' });
+    });
+
+    it('create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-screen-schemes', 'create', [], {
+            mappings: '[]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('create throws when --mappings missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'create', [], { name: 'X' }), GLOBALS),
+      ).rejects.toThrow('Missing required option: --mappings');
+    });
+
+    it('create includes --description when provided', async () => {
+      jiraIssueTypeScreenSchemesMock.create.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'create', [], {
+          name: 'My Scheme',
+          description: 'A desc',
+          mappings: '[]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.create).toHaveBeenCalledWith({
+        name: 'My Scheme',
+        description: 'A desc',
+        issueTypeMappings: [],
+      });
+    });
+
+    it('update calls client.issueTypeScreenSchemes.update() and returns { updated: true }', async () => {
+      jiraIssueTypeScreenSchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'update', ['10001'], { name: 'New Name' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.update).toHaveBeenCalledWith('10001', {
+        name: 'New Name',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update with --description only', async () => {
+      jiraIssueTypeScreenSchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'update', ['10001'], { description: 'New desc' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.update).toHaveBeenCalledWith('10001', {
+        description: 'New desc',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('update throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'update', [], { name: 'X' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument');
+    });
+
+    it('delete calls client.issueTypeScreenSchemes.delete() and returns { deleted: true }', async () => {
+      jiraIssueTypeScreenSchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'delete', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'delete', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument');
+    });
+
+    it('update-mapping calls client.issueTypeScreenSchemes.updateMapping()', async () => {
+      jiraIssueTypeScreenSchemesMock.updateMapping.mockResolvedValue(undefined);
+      const mappings = JSON.stringify([{ issueTypeId: '10000', screenSchemeId: '10002' }]);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'update-mapping', ['10001'], { mappings }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.updateMapping).toHaveBeenCalledWith('10001', {
+        issueTypeMappings: [{ issueTypeId: '10000', screenSchemeId: '10002' }],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update-default-mapping calls client.issueTypeScreenSchemes.updateDefaultMapping()', async () => {
+      jiraIssueTypeScreenSchemesMock.updateDefaultMapping.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'update-default-mapping', ['10001'], {
+          'screen-scheme-id': '10002',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.updateDefaultMapping).toHaveBeenCalledWith('10001', {
+        screenSchemeId: '10002',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update-default-mapping throws when --screen-scheme-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-screen-schemes', 'update-default-mapping', ['10001']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --screen-scheme-id');
+    });
+
+    it('remove-mappings calls client.issueTypeScreenSchemes.removeMappings()', async () => {
+      jiraIssueTypeScreenSchemesMock.removeMappings.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'remove-mappings', ['10001'], {
+          'issue-type-ids': '10000,10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.removeMappings).toHaveBeenCalledWith('10001', {
+        issueTypeIds: ['10000', '10001'],
+      });
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('remove-mappings throws when --issue-type-ids missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'remove-mappings', ['10001']), GLOBALS),
+      ).rejects.toThrow('remove-mappings requires --issue-type-ids');
+    });
+
+    it('get-project calls client.issueTypeScreenSchemes.listProject()', async () => {
+      jiraIssueTypeScreenSchemesMock.listProject.mockResolvedValue(PAGE);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'get-project', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.listProject).toHaveBeenCalledWith('10001', {
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(PAGE);
+    });
+
+    it('get-project throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'get-project', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument');
+    });
+
+    it('list-mapping calls client.issueTypeScreenSchemes.listMapping()', async () => {
+      jiraIssueTypeScreenSchemesMock.listMapping.mockResolvedValue(PAGE);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'list-mapping', [], { 'scheme-ids': '1,2' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.listMapping).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+        issueTypeScreenSchemeId: [1, 2],
+      });
+      expect(result).toEqual(PAGE);
+    });
+
+    it('list-mapping with no params passes undefined issueTypeScreenSchemeId', async () => {
+      jiraIssueTypeScreenSchemesMock.listMapping.mockResolvedValue(PAGE);
+      await executeJiraCommand(cmd('issue-type-screen-schemes', 'list-mapping'), GLOBALS);
+      expect(jiraIssueTypeScreenSchemesMock.listMapping).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+        issueTypeScreenSchemeId: undefined,
+      });
+    });
+
+    it('list-project-mappings calls client.issueTypeScreenSchemes.listProjectMappings()', async () => {
+      jiraIssueTypeScreenSchemesMock.listProjectMappings.mockResolvedValue(PAGE);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'list-project-mappings', [], {
+          'project-ids': '10001,10002',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.listProjectMappings).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+        projectId: ['10001', '10002'],
+      });
+      expect(result).toEqual(PAGE);
+    });
+
+    it('list-project-mappings throws when --project-ids missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'list-project-mappings'), GLOBALS),
+      ).rejects.toThrow('list-project-mappings requires --project-ids');
+    });
+
+    it('assign-to-project calls client.issueTypeScreenSchemes.assignToProject()', async () => {
+      jiraIssueTypeScreenSchemesMock.assignToProject.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'assign-to-project', [], {
+          'scheme-id': '10001',
+          'project-id': '10002',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.assignToProject).toHaveBeenCalledWith({
+        issueTypeScreenSchemeId: '10001',
+        projectId: '10002',
+      });
+      expect(result).toEqual({ assigned: true });
+    });
+
+    it('assign-to-project throws when --scheme-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-screen-schemes', 'assign-to-project', [], { 'project-id': '10002' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --scheme-id');
+    });
+
+    it('assign-to-project throws when --project-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-screen-schemes', 'assign-to-project', [], { 'scheme-id': '10001' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --project-id');
+    });
+
+    it('unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-screen-schemes', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown issue-type-screen-schemes action');
     });
   });
 });
