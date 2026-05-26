@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "43e56cac2e9671eb10e543844c470b47ac0e52d69fae888e2d6eb53b8f237d7d",
+  "sourceHash": "21447cc19f811e05c2c3928041633f0b494cf2a7ed9f070e17c493e05e8469c2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22677,7 +22677,7 @@
           "kind": "interface",
           "line": 17,
           "exported": true,
-          "signature": "export interface NotificationSchemeNotification { readonly id?: number; readonly notificationType: string; readonly para…",
+          "signature": "export interface NotificationSchemeNotification { readonly id?: string; readonly notificationType: string; readonly para…",
           "jsdoc": "A single notification target within a notification scheme event. `notificationType` is the recipient kind (e.g. `CurrentAssignee`, `Group`, `User`, `ProjectLead`, `EmailAddress`); `parameter` is the type-specific value (group name, accountId, email, etc.)."
         },
         {
@@ -22693,7 +22693,7 @@
           "kind": "interface",
           "line": 37,
           "exported": true,
-          "signature": "export interface NotificationScheme { readonly id?: number; readonly self?: string; readonly name: string; readonly desc…",
+          "signature": "export interface NotificationScheme { readonly id?: string; readonly self?: string; readonly name: string; readonly desc…",
           "jsdoc": "A Jira notification scheme."
         },
         {
@@ -23082,7 +23082,7 @@
         {
           "name": "PriorityWithSequence",
           "kind": "interface",
-          "line": 37,
+          "line": 36,
           "exported": true,
           "signature": "export interface PriorityWithSequence { readonly id: string; readonly name: string; readonly self?: string; readonly des…",
           "jsdoc": "A priority with sequence info, as returned inside priority-scheme pages."
@@ -23090,7 +23090,7 @@
         {
           "name": "PrioritySchemeProject",
           "kind": "interface",
-          "line": 54,
+          "line": 53,
           "exported": true,
           "signature": "export interface PrioritySchemeProject { readonly id: string; readonly key?: string; readonly name?: string; readonly se…",
           "jsdoc": "A project entry returned by `GET /rest/api/3/priorityscheme/{schemeId}/projects`."
@@ -23098,7 +23098,7 @@
         {
           "name": "IdListUpdate",
           "kind": "interface",
-          "line": 72,
+          "line": 71,
           "exported": true,
           "signature": "export interface IdListUpdate { readonly add?: { readonly ids: number[] }; readonly remove?: { readonly ids: number[] };…",
           "jsdoc": "`add` / `remove` lists used in the update body for `priorities` and `projects`."
@@ -23106,7 +23106,7 @@
         {
           "name": "PriorityMapping",
           "kind": "interface",
-          "line": 85,
+          "line": 84,
           "exported": true,
           "signature": "export interface PriorityMapping { readonly in?: Readonly<Record<string, number>>; readonly out?: Readonly<Record<string…",
           "jsdoc": "Mapping of issue priorities for changes in priority schemes. Keys are the old priority IDs and values are the new priority IDs."
@@ -23114,7 +23114,7 @@
         {
           "name": "ListPrioritySchemesParams",
           "kind": "interface",
-          "line": 91,
+          "line": 90,
           "exported": true,
           "signature": "export interface ListPrioritySchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly priorityI…",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme`."
@@ -23122,7 +23122,7 @@
         {
           "name": "CreatePrioritySchemeData",
           "kind": "interface",
-          "line": 108,
+          "line": 107,
           "exported": true,
           "signature": "export interface CreatePrioritySchemeData { readonly name: string; readonly defaultPriorityId: number; readonly priority…",
           "jsdoc": "Request body for `POST /rest/api/3/priorityscheme`."
@@ -23130,7 +23130,7 @@
         {
           "name": "UpdatePrioritySchemeData",
           "kind": "interface",
-          "line": 118,
+          "line": 117,
           "exported": true,
           "signature": "export interface UpdatePrioritySchemeData { readonly name?: string; readonly description?: string; readonly defaultPrior…",
           "jsdoc": "Request body for `PUT /rest/api/3/priorityscheme/{schemeId}`."
@@ -23138,7 +23138,7 @@
         {
           "name": "PrioritySchemeId",
           "kind": "interface",
-          "line": 128,
+          "line": 127,
           "exported": true,
           "signature": "export interface PrioritySchemeId { readonly id?: string; readonly task?: Task; }",
           "jsdoc": "Response envelope for `POST /rest/api/3/priorityscheme` (and the task field is also returned on `PUT`)."
@@ -23146,7 +23146,7 @@
         {
           "name": "UpdatePrioritySchemeResponse",
           "kind": "interface",
-          "line": 134,
+          "line": 133,
           "exported": true,
           "signature": "export interface UpdatePrioritySchemeResponse { readonly task?: Task; readonly priorityScheme?: PriorityScheme; }",
           "jsdoc": "Response envelope for `PUT /rest/api/3/priorityscheme/{schemeId}`."
@@ -23154,7 +23154,7 @@
         {
           "name": "ListPrioritySchemePrioritiesParams",
           "kind": "interface",
-          "line": 140,
+          "line": 139,
           "exported": true,
           "signature": "export interface ListPrioritySchemePrioritiesParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/{schemeId}/priorities`."
@@ -23162,7 +23162,7 @@
         {
           "name": "ListPrioritySchemeProjectsParams",
           "kind": "interface",
-          "line": 146,
+          "line": 145,
           "exported": true,
           "signature": "export interface ListPrioritySchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly pr…",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/{schemeId}/projects`."
@@ -23170,7 +23170,7 @@
         {
           "name": "SuggestedPriorityChanges",
           "kind": "interface",
-          "line": 154,
+          "line": 153,
           "exported": true,
           "signature": "export interface SuggestedPriorityChanges { readonly add?: number[]; readonly remove?: number[]; }",
           "jsdoc": "Add/remove lists for the suggested-mappings request."
@@ -23178,7 +23178,7 @@
         {
           "name": "SuggestedProjectChanges",
           "kind": "interface",
-          "line": 160,
+          "line": 159,
           "exported": true,
           "signature": "export interface SuggestedProjectChanges { readonly add?: number[]; }",
           "jsdoc": "Add-only list used inside the suggested-mappings request."
@@ -23186,7 +23186,7 @@
         {
           "name": "SuggestedMappingsData",
           "kind": "interface",
-          "line": 165,
+          "line": 164,
           "exported": true,
           "signature": "export interface SuggestedMappingsData { readonly schemeId?: number; readonly priorities?: SuggestedPriorityChanges; rea…",
           "jsdoc": "Request body for `POST /rest/api/3/priorityscheme/mappings`."
@@ -23194,7 +23194,7 @@
         {
           "name": "ListAvailablePrioritiesParams",
           "kind": "interface",
-          "line": 174,
+          "line": 173,
           "exported": true,
           "signature": "export interface ListAvailablePrioritiesParams { readonly schemeId: string; readonly query?: string; readonly exclude?: …",
           "jsdoc": "Query parameters for `GET /rest/api/3/priorityscheme/priorities/available`."
@@ -23202,7 +23202,7 @@
         {
           "name": "PrioritySchemeResource",
           "kind": "class",
-          "line": 196,
+          "line": 195,
           "exported": true,
           "signature": "export class PrioritySchemeResource",
           "jsdoc": "Jira Priority Schemes resource — B644-B651.",
@@ -23210,92 +23210,92 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 197
+              "line": 196
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 206
+              "line": 205
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 220
+              "line": 219
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 237
+              "line": 236
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 260
+              "line": 259
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 271
+              "line": 270
             },
             {
               "name": "listPriorities",
               "kind": "method",
-              "line": 294
+              "line": 293
             },
             {
               "name": "listPrioritiesAll",
               "kind": "method",
-              "line": 311
+              "line": 310
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 329
+              "line": 328
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 346
+              "line": 345
             },
             {
               "name": "suggestedMappings",
               "kind": "method",
-              "line": 368
+              "line": 367
             },
             {
               "name": "listAvailablePriorities",
               "kind": "method",
-              "line": 390
+              "line": 389
             },
             {
               "name": "listAvailablePrioritiesAll",
               "kind": "method",
-              "line": 407
+              "line": 406
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 427,
+          "line": 426,
           "signature": "function buildListQuery( params: ListPrioritySchemesParams | undefined, ): Record<string, string | number | boolean | un…"
         },
         {
           "name": "buildPaginationQuery",
           "kind": "function",
-          "line": 446,
+          "line": 445,
           "signature": "function buildPaginationQuery( params: ListPrioritySchemePrioritiesParams | undefined, ): Record<string, string | number…"
         },
         {
           "name": "buildProjectsQuery",
           "kind": "function",
-          "line": 455,
+          "line": 454,
           "signature": "function buildProjectsQuery( params: ListPrioritySchemeProjectsParams | undefined, ): Record<string, string | number | b…"
         },
         {
           "name": "buildAvailablePrioritiesQuery",
           "kind": "function",
-          "line": 468,
+          "line": 467,
           "signature": "function buildAvailablePrioritiesQuery( params: ListAvailablePrioritiesParams, ): Record<string, string | number | boole…"
         }
       ],

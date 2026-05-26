@@ -15,7 +15,7 @@ export interface NotificationEventRef {
  * value (group name, accountId, email, etc.).
  */
 export interface NotificationSchemeNotification {
-  readonly id?: number;
+  readonly id?: string;
   readonly notificationType: string;
   readonly parameter?: string;
   readonly emailAddress?: string;
@@ -35,7 +35,7 @@ export interface NotificationSchemeEvent {
 
 /** A Jira notification scheme. */
 export interface NotificationScheme {
-  readonly id?: number;
+  readonly id?: string;
   readonly self?: string;
   readonly name: string;
   readonly description?: string;
@@ -49,7 +49,7 @@ export interface NotificationScheme {
       readonly name?: string;
     };
   };
-  readonly projects?: number[];
+  readonly projects?: string[];
 }
 
 /** Query parameters for GET /rest/api/3/notificationscheme. */
