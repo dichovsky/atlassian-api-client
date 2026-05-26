@@ -179,6 +179,17 @@ const GLOBAL_OPTIONS = {
   'project-role': { type: 'string' as const },
   'show-avatar': { type: 'boolean' as const },
   'user-name': { type: 'string' as const },
+  // groups CRUD options (B468-B473, B923)
+  'group-name': { type: 'string' as const },
+  'group-id': { type: 'string' as const },
+  'group-names': { type: 'string' as const },
+  'group-ids': { type: 'string' as const },
+  'swap-group': { type: 'string' as const },
+  'swap-group-id': { type: 'string' as const },
+  'account-id': { type: 'string' as const },
+  'access-type': { type: 'string' as const },
+  'application-key': { type: 'string' as const },
+  'include-inactive-users': { type: 'boolean' as const },
   // settings/columns options (B772)
   columns: { type: 'string' as const },
   // exists-by-properties options (B963)
@@ -223,9 +234,6 @@ const GLOBAL_OPTIONS = {
   'time-format': { type: 'string' as const },
   'default-unit': { type: 'string' as const },
   // filters options (B452-B466)
-  'account-id': { type: 'string' as const },
-  'group-name': { type: 'string' as const },
-  'group-id': { type: 'string' as const },
   'share-scope': { type: 'string' as const },
   'share-type': { type: 'string' as const },
   'include-favourites': { type: 'boolean' as const },

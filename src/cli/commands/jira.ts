@@ -867,6 +867,15 @@ function asBoardType(
   throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
 }
 
+function asAccessType(
+  value: string | boolean | undefined,
+): 'site-admin' | 'admin' | 'user' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'site-admin' || s === 'admin' || s === 'user') return s;
+  throw new Error(`--access-type must be one of: site-admin, admin, user. Got: ${s}`);
+}
+
 function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
   const s = asString(value);
   if (!s) throw new Error('Missing required option: --type');
@@ -1090,6 +1099,8 @@ async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): 
 
 async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
+  const groupName = asString(opts['group-name']);
+  const groupId = asString(opts['group-id']);
 
   switch (cmd.action) {
     case 'picker': {
@@ -1108,8 +1119,76 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         userName: asString(opts['user-name']),
       });
     }
+    case 'get': {
+      const expand = asString(opts['expand']);
+      return client.groups.get({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        ...(expand !== undefined ? { expand } : {}),
+      });
+    }
+    case 'create': {
+      const name = asString(opts['name']);
+      if (!name) throw new Error('create requires --name');
+      return client.groups.create({ name });
+    }
+    case 'delete': {
+      const swapGroup = asString(opts['swap-group']);
+      const swapGroupId = asString(opts['swap-group-id']);
+      await client.groups.delete({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        ...(swapGroup !== undefined ? { swapGroup } : {}),
+        ...(swapGroupId !== undefined ? { swapGroupId } : {}),
+      });
+      return { deleted: true };
+    }
+    case 'list-bulk': {
+      const groupIds = parseCsv(opts['group-ids']);
+      const groupNames = parseCsv(opts['group-names']);
+      const accessType = asAccessType(opts['access-type']);
+      const applicationKey = asString(opts['application-key']);
+      return client.groups.listBulk({
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(groupIds !== undefined ? { groupId: groupIds } : {}),
+        ...(groupNames !== undefined ? { groupName: groupNames } : {}),
+        ...(accessType !== undefined ? { accessType } : {}),
+        ...(applicationKey !== undefined ? { applicationKey } : {}),
+      });
+    }
+    case 'list-members': {
+      return client.groups.listMembers({
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+        includeInactiveUsers: asBoolFlag(opts['include-inactive-users']),
+        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'remove-user': {
+      const accountId = asString(opts['account-id']);
+      if (!accountId) throw new Error('remove-user requires --account-id');
+      await client.groups.removeUser({
+        accountId,
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+      });
+      return { removed: true };
+    }
+    case 'add-user': {
+      const accountId = asString(opts['account-id']);
+      if (!accountId) throw new Error('add-user requires --account-id');
+      return client.groups.addUser({
+        accountId,
+        ...(groupName !== undefined ? { groupname: groupName } : {}),
+        ...(groupId !== undefined ? { groupId } : {}),
+      });
+    }
     default:
-      throw new Error(`Unknown groups action: ${cmd.action}. Actions: picker`);
+      throw new Error(
+        `Unknown groups action: ${cmd.action}. Actions: picker, get, create, delete, list-bulk, list-members, remove-user, add-user`,
+      );
   }
 }
 

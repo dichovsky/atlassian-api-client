@@ -957,6 +957,27 @@
 - [x] ✅ 🧩 API: B474 Jira: expose GET /rest/api/3/groups/picker
       **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.picker()`) · CLI `atlas jira groups picker` · query/filter params as flags · `test/jira/groups.test.ts`
       **Rat:** Group picker autocomplete; all query params exposed as CLI flags (`--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name`).
+- [x] ✅ 🧩 API: B468 Jira: expose DELETE /rest/api/3/group
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.delete()`) · CLI `atlas jira groups delete --group-name/--group-id [--swap-group/--swap-group-id]` · BACKLOG listed filename as `group.ts`; actual file is `groups.ts` (extended existing picker resource) · `test/jira/groups.test.ts`
+      **Rat:** Group delete with optional restriction swap; identity flags individually optional because Atlassian accepts either form (server enforces).
+- [x] ✅ 🧩 API: B923 Jira: expose GET /rest/api/3/group
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.get()`) · CLI `atlas jira groups get [--group-name/--group-id] [--expand users]` · file path = `groups.ts` (BACKLOG listed `group.ts`)
+      **Rat:** Singleton group fetch with `expand=users` inlining first member page; full enumeration delegates to `list-members`.
+- [x] ✅ 🧩 API: B469 Jira: expose POST /rest/api/3/group
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.create()`) · CLI `atlas jira groups create --name <name>` · `--name` required
+      **Rat:** Create group; single required body field exposed per CLI completeness rule.
+- [x] ✅ 🧩 API: B470 Jira: expose GET /rest/api/3/group/bulk
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.listBulk()` + `listAllBulk()` async generator) · CLI `atlas jira groups list-bulk [--group-ids/--group-names CSV] [--access-type] [--application-key]` · multi-page tests
+      **Rat:** Paginated bulk listing; `listAll` generator pair (per orchestration mem) delegates to `paginateOffset` so advancement uses row count, not server-echoed `maxResults`.
+- [x] ✅ 🧩 API: B471 Jira: expose GET /rest/api/3/group/member
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.listMembers()` + `listAllMembers()` async generator) · CLI `atlas jira groups list-members [--group-name/--group-id] [--include-inactive-users]` · multi-page tests
+      **Rat:** Paginated member listing; `listAll` generator pair mandatory for cursor-paginated list methods.
+- [x] ✅ 🧩 API: B472 Jira: expose DELETE /rest/api/3/group/user
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.removeUser()`) · CLI `atlas jira groups remove-user --account-id <id> [--group-name/--group-id]` · `--account-id` required
+      **Rat:** Remove user from group; `--account-id` required because the server has no sensible default user to remove.
+- [x] ✅ 🧩 API: B473 Jira: expose POST /rest/api/3/group/user
+      **Impl:** `src/jira/resources/groups.ts` (`GroupsResource.addUser()`) · CLI `atlas jira groups add-user --account-id <id> [--group-name/--group-id]` · `accountId` sent in body; `groupname`/`groupId` in query per Atlassian spec
+      **Rat:** Add user to group; mixed query+body mirrors the Atlassian endpoint contract (body holds `accountId`, query holds group identity).
 - [x] ✅ 🧩 API: B475 Jira: expose GET /rest/api/3/groupuserpicker
       **Impl:** `src/jira/resources/group-user-picker.ts` (`GroupUserPickerResource.pick()`) · CLI `atlas jira group-user-picker pick` · BACKLOG listed filename as `groupuserpicker.ts`; renamed to `group-user-picker.ts` per kebab-case rule · `test/jira/group-user-picker.test.ts`
       **Rat:** Combined group+user autocomplete picker; kebab rename keeps filenames consistent with project-jira-pattern.md rule (same rename applied to `securitylevel.ts` → `security-level.ts`).

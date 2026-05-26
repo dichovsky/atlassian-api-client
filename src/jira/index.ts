@@ -233,7 +233,22 @@ export type { Vulnerability } from './resources/vulnerability.js';
 export { VulnerabilityResource } from './resources/vulnerability.js';
 export type { DevopsComponent } from './resources/devopscomponents.js';
 export { DevopscomponentsResource } from './resources/devopscomponents.js';
-export type { GroupMatch, GroupPickerResponse, GroupPickerParams } from './resources/groups.js';
+export type {
+  GroupMatch,
+  GroupPickerResponse,
+  GroupPickerParams,
+  Group,
+  GroupMember,
+  BulkGroupDetails,
+  DeleteGroupParams,
+  GetGroupParams,
+  CreateGroupData,
+  GroupAccessType,
+  ListBulkGroupsParams,
+  ListGroupMembersParams,
+  RemoveGroupUserParams,
+  AddGroupUserParams,
+} from './resources/groups.js';
 export { GroupsResource } from './resources/groups.js';
 export type {
   GroupSuggestion,

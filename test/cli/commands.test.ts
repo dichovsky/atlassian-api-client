@@ -499,6 +499,13 @@ const jiraDevopscomponentsMock = {
 };
 const jiraGroupsMock = {
   picker: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+  listBulk: vi.fn(),
+  listMembers: vi.fn(),
+  addUser: vi.fn(),
+  removeUser: vi.fn(),
 };
 const jiraGroupUserPickerMock = {
   pick: vi.fn(),
@@ -10438,6 +10445,260 @@ describe('executeJiraCommand', () => {
       expect(jiraGroupsMock.picker).toHaveBeenCalledWith(
         expect.objectContaining({ exclude: ['grp-1', 'grp-2'] }),
       );
+    });
+
+    it('groups get forwards group-name, group-id, expand', async () => {
+      jiraGroupsMock.get.mockResolvedValue({ name: 'devs', groupId: 'grp-1' });
+
+      await executeJiraCommand(
+        cmd('groups', 'get', [], {
+          'group-name': 'devs',
+          'group-id': 'grp-1',
+          expand: 'users',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.get).toHaveBeenCalledWith({
+        groupname: 'devs',
+        groupId: 'grp-1',
+        expand: 'users',
+      });
+    });
+
+    it('groups get called with no flags forwards empty params', async () => {
+      jiraGroupsMock.get.mockResolvedValue({ name: 'devs' });
+
+      await executeJiraCommand(cmd('groups', 'get'), GLOBALS);
+
+      expect(jiraGroupsMock.get).toHaveBeenCalledWith({});
+    });
+
+    it('groups create requires --name', async () => {
+      await expect(executeJiraCommand(cmd('groups', 'create'), GLOBALS)).rejects.toThrow(
+        'create requires --name',
+      );
+    });
+
+    it('groups create forwards name', async () => {
+      jiraGroupsMock.create.mockResolvedValue({ name: 'qa' });
+
+      await executeJiraCommand(cmd('groups', 'create', [], { name: 'qa' }), GLOBALS);
+
+      expect(jiraGroupsMock.create).toHaveBeenCalledWith({ name: 'qa' });
+    });
+
+    it('groups delete forwards all flags and returns deleted marker', async () => {
+      jiraGroupsMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('groups', 'delete', [], {
+          'group-name': 'old',
+          'group-id': 'grp-old',
+          'swap-group': 'new',
+          'swap-group-id': 'grp-new',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.delete).toHaveBeenCalledWith({
+        groupname: 'old',
+        groupId: 'grp-old',
+        swapGroup: 'new',
+        swapGroupId: 'grp-new',
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('groups delete with no flags passes empty object', async () => {
+      jiraGroupsMock.delete.mockResolvedValue(undefined);
+
+      await executeJiraCommand(cmd('groups', 'delete'), GLOBALS);
+
+      expect(jiraGroupsMock.delete).toHaveBeenCalledWith({});
+    });
+
+    it('groups list-bulk forwards CSV arrays and pagination flags', async () => {
+      jiraGroupsMock.listBulk.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      await executeJiraCommand(
+        cmd('groups', 'list-bulk', [], {
+          'start-at': '10',
+          'max-results': '25',
+          'group-ids': 'a,b',
+          'group-names': 'x,y',
+          'access-type': 'site-admin',
+          'application-key': 'jira-software',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.listBulk).toHaveBeenCalledWith({
+        startAt: 10,
+        maxResults: 25,
+        groupId: ['a', 'b'],
+        groupName: ['x', 'y'],
+        accessType: 'site-admin',
+        applicationKey: 'jira-software',
+      });
+    });
+
+    it('groups list-bulk rejects invalid --access-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('groups', 'list-bulk', [], { 'access-type': 'application' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--access-type must be one of: site-admin, admin, user. Got: application');
+    });
+
+    it('groups list-bulk with no flags', async () => {
+      jiraGroupsMock.listBulk.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      await executeJiraCommand(cmd('groups', 'list-bulk'), GLOBALS);
+
+      expect(jiraGroupsMock.listBulk).toHaveBeenCalledWith({});
+    });
+
+    it('groups list-members with no flags passes empty params', async () => {
+      jiraGroupsMock.listMembers.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      await executeJiraCommand(cmd('groups', 'list-members'), GLOBALS);
+
+      expect(jiraGroupsMock.listMembers).toHaveBeenCalledWith({});
+    });
+
+    it('groups list-members forwards all flags', async () => {
+      jiraGroupsMock.listMembers.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      await executeJiraCommand(
+        cmd('groups', 'list-members', [], {
+          'group-name': 'devs',
+          'group-id': 'grp-1',
+          'include-inactive-users': true,
+          'start-at': '5',
+          'max-results': '10',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.listMembers).toHaveBeenCalledWith({
+        groupname: 'devs',
+        groupId: 'grp-1',
+        includeInactiveUsers: true,
+        startAt: 5,
+        maxResults: 10,
+      });
+    });
+
+    it('groups add-user requires --account-id', async () => {
+      await expect(
+        executeJiraCommand(cmd('groups', 'add-user', [], { 'group-id': 'grp-1' }), GLOBALS),
+      ).rejects.toThrow('add-user requires --account-id');
+    });
+
+    it('groups add-user forwards accountId and group identity', async () => {
+      jiraGroupsMock.addUser.mockResolvedValue({ name: 'devs', groupId: 'grp-1' });
+
+      await executeJiraCommand(
+        cmd('groups', 'add-user', [], {
+          'account-id': 'u1',
+          'group-name': 'devs',
+          'group-id': 'grp-1',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.addUser).toHaveBeenCalledWith({
+        accountId: 'u1',
+        groupname: 'devs',
+        groupId: 'grp-1',
+      });
+    });
+
+    it('groups add-user without group flags sends only accountId', async () => {
+      jiraGroupsMock.addUser.mockResolvedValue({ name: 'devs' });
+
+      await executeJiraCommand(cmd('groups', 'add-user', [], { 'account-id': 'u1' }), GLOBALS);
+
+      expect(jiraGroupsMock.addUser).toHaveBeenCalledWith({ accountId: 'u1' });
+    });
+
+    it('groups remove-user without group flags sends only accountId', async () => {
+      jiraGroupsMock.removeUser.mockResolvedValue(undefined);
+
+      await executeJiraCommand(cmd('groups', 'remove-user', [], { 'account-id': 'u1' }), GLOBALS);
+
+      expect(jiraGroupsMock.removeUser).toHaveBeenCalledWith({ accountId: 'u1' });
+    });
+
+    it('groups list-bulk drops empty CSV strings for group-ids/group-names', async () => {
+      jiraGroupsMock.listBulk.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+
+      await executeJiraCommand(
+        cmd('groups', 'list-bulk', [], { 'group-ids': ', ,', 'group-names': '' }),
+        GLOBALS,
+      );
+
+      // parseCsv returns undefined when all entries are blank, so the
+      // call site should not include groupId/groupName keys.
+      expect(jiraGroupsMock.listBulk).toHaveBeenCalledWith({});
+    });
+
+    it('groups remove-user requires --account-id', async () => {
+      await expect(executeJiraCommand(cmd('groups', 'remove-user'), GLOBALS)).rejects.toThrow(
+        'remove-user requires --account-id',
+      );
+    });
+
+    it('groups remove-user forwards accountId and group identity', async () => {
+      jiraGroupsMock.removeUser.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('groups', 'remove-user', [], {
+          'account-id': 'u1',
+          'group-name': 'devs',
+          'group-id': 'grp-1',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraGroupsMock.removeUser).toHaveBeenCalledWith({
+        accountId: 'u1',
+        groupname: 'devs',
+        groupId: 'grp-1',
+      });
+      expect(result).toEqual({ removed: true });
     });
 
     it('groups unknown action throws', async () => {

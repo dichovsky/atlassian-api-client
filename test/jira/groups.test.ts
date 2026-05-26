@@ -117,4 +117,392 @@ describe('GroupsResource', () => {
       await expect(groups.picker()).rejects.toThrow('network error');
     });
   });
+
+  // ── get (B923) ────────────────────────────────────────────────────────────
+
+  describe('get()', () => {
+    it('calls GET /group with no params', async () => {
+      transport.respondWith({ name: 'developers' });
+
+      const result = await groups.get();
+
+      expect(result).toEqual({ name: 'developers' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/group`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards groupname, groupId, and expand', async () => {
+      transport.respondWith({ name: 'developers', groupId: 'grp-1' });
+
+      await groups.get({ groupname: 'developers', groupId: 'grp-1', expand: 'users' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        groupname: 'developers',
+        groupId: 'grp-1',
+        expand: 'users',
+      });
+    });
+  });
+
+  // ── create (B469) ─────────────────────────────────────────────────────────
+
+  describe('create()', () => {
+    it('calls POST /group with name in body', async () => {
+      transport.respondWith({ name: 'qa', groupId: 'grp-qa' });
+
+      const result = await groups.create({ name: 'qa' });
+
+      expect(result).toEqual({ name: 'qa', groupId: 'grp-qa' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/group`,
+        body: { name: 'qa' },
+      });
+    });
+  });
+
+  // ── delete (B468) ─────────────────────────────────────────────────────────
+
+  describe('delete()', () => {
+    it('calls DELETE /group with no params', async () => {
+      transport.respondWith(undefined, 204);
+
+      await groups.delete();
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/group`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards groupname, groupId, swapGroup, swapGroupId', async () => {
+      transport.respondWith(undefined, 204);
+
+      await groups.delete({
+        groupname: 'old',
+        groupId: 'grp-old',
+        swapGroup: 'new',
+        swapGroupId: 'grp-new',
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        groupname: 'old',
+        groupId: 'grp-old',
+        swapGroup: 'new',
+        swapGroupId: 'grp-new',
+      });
+    });
+  });
+
+  // ── listBulk + listAllBulk (B470) ─────────────────────────────────────────
+
+  describe('listBulk()', () => {
+    it('calls GET /group/bulk with no params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      const result = await groups.listBulk();
+
+      expect(result.values).toEqual([]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/group/bulk`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards CSV-joined groupId and groupName arrays plus filters', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      await groups.listBulk({
+        startAt: 10,
+        maxResults: 25,
+        groupId: ['a', 'b'],
+        groupName: ['x', 'y'],
+        accessType: 'site-admin',
+        applicationKey: 'jira-software',
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        startAt: 10,
+        maxResults: 25,
+        groupId: 'a,b',
+        groupName: 'x,y',
+        accessType: 'site-admin',
+        applicationKey: 'jira-software',
+      });
+    });
+
+    it('omits empty groupId / groupName arrays', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      await groups.listBulk({ groupId: [], groupName: [] });
+
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('groupId');
+      expect(query).not.toHaveProperty('groupName');
+    });
+
+    it('rejects non-positive maxResults', async () => {
+      await expect(groups.listBulk({ maxResults: 0 })).rejects.toThrow(/maxResults/);
+    });
+  });
+
+  describe('listAllBulk()', () => {
+    it('yields all items from a single page', async () => {
+      transport.respondWith({
+        values: [
+          { groupId: 'a', name: 'alpha' },
+          { groupId: 'b', name: 'beta' },
+        ],
+        startAt: 0,
+        maxResults: 50,
+        total: 2,
+        isLast: true,
+      });
+
+      const results: { groupId: string; name: string }[] = [];
+      for await (const g of groups.listAllBulk()) {
+        results.push(g);
+      }
+
+      expect(results).toEqual([
+        { groupId: 'a', name: 'alpha' },
+        { groupId: 'b', name: 'beta' },
+      ]);
+    });
+
+    it('paginates across multiple pages', async () => {
+      transport
+        .respondWith({
+          values: [{ groupId: 'a', name: 'alpha' }],
+          startAt: 0,
+          maxResults: 1,
+          total: 2,
+          isLast: false,
+        })
+        .respondWith({
+          values: [{ groupId: 'b', name: 'beta' }],
+          startAt: 1,
+          maxResults: 1,
+          total: 2,
+          isLast: true,
+        });
+
+      const results: { groupId: string; name: string }[] = [];
+      for await (const g of groups.listAllBulk({ maxResults: 1 })) {
+        results.push(g);
+      }
+
+      expect(results).toHaveLength(2);
+      expect(results[0]!.groupId).toBe('a');
+      expect(results[1]!.groupId).toBe('b');
+    });
+
+    it('forwards filter query params on every page', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      const results: unknown[] = [];
+      for await (const g of groups.listAllBulk({ groupId: ['x'], accessType: 'admin' })) {
+        results.push(g);
+      }
+
+      expect(results).toHaveLength(0);
+      expect(transport.lastCall?.options.query).toMatchObject({
+        groupId: 'x',
+        accessType: 'admin',
+      });
+    });
+
+    it('rejects non-positive maxResults', async () => {
+      await expect(async () => {
+        for await (const _ of groups.listAllBulk({ maxResults: -1 })) {
+          // consume
+        }
+      }).rejects.toThrow(/maxResults/);
+    });
+  });
+
+  // ── listMembers + listAllMembers (B471) ───────────────────────────────────
+
+  describe('listMembers()', () => {
+    it('calls GET /group/member with no params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      const result = await groups.listMembers();
+
+      expect(result.values).toEqual([]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/group/member`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards all params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      await groups.listMembers({
+        groupname: 'devs',
+        groupId: 'grp-1',
+        includeInactiveUsers: true,
+        startAt: 5,
+        maxResults: 10,
+      });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        groupname: 'devs',
+        groupId: 'grp-1',
+        includeInactiveUsers: true,
+        startAt: 5,
+        maxResults: 10,
+      });
+    });
+
+    it('rejects non-positive maxResults', async () => {
+      await expect(groups.listMembers({ maxResults: 0 })).rejects.toThrow(/maxResults/);
+    });
+  });
+
+  describe('listAllMembers()', () => {
+    it('yields all items from a single page', async () => {
+      transport.respondWith({
+        values: [
+          { accountId: 'u1', displayName: 'User One' },
+          { accountId: 'u2', displayName: 'User Two' },
+        ],
+        startAt: 0,
+        maxResults: 50,
+        total: 2,
+        isLast: true,
+      });
+
+      const results: { accountId: string }[] = [];
+      for await (const u of groups.listAllMembers({ groupId: 'grp-1' })) {
+        results.push(u);
+      }
+
+      expect(results.map((u) => u.accountId)).toEqual(['u1', 'u2']);
+    });
+
+    it('paginates across multiple pages', async () => {
+      transport
+        .respondWith({
+          values: [{ accountId: 'u1' }],
+          startAt: 0,
+          maxResults: 1,
+          total: 2,
+          isLast: false,
+        })
+        .respondWith({
+          values: [{ accountId: 'u2' }],
+          startAt: 1,
+          maxResults: 1,
+          total: 2,
+          isLast: true,
+        });
+
+      const results: { accountId: string }[] = [];
+      for await (const u of groups.listAllMembers({ groupId: 'grp-1', maxResults: 1 })) {
+        results.push(u);
+      }
+
+      expect(results.map((u) => u.accountId)).toEqual(['u1', 'u2']);
+    });
+
+    it('forwards includeInactiveUsers filter on every page', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
+
+      const results: unknown[] = [];
+      for await (const u of groups.listAllMembers({
+        groupname: 'devs',
+        includeInactiveUsers: true,
+      })) {
+        results.push(u);
+      }
+
+      expect(results).toHaveLength(0);
+      expect(transport.lastCall?.options.query).toMatchObject({
+        groupname: 'devs',
+        includeInactiveUsers: true,
+      });
+    });
+
+    it('rejects non-positive maxResults', async () => {
+      await expect(async () => {
+        for await (const _ of groups.listAllMembers({ maxResults: 0 })) {
+          // consume
+        }
+      }).rejects.toThrow(/maxResults/);
+    });
+  });
+
+  // ── removeUser (B472) ─────────────────────────────────────────────────────
+
+  describe('removeUser()', () => {
+    it('calls DELETE /group/user with required accountId', async () => {
+      transport.respondWith(undefined, 200);
+
+      await groups.removeUser({ accountId: 'u1' });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/group/user`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({ accountId: 'u1' });
+    });
+
+    it('forwards optional groupname and groupId', async () => {
+      transport.respondWith(undefined, 200);
+
+      await groups.removeUser({ accountId: 'u1', groupname: 'devs', groupId: 'grp-1' });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        accountId: 'u1',
+        groupname: 'devs',
+        groupId: 'grp-1',
+      });
+    });
+  });
+
+  // ── addUser (B473) ────────────────────────────────────────────────────────
+
+  describe('addUser()', () => {
+    it('calls POST /group/user with accountId body and group query', async () => {
+      transport.respondWith({ name: 'devs', groupId: 'grp-1' });
+
+      const result = await groups.addUser({ accountId: 'u1', groupId: 'grp-1' });
+
+      expect(result).toEqual({ name: 'devs', groupId: 'grp-1' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/group/user`,
+        body: { accountId: 'u1' },
+      });
+      expect(transport.lastCall?.options.query).toEqual({ groupId: 'grp-1' });
+    });
+
+    it('forwards both groupname and groupId when provided', async () => {
+      transport.respondWith({ name: 'devs' });
+
+      await groups.addUser({ accountId: 'u1', groupname: 'devs', groupId: 'grp-1' });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        groupname: 'devs',
+        groupId: 'grp-1',
+      });
+    });
+
+    it('sends empty query when neither groupname nor groupId provided', async () => {
+      transport.respondWith({ name: 'devs' });
+
+      await groups.addUser({ accountId: 'u1' });
+
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.body).toEqual({ accountId: 'u1' });
+    });
+  });
 });
