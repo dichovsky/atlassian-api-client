@@ -346,6 +346,14 @@ describe('IssueTypeSchemeResource', () => {
         projectId: '10100,10101',
       });
     });
+
+    it('forwards startAt and maxResults when listing by params', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.listProject({ startAt: 5, maxResults: 10 });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
   });
 
   // ── listProjectAll ────────────────────────────────────────────────────────
@@ -380,14 +388,6 @@ describe('IssueTypeSchemeResource', () => {
           break;
         }
       }).rejects.toThrow();
-    });
-
-    it('forwards startAt and maxResults when listing by params', async () => {
-      transport.respondWith(makePageOf([]));
-
-      await resource.listProject({ startAt: 5, maxResults: 10 });
-
-      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
     });
   });
 
