@@ -14,6 +14,10 @@ const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8'
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
+// Keep the router concise enough to stay in a small prompt chunk.
+const MAX_SKILL_MD_LENGTH = 3500;
+// Ensure a practical example set across SKILL.md + examples reference.
+const MIN_EXAMPLE_COMMANDS = 10;
 const CONFLUENCE_SRC = readFileSync(
   resolve(REPO_ROOT, 'src', 'cli', 'commands', 'confluence.ts'),
   'utf8',
@@ -59,7 +63,7 @@ describe('SKILL.md content', () => {
   });
 
   it('keeps SKILL.md compact to reduce prompt tokens', () => {
-    expect(SKILL_MD.length).toBeLessThan(3500);
+    expect(SKILL_MD.length).toBeLessThan(MAX_SKILL_MD_LENGTH);
   });
 
   it('documents the install-skill subcommand', () => {
@@ -87,7 +91,7 @@ describe('Example commands in skill docs parse correctly', () => {
   const examples = [...extractAtlasCommands(SKILL_MD), ...extractAtlasCommands(EXAMPLES_REF)];
 
   it('finds at least 10 example commands', () => {
-    expect(examples.length).toBeGreaterThanOrEqual(10);
+    expect(examples.length).toBeGreaterThanOrEqual(MIN_EXAMPLE_COMMANDS);
   });
 
   for (const example of examples) {
