@@ -265,6 +265,7 @@ RESOURCES:
   permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
   issue-type-schemes     list, list-mapping, list-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
   roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
+  expression             analyse, eval, evaluate
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -407,6 +408,10 @@ EXAMPLES:
   atlas jira statuses get-workflow-usages 10001
   atlas jira statuses by-names --names "In Progress,Done"
   atlas jira statuses search --project-id 10000 --search-string "In Progress"
+  atlas jira expression analyse --expressions '["issue.key","issue.summary"]'
+  atlas jira expression analyse --expressions '["value.accountId"]' --context-variables '{"value":"User"}' --check type
+  atlas jira expression eval --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}'
+  atlas jira expression evaluate --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}' --expand meta.complexity
 `;
 
 /** Get help text for the given level. */

@@ -2026,3 +2026,50 @@ atlas jira roles delete-actors 10001 --account-id acc-1
 atlas jira roles delete-actors 10001 --group-name my-group
 atlas jira roles delete-actors 10001 --group-id grp-1
 ```
+
+## `expression`
+
+Jira expression validation and evaluation at `/rest/api/3/expression/{analyse,eval,evaluate}` (B409, B904, B410).
+
+| Action     | Positional | Required flags  | Optional flags                   |
+| ---------- | ---------- | --------------- | -------------------------------- |
+| `analyse`  | —          | `--expressions` | `--context-variables`, `--check` |
+| `eval`     | —          | `--expression`  | `--context`, `--expand`          |
+| `evaluate` | —          | `--expression`  | `--context`, `--expand`          |
+
+- `--expressions` (on `analyse`) is a **JSON array of strings**, e.g. `'["issue.key","issue.summary"]'`.
+- `--context-variables` (on `analyse`) is a **JSON object** mapping variable names to type strings, e.g. `'{"value":"User","listOfStrings":"List<String>"}'`.
+- `--check` (on `analyse`) enables type-checking; values per Atlassian docs include `syntax` (default), `type`, `complexity`.
+- `--expression` (on `eval`/`evaluate`) is a single Jira expression string.
+- `--context` (on `eval`/`evaluate`) is a **JSON object** matching the `JiraExpressionEvalContextBean` shape (board, custom, customerRequest, issue, issues.jql, project, serviceDesk, sprint).
+- `--expand` (on `eval`/`evaluate`) is a comma-separated list of expansion keys (e.g. `meta.complexity`).
+- `eval` uses the enhanced (scrolling, `nextPageToken`) JQL search and is eventually consistent.
+- `evaluate` uses the legacy strongly-consistent paginated JQL search (`startAt`/`totalCount`).
+
+```sh
+# Validate two expressions
+atlas jira expression analyse --expressions '["issue.key","issue.summary"]'
+
+# Validate with type-checking and context variable declarations
+atlas jira expression analyse \
+  --expressions '["value.accountId"]' \
+  --context-variables '{"value":"User"}' \
+  --check type
+
+# Evaluate an expression against an issue (enhanced search)
+atlas jira expression eval \
+  --expression "issue.key" \
+  --context '{"issue":{"key":"ACJIRA-1470"}}'
+
+# Evaluate using a JQL scrolling view and expand complexity metadata
+atlas jira expression eval \
+  --expression "issues.map(i => i.key)" \
+  --context '{"issues":{"jql":{"query":"project = ACJIRA","maxResults":100}}}' \
+  --expand meta.complexity
+
+# Evaluate against the legacy paginated JQL endpoint
+atlas jira expression evaluate \
+  --expression "issue.summary" \
+  --context '{"issue":{"key":"ACJIRA-1470"}}' \
+  --expand meta.complexity
+```

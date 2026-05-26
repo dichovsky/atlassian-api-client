@@ -644,6 +644,12 @@ const jiraResolutionsMock = {
   search: vi.fn(),
 };
 
+const jiraExpressionMock = {
+  analyse: vi.fn(),
+  eval: vi.fn(),
+  evaluate: vi.fn(),
+};
+
 const jiraFiltersMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -782,6 +788,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueTypeSchemes: jiraIssueTypeSchemesMock,
       roles: jiraRolesMock,
       resolutions: jiraResolutionsMock,
+      expression: jiraExpressionMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -14683,6 +14690,142 @@ describe('executeJiraCommand', () => {
     it('resolutions unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('resolutions', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown resolutions action',
+      );
+    });
+  });
+
+  // ── expression (B409, B410, B904) ────────────────────────────────────────
+
+  describe('expression resource', () => {
+    it('expression analyse calls client.expression.analyse with expressions array', async () => {
+      const response = { results: [{ expression: 'issue.key', valid: true }] };
+      jiraExpressionMock.analyse.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('expression', 'analyse', [], { expressions: '["issue.key","issue.summary"]' }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.analyse).toHaveBeenCalledWith(
+        { expressions: ['issue.key', 'issue.summary'] },
+        undefined,
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('expression analyse forwards contextVariables and check', async () => {
+      jiraExpressionMock.analyse.mockResolvedValue({ results: [] });
+      await executeJiraCommand(
+        cmd('expression', 'analyse', [], {
+          expressions: '["value.accountId"]',
+          'context-variables': '{"value":"User"}',
+          check: 'type',
+        }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.analyse).toHaveBeenCalledWith(
+        {
+          expressions: ['value.accountId'],
+          contextVariables: { value: 'User' },
+        },
+        { check: 'type' },
+      );
+    });
+
+    it('expression analyse throws when --expressions missing', async () => {
+      await expect(executeJiraCommand(cmd('expression', 'analyse'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --expressions',
+      );
+    });
+
+    it('expression analyse throws when --expressions is empty array', async () => {
+      await expect(
+        executeJiraCommand(cmd('expression', 'analyse', [], { expressions: '[]' }), GLOBALS),
+      ).rejects.toThrow('--expressions must contain at least one expression');
+    });
+
+    it('expression analyse rejects invalid JSON for --expressions', async () => {
+      await expect(
+        executeJiraCommand(cmd('expression', 'analyse', [], { expressions: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('--expressions must be valid JSON');
+    });
+
+    it('expression eval calls client.expression.eval with expression', async () => {
+      const response = { value: 'ACJIRA-1470' };
+      jiraExpressionMock.eval.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('expression', 'eval', [], { expression: 'issue.key' }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.eval).toHaveBeenCalledWith({ expression: 'issue.key' }, undefined);
+      expect(result).toEqual(response);
+    });
+
+    it('expression eval forwards context and expand', async () => {
+      jiraExpressionMock.eval.mockResolvedValue({ value: 'X' });
+      await executeJiraCommand(
+        cmd('expression', 'eval', [], {
+          expression: 'issue.key',
+          context: '{"issue":{"key":"ACJIRA-1470"}}',
+          expand: 'meta.complexity',
+        }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.eval).toHaveBeenCalledWith(
+        {
+          expression: 'issue.key',
+          context: { issue: { key: 'ACJIRA-1470' } },
+        },
+        { expand: 'meta.complexity' },
+      );
+    });
+
+    it('expression eval throws when --expression missing', async () => {
+      await expect(executeJiraCommand(cmd('expression', 'eval'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --expression',
+      );
+    });
+
+    it('expression evaluate calls client.expression.evaluate with expression', async () => {
+      const response = { value: 'ACJIRA-1470' };
+      jiraExpressionMock.evaluate.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('expression', 'evaluate', [], { expression: 'issue.key' }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.evaluate).toHaveBeenCalledWith(
+        { expression: 'issue.key' },
+        undefined,
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('expression evaluate forwards context and expand', async () => {
+      jiraExpressionMock.evaluate.mockResolvedValue({ value: 'X' });
+      await executeJiraCommand(
+        cmd('expression', 'evaluate', [], {
+          expression: 'issue.summary',
+          context: '{"issue":{"key":"ACJIRA-1470"}}',
+          expand: 'meta.complexity',
+        }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.evaluate).toHaveBeenCalledWith(
+        {
+          expression: 'issue.summary',
+          context: { issue: { key: 'ACJIRA-1470' } },
+        },
+        { expand: 'meta.complexity' },
+      );
+    });
+
+    it('expression evaluate throws when --expression missing', async () => {
+      await expect(executeJiraCommand(cmd('expression', 'evaluate'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --expression',
+      );
+    });
+
+    it('expression unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('expression', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown expression action',
       );
     });
   });

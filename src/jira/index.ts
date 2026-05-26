@@ -412,3 +412,22 @@ export type {
   SearchStatusesParams,
   StatusUsagesParams,
 } from './resources/statuses.js';
+export type {
+  AnalysedExpression,
+  AnalysedExpressionError,
+  AnalysedExpressionComplexity,
+  AnalyseJiraExpressionsResponse,
+  AnalyseJiraExpressionsData,
+  AnalyseJiraExpressionsParams,
+  JiraExpressionEvalJqlContext,
+  JiraExpressionEvalContext,
+  EvaluateJiraExpressionData,
+  EvaluateJiraExpressionParams,
+  JiraExpressionMetric,
+  JiraExpressionComplexity,
+  JiraExpressionEvaluateJqlMeta,
+  JiraExpressionEvalJqlMeta,
+  EvaluateJiraExpressionResponse,
+  EvalJiraExpressionResponse,
+} from './resources/expression.js';
+export { ExpressionResource } from './resources/expression.js';

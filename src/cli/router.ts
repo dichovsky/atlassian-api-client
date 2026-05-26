@@ -269,6 +269,12 @@ const GLOBAL_OPTIONS = {
   // issue-type-schemes options (B566-B575)
   'default-issue-type-id': { type: 'string' as const },
   position: { type: 'string' as const },
+  // expression options (B409, B410, B904)
+  expression: { type: 'string' as const },
+  expressions: { type: 'string' as const },
+  context: { type: 'string' as const },
+  'context-variables': { type: 'string' as const },
+  check: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

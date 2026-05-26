@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "6e89ee0d889521fd460ae9f90eec178c1b51132f98f1b899def5f5b84597a9d4",
+  "sourceHash": "f4e0778c2120e689eac877b436c84dac9a3ad62b143875464056ccef58533340",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1471,7 +1471,7 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 68,
+      "line": 69,
       "signature": "export class JiraClient",
       "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
     },
@@ -4039,584 +4039,596 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 135,
+          "line": 137,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 216,
+          "line": 218,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 229,
+          "line": 231,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 243,
+          "line": 245,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 259,
+          "line": 261,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 270,
+          "line": 272,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 281,
+          "line": 283,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 346,
+          "line": 348,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 555,
+          "line": 557,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 693,
+          "line": 695,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 765,
+          "line": 767,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 789,
+          "line": 791,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-          "line": 828,
+          "line": 830,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-          "line": 855,
+          "line": 857,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 873,
+          "line": 875,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 882,
+          "line": 884,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 891,
+          "line": 893,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 896,
+          "line": 898,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 901,
+          "line": 903,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 905,
+          "line": 907,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
-          "line": 914,
+          "line": 916,
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 923,
+          "line": 925,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 931,
+          "line": 933,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "asAccessType",
           "kind": "function",
-          "line": 940,
+          "line": 942,
           "signature": "function asAccessType( value: string | boolean | undefined, ): 'site-admin' | 'admin' | 'user' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 949,
+          "line": 951,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 956,
+          "line": 958,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-          "line": 964,
+          "line": 966,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
-          "line": 977,
+          "line": 979,
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
-          "line": 988,
+          "line": 990,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
-          "line": 999,
+          "line": 1001,
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
-          "line": 1008,
+          "line": 1010,
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
-          "line": 1017,
+          "line": 1019,
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
-          "line": 1037,
+          "line": 1039,
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
-          "line": 1054,
+          "line": 1056,
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
-          "line": 1063,
+          "line": 1065,
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
-          "line": 1100,
+          "line": 1102,
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIncidents",
           "kind": "function",
-          "line": 1119,
+          "line": 1121,
           "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePostIncidentReviews",
           "kind": "function",
-          "line": 1131,
+          "line": 1133,
           "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeVulnerability",
           "kind": "function",
-          "line": 1146,
+          "line": 1148,
           "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDevopscomponents",
           "kind": "function",
-          "line": 1158,
+          "line": 1160,
           "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroups",
           "kind": "function",
-          "line": 1170,
+          "line": 1172,
           "signature": "async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroupUserPicker",
           "kind": "function",
-          "line": 1265,
+          "line": 1267,
           "signature": "async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSecurityLevel",
           "kind": "function",
-          "line": 1299,
+          "line": 1301,
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
-          "line": 1308,
+          "line": 1310,
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
-          "line": 1323,
+          "line": 1325,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-          "line": 1345,
+          "line": 1347,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-          "line": 1369,
+          "line": 1371,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-          "line": 1381,
+          "line": 1383,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
-          "line": 1393,
+          "line": 1395,
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
-          "line": 1402,
+          "line": 1404,
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1411,
+          "line": 1413,
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
-          "line": 1423,
+          "line": 1425,
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
-          "line": 1448,
+          "line": 1450,
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
-          "line": 1460,
+          "line": 1462,
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
-          "line": 1469,
+          "line": 1471,
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
-          "line": 1483,
+          "line": 1485,
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
-          "line": 1592,
+          "line": 1594,
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 1599,
+          "line": 1601,
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
-          "line": 1714,
+          "line": 1716,
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
-          "line": 1724,
+          "line": 1726,
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
-          "line": 1732,
+          "line": 1734,
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
-          "line": 1740,
+          "line": 1742,
           "signature": "const BULK_ACTIONS = [ 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', 'transition-issue…"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
-          "line": 1760,
+          "line": 1762,
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
-          "line": 1767,
+          "line": 1769,
           "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
-          "line": 1775,
+          "line": 1777,
           "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
-          "line": 1783,
+          "line": 1785,
           "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
-          "line": 1791,
+          "line": 1793,
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueAttachments",
           "kind": "function",
-          "line": 1904,
+          "line": 1906,
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
-          "line": 1968,
+          "line": 1970,
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 2057,
+          "line": 2059,
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
-          "line": 2064,
+          "line": 2066,
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
-          "line": 2077,
+          "line": 2079,
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
-          "line": 2078,
+          "line": 2080,
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
-          "line": 2079,
+          "line": 2081,
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
-          "line": 2080,
+          "line": 2082,
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
-          "line": 2082,
+          "line": 2084,
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
-          "line": 2089,
+          "line": 2091,
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
-          "line": 2096,
+          "line": 2098,
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
-          "line": 2105,
+          "line": 2107,
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
-          "line": 2139,
+          "line": 2141,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asStatusCategory",
           "kind": "function",
-          "line": 2201,
+          "line": 2203,
           "signature": "function asStatusCategory( value: string | boolean | undefined, ): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined"
         },
         {
           "name": "executeResolutions",
           "kind": "function",
-          "line": 2212,
+          "line": 2214,
           "signature": "async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-          "line": 2286,
+          "line": 2288,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-          "line": 2308,
+          "line": 2310,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-          "line": 2317,
+          "line": 2319,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-          "line": 2325,
+          "line": 2327,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-          "line": 2354,
+          "line": 2356,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-          "line": 2362,
+          "line": 2364,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 2567,
+          "line": 2569,
           "signature": "const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [ 'list', 'create', 'update', 'delete', 'update-mapping', 'update-default-mapp…"
         },
         {
           "name": "executeIssueTypeScreenSchemes",
           "kind": "function",
-          "line": 2581,
+          "line": 2583,
           "signature": "async function executeIssueTypeScreenSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PERMISSION_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 2708,
+          "line": 2710,
           "signature": "const PERMISSION_SCHEMES_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-permissions', 'create-permission…"
         },
         {
           "name": "executePermissionSchemes",
           "kind": "function",
-          "line": 2720,
+          "line": 2722,
           "signature": "async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 2869,
+          "line": 2871,
           "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
           "kind": "function",
-          "line": 2882,
+          "line": 2884,
           "signature": "async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asMovePosition",
           "kind": "function",
-          "line": 2993,
+          "line": 2995,
           "signature": "function asMovePosition(value: string): 'First' | 'Last'"
         },
         {
           "name": "ROLES_ACTIONS",
           "kind": "variable",
-          "line": 3000,
+          "line": 3002,
           "signature": "const ROLES_ACTIONS = [ 'list', 'get', 'create', 'update', 'partial-update', 'delete', 'get-actors', 'add-actors', 'dele…"
         },
         {
           "name": "executeRoles",
           "kind": "function",
-          "line": 3012,
+          "line": 3014,
           "signature": "async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "EXPRESSION_ACTIONS",
+          "kind": "variable",
+          "line": 3110,
+          "signature": "const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;"
+        },
+        {
+          "name": "executeExpression",
+          "kind": "function",
+          "line": 3112,
+          "signature": "async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -4706,7 +4718,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 413,
+          "line": 418,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -4867,7 +4879,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 274,
+          "line": 280,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -14926,7 +14938,7 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 68,
+          "line": 69,
           "exported": true,
           "signature": "export class JiraClient",
           "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
@@ -14934,317 +14946,322 @@
             {
               "name": "issues",
               "kind": "property",
-              "line": 69
+              "line": 70
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 70
+              "line": 71
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 71
+              "line": 72
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 72
+              "line": 73
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 73
+              "line": 74
             },
             {
               "name": "issueType",
               "kind": "property",
-              "line": 75
+              "line": 76
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 76
+              "line": 77
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 77
+              "line": 78
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 79
+              "line": 80
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 81
+              "line": 82
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 83
+              "line": 84
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 85
+              "line": 86
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 87
+              "line": 88
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 89
+              "line": 90
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 91
+              "line": 92
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 93
+              "line": 94
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 95
+              "line": 96
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 97
+              "line": 98
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 99
+              "line": 100
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 101
+              "line": 102
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 103
+              "line": 104
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 105
+              "line": 106
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 107
+              "line": 108
             },
             {
               "name": "applicationRole",
               "kind": "property",
-              "line": 109
+              "line": 110
             },
             {
               "name": "dataPolicy",
               "kind": "property",
-              "line": 111
+              "line": 112
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 113
+              "line": 114
             },
             {
               "name": "statusCategory",
               "kind": "property",
-              "line": 115
+              "line": 116
             },
             {
               "name": "serverInfo",
               "kind": "property",
-              "line": 117
+              "line": 118
             },
             {
               "name": "instance",
               "kind": "property",
-              "line": 119
+              "line": 120
             },
             {
               "name": "myPermissions",
               "kind": "property",
-              "line": 121
+              "line": 122
             },
             {
               "name": "auditing",
               "kind": "property",
-              "line": 123
+              "line": 124
             },
             {
               "name": "events",
               "kind": "property",
-              "line": 125
+              "line": 126
             },
             {
               "name": "changelog",
               "kind": "property",
-              "line": 127
+              "line": 128
             },
             {
               "name": "forge",
               "kind": "property",
-              "line": 129
+              "line": 130
             },
             {
               "name": "incidents",
               "kind": "property",
-              "line": 131
+              "line": 132
             },
             {
               "name": "postIncidentReviews",
               "kind": "property",
-              "line": 133
+              "line": 134
             },
             {
               "name": "vulnerability",
               "kind": "property",
-              "line": 135
+              "line": 136
             },
             {
               "name": "devopscomponents",
               "kind": "property",
-              "line": 137
+              "line": 138
             },
             {
               "name": "groups",
               "kind": "property",
-              "line": 139
+              "line": 140
             },
             {
               "name": "groupUserPicker",
               "kind": "property",
-              "line": 141
+              "line": 142
             },
             {
               "name": "securityLevel",
               "kind": "property",
-              "line": 143
+              "line": 144
             },
             {
               "name": "license",
               "kind": "property",
-              "line": 145
+              "line": 146
             },
             {
               "name": "settings",
               "kind": "property",
-              "line": 147
+              "line": 148
             },
             {
               "name": "redact",
               "kind": "property",
-              "line": 149
+              "line": 150
             },
             {
               "name": "flag",
               "kind": "property",
-              "line": 151
+              "line": 152
             },
             {
               "name": "task",
               "kind": "property",
-              "line": 153
+              "line": 154
             },
             {
               "name": "avatar",
               "kind": "property",
-              "line": 155
+              "line": 156
             },
             {
               "name": "customFieldOption",
               "kind": "property",
-              "line": 157
+              "line": 158
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 159
+              "line": 160
             },
             {
               "name": "latest",
               "kind": "property",
-              "line": 161
+              "line": 162
             },
             {
               "name": "remoteLink",
               "kind": "property",
-              "line": 163
+              "line": 164
             },
             {
               "name": "serviceRegistry",
               "kind": "property",
-              "line": 165
+              "line": 166
             },
             {
               "name": "existsByProperties",
               "kind": "property",
-              "line": 167
+              "line": 168
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 173
+              "line": 174
             },
             {
               "name": "component",
               "kind": "property",
-              "line": 175
+              "line": 176
             },
             {
               "name": "applicationProperties",
               "kind": "property",
-              "line": 177
+              "line": 178
             },
             {
               "name": "configuration",
               "kind": "property",
-              "line": 179
+              "line": 180
             },
             {
               "name": "issueTypeScreenSchemes",
               "kind": "property",
-              "line": 181
+              "line": 182
             },
             {
               "name": "permissionSchemes",
               "kind": "property",
-              "line": 183
+              "line": 184
             },
             {
               "name": "issueTypeSchemes",
               "kind": "property",
-              "line": 185
+              "line": 186
             },
             {
               "name": "roles",
               "kind": "property",
-              "line": 187
+              "line": 188
             },
             {
               "name": "resolutions",
               "kind": "property",
-              "line": 189
+              "line": 190
+            },
+            {
+              "name": "expression",
+              "kind": "property",
+              "line": 192
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 191
+              "line": 194
             }
           ]
         }
@@ -15273,6 +15290,7 @@
         "./resources/epic.js",
         "./resources/events.js",
         "./resources/exists-by-properties.js",
+        "./resources/expression.js",
         "./resources/fields.js",
         "./resources/filters.js",
         "./resources/flag.js",
@@ -16083,6 +16101,88 @@
             {
               "exported": "ExistsByPropertiesResource",
               "original": "ExistsByPropertiesResource"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/expression.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "AnalysedExpression",
+              "original": "AnalysedExpression"
+            },
+            {
+              "exported": "AnalysedExpressionError",
+              "original": "AnalysedExpressionError"
+            },
+            {
+              "exported": "AnalysedExpressionComplexity",
+              "original": "AnalysedExpressionComplexity"
+            },
+            {
+              "exported": "AnalyseJiraExpressionsResponse",
+              "original": "AnalyseJiraExpressionsResponse"
+            },
+            {
+              "exported": "AnalyseJiraExpressionsData",
+              "original": "AnalyseJiraExpressionsData"
+            },
+            {
+              "exported": "AnalyseJiraExpressionsParams",
+              "original": "AnalyseJiraExpressionsParams"
+            },
+            {
+              "exported": "JiraExpressionEvalJqlContext",
+              "original": "JiraExpressionEvalJqlContext"
+            },
+            {
+              "exported": "JiraExpressionEvalContext",
+              "original": "JiraExpressionEvalContext"
+            },
+            {
+              "exported": "EvaluateJiraExpressionData",
+              "original": "EvaluateJiraExpressionData"
+            },
+            {
+              "exported": "EvaluateJiraExpressionParams",
+              "original": "EvaluateJiraExpressionParams"
+            },
+            {
+              "exported": "JiraExpressionMetric",
+              "original": "JiraExpressionMetric"
+            },
+            {
+              "exported": "JiraExpressionComplexity",
+              "original": "JiraExpressionComplexity"
+            },
+            {
+              "exported": "JiraExpressionEvaluateJqlMeta",
+              "original": "JiraExpressionEvaluateJqlMeta"
+            },
+            {
+              "exported": "JiraExpressionEvalJqlMeta",
+              "original": "JiraExpressionEvalJqlMeta"
+            },
+            {
+              "exported": "EvaluateJiraExpressionResponse",
+              "original": "EvaluateJiraExpressionResponse"
+            },
+            {
+              "exported": "EvalJiraExpressionResponse",
+              "original": "EvalJiraExpressionResponse"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./resources/expression.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "ExpressionResource",
+              "original": "ExpressionResource"
             }
           ]
         },
@@ -19615,6 +19715,172 @@
               "name": "get",
               "kind": "method",
               "line": 37
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/types.js"
+      ]
+    },
+    {
+      "path": "src/jira/resources/expression.ts",
+      "symbols": [
+        {
+          "name": "AnalysedExpression",
+          "kind": "interface",
+          "line": 11,
+          "exported": true,
+          "signature": "export interface AnalysedExpression { readonly expression?: string; readonly errors?: AnalysedExpressionError[]; readonl…",
+          "jsdoc": "Per-expression analysis result returned by POST /expression/analyse."
+        },
+        {
+          "name": "AnalysedExpressionError",
+          "kind": "interface",
+          "line": 20,
+          "exported": true,
+          "signature": "export interface AnalysedExpressionError { readonly line?: number; readonly column?: number; readonly expression?: strin…",
+          "jsdoc": "Error entry attached to an invalid analysed expression."
+        },
+        {
+          "name": "AnalysedExpressionComplexity",
+          "kind": "interface",
+          "line": 29,
+          "exported": true,
+          "signature": "export interface AnalysedExpressionComplexity { readonly expensiveOperations?: string; readonly variables?: Record<strin…",
+          "jsdoc": "Complexity profile attached to a valid analysed expression."
+        },
+        {
+          "name": "AnalyseJiraExpressionsResponse",
+          "kind": "interface",
+          "line": 35,
+          "exported": true,
+          "signature": "export interface AnalyseJiraExpressionsResponse { readonly results: AnalysedExpression[]; }",
+          "jsdoc": "Response envelope for POST /expression/analyse."
+        },
+        {
+          "name": "AnalyseJiraExpressionsData",
+          "kind": "interface",
+          "line": 40,
+          "exported": true,
+          "signature": "export interface AnalyseJiraExpressionsData { readonly expressions: string[]; readonly contextVariables?: Record<string,…",
+          "jsdoc": "Request body for POST /expression/analyse."
+        },
+        {
+          "name": "AnalyseJiraExpressionsParams",
+          "kind": "interface",
+          "line": 48,
+          "exported": true,
+          "signature": "export interface AnalyseJiraExpressionsParams { readonly check?: string; }",
+          "jsdoc": "Query parameters for POST /expression/analyse."
+        },
+        {
+          "name": "JiraExpressionEvalJqlContext",
+          "kind": "interface",
+          "line": 58,
+          "exported": true,
+          "signature": "export interface JiraExpressionEvalJqlContext { readonly query?: string; readonly startAt?: number; readonly maxResults?…",
+          "jsdoc": "Jql context bean for POST /expression/eval and /expression/evaluate."
+        },
+        {
+          "name": "JiraExpressionEvalContext",
+          "kind": "interface",
+          "line": 66,
+          "exported": true,
+          "signature": "export interface JiraExpressionEvalContext { readonly board?: number; readonly custom?: Record<string, unknown>; readonl…",
+          "jsdoc": "Evaluation context for POST /expression/eval and /expression/evaluate."
+        },
+        {
+          "name": "EvaluateJiraExpressionData",
+          "kind": "interface",
+          "line": 78,
+          "exported": true,
+          "signature": "export interface EvaluateJiraExpressionData { readonly expression: string; readonly context?: JiraExpressionEvalContext;…",
+          "jsdoc": "Request body for POST /expression/eval and /expression/evaluate."
+        },
+        {
+          "name": "EvaluateJiraExpressionParams",
+          "kind": "interface",
+          "line": 86,
+          "exported": true,
+          "signature": "export interface EvaluateJiraExpressionParams { readonly expand?: string; }",
+          "jsdoc": "Query parameters for POST /expression/eval and /expression/evaluate."
+        },
+        {
+          "name": "JiraExpressionMetric",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface JiraExpressionMetric { readonly value?: number; readonly limit?: number; }",
+          "jsdoc": "Complexity sub-metric (value + limit pair)."
+        },
+        {
+          "name": "JiraExpressionComplexity",
+          "kind": "interface",
+          "line": 98,
+          "exported": true,
+          "signature": "export interface JiraExpressionComplexity { readonly steps?: JiraExpressionMetric; readonly expensiveOperations?: JiraEx…",
+          "jsdoc": "Complexity envelope attached to evaluation responses."
+        },
+        {
+          "name": "JiraExpressionEvaluateJqlMeta",
+          "kind": "interface",
+          "line": 106,
+          "exported": true,
+          "signature": "export interface JiraExpressionEvaluateJqlMeta { readonly startAt?: number; readonly maxResults?: number; readonly count…",
+          "jsdoc": "JQL metadata block attached to /expression/evaluate (paginated)."
+        },
+        {
+          "name": "JiraExpressionEvalJqlMeta",
+          "kind": "interface",
+          "line": 115,
+          "exported": true,
+          "signature": "export interface JiraExpressionEvalJqlMeta { readonly nextPageToken?: string; readonly maxResults?: number; readonly cou…",
+          "jsdoc": "JQL metadata block attached to /expression/eval (scrolling)."
+        },
+        {
+          "name": "EvaluateJiraExpressionResponse",
+          "kind": "interface",
+          "line": 123,
+          "exported": true,
+          "signature": "export interface EvaluateJiraExpressionResponse { readonly value?: unknown; readonly meta?: { readonly complexity?: Jira…",
+          "jsdoc": "Response envelope for POST /expression/evaluate (paginated)."
+        },
+        {
+          "name": "EvalJiraExpressionResponse",
+          "kind": "interface",
+          "line": 132,
+          "exported": true,
+          "signature": "export interface EvalJiraExpressionResponse { readonly value?: unknown; readonly meta?: { readonly complexity?: JiraExpr…",
+          "jsdoc": "Response envelope for POST /expression/eval (enhanced, scrolling JQL)."
+        },
+        {
+          "name": "ExpressionResource",
+          "kind": "class",
+          "line": 150,
+          "exported": true,
+          "signature": "export class ExpressionResource",
+          "jsdoc": "Jira Expressions resource.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 151
+            },
+            {
+              "name": "analyse",
+              "kind": "method",
+              "line": 157
+            },
+            {
+              "name": "eval",
+              "kind": "method",
+              "line": 178
+            },
+            {
+              "name": "evaluate",
+              "kind": "method",
+              "line": 199
             }
           ]
         }
