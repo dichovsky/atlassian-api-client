@@ -32,12 +32,12 @@ export interface AnalysedExpressionComplexity {
 }
 
 /** Response envelope for POST /expression/analyse. */
-export interface AnalyseJiraExpressionsResponse {
+export interface AnalyseExpressionsResponse {
   readonly results: AnalysedExpression[];
 }
 
 /** Request body for POST /expression/analyse. */
-export interface AnalyseJiraExpressionsData {
+export interface AnalyseExpressionsData {
   /** Array of Jira expressions to analyse. */
   readonly expressions: string[];
   /** Optional map of variables made available to the analysed expressions. */
@@ -45,17 +45,17 @@ export interface AnalyseJiraExpressionsData {
 }
 
 /** Query parameters for POST /expression/analyse. */
-export interface AnalyseJiraExpressionsParams {
+export interface AnalyseExpressionsParams {
   /**
    * When set, enables type-checking of the expressions.
    * Accepted values per Atlassian docs: `syntax` (default), `type`,
-   * `complexity`. Modelled as `string` to forward any future value.
+   * `complexity`.
    */
-  readonly check?: string;
+  readonly check?: 'syntax' | 'type' | 'complexity';
 }
 
 /** Jql context bean for POST /expression/eval and /expression/evaluate. */
-export interface JiraExpressionEvalJqlContext {
+export interface ExpressionEvalJqlContext {
   readonly query?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -63,47 +63,47 @@ export interface JiraExpressionEvalJqlContext {
 }
 
 /** Evaluation context for POST /expression/eval and /expression/evaluate. */
-export interface JiraExpressionEvalContext {
+export interface ExpressionEvalContext {
   readonly board?: number;
   readonly custom?: Record<string, unknown>;
   readonly customerRequest?: number;
-  readonly issue?: { readonly key?: string; readonly id?: number };
-  readonly issues?: { readonly jql?: JiraExpressionEvalJqlContext };
-  readonly project?: { readonly key?: string; readonly id?: number };
+  readonly issue?: { readonly key?: string; readonly id?: string };
+  readonly issues?: { readonly jql?: ExpressionEvalJqlContext };
+  readonly project?: { readonly key?: string; readonly id?: string };
   readonly serviceDesk?: number;
   readonly sprint?: number;
 }
 
 /** Request body for POST /expression/eval and /expression/evaluate. */
-export interface EvaluateJiraExpressionData {
+export interface EvaluateExpressionData {
   /** The Jira expression to evaluate. */
   readonly expression: string;
   /** Optional evaluation context. */
-  readonly context?: JiraExpressionEvalContext;
+  readonly context?: ExpressionEvalContext;
 }
 
 /** Query parameters for POST /expression/eval and /expression/evaluate. */
-export interface EvaluateJiraExpressionParams {
+export interface EvaluateExpressionParams {
   /** Comma-separated expansion keys (e.g. `meta.complexity`). */
   readonly expand?: string;
 }
 
 /** Complexity sub-metric (value + limit pair). */
-export interface JiraExpressionMetric {
+export interface ExpressionMetric {
   readonly value?: number;
   readonly limit?: number;
 }
 
 /** Complexity envelope attached to evaluation responses. */
-export interface JiraExpressionComplexity {
-  readonly steps?: JiraExpressionMetric;
-  readonly expensiveOperations?: JiraExpressionMetric;
-  readonly beans?: JiraExpressionMetric;
-  readonly primitiveValues?: JiraExpressionMetric;
+export interface ExpressionComplexity {
+  readonly steps?: ExpressionMetric;
+  readonly expensiveOperations?: ExpressionMetric;
+  readonly beans?: ExpressionMetric;
+  readonly primitiveValues?: ExpressionMetric;
 }
 
 /** JQL metadata block attached to /expression/evaluate (paginated). */
-export interface JiraExpressionEvaluateJqlMeta {
+export interface ExpressionEvaluateJqlMeta {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly count?: number;
@@ -112,7 +112,7 @@ export interface JiraExpressionEvaluateJqlMeta {
 }
 
 /** JQL metadata block attached to /expression/eval (scrolling). */
-export interface JiraExpressionEvalJqlMeta {
+export interface ExpressionEvalJqlMeta {
   readonly nextPageToken?: string;
   readonly maxResults?: number;
   readonly count?: number;
@@ -120,20 +120,20 @@ export interface JiraExpressionEvalJqlMeta {
 }
 
 /** Response envelope for POST /expression/evaluate (paginated). */
-export interface EvaluateJiraExpressionResponse {
+export interface EvaluateExpressionResponse {
   readonly value?: unknown;
   readonly meta?: {
-    readonly complexity?: JiraExpressionComplexity;
-    readonly issues?: { readonly jql?: JiraExpressionEvaluateJqlMeta };
+    readonly complexity?: ExpressionComplexity;
+    readonly issues?: { readonly jql?: ExpressionEvaluateJqlMeta };
   };
 }
 
 /** Response envelope for POST /expression/eval (enhanced, scrolling JQL). */
-export interface EvalJiraExpressionResponse {
+export interface EvalExpressionResponse {
   readonly value?: unknown;
   readonly meta?: {
-    readonly complexity?: JiraExpressionComplexity;
-    readonly issues?: { readonly jql?: JiraExpressionEvalJqlMeta };
+    readonly complexity?: ExpressionComplexity;
+    readonly issues?: { readonly jql?: ExpressionEvalJqlMeta };
   };
 }
 
@@ -155,14 +155,14 @@ export class ExpressionResource {
 
   /** B409: Analyse Jira expressions. POST /expression/analyse */
   async analyse(
-    data: AnalyseJiraExpressionsData,
-    params?: AnalyseJiraExpressionsParams,
-  ): Promise<AnalyseJiraExpressionsResponse> {
+    data: AnalyseExpressionsData,
+    params?: AnalyseExpressionsParams,
+  ): Promise<AnalyseExpressionsResponse> {
     const query: Record<string, string | undefined> = {};
     if (params?.check !== undefined) query['check'] = params.check;
     const body: Record<string, unknown> = { expressions: data.expressions };
     if (data.contextVariables !== undefined) body['contextVariables'] = data.contextVariables;
-    const response = await this.transport.request<AnalyseJiraExpressionsResponse>({
+    const response = await this.transport.request<AnalyseExpressionsResponse>({
       method: 'POST',
       path: `${this.baseUrl}/expression/analyse`,
       body,
@@ -176,14 +176,14 @@ export class ExpressionResource {
    * (eventually consistent, scrolling JQL view). POST /expression/eval
    */
   async eval(
-    data: EvaluateJiraExpressionData,
-    params?: EvaluateJiraExpressionParams,
-  ): Promise<EvalJiraExpressionResponse> {
+    data: EvaluateExpressionData,
+    params?: EvaluateExpressionParams,
+  ): Promise<EvalExpressionResponse> {
     const query: Record<string, string | undefined> = {};
     if (params?.expand !== undefined) query['expand'] = params.expand;
     const body: Record<string, unknown> = { expression: data.expression };
     if (data.context !== undefined) body['context'] = data.context;
-    const response = await this.transport.request<EvalJiraExpressionResponse>({
+    const response = await this.transport.request<EvalExpressionResponse>({
       method: 'POST',
       path: `${this.baseUrl}/expression/eval`,
       body,
@@ -197,14 +197,14 @@ export class ExpressionResource {
    * search API (paginated JQL view). POST /expression/evaluate
    */
   async evaluate(
-    data: EvaluateJiraExpressionData,
-    params?: EvaluateJiraExpressionParams,
-  ): Promise<EvaluateJiraExpressionResponse> {
+    data: EvaluateExpressionData,
+    params?: EvaluateExpressionParams,
+  ): Promise<EvaluateExpressionResponse> {
     const query: Record<string, string | undefined> = {};
     if (params?.expand !== undefined) query['expand'] = params.expand;
     const body: Record<string, unknown> = { expression: data.expression };
     if (data.context !== undefined) body['context'] = data.context;
-    const response = await this.transport.request<EvaluateJiraExpressionResponse>({
+    const response = await this.transport.request<EvaluateExpressionResponse>({
       method: 'POST',
       path: `${this.baseUrl}/expression/evaluate`,
       body,

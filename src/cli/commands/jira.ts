@@ -948,6 +948,15 @@ function asAccessType(
   throw new Error(`--access-type must be one of: site-admin, admin, user. Got: ${s}`);
 }
 
+function asExpressionCheck(
+  value: string | boolean | undefined,
+): 'syntax' | 'type' | 'complexity' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'syntax' || s === 'type' || s === 'complexity') return s;
+  throw new Error(`Invalid --check value "${s}". Must be one of: syntax, type, complexity`);
+}
+
 function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
   const s = asString(value);
   if (!s) throw new Error('Missing required option: --type');
@@ -3127,7 +3136,7 @@ async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promis
               string
             >)
           : undefined;
-      const check = asString(opts['check']);
+      const check = asExpressionCheck(opts['check']);
       return client.expression.analyse(
         {
           expressions,

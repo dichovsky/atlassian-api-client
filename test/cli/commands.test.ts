@@ -14828,5 +14828,40 @@ describe('executeJiraCommand', () => {
         'Unknown expression action',
       );
     });
+
+    it('expression analyse forwards check=syntax', async () => {
+      jiraExpressionMock.analyse.mockResolvedValue({ results: [] });
+      await executeJiraCommand(
+        cmd('expression', 'analyse', [], { expressions: '["issue.key"]', check: 'syntax' }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.analyse).toHaveBeenCalledWith(
+        { expressions: ['issue.key'] },
+        { check: 'syntax' },
+      );
+    });
+
+    it('expression analyse forwards check=complexity', async () => {
+      jiraExpressionMock.analyse.mockResolvedValue({ results: [] });
+      await executeJiraCommand(
+        cmd('expression', 'analyse', [], { expressions: '["issue.key"]', check: 'complexity' }),
+        GLOBALS,
+      );
+      expect(jiraExpressionMock.analyse).toHaveBeenCalledWith(
+        { expressions: ['issue.key'] },
+        { check: 'complexity' },
+      );
+    });
+
+    it('expression analyse throws on invalid --check value', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('expression', 'analyse', [], { expressions: '["issue.key"]', check: 'invalid' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow(
+        'Invalid --check value "invalid". Must be one of: syntax, type, complexity',
+      );
+    });
   });
 });
