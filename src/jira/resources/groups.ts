@@ -53,6 +53,11 @@ export interface GroupMember {
  * requested. The expanded `users` block contains the first N members plus a
  * paginated envelope; full enumeration should go through `listMembers` /
  * `listAllMembers`.
+ *
+ * Note: the inlined `users` envelope uses kebab-case keys
+ * (`max-results`, `start-index`, `end-index`) verbatim from Atlassian's
+ * response — preserved as-is rather than remapped so callers can pass the
+ * raw payload through without surprises.
  */
 export interface Group {
   readonly name: string;
@@ -102,6 +107,14 @@ export interface CreateGroupData {
   readonly name: string;
 }
 
+/**
+ * Group access type per Atlassian Jira Cloud REST v3 spec
+ * (`GET /rest/api/3/group/bulk`).
+ *
+ * Closed set documented by Atlassian: `'site-admin' | 'admin' | 'user'`.
+ */
+export type GroupAccessType = 'site-admin' | 'admin' | 'user';
+
 /** Query parameters for GET /rest/api/3/group/bulk. */
 export interface ListBulkGroupsParams {
   /** Pagination offset (default 0). */
@@ -112,8 +125,8 @@ export interface ListBulkGroupsParams {
   readonly groupId?: string[];
   /** Group names to filter the result set (CSV-joined into a single query value). */
   readonly groupName?: string[];
-  /** Restrict to groups providing a given access type (`application` | `site-admin` | `admin`). */
-  readonly accessType?: string;
+  /** Restrict to groups providing a given access type. */
+  readonly accessType?: GroupAccessType;
   /** Application key used in combination with `accessType`. */
   readonly applicationKey?: string;
 }

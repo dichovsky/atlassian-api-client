@@ -10533,7 +10533,7 @@ describe('executeJiraCommand', () => {
           'max-results': '25',
           'group-ids': 'a,b',
           'group-names': 'x,y',
-          'access-type': 'application',
+          'access-type': 'site-admin',
           'application-key': 'jira-software',
         }),
         GLOBALS,
@@ -10544,9 +10544,18 @@ describe('executeJiraCommand', () => {
         maxResults: 25,
         groupId: ['a', 'b'],
         groupName: ['x', 'y'],
-        accessType: 'application',
+        accessType: 'site-admin',
         applicationKey: 'jira-software',
       });
+    });
+
+    it('groups list-bulk rejects invalid --access-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('groups', 'list-bulk', [], { 'access-type': 'application' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--access-type must be one of: site-admin, admin, user. Got: application');
     });
 
     it('groups list-bulk with no flags', async () => {

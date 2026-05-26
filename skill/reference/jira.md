@@ -1096,7 +1096,7 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 
 - `--group-ids` — **comma-separated** group IDs to filter the result set.
 - `--group-names` — **comma-separated** group names to filter the result set.
-- `--access-type` — restrict to groups providing a given access type (`application`, `site-admin`, `admin`).
+- `--access-type` — restrict to groups providing a given access type. One of: `site-admin`, `admin`, `user`.
 - `--application-key` — application key used with `--access-type`.
 - `--start-at`, `--max-results` — offset pagination controls.
 - Endpoint: `GET /rest/api/3/group/bulk`.
@@ -1133,8 +1133,8 @@ atlas jira groups create --name developers
 # Delete a group and swap its restrictions onto another group
 atlas jira groups delete --group-id grp-old --swap-group-id grp-new
 
-# Bulk-list groups providing application access
-atlas jira groups list-bulk --access-type application --application-key jira-software
+# Bulk-list groups providing site-admin access
+atlas jira groups list-bulk --access-type site-admin --application-key jira-software
 
 # List members of a group, including deactivated users
 atlas jira groups list-members --group-id grp-1 --include-inactive-users

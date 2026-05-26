@@ -234,9 +234,6 @@ const GLOBAL_OPTIONS = {
   'time-format': { type: 'string' as const },
   'default-unit': { type: 'string' as const },
   // filters options (B452-B466)
-  'account-id': { type: 'string' as const },
-  'group-name': { type: 'string' as const },
-  'group-id': { type: 'string' as const },
   'share-scope': { type: 'string' as const },
   'share-type': { type: 'string' as const },
   'include-favourites': { type: 'boolean' as const },

@@ -243,6 +243,7 @@ export type {
   DeleteGroupParams,
   GetGroupParams,
   CreateGroupData,
+  GroupAccessType,
   ListBulkGroupsParams,
   ListGroupMembersParams,
   RemoveGroupUserParams,

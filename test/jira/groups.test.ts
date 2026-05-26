@@ -222,7 +222,7 @@ describe('GroupsResource', () => {
         maxResults: 25,
         groupId: ['a', 'b'],
         groupName: ['x', 'y'],
-        accessType: 'application',
+        accessType: 'site-admin',
         applicationKey: 'jira-software',
       });
 
@@ -231,7 +231,7 @@ describe('GroupsResource', () => {
         maxResults: 25,
         groupId: 'a,b',
         groupName: 'x,y',
-        accessType: 'application',
+        accessType: 'site-admin',
         applicationKey: 'jira-software',
       });
     });

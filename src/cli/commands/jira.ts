@@ -867,6 +867,15 @@ function asBoardType(
   throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
 }
 
+function asAccessType(
+  value: string | boolean | undefined,
+): 'site-admin' | 'admin' | 'user' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'site-admin' || s === 'admin' || s === 'user') return s;
+  throw new Error(`--access-type must be one of: site-admin, admin, user. Got: ${s}`);
+}
+
 function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
   const s = asString(value);
   if (!s) throw new Error('Missing required option: --type');
@@ -1137,7 +1146,7 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'list-bulk': {
       const groupIds = splitCsv(asString(opts['group-ids']));
       const groupNames = splitCsv(asString(opts['group-names']));
-      const accessType = asString(opts['access-type']);
+      const accessType = asAccessType(opts['access-type']);
       const applicationKey = asString(opts['application-key']);
       return client.groups.listBulk({
         startAt: asPositiveInt(opts['start-at'], '--start-at'),
