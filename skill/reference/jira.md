@@ -136,7 +136,7 @@ Issue field configuration management (B908–B913). Covers the flat `/rest/api/3
 atlas jira fieldconfiguration list --start-at 0 --max-results 50
 
 # Filter by IDs, default-flag, or substring
-atlas jira fieldconfiguration list --ids 10000,10001 --is-default true
+atlas jira fieldconfiguration list --ids 10000,10001 --is-default
 atlas jira fieldconfiguration list --query "default"
 
 # Create a configuration

@@ -415,7 +415,7 @@ EXAMPLES:
   atlas jira expression eval --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}'
   atlas jira expression evaluate --expression "issue.key" --context '{"issue":{"key":"ACJIRA-1470"}}' --expand meta.complexity
   atlas jira fieldconfiguration list --start-at 0 --max-results 50
-  atlas jira fieldconfiguration list --ids 10000,10001 --is-default true
+  atlas jira fieldconfiguration list --ids 10000,10001 --is-default
   atlas jira fieldconfiguration list --query "default"
   atlas jira fieldconfiguration create --name "My Configuration" --description "A new field configuration"
   atlas jira fieldconfiguration update 10001 --name "Renamed" --description "Updated description"
