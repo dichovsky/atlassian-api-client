@@ -57,7 +57,63 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `component`              | `list`, `create`, `get`, `update`, `delete`, `related-issue-counts`                                                                                                                                                                                                                                                                                                                                                      |
 | `filters`                | `search`, `get`, `create`, `update`, `delete`, `list-favourites`, `list-my`, `add-favourite`, `remove-favourite`, `change-owner`, `get-columns`, `set-columns`, `reset-columns`, `list-permissions`, `add-permission`, `get-permission`, `delete-permission`, `get-default-share-scope`, `set-default-share-scope`                                                                                                       |
 | `permission-schemes`     | `list`, `get`, `create`, `update`, `delete`, `list-permissions`, `create-permission`, `get-permission`, `delete-permission`                                                                                                                                                                                                                                                                                              |
-| `issue-type-schemes`     | `list`, `get-mapping`, `get-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                      |
+| `issue-type-schemes`     | `list`, `list-mapping`, `list-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                    |
+
+## `issue-type-schemes`
+
+Issue type scheme management (B566–B575). Covers the full `/rest/api/3/issuetypescheme` surface.
+
+| Action              | Positional                          | Required flags                                                       | Optional flags                                                       |
+| ------------------- | ----------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `list`              | —                                   | —                                                                    | `--start-at`, `--max-results`, `--ids` (CSV scheme IDs)              |
+| `list-mapping`      | —                                   | —                                                                    | `--start-at`, `--max-results`, `--scheme-ids` (CSV scheme IDs)       |
+| `list-project`      | —                                   | —                                                                    | `--start-at`, `--max-results`, `--project-ids` (CSV)                 |
+| `create`            | —                                   | `--name`                                                             | `--description`, `--default-issue-type-id`, `--issue-type-ids` (CSV) |
+| `update`            | `<issueTypeSchemeId>`               | at least one of `--name`, `--description`, `--default-issue-type-id` | —                                                                    |
+| `delete`            | `<issueTypeSchemeId>`               | —                                                                    | —                                                                    |
+| `add-issue-types`   | `<issueTypeSchemeId>`               | `--issue-type-ids` (CSV)                                             | —                                                                    |
+| `remove-issue-type` | `<issueTypeSchemeId> <issueTypeId>` | —                                                                    | —                                                                    |
+| `move-issue-types`  | `<issueTypeSchemeId>`               | `--issue-type-ids` (CSV)                                             | `--position` (First\|Last), `--after` (issueTypeId)                  |
+| `assign-to-project` | —                                   | `--scheme-id`, `--project-id`                                        | —                                                                    |
+
+```bash
+# List all schemes (paginated)
+atlas jira issue-type-schemes list --start-at 0 --max-results 50
+
+# List specific schemes by ID
+atlas jira issue-type-schemes list --ids 10000,10001
+
+# Create a scheme
+atlas jira issue-type-schemes create --name "Software Development" --description "Default for dev" --default-issue-type-id 10001 --issue-type-ids 10001,10002,10003
+
+# Update a scheme
+atlas jira issue-type-schemes update 10000 --name "Updated Scheme" --description "New description"
+
+# Delete a scheme
+atlas jira issue-type-schemes delete 10000
+
+# Add issue types to a scheme
+atlas jira issue-type-schemes add-issue-types 10000 --issue-type-ids 10005,10006
+
+# Remove an issue type from a scheme
+atlas jira issue-type-schemes remove-issue-type 10000 10005
+
+# Move issue types to the top
+atlas jira issue-type-schemes move-issue-types 10000 --issue-type-ids 10001,10002 --position First
+
+# Move issue types after another
+atlas jira issue-type-schemes move-issue-types 10000 --issue-type-ids 10003 --after 10002
+
+# Get scheme-to-issue-type mapping
+atlas jira issue-type-schemes list-mapping --scheme-ids 10000,10001
+
+# Get project-to-scheme mapping
+atlas jira issue-type-schemes list-project --project-ids 10100,10101
+
+# Assign a scheme to a project
+atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
+```
+
 
 ## `app`
 

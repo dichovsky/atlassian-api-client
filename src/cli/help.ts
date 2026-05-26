@@ -262,7 +262,7 @@ RESOURCES:
   filters                search, get, create, update, delete, list-favourites, list-my, add-favourite, remove-favourite, change-owner, get-columns, set-columns, reset-columns, list-permissions, add-permission, get-permission, delete-permission, get-default-share-scope, set-default-share-scope
   issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
   permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
-  issue-type-schemes     list, get-mapping, get-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
+  issue-type-schemes     list, list-mapping, list-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -373,9 +373,9 @@ EXAMPLES:
   atlas jira issue-type-schemes remove-issue-type 10000 10005
   atlas jira issue-type-schemes move-issue-types 10000 --issue-type-ids 10001,10002 --position First
   atlas jira issue-type-schemes move-issue-types 10000 --issue-type-ids 10003 --after 10002
-  atlas jira issue-type-schemes get-mapping --ids 10000,10001
-  atlas jira issue-type-schemes get-project --project-ids 10100,10101
-  atlas jira issue-type-schemes assign-to-project --id 10000 --project-id 10100
+  atlas jira issue-type-schemes list-mapping --scheme-ids 10000,10001
+  atlas jira issue-type-schemes list-project --project-ids 10100,10101
+  atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
 `;
 
 /** Get help text for the given level. */

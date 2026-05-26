@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "9fd7ee3d9430fe7edf799572010da7776c90ea848e753f67374e757b384145c9",
+  "sourceHash": "16555b15f1a0921faa9d111624eed8d683b09e39151aa621b068387cb754bcd9",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4580,7 +4580,7 @@
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
           "line": 2720,
-          "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'get-mapping', 'get-project', 'create', 'update', 'delete', 'add-issue-type…"
+          "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
@@ -20961,17 +20961,25 @@
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype."
         },
         {
-          "name": "MoveIssueTypesData",
-          "kind": "interface",
+          "name": "IssueTypeMovePosition",
+          "kind": "type",
           "line": 46,
           "exported": true,
-          "signature": "export interface MoveIssueTypesData { readonly issueTypeIds: string[]; readonly after?: string; readonly position?: 'Fir…",
+          "signature": "export type IssueTypeMovePosition = 'First' | 'Last';",
+          "jsdoc": "Position sentinel values for moving issue types within a scheme."
+        },
+        {
+          "name": "MoveIssueTypesData",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface MoveIssueTypesData { readonly issueTypeIds: string[]; readonly after?: string; readonly position?: Issu…",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/move."
         },
         {
           "name": "IssueTypeSchemeMapping",
           "kind": "interface",
-          "line": 53,
+          "line": 56,
           "exported": true,
           "signature": "export interface IssueTypeSchemeMapping { readonly issueTypeSchemeId: string; readonly issueTypeId: string; }",
           "jsdoc": "A mapping entry returned by GET /rest/api/3/issuetypescheme/mapping."
@@ -20979,31 +20987,31 @@
         {
           "name": "ListIssueTypeSchemeMappingsParams",
           "kind": "interface",
-          "line": 59,
+          "line": 62,
           "exported": true,
           "signature": "export interface ListIssueTypeSchemeMappingsParams { readonly startAt?: number; readonly maxResults?: number; readonly i…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescheme/mapping."
         },
         {
-          "name": "IssueTypeSchemeProjects",
+          "name": "IssueTypeSchemeProjectAssociation",
           "kind": "interface",
-          "line": 69,
+          "line": 72,
           "exported": true,
-          "signature": "export interface IssueTypeSchemeProjects { readonly issueTypeScheme: IssueTypeScheme; readonly projectIds: string[]; }",
+          "signature": "export interface IssueTypeSchemeProjectAssociation { readonly issueTypeScheme: IssueTypeScheme; readonly projectIds: str…",
           "jsdoc": "A project-scheme mapping entry returned by GET /rest/api/3/issuetypescheme/project."
         },
         {
-          "name": "ListIssueTypeSchemeProjectsParams",
+          "name": "ListIssueTypeSchemeProjectAssociationParams",
           "kind": "interface",
-          "line": 75,
+          "line": 78,
           "exported": true,
-          "signature": "export interface ListIssueTypeSchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly p…",
+          "signature": "export interface ListIssueTypeSchemeProjectAssociationParams { readonly startAt?: number; readonly maxResults?: number; …",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescheme/project."
         },
         {
           "name": "AssignIssueTypeSchemeToProjectData",
           "kind": "interface",
-          "line": 85,
+          "line": 88,
           "exported": true,
           "signature": "export interface AssignIssueTypeSchemeToProjectData { readonly issueTypeSchemeId: string; readonly projectId: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescheme/project."
@@ -21011,7 +21019,7 @@
         {
           "name": "CreatedIssueTypeScheme",
           "kind": "interface",
-          "line": 91,
+          "line": 94,
           "exported": true,
           "signature": "export interface CreatedIssueTypeScheme { readonly id: string; }",
           "jsdoc": "Response envelope for POST /rest/api/3/issuetypescheme."
@@ -21019,7 +21027,7 @@
         {
           "name": "IssueTypeSchemeResource",
           "kind": "class",
-          "line": 102,
+          "line": 105,
           "exported": true,
           "signature": "export class IssueTypeSchemeResource",
           "jsdoc": "Jira Issue Type Schemes resource — B566-B575.",
@@ -21027,92 +21035,92 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 103
+              "line": 106
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 112
+              "line": 115
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 128
+              "line": 131
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 145
+              "line": 148
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 162
+              "line": 165
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 173
+              "line": 176
             },
             {
               "name": "addIssueTypes",
               "kind": "method",
-              "line": 189
+              "line": 192
             },
             {
               "name": "removeIssueType",
               "kind": "method",
-              "line": 201
+              "line": 204
             },
             {
               "name": "moveIssueTypes",
               "kind": "method",
-              "line": 212
+              "line": 215
             },
             {
               "name": "listMapping",
               "kind": "method",
-              "line": 227
+              "line": 230
             },
             {
               "name": "listMappingAll",
               "kind": "method",
-              "line": 243
+              "line": 246
             },
             {
               "name": "listProject",
               "kind": "method",
-              "line": 260
+              "line": 263
             },
             {
               "name": "listProjectAll",
               "kind": "method",
-              "line": 278
+              "line": 281
             },
             {
               "name": "assignToProject",
               "kind": "method",
-              "line": 295
+              "line": 298
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 306,
+          "line": 309,
           "signature": "function buildListQuery( params: ListIssueTypeSchemesParams | undefined, ): Record<string, string | number | boolean | u…"
         },
         {
           "name": "buildMappingQuery",
           "kind": "function",
-          "line": 318,
+          "line": 321,
           "signature": "function buildMappingQuery( params: ListIssueTypeSchemeMappingsParams | undefined, ): Record<string, string | number | b…"
         },
         {
           "name": "buildProjectQuery",
           "kind": "function",
-          "line": 330,
-          "signature": "function buildProjectQuery( params: ListIssueTypeSchemeProjectsParams | undefined, ): Record<string, string | number | b…"
+          "line": 333,
+          "signature": "function buildProjectQuery( params: ListIssueTypeSchemeProjectAssociationParams | undefined, ): Record<string, string | …"
         }
       ],
       "imports": [

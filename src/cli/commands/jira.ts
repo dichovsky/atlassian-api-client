@@ -2719,8 +2719,8 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
 
 const ISSUE_TYPE_SCHEMES_ACTIONS = [
   'list',
-  'get-mapping',
-  'get-project',
+  'list-mapping',
+  'list-project',
   'create',
   'update',
   'delete',
@@ -2742,15 +2742,15 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
         ...(ids !== undefined && { id: ids }),
       });
     }
-    case 'get-mapping': {
-      const issueTypeSchemeId = parseCsv(opts['ids']);
+    case 'list-mapping': {
+      const issueTypeSchemeId = parseCsv(opts['scheme-ids']);
       return client.issueTypeSchemes.listMapping({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(issueTypeSchemeId !== undefined && { issueTypeSchemeId }),
       });
     }
-    case 'get-project': {
+    case 'list-project': {
       const projectId = parseCsv(opts['project-ids']);
       return client.issueTypeSchemes.listProject({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
@@ -2829,7 +2829,7 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
       return { updated: true };
     }
     case 'assign-to-project': {
-      const issueTypeSchemeId = requireOpt(opts['id'], '--id');
+      const issueTypeSchemeId = requireOpt(opts['scheme-id'], '--scheme-id');
       const projectId = requireOpt(opts['project-id'], '--project-id');
       await client.issueTypeSchemes.assignToProject({ issueTypeSchemeId, projectId });
       return { assigned: true };

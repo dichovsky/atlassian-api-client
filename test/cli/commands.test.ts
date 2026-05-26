@@ -13814,17 +13814,17 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('issue-type-schemes get-mapping calls client.issueTypeSchemes.listMapping', async () => {
+    it('issue-type-schemes list-mapping calls client.issueTypeSchemes.listMapping', async () => {
       const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
       jiraIssueTypeSchemesMock.listMapping.mockResolvedValue(page);
-      await executeJiraCommand(cmd('issue-type-schemes', 'get-mapping'), GLOBALS);
+      await executeJiraCommand(cmd('issue-type-schemes', 'list-mapping'), GLOBALS);
       expect(jiraIssueTypeSchemesMock.listMapping).toHaveBeenCalled();
     });
 
-    it('issue-type-schemes get-mapping passes issueTypeSchemeId filter', async () => {
+    it('issue-type-schemes list-mapping passes issueTypeSchemeId filter', async () => {
       jiraIssueTypeSchemesMock.listMapping.mockResolvedValue({ values: [] });
       await executeJiraCommand(
-        cmd('issue-type-schemes', 'get-mapping', [], { ids: '10001,10002' }),
+        cmd('issue-type-schemes', 'list-mapping', [], { 'scheme-ids': '10001,10002' }),
         GLOBALS,
       );
       expect(jiraIssueTypeSchemesMock.listMapping).toHaveBeenCalledWith(
@@ -13832,17 +13832,17 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('issue-type-schemes get-project calls client.issueTypeSchemes.listProject', async () => {
+    it('issue-type-schemes list-project calls client.issueTypeSchemes.listProject', async () => {
       const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
       jiraIssueTypeSchemesMock.listProject.mockResolvedValue(page);
-      await executeJiraCommand(cmd('issue-type-schemes', 'get-project'), GLOBALS);
+      await executeJiraCommand(cmd('issue-type-schemes', 'list-project'), GLOBALS);
       expect(jiraIssueTypeSchemesMock.listProject).toHaveBeenCalled();
     });
 
-    it('issue-type-schemes get-project passes projectId filter', async () => {
+    it('issue-type-schemes list-project passes projectId filter', async () => {
       jiraIssueTypeSchemesMock.listProject.mockResolvedValue({ values: [] });
       await executeJiraCommand(
-        cmd('issue-type-schemes', 'get-project', [], { 'project-ids': '10100,10101' }),
+        cmd('issue-type-schemes', 'list-project', [], { 'project-ids': '10100,10101' }),
         GLOBALS,
       );
       expect(jiraIssueTypeSchemesMock.listProject).toHaveBeenCalledWith(
@@ -14053,7 +14053,7 @@ describe('executeJiraCommand', () => {
       jiraIssueTypeSchemesMock.assignToProject.mockResolvedValue(undefined);
       const result = await executeJiraCommand(
         cmd('issue-type-schemes', 'assign-to-project', [], {
-          id: '10001',
+          'scheme-id': '10001',
           'project-id': '10100',
         }),
         GLOBALS,
@@ -14065,19 +14065,19 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ assigned: true });
     });
 
-    it('issue-type-schemes assign-to-project throws when --id missing', async () => {
+    it('issue-type-schemes assign-to-project throws when --scheme-id missing', async () => {
       await expect(
         executeJiraCommand(
           cmd('issue-type-schemes', 'assign-to-project', [], { 'project-id': '10100' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('Missing required option: --id');
+      ).rejects.toThrow('Missing required option: --scheme-id');
     });
 
     it('issue-type-schemes assign-to-project throws when --project-id missing', async () => {
       await expect(
         executeJiraCommand(
-          cmd('issue-type-schemes', 'assign-to-project', [], { id: '10001' }),
+          cmd('issue-type-schemes', 'assign-to-project', [], { 'scheme-id': '10001' }),
           GLOBALS,
         ),
       ).rejects.toThrow('Missing required option: --project-id');
