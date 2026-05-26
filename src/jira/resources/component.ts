@@ -191,7 +191,7 @@ export class ComponentResource {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/component/${encodePathSegment(id)}`,
-      query,
+      ...(Object.keys(query).length > 0 && { query }),
     });
   }
 

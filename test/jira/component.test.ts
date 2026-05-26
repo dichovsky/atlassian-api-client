@@ -334,14 +334,14 @@ describe('ComponentResource', () => {
   // ── delete ────────────────────────────────────────────────────────────────
 
   describe('delete()', () => {
-    it('DELETEs /component/{id} with empty query when no params', async () => {
+    it('DELETEs /component/{id} without query when no params', async () => {
       transport.respondWith(undefined);
       await component.delete('10000');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
         path: `${BASE_URL}/component/10000`,
       });
-      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('forwards moveIssuesTo query param', async () => {

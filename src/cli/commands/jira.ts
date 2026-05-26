@@ -1802,14 +1802,14 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
   switch (cmd.action) {
     case 'list': {
       const projectIdsOrKeys = parseCsv(opts['project-ids-or-keys']);
+      const orderBy = asString(opts['order-by']);
+      const query = asString(opts['query']);
       return client.component.list({
         ...(projectIdsOrKeys !== undefined && { projectIdsOrKeys }),
         startAt: asPositiveInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        ...(asString(opts['order-by']) !== undefined && {
-          orderBy: asString(opts['order-by']) as string,
-        }),
-        ...(asString(opts['query']) !== undefined && { query: asString(opts['query']) as string }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(query !== undefined && { query }),
       });
     }
     case 'create': {
