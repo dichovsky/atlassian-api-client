@@ -11897,7 +11897,7 @@ describe('executeJiraCommand', () => {
       expect(jiraComponentMock.list).toHaveBeenCalledWith({});
     });
 
-    it('component list forwards all supported flags', async () => {
+    it('component list forwards all supported flags (start-at 0 is accepted)', async () => {
       jiraComponentMock.list.mockResolvedValue({
         values: [],
         startAt: 0,
@@ -11907,7 +11907,7 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(
         cmd('component', 'list', [], {
           'project-ids-or-keys': 'HSP,PROJ',
-          'start-at': '10',
+          'start-at': '0',
           'max-results': '25',
           'order-by': 'name',
           query: 'auth',
@@ -11916,11 +11916,17 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraComponentMock.list).toHaveBeenCalledWith({
         projectIdsOrKeys: ['HSP', 'PROJ'],
-        startAt: 10,
+        startAt: 0,
         maxResults: 25,
         orderBy: 'name',
         query: 'auth',
       });
+    });
+
+    it('component list rejects negative --start-at', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'list', [], { 'start-at': '-1' }), GLOBALS),
+      ).rejects.toThrow('--start-at must be a non-negative integer');
     });
 
     it('component list rejects non-positive --max-results', async () => {
@@ -11929,15 +11935,21 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--max-results must be a positive integer');
     });
 
-    it('component create with required flags only', async () => {
+    it('component create with required flags only (--name + --project)', async () => {
       const created = { id: '10000', name: 'C1', self: 'x' };
       jiraComponentMock.create.mockResolvedValue(created);
       const result = await executeJiraCommand(
-        cmd('component', 'create', [], { name: 'C1' }),
+        cmd('component', 'create', [], { name: 'C1', project: 'HSP' }),
         GLOBALS,
       );
-      expect(jiraComponentMock.create).toHaveBeenCalledWith({ name: 'C1' });
+      expect(jiraComponentMock.create).toHaveBeenCalledWith({ name: 'C1', project: 'HSP' });
       expect(result).toEqual(created);
+    });
+
+    it('component create throws when neither --project nor --project-id is provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'create', [], { name: 'C1' }), GLOBALS),
+      ).rejects.toThrow('component create requires --project or --project-id');
     });
 
     it('component create with all flags forwards full body', async () => {
@@ -11972,12 +11984,14 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(
         cmd('component', 'create', [], {
           name: 'N',
+          project: 'HSP',
           'is-assignee-type-valid': false,
         }),
         GLOBALS,
       );
       expect(jiraComponentMock.create).toHaveBeenCalledWith({
         name: 'N',
+        project: 'HSP',
         isAssigneeTypeValid: false,
       });
     });
@@ -11991,7 +12005,7 @@ describe('executeJiraCommand', () => {
     it('component create rejects invalid --assignee-type', async () => {
       await expect(
         executeJiraCommand(
-          cmd('component', 'create', [], { name: 'X', 'assignee-type': 'BAD' }),
+          cmd('component', 'create', [], { name: 'X', project: 'HSP', 'assignee-type': 'BAD' }),
           GLOBALS,
         ),
       ).rejects.toThrow('--assignee-type must be one of');

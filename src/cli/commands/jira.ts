@@ -834,6 +834,15 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   return n;
 }
 
+function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`${name} must be a non-negative integer, got: ${value}`);
+  }
+  return n;
+}
+
 function parsePositiveIntArg(value: string, name: string): number {
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
@@ -1806,7 +1815,7 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const query = asString(opts['query']);
       return client.component.list({
         ...(projectIdsOrKeys !== undefined && { projectIdsOrKeys }),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(orderBy !== undefined && { orderBy }),
         ...(query !== undefined && { query }),
@@ -1826,6 +1835,9 @@ async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise
       const projectIdStr = asString(opts['project-id']);
       const projectId =
         projectIdStr !== undefined ? parsePositiveIntArg(projectIdStr, '--project-id') : undefined;
+      if (project === undefined && projectId === undefined) {
+        throw new Error('component create requires --project or --project-id');
+      }
       return client.component.create({
         name,
         ...(description !== undefined && { description }),

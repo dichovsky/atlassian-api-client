@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ComponentResource } from '../../src/jira/resources/component.js';
+import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -199,16 +200,34 @@ describe('ComponentResource', () => {
   // ── create ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('POSTs minimal body with required name only', async () => {
+    it('POSTs minimal body with required name + project', async () => {
       const created = makeComponent('1', 'C1');
       transport.respondWith(created);
-      const result = await component.create({ name: 'C1' });
+      const result = await component.create({ name: 'C1', project: 'HSP' });
       expect(result).toEqual(created);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/component`,
-        body: { name: 'C1' },
+        body: { name: 'C1', project: 'HSP' },
       });
+    });
+
+    it('accepts projectId as the owning project', async () => {
+      const created = makeComponent('2', 'C2');
+      transport.respondWith(created);
+      await component.create({ name: 'C2', projectId: 10000 });
+      expect(transport.lastCall?.options.body).toEqual({ name: 'C2', projectId: 10000 });
+    });
+
+    it('throws ValidationError when neither project nor projectId is provided', async () => {
+      await expect(component.create({ name: 'X' })).rejects.toThrow(ValidationError);
+      await expect(component.create({ name: 'X' })).rejects.toThrow(
+        'component create requires "project" or "projectId"',
+      );
+    });
+
+    it('throws ValidationError when project is an empty string and no projectId', async () => {
+      await expect(component.create({ name: 'X', project: '' })).rejects.toThrow(ValidationError);
     });
 
     it('forwards every optional body field', async () => {

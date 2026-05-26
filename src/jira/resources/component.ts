@@ -2,6 +2,7 @@ import type { Transport, Logger } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 
 /** Assignment policy for the component. */
 export type ComponentAssigneeType =
@@ -142,6 +143,9 @@ export class ComponentResource {
 
   /** B362: Create a component. */
   async create(data: CreateComponentData): Promise<Component> {
+    if ((data.project === undefined || data.project === '') && data.projectId === undefined) {
+      throw new ValidationError('component create requires "project" or "projectId"');
+    }
     const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.leadAccountId !== undefined) body['leadAccountId'] = data.leadAccountId;
