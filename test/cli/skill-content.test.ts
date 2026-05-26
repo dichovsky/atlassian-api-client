@@ -190,6 +190,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'permission-schemes',
           'issue-type-schemes',
           'roles',
+          'resolutions',
         ]).toContain(parsed.resource);
       }
     });
@@ -299,6 +300,7 @@ describe('Resource coverage drift check', () => {
     'permission-schemes',
     'issue-type-schemes',
     'roles',
+    'resolutions',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

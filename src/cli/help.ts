@@ -216,7 +216,8 @@ RESOURCES:
   issue-types   list, get
   issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
   priorities    list, get
-  statuses      list
+  statuses      list, bulk-delete, bulk-create, bulk-update, get-issue-type-usages, get-project-usages, get-workflow-usages, by-names, search
+  resolutions   list, get, create, update, delete, set-default, move, search
   status        list, get
   status-category  list, get
   boards        list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports
@@ -390,6 +391,22 @@ EXAMPLES:
   atlas jira roles delete-actors 10001 --account-id acc-1
   atlas jira roles delete-actors 10001 --group-name my-group
   atlas jira roles delete-actors 10001 --group-id grp-1
+  atlas jira resolutions list
+  atlas jira resolutions get 10001
+  atlas jira resolutions create --name "Fixed"
+  atlas jira resolutions update 10001 --name "Fixed" --description "Issue was fixed"
+  atlas jira resolutions delete 10001 --replace-with 10000
+  atlas jira resolutions set-default 10001
+  atlas jira resolutions move --ids 10001,10002 --after 10000
+  atlas jira resolutions search --query-string "Won't" --max-results 10
+  atlas jira statuses bulk-delete --ids 10001,10002
+  atlas jira statuses bulk-create --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]'
+  atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed"}]'
+  atlas jira statuses get-issue-type-usages 10001 10002
+  atlas jira statuses get-project-usages 10001
+  atlas jira statuses get-workflow-usages 10001
+  atlas jira statuses by-names --names "In Progress,Done"
+  atlas jira statuses search --project-id 10000 --search-string "In Progress"
 `;
 
 /** Get help text for the given level. */

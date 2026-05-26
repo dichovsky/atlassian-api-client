@@ -392,3 +392,23 @@ export type {
   DeleteActorsParams,
 } from './resources/role.js';
 export { RoleResource } from './resources/role.js';
+export type {
+  Resolution,
+  CreateResolutionData,
+  UpdateResolutionData,
+  DeleteResolutionParams,
+  SetDefaultResolutionData,
+  MoveResolutionData,
+  SearchResolutionsParams,
+} from './resources/resolution.js';
+export { ResolutionResource } from './resources/resolution.js';
+export type {
+  CreateStatusData,
+  UpdateStatusData,
+  StatusUsagesPage,
+  StatusIssueTypeUsage,
+  StatusProjectUsage,
+  StatusWorkflowUsage,
+  SearchStatusesParams,
+  StatusUsagesParams,
+} from './resources/statuses.js';

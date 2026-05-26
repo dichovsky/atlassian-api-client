@@ -12,7 +12,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `users`                  | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `priorities`             | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `statuses`               | `list`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `statuses`               | `list`, `bulk-delete`, `bulk-create`, `bulk-update`, `get-issue-type-usages`, `get-project-usages`, `get-workflow-usages`, `by-names`, `search`                                                                                                                                                                                                                                                                          |
+| `resolutions`            | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                             |
 | `boards`                 | `list`, `get`, `create`, `delete`, `backlog`, `configuration`, `list-epics`, `epic-issues`, `issues-without-epic`, `get-features`, `toggle-feature`, `get-issues`, `move-issues`, `list-projects`, `list-projects-full`, `list-sprints`, `list-versions`, `sprint-issues`, `list-by-filter`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports` |
 | `sprints`                | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap`                                                                                                                                                                                                                                                         |
 | `epic`                   | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                                                                                                                                                                                                                                                                         |
@@ -1894,6 +1895,74 @@ atlas jira issue-type-schemes get-project --project-ids 10100,10101
 
 # Assign a scheme to a project
 atlas jira issue-type-schemes assign-to-project --id 10000 --project-id 10100
+```
+
+## `resolutions`
+
+Issue resolution management (B931, B712-B718). `list` is deprecated by Atlassian — prefer `search`.
+
+| Action        | Positional | Required flags                            | Optional flags                                                             |
+| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------------------------- |
+| `list`        | —          | —                                         | — (deprecated; no filtering)                                               |
+| `get`         | `<id>`     | —                                         | —                                                                          |
+| `create`      | —          | `--name`                                  | `--description`                                                            |
+| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                                          |
+| `delete`      | `<id>`     | —                                         | `--replace-with`                                                           |
+| `set-default` | `<id>`     | —                                         | —                                                                          |
+| `move`        | —          | `--ids`                                   | `--after` or `--before`                                                    |
+| `search`      | —          | —                                         | `--query-string`, `--only-default`, `--start-at`, `--max-results`, `--ids` |
+
+- `--ids` is comma-separated (for `move` and `search`).
+- `--replace-with` is the ID of the replacement resolution when deleting a resolution that is in use.
+- `--after` / `--before` for `move`: the ID of the resolution after/before which the moved items are placed (mutually exclusive).
+- `--only-default`: boolean flag; when set only the default resolution is returned.
+
+```sh
+atlas jira resolutions list
+atlas jira resolutions get 10001
+atlas jira resolutions create --name "Fixed"
+atlas jira resolutions create --name "Won't Fix" --description "Not a bug"
+atlas jira resolutions update 10001 --name "Fixed" --description "Issue was fixed"
+atlas jira resolutions delete 10001 --replace-with 10000
+atlas jira resolutions set-default 10001
+atlas jira resolutions move --ids 10001,10002 --after 10000
+atlas jira resolutions search --query-string "Won't" --max-results 10
+atlas jira resolutions search --only-default
+```
+
+## `statuses` (extended — B777-B784)
+
+Bulk management, usage queries, and search for the `/rest/api/3/statuses` surface.
+
+| Action                  | Positional                 | Required flags | Optional flags                                                                        |
+| ----------------------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| `list`                  | —                          | —              | —                                                                                     |
+| `bulk-delete`           | —                          | `--ids`        | —                                                                                     |
+| `bulk-create`           | —                          | `--value`      | —                                                                                     |
+| `bulk-update`           | —                          | `--value`      | —                                                                                     |
+| `get-issue-type-usages` | `<statusId>` `<projectId>` | —              | `--next-page-token`, `--max-results`                                                  |
+| `get-project-usages`    | `<statusId>`               | —              | `--next-page-token`, `--max-results`                                                  |
+| `get-workflow-usages`   | `<statusId>`               | —              | `--next-page-token`, `--max-results`                                                  |
+| `by-names`              | —                          | `--names`      | —                                                                                     |
+| `search`                | —                          | —              | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category` |
+
+- `--ids` for `bulk-delete`: comma-separated status IDs.
+- `--value` for `bulk-create`: JSON array of `{ name, statusCategory, description?, scope? }` objects. `statusCategory` must be `TODO`, `IN_PROGRESS`, or `DONE`.
+- `--value` for `bulk-update`: JSON array of `{ id, name?, description?, statusCategory? }` objects.
+- `--next-page-token`: opaque token from previous page response (usages endpoints use cursor pagination, not offset).
+- `--names` for `by-names`: comma-separated status names.
+- `--status-category`: one of `TODO`, `IN_PROGRESS`, `DONE`.
+
+```sh
+atlas jira statuses list
+atlas jira statuses bulk-delete --ids 10001,10002
+atlas jira statuses bulk-create --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS","description":"Awaiting external input"}]'
+atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed Status"}]'
+atlas jira statuses get-issue-type-usages 10001 10002
+atlas jira statuses get-project-usages 10001 --next-page-token abc123
+atlas jira statuses get-workflow-usages 10001
+atlas jira statuses by-names --names "In Progress,Done"
+atlas jira statuses search --project-id 10000 --search-string "In Progress" --status-category IN_PROGRESS
 ```
 
 ## Errors specific to Jira

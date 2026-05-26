@@ -131,6 +131,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'permission-schemes': 'executePermissionSchemes',
   'issue-type-schemes': 'executeIssueTypeSchemes',
   roles: 'executeRoles',
+  resolutions: 'executeResolutions',
 };
 
 /**

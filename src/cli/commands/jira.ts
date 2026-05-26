@@ -1,6 +1,10 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
-import type { AddFilterSharePermissionData } from '../../jira/index.js';
+import type {
+  AddFilterSharePermissionData,
+  CreateStatusData,
+  UpdateStatusData,
+} from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -121,6 +125,8 @@ export async function executeJiraCommand(
       return executeIssueTypeSchemes(client, cmd);
     case 'roles':
       return executeRoles(client, cmd);
+    case 'resolutions':
+      return executeResolutions(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -273,11 +279,67 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
 }
 
 async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
       return client.statuses.list();
+    case 'bulk-delete': {
+      const idsRaw = requireOpt(opts['ids'], '--ids');
+      const id = splitCsvIds(idsRaw);
+      await client.statuses.bulkDelete({ id });
+      return { deleted: true };
+    }
+    case 'bulk-create': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      const statuses = parseJsonArrayFlag(valueRaw, '--value') as CreateStatusData[];
+      return client.statuses.bulkCreate({ statuses });
+    }
+    case 'bulk-update': {
+      const valueRaw = requireOpt(opts['value'], '--value');
+      const statuses = parseJsonArrayFlag(valueRaw, '--value') as UpdateStatusData[];
+      await client.statuses.bulkUpdate({ statuses });
+      return { updated: true };
+    }
+    case 'get-issue-type-usages': {
+      const statusId = requireArg(cmd.positionalArgs[0], 'statusId');
+      const projectId = requireArg(cmd.positionalArgs[1], 'projectId');
+      return client.statuses.getIssueTypeUsages(statusId, projectId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'get-project-usages': {
+      const statusId = requireArg(cmd.positionalArgs[0], 'statusId');
+      return client.statuses.getProjectUsages(statusId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'get-workflow-usages': {
+      const statusId = requireArg(cmd.positionalArgs[0], 'statusId');
+      return client.statuses.getWorkflowUsages(statusId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'by-names': {
+      const namesRaw = requireOpt(opts['names'], '--names');
+      const names = splitCsvIds(namesRaw);
+      return client.statuses.byNames({ names });
+    }
+    case 'search':
+      return client.statuses.search({
+        projectId: asString(opts['project-id']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        searchString: asString(opts['search-string']),
+        statusCategory: asStatusCategory(opts['status-category']),
+      });
     default:
-      throw new Error(`Unknown statuses action: ${cmd.action}. Actions: list`);
+      throw new Error(
+        `Unknown statuses action: ${cmd.action}. Actions: list, bulk-delete, bulk-create, bulk-update, get-issue-type-usages, get-project-usages, get-workflow-usages, by-names, search`,
+      );
   }
 }
 
@@ -2130,6 +2192,91 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
     default:
       throw new Error(
         `Unknown configuration action: ${cmd.action}. Actions: get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options`,
+      );
+  }
+}
+
+// ── statuses / resolutions helpers ──────────────────────────────────────────
+
+function asStatusCategory(
+  value: string | boolean | undefined,
+): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'TODO' || s === 'IN_PROGRESS' || s === 'DONE') return s;
+  throw new Error(`--status-category must be one of: TODO, IN_PROGRESS, DONE. Got: ${s}`);
+}
+
+// ── resolutions (B931, B712-B718) ────────────────────────────────────────────
+
+async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.resolutions.list();
+    case 'get':
+      return client.resolutions.get(requireArg(cmd.positionalArgs[0], 'id'));
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.resolutions.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      await client.resolutions.update(id, {
+        name,
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const replaceWith = asString(opts['replace-with']);
+      await client.resolutions.delete(id, {
+        ...(replaceWith !== undefined && { replaceWith }),
+      });
+      return { deleted: true };
+    }
+    case 'set-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      await client.resolutions.setDefault({ id });
+      return { updated: true };
+    }
+    case 'move': {
+      const idsRaw = requireOpt(opts['ids'], '--ids');
+      const ids = splitCsvIds(idsRaw);
+      const after = asString(opts['after']);
+      const before = asString(opts['before']);
+      if (after !== undefined && before !== undefined) {
+        throw new Error('resolutions move accepts either --after or --before, not both');
+      }
+      await client.resolutions.moveResolutions({
+        ids,
+        ...(after !== undefined && { after }),
+        ...(before !== undefined && { before }),
+      });
+      return { moved: true };
+    }
+    case 'search': {
+      const idsRaw = asString(opts['ids']);
+      const id = idsRaw ? splitCsvIds(idsRaw) : undefined;
+      return client.resolutions.search({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(id !== undefined && { id }),
+        onlyDefault: asBoolFlag(opts['only-default']),
+        queryString: asString(opts['query-string']),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown resolutions action: ${cmd.action}. Actions: list, get, create, update, delete, set-default, move, search`,
       );
   }
 }
