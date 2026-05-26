@@ -43,6 +43,10 @@
 - [ ] 🔴 ♻️ Jira: B008 Split types by domain
   - files: `src/jira/types/*`, `src/jira/index.ts`
   - deps: B007
+- [ ] 🟢 ♻️ Jira: B566 Drop redundant `maxResults` from `listAll` base query in `filters.ts`
+  - files: `src/jira/resources/filters.ts`, `test/jira/filters.test.ts`
+  - deps: none
+  - rat: `paginateOffset` overwrites `startAt`/`maxResults` per page; including them in the base query is misleading. Mirror fix already applied to `groups.listAllBulk`/`listAllMembers` (PR #85).
 
 ## 🖥️ CLI
 
@@ -138,7 +142,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 539 as of 2026-05-25. Updated by `chore/jira-backlog-reconcile` PR.
+> **Truly-missing Jira endpoints:** 482 as of 2026-05-26. Updated by `chore/jira-backlog-reconcile` PR.
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
