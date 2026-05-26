@@ -693,7 +693,6 @@ const jiraIssueTypeSchemesMock = {
   assignToProject: vi.fn(),
 };
 
-
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -14090,4 +14089,3 @@ describe('executeJiraCommand', () => {
     });
   });
 });
-

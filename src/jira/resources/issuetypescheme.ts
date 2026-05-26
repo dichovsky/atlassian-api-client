@@ -265,13 +265,13 @@ export class IssueTypeSchemeResource {
   ): Promise<OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectQuery(params);
-    const response = await this.transport.request<OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>>(
-      {
-        method: 'GET',
-        path: `${this.baseUrl}/issuetypescheme/project`,
-        query,
-      },
-    );
+    const response = await this.transport.request<
+      OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>
+    >({
+      method: 'GET',
+      path: `${this.baseUrl}/issuetypescheme/project`,
+      query,
+    });
     return response.data;
   }
 

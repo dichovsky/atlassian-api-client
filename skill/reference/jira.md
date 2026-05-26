@@ -114,7 +114,6 @@ atlas jira issue-type-schemes list-project --project-ids 10100,10101
 atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
 ```
 
-
 ## `app`
 
 App-scoped resource grouping three distinct API surfaces used by Forge and Atlassian Connect apps:

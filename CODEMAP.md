@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "16555b15f1a0921faa9d111624eed8d683b09e39151aa621b068387cb754bcd9",
+  "sourceHash": "b8b03aa418bc25c1ae3ead3f1222b0a027b729bfb664b6269e905dc809c6614d",
   "entrypoints": [
     "src/index.ts"
   ],
