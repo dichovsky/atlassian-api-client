@@ -1,8 +1,8 @@
 ---
 name: atlassian-api-client-cli
 description: |
-  Operate Atlassian Cloud via `atlas` CLI with prompt-token-efficient, high-accuracy execution.
-  TRIGGER when: user needs Jira/Confluence Cloud CLI operations or asks for `atlas` command construction.
+  Use the atlas CLI (npm: atlassian-api-client) to read and write Confluence Cloud pages/spaces/comments and Jira Cloud issues/projects/searches from a shell.
+  TRIGGER when: user wants to query, create, update, or delete Confluence or Jira Cloud data from the command line; agent needs to script Atlassian operations; user mentions `atlas`, `atlassian-api-client`, or asks "how do I CLI into Jira/Confluence".
   DO NOT TRIGGER when: request is for TypeScript SDK internals, Atlassian Server/Data Center, Bitbucket, Trello, or web UI workflows.
 version: 0.0.0-dev
 source: atlassian-api-client npm package
@@ -54,3 +54,14 @@ atlas install-skill --print
 ```
 
 `install-skill` is options-only: `atlas install-skill [--local|--path <dir>] [--print|--dry-run|--force]`.
+
+## Installing this skill
+
+Use the `--package` form to avoid `npx` resolving an unrelated package named `atlas`:
+
+```sh
+npx --package atlassian-api-client -- atlas install-skill
+npx --package atlassian-api-client -- atlas install-skill --local
+```
+
+The `--package` flag is required because the binary name `atlas` is also used by other packages. If `atlassian-api-client` is already in the current project's `node_modules`, `npx atlas install-skill` also works.
