@@ -148,15 +148,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B331 Jira: expose GET /rest/api/3/application-properties
-  - files: `src/jira/resources/application-properties.ts`, `test/jira/application-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B332 Jira: expose PUT /rest/api/3/application-properties/{id}
-  - files: `src/jira/resources/application-properties.ts`, `test/jira/application-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B333 Jira: expose GET /rest/api/3/application-properties/advanced-settings
-  - files: `src/jira/resources/application-properties.ts`, `test/jira/application-properties.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B356 Jira: expose GET /rest/api/3/comment/{commentId}/properties
   - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
@@ -216,24 +207,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B381 Jira: expose PUT /rest/api/3/config/fieldschemes/projects
   - files: `src/jira/resources/config.ts`, `test/jira/config.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B382 Jira: expose GET /rest/api/3/configuration
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B383 Jira: expose GET /rest/api/3/configuration/timetracking
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B384 Jira: expose PUT /rest/api/3/configuration/timetracking
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B385 Jira: expose GET /rest/api/3/configuration/timetracking/list
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B386 Jira: expose GET /rest/api/3/configuration/timetracking/options
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B387 Jira: expose PUT /rest/api/3/configuration/timetracking/options
-  - files: `src/jira/resources/configuration.ts`, `test/jira/configuration.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B409 Jira: expose POST /rest/api/3/expression/analyse
   - files: `src/jira/resources/expression.ts`, `test/jira/expression.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

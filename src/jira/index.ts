@@ -299,3 +299,17 @@ export type {
   DeleteComponentParams,
 } from './resources/component.js';
 export { ComponentResource } from './resources/component.js';
+export type {
+  ApplicationProperty,
+  ListApplicationPropertiesParams,
+  UpdateApplicationPropertyData,
+} from './resources/application-properties.js';
+export { ApplicationPropertiesResource } from './resources/application-properties.js';
+export type {
+  Configuration,
+  TimeTrackingConfiguration,
+  TimeTrackingProvider,
+  SelectTimeTrackingProviderData,
+  UpdateTimeTrackingConfigurationData,
+} from './resources/configuration.js';
+export { ConfigurationResource } from './resources/configuration.js';

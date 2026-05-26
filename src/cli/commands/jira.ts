@@ -100,6 +100,10 @@ export async function executeJiraCommand(
       return executeExistsByProperties(client, cmd);
     case 'app':
       return executeApp(client, cmd);
+    case 'application-properties':
+      return executeApplicationProperties(client, cmd);
+    case 'configuration':
+      return executeConfiguration(client, cmd);
     case 'bulk':
       return executeBulk(client, cmd);
     case 'issue-attachments':
@@ -1805,6 +1809,7 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
       );
   }
 }
+
 async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -1912,4 +1917,126 @@ function asComponentAssigneeType(
   throw new Error(
     `--assignee-type must be one of: ${COMPONENT_ASSIGNEE_TYPES.join(', ')}. Got: ${s}`,
   );
+}
+
+const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;
+const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;
+type TimeFormat = (typeof TIME_FORMATS)[number];
+type DefaultUnit = (typeof DEFAULT_UNITS)[number];
+
+function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if ((TIME_FORMATS as readonly string[]).includes(s)) return s as TimeFormat;
+  throw new Error(`--time-format must be one of: ${TIME_FORMATS.join(', ')}. Got: ${s}`);
+}
+
+function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if ((DEFAULT_UNITS as readonly string[]).includes(s)) return s as DefaultUnit;
+  throw new Error(`--default-unit must be one of: ${DEFAULT_UNITS.join(', ')}. Got: ${s}`);
+}
+
+function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`${name} must be a positive number, got: ${value}`);
+  }
+  return n;
+}
+
+async function executeApplicationProperties(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      // Positional id (if any) is treated as `--key` shorthand — matches the
+      // server semantic where `key=<id>` returns the single matching entry.
+      const positionalKey = cmd.positionalArgs[0];
+      const key = positionalKey ?? asString(opts['key']);
+      const permissionLevel = asString(opts['permission-level']);
+      const keyFilter = asString(opts['key-filter']);
+      return client.applicationProperties.list({
+        ...(key !== undefined && { key }),
+        ...(permissionLevel !== undefined && { permissionLevel }),
+        ...(keyFilter !== undefined && { keyFilter }),
+      });
+    }
+    case 'set': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const value = requireOpt(opts['value'], '--value');
+      return client.applicationProperties.update(id, { id, value });
+    }
+    case 'list-advanced-settings':
+      return client.applicationProperties.listAdvancedSettings();
+    default:
+      throw new Error(
+        `Unknown application-properties action: ${cmd.action}. Actions: list, set, list-advanced-settings`,
+      );
+  }
+}
+
+async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.configuration.get();
+    case 'get-timetracking':
+      return client.configuration.getTimeTracking();
+    case 'select-timetracking': {
+      const key = requireOpt(opts['key'], '--key');
+      const name = asString(opts['name']);
+      const url = asString(opts['url']);
+      await client.configuration.selectTimeTracking({
+        key,
+        ...(name !== undefined && { name }),
+        ...(url !== undefined && { url }),
+      });
+      return { selected: true };
+    }
+    case 'list-timetracking-providers':
+      return client.configuration.listTimeTrackingProviders();
+    case 'get-timetracking-options':
+      return client.configuration.getTimeTrackingOptions();
+    case 'update-timetracking-options': {
+      const workingHoursPerDay = asPositiveNumber(
+        opts['working-hours-per-day'],
+        '--working-hours-per-day',
+      );
+      const workingDaysPerWeek = asPositiveNumber(
+        opts['working-days-per-week'],
+        '--working-days-per-week',
+      );
+      const timeFormat = asTimeFormat(opts['time-format']);
+      const defaultUnit = asDefaultUnit(opts['default-unit']);
+
+      if (
+        workingHoursPerDay === undefined &&
+        workingDaysPerWeek === undefined &&
+        timeFormat === undefined &&
+        defaultUnit === undefined
+      ) {
+        throw new Error(
+          'update-timetracking-options requires at least one of: --working-hours-per-day, --working-days-per-week, --time-format, --default-unit',
+        );
+      }
+
+      return client.configuration.updateTimeTrackingOptions({
+        ...(workingHoursPerDay !== undefined && { workingHoursPerDay }),
+        ...(workingDaysPerWeek !== undefined && { workingDaysPerWeek }),
+        ...(timeFormat !== undefined && { timeFormat }),
+        ...(defaultUnit !== undefined && { defaultUnit }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown configuration action: ${cmd.action}. Actions: get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options`,
+      );
+  }
 }

@@ -1134,3 +1134,30 @@
 - [x] 🔴 🧩 API: B366 Jira: expose GET /rest/api/3/component/{id}/relatedIssueCounts
   - **Impl:** `ComponentResource.getRelatedIssueCounts(id)` returns `ComponentRelatedIssueCounts`. CLI `atlas jira component related-issue-counts 10000`.
   - **Rat:** Read-only count sub-resource; kebab-case action mirrors API name.
+- [x] 🔴 🧩 API: B331 Jira: expose GET /rest/api/3/application-properties
+  - **Impl:** `ApplicationPropertiesResource.list({key?, permissionLevel?, keyFilter?})` returns `readonly ApplicationProperty[]`. CLI `atlas jira application-properties list [key] [--key] [--permission-level] [--key-filter]`. Bundled with B332-B333 + B382-B387 in a single 2-resource PR.
+  - **Rat:** Server-wide config key/value endpoint; key/permissionLevel/keyFilter all pass through.
+- [x] 🔴 🧩 API: B332 Jira: expose PUT /rest/api/3/application-properties/{id}
+  - **Impl:** `ApplicationPropertiesResource.update(id, {id, value})` returns the updated `ApplicationProperty`. CLI `atlas jira application-properties set <id> --value <value>`.
+  - **Rat:** Update a single application property value; positional id matches Jira pattern for path-param actions.
+- [x] 🔴 🧩 API: B333 Jira: expose GET /rest/api/3/application-properties/advanced-settings
+  - **Impl:** `ApplicationPropertiesResource.listAdvancedSettings()` returns `readonly ApplicationProperty[]`. CLI `atlas jira application-properties list-advanced-settings`.
+  - **Rat:** Admin-only subset (the "advanced settings" sub-page of Jira admin UI); separate action keeps the surface explicit.
+- [x] 🔴 🧩 API: B382 Jira: expose GET /rest/api/3/configuration
+  - **Impl:** `ConfigurationResource.get()` returns `Configuration` (feature flags + embedded `timeTrackingConfiguration`). CLI `atlas jira configuration get`. Bundled with B383-B387 + B331-B333 in PR.
+  - **Rat:** Global instance feature-flag snapshot; singleton GET so no positional/flags required.
+- [x] 🔴 🧩 API: B383 Jira: expose GET /rest/api/3/configuration/timetracking
+  - **Impl:** `ConfigurationResource.getTimeTracking()` returns `TimeTrackingProvider`. CLI `atlas jira configuration get-timetracking`.
+  - **Rat:** Currently selected time-tracking provider.
+- [x] 🔴 🧩 API: B384 Jira: expose PUT /rest/api/3/configuration/timetracking
+  - **Impl:** `ConfigurationResource.selectTimeTracking({key, name?, url?})` returns `void`. CLI `atlas jira configuration select-timetracking --key <key> [--name] [--url]`.
+  - **Rat:** Switch active provider; key required, name/url for third-party providers.
+- [x] 🔴 🧩 API: B385 Jira: expose GET /rest/api/3/configuration/timetracking/list
+  - **Impl:** `ConfigurationResource.listTimeTrackingProviders()` returns `readonly TimeTrackingProvider[]`. CLI `atlas jira configuration list-timetracking-providers`.
+  - **Rat:** Lists every installed provider; singleton GET.
+- [x] 🔴 🧩 API: B386 Jira: expose GET /rest/api/3/configuration/timetracking/options
+  - **Impl:** `ConfigurationResource.getTimeTrackingOptions()` returns `TimeTrackingConfiguration`. CLI `atlas jira configuration get-timetracking-options`.
+  - **Rat:** Display/calculation settings (working hours/days, time format, default unit).
+- [x] 🔴 🧩 API: B387 Jira: expose PUT /rest/api/3/configuration/timetracking/options
+  - **Impl:** `ConfigurationResource.updateTimeTrackingOptions({...})` returns the updated `TimeTrackingConfiguration`. CLI `atlas jira configuration update-timetracking-options [--working-hours-per-day] [--working-days-per-week] [--time-format] [--default-unit]`. Update requires at least one flag; closed-enum flags validated via local guards (`asTimeFormat`, `asDefaultUnit`).
+  - **Rat:** Update global time-tracking display/calculation options; partial update pattern matches other singleton PUT endpoints.

@@ -121,6 +121,8 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'service-registry': 'executeServiceRegistry',
   'exists-by-properties': 'executeExistsByProperties',
   dashboards: 'executeDashboards',
+  'application-properties': 'executeApplicationProperties',
+  configuration: 'executeConfiguration',
   bulk: 'executeBulk',
   'issue-attachments': 'executeIssueAttachments',
   component: 'executeComponent',
