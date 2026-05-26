@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RoleResource } from '../../src/jira/resources/role.js';
+import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -98,11 +99,29 @@ describe('RoleResource', () => {
         path: `${BASE_URL}/role/10001`,
       });
     });
+
+    it('throws ValidationError for roleId = 0', async () => {
+      await expect(roles.get(0)).rejects.toThrow(ValidationError);
+    });
+
+    it('throws ValidationError for negative roleId', async () => {
+      await expect(roles.get(-1)).rejects.toThrow(ValidationError);
+    });
+
+    it('throws ValidationError for NaN roleId', async () => {
+      await expect(roles.get(NaN)).rejects.toThrow(ValidationError);
+    });
   });
 
   // ── update (PUT) ──────────────────────────────────────────────────────────
 
   describe('update()', () => {
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.update(0, { name: 'x' })).rejects.toThrow(ValidationError);
+      await expect(roles.update(-5, { name: 'x' })).rejects.toThrow(ValidationError);
+      await expect(roles.update(NaN, { name: 'x' })).rejects.toThrow(ValidationError);
+    });
+
     it('calls PUT /role/{id} with body and returns Role', async () => {
       const updated = makeRole({ id: 10001, name: 'Updated Developers' });
       transport.respondWith(updated);
@@ -149,6 +168,12 @@ describe('RoleResource', () => {
   // ── partialUpdate (POST /{id}) ────────────────────────────────────────────
 
   describe('partialUpdate()', () => {
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.partialUpdate(0, { name: 'x' })).rejects.toThrow(ValidationError);
+      await expect(roles.partialUpdate(-1, {})).rejects.toThrow(ValidationError);
+      await expect(roles.partialUpdate(NaN, {})).rejects.toThrow(ValidationError);
+    });
+
     it('calls POST /role/{id} with body and returns Role', async () => {
       const updated = makeRole({ id: 10001, description: 'New description' });
       transport.respondWith(updated);
@@ -176,6 +201,12 @@ describe('RoleResource', () => {
   // ── delete ────────────────────────────────────────────────────────────────
 
   describe('delete()', () => {
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.delete(0)).rejects.toThrow(ValidationError);
+      await expect(roles.delete(-1)).rejects.toThrow(ValidationError);
+      await expect(roles.delete(NaN)).rejects.toThrow(ValidationError);
+    });
+
     it('calls DELETE /role/{id} with no query params', async () => {
       transport.respondWith(undefined);
 
@@ -205,9 +236,9 @@ describe('RoleResource', () => {
     });
   });
 
-  // ── getActors ─────────────────────────────────────────────────────────────
+  // ── getWithActors ─────────────────────────────────────────────────────────
 
-  describe('getActors()', () => {
+  describe('getWithActors()', () => {
     it('calls GET /role/{id}/actors and returns Role with actors', async () => {
       const roleWithActors = {
         ...makeRole(),
@@ -222,7 +253,7 @@ describe('RoleResource', () => {
       };
       transport.respondWith(roleWithActors);
 
-      const result = await roles.getActors(10001);
+      const result = await roles.getWithActors(10001);
 
       expect(result).toEqual(roleWithActors);
       expect(transport.lastCall?.options).toMatchObject({
@@ -230,11 +261,23 @@ describe('RoleResource', () => {
         path: `${BASE_URL}/role/10001/actors`,
       });
     });
+
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.getWithActors(0)).rejects.toThrow(ValidationError);
+      await expect(roles.getWithActors(-1)).rejects.toThrow(ValidationError);
+      await expect(roles.getWithActors(NaN)).rejects.toThrow(ValidationError);
+    });
   });
 
   // ── addActors ─────────────────────────────────────────────────────────────
 
   describe('addActors()', () => {
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.addActors(0, { user: ['acc-1'] })).rejects.toThrow(ValidationError);
+      await expect(roles.addActors(-1, { user: ['acc-1'] })).rejects.toThrow(ValidationError);
+      await expect(roles.addActors(NaN, { user: ['acc-1'] })).rejects.toThrow(ValidationError);
+    });
+
     it('calls POST /role/{id}/actors with user array and returns updated Role', async () => {
       const updated = makeRole();
       transport.respondWith(updated);
@@ -278,6 +321,12 @@ describe('RoleResource', () => {
   // ── deleteActors ──────────────────────────────────────────────────────────
 
   describe('deleteActors()', () => {
+    it('throws ValidationError for invalid roleId', async () => {
+      await expect(roles.deleteActors(0, { user: 'acc-1' })).rejects.toThrow(ValidationError);
+      await expect(roles.deleteActors(-1, { user: 'acc-1' })).rejects.toThrow(ValidationError);
+      await expect(roles.deleteActors(NaN, { user: 'acc-1' })).rejects.toThrow(ValidationError);
+    });
+
     it('calls DELETE /role/{id}/actors with user query param', async () => {
       transport.respondWith(undefined);
 

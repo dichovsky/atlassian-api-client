@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 
 /**
@@ -93,7 +94,7 @@ export interface DeleteActorsParams {
  * Jira global project-role definitions resource — top-level `/rest/api/3/role` surface.
  *
  * Covers B737–B745: list, create, get, update (PUT), partialUpdate (POST),
- * delete, getActors, addActors, deleteActors.
+ * delete, getWithActors, addActors, deleteActors.
  *
  * This resource is scoped to **global** role definitions only. Per-project role
  * assignments at `/rest/api/3/project/{projectKeyOrId}/role/*` (B682–B687) are
@@ -128,6 +129,9 @@ export class RoleResource {
 
   /** B740: Get a global project role by ID. GET /rest/api/3/role/{id} */
   async get(roleId: number): Promise<Role> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const response = await this.transport.request<Role>({
       method: 'GET',
       path: `${this.baseUrl}/role/${encodePathSegment(String(roleId))}`,
@@ -140,6 +144,9 @@ export class RoleResource {
    * PUT /rest/api/3/role/{id}
    */
   async update(roleId: number, data: UpdateRoleData): Promise<Role> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const body: Record<string, unknown> = {};
     if (data.name !== undefined) body['name'] = data.name;
     if (data.description !== undefined) body['description'] = data.description;
@@ -159,6 +166,9 @@ export class RoleResource {
    * PUT requires the complete representation. Both return the updated Role.
    */
   async partialUpdate(roleId: number, data: PartialUpdateRoleData): Promise<Role> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const body: Record<string, unknown> = {};
     if (data.name !== undefined) body['name'] = data.name;
     if (data.description !== undefined) body['description'] = data.description;
@@ -178,6 +188,9 @@ export class RoleResource {
    *   reassigned before deletion.
    */
   async delete(roleId: number, params?: DeleteRoleParams): Promise<void> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.swap !== undefined) query['swap'] = params.swap;
     await this.transport.request<undefined>({
@@ -187,8 +200,16 @@ export class RoleResource {
     });
   }
 
-  /** B744: Get the actors (users/groups) for a global project role. GET /rest/api/3/role/{id}/actors */
-  async getActors(roleId: number): Promise<Role> {
+  /**
+   * B744: Get the actors (users/groups) for a global project role.
+   * GET /rest/api/3/role/{id}/actors
+   *
+   * Returns the full role object including its `actors` array per Jira spec.
+   */
+  async getWithActors(roleId: number): Promise<Role> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const response = await this.transport.request<Role>({
       method: 'GET',
       path: `${this.baseUrl}/role/${encodePathSegment(String(roleId))}/actors`,
@@ -203,6 +224,9 @@ export class RoleResource {
    * Returns the updated role with its full actors list.
    */
   async addActors(roleId: number, data: AddActorsData): Promise<Role> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const body: Record<string, unknown> = {};
     if (data.user !== undefined && data.user.length > 0) body['user'] = data.user;
     if (data.group !== undefined && data.group.length > 0) body['group'] = data.group;
@@ -220,6 +244,9 @@ export class RoleResource {
    * DELETE /rest/api/3/role/{id}/actors
    */
   async deleteActors(roleId: number, params?: DeleteActorsParams): Promise<void> {
+    if (!Number.isInteger(roleId) || roleId <= 0) {
+      throw new ValidationError('roleId must be a positive integer');
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.user !== undefined) query['user'] = params.user;
     if (params?.group !== undefined) query['group'] = params.group;

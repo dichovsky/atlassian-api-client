@@ -2911,7 +2911,7 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     case 'get-actors': {
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
-      return client.roles.getActors(roleId);
+      return client.roles.getWithActors(roleId);
     }
     case 'add-actors': {
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
@@ -2941,12 +2941,12 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     case 'delete-actors': {
       const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
-      const user = asString(opts['user']);
-      const group = asString(opts['group']);
+      const accountId = asString(opts['account-id']);
+      const groupName = asString(opts['group-name']);
       const groupId = asString(opts['group-id']);
       const params: { user?: string; group?: string; groupId?: string } = {};
-      if (user !== undefined) params.user = user;
-      if (group !== undefined) params.group = group;
+      if (accountId !== undefined) params.user = accountId;
+      if (groupName !== undefined) params.group = groupName;
       if (groupId !== undefined) params.groupId = groupId;
       await client.roles.deleteActors(roleId, Object.keys(params).length > 0 ? params : undefined);
       return { deleted: true };

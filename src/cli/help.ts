@@ -387,7 +387,8 @@ EXAMPLES:
   atlas jira roles get-actors 10001
   atlas jira roles add-actors 10001 --user acc-1,acc-2
   atlas jira roles add-actors 10001 --group-id grp-1,grp-2
-  atlas jira roles delete-actors 10001 --user acc-1
+  atlas jira roles delete-actors 10001 --account-id acc-1
+  atlas jira roles delete-actors 10001 --group-name my-group
   atlas jira roles delete-actors 10001 --group-id grp-1
 `;
 

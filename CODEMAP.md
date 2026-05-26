@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "923e024403e016de0d3f281aa1e6ace262235ded3baf940c8d0dcc6aa2a08c8d",
+  "sourceHash": "d4dffb099a81cc79cd40b29e5e7f8311ebce639a83979040f5309c971e04af7c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4652,7 +4652,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 360,
+          "line": 361,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -21264,7 +21264,7 @@
         {
           "name": "Actor",
           "kind": "interface",
-          "line": 10,
+          "line": 11,
           "exported": true,
           "signature": "export interface Actor { readonly id?: number; readonly displayName?: string; readonly type?: 'atlassian-user-role-actor…",
           "jsdoc": "A user reference appearing in project-role actor listings."
@@ -21272,7 +21272,7 @@
         {
           "name": "Role",
           "kind": "interface",
-          "line": 32,
+          "line": 33,
           "exported": true,
           "signature": "export interface Role { readonly self?: string; readonly name: string; readonly id?: number; readonly description?: stri…",
           "jsdoc": "A Jira global project role definition (`/rest/api/3/role`)."
@@ -21280,7 +21280,7 @@
         {
           "name": "CreateRoleData",
           "kind": "interface",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export interface CreateRoleData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for `POST /rest/api/3/role` (create)."
@@ -21288,7 +21288,7 @@
         {
           "name": "UpdateRoleData",
           "kind": "interface",
-          "line": 55,
+          "line": 56,
           "exported": true,
           "signature": "export interface UpdateRoleData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for `PUT /rest/api/3/role/{id}` (full update)."
@@ -21296,7 +21296,7 @@
         {
           "name": "PartialUpdateRoleData",
           "kind": "interface",
-          "line": 61,
+          "line": 62,
           "exported": true,
           "signature": "export interface PartialUpdateRoleData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for `POST /rest/api/3/role/{id}` (partial update / set actors)."
@@ -21304,7 +21304,7 @@
         {
           "name": "DeleteRoleParams",
           "kind": "interface",
-          "line": 67,
+          "line": 68,
           "exported": true,
           "signature": "export interface DeleteRoleParams { readonly swap?: number; }",
           "jsdoc": "Query parameters for `DELETE /rest/api/3/role/{id}`."
@@ -21312,7 +21312,7 @@
         {
           "name": "AddActorsData",
           "kind": "interface",
-          "line": 73,
+          "line": 74,
           "exported": true,
           "signature": "export interface AddActorsData { readonly user?: readonly string[]; readonly group?: readonly string[]; readonly groupId…",
           "jsdoc": "Request body for `POST /rest/api/3/role/{id}/actors` (add actors)."
@@ -21320,7 +21320,7 @@
         {
           "name": "DeleteActorsParams",
           "kind": "interface",
-          "line": 83,
+          "line": 84,
           "exported": true,
           "signature": "export interface DeleteActorsParams { readonly user?: string; readonly group?: string; readonly groupId?: string; }",
           "jsdoc": "Query parameters for `DELETE /rest/api/3/role/{id}/actors` (remove actors)."
@@ -21328,7 +21328,7 @@
         {
           "name": "RoleResource",
           "kind": "class",
-          "line": 102,
+          "line": 103,
           "exported": true,
           "signature": "export class RoleResource",
           "jsdoc": "Jira global project-role definitions resource — top-level `/rest/api/3/role` surface.",
@@ -21336,57 +21336,58 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 103
+              "line": 104
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 109
+              "line": 110
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 118
+              "line": 119
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 130
+              "line": 131
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 142
+              "line": 146
             },
             {
               "name": "partialUpdate",
               "kind": "method",
-              "line": 161
+              "line": 168
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 180
+              "line": 190
             },
             {
-              "name": "getActors",
+              "name": "getWithActors",
               "kind": "method",
-              "line": 191
+              "line": 209
             },
             {
               "name": "addActors",
               "kind": "method",
-              "line": 205
+              "line": 226
             },
             {
               "name": "deleteActors",
               "kind": "method",
-              "line": 222
+              "line": 246
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js"
       ]

@@ -653,7 +653,7 @@ const jiraRolesMock = {
   update: vi.fn(),
   partialUpdate: vi.fn(),
   delete: vi.fn(),
-  getActors: vi.fn(),
+  getWithActors: vi.fn(),
   addActors: vi.fn(),
   deleteActors: vi.fn(),
 };
@@ -14246,14 +14246,14 @@ describe('executeJiraCommand', () => {
       expect(jiraRolesMock.delete).toHaveBeenCalledWith(10001, { swap: 10002 });
     });
 
-    it('roles get-actors calls client.roles.getActors()', async () => {
+    it('roles get-actors calls client.roles.getWithActors()', async () => {
       const roleWithActors = { id: 10001, name: 'Dev', actors: [{ id: 1, displayName: 'Alice' }] };
-      jiraRolesMock.getActors.mockResolvedValue(roleWithActors);
+      jiraRolesMock.getWithActors.mockResolvedValue(roleWithActors);
 
       const result = await executeJiraCommand(cmd('roles', 'get-actors', ['10001']), GLOBALS);
 
       expect(result).toEqual(roleWithActors);
-      expect(jiraRolesMock.getActors).toHaveBeenCalledWith(10001);
+      expect(jiraRolesMock.getWithActors).toHaveBeenCalledWith(10001);
     });
 
     it('roles add-actors calls client.roles.addActors() with user CSV', async () => {
@@ -14301,11 +14301,11 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('add-actors requires at least one of: --user, --group, --group-id');
     });
 
-    it('roles delete-actors calls client.roles.deleteActors() with user', async () => {
+    it('roles delete-actors calls client.roles.deleteActors() with --account-id', async () => {
       jiraRolesMock.deleteActors.mockResolvedValue(undefined);
 
       const result = await executeJiraCommand(
-        cmd('roles', 'delete-actors', ['10001'], { user: 'acc-1' }),
+        cmd('roles', 'delete-actors', ['10001'], { 'account-id': 'acc-1' }),
         GLOBALS,
       );
 
@@ -14324,11 +14324,11 @@ describe('executeJiraCommand', () => {
       expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, { groupId: 'grp-1' });
     });
 
-    it('roles delete-actors calls with group (deprecated name)', async () => {
+    it('roles delete-actors calls with --group-name (singular)', async () => {
       jiraRolesMock.deleteActors.mockResolvedValue(undefined);
 
       await executeJiraCommand(
-        cmd('roles', 'delete-actors', ['10001'], { group: 'my-group' }),
+        cmd('roles', 'delete-actors', ['10001'], { 'group-name': 'my-group' }),
         GLOBALS,
       );
 

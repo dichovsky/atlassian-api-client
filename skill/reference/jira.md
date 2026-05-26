@@ -1907,20 +1907,20 @@ atlas jira issue-type-schemes assign-to-project --id 10000 --project-id 10100
 
 Global project-role definitions at `/rest/api/3/role`. These are **top-level role definitions**, not per-project role assignments. Per-project assignments at `/rest/api/3/project/{key}/role/*` (B682–B687) are separate and belong to the `projects` resource.
 
-| Action           | Positional | Required flags                                    | Optional flags                       |
-| ---------------- | ---------- | ------------------------------------------------- | ------------------------------------ |
-| `list`           | —          | —                                                 | —                                    |
-| `get`            | `<roleId>` | —                                                 | —                                    |
-| `create`         | —          | `--name`                                          | `--description`                      |
-| `update`         | `<roleId>` | at least one of `--name`, `--description`         | —                                    |
-| `partial-update` | `<roleId>` | at least one of `--name`, `--description`         | —                                    |
-| `delete`         | `<roleId>` | —                                                 | `--swap` (ID of role to reassign to) |
-| `get-actors`     | `<roleId>` | —                                                 | —                                    |
-| `add-actors`     | `<roleId>` | at least one of `--user`, `--group`, `--group-id` | —                                    |
-| `delete-actors`  | `<roleId>` | —                                                 | `--user`, `--group`, `--group-id`    |
+| Action           | Positional | Required flags                                    | Optional flags                               |
+| ---------------- | ---------- | ------------------------------------------------- | -------------------------------------------- |
+| `list`           | —          | —                                                 | —                                            |
+| `get`            | `<roleId>` | —                                                 | —                                            |
+| `create`         | —          | `--name`                                          | `--description`                              |
+| `update`         | `<roleId>` | at least one of `--name`, `--description`         | —                                            |
+| `partial-update` | `<roleId>` | at least one of `--name`, `--description`         | —                                            |
+| `delete`         | `<roleId>` | —                                                 | `--swap` (ID of role to reassign to)         |
+| `get-actors`     | `<roleId>` | —                                                 | —                                            |
+| `add-actors`     | `<roleId>` | at least one of `--user`, `--group`, `--group-id` | —                                            |
+| `delete-actors`  | `<roleId>` | —                                                 | `--account-id`, `--group-name`, `--group-id` |
 
 - `--user` and `--group-id` / `--group` for `add-actors` accept comma-separated values (multiple accounts/groups in one call).
-- `--user` / `--group` / `--group-id` for `delete-actors` accept a single value each.
+- `--account-id` / `--group-name` / `--group-id` for `delete-actors` accept a single value each (use `--account-id` instead of `--user` to remove a single user).
 - `update` (PUT) and `partial-update` (POST `/{id}`) are distinct Jira endpoints; Jira differentiates set-actors (POST) from full replace (PUT).
 - `--swap` for `delete` is a numeric role ID; Jira reassigns permissions to that role before deleting.
 
@@ -1953,6 +1953,7 @@ atlas jira roles add-actors 10001 --group-id grp-1,grp-2
 atlas jira roles add-actors 10001 --group legacy-group-name
 
 # Remove a default actor
-atlas jira roles delete-actors 10001 --user acc-1
+atlas jira roles delete-actors 10001 --account-id acc-1
+atlas jira roles delete-actors 10001 --group-name my-group
 atlas jira roles delete-actors 10001 --group-id grp-1
 ```
