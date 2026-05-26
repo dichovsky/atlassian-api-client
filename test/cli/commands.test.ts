@@ -13242,7 +13242,6 @@ describe('executeJiraCommand', () => {
     });
   });
 
-
   // ── issue-type-screen-schemes ─────────────────────────────────────────────
 
   describe('issue-type-screen-schemes resource', () => {
@@ -14371,7 +14370,7 @@ describe('executeJiraCommand', () => {
     });
   });
 
-    // ── statuses extended (B777-B784) ─────────────────────────────────────────
+  // ── statuses extended (B777-B784) ─────────────────────────────────────────
 
   describe('statuses extended resource', () => {
     it('statuses bulk-delete calls client.statuses.bulkDelete with ids', async () => {
