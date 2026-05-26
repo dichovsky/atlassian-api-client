@@ -336,11 +336,11 @@ export type {
 export { ConfigurationResource } from './resources/configuration.js';
 export type {
   IssueTypeScreenScheme,
-  IssueTypeScreenSchemeDetails,
   IssueTypeScreenSchemeMapping,
   IssueTypeScreenSchemeDefaultMapping,
   IssueTypeScreenSchemeMappingDetails,
-  ProjectIssueTypeScreenSchemeMapping,
+  ProjectDetails,
+  IssueTypeScreenSchemesProjects,
   ListIssueTypeScreenSchemesParams,
   CreateIssueTypeScreenSchemeData,
   UpdateIssueTypeScreenSchemeData,

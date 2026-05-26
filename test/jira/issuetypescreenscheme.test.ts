@@ -80,6 +80,27 @@ describe('IssueTypeScreenSchemeResource', () => {
       await expect(resource.list({ maxResults: 0 })).rejects.toThrow(/maxResults/);
     });
 
+    it('forwards orderBy and expand', async () => {
+      transport.respondWith(makePageResponse([]));
+
+      await resource.list({ orderBy: 'name', expand: 'projects' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        orderBy: 'name',
+        expand: 'projects',
+      });
+    });
+
+    it('omits orderBy and expand when not provided', async () => {
+      transport.respondWith(makePageResponse([]));
+
+      await resource.list({ queryString: 'test' });
+
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('orderBy');
+      expect(query).not.toHaveProperty('expand');
+    });
+
     it('propagates transport errors', async () => {
       transport.respondWithError(new Error('network failure'));
       await expect(resource.list()).rejects.toThrow('network failure');
@@ -298,13 +319,21 @@ describe('IssueTypeScreenSchemeResource', () => {
 
   // ── listProject (B583) ──────────────────────────────────────────────────────
 
+  const makeProjectDetails = (id = 'p1', key = 'PROJ') => ({
+    id,
+    key,
+    name: 'Project ' + key,
+    projectTypeKey: 'software',
+  });
+
   describe('listProject()', () => {
     it('calls GET /issuetypescreenscheme/{id}/project with no params', async () => {
-      transport.respondWith(makePageResponse([{ projectId: 'proj-1' }]));
+      transport.respondWith(makePageResponse([makeProjectDetails()]));
 
       const result = await resource.listProject('10001');
 
       expect(result.values).toHaveLength(1);
+      expect(result.values[0]).toMatchObject({ id: 'p1', key: 'PROJ', projectTypeKey: 'software' });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/issuetypescreenscheme/10001/project`,
@@ -328,40 +357,43 @@ describe('IssueTypeScreenSchemeResource', () => {
   // ── listProjectAll (B583) ───────────────────────────────────────────────────
 
   describe('listProjectAll()', () => {
-    it('yields items from a single page', async () => {
-      transport.respondWith(makePageResponse([{ projectId: 'p1' }, { projectId: 'p2' }]));
+    it('yields ProjectDetails items from a single page', async () => {
+      transport.respondWith(
+        makePageResponse([makeProjectDetails('p1', 'ALPHA'), makeProjectDetails('p2', 'BETA')]),
+      );
 
-      const results: { projectId: string }[] = [];
+      const results: { id: string; key: string }[] = [];
       for await (const p of resource.listProjectAll('10001')) {
         results.push(p);
       }
 
-      expect(results.map((p) => p.projectId)).toEqual(['p1', 'p2']);
+      expect(results.map((p) => p.id)).toEqual(['p1', 'p2']);
+      expect(results[0]).toMatchObject({ key: 'ALPHA', projectTypeKey: 'software' });
     });
 
     it('paginates across multiple pages', async () => {
       transport
         .respondWith({
-          values: [{ projectId: 'p1' }],
+          values: [makeProjectDetails('p1', 'ALPHA')],
           startAt: 0,
           maxResults: 1,
           total: 2,
           isLast: false,
         })
         .respondWith({
-          values: [{ projectId: 'p2' }],
+          values: [makeProjectDetails('p2', 'BETA')],
           startAt: 1,
           maxResults: 1,
           total: 2,
           isLast: true,
         });
 
-      const results: { projectId: string }[] = [];
+      const results: { id: string }[] = [];
       for await (const p of resource.listProjectAll('10001', { maxResults: 1 })) {
         results.push(p);
       }
 
-      expect(results.map((p) => p.projectId)).toEqual(['p1', 'p2']);
+      expect(results.map((p) => p.id)).toEqual(['p1', 'p2']);
     });
   });
 
@@ -445,13 +477,22 @@ describe('IssueTypeScreenSchemeResource', () => {
 
   // ── listProjectMappings (B585) ──────────────────────────────────────────────
 
+  const makeSchemeProjects = (schemeId = '10001', projectIds = ['proj-1']) => ({
+    issueTypeScreenScheme: makeScheme(schemeId),
+    projectIds,
+  });
+
   describe('listProjectMappings()', () => {
     it('calls GET /issuetypescreenscheme/project with required projectId', async () => {
-      transport.respondWith(makePageResponse([{ projectId: 'proj-1' }]));
+      transport.respondWith(makePageResponse([makeSchemeProjects()]));
 
       const result = await resource.listProjectMappings({ projectId: ['10001'] });
 
       expect(result.values).toHaveLength(1);
+      expect(result.values[0]).toMatchObject({
+        issueTypeScreenScheme: { id: '10001' },
+        projectIds: ['proj-1'],
+      });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/issuetypescreenscheme/project`,
@@ -494,35 +535,39 @@ describe('IssueTypeScreenSchemeResource', () => {
   // ── listProjectMappingsAll (B585) ───────────────────────────────────────────
 
   describe('listProjectMappingsAll()', () => {
-    it('yields items from a single page', async () => {
-      transport.respondWith(makePageResponse([{ projectId: 'p1' }]));
+    it('yields IssueTypeScreenSchemesProjects items from a single page', async () => {
+      transport.respondWith(makePageResponse([makeSchemeProjects('10001', ['p1'])]));
 
-      const results: { projectId: string }[] = [];
+      const results: { issueTypeScreenScheme: { id: string }; projectIds: string[] }[] = [];
       for await (const p of resource.listProjectMappingsAll({ projectId: ['10001'] })) {
         results.push(p);
       }
 
-      expect(results.map((p) => p.projectId)).toEqual(['p1']);
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        issueTypeScreenScheme: { id: '10001' },
+        projectIds: ['p1'],
+      });
     });
 
     it('paginates across multiple pages', async () => {
       transport
         .respondWith({
-          values: [{ projectId: 'p1' }],
+          values: [makeSchemeProjects('10001', ['p1'])],
           startAt: 0,
           maxResults: 1,
           total: 2,
           isLast: false,
         })
         .respondWith({
-          values: [{ projectId: 'p2' }],
+          values: [makeSchemeProjects('10002', ['p2'])],
           startAt: 1,
           maxResults: 1,
           total: 2,
           isLast: true,
         });
 
-      const results: { projectId: string }[] = [];
+      const results: { issueTypeScreenScheme: { id: string }; projectIds: string[] }[] = [];
       for await (const p of resource.listProjectMappingsAll({
         projectId: ['10001'],
         maxResults: 1,
@@ -530,7 +575,7 @@ describe('IssueTypeScreenSchemeResource', () => {
         results.push(p);
       }
 
-      expect(results.map((p) => p.projectId)).toEqual(['p1', 'p2']);
+      expect(results.map((p) => p.issueTypeScreenScheme.id)).toEqual(['10001', '10002']);
     });
   });
 

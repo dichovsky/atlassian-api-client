@@ -13193,6 +13193,8 @@ describe('executeJiraCommand', () => {
         maxResults: undefined,
         id: undefined,
         queryString: undefined,
+        orderBy: undefined,
+        expand: undefined,
       });
       expect(result).toEqual(PAGE);
     });
@@ -13213,7 +13215,26 @@ describe('executeJiraCommand', () => {
         maxResults: 25,
         id: [1, 2],
         queryString: 'Default',
+        orderBy: undefined,
+        expand: undefined,
       });
+    });
+
+    it('list forwards order-by and expand flags', async () => {
+      jiraIssueTypeScreenSchemesMock.list.mockResolvedValue(PAGE);
+      await executeJiraCommand(
+        cmd('issue-type-screen-schemes', 'list', [], {
+          'order-by': 'name',
+          expand: 'projects',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeScreenSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: 'name',
+          expand: 'projects',
+        }),
+      );
     });
 
     it('create calls client.issueTypeScreenSchemes.create() with required fields', async () => {

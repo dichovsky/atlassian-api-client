@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "858a39323ea4c15ca573d0124d0e3bf830f61fc704a582f7a8baba3742c6eb78",
+  "sourceHash": "c86676bad4441f4176a698a0bff9a150841054f839d53bab97e47a0ca159f18c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16463,10 +16463,6 @@
               "original": "IssueTypeScreenScheme"
             },
             {
-              "exported": "IssueTypeScreenSchemeDetails",
-              "original": "IssueTypeScreenSchemeDetails"
-            },
-            {
               "exported": "IssueTypeScreenSchemeMapping",
               "original": "IssueTypeScreenSchemeMapping"
             },
@@ -16479,8 +16475,12 @@
               "original": "IssueTypeScreenSchemeMappingDetails"
             },
             {
-              "exported": "ProjectIssueTypeScreenSchemeMapping",
-              "original": "ProjectIssueTypeScreenSchemeMapping"
+              "exported": "ProjectDetails",
+              "original": "ProjectDetails"
+            },
+            {
+              "exported": "IssueTypeScreenSchemesProjects",
+              "original": "IssueTypeScreenSchemesProjects"
             },
             {
               "exported": "ListIssueTypeScreenSchemesParams",
@@ -20779,33 +20779,33 @@
           "jsdoc": "An issue type screen scheme."
         },
         {
-          "name": "IssueTypeScreenSchemeDetails",
-          "kind": "interface",
-          "line": 27,
-          "exported": true,
-          "signature": "export interface IssueTypeScreenSchemeDetails { readonly id: string; readonly name: string; readonly description?: strin…",
-          "jsdoc": "An issue type screen scheme with additional details."
-        },
-        {
           "name": "IssueTypeScreenSchemeMappingDetails",
           "kind": "interface",
-          "line": 34,
+          "line": 27,
           "exported": true,
           "signature": "export interface IssueTypeScreenSchemeMappingDetails { readonly issueTypeScreenSchemeId: string; readonly issueTypeId: s…",
           "jsdoc": "A mapping item returned by GET /issuetypescreenscheme/mapping."
         },
         {
-          "name": "ProjectIssueTypeScreenSchemeMapping",
+          "name": "ProjectDetails",
           "kind": "interface",
-          "line": 41,
+          "line": 37,
           "exported": true,
-          "signature": "export interface ProjectIssueTypeScreenSchemeMapping { readonly projectId: string; readonly issueTypeScreenScheme?: Issu…",
-          "jsdoc": "A project associated with an issue type screen scheme."
+          "signature": "export interface ProjectDetails { readonly id: string; readonly key: string; readonly name: string; readonly projectType…",
+          "jsdoc": "A project returned by GET /issuetypescreenscheme/{id}/project (B583). Matches the PageBeanProjectDetails shape from the Jira spec."
+        },
+        {
+          "name": "IssueTypeScreenSchemesProjects",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface IssueTypeScreenSchemesProjects { readonly issueTypeScreenScheme: IssueTypeScreenScheme; readonly projec…",
+          "jsdoc": "A project-to-scheme mapping returned by GET /issuetypescreenscheme/project (B585). Both fields are required per the Jira spec."
         },
         {
           "name": "ListIssueTypeScreenSchemesParams",
           "kind": "interface",
-          "line": 47,
+          "line": 59,
           "exported": true,
           "signature": "export interface ListIssueTypeScreenSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescreenscheme."
@@ -20813,7 +20813,7 @@
         {
           "name": "CreateIssueTypeScreenSchemeData",
           "kind": "interface",
-          "line": 59,
+          "line": 75,
           "exported": true,
           "signature": "export interface CreateIssueTypeScreenSchemeData { readonly name: string; readonly description?: string; readonly issueT…",
           "jsdoc": "Request body for POST /rest/api/3/issuetypescreenscheme."
@@ -20821,7 +20821,7 @@
         {
           "name": "UpdateIssueTypeScreenSchemeData",
           "kind": "interface",
-          "line": 66,
+          "line": 82,
           "exported": true,
           "signature": "export interface UpdateIssueTypeScreenSchemeData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescreenscheme/{id}."
@@ -20829,7 +20829,7 @@
         {
           "name": "UpdateIssueTypeScreenSchemeMappingData",
           "kind": "interface",
-          "line": 72,
+          "line": 88,
           "exported": true,
           "signature": "export interface UpdateIssueTypeScreenSchemeMappingData { readonly issueTypeMappings: IssueTypeScreenSchemeMapping[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescreenscheme/{id}/mapping."
@@ -20837,7 +20837,7 @@
         {
           "name": "UpdateIssueTypeScreenSchemeDefaultMappingData",
           "kind": "interface",
-          "line": 77,
+          "line": 93,
           "exported": true,
           "signature": "export interface UpdateIssueTypeScreenSchemeDefaultMappingData { readonly screenSchemeId: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescreenscheme/{id}/mapping/default."
@@ -20845,7 +20845,7 @@
         {
           "name": "RemoveIssueTypeScreenSchemeMappingData",
           "kind": "interface",
-          "line": 82,
+          "line": 98,
           "exported": true,
           "signature": "export interface RemoveIssueTypeScreenSchemeMappingData { readonly issueTypeIds: string[]; }",
           "jsdoc": "Request body for POST /rest/api/3/issuetypescreenscheme/{id}/mapping/remove."
@@ -20853,7 +20853,7 @@
         {
           "name": "ListIssueTypeScreenSchemeProjectsParams",
           "kind": "interface",
-          "line": 87,
+          "line": 103,
           "exported": true,
           "signature": "export interface ListIssueTypeScreenSchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescreenscheme/{id}/project."
@@ -20861,7 +20861,7 @@
         {
           "name": "ListIssueTypeScreenSchemeMappingParams",
           "kind": "interface",
-          "line": 93,
+          "line": 109,
           "exported": true,
           "signature": "export interface ListIssueTypeScreenSchemeMappingParams { readonly startAt?: number; readonly maxResults?: number; reado…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescreenscheme/mapping."
@@ -20869,7 +20869,7 @@
         {
           "name": "ListIssueTypeScreenSchemeProjectMappingsParams",
           "kind": "interface",
-          "line": 101,
+          "line": 117,
           "exported": true,
           "signature": "export interface ListIssueTypeScreenSchemeProjectMappingsParams { readonly startAt?: number; readonly maxResults?: numbe…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuetypescreenscheme/project."
@@ -20877,7 +20877,7 @@
         {
           "name": "AssignIssueTypeScreenSchemeToProjectData",
           "kind": "interface",
-          "line": 109,
+          "line": 125,
           "exported": true,
           "signature": "export interface AssignIssueTypeScreenSchemeToProjectData { readonly issueTypeScreenSchemeId: string; readonly projectId…",
           "jsdoc": "Request body for PUT /rest/api/3/issuetypescreenscheme/project."
@@ -20885,7 +20885,7 @@
         {
           "name": "IssueTypeScreenSchemeResource",
           "kind": "class",
-          "line": 120,
+          "line": 136,
           "exported": true,
           "signature": "export class IssueTypeScreenSchemeResource",
           "jsdoc": "Jira Issue Type Screen Schemes resource — full CRUD plus mapping management and project assignment endpoints (B576-B586).",
@@ -20893,101 +20893,101 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 121
+              "line": 137
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 130
+              "line": 146
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 147
+              "line": 163
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 164
+              "line": 180
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 182
+              "line": 198
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 197
+              "line": 213
             },
             {
               "name": "updateMapping",
               "kind": "method",
-              "line": 208
+              "line": 224
             },
             {
               "name": "updateDefaultMapping",
               "kind": "method",
-              "line": 223
+              "line": 239
             },
             {
               "name": "removeMappings",
               "kind": "method",
-              "line": 238
+              "line": 254
             },
             {
               "name": "listProject",
               "kind": "method",
-              "line": 253
+              "line": 269
             },
             {
               "name": "listProjectAll",
               "kind": "method",
-              "line": 274
+              "line": 288
             },
             {
               "name": "listMapping",
               "kind": "method",
-              "line": 292
+              "line": 306
             },
             {
               "name": "listMappingAll",
               "kind": "method",
-              "line": 310
+              "line": 324
             },
             {
               "name": "listProjectMappings",
               "kind": "method",
-              "line": 327
+              "line": 341
             },
             {
               "name": "listProjectMappingsAll",
               "kind": "method",
-              "line": 345
+              "line": 359
             },
             {
               "name": "assignToProject",
               "kind": "method",
-              "line": 366
+              "line": 380
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 380,
+          "line": 394,
           "signature": "function buildListQuery( params: ListIssueTypeScreenSchemesParams | undefined, ): Record<string, string | number | boole…"
         },
         {
           "name": "buildMappingQuery",
           "kind": "function",
-          "line": 393,
+          "line": 409,
           "signature": "function buildMappingQuery( params: ListIssueTypeScreenSchemeMappingParams | undefined, ): Record<string, string | numbe…"
         },
         {
           "name": "buildProjectMappingQuery",
           "kind": "function",
-          "line": 405,
+          "line": 421,
           "signature": "function buildProjectMappingQuery( params: | ListIssueTypeScreenSchemeProjectMappingsParams | Omit<ListIssueTypeScreenSc…"
         }
       ],

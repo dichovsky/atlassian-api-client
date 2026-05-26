@@ -2441,6 +2441,8 @@ async function executeIssueTypeScreenSchemes(
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         id: ids,
         queryString: asString(opts['query']),
+        orderBy: asString(opts['order-by']),
+        expand: asString(opts['expand']),
       });
     }
     case 'create': {

@@ -23,13 +23,6 @@ export interface IssueTypeScreenScheme {
   readonly description?: string;
 }
 
-/** An issue type screen scheme with additional details. */
-export interface IssueTypeScreenSchemeDetails {
-  readonly id: string;
-  readonly name: string;
-  readonly description?: string;
-}
-
 /** A mapping item returned by GET /issuetypescreenscheme/mapping. */
 export interface IssueTypeScreenSchemeMappingDetails {
   readonly issueTypeScreenSchemeId: string;
@@ -37,10 +30,29 @@ export interface IssueTypeScreenSchemeMappingDetails {
   readonly screenSchemeId: string;
 }
 
-/** A project associated with an issue type screen scheme. */
-export interface ProjectIssueTypeScreenSchemeMapping {
-  readonly projectId: string;
-  readonly issueTypeScreenScheme?: IssueTypeScreenScheme;
+/**
+ * A project returned by GET /issuetypescreenscheme/{id}/project (B583).
+ * Matches the PageBeanProjectDetails shape from the Jira spec.
+ */
+export interface ProjectDetails {
+  readonly id: string;
+  readonly key: string;
+  readonly name: string;
+  readonly projectTypeKey: string;
+  readonly self?: string;
+  readonly avatarUrls?: Record<string, string>;
+  readonly simplified?: boolean;
+  readonly style?: string;
+  readonly isPrivate?: boolean;
+}
+
+/**
+ * A project-to-scheme mapping returned by GET /issuetypescreenscheme/project (B585).
+ * Both fields are required per the Jira spec.
+ */
+export interface IssueTypeScreenSchemesProjects {
+  readonly issueTypeScreenScheme: IssueTypeScreenScheme;
+  readonly projectIds: string[];
 }
 
 /** Query parameters for GET /rest/api/3/issuetypescreenscheme. */
@@ -53,6 +65,10 @@ export interface ListIssueTypeScreenSchemesParams {
   readonly id?: number[];
   /** Filter by name substring. */
   readonly queryString?: string;
+  /** Order by field (e.g. "name", "-name"). */
+  readonly orderBy?: string;
+  /** Expand additional fields in the response. */
+  readonly expand?: string;
 }
 
 /** Request body for POST /rest/api/3/issuetypescreenscheme. */
@@ -253,14 +269,12 @@ export class IssueTypeScreenSchemeResource {
   async listProject(
     schemeId: string,
     params?: ListIssueTypeScreenSchemeProjectsParams,
-  ): Promise<OffsetPaginatedResponse<ProjectIssueTypeScreenSchemeMapping>> {
+  ): Promise<OffsetPaginatedResponse<ProjectDetails>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    const response = await this.transport.request<
-      OffsetPaginatedResponse<ProjectIssueTypeScreenSchemeMapping>
-    >({
+    const response = await this.transport.request<OffsetPaginatedResponse<ProjectDetails>>({
       method: 'GET',
       path: `${this.baseUrl}/issuetypescreenscheme/${encodePathSegment(schemeId)}/project`,
       query,
@@ -274,10 +288,10 @@ export class IssueTypeScreenSchemeResource {
   async *listProjectAll(
     schemeId: string,
     params?: Omit<ListIssueTypeScreenSchemeProjectsParams, 'startAt'>,
-  ): AsyncGenerator<ProjectIssueTypeScreenSchemeMapping> {
+  ): AsyncGenerator<ProjectDetails> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
-    yield* paginateOffset<ProjectIssueTypeScreenSchemeMapping>(
+    yield* paginateOffset<ProjectDetails>(
       this.transport,
       `${this.baseUrl}/issuetypescreenscheme/${encodePathSegment(schemeId)}/project`,
       query,
@@ -326,11 +340,11 @@ export class IssueTypeScreenSchemeResource {
    */
   async listProjectMappings(
     params: ListIssueTypeScreenSchemeProjectMappingsParams,
-  ): Promise<OffsetPaginatedResponse<ProjectIssueTypeScreenSchemeMapping>> {
+  ): Promise<OffsetPaginatedResponse<IssueTypeScreenSchemesProjects>> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectMappingQuery(params);
     const response = await this.transport.request<
-      OffsetPaginatedResponse<ProjectIssueTypeScreenSchemeMapping>
+      OffsetPaginatedResponse<IssueTypeScreenSchemesProjects>
     >({
       method: 'GET',
       path: `${this.baseUrl}/issuetypescreenscheme/project`,
@@ -344,14 +358,14 @@ export class IssueTypeScreenSchemeResource {
    */
   async *listProjectMappingsAll(
     params: Omit<ListIssueTypeScreenSchemeProjectMappingsParams, 'startAt'>,
-  ): AsyncGenerator<ProjectIssueTypeScreenSchemeMapping> {
+  ): AsyncGenerator<IssueTypeScreenSchemesProjects> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectMappingQuery({
       ...params,
       startAt: undefined,
       maxResults: undefined,
     });
-    yield* paginateOffset<ProjectIssueTypeScreenSchemeMapping>(
+    yield* paginateOffset<IssueTypeScreenSchemesProjects>(
       this.transport,
       `${this.baseUrl}/issuetypescreenscheme/project`,
       query,
@@ -387,6 +401,8 @@ function buildListQuery(
     query['id'] = params.id.join(',');
   }
   if (params?.queryString !== undefined) query['queryString'] = params.queryString;
+  if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
+  if (params?.expand !== undefined) query['expand'] = params.expand;
   return query;
 }
 
