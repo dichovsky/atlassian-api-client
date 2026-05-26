@@ -119,6 +119,8 @@ export async function executeJiraCommand(
       return executePermissionSchemes(client, cmd);
     case 'issue-type-schemes':
       return executeIssueTypeSchemes(client, cmd);
+    case 'roles':
+      return executeRoles(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2844,4 +2846,112 @@ async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): 
 function asMovePosition(value: string): 'First' | 'Last' {
   if (value === 'First' || value === 'Last') return value;
   throw new Error(`--position must be one of: First, Last. Got: ${value}`);
+}
+
+// ── roles (B737-B745) ────────────────────────────────────────────────────────
+
+const ROLES_ACTIONS = [
+  'list',
+  'get',
+  'create',
+  'update',
+  'partial-update',
+  'delete',
+  'get-actors',
+  'add-actors',
+  'delete-actors',
+] as const;
+
+async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.roles.list();
+    case 'get': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      return client.roles.get(roleId);
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const body: { name: string; description?: string } = { name };
+      if (description !== undefined) body.description = description;
+      return client.roles.create(body);
+    }
+    case 'update': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      const body: { name?: string; description?: string } = {};
+      if (name !== undefined) body.name = name;
+      if (description !== undefined) body.description = description;
+      return client.roles.update(roleId, body);
+    }
+    case 'partial-update': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('partial-update requires at least one of: --name, --description');
+      }
+      const body: { name?: string; description?: string } = {};
+      if (name !== undefined) body.name = name;
+      if (description !== undefined) body.description = description;
+      return client.roles.partialUpdate(roleId, body);
+    }
+    case 'delete': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      const swap = asPositiveInt(opts['swap'], '--swap');
+      await client.roles.delete(roleId, swap !== undefined ? { swap } : undefined);
+      return { deleted: true };
+    }
+    case 'get-actors': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      return client.roles.getActors(roleId);
+    }
+    case 'add-actors': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      const userRaw = asString(opts['user']);
+      const groupRaw = asString(opts['group']);
+      const groupIdRaw = asString(opts['group-id']);
+      if (userRaw === undefined && groupRaw === undefined && groupIdRaw === undefined) {
+        throw new Error('add-actors requires at least one of: --user, --group, --group-id');
+      }
+      const data: { user?: string[]; group?: string[]; groupId?: string[] } = {};
+      if (userRaw !== undefined)
+        data.user = userRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      if (groupRaw !== undefined)
+        data.group = groupRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      if (groupIdRaw !== undefined)
+        data.groupId = groupIdRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      return client.roles.addActors(roleId, data);
+    }
+    case 'delete-actors': {
+      const roleId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'roleId'), 'roleId');
+      const user = asString(opts['user']);
+      const group = asString(opts['group']);
+      const groupId = asString(opts['group-id']);
+      const params: { user?: string; group?: string; groupId?: string } = {};
+      if (user !== undefined) params.user = user;
+      if (group !== undefined) params.group = group;
+      if (groupId !== undefined) params.groupId = groupId;
+      await client.roles.deleteActors(roleId, Object.keys(params).length > 0 ? params : undefined);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(`Unknown roles action: ${cmd.action}. Actions: ${ROLES_ACTIONS.join(', ')}`);
+  }
 }

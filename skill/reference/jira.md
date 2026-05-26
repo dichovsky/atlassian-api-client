@@ -58,6 +58,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `filters`                | `search`, `get`, `create`, `update`, `delete`, `list-favourites`, `list-my`, `add-favourite`, `remove-favourite`, `change-owner`, `get-columns`, `set-columns`, `reset-columns`, `list-permissions`, `add-permission`, `get-permission`, `delete-permission`, `get-default-share-scope`, `set-default-share-scope`                                                                                                       |
 | `permission-schemes`     | `list`, `get`, `create`, `update`, `delete`, `list-permissions`, `create-permission`, `get-permission`, `delete-permission`                                                                                                                                                                                                                                                                                              |
 | `issue-type-schemes`     | `list`, `list-mapping`, `list-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                    |
+| `roles`                  | `list`, `get`, `create`, `update`, `partial-update`, `delete`, `get-actors`, `add-actors`, `delete-actors`                                                                                                                                                                                                                                                                                                               |
 
 ## `issue-type-schemes`
 
@@ -1901,3 +1902,57 @@ atlas jira issue-type-schemes assign-to-project --id 10000 --project-id 10100
 - **403 on `issues create`** typically means the token lacks "Create Issues" permission in the target project, not a global scope problem.
 - **400 with `"errorMessages":["The value 'X' does not exist for the field 'project'."]`** — `--project` needs the project **key** (e.g. `PROJ`), not name or ID.
 - **400 with custom-field errors** — the CLI can't set custom fields. Use the SDK with `fields: { customfield_10001: ... }`.
+
+## `roles`
+
+Global project-role definitions at `/rest/api/3/role`. These are **top-level role definitions**, not per-project role assignments. Per-project assignments at `/rest/api/3/project/{key}/role/*` (B682–B687) are separate and belong to the `projects` resource.
+
+| Action           | Positional | Required flags                                    | Optional flags                       |
+| ---------------- | ---------- | ------------------------------------------------- | ------------------------------------ |
+| `list`           | —          | —                                                 | —                                    |
+| `get`            | `<roleId>` | —                                                 | —                                    |
+| `create`         | —          | `--name`                                          | `--description`                      |
+| `update`         | `<roleId>` | at least one of `--name`, `--description`         | —                                    |
+| `partial-update` | `<roleId>` | at least one of `--name`, `--description`         | —                                    |
+| `delete`         | `<roleId>` | —                                                 | `--swap` (ID of role to reassign to) |
+| `get-actors`     | `<roleId>` | —                                                 | —                                    |
+| `add-actors`     | `<roleId>` | at least one of `--user`, `--group`, `--group-id` | —                                    |
+| `delete-actors`  | `<roleId>` | —                                                 | `--user`, `--group`, `--group-id`    |
+
+- `--user` and `--group-id` / `--group` for `add-actors` accept comma-separated values (multiple accounts/groups in one call).
+- `--user` / `--group` / `--group-id` for `delete-actors` accept a single value each.
+- `update` (PUT) and `partial-update` (POST `/{id}`) are distinct Jira endpoints; Jira differentiates set-actors (POST) from full replace (PUT).
+- `--swap` for `delete` is a numeric role ID; Jira reassigns permissions to that role before deleting.
+
+```sh
+# List all global project roles
+atlas jira roles list
+
+# Get a specific role
+atlas jira roles get 10001
+
+# Create a new role
+atlas jira roles create --name "Developers" --description "Dev team role"
+
+# Full update (PUT)
+atlas jira roles update 10001 --name "Developers" --description "Updated description"
+
+# Partial update (POST /{id})
+atlas jira roles partial-update 10001 --description "Only updating description"
+
+# Delete a role (optionally reassigning permissions)
+atlas jira roles delete 10001
+atlas jira roles delete 10001 --swap 10002
+
+# Get actors (users/groups) assigned to the role by default
+atlas jira roles get-actors 10001
+
+# Add users and/or groups as default actors
+atlas jira roles add-actors 10001 --user acc-1,acc-2
+atlas jira roles add-actors 10001 --group-id grp-1,grp-2
+atlas jira roles add-actors 10001 --group legacy-group-name
+
+# Remove a default actor
+atlas jira roles delete-actors 10001 --user acc-1
+atlas jira roles delete-actors 10001 --group-id grp-1
+```

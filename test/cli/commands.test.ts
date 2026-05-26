@@ -646,6 +646,17 @@ const jiraFiltersMock = {
   getDefaultShareScope: vi.fn(),
   setDefaultShareScope: vi.fn(),
 };
+const jiraRolesMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  partialUpdate: vi.fn(),
+  delete: vi.fn(),
+  getActors: vi.fn(),
+  addActors: vi.fn(),
+  deleteActors: vi.fn(),
+};
 
 const jiraIssueTypeScreenSchemesMock = {
   list: vi.fn(),
@@ -750,6 +761,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueTypeScreenSchemes: jiraIssueTypeScreenSchemesMock,
       permissionSchemes: jiraPermissionSchemesMock,
       issueTypeSchemes: jiraIssueTypeSchemesMock,
+      roles: jiraRolesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -14085,6 +14097,255 @@ describe('executeJiraCommand', () => {
     it('issue-type-schemes unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('issue-type-schemes', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issue-type-schemes action',
+      );
+    });
+  });
+
+  // ── roles (B737-B745) ─────────────────────────────────────────────────────
+
+  describe('roles resource', () => {
+    it('roles list calls client.roles.list()', async () => {
+      const roleList = [{ id: 10001, name: 'Developers' }];
+      jiraRolesMock.list.mockResolvedValue(roleList);
+
+      const result = await executeJiraCommand(cmd('roles', 'list'), GLOBALS);
+
+      expect(result).toEqual(roleList);
+      expect(jiraRolesMock.list).toHaveBeenCalled();
+    });
+
+    it('roles get calls client.roles.get() with numeric roleId', async () => {
+      const role = { id: 10001, name: 'Developers' };
+      jiraRolesMock.get.mockResolvedValue(role);
+
+      const result = await executeJiraCommand(cmd('roles', 'get', ['10001']), GLOBALS);
+
+      expect(result).toEqual(role);
+      expect(jiraRolesMock.get).toHaveBeenCalledWith(10001);
+    });
+
+    it('roles get throws when roleId is missing', async () => {
+      await expect(executeJiraCommand(cmd('roles', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: roleId',
+      );
+    });
+
+    it('roles create calls client.roles.create() with name', async () => {
+      const created = { id: 10001, name: 'QA' };
+      jiraRolesMock.create.mockResolvedValue(created);
+
+      const result = await executeJiraCommand(cmd('roles', 'create', [], { name: 'QA' }), GLOBALS);
+
+      expect(result).toEqual(created);
+      expect(jiraRolesMock.create).toHaveBeenCalledWith({ name: 'QA' });
+    });
+
+    it('roles create throws when --name is missing', async () => {
+      await expect(executeJiraCommand(cmd('roles', 'create'), GLOBALS)).rejects.toThrow('--name');
+    });
+
+    it('roles create sends description when provided', async () => {
+      jiraRolesMock.create.mockResolvedValue({ id: 10001, name: 'QA' });
+
+      await executeJiraCommand(
+        cmd('roles', 'create', [], { name: 'QA', description: 'Quality Assurance' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.create).toHaveBeenCalledWith({
+        name: 'QA',
+        description: 'Quality Assurance',
+      });
+    });
+
+    it('roles update calls client.roles.update() with numeric roleId and body', async () => {
+      const updated = { id: 10001, name: 'Updated' };
+      jiraRolesMock.update.mockResolvedValue(updated);
+
+      const result = await executeJiraCommand(
+        cmd('roles', 'update', ['10001'], { name: 'Updated' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(updated);
+      expect(jiraRolesMock.update).toHaveBeenCalledWith(10001, { name: 'Updated' });
+    });
+
+    it('roles update sends description only when name is omitted', async () => {
+      jiraRolesMock.update.mockResolvedValue({ id: 10001, name: 'Dev', description: 'desc' });
+
+      await executeJiraCommand(
+        cmd('roles', 'update', ['10001'], { description: 'New desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.update).toHaveBeenCalledWith(10001, { description: 'New desc' });
+    });
+
+    it('roles update throws when no name or description provided', async () => {
+      await expect(executeJiraCommand(cmd('roles', 'update', ['10001']), GLOBALS)).rejects.toThrow(
+        'update requires at least one of: --name, --description',
+      );
+    });
+
+    it('roles partial-update calls client.roles.partialUpdate()', async () => {
+      const updated = { id: 10001, name: 'Dev', description: 'New' };
+      jiraRolesMock.partialUpdate.mockResolvedValue(updated);
+
+      const result = await executeJiraCommand(
+        cmd('roles', 'partial-update', ['10001'], { description: 'New' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(updated);
+      expect(jiraRolesMock.partialUpdate).toHaveBeenCalledWith(10001, { description: 'New' });
+    });
+
+    it('roles partial-update sends description only when name is omitted', async () => {
+      jiraRolesMock.partialUpdate.mockResolvedValue({ id: 10001, name: 'Dev' });
+
+      await executeJiraCommand(
+        cmd('roles', 'partial-update', ['10001'], { description: 'Only desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.partialUpdate).toHaveBeenCalledWith(10001, { description: 'Only desc' });
+    });
+
+    it('roles partial-update sends name only when description is omitted', async () => {
+      jiraRolesMock.partialUpdate.mockResolvedValue({ id: 10001, name: 'Dev' });
+
+      await executeJiraCommand(
+        cmd('roles', 'partial-update', ['10001'], { name: 'Dev v2' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.partialUpdate).toHaveBeenCalledWith(10001, { name: 'Dev v2' });
+    });
+
+    it('roles partial-update throws when no name or description provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('roles', 'partial-update', ['10001']), GLOBALS),
+      ).rejects.toThrow('partial-update requires at least one of: --name, --description');
+    });
+
+    it('roles delete calls client.roles.delete() and returns { deleted: true }', async () => {
+      jiraRolesMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('roles', 'delete', ['10001']), GLOBALS);
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraRolesMock.delete).toHaveBeenCalledWith(10001, undefined);
+    });
+
+    it('roles delete sends swap param when --swap provided', async () => {
+      jiraRolesMock.delete.mockResolvedValue(undefined);
+
+      await executeJiraCommand(cmd('roles', 'delete', ['10001'], { swap: '10002' }), GLOBALS);
+
+      expect(jiraRolesMock.delete).toHaveBeenCalledWith(10001, { swap: 10002 });
+    });
+
+    it('roles get-actors calls client.roles.getActors()', async () => {
+      const roleWithActors = { id: 10001, name: 'Dev', actors: [{ id: 1, displayName: 'Alice' }] };
+      jiraRolesMock.getActors.mockResolvedValue(roleWithActors);
+
+      const result = await executeJiraCommand(cmd('roles', 'get-actors', ['10001']), GLOBALS);
+
+      expect(result).toEqual(roleWithActors);
+      expect(jiraRolesMock.getActors).toHaveBeenCalledWith(10001);
+    });
+
+    it('roles add-actors calls client.roles.addActors() with user CSV', async () => {
+      jiraRolesMock.addActors.mockResolvedValue({ id: 10001, name: 'Dev' });
+
+      await executeJiraCommand(
+        cmd('roles', 'add-actors', ['10001'], { user: 'acc-1,acc-2' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.addActors).toHaveBeenCalledWith(10001, {
+        user: ['acc-1', 'acc-2'],
+      });
+    });
+
+    it('roles add-actors calls client.roles.addActors() with group-id CSV', async () => {
+      jiraRolesMock.addActors.mockResolvedValue({ id: 10001, name: 'Dev' });
+
+      await executeJiraCommand(
+        cmd('roles', 'add-actors', ['10001'], { 'group-id': 'grp-1,grp-2' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.addActors).toHaveBeenCalledWith(10001, {
+        groupId: ['grp-1', 'grp-2'],
+      });
+    });
+
+    it('roles add-actors calls client.roles.addActors() with group CSV (deprecated)', async () => {
+      jiraRolesMock.addActors.mockResolvedValue({ id: 10001, name: 'Dev' });
+
+      await executeJiraCommand(
+        cmd('roles', 'add-actors', ['10001'], { group: 'my-group,other-group' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.addActors).toHaveBeenCalledWith(10001, {
+        group: ['my-group', 'other-group'],
+      });
+    });
+
+    it('roles add-actors throws when no user, group, or group-id provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('roles', 'add-actors', ['10001']), GLOBALS),
+      ).rejects.toThrow('add-actors requires at least one of: --user, --group, --group-id');
+    });
+
+    it('roles delete-actors calls client.roles.deleteActors() with user', async () => {
+      jiraRolesMock.deleteActors.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('roles', 'delete-actors', ['10001'], { user: 'acc-1' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, { user: 'acc-1' });
+    });
+
+    it('roles delete-actors calls with group-id', async () => {
+      jiraRolesMock.deleteActors.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('roles', 'delete-actors', ['10001'], { 'group-id': 'grp-1' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, { groupId: 'grp-1' });
+    });
+
+    it('roles delete-actors calls with group (deprecated name)', async () => {
+      jiraRolesMock.deleteActors.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('roles', 'delete-actors', ['10001'], { group: 'my-group' }),
+        GLOBALS,
+      );
+
+      expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, { group: 'my-group' });
+    });
+
+    it('roles delete-actors calls with no params when no flags', async () => {
+      jiraRolesMock.deleteActors.mockResolvedValue(undefined);
+
+      await executeJiraCommand(cmd('roles', 'delete-actors', ['10001']), GLOBALS);
+
+      expect(jiraRolesMock.deleteActors).toHaveBeenCalledWith(10001, undefined);
+    });
+
+    it('roles unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('roles', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown roles action',
       );
     });
   });
