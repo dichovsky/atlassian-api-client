@@ -127,6 +127,8 @@ export async function executeJiraCommand(
       return executeRoles(client, cmd);
     case 'resolutions':
       return executeResolutions(client, cmd);
+    case 'expression':
+      return executeExpression(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -944,6 +946,15 @@ function asAccessType(
   if (s === undefined) return undefined;
   if (s === 'site-admin' || s === 'admin' || s === 'user') return s;
   throw new Error(`--access-type must be one of: site-admin, admin, user. Got: ${s}`);
+}
+
+function asExpressionCheck(
+  value: string | boolean | undefined,
+): 'syntax' | 'type' | 'complexity' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'syntax' || s === 'type' || s === 'complexity') return s;
+  throw new Error(`Invalid --check value "${s}". Must be one of: syntax, type, complexity`);
 }
 
 function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
@@ -3100,5 +3111,75 @@ async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     default:
       throw new Error(`Unknown roles action: ${cmd.action}. Actions: ${ROLES_ACTIONS.join(', ')}`);
+  }
+}
+
+// ── expression (B409, B410, B904) ────────────────────────────────────────────
+
+const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;
+
+async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'analyse': {
+      const expressionsRaw = requireOpt(opts['expressions'], '--expressions');
+      const expressions = parseJsonArrayFlag(expressionsRaw, '--expressions') as string[];
+      if (expressions.length === 0) {
+        throw new Error('--expressions must contain at least one expression');
+      }
+      const contextVariablesRaw = asString(opts['context-variables']);
+      const contextVariables =
+        contextVariablesRaw !== undefined
+          ? (parseJsonObjectFlag(contextVariablesRaw, '--context-variables') as Record<
+              string,
+              string
+            >)
+          : undefined;
+      const check = asExpressionCheck(opts['check']);
+      return client.expression.analyse(
+        {
+          expressions,
+          ...(contextVariables !== undefined && { contextVariables }),
+        },
+        check !== undefined ? { check } : undefined,
+      );
+    }
+    case 'eval': {
+      const expression = requireOpt(opts['expression'], '--expression');
+      const contextRaw = asString(opts['context']);
+      const context =
+        contextRaw !== undefined
+          ? (parseJsonObjectFlag(contextRaw, '--context') as Record<string, unknown>)
+          : undefined;
+      const expand = asString(opts['expand']);
+      return client.expression.eval(
+        {
+          expression,
+          ...(context !== undefined && { context }),
+        },
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    case 'evaluate': {
+      const expression = requireOpt(opts['expression'], '--expression');
+      const contextRaw = asString(opts['context']);
+      const context =
+        contextRaw !== undefined
+          ? (parseJsonObjectFlag(contextRaw, '--context') as Record<string, unknown>)
+          : undefined;
+      const expand = asString(opts['expand']);
+      return client.expression.evaluate(
+        {
+          expression,
+          ...(context !== undefined && { context }),
+        },
+        expand !== undefined ? { expand } : undefined,
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown expression action: ${cmd.action}. Actions: ${EXPRESSION_ACTIONS.join(', ')}`,
+      );
   }
 }

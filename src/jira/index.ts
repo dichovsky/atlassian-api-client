@@ -412,3 +412,22 @@ export type {
   SearchStatusesParams,
   StatusUsagesParams,
 } from './resources/statuses.js';
+export type {
+  AnalysedExpression,
+  AnalysedExpressionError,
+  AnalysedExpressionComplexity,
+  AnalyseExpressionsResponse,
+  AnalyseExpressionsData,
+  AnalyseExpressionsParams,
+  ExpressionEvalJqlContext,
+  ExpressionEvalContext,
+  EvaluateExpressionData,
+  EvaluateExpressionParams,
+  ExpressionMetric,
+  ExpressionComplexity,
+  ExpressionEvaluateJqlMeta,
+  ExpressionEvalJqlMeta,
+  EvaluateExpressionResponse,
+  EvalExpressionResponse,
+} from './resources/expression.js';
+export { ExpressionResource } from './resources/expression.js';

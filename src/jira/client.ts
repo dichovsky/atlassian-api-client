@@ -63,6 +63,7 @@ import { PermissionSchemeResource } from './resources/permissionscheme.js';
 import { IssueTypeSchemeResource } from './resources/issuetypescheme.js';
 import { RoleResource } from './resources/role.js';
 import { ResolutionResource } from './resources/resolution.js';
+import { ExpressionResource } from './resources/expression.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -187,6 +188,8 @@ export class JiraClient {
   readonly roles: RoleResource;
   /** Jira issue resolutions resource (B931, B712-B718). */
   readonly resolutions: ResolutionResource;
+  /** Jira expressions resource (B409, B410, B904). */
+  readonly expression: ExpressionResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -276,5 +279,6 @@ export class JiraClient {
     this.issueTypeSchemes = new IssueTypeSchemeResource(transport, baseUrl);
     this.roles = new RoleResource(transport, baseUrl);
     this.resolutions = new ResolutionResource(transport, baseUrl);
+    this.expression = new ExpressionResource(transport, baseUrl);
   }
 }
