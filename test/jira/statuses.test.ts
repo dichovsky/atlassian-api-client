@@ -96,6 +96,16 @@ describe('StatusesResource', () => {
     it('throws ValidationError when ids array is empty', async () => {
       await expect(statuses.bulkDelete({ id: [] })).rejects.toBeInstanceOf(ValidationError);
     });
+
+    it('throws ValidationError when all ids are empty strings', async () => {
+      await expect(statuses.bulkDelete({ id: ['', ''] })).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it('throws ValidationError when ids array contains a mix of valid and empty strings', async () => {
+      await expect(statuses.bulkDelete({ id: ['10001', ''] })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
   });
 
   // ── bulkCreate (B778) ─────────────────────────────────────────────────────

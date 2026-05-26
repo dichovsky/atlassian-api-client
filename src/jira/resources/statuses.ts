@@ -117,6 +117,9 @@ export class StatusesResource {
     if (params.id === undefined || params.id.length === 0) {
       throw new ValidationError('bulkDelete requires at least one id (--ids)');
     }
+    if (params.id.some((id) => id.trim() === '')) {
+      throw new ValidationError('bulkDelete requires non-empty status IDs');
+    }
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/statuses`,
