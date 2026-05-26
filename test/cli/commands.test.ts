@@ -748,6 +748,19 @@ const jiraFieldConfigurationsMock = {
   updateFields: vi.fn(),
 };
 
+const jiraNotificationSchemesMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  addNotifications: vi.fn(),
+  delete: vi.fn(),
+  removeNotification: vi.fn(),
+  listProjects: vi.fn(),
+  listProjectsAll: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -810,6 +823,7 @@ vi.mock('../../src/jira/client.js', () => {
       expression: jiraExpressionMock,
       issueComments: jiraIssueCommentsMock,
       fieldConfigurations: jiraFieldConfigurationsMock,
+      notificationSchemes: jiraNotificationSchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -15218,6 +15232,264 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('fieldconfiguration', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown fieldconfiguration action',
       );
+    });
+  });
+
+  // ── notification-schemes (B605-B612) ──────────────────────────────────────
+
+  describe('notification-schemes resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('notification-schemes list calls client.notificationSchemes.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraNotificationSchemesMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('notification-schemes list passes ids and project-ids filters', async () => {
+      jiraNotificationSchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'list', [], {
+          ids: '10001,10002',
+          'project-ids': '10100,10101',
+        }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: ['10001', '10002'],
+          projectId: ['10100', '10101'],
+        }),
+      );
+    });
+
+    it('notification-schemes list forwards expand and only-default', async () => {
+      jiraNotificationSchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'list', [], {
+          expand: 'notificationSchemeEvents',
+          'only-default': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: 'notificationSchemeEvents', onlyDefault: true }),
+      );
+    });
+
+    it('notification-schemes create calls client.notificationSchemes.create with required name', async () => {
+      jiraNotificationSchemesMock.create.mockResolvedValue({ id: '10001' });
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'create', [], { name: 'My Scheme' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.create).toHaveBeenCalledWith({ name: 'My Scheme' });
+      expect(result).toEqual({ id: '10001' });
+    });
+
+    it('notification-schemes create forwards description and notification-scheme-events', async () => {
+      jiraNotificationSchemesMock.create.mockResolvedValue({ id: '10002' });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'create', [], {
+          name: 'Full',
+          description: 'desc',
+          'notification-scheme-events':
+            '[{"event":{"id":"1"},"notifications":[{"notificationType":"CurrentAssignee"}]}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.create).toHaveBeenCalledWith({
+        name: 'Full',
+        description: 'desc',
+        notificationSchemeEvents: [
+          { event: { id: '1' }, notifications: [{ notificationType: 'CurrentAssignee' }] },
+        ],
+      });
+    });
+
+    it('notification-schemes create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'create'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('notification-schemes create throws on invalid --notification-scheme-events JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('notification-schemes', 'create', [], {
+            name: 'X',
+            'notification-scheme-events': '{not json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--notification-scheme-events must be valid JSON');
+    });
+
+    it('notification-schemes get calls client.notificationSchemes.get', async () => {
+      const scheme = { id: 10000, name: 'Default' };
+      jiraNotificationSchemesMock.get.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'get', ['10000']),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.get).toHaveBeenCalledWith('10000', undefined);
+      expect(result).toEqual(scheme);
+    });
+
+    it('notification-schemes get forwards expand', async () => {
+      jiraNotificationSchemesMock.get.mockResolvedValue({ id: 10000, name: 'Default' });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'get', ['10000'], { expand: 'notificationSchemeEvents' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.get).toHaveBeenCalledWith('10000', {
+        expand: 'notificationSchemeEvents',
+      });
+    });
+
+    it('notification-schemes get throws when notificationSchemeId missing', async () => {
+      await expect(executeJiraCommand(cmd('notification-schemes', 'get'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: notificationSchemeId',
+      );
+    });
+
+    it('notification-schemes update calls client.notificationSchemes.update with name', async () => {
+      jiraNotificationSchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'update', ['10000'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.update).toHaveBeenCalledWith('10000', { name: 'Renamed' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('notification-schemes update forwards description only', async () => {
+      jiraNotificationSchemesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('notification-schemes', 'update', ['10000'], { description: 'new desc' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.update).toHaveBeenCalledWith('10000', {
+        description: 'new desc',
+      });
+    });
+
+    it('notification-schemes update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'update', ['10000']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of: --name, --description');
+    });
+
+    it('notification-schemes update throws when notificationSchemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: notificationSchemeId');
+    });
+
+    it('notification-schemes add-notifications calls addNotifications', async () => {
+      jiraNotificationSchemesMock.addNotifications.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'add-notifications', ['10000'], {
+          'notification-scheme-events':
+            '[{"event":{"id":"1"},"notifications":[{"notificationType":"CurrentAssignee"}]}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.addNotifications).toHaveBeenCalledWith('10000', {
+        notificationSchemeEvents: [
+          { event: { id: '1' }, notifications: [{ notificationType: 'CurrentAssignee' }] },
+        ],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('notification-schemes add-notifications throws when --notification-scheme-events missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'add-notifications', ['10000']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --notification-scheme-events');
+    });
+
+    it('notification-schemes delete calls client.notificationSchemes.delete', async () => {
+      jiraNotificationSchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'delete', ['10000']),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.delete).toHaveBeenCalledWith('10000');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('notification-schemes delete throws when notificationSchemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'delete'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: notificationSchemeId');
+    });
+
+    it('notification-schemes remove-notification calls removeNotification', async () => {
+      jiraNotificationSchemesMock.removeNotification.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'remove-notification', ['10000', '5']),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.removeNotification).toHaveBeenCalledWith('10000', '5');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('notification-schemes remove-notification throws when notificationId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'remove-notification', ['10000']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: notificationId');
+    });
+
+    it('notification-schemes list-projects calls listProjects', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraNotificationSchemesMock.listProjects.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('notification-schemes', 'list-projects'),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.listProjects).toHaveBeenCalled();
+      expect(result).toEqual(page);
+    });
+
+    it('notification-schemes list-projects forwards project-ids filter', async () => {
+      jiraNotificationSchemesMock.listProjects.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'list-projects', [], { 'project-ids': '10100,10101' }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.listProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: ['10100', '10101'] }),
+      );
+    });
+
+    it('notification-schemes list-projects forwards startAt and maxResults', async () => {
+      jiraNotificationSchemesMock.listProjects.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('notification-schemes', 'list-projects', [], {
+          'start-at': '5',
+          'max-results': '10',
+        }),
+        GLOBALS,
+      );
+      expect(jiraNotificationSchemesMock.listProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 5, maxResults: 10 }),
+      );
+    });
+
+    it('notification-schemes unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('notification-schemes', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown notification-schemes action');
     });
   });
 });

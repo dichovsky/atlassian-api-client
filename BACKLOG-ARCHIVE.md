@@ -1258,6 +1258,30 @@
 - [x] 🔴 🧩 API: B575 Jira: expose PUT /rest/api/3/issuetypescheme/project
   - **Impl:** `IssueTypeSchemeResource.assignToProject(data)` returns `void`. CLI: `atlas jira issue-type-schemes assign-to-project --scheme-id <schemeId> --project-id <projectId>`.
   - **Rat:** Assign a custom scheme to a project to control which issue types are available in that project.
+- [x] 🔴 🧩 API: B605 Jira: expose GET /rest/api/3/notificationscheme
+  - **Impl:** New `NotificationSchemeResource` (`src/jira/resources/notificationscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<NotificationScheme>`; `listAll()` async generator via `paginateOffset`. CLI: `atlas jira notification-schemes list [--start-at] [--max-results] [--ids] [--project-ids] [--expand] [--only-default]`. Part of Wave-3 PR E.
+  - **Rat:** Primary listing endpoint for notification schemes; pagination required for tenants with many schemes.
+- [x] 🔴 🧩 API: B606 Jira: expose POST /rest/api/3/notificationscheme
+  - **Impl:** `NotificationSchemeResource.create(data)` returns `CreatedNotificationScheme` (`{ id }`). CLI: `atlas jira notification-schemes create --name <name> [--description] [--notification-scheme-events]`.
+  - **Rat:** Create custom notification schemes with optional initial event-notification mappings.
+- [x] 🔴 🧩 API: B607 Jira: expose GET /rest/api/3/notificationscheme/{id}
+  - **Impl:** `NotificationSchemeResource.get(id, params?)` returns `NotificationScheme`. CLI: `atlas jira notification-schemes get <notificationSchemeId> [--expand]`.
+  - **Rat:** Fetch a single notification scheme by ID, optionally expanding events/notifications.
+- [x] 🔴 🧩 API: B608 Jira: expose PUT /rest/api/3/notificationscheme/{id}
+  - **Impl:** `NotificationSchemeResource.update(id, data)` returns `void` (204). CLI: `atlas jira notification-schemes update <id> [--name] [--description]`. Update requires at least one flag.
+  - **Rat:** Rename or redescribe a notification scheme without recreating it.
+- [x] 🔴 🧩 API: B609 Jira: expose PUT /rest/api/3/notificationscheme/{id}/notification
+  - **Impl:** `NotificationSchemeResource.addNotifications(id, data)` returns `void` (204). CLI: `atlas jira notification-schemes add-notifications <id> --notification-scheme-events <JSON array>`.
+  - **Rat:** Append event/notification pairs to an existing scheme without replacing existing entries.
+- [x] 🔴 🧩 API: B610 Jira: expose DELETE /rest/api/3/notificationscheme/{notificationSchemeId}
+  - **Impl:** `NotificationSchemeResource.delete(notificationSchemeId)` returns `void`. CLI: `atlas jira notification-schemes delete <notificationSchemeId>`.
+  - **Rat:** Remove obsolete schemes; symmetric with create.
+- [x] 🔴 🧩 API: B611 Jira: expose DELETE /rest/api/3/notificationscheme/{notificationSchemeId}/notification/{notificationId}
+  - **Impl:** `NotificationSchemeResource.removeNotification(schemeId, notificationId)` returns `void`. CLI: `atlas jira notification-schemes remove-notification <notificationSchemeId> <notificationId>`.
+  - **Rat:** Remove a single notification entry without rebuilding the entire scheme.
+- [x] 🔴 🧩 API: B612 Jira: expose GET /rest/api/3/notificationscheme/project
+  - **Impl:** `NotificationSchemeResource.listProjects(params?)` + `listProjectsAll(opts?)` async generator. CLI: `atlas jira notification-schemes list-projects [--start-at] [--max-results] [--project-ids]`.
+  - **Rat:** Enumerate per-project scheme assignments; required for project-configuration audits.
 - [x] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
   - **Impl:** New `IssueTypeScreenSchemeResource` (`src/jira/resources/issuetypescreenscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<IssueTypeScreenScheme>`; `listAll()` async generator via `paginateOffset`. CLI `atlas jira issue-type-screen-schemes list [--ids] [--query] [--start-at] [--max-results]`.
   - **Rat:** Primary listing surface for issue type screen schemes; supports filtering by ID or name substring.

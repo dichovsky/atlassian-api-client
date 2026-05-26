@@ -65,6 +65,7 @@ import { RoleResource } from './resources/role.js';
 import { ResolutionResource } from './resources/resolution.js';
 import { ExpressionResource } from './resources/expression.js';
 import { FieldConfigurationResource } from './resources/fieldconfiguration.js';
+import { NotificationSchemeResource } from './resources/notificationscheme.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -193,6 +194,8 @@ export class JiraClient {
   readonly expression: ExpressionResource;
   /** Jira issue field configurations resource (B908-B913). */
   readonly fieldConfigurations: FieldConfigurationResource;
+  /** Jira notification schemes resource (B605-B612). */
+  readonly notificationSchemes: NotificationSchemeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -284,5 +287,6 @@ export class JiraClient {
     this.resolutions = new ResolutionResource(transport, baseUrl);
     this.expression = new ExpressionResource(transport, baseUrl);
     this.fieldConfigurations = new FieldConfigurationResource(transport, baseUrl);
+    this.notificationSchemes = new NotificationSchemeResource(transport, baseUrl);
   }
 }

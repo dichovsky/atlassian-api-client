@@ -264,6 +264,7 @@ RESOURCES:
   issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
   permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
   issue-type-schemes     list, list-mapping, list-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
+  notification-schemes   list, create, get, update, add-notifications, delete, remove-notification, list-projects
   roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
   expression             analyse, eval, evaluate
   issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
@@ -381,6 +382,14 @@ EXAMPLES:
   atlas jira issue-type-schemes list-mapping --scheme-ids 10000,10001
   atlas jira issue-type-schemes list-project --project-ids 10100,10101
   atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
+  atlas jira notification-schemes list --start-at 0 --max-results 50
+  atlas jira notification-schemes get 10000 --expand notificationSchemeEvents
+  atlas jira notification-schemes create --name "Default" --description "Default scheme"
+  atlas jira notification-schemes update 10000 --name "Renamed"
+  atlas jira notification-schemes add-notifications 10000 --notification-scheme-events '[{"event":{"id":"1"},"notifications":[{"notificationType":"CurrentAssignee"}]}]'
+  atlas jira notification-schemes delete 10000
+  atlas jira notification-schemes remove-notification 10000 5
+  atlas jira notification-schemes list-projects --project-ids 10100,10101
   atlas jira roles list
   atlas jira roles get 10001
   atlas jira roles create --name "Developers" --description "Development team role"
