@@ -465,3 +465,23 @@ export type {
   ListNotificationSchemeProjectsParams,
 } from './resources/notificationscheme.js';
 export { NotificationSchemeResource } from './resources/notificationscheme.js';
+export type {
+  PriorityScheme,
+  PriorityWithSequence,
+  PrioritySchemeProject,
+  PrioritySchemeOrderBy,
+  PrioritySchemeId,
+  UpdatePrioritySchemeResponse,
+  IdListUpdate,
+  PriorityMapping,
+  ListPrioritySchemesParams,
+  CreatePrioritySchemeData,
+  UpdatePrioritySchemeData,
+  ListPrioritySchemePrioritiesParams,
+  ListPrioritySchemeProjectsParams,
+  SuggestedPriorityChanges,
+  SuggestedProjectChanges,
+  SuggestedMappingsData,
+  ListAvailablePrioritiesParams,
+} from './resources/priorityscheme.js';
+export { PrioritySchemeResource } from './resources/priorityscheme.js';

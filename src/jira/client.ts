@@ -66,6 +66,7 @@ import { ResolutionResource } from './resources/resolution.js';
 import { ExpressionResource } from './resources/expression.js';
 import { FieldConfigurationResource } from './resources/fieldconfiguration.js';
 import { NotificationSchemeResource } from './resources/notificationscheme.js';
+import { PrioritySchemeResource } from './resources/priorityscheme.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -196,6 +197,8 @@ export class JiraClient {
   readonly fieldConfigurations: FieldConfigurationResource;
   /** Jira notification schemes resource (B605-B612). */
   readonly notificationSchemes: NotificationSchemeResource;
+  /** Jira priority schemes resource (B644-B651). */
+  readonly prioritySchemes: PrioritySchemeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -288,5 +291,6 @@ export class JiraClient {
     this.expression = new ExpressionResource(transport, baseUrl);
     this.fieldConfigurations = new FieldConfigurationResource(transport, baseUrl);
     this.notificationSchemes = new NotificationSchemeResource(transport, baseUrl);
+    this.prioritySchemes = new PrioritySchemeResource(transport, baseUrl);
   }
 }

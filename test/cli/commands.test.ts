@@ -761,6 +761,21 @@ const jiraNotificationSchemesMock = {
   listProjectsAll: vi.fn(),
 };
 
+const jiraPrioritySchemesMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+  update: vi.fn(),
+  listPriorities: vi.fn(),
+  listPrioritiesAll: vi.fn(),
+  listProjects: vi.fn(),
+  listProjectsAll: vi.fn(),
+  suggestedMappings: vi.fn(),
+  listAvailablePriorities: vi.fn(),
+  listAvailablePrioritiesAll: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -824,6 +839,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueComments: jiraIssueCommentsMock,
       fieldConfigurations: jiraFieldConfigurationsMock,
       notificationSchemes: jiraNotificationSchemesMock,
+      prioritySchemes: jiraPrioritySchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -15490,6 +15506,331 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('notification-schemes', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown notification-schemes action');
+    });
+  });
+
+  // ── priorityscheme (B644-B651) ───────────────────────────────────────────────
+
+  describe('priorityscheme resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('priorityscheme list with no params calls client.prioritySchemes.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritySchemesMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(cmd('priority-schemes', 'list'), GLOBALS);
+      expect(jiraPrioritySchemesMock.list).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('priorityscheme list forwards every filter flag', async () => {
+      jiraPrioritySchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('priority-schemes', 'list', [], {
+          'start-at': '0',
+          'max-results': '25',
+          'priority-ids': '10000,10001',
+          'scheme-ids': '20000,20001',
+          'scheme-name': 'My Scheme',
+          'only-default': true,
+          'order-by': '-name',
+          expand: 'priorities,projects',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.list).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 25,
+        priorityId: [10000, 10001],
+        schemeId: [20000, 20001],
+        schemeName: 'My Scheme',
+        onlyDefault: true,
+        orderBy: '-name',
+        expand: 'priorities,projects',
+      });
+    });
+
+    it('priorityscheme list rejects non-integer --priority-ids', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priority-schemes', 'list', [], { 'priority-ids': '10000,abc' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--priority-ids must contain integers');
+    });
+
+    it('priorityscheme list rejects invalid --order-by', async () => {
+      await expect(
+        executeJiraCommand(cmd('priority-schemes', 'list', [], { 'order-by': 'random' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of: name, +name, -name');
+    });
+
+    it('priorityscheme create calls client.prioritySchemes.create', async () => {
+      jiraPrioritySchemesMock.create.mockResolvedValue({ id: '10001' });
+      const result = await executeJiraCommand(
+        cmd('priority-schemes', 'create', [], {
+          name: 'New Scheme',
+          'default-priority-id': '10001',
+          'priority-ids': '10001,10002',
+          description: 'desc',
+          'project-ids': '10100,10101',
+          mappings: '{"in":{"10000":10001}}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.create).toHaveBeenCalledWith({
+        name: 'New Scheme',
+        defaultPriorityId: 10001,
+        priorityIds: [10001, 10002],
+        description: 'desc',
+        projectIds: [10100, 10101],
+        mappings: { in: { '10000': 10001 } },
+      });
+      expect(result).toEqual({ id: '10001' });
+    });
+
+    it('priorityscheme create with only required fields', async () => {
+      jiraPrioritySchemesMock.create.mockResolvedValue({ id: '10001' });
+      await executeJiraCommand(
+        cmd('priority-schemes', 'create', [], {
+          name: 'Minimal',
+          'default-priority-id': '10001',
+          'priority-ids': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.create).toHaveBeenCalledWith({
+        name: 'Minimal',
+        defaultPriorityId: 10001,
+        priorityIds: [10001],
+      });
+    });
+
+    it('priorityscheme create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priority-schemes', 'create', [], {
+            'default-priority-id': '10001',
+            'priority-ids': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('priorityscheme create throws when --default-priority-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priority-schemes', 'create', [], {
+            name: 'X',
+            'priority-ids': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --default-priority-id');
+    });
+
+    it('priorityscheme create throws when --priority-ids missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priority-schemes', 'create', [], {
+            name: 'X',
+            'default-priority-id': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --priority-ids');
+    });
+
+    it('priorityscheme create throws when --priority-ids is empty after trim', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priority-schemes', 'create', [], {
+            name: 'X',
+            'default-priority-id': '10001',
+            'priority-ids': ',,',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--priority-ids must contain at least one priority ID');
+    });
+
+    it('priorityscheme delete calls client.prioritySchemes.delete', async () => {
+      jiraPrioritySchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('priority-schemes', 'delete', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.delete).toHaveBeenCalledWith(10001);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('priorityscheme delete throws when schemeId missing', async () => {
+      await expect(executeJiraCommand(cmd('priority-schemes', 'delete'), GLOBALS)).rejects.toThrow(
+        'Missing required argument: schemeId',
+      );
+    });
+
+    it('priorityscheme update calls client.prioritySchemes.update', async () => {
+      const response = { task: { id: 'task-1' }, priorityScheme: { id: '10001' } };
+      jiraPrioritySchemesMock.update.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('priority-schemes', 'update', ['10001'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith(10001, { name: 'Renamed' });
+      expect(result).toEqual(response);
+    });
+
+    it('priorityscheme update forwards all body flags', async () => {
+      jiraPrioritySchemesMock.update.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('priority-schemes', 'update', ['10001'], {
+          name: 'X',
+          description: 'd',
+          'default-priority-id': '10002',
+          priorities: '{"add":{"ids":[10003]}}',
+          projects: '{"remove":{"ids":[10101]}}',
+          mappings: '{"in":{"10004":10003}}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith(10001, {
+        name: 'X',
+        description: 'd',
+        defaultPriorityId: 10002,
+        priorities: { add: { ids: [10003] } },
+        projects: { remove: { ids: [10101] } },
+        mappings: { in: { '10004': 10003 } },
+      });
+    });
+
+    it('priorityscheme update throws when no body flags supplied', async () => {
+      await expect(
+        executeJiraCommand(cmd('priority-schemes', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('priorityscheme update throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('priority-schemes', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: schemeId');
+    });
+
+    it('priorityscheme list-priorities calls client.prioritySchemes.listPriorities', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritySchemesMock.listPriorities.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('priority-schemes', 'list-priorities', ['10001'], {
+          'start-at': '0',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.listPriorities).toHaveBeenCalledWith(10001, {
+        startAt: 0,
+        maxResults: 25,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('priorityscheme list-priorities throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('priority-schemes', 'list-priorities'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: schemeId');
+    });
+
+    it('priorityscheme list-projects calls client.prioritySchemes.listProjects', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritySchemesMock.listProjects.mockResolvedValue(page);
+      await executeJiraCommand(
+        cmd('priority-schemes', 'list-projects', ['10001'], {
+          'project-ids': '10100,10101',
+          query: 'EX',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.listProjects).toHaveBeenCalledWith(10001, {
+        projectId: [10100, 10101],
+        query: 'EX',
+      });
+    });
+
+    it('priorityscheme list-projects without filters omits projectId / query', async () => {
+      jiraPrioritySchemesMock.listProjects.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('priority-schemes', 'list-projects', ['10001']), GLOBALS);
+      const callArg = jiraPrioritySchemesMock.listProjects.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(callArg).not.toHaveProperty('projectId');
+      expect(callArg).not.toHaveProperty('query');
+    });
+
+    it('priorityscheme suggested-mappings with no flags calls with undefined', async () => {
+      jiraPrioritySchemesMock.suggestedMappings.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('priority-schemes', 'suggested-mappings'), GLOBALS);
+      expect(jiraPrioritySchemesMock.suggestedMappings).toHaveBeenCalledWith(undefined);
+    });
+
+    it('priorityscheme suggested-mappings forwards all body fields', async () => {
+      jiraPrioritySchemesMock.suggestedMappings.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('priority-schemes', 'suggested-mappings', [], {
+          'scheme-id': '10005',
+          priorities: '{"add":[10001],"remove":[10003]}',
+          projects: '{"add":[10021]}',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.suggestedMappings).toHaveBeenCalledWith({
+        schemeId: 10005,
+        priorities: { add: [10001], remove: [10003] },
+        projects: { add: [10021] },
+        startAt: 0,
+        maxResults: 50,
+      });
+    });
+
+    it('priorityscheme available-priorities calls client.prioritySchemes.listAvailablePriorities', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritySchemesMock.listAvailablePriorities.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('priority-schemes', 'available-priorities', [], {
+          'scheme-id': '10001',
+          query: 'high',
+          exclude: '10005,10006',
+          'start-at': '0',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritySchemesMock.listAvailablePriorities).toHaveBeenCalledWith({
+        schemeId: '10001',
+        startAt: 0,
+        maxResults: 25,
+        query: 'high',
+        exclude: ['10005', '10006'],
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('priorityscheme available-priorities throws when --scheme-id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('priority-schemes', 'available-priorities'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --scheme-id');
+    });
+
+    it('priorityscheme unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('priority-schemes', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown priority-schemes action',
+      );
     });
   });
 });

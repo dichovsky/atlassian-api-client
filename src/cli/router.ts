@@ -280,6 +280,12 @@ const GLOBAL_OPTIONS = {
   'field-configuration-items': { type: 'string' as const },
   // notification-schemes options (B605-B612)
   'notification-scheme-events': { type: 'string' as const },
+  // priorityscheme options (B644-B651)
+  'priority-ids': { type: 'string' as const },
+  'default-priority-id': { type: 'string' as const },
+  'scheme-name': { type: 'string' as const },
+  priorities: { type: 'string' as const },
+  projects: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

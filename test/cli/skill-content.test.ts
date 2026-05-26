@@ -195,6 +195,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'expression',
           'issue-comments',
           'fieldconfiguration',
+          'priority-schemes',
         ]).toContain(parsed.resource);
       }
     });
@@ -309,6 +310,7 @@ describe('Resource coverage drift check', () => {
     'expression',
     'issue-comments',
     'fieldconfiguration',
+    'priority-schemes',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

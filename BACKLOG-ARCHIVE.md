@@ -1459,3 +1459,27 @@
 - [x] 🔴 🧩 API: B913 Jira: expose PUT /rest/api/3/fieldconfiguration/{id}/fields
   - **Impl:** Branch `feat/jira-fieldconfiguration`; `FieldConfigurationResource.updateFields(id, { fieldConfigurationItems })` issues `PUT /rest/api/3/fieldconfiguration/{id}/fields` returning `void` (204). CLI: `atlas jira fieldconfiguration update-fields <id> --field-configuration-items '<JSON-array>'`. Item shape: `{ id, description?, isHidden?, isRequired?, renderer? }`. New router flags: `--is-default`, `--field-configuration-items`.
   - **Rat:** Bulk item update body must be provided as a JSON array via flag; matches B913 spec verbatim. Per Atlassian: hiding a field deletes its other properties.
+- [x] 🔴 🧩 API: B644 Jira: expose GET /rest/api/3/priorityscheme
+  - **Impl:** `PrioritySchemeResource.list(params?)` returns `OffsetPaginatedResponse<PriorityScheme>` plus `listAll()` async generator. Supports `startAt`, `maxResults`, `priorityId[]`, `schemeId[]`, `schemeName`, `onlyDefault`, `orderBy`, `expand`. CLI: `atlas jira priority-schemes list [--start-at N] [--max-results N] [--priority-ids csv] [--scheme-ids csv] [--scheme-name s] [--only-default] [--order-by name|+name|-name] [--expand s]`.
+  - **Rat:** Paginated discovery of priority schemes with expand options to inline associated priorities/projects per page.
+- [x] 🔴 🧩 API: B645 Jira: expose POST /rest/api/3/priorityscheme
+  - **Impl:** `PrioritySchemeResource.create(data)` returns `PrioritySchemeId` (`{id, task?}` — 201 sync or 202 async). Required body: `name`, `defaultPriorityId`, `priorityIds`. Optional: `description`, `projectIds`, `mappings`. CLI: `atlas jira priority-schemes create --name <n> --default-priority-id <id> --priority-ids csv [--description <d>] [--project-ids csv] [--mappings <json>]`.
+  - **Rat:** Programmatic scheme provisioning with optional inline project association and migration mappings.
+- [x] 🔴 🧩 API: B646 Jira: expose DELETE /rest/api/3/priorityscheme/{schemeId}
+  - **Impl:** `PrioritySchemeResource.delete(schemeId)` returns `void` (204). CLI: `atlas jira priority-schemes delete <schemeId>`.
+  - **Rat:** Remove an unused scheme; spec requires no associated projects before deletion succeeds.
+- [x] 🔴 🧩 API: B647 Jira: expose PUT /rest/api/3/priorityscheme/{schemeId}
+  - **Impl:** `PrioritySchemeResource.update(schemeId, data)` returns `UpdatePrioritySchemeResponse` (`{task, priorityScheme}` — 202 async). Body fields: `name?`, `description?`, `defaultPriorityId?`, `priorities?` (add/remove), `projects?` (add/remove), `mappings?` (in/out). CLI: `atlas jira priority-schemes update <schemeId>` requires at least one of `--name`, `--description`, `--default-priority-id`, `--priorities`, `--projects`, `--mappings`.
+  - **Rat:** Single endpoint to rename, change default priority, add/remove priorities, attach/detach projects, and supply migration mappings — async task envelope per spec.
+- [x] 🔴 🧩 API: B648 Jira: expose GET /rest/api/3/priorityscheme/{schemeId}/priorities
+  - **Impl:** `PrioritySchemeResource.listPriorities(schemeId, params?)` returns `OffsetPaginatedResponse<PriorityWithSequence>` plus `listPrioritiesAll()` generator. CLI: `atlas jira priority-schemes list-priorities <schemeId> [--start-at N] [--max-results N]`.
+  - **Rat:** Paginated enumeration of the priorities currently inside a scheme.
+- [x] 🔴 🧩 API: B649 Jira: expose GET /rest/api/3/priorityscheme/{schemeId}/projects
+  - **Impl:** `PrioritySchemeResource.listProjects(schemeId, params?)` returns `OffsetPaginatedResponse<PrioritySchemeProject>` plus `listProjectsAll()` generator. Supports `startAt`, `maxResults`, `projectId[]`, `query`. CLI: `atlas jira priority-schemes list-projects <schemeId> [--start-at N] [--max-results N] [--project-ids csv] [--query s]`.
+  - **Rat:** Paginated enumeration of projects associated with a scheme with optional ID-set and name-search filters.
+- [x] 🔴 🧩 API: B650 Jira: expose POST /rest/api/3/priorityscheme/mappings
+  - **Impl:** `PrioritySchemeResource.suggestedMappings(data?)` returns `OffsetPaginatedResponse<PriorityWithSequence>`. Body fields: `schemeId?`, `priorities?` (`{add,remove}` arrays), `projects?` (`{add}` array), `startAt?`, `maxResults?`. CLI: `atlas jira priority-schemes suggested-mappings [--scheme-id <id>] [--priorities <json>] [--projects <json>] [--start-at N] [--max-results N]`.
+  - **Rat:** Pre-flight check: returns priorities that would require migration mappings before committing a scheme change.
+- [x] 🔴 🧩 API: B651 Jira: expose GET /rest/api/3/priorityscheme/priorities/available
+  - **Impl:** `PrioritySchemeResource.listAvailablePriorities(params)` returns `OffsetPaginatedResponse<PriorityWithSequence>` plus `listAvailablePrioritiesAll()` generator. Requires `schemeId` (string per spec). Optional: `query`, `exclude[]`, `startAt`, `maxResults`. CLI: `atlas jira priority-schemes available-priorities --scheme-id <id> [--query s] [--exclude csv] [--start-at N] [--max-results N]`.
+  - **Rat:** Returns priorities that could still be added to the scheme — drives UX pickers that hide already-included priorities.
