@@ -677,6 +677,23 @@ const jiraPermissionSchemesMock = {
   deletePermission: vi.fn(),
 };
 
+const jiraIssueTypeSchemesMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  addIssueTypes: vi.fn(),
+  removeIssueType: vi.fn(),
+  moveIssueTypes: vi.fn(),
+  listMapping: vi.fn(),
+  listMappingAll: vi.fn(),
+  listProject: vi.fn(),
+  listProjectAll: vi.fn(),
+  assignToProject: vi.fn(),
+};
+
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -733,6 +750,7 @@ vi.mock('../../src/jira/client.js', () => {
       filters: jiraFiltersMock,
       issueTypeScreenSchemes: jiraIssueTypeScreenSchemesMock,
       permissionSchemes: jiraPermissionSchemesMock,
+      issueTypeSchemes: jiraIssueTypeSchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -13764,4 +13782,312 @@ describe('executeJiraCommand', () => {
       );
     });
   });
+
+  // ── issue-type-schemes (B566-B575) ────────────────────────────────────────
+
+  describe('issue-type-schemes resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('issue-type-schemes list calls client.issueTypeSchemes.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraIssueTypeSchemesMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('issue-type-schemes list passes ids filter', async () => {
+      jiraIssueTypeSchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'list', [], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ id: ['10001', '10002'] }),
+      );
+    });
+
+    it('issue-type-schemes get-mapping calls client.issueTypeSchemes.listMapping', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraIssueTypeSchemesMock.listMapping.mockResolvedValue(page);
+      await executeJiraCommand(cmd('issue-type-schemes', 'get-mapping'), GLOBALS);
+      expect(jiraIssueTypeSchemesMock.listMapping).toHaveBeenCalled();
+    });
+
+    it('issue-type-schemes get-mapping passes issueTypeSchemeId filter', async () => {
+      jiraIssueTypeSchemesMock.listMapping.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'get-mapping', [], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.listMapping).toHaveBeenCalledWith(
+        expect.objectContaining({ issueTypeSchemeId: ['10001', '10002'] }),
+      );
+    });
+
+    it('issue-type-schemes get-project calls client.issueTypeSchemes.listProject', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraIssueTypeSchemesMock.listProject.mockResolvedValue(page);
+      await executeJiraCommand(cmd('issue-type-schemes', 'get-project'), GLOBALS);
+      expect(jiraIssueTypeSchemesMock.listProject).toHaveBeenCalled();
+    });
+
+    it('issue-type-schemes get-project passes projectId filter', async () => {
+      jiraIssueTypeSchemesMock.listProject.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'get-project', [], { 'project-ids': '10100,10101' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.listProject).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: ['10100', '10101'] }),
+      );
+    });
+
+    it('issue-type-schemes create calls client.issueTypeSchemes.create', async () => {
+      jiraIssueTypeSchemesMock.create.mockResolvedValue({ id: '10001' });
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'create', [], {
+          name: 'My Scheme',
+          description: 'desc',
+          'default-issue-type-id': '10010',
+          'issue-type-ids': '10010,10011',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'My Scheme',
+          description: 'desc',
+          defaultIssueTypeId: '10010',
+          issueTypeIds: ['10010', '10011'],
+        }),
+      );
+      expect(result).toEqual({ id: '10001' });
+    });
+
+    it('issue-type-schemes create without optional fields works', async () => {
+      jiraIssueTypeSchemesMock.create.mockResolvedValue({ id: '10002' });
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'create', [], { name: 'Minimal' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.create).toHaveBeenCalledWith({ name: 'Minimal' });
+    });
+
+    it('issue-type-schemes create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'create'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('issue-type-schemes create throws when --issue-type-ids is empty after trim', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'create', [], { name: 'My Scheme', 'issue-type-ids': ',,' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--issue-type-ids must contain at least one issue type ID');
+    });
+
+    it('issue-type-schemes update calls client.issueTypeSchemes.update', async () => {
+      jiraIssueTypeSchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'update', ['10001'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ name: 'Renamed' }),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('issue-type-schemes update with description and defaultIssueTypeId', async () => {
+      jiraIssueTypeSchemesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'update', ['10001'], {
+          description: 'new desc',
+          'default-issue-type-id': '10011',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ description: 'new desc', defaultIssueTypeId: '10011' }),
+      );
+    });
+
+    it('issue-type-schemes update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('issue-type-schemes update throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issueTypeSchemeId');
+    });
+
+    it('issue-type-schemes delete calls client.issueTypeSchemes.delete', async () => {
+      jiraIssueTypeSchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'delete', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-type-schemes delete throws when schemeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'delete'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issueTypeSchemeId');
+    });
+
+    it('issue-type-schemes add-issue-types calls client.issueTypeSchemes.addIssueTypes', async () => {
+      jiraIssueTypeSchemesMock.addIssueTypes.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'add-issue-types', ['10001'], {
+          'issue-type-ids': '10010,10011',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.addIssueTypes).toHaveBeenCalledWith('10001', {
+        issueTypeIds: ['10010', '10011'],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('issue-type-schemes add-issue-types throws when --issue-type-ids missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'add-issue-types', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --issue-type-ids');
+    });
+
+    it('issue-type-schemes add-issue-types throws when --issue-type-ids is empty after trim', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'add-issue-types', ['10001'], { 'issue-type-ids': ',,' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--issue-type-ids must contain at least one ID');
+    });
+
+    it('issue-type-schemes remove-issue-type calls client.issueTypeSchemes.removeIssueType', async () => {
+      jiraIssueTypeSchemesMock.removeIssueType.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'remove-issue-type', ['10001', '10010']),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.removeIssueType).toHaveBeenCalledWith('10001', '10010');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-type-schemes remove-issue-type throws when issueTypeId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'remove-issue-type', ['10001']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issueTypeId');
+    });
+
+    it('issue-type-schemes move-issue-types calls client.issueTypeSchemes.moveIssueTypes with position', async () => {
+      jiraIssueTypeSchemesMock.moveIssueTypes.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'move-issue-types', ['10001'], {
+          'issue-type-ids': '10010,10011',
+          position: 'First',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.moveIssueTypes).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ issueTypeIds: ['10010', '10011'], position: 'First' }),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('issue-type-schemes move-issue-types throws when --issue-type-ids is empty after trim', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'move-issue-types', ['10001'], { 'issue-type-ids': ',,' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--issue-type-ids must contain at least one ID');
+    });
+
+    it('issue-type-schemes move-issue-types throws on invalid position', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'move-issue-types', ['10001'], {
+            'issue-type-ids': '10010',
+            position: 'Middle',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--position must be one of: First, Last');
+    });
+
+    it('issue-type-schemes move-issue-types with after field', async () => {
+      jiraIssueTypeSchemesMock.moveIssueTypes.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issue-type-schemes', 'move-issue-types', ['10001'], {
+          'issue-type-ids': '10010',
+          after: '10009',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.moveIssueTypes).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ after: '10009' }),
+      );
+    });
+
+    it('issue-type-schemes assign-to-project calls client.issueTypeSchemes.assignToProject', async () => {
+      jiraIssueTypeSchemesMock.assignToProject.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-type-schemes', 'assign-to-project', [], {
+          id: '10001',
+          'project-id': '10100',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueTypeSchemesMock.assignToProject).toHaveBeenCalledWith({
+        issueTypeSchemeId: '10001',
+        projectId: '10100',
+      });
+      expect(result).toEqual({ assigned: true });
+    });
+
+    it('issue-type-schemes assign-to-project throws when --id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'assign-to-project', [], { 'project-id': '10100' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --id');
+    });
+
+    it('issue-type-schemes assign-to-project throws when --project-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-type-schemes', 'assign-to-project', [], { id: '10001' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --project-id');
+    });
+
+    it('issue-type-schemes unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('issue-type-schemes', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown issue-type-schemes action',
+      );
+    });
+  });
 });
+

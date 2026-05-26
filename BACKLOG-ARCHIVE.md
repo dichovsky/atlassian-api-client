@@ -1228,6 +1228,36 @@
   - **Impl:** Existing `FiltersResource.list(params)` exposed as `atlas jira filters search` with `--start-at`, `--max-results`, `--expand`, `--ids` (CSV of numeric IDs), `--order-by`. First time `filters` is wired into the CLI dispatcher — also unlocks the previously-implemented `get`/`create`/`update`/`delete` resource methods.
   - **Rat:** Primary discovery endpoint for saved filters; the resource implementation already existed.
 
+- [x] 🔴 🧩 API: B566 Jira: expose GET /rest/api/3/issuetypescheme
+  - **Impl:** `IssueTypeSchemeResource.list(params?)` returns `OffsetPaginatedResponse<IssueTypeScheme>`. `listAll(opts?)` async generator via `paginateOffset`. CLI: `atlas jira issue-type-schemes list [--start-at] [--max-results] [--ids]`. Part of Wave-3 PR A.
+  - **Rat:** Primary listing endpoint for issue type schemes; pagination required for tenants with many schemes.
+- [x] 🔴 🧩 API: B567 Jira: expose POST /rest/api/3/issuetypescheme
+  - **Impl:** `IssueTypeSchemeResource.create(data)` returns `CreatedIssueTypeScheme`. CLI: `atlas jira issue-type-schemes create --name <n> [--description] [--default-issue-type-id] [--issue-type-ids]`.
+  - **Rat:** Create custom issue type schemes for project-specific workflows.
+- [x] 🔴 🧩 API: B568 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}
+  - **Impl:** `IssueTypeSchemeResource.delete(issueTypeSchemeId)` returns `void`. CLI: `atlas jira issue-type-schemes delete <issueTypeSchemeId>`.
+  - **Rat:** Remove obsolete schemes; symmetric with create.
+- [x] 🔴 🧩 API: B569 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}
+  - **Impl:** `IssueTypeSchemeResource.update(issueTypeSchemeId, data)` returns `void` (PUT 204). CLI: `atlas jira issue-type-schemes update <id> [--name] [--description] [--default-issue-type-id]`. Update requires at least one flag.
+  - **Rat:** Rename schemes or change their default issue type without recreating them.
+- [x] 🔴 🧩 API: B570 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype
+  - **Impl:** `IssueTypeSchemeResource.addIssueTypes(issueTypeSchemeId, data)` returns `void`. CLI: `atlas jira issue-type-schemes add-issue-types <id> --issue-type-ids <csv>`.
+  - **Rat:** Extend an existing scheme with additional issue types.
+- [x] 🔴 🧩 API: B571 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/{issueTypeId}
+  - **Impl:** `IssueTypeSchemeResource.removeIssueType(issueTypeSchemeId, issueTypeId)` returns `void`. CLI: `atlas jira issue-type-schemes remove-issue-type <schemeId> <issueTypeId>`.
+  - **Rat:** Remove an issue type from a scheme without deleting the scheme or the issue type.
+- [x] 🔴 🧩 API: B572 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/move
+  - **Impl:** `IssueTypeSchemeResource.moveIssueTypes(issueTypeSchemeId, data)` returns `void`. CLI: `atlas jira issue-type-schemes move-issue-types <id> --issue-type-ids <csv> [--position First|Last] [--after <id>]`.
+  - **Rat:** Control display order of issue types within a scheme.
+- [x] 🔴 🧩 API: B573 Jira: expose GET /rest/api/3/issuetypescheme/mapping
+  - **Impl:** `IssueTypeSchemeResource.listMapping(params?)` + `listMappingAll(opts?)` async generator. CLI: `atlas jira issue-type-schemes get-mapping [--start-at] [--max-results] [--ids]`.
+  - **Rat:** Enumerate which issue types belong to each scheme; useful for bulk audits.
+- [x] 🔴 🧩 API: B574 Jira: expose GET /rest/api/3/issuetypescheme/project
+  - **Impl:** `IssueTypeSchemeResource.listProject(params?)` + `listProjectAll(opts?)` async generator. CLI: `atlas jira issue-type-schemes get-project [--start-at] [--max-results] [--project-ids]`.
+  - **Rat:** Map projects to their assigned scheme; required for project-configuration audits.
+- [x] 🔴 🧩 API: B575 Jira: expose PUT /rest/api/3/issuetypescheme/project
+  - **Impl:** `IssueTypeSchemeResource.assignToProject(data)` returns `void`. CLI: `atlas jira issue-type-schemes assign-to-project --id <schemeId> --project-id <projectId>`.
+  - **Rat:** Assign a custom scheme to a project to control which issue types are available in that project.
 - [x] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
   - **Impl:** New `IssueTypeScreenSchemeResource` (`src/jira/resources/issuetypescreenscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<IssueTypeScreenScheme>`; `listAll()` async generator via `paginateOffset`. CLI `atlas jira issue-type-screen-schemes list [--ids] [--query] [--start-at] [--max-results]`.
   - **Rat:** Primary listing surface for issue type screen schemes; supports filtering by ID or name substring.

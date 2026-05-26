@@ -599,34 +599,34 @@
 - [ ] 🔴 🧩 API: B555 Jira: expose GET /rest/api/3/issuesecurityschemes/search
   - files: `src/jira/resources/issuesecurityschemes.ts`, `test/jira/issuesecurityschemes.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B566 Jira: expose GET /rest/api/3/issuetypescheme
+- [x] 🔴 🧩 API: B566 Jira: expose GET /rest/api/3/issuetypescheme
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B567 Jira: expose POST /rest/api/3/issuetypescheme
+- [x] 🔴 🧩 API: B567 Jira: expose POST /rest/api/3/issuetypescheme
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B568 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}
+- [x] 🔴 🧩 API: B568 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B569 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}
+- [x] 🔴 🧩 API: B569 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B570 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype
+- [x] 🔴 🧩 API: B570 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B571 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/{issueTypeId}
+- [x] 🔴 🧩 API: B571 Jira: expose DELETE /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/{issueTypeId}
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B572 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/move
+- [x] 🔴 🧩 API: B572 Jira: expose PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}/issuetype/move
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B573 Jira: expose GET /rest/api/3/issuetypescheme/mapping
+- [x] 🔴 🧩 API: B573 Jira: expose GET /rest/api/3/issuetypescheme/mapping
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B574 Jira: expose GET /rest/api/3/issuetypescheme/project
+- [x] 🔴 🧩 API: B574 Jira: expose GET /rest/api/3/issuetypescheme/project
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B575 Jira: expose PUT /rest/api/3/issuetypescheme/project
+- [x] 🔴 🧩 API: B575 Jira: expose PUT /rest/api/3/issuetypescheme/project
   - files: `src/jira/resources/issuetypescheme.ts`, `test/jira/issuetypescheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [x] 🔴 🧩 API: B576 Jira: expose GET /rest/api/3/issuetypescreenscheme
