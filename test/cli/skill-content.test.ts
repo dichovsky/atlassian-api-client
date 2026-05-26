@@ -14,8 +14,8 @@ const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8'
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
-// Keep router text under 875 prompt tokens so the skill stays cheap and leaves room for task context.
-// 3500 chars / 4 chars per token = 875 tokens (standard prompt-size heuristic).
+// Keep router text compact so the skill stays cheap and leaves room for task context.
+// 3500 characters is roughly 875 prompt tokens using a 4 chars/token estimate.
 const MAX_SKILL_MD_LENGTH = 3500;
 // Ensure a practical example set across SKILL.md + examples reference.
 const MIN_EXAMPLE_COMMANDS = 10;

@@ -16,7 +16,7 @@
 
 - Truncate long text in summaries; keep source ID for retrieval.
 - Avoid repeating unchanged context between steps.
-- For structured specs in AI-agent chat responses, prefer YAML over verbose JSON only when parser/docs confirm both formats are accepted.
+- For structured specs in AI-agent chat responses, prefer YAML over verbose JSON when both formats are supported.
 
 ## Escalation
 
