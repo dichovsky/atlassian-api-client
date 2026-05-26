@@ -13681,7 +13681,7 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(
         cmd('permission-schemes', 'create-permission', ['10000'], {
           'holder-type': 'anyone',
-          permissions: 'BROWSE_PROJECTS',
+          permission: 'BROWSE_PROJECTS',
         }),
         GLOBALS,
       );
@@ -13715,7 +13715,7 @@ describe('executeJiraCommand', () => {
       jiraPermissionSchemesMock.createPermission.mockResolvedValue({ id: 3 });
       await executeJiraCommand(
         cmd('permission-schemes', 'create-permission', ['10000'], {
-          permissions: 'BROWSE_PROJECTS',
+          permission: 'BROWSE_PROJECTS',
         }),
         GLOBALS,
       );

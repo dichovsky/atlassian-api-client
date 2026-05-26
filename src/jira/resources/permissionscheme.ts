@@ -6,7 +6,6 @@ export interface PermissionHolder {
   readonly type: string;
   readonly parameter?: string;
   readonly value?: string;
-  readonly expand?: string;
 }
 
 /**

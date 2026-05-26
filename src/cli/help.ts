@@ -360,7 +360,7 @@ EXAMPLES:
   atlas jira permission-schemes update 10000 --name "Updated scheme" --description "Updated"
   atlas jira permission-schemes delete 10000
   atlas jira permission-schemes list-permissions 10000
-  atlas jira permission-schemes create-permission 10000 --holder-type anyone --permissions BROWSE_PROJECTS
+  atlas jira permission-schemes create-permission 10000 --holder-type anyone --permission BROWSE_PROJECTS
   atlas jira permission-schemes get-permission 10000 10001
   atlas jira permission-schemes delete-permission 10000 10001
 `;

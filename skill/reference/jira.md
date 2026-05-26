@@ -1712,6 +1712,78 @@ atlas jira issue-type-screen-schemes list-project-mappings --project-ids 10001,1
 atlas jira issue-type-screen-schemes assign-to-project --scheme-id 10001 --project-id 10002
 ```
 
+## `permission-schemes`
+
+Jira permission schemes and per-scheme permission grants under `/rest/api/3/permissionscheme` (B616–B624).
+
+| Action              | Positional                  | Required flags                                           | Optional flags                                                                      |
+| ------------------- | --------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `list`              | —                           | —                                                        | `--expand`                                                                          |
+| `get`               | `<schemeId>`                | —                                                        | `--expand`                                                                          |
+| `create`            | —                           | `--name`                                                 | `--description`, `--permissions`, `--expand`                                        |
+| `update`            | `<schemeId>`                | at least one of `--name`/`--description`/`--permissions` | `--expand`                                                                          |
+| `delete`            | `<schemeId>`                | —                                                        | —                                                                                   |
+| `list-permissions`  | `<schemeId>`                | —                                                        | `--expand`                                                                          |
+| `create-permission` | `<schemeId>`                | —                                                        | `--permission`, `--holder-type`, `--holder-parameter`, `--holder-value`, `--expand` |
+| `get-permission`    | `<schemeId> <permissionId>` | —                                                        | `--expand`                                                                          |
+| `delete-permission` | `<schemeId> <permissionId>` | —                                                        | —                                                                                   |
+
+- `--expand` on `list`/`get`/`create`/`update` accepts `permissions` to inline the grant list; on grant endpoints (`list-permissions`, `create-permission`, `get-permission`) accepts `all` or `field`.
+- `--permissions` (on `create`/`update`) is a **JSON array** of `PermissionGrant` objects, e.g. `'[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]'`.
+- `--permission` (on `create-permission`) is a single permission key string, e.g. `BROWSE_PROJECTS`.
+- `--holder-type` identifies the grantee category: `anyone`, `applicationRole`, `assignee`, `group`, `groupCustomField`, `projectLead`, `projectRole`, `reporter`, `sd.customer.portal.only`, `user`, `userCustomField`.
+- `--holder-parameter` supplies the required qualifier for role/group/user holder types (role ID, group name, account ID, etc.).
+- `--holder-value` is an optional secondary value used by some holder types.
+
+```sh
+# List all permission schemes
+atlas jira permission-schemes list
+
+# List schemes and inline their grants
+atlas jira permission-schemes list --expand permissions
+
+# Get a specific scheme by ID
+atlas jira permission-schemes get 10000
+
+# Get a scheme and expand its grants
+atlas jira permission-schemes get 10000 --expand permissions
+
+# Create a new scheme with a name
+atlas jira permission-schemes create --name "Default Scheme"
+
+# Create a scheme with an initial grant (browse access for everyone)
+atlas jira permission-schemes create \
+  --name "Open Scheme" \
+  --description "Everyone can browse" \
+  --permissions '[{"holder":{"type":"anyone"},"permission":"BROWSE_PROJECTS"}]'
+
+# Update a scheme's name and description
+atlas jira permission-schemes update 10000 --name "Renamed Scheme" --description "Updated description"
+
+# Delete a permission scheme
+atlas jira permission-schemes delete 10000
+
+# List all permission grants on a scheme
+atlas jira permission-schemes list-permissions 10000
+
+# Add a browse grant for all logged-in users
+atlas jira permission-schemes create-permission 10000 \
+  --holder-type anyone \
+  --permission BROWSE_PROJECTS
+
+# Add a grant scoped to a specific group
+atlas jira permission-schemes create-permission 10000 \
+  --holder-type group \
+  --holder-parameter developers \
+  --permission ADMINISTER_PROJECTS
+
+# Get a single permission grant by ID
+atlas jira permission-schemes get-permission 10000 10001
+
+# Delete a permission grant
+atlas jira permission-schemes delete-permission 10000 10001
+```
+
 ## Errors specific to Jira
 
 - **401 with a known-good token** usually means the token is API-token (basic auth) but `ATLASSIAN_AUTH_TYPE=bearer` is set, or vice versa.

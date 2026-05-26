@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "07ff405dbb199527009d6a44fadc3895c1835a02cfcbef23851706946572c6c9",
+  "sourceHash": "2c1e978d06c8ca08d055b0137a413aef314a105730864bc32af83d451a13ab36",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -21402,13 +21402,13 @@
           "kind": "interface",
           "line": 5,
           "exported": true,
-          "signature": "export interface PermissionHolder { readonly type: string; readonly parameter?: string; readonly value?: string; readonl…",
+          "signature": "export interface PermissionHolder { readonly type: string; readonly parameter?: string; readonly value?: string; }",
           "jsdoc": "A holder reference for a permission grant (user, group, role, etc.)."
         },
         {
           "name": "PermissionGrant",
           "kind": "interface",
-          "line": 16,
+          "line": 15,
           "exported": true,
           "signature": "export interface PermissionGrant { readonly id?: number; readonly self?: string; readonly holder?: PermissionHolder; rea…",
           "jsdoc": "A permission grant within a permission scheme. B621-B624: GET/POST/DELETE /rest/api/3/permissionscheme/{schemeId}/permission"
@@ -21416,7 +21416,7 @@
         {
           "name": "ListPermissionGrantsResponse",
           "kind": "interface",
-          "line": 24,
+          "line": 23,
           "exported": true,
           "signature": "export interface ListPermissionGrantsResponse { readonly permissions: PermissionGrant[]; readonly expand?: string; }",
           "jsdoc": "Response envelope for GET /rest/api/3/permissionscheme/{schemeId}/permission."
@@ -21424,7 +21424,7 @@
         {
           "name": "PermissionScheme",
           "kind": "interface",
-          "line": 33,
+          "line": 32,
           "exported": true,
           "signature": "export interface PermissionScheme { readonly id?: number; readonly self?: string; readonly name: string; readonly descri…",
           "jsdoc": "A Jira permission scheme. B616-B620: CRUD on /rest/api/3/permissionscheme"
@@ -21432,7 +21432,7 @@
         {
           "name": "ListPermissionSchemesResponse",
           "kind": "interface",
-          "line": 51,
+          "line": 50,
           "exported": true,
           "signature": "export interface ListPermissionSchemesResponse { readonly permissionSchemes: PermissionScheme[]; }",
           "jsdoc": "Response envelope for GET /rest/api/3/permissionscheme."
@@ -21440,7 +21440,7 @@
         {
           "name": "PermissionSchemeExpandParams",
           "kind": "interface",
-          "line": 56,
+          "line": 55,
           "exported": true,
           "signature": "export interface PermissionSchemeExpandParams { readonly expand?: string; }",
           "jsdoc": "Query parameters used on list/get endpoints that support `expand`."
@@ -21448,7 +21448,7 @@
         {
           "name": "CreatePermissionSchemeData",
           "kind": "interface",
-          "line": 61,
+          "line": 60,
           "exported": true,
           "signature": "export interface CreatePermissionSchemeData { readonly name: string; readonly description?: string; readonly permissions…",
           "jsdoc": "Request body for POST /rest/api/3/permissionscheme."
@@ -21456,7 +21456,7 @@
         {
           "name": "UpdatePermissionSchemeData",
           "kind": "interface",
-          "line": 68,
+          "line": 67,
           "exported": true,
           "signature": "export interface UpdatePermissionSchemeData { readonly name?: string; readonly description?: string; readonly permission…",
           "jsdoc": "Request body for PUT /rest/api/3/permissionscheme/{schemeId}."
@@ -21464,7 +21464,7 @@
         {
           "name": "CreatePermissionGrantData",
           "kind": "interface",
-          "line": 75,
+          "line": 74,
           "exported": true,
           "signature": "export interface CreatePermissionGrantData { readonly holder?: PermissionHolder; readonly permission?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/permissionscheme/{schemeId}/permission."
@@ -21472,7 +21472,7 @@
         {
           "name": "PermissionSchemeResource",
           "kind": "class",
-          "line": 90,
+          "line": 89,
           "exported": true,
           "signature": "export class PermissionSchemeResource",
           "jsdoc": "Jira Permission Schemes resource.",
@@ -21480,52 +21480,52 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 91
+              "line": 90
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 97
+              "line": 96
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 109
+              "line": 108
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 128
+              "line": 127
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 140
+              "line": 139
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 161
+              "line": 160
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 169
+              "line": 168
             },
             {
               "name": "createPermission",
               "kind": "method",
-              "line": 184
+              "line": 183
             },
             {
               "name": "getPermission",
               "kind": "method",
-              "line": 204
+              "line": 203
             },
             {
               "name": "deletePermission",
               "kind": "method",
-              "line": 220
+              "line": 219
             }
           ]
         }

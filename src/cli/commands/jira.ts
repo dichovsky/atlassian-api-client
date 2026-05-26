@@ -2659,7 +2659,7 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
       const holderType = asString(opts['holder-type']);
       const holderParameter = asString(opts['holder-parameter']);
       const holderValue = asString(opts['holder-value']);
-      const permission = asString(opts['permissions']);
+      const permission = asString(opts['permission']);
       const expand = asString(opts['expand']);
       const holder =
         holderType !== undefined
