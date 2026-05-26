@@ -58,6 +58,7 @@ import { AppResource } from './resources/app.js';
 import { ComponentResource } from './resources/component.js';
 import { ApplicationPropertiesResource } from './resources/application-properties.js';
 import { ConfigurationResource } from './resources/configuration.js';
+import { IssueTypeScreenSchemeResource } from './resources/issuetypescreenscheme.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -172,6 +173,8 @@ export class JiraClient {
   readonly applicationProperties: ApplicationPropertiesResource;
   /** Jira global + time-tracking configuration resource (B382-B387). */
   readonly configuration: ConfigurationResource;
+  /** Jira issue type screen schemes resource (B576-B586). */
+  readonly issueTypeScreenSchemes: IssueTypeScreenSchemeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -256,5 +259,6 @@ export class JiraClient {
     this.component = new ComponentResource(transport, baseUrl);
     this.applicationProperties = new ApplicationPropertiesResource(transport, baseUrl);
     this.configuration = new ConfigurationResource(transport, baseUrl);
+    this.issueTypeScreenSchemes = new IssueTypeScreenSchemeResource(transport, baseUrl);
   }
 }

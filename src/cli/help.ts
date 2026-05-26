@@ -260,6 +260,7 @@ RESOURCES:
   issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
   component              list, create, get, update, delete, related-issue-counts
   filters                search, get, create, update, delete, list-favourites, list-my, add-favourite, remove-favourite, change-owner, get-columns, set-columns, reset-columns, list-permissions, add-permission, get-permission, delete-permission, get-default-share-scope, set-default-share-scope
+  issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -341,6 +342,17 @@ EXAMPLES:
   atlas jira configuration list-timetracking-providers
   atlas jira configuration get-timetracking-options
   atlas jira configuration update-timetracking-options --working-hours-per-day 8 --time-format pretty
+  atlas jira issue-type-screen-schemes list --max-results 50
+  atlas jira issue-type-screen-schemes create --name "Default" --mappings '[{"issueTypeId":"10000","screenSchemeId":"10001"}]'
+  atlas jira issue-type-screen-schemes update 10001 --name "Renamed"
+  atlas jira issue-type-screen-schemes delete 10001
+  atlas jira issue-type-screen-schemes update-mapping 10001 --mappings '[{"issueTypeId":"10000","screenSchemeId":"10002"}]'
+  atlas jira issue-type-screen-schemes update-default-mapping 10001 --screen-scheme-id 10002
+  atlas jira issue-type-screen-schemes remove-mappings 10001 --issue-type-ids 10000,10001
+  atlas jira issue-type-screen-schemes get-project 10001 --max-results 25
+  atlas jira issue-type-screen-schemes list-mapping --scheme-ids 10001,10002
+  atlas jira issue-type-screen-schemes list-project-mappings --project-ids 10001,10002
+  atlas jira issue-type-screen-schemes assign-to-project --scheme-id 10001 --project-id 10002
 `;
 
 /** Get help text for the given level. */
