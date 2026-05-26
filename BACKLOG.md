@@ -152,21 +152,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B356 Jira: expose GET /rest/api/3/comment/{commentId}/properties
-  - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B357 Jira: expose DELETE /rest/api/3/comment/{commentId}/properties/{propertyKey}
-  - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B358 Jira: expose GET /rest/api/3/comment/{commentId}/properties/{propertyKey}
-  - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B359 Jira: expose PUT /rest/api/3/comment/{commentId}/properties/{propertyKey}
-  - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B360 Jira: expose POST /rest/api/3/comment/list
-  - files: `src/jira/resources/issue-comments.ts`, `test/jira/issue-comments.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B367 Jira: expose GET /rest/api/3/config/fieldschemes
   - files: `src/jira/resources/config.ts`, `test/jira/config.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

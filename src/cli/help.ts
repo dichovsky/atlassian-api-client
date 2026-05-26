@@ -266,6 +266,7 @@ RESOURCES:
   issue-type-schemes     list, list-mapping, list-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
   roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
   expression             analyse, eval, evaluate
+  issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
 
 EXAMPLES:
   atlas jira issues get PROJ-123

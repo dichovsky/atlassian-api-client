@@ -60,6 +60,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `permission-schemes`     | `list`, `get`, `create`, `update`, `delete`, `list-permissions`, `create-permission`, `get-permission`, `delete-permission`                                                                                                                                                                                                                                                                                              |
 | `issue-type-schemes`     | `list`, `list-mapping`, `list-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                    |
 | `roles`                  | `list`, `get`, `create`, `update`, `partial-update`, `delete`, `get-actors`, `add-actors`, `delete-actors`                                                                                                                                                                                                                                                                                                               |
+| `issue-comments`         | `list-properties`, `get-property`, `set-property`, `delete-property`, `bulk-fetch`                                                                                                                                                                                                                                                                                                                                       |
 
 ## `issue-type-schemes`
 
@@ -2072,4 +2073,40 @@ atlas jira expression evaluate \
   --expression "issue.summary" \
   --context '{"issue":{"key":"ACJIRA-1470"}}' \
   --expand meta.complexity
+```
+
+## `issue-comments`
+
+Comment property CRUD + bulk fetch (B356–B360). The base comment CRUD (`list`, `get`, `create`, `update`, `delete`) is available via the SDK (`client.issueComments.*`) but not yet wired into the CLI — only the property surface and bulk fetch below are reachable from `atlas jira issue-comments …`.
+
+| Action            | Positional                  | Required flags    | Optional flags |
+| ----------------- | --------------------------- | ----------------- | -------------- |
+| `list-properties` | `<commentId>`               | —                 | —              |
+| `get-property`    | `<commentId> <propertyKey>` | —                 | —              |
+| `set-property`    | `<commentId> <propertyKey>` | `--value` (JSON)  | —              |
+| `delete-property` | `<commentId> <propertyKey>` | —                 | —              |
+| `bulk-fetch`      | —                           | `--ids` (CSV int) | `--expand`     |
+
+- `--value` is parsed as JSON; pass any scalar, object, or array (e.g. `--value '{"flag":true}'`, `--value 42`, `--value '"plain"'`).
+- `--ids` is a comma-separated list of integer comment IDs. The Jira API caps the list at 1000 IDs.
+- `--expand` accepts a comma-separated list (e.g. `renderedBody,properties`).
+
+```sh
+# List property keys on a comment
+atlas jira issue-comments list-properties 10001
+
+# Get a single property
+atlas jira issue-comments get-property 10001 my-key
+
+# Set/overwrite a property with arbitrary JSON
+atlas jira issue-comments set-property 10001 my-key --value '{"approved":true,"reviewer":"alice"}'
+
+# Delete a property
+atlas jira issue-comments delete-property 10001 my-key
+
+# Bulk fetch comments by IDs
+atlas jira issue-comments bulk-fetch --ids 10001,10002,10003
+
+# Bulk fetch with rendered body
+atlas jira issue-comments bulk-fetch --ids 10001,10002 --expand renderedBody,properties
 ```

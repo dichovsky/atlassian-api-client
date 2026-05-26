@@ -50,6 +50,15 @@ export type {
 export { PrioritiesResource } from './resources/priorities.js';
 export { StatusesResource } from './resources/statuses.js';
 export { IssueCommentsResource } from './resources/issue-comments.js';
+export type {
+  IssueCommentsResponse,
+  IssueCommentPropertyKey,
+  IssueCommentPropertyKeys,
+  IssueCommentProperty,
+  BulkFetchIssueCommentsData,
+  BulkFetchIssueCommentsParams,
+  BulkFetchIssueCommentsResponse,
+} from './resources/issue-comments.js';
 export { IssueAttachmentsResource } from './resources/issue-attachments.js';
 export type {
   IssueAttachmentsResponse,

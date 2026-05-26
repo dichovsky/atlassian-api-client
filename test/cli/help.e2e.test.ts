@@ -133,6 +133,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   roles: 'executeRoles',
   resolutions: 'executeResolutions',
   expression: 'executeExpression',
+  'issue-comments': 'executeIssueComments',
 };
 
 /**
