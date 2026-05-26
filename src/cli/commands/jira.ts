@@ -1959,14 +1959,12 @@ async function executeApplicationProperties(
       // server semantic where `key=<id>` returns the single matching entry.
       const positionalKey = cmd.positionalArgs[0];
       const key = positionalKey ?? asString(opts['key']);
+      const permissionLevel = asString(opts['permission-level']);
+      const keyFilter = asString(opts['key-filter']);
       return client.applicationProperties.list({
         ...(key !== undefined && { key }),
-        ...(asString(opts['permission-level']) !== undefined && {
-          permissionLevel: asString(opts['permission-level']) as string,
-        }),
-        ...(asString(opts['key-filter']) !== undefined && {
-          keyFilter: asString(opts['key-filter']) as string,
-        }),
+        ...(permissionLevel !== undefined && { permissionLevel }),
+        ...(keyFilter !== undefined && { keyFilter }),
       });
     }
     case 'set': {

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "524d5c35709e252f3f651aa4ba3f1fa6864d19f7db3266bfd0b513d3124115b3",
+  "sourceHash": "389a3a6e2c7eb4a6aba4ae70bcc2706cbb791f5ebdaa69b37124f8a305752bc0",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4506,7 +4506,7 @@
         {
           "name": "executeConfiguration",
           "kind": "function",
-          "line": 1986,
+          "line": 1984,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -15682,8 +15682,8 @@
           "typeOnly": true,
           "names": [
             {
-              "exported": "JiraConfiguration",
-              "original": "JiraConfiguration"
+              "exported": "Configuration",
+              "original": "Configuration"
             },
             {
               "exported": "TimeTrackingConfiguration",
@@ -17280,7 +17280,7 @@
         {
           "name": "ListApplicationPropertiesParams",
           "kind": "interface",
-          "line": 40,
+          "line": 41,
           "exported": true,
           "signature": "export interface ListApplicationPropertiesParams { readonly key?: string; readonly permissionLevel?: string; readonly ke…",
           "jsdoc": "Query parameters for GET /rest/api/3/application-properties."
@@ -17288,7 +17288,7 @@
         {
           "name": "UpdateApplicationPropertyData",
           "kind": "interface",
-          "line": 52,
+          "line": 53,
           "exported": true,
           "signature": "export interface UpdateApplicationPropertyData { readonly id: string; readonly value: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/application-properties/{id}."
@@ -17296,7 +17296,7 @@
         {
           "name": "ApplicationPropertiesResource",
           "kind": "class",
-          "line": 62,
+          "line": 63,
           "exported": true,
           "signature": "export class ApplicationPropertiesResource",
           "jsdoc": "Jira application properties resource — global key/value settings under `/rest/api/3/application-properties`. Covers B331 (list), B332 (update), B333 (advanced-settings).",
@@ -17304,22 +17304,22 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 63
+              "line": 64
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 73
+              "line": 74
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 93
+              "line": 94
             },
             {
               "name": "listAdvancedSettings",
               "kind": "method",
-              "line": 107
+              "line": 108
             }
           ]
         }
@@ -18392,11 +18392,11 @@
           "jsdoc": "Time-tracking configuration shape returned by the `/configuration/timetracking/options` endpoints."
         },
         {
-          "name": "JiraConfiguration",
+          "name": "Configuration",
           "kind": "interface",
           "line": 24,
           "exported": true,
-          "signature": "export interface JiraConfiguration { readonly votingEnabled: boolean; readonly watchingEnabled: boolean; readonly unassi…",
+          "signature": "export interface Configuration { readonly votingEnabled: boolean; readonly watchingEnabled: boolean; readonly unassigned…",
           "jsdoc": "Global Jira instance configuration returned by GET /rest/api/3/configuration."
         },
         {

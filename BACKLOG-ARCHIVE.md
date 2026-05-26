@@ -1144,7 +1144,7 @@
   - **Impl:** `ApplicationPropertiesResource.listAdvancedSettings()` returns `readonly ApplicationProperty[]`. CLI `atlas jira application-properties list-advanced-settings`.
   - **Rat:** Admin-only subset (the "advanced settings" sub-page of Jira admin UI); separate action keeps the surface explicit.
 - [x] 🔴 🧩 API: B382 Jira: expose GET /rest/api/3/configuration
-  - **Impl:** `ConfigurationResource.get()` returns `JiraConfiguration` (feature flags + embedded `timeTrackingConfiguration`). CLI `atlas jira configuration get`. Interface prefixed `Jira` for clarity vs the global `Configuration` name. Bundled with B383-B387 + B331-B333 in PR.
+  - **Impl:** `ConfigurationResource.get()` returns `Configuration` (feature flags + embedded `timeTrackingConfiguration`). CLI `atlas jira configuration get`. Bundled with B383-B387 + B331-B333 in PR.
   - **Rat:** Global instance feature-flag snapshot; singleton GET so no positional/flags required.
 - [x] 🔴 🧩 API: B383 Jira: expose GET /rest/api/3/configuration/timetracking
   - **Impl:** `ConfigurationResource.getTimeTracking()` returns `TimeTrackingProvider`. CLI `atlas jira configuration get-timetracking`.

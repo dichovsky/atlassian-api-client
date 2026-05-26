@@ -21,7 +21,7 @@ export interface TimeTrackingConfiguration {
  * Reflects which optional Jira features (voting, watching, sub-tasks, time
  * tracking, attachments, issue linking) are enabled at the instance level.
  */
-export interface JiraConfiguration {
+export interface Configuration {
   readonly votingEnabled: boolean;
   readonly watchingEnabled: boolean;
   readonly unassignedIssuesAllowed: boolean;
@@ -74,8 +74,8 @@ export class ConfigurationResource {
   ) {}
 
   /** GET /rest/api/3/configuration — global instance configuration. */
-  async get(): Promise<JiraConfiguration> {
-    const response = await this.transport.request<JiraConfiguration>({
+  async get(): Promise<Configuration> {
+    const response = await this.transport.request<Configuration>({
       method: 'GET',
       path: `${this.baseUrl}/configuration`,
     });

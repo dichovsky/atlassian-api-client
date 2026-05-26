@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ConfigurationResource,
-  type JiraConfiguration,
+  type Configuration,
   type TimeTrackingConfiguration,
   type TimeTrackingProvider,
 } from '../../src/jira/resources/configuration.js';
@@ -9,7 +9,7 @@ import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
-const makeConfig = (overrides: Partial<JiraConfiguration> = {}): JiraConfiguration => ({
+const makeConfig = (overrides: Partial<Configuration> = {}): Configuration => ({
   votingEnabled: true,
   watchingEnabled: true,
   unassignedIssuesAllowed: false,

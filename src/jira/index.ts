@@ -306,7 +306,7 @@ export type {
 } from './resources/application-properties.js';
 export { ApplicationPropertiesResource } from './resources/application-properties.js';
 export type {
-  JiraConfiguration,
+  Configuration,
   TimeTrackingConfiguration,
   TimeTrackingProvider,
   SelectTimeTrackingProviderData,

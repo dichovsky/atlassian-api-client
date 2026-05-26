@@ -32,9 +32,10 @@ export interface ApplicationProperty {
  *
  * - `key` filters to a single property by id; takes precedence over the
  *   other filters when supplied.
- * - `permissionLevel` filters by visibility tier (`SYSEMIN`, `SYSADMIN`,
- *   `JIRAUSER` per the spec — passed through unchanged so the server can
- *   evolve the enum without a client release).
+ * - `permissionLevel` filters by visibility tier. Free-form string per the
+ *   Atlassian REST v3 spec (schema: `{ type: 'string' }` — no closed enum);
+ *   passed through unchanged so the server can evolve accepted values
+ *   without a client release.
  * - `keyFilter` is a regex applied to keys (server-side filter).
  */
 export interface ListApplicationPropertiesParams {
