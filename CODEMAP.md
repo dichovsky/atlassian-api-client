@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "3f6c389707d05d55350757eb702588bf33bf6dfbcb30285b3708dcbd8d3dac2c",
+  "sourceHash": "519a4220db495ba00cde8259efabc06f44b5c036ece923d121f19a478a46edb5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4038,392 +4038,398 @@
         {
           "name": "executeIssues",
           "kind": "function",
-          "line": 110,
+          "line": 112,
           "signature": "async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeProjects",
           "kind": "function",
-          "line": 191,
+          "line": 193,
           "signature": "async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSearch",
           "kind": "function",
-          "line": 204,
+          "line": 206,
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 218,
+          "line": 220,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-          "line": 234,
+          "line": 236,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-          "line": 245,
+          "line": 247,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-          "line": 256,
+          "line": 258,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-          "line": 265,
+          "line": 267,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-          "line": 474,
+          "line": 476,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-          "line": 612,
+          "line": 614,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-          "line": 684,
+          "line": 686,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-          "line": 708,
+          "line": 710,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-          "line": 747,
+          "line": 749,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-          "line": 774,
+          "line": 776,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-          "line": 792,
+          "line": 794,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-          "line": 801,
+          "line": 803,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 810,
+          "line": 812,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 815,
+          "line": 817,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 820,
+          "line": 822,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 824,
+          "line": 826,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-          "line": 833,
+          "line": 835,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-          "line": 841,
+          "line": 843,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-          "line": 850,
+          "line": 852,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-          "line": 857,
+          "line": 859,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-          "line": 865,
+          "line": 867,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
-          "line": 878,
+          "line": 880,
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
-          "line": 889,
+          "line": 891,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
-          "line": 900,
+          "line": 902,
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
-          "line": 909,
+          "line": 911,
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
-          "line": 918,
+          "line": 920,
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
-          "line": 938,
+          "line": 940,
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
-          "line": 955,
+          "line": 957,
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
-          "line": 964,
+          "line": 966,
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
-          "line": 1001,
+          "line": 1003,
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIncidents",
           "kind": "function",
-          "line": 1020,
+          "line": 1022,
           "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePostIncidentReviews",
           "kind": "function",
-          "line": 1032,
+          "line": 1034,
           "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeVulnerability",
           "kind": "function",
-          "line": 1047,
+          "line": 1049,
           "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDevopscomponents",
           "kind": "function",
-          "line": 1059,
+          "line": 1061,
           "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroups",
           "kind": "function",
-          "line": 1071,
+          "line": 1073,
           "signature": "async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroupUserPicker",
           "kind": "function",
-          "line": 1096,
+          "line": 1098,
           "signature": "async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSecurityLevel",
           "kind": "function",
-          "line": 1130,
+          "line": 1132,
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
-          "line": 1139,
+          "line": 1141,
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
-          "line": 1154,
+          "line": 1156,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-          "line": 1176,
+          "line": 1178,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-          "line": 1200,
+          "line": 1202,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-          "line": 1212,
+          "line": 1214,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
-          "line": 1224,
+          "line": 1226,
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
-          "line": 1233,
+          "line": 1235,
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1242,
+          "line": 1244,
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
-          "line": 1254,
+          "line": 1256,
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
-          "line": 1279,
+          "line": 1281,
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
-          "line": 1291,
+          "line": 1293,
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
-          "line": 1300,
+          "line": 1302,
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
-          "line": 1314,
+          "line": 1316,
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
-          "line": 1423,
+          "line": 1425,
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 1430,
+          "line": 1432,
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
-          "line": 1545,
+          "line": 1547,
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
-          "line": 1555,
+          "line": 1557,
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
-          "line": 1563,
+          "line": 1565,
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
-          "line": 1571,
+          "line": 1573,
           "signature": "const BULK_ACTIONS = [ 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', 'transition-issue…"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
-          "line": 1591,
+          "line": 1593,
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
-          "line": 1598,
+          "line": 1600,
           "signature": "function parseJsonValueFlag(raw: string, label: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
-          "line": 1606,
+          "line": 1608,
           "signature": "function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
-          "line": 1614,
+          "line": 1616,
           "signature": "function parseJsonArrayFlag(raw: string, label: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
-          "line": 1622,
+          "line": 1624,
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+        },
+        {
+          "name": "executeIssueAttachments",
+          "kind": "function",
+          "line": 1734,
+          "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -4512,7 +4518,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 318,
+          "line": 327,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -4673,7 +4679,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 202,
+          "line": 210,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -15983,6 +15989,45 @@
         },
         {
           "kind": "named",
+          "from": "./resources/issue-attachments.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "IssueAttachmentsResponse",
+              "original": "IssueAttachmentsResponse"
+            },
+            {
+              "exported": "AttachmentArchiveEntry",
+              "original": "AttachmentArchiveEntry"
+            },
+            {
+              "exported": "AttachmentArchiveItemReadable",
+              "original": "AttachmentArchiveItemReadable"
+            },
+            {
+              "exported": "AttachmentArchiveMetadataReadable",
+              "original": "AttachmentArchiveMetadataReadable"
+            },
+            {
+              "exported": "AttachmentArchive",
+              "original": "AttachmentArchive"
+            },
+            {
+              "exported": "AttachmentSettings",
+              "original": "AttachmentSettings"
+            },
+            {
+              "exported": "DownloadAttachmentContentParams",
+              "original": "DownloadAttachmentContentParams"
+            },
+            {
+              "exported": "DownloadAttachmentThumbnailParams",
+              "original": "DownloadAttachmentThumbnailParams"
+            }
+          ]
+        },
+        {
+          "kind": "named",
           "from": "./resources/issue-comments.js",
           "typeOnly": false,
           "names": [
@@ -19247,35 +19292,121 @@
           "line": 6,
           "exported": true,
           "signature": "export interface IssueAttachmentsResponse { readonly attachments: IssueAttachment[]; }",
-          "jsdoc": "Response wrapper for issue attachments list."
+          "jsdoc": "@deprecated Unused; kept for backward compatibility until next major."
+        },
+        {
+          "name": "AttachmentArchiveEntry",
+          "kind": "interface",
+          "line": 11,
+          "exported": true,
+          "signature": "export interface AttachmentArchiveEntry { readonly entryIndex?: number; readonly mediaType?: string; readonly path?: str…",
+          "jsdoc": "A single entry inside an archive-typed attachment (e.g. zip) — raw form."
+        },
+        {
+          "name": "AttachmentArchiveItemReadable",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface AttachmentArchiveItemReadable { readonly index?: number; readonly mediaType?: string; readonly path?: s…",
+          "jsdoc": "A single entry inside an archive-typed attachment — human-readable form."
+        },
+        {
+          "name": "AttachmentArchiveMetadataReadable",
+          "kind": "interface",
+          "line": 31,
+          "exported": true,
+          "signature": "export interface AttachmentArchiveMetadataReadable { readonly id?: number; readonly name?: string; readonly entries?: re…",
+          "jsdoc": "Human-readable archive expansion. Mirrors `AttachmentArchiveMetadataReadable` in the Jira REST v3 spec — preferred over the raw form for end-user display because each entry's `size` is humanised (e.g. `\"2.5 kB\"`)."
+        },
+        {
+          "name": "AttachmentArchive",
+          "kind": "interface",
+          "line": 44,
+          "exported": true,
+          "signature": "export interface AttachmentArchive { readonly entries?: readonly AttachmentArchiveEntry[]; readonly totalEntryCount?: nu…",
+          "jsdoc": "Raw archive expansion. Mirrors `AttachmentArchive` in the Jira REST v3 spec — each entry's `size` is in bytes (number) instead of the humanised string returned by the `/expand/human` endpoint."
+        },
+        {
+          "name": "AttachmentSettings",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface AttachmentSettings { readonly enabled: boolean; readonly uploadLimit: number; }",
+          "jsdoc": "Instance-level attachment settings (`GET /attachment/meta`). Reports whether the admin has enabled attachments and the per-file upload byte cap."
+        },
+        {
+          "name": "DownloadAttachmentContentParams",
+          "kind": "interface",
+          "line": 59,
+          "exported": true,
+          "signature": "export interface DownloadAttachmentContentParams { readonly redirect?: boolean; }",
+          "jsdoc": "Query params for {@link IssueAttachmentsResource.downloadContent}."
+        },
+        {
+          "name": "DownloadAttachmentThumbnailParams",
+          "kind": "interface",
+          "line": 71,
+          "exported": true,
+          "signature": "export interface DownloadAttachmentThumbnailParams { readonly redirect?: boolean; readonly fallbackToDefault?: boolean; …",
+          "jsdoc": "Query params for {@link IssueAttachmentsResource.downloadThumbnail}."
         },
         {
           "name": "IssueAttachmentsResource",
           "kind": "class",
-          "line": 11,
+          "line": 87,
           "exported": true,
           "signature": "export class IssueAttachmentsResource",
-          "jsdoc": "Jira Issue Attachments resource — list, get, and upload attachments on issues.",
+          "jsdoc": "Jira Issue Attachments resource — list, get, upload, and manage attachments on issues.",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 12
+              "line": 88
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 18
+              "line": 94
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 30
+              "line": 106
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 119
+            },
+            {
+              "name": "expandHuman",
+              "kind": "method",
+              "line": 132
+            },
+            {
+              "name": "expandRaw",
+              "kind": "method",
+              "line": 146
+            },
+            {
+              "name": "downloadContent",
+              "kind": "method",
+              "line": 169
+            },
+            {
+              "name": "getMeta",
+              "kind": "method",
+              "line": 190
+            },
+            {
+              "name": "downloadThumbnail",
+              "kind": "method",
+              "line": 212
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 46
+              "line": 240
             }
           ]
         }

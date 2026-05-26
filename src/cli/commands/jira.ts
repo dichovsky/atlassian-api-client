@@ -102,6 +102,8 @@ export async function executeJiraCommand(
       return executeApp(client, cmd);
     case 'bulk':
       return executeBulk(client, cmd);
+    case 'issue-attachments':
+      return executeIssueAttachments(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -1726,5 +1728,69 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       );
     default:
       throw new Error(`Unknown bulk action: ${cmd.action}. Actions: ${BULK_ACTIONS.join(', ')}`);
+  }
+}
+
+async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.issueAttachments.list(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'));
+    case 'get':
+      return client.issueAttachments.get(requireArg(cmd.positionalArgs[0], 'attachmentId'));
+    case 'delete': {
+      const attachmentId = requireArg(cmd.positionalArgs[0], 'attachmentId');
+      await client.issueAttachments.delete(attachmentId);
+      return { deleted: true };
+    }
+    case 'expand-human':
+      return client.issueAttachments.expandHuman(requireArg(cmd.positionalArgs[0], 'attachmentId'));
+    case 'expand-raw':
+      return client.issueAttachments.expandRaw(requireArg(cmd.positionalArgs[0], 'attachmentId'));
+    case 'download-content': {
+      const attachmentId = requireArg(cmd.positionalArgs[0], 'attachmentId');
+      const redirect = asBoolFlag(opts['redirect']);
+      const buffer = await client.issueAttachments.downloadContent(attachmentId, {
+        ...(redirect !== undefined && { redirect }),
+      });
+      return { bytes: buffer.byteLength };
+    }
+    case 'get-meta':
+      return client.issueAttachments.getMeta();
+    case 'download-thumbnail': {
+      const attachmentId = requireArg(cmd.positionalArgs[0], 'attachmentId');
+      const redirect = asBoolFlag(opts['redirect']);
+      const fallbackToDefault = asBoolFlag(opts['fallback-to-default']);
+      const width = asPositiveInt(opts['width'], '--width');
+      const height = asPositiveInt(opts['height'], '--height');
+      const buffer = await client.issueAttachments.downloadThumbnail(attachmentId, {
+        ...(redirect !== undefined && { redirect }),
+        ...(fallbackToDefault !== undefined && { fallbackToDefault }),
+        ...(width !== undefined && { width }),
+        ...(height !== undefined && { height }),
+      });
+      return { bytes: buffer.byteLength };
+    }
+    case 'upload': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      const filePath = requireOpt(opts['file'], '--file');
+      const filename = asString(opts['filename']);
+      const mimeType = asString(opts['media-type']);
+      const { readFile } = await import('node:fs/promises');
+      const { basename } = await import('node:path');
+      const buffer = await readFile(filePath);
+      const blob = new Blob([buffer]);
+      return client.issueAttachments.upload(
+        issueIdOrKey,
+        filename ?? basename(filePath),
+        blob,
+        mimeType,
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown issue-attachments action: ${cmd.action}. Actions: list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload`,
+      );
   }
 }
