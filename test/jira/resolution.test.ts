@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ResolutionResource } from '../../src/jira/resources/resolution.js';
 import type { Resolution } from '../../src/jira/resources/resolution.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -142,18 +143,27 @@ describe('ResolutionResource', () => {
       });
     });
 
-    it('sends only provided fields', async () => {
+    it('includes optional description in body', async () => {
       transport.respondWith(undefined, 204);
 
-      await resource.update('10', { description: 'Updated description' });
+      await resource.update('10', { name: 'Renamed', description: 'Updated description' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body).toEqual({ description: 'Updated description' });
-      expect(body).not.toHaveProperty('name');
+      expect(body).toEqual({ name: 'Renamed', description: 'Updated description' });
     });
 
-    it('throws when no fields provided', async () => {
-      await expect(resource.update('10', {})).rejects.toThrow('update requires at least one of');
+    it('throws ValidationError when name is missing', async () => {
+      await expect(resource.update('10', {})).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it('throws ValidationError when name is empty string', async () => {
+      await expect(resource.update('10', { name: '' })).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it('throws ValidationError when only description provided (name required by Jira spec)', async () => {
+      await expect(resource.update('10', { description: 'desc only' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
     });
   });
 
@@ -200,29 +210,19 @@ describe('ResolutionResource', () => {
   // ── moveResolutions (B717) ─────────────────────────────────────────────────
 
   describe('moveResolutions()', () => {
-    it('calls PUT /resolution/move with required ids', async () => {
-      transport.respondWith(undefined, 204);
-
-      await resource.moveResolutions({ ids: ['1', '2'] });
-
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'PUT',
-        path: `${BASE_URL}/resolution/move`,
-        body: { ids: ['1', '2'] },
-      });
-    });
-
-    it('includes after when provided', async () => {
+    it('calls PUT /resolution/move with ids and after', async () => {
       transport.respondWith(undefined, 204);
 
       await resource.moveResolutions({ ids: ['1', '2'], after: '3' });
 
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['after']).toBe('3');
-      expect(body).not.toHaveProperty('before');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/resolution/move`,
+        body: { ids: ['1', '2'], after: '3' },
+      });
     });
 
-    it('includes before when provided', async () => {
+    it('calls PUT /resolution/move with ids and before', async () => {
       transport.respondWith(undefined, 204);
 
       await resource.moveResolutions({ ids: ['1', '2'], before: '0' });
@@ -232,14 +232,22 @@ describe('ResolutionResource', () => {
       expect(body).not.toHaveProperty('after');
     });
 
-    it('omits after/before when not provided', async () => {
-      transport.respondWith(undefined, 204);
+    it('throws ValidationError when ids is empty array', async () => {
+      await expect(resource.moveResolutions({ ids: [], after: '3' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
 
-      await resource.moveResolutions({ ids: ['1'] });
+    it('throws ValidationError when both after and before are missing', async () => {
+      await expect(resource.moveResolutions({ ids: ['1'] })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    });
 
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body).not.toHaveProperty('after');
-      expect(body).not.toHaveProperty('before');
+    it('throws ValidationError when both after and before are provided', async () => {
+      await expect(
+        resource.moveResolutions({ ids: ['1'], after: '2', before: '3' }),
+      ).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

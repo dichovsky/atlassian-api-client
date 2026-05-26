@@ -14577,19 +14577,22 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ updated: true });
     });
 
-    it('resolutions update with description includes description', async () => {
+    it('resolutions update with description passes both name and description', async () => {
       jiraResolutionsMock.update.mockResolvedValue(undefined);
       await executeJiraCommand(
-        cmd('resolutions', 'update', ['1'], { description: 'Desc' }),
+        cmd('resolutions', 'update', ['1'], { name: 'Fixed', description: 'Desc' }),
         GLOBALS,
       );
-      expect(jiraResolutionsMock.update).toHaveBeenCalledWith('1', { description: 'Desc' });
+      expect(jiraResolutionsMock.update).toHaveBeenCalledWith('1', {
+        name: 'Fixed',
+        description: 'Desc',
+      });
     });
 
-    it('resolutions update throws when no fields provided', async () => {
+    it('resolutions update throws when --name is missing', async () => {
       await expect(
         executeJiraCommand(cmd('resolutions', 'update', ['1']), GLOBALS),
-      ).rejects.toThrow('update requires at least one of');
+      ).rejects.toThrow('--name');
     });
 
     it('resolutions delete calls client.resolutions.delete', async () => {

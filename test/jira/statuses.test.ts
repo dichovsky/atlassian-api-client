@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { StatusesResource } from '../../src/jira/resources/statuses.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { Status } from '../../src/jira/types.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -91,6 +92,10 @@ describe('StatusesResource', () => {
 
       expect(transport.lastCall?.options.query).toEqual({ id: '5' });
     });
+
+    it('throws ValidationError when ids array is empty', async () => {
+      await expect(statuses.bulkDelete({ id: [] })).rejects.toBeInstanceOf(ValidationError);
+    });
   });
 
   // ── bulkCreate (B778) ─────────────────────────────────────────────────────
@@ -115,6 +120,10 @@ describe('StatusesResource', () => {
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['statuses']).toHaveLength(2);
     });
+
+    it('throws ValidationError when statuses array is empty', async () => {
+      await expect(statuses.bulkCreate({ statuses: [] })).rejects.toBeInstanceOf(ValidationError);
+    });
   });
 
   // ── bulkUpdate (B779) ─────────────────────────────────────────────────────
@@ -133,6 +142,10 @@ describe('StatusesResource', () => {
       });
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['statuses']).toHaveLength(1);
+    });
+
+    it('throws ValidationError when statuses array is empty', async () => {
+      await expect(statuses.bulkUpdate({ statuses: [] })).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

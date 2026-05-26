@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { Status } from '../types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 
 // ─── New types for extended endpoints (B777-B784) ───────────────────────────
 
@@ -113,6 +114,9 @@ export class StatusesResource {
    * Returns void (200 or 204 on success).
    */
   async bulkDelete(params: { id: string[] }): Promise<void> {
+    if (params.id === undefined || params.id.length === 0) {
+      throw new ValidationError('bulkDelete requires at least one id (--ids)');
+    }
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/statuses`,
@@ -127,6 +131,9 @@ export class StatusesResource {
    * Returns the created statuses.
    */
   async bulkCreate(data: { statuses: CreateStatusData[] }): Promise<Status[]> {
+    if (data.statuses === undefined || data.statuses.length === 0) {
+      throw new ValidationError('bulkCreate requires at least one status entry (--value)');
+    }
     const response = await this.transport.request<Status[]>({
       method: 'POST',
       path: `${this.baseUrl}/statuses`,
@@ -142,6 +149,9 @@ export class StatusesResource {
    * Returns void (200 or 204 on success).
    */
   async bulkUpdate(data: { statuses: UpdateStatusData[] }): Promise<void> {
+    if (data.statuses === undefined || data.statuses.length === 0) {
+      throw new ValidationError('bulkUpdate requires at least one status entry (--value)');
+    }
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/statuses`,

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { ValidationError } from '../../core/errors.js';
 
 /**
  * A Jira issue resolution (e.g. Fixed, Won't Fix, Duplicate).
@@ -137,11 +138,12 @@ export class ResolutionResource {
    * Returns void (204 No Content on success).
    */
   async update(id: string, data: UpdateResolutionData): Promise<void> {
-    if (data.name === undefined && data.description === undefined) {
-      throw new Error('update requires at least one of: name, description');
+    if (data.name === undefined || data.name === null || data.name === '') {
+      throw new ValidationError(
+        'resolutions.update requires name (Jira spec: name is required for PUT /resolution/{id})',
+      );
     }
-    const body: Record<string, unknown> = {};
-    if (data.name !== undefined) body['name'] = data.name;
+    const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
 
     await this.transport.request<undefined>({
@@ -186,6 +188,15 @@ export class ResolutionResource {
    * PUT /rest/api/3/resolution/move
    */
   async moveResolutions(data: MoveResolutionData): Promise<void> {
+    if (data.ids === undefined || data.ids.length === 0) {
+      throw new ValidationError('moveResolutions requires at least one id (--ids)');
+    }
+    if (data.after === undefined && data.before === undefined) {
+      throw new ValidationError('moveResolutions requires either --after or --before');
+    }
+    if (data.after !== undefined && data.before !== undefined) {
+      throw new ValidationError('moveResolutions accepts either --after or --before, not both');
+    }
     const body: Record<string, unknown> = { ids: data.ids };
     if (data.after !== undefined) body['after'] = data.after;
     if (data.before !== undefined) body['before'] = data.before;

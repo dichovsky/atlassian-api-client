@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "7a346c6bfcd3378a18bf1c53e152e3d643aa6789cb22c0720bf17ccfdd673a25",
+  "sourceHash": "f9e35e6e7f6cc088cc1cbe851eec3f6c095bbffd5093cb0381e8647fee54b727",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4531,37 +4531,37 @@
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-          "line": 2275,
+          "line": 2272,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-          "line": 2297,
+          "line": 2294,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-          "line": 2306,
+          "line": 2303,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-          "line": 2314,
+          "line": 2311,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-          "line": 2343,
+          "line": 2340,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-          "line": 2351,
+          "line": 2348,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -21300,7 +21300,7 @@
         {
           "name": "Resolution",
           "kind": "interface",
-          "line": 12,
+          "line": 13,
           "exported": true,
           "signature": "export interface Resolution { readonly id: string; readonly name: string; readonly self?: string; readonly description?:…",
           "jsdoc": "A Jira issue resolution (e.g. Fixed, Won't Fix, Duplicate)."
@@ -21308,7 +21308,7 @@
         {
           "name": "CreateResolutionData",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export interface CreateResolutionData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/resolution."
@@ -21316,7 +21316,7 @@
         {
           "name": "UpdateResolutionData",
           "kind": "interface",
-          "line": 28,
+          "line": 29,
           "exported": true,
           "signature": "export interface UpdateResolutionData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/{id}."
@@ -21324,7 +21324,7 @@
         {
           "name": "DeleteResolutionParams",
           "kind": "interface",
-          "line": 34,
+          "line": 35,
           "exported": true,
           "signature": "export interface DeleteResolutionParams { readonly replaceWith?: string; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/resolution/{id}."
@@ -21332,7 +21332,7 @@
         {
           "name": "SetDefaultResolutionData",
           "kind": "interface",
-          "line": 43,
+          "line": 44,
           "exported": true,
           "signature": "export interface SetDefaultResolutionData { readonly id: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/default."
@@ -21340,7 +21340,7 @@
         {
           "name": "MoveResolutionData",
           "kind": "interface",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export interface MoveResolutionData { readonly ids: string[]; readonly after?: string; readonly before?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/resolution/move."
@@ -21348,7 +21348,7 @@
         {
           "name": "SearchResolutionsParams",
           "kind": "interface",
-          "line": 59,
+          "line": 60,
           "exported": true,
           "signature": "export interface SearchResolutionsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/resolution/search."
@@ -21356,7 +21356,7 @@
         {
           "name": "ResolutionResource",
           "kind": "class",
-          "line": 81,
+          "line": 82,
           "exported": true,
           "signature": "export class ResolutionResource",
           "jsdoc": "Jira Issue Resolutions resource — CRUD endpoints under `/rest/api/3/resolution` plus the `default` and `move` sub-resources.",
@@ -21364,63 +21364,64 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 82
+              "line": 83
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 97
+              "line": 98
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 109
+              "line": 110
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 121
+              "line": 122
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 139
+              "line": 140
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 161
+              "line": 163
             },
             {
               "name": "setDefault",
               "kind": "method",
-              "line": 176
+              "line": 178
             },
             {
               "name": "moveResolutions",
               "kind": "method",
-              "line": 188
+              "line": 190
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 206
+              "line": 217
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 221
+              "line": 232
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 237,
+          "line": 248,
           "signature": "function buildSearchQuery( params: SearchResolutionsParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js"
@@ -21861,7 +21862,7 @@
         {
           "name": "CreateStatusData",
           "kind": "interface",
-          "line": 10,
+          "line": 11,
           "exported": true,
           "signature": "export interface CreateStatusData { readonly name: string; readonly description?: string; readonly statusCategory: 'TODO…",
           "jsdoc": "Request body entry for bulk-creating a status."
@@ -21869,7 +21870,7 @@
         {
           "name": "UpdateStatusData",
           "kind": "interface",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export interface UpdateStatusData { readonly id: string; readonly name?: string; readonly description?: string; readonly…",
           "jsdoc": "Request body entry for bulk-updating a status."
@@ -21877,7 +21878,7 @@
         {
           "name": "StatusUsagesPage",
           "kind": "interface",
-          "line": 40,
+          "line": 41,
           "exported": true,
           "signature": "export interface StatusUsagesPage<T> { readonly values: T[]; readonly nextPageToken?: string; readonly maxResults?: numb…",
           "jsdoc": "Response envelope for usage listing endpoints (B780 issueTypeUsages, B781 projectUsages, B782 workflowUsages)."
@@ -21885,7 +21886,7 @@
         {
           "name": "StatusIssueTypeUsage",
           "kind": "interface",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export interface StatusIssueTypeUsage { readonly issueTypeId: string; readonly issueTypeName?: string; }",
           "jsdoc": "A single issue-type usage entry returned by B780."
@@ -21893,7 +21894,7 @@
         {
           "name": "StatusProjectUsage",
           "kind": "interface",
-          "line": 55,
+          "line": 56,
           "exported": true,
           "signature": "export interface StatusProjectUsage { readonly projectId: string; readonly projectName?: string; }",
           "jsdoc": "A single project-usage entry returned by B781."
@@ -21901,7 +21902,7 @@
         {
           "name": "StatusWorkflowUsage",
           "kind": "interface",
-          "line": 61,
+          "line": 62,
           "exported": true,
           "signature": "export interface StatusWorkflowUsage { readonly workflowId: string; readonly workflowName?: string; }",
           "jsdoc": "A single workflow-usage entry returned by B782."
@@ -21909,7 +21910,7 @@
         {
           "name": "SearchStatusesParams",
           "kind": "interface",
-          "line": 71,
+          "line": 72,
           "exported": true,
           "signature": "export interface SearchStatusesParams { readonly projectId?: string; readonly startAt?: number; readonly maxResults?: nu…",
           "jsdoc": "Query parameters for GET /rest/api/3/statuses/search (B784)."
@@ -21917,7 +21918,7 @@
         {
           "name": "StatusUsagesParams",
           "kind": "interface",
-          "line": 85,
+          "line": 86,
           "exported": true,
           "signature": "export interface StatusUsagesParams { readonly nextPageToken?: string; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the usages endpoints (B780-B782)."
@@ -21925,75 +21926,76 @@
         {
           "name": "StatusesResource",
           "kind": "class",
-          "line": 92,
+          "line": 93,
           "exported": true,
           "signature": "export class StatusesResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 93
+              "line": 94
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 99
+              "line": 100
             },
             {
               "name": "bulkDelete",
               "kind": "method",
-              "line": 115
+              "line": 116
             },
             {
               "name": "bulkCreate",
               "kind": "method",
-              "line": 129
+              "line": 133
             },
             {
               "name": "bulkUpdate",
               "kind": "method",
-              "line": 144
+              "line": 151
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 159
+              "line": 169
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 183
+              "line": 193
             },
             {
               "name": "getWorkflowUsages",
               "kind": "method",
-              "line": 206
+              "line": 216
             },
             {
               "name": "byNames",
               "kind": "method",
-              "line": 226
+              "line": 236
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 241
+              "line": 251
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 256
+              "line": 266
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 272,
+          "line": 282,
           "signature": "function buildSearchQuery( params: SearchStatusesParams | undefined, ): Record<string, string | number | boolean | undef…"
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js",

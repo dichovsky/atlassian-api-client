@@ -2224,13 +2224,10 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
     }
     case 'update': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
-      const name = asString(opts['name']);
+      const name = requireOpt(opts['name'], '--name');
       const description = asString(opts['description']);
-      if (name === undefined && description === undefined) {
-        throw new Error('update requires at least one of: --name, --description');
-      }
       await client.resolutions.update(id, {
-        ...(name !== undefined && { name }),
+        name,
         ...(description !== undefined && { description }),
       });
       return { updated: true };
