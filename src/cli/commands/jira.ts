@@ -117,6 +117,8 @@ export async function executeJiraCommand(
       return executeIssueTypeScreenSchemes(client, cmd);
     case 'permission-schemes':
       return executePermissionSchemes(client, cmd);
+    case 'issue-type-schemes':
+      return executeIssueTypeSchemes(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -2711,4 +2713,135 @@ async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand):
         `Unknown permission-schemes action: ${cmd.action}. Actions: ${PERMISSION_SCHEMES_ACTIONS.join(', ')}`,
       );
   }
+}
+
+// ── issue-type-schemes (B566-B575) ───────────────────────────────────────────
+
+const ISSUE_TYPE_SCHEMES_ACTIONS = [
+  'list',
+  'list-mapping',
+  'list-project',
+  'create',
+  'update',
+  'delete',
+  'add-issue-types',
+  'remove-issue-type',
+  'move-issue-types',
+  'assign-to-project',
+] as const;
+
+async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const ids = parseCsv(opts['ids']);
+      return client.issueTypeSchemes.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+      });
+    }
+    case 'list-mapping': {
+      const issueTypeSchemeId = parseCsv(opts['scheme-ids']);
+      return client.issueTypeSchemes.listMapping({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(issueTypeSchemeId !== undefined && { issueTypeSchemeId }),
+      });
+    }
+    case 'list-project': {
+      const projectId = parseCsv(opts['project-ids']);
+      return client.issueTypeSchemes.listProject({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(projectId !== undefined && { projectId }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const defaultIssueTypeId = asString(opts['default-issue-type-id']);
+      const issueTypeIds = parseCsv(opts['issue-type-ids']);
+      if (opts['issue-type-ids'] !== undefined && issueTypeIds === undefined) {
+        throw new Error('--issue-type-ids must contain at least one issue type ID');
+      }
+      return client.issueTypeSchemes.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(defaultIssueTypeId !== undefined && { defaultIssueTypeId }),
+        ...(issueTypeIds !== undefined && { issueTypeIds }),
+      });
+    }
+    case 'update': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeSchemeId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const defaultIssueTypeId = asString(opts['default-issue-type-id']);
+      if (name === undefined && description === undefined && defaultIssueTypeId === undefined) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --default-issue-type-id',
+        );
+      }
+      await client.issueTypeSchemes.update(schemeId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(defaultIssueTypeId !== undefined && { defaultIssueTypeId }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeSchemeId');
+      await client.issueTypeSchemes.delete(schemeId);
+      return { deleted: true };
+    }
+    case 'add-issue-types': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeSchemeId');
+      requireOpt(opts['issue-type-ids'], '--issue-type-ids');
+      const issueTypeIds = parseCsv(opts['issue-type-ids']);
+      if (!issueTypeIds) {
+        throw new Error('--issue-type-ids must contain at least one ID');
+      }
+      await client.issueTypeSchemes.addIssueTypes(schemeId, { issueTypeIds });
+      return { updated: true };
+    }
+    case 'remove-issue-type': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeSchemeId');
+      const issueTypeId = requireArg(cmd.positionalArgs[1], 'issueTypeId');
+      await client.issueTypeSchemes.removeIssueType(schemeId, issueTypeId);
+      return { deleted: true };
+    }
+    case 'move-issue-types': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'issueTypeSchemeId');
+      requireOpt(opts['issue-type-ids'], '--issue-type-ids');
+      const issueTypeIds = parseCsv(opts['issue-type-ids']);
+      if (!issueTypeIds) {
+        throw new Error('--issue-type-ids must contain at least one ID');
+      }
+      const after = asString(opts['after']);
+      const positionRaw = asString(opts['position']);
+      const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
+      await client.issueTypeSchemes.moveIssueTypes(schemeId, {
+        issueTypeIds,
+        ...(after !== undefined && { after }),
+        ...(position !== undefined && { position }),
+      });
+      return { updated: true };
+    }
+    case 'assign-to-project': {
+      const issueTypeSchemeId = requireOpt(opts['scheme-id'], '--scheme-id');
+      const projectId = requireOpt(opts['project-id'], '--project-id');
+      await client.issueTypeSchemes.assignToProject({ issueTypeSchemeId, projectId });
+      return { assigned: true };
+    }
+    default:
+      throw new Error(
+        `Unknown issue-type-schemes action: ${cmd.action}. Actions: ${ISSUE_TYPE_SCHEMES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+function asMovePosition(value: string): 'First' | 'Last' {
+  if (value === 'First' || value === 'Last') return value;
+  throw new Error(`--position must be one of: First, Last. Got: ${value}`);
 }

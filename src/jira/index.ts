@@ -365,3 +365,19 @@ export type {
   CreatePermissionGrantData,
 } from './resources/permissionscheme.js';
 export { PermissionSchemeResource } from './resources/permissionscheme.js';
+export type {
+  IssueTypeScheme,
+  CreatedIssueTypeScheme,
+  ListIssueTypeSchemesParams,
+  CreateIssueTypeSchemeData,
+  UpdateIssueTypeSchemeData,
+  AddIssueTypesToSchemeData,
+  IssueTypeMovePosition,
+  MoveIssueTypesData,
+  IssueTypeSchemeMapping,
+  ListIssueTypeSchemeMappingsParams,
+  IssueTypeSchemeProjectAssociation,
+  ListIssueTypeSchemeProjectAssociationParams,
+  AssignIssueTypeSchemeToProjectData,
+} from './resources/issuetypescheme.js';
+export { IssueTypeSchemeResource } from './resources/issuetypescheme.js';

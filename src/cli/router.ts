@@ -253,6 +253,9 @@ const GLOBAL_OPTIONS = {
   'scheme-ids': { type: 'string' as const },
   'issue-type-ids': { type: 'string' as const },
   'project-ids': { type: 'string' as const },
+  // issue-type-schemes options (B566-B575)
+  'default-issue-type-id': { type: 'string' as const },
+  position: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
