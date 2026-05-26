@@ -11,6 +11,9 @@ const SKILL_DIR = resolve(REPO_ROOT, 'skill');
 const SKILL_MD = readFileSync(resolve(SKILL_DIR, 'SKILL.md'), 'utf8');
 const CONFLUENCE_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'confluence.md'), 'utf8');
 const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8');
+const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
+const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
+const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
 const CONFLUENCE_SRC = readFileSync(
   resolve(REPO_ROOT, 'src', 'cli', 'commands', 'confluence.ts'),
   'utf8',
@@ -43,19 +46,20 @@ describe('SKILL.md content', () => {
   it('teaches strict env-vars-only auth posture', () => {
     expect(SKILL_MD).toContain('ATLASSIAN_BASE_URL');
     expect(SKILL_MD).toContain('ATLASSIAN_API_TOKEN');
-    expect(SKILL_MD).toMatch(/Never.*--token/i);
-    expect(SKILL_MD).toContain('stop and ask the user');
+    expect(SKILL_MD).toContain('Never place secrets');
+    expect(SKILL_MD).toContain('Ask user for missing auth env');
   });
 
-  it('documents the first-try gotchas', () => {
-    expect(SKILL_MD).toContain('--version-number');
-    expect(SKILL_MD).toContain('comma-separated');
-    expect(SKILL_MD).toContain('JQL');
-  });
-
-  it('points at both reference files', () => {
+  it('routes heavy rules into compact reference files', () => {
+    expect(SKILL_MD).toContain('reference/auth-and-safety.md');
+    expect(SKILL_MD).toContain('reference/payload-rules.md');
+    expect(SKILL_MD).toContain('reference/examples.md');
     expect(SKILL_MD).toContain('reference/confluence.md');
     expect(SKILL_MD).toContain('reference/jira.md');
+  });
+
+  it('keeps SKILL.md compact to reduce prompt tokens', () => {
+    expect(SKILL_MD.length).toBeLessThan(3500);
   });
 
   it('documents the install-skill subcommand', () => {
@@ -64,11 +68,26 @@ describe('SKILL.md content', () => {
   });
 });
 
-describe('Example commands in SKILL.md parse correctly', () => {
-  const examples = extractAtlasCommands(SKILL_MD);
+describe('Reference content sanity checks', () => {
+  it('includes auth and host safety guidance', () => {
+    expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_BASE_URL');
+    expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_ALLOWED_HOSTS');
+    expect(AUTH_SAFETY_REF).toContain('401');
+    expect(AUTH_SAFETY_REF).toContain('429');
+  });
 
-  it('finds at least 8 example commands', () => {
-    expect(examples.length).toBeGreaterThanOrEqual(8);
+  it('includes payload minimization guidance', () => {
+    expect(PAYLOAD_RULES_REF).toContain('--format minimal');
+    expect(PAYLOAD_RULES_REF).toContain('Use strict filters');
+    expect(PAYLOAD_RULES_REF).toContain('YAML');
+  });
+});
+
+describe('Example commands in skill docs parse correctly', () => {
+  const examples = [...extractAtlasCommands(SKILL_MD), ...extractAtlasCommands(EXAMPLES_REF)];
+
+  it('finds at least 10 example commands', () => {
+    expect(examples.length).toBeGreaterThanOrEqual(10);
   });
 
   for (const example of examples) {
