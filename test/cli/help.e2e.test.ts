@@ -126,6 +126,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   bulk: 'executeBulk',
   'issue-attachments': 'executeIssueAttachments',
   component: 'executeComponent',
+  filters: 'executeFilters',
 };
 
 /**

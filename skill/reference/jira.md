@@ -55,6 +55,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `dashboards`             | `list`, `get`, `create`, `update`, `delete`, `list-gadgets`, `add-gadget`, `update-gadget`, `remove-gadget`, `list-item-properties`, `get-item-property`, `set-item-property`, `delete-item-property`, `copy`, `bulk-edit`, `list-available-gadgets`, `search`, `search-all`                                                                                                                                             |
 | `issue-attachments`      | `list`, `get`, `delete`, `expand-human`, `expand-raw`, `download-content`, `get-meta`, `download-thumbnail`, `upload`                                                                                                                                                                                                                                                                                                    |
 | `component`              | `list`, `create`, `get`, `update`, `delete`, `related-issue-counts`                                                                                                                                                                                                                                                                                                                                                      |
+| `filters`                | `search`, `get`, `create`, `update`, `delete`, `list-favourites`, `list-my`, `add-favourite`, `remove-favourite`, `change-owner`, `get-columns`, `set-columns`, `reset-columns`, `list-permissions`, `add-permission`, `get-permission`, `delete-permission`, `get-default-share-scope`, `set-default-share-scope`                                                                                                       |
 
 ## `app`
 
@@ -1520,6 +1521,72 @@ atlas jira issue-attachments download-thumbnail 10001 \
 
 # Upload a file from disk to an issue
 atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png
+```
+
+## `filters`
+
+Saved JQL filters, their owners, share permissions, favourites, and
+per-user default share scope.
+
+| Action                    | Positional                  | Required flags         | Optional flags                                                                                 |
+| ------------------------- | --------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `search`                  | —                           | —                      | `--start-at`, `--max-results`, `--expand`, `--ids`, `--order-by`                               |
+| `get`                     | `<filterId>`                | —                      | —                                                                                              |
+| `create`                  | —                           | `--name`               | `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions`           |
+| `update`                  | `<filterId>`                | at least one body flag | `--name`, `--description`, `--jql`, `--favourite`, `--share-permissions`, `--edit-permissions` |
+| `delete`                  | `<filterId>`                | —                      | —                                                                                              |
+| `list-favourites`         | —                           | —                      | `--expand`                                                                                     |
+| `list-my`                 | —                           | —                      | `--expand`, `--include-favourites`                                                             |
+| `add-favourite`           | `<filterId>`                | —                      | `--expand`                                                                                     |
+| `remove-favourite`        | `<filterId>`                | —                      | `--expand`                                                                                     |
+| `change-owner`            | `<filterId>`                | `--account-id`         | —                                                                                              |
+| `get-columns`             | `<filterId>`                | —                      | —                                                                                              |
+| `set-columns`             | `<filterId>`                | `--columns`            | —                                                                                              |
+| `reset-columns`           | `<filterId>`                | —                      | —                                                                                              |
+| `list-permissions`        | `<filterId>`                | —                      | —                                                                                              |
+| `add-permission`          | `<filterId>`                | `--share-type`         | `--project-id`, `--group-name`, `--group-id`, `--role-id`, `--account-id`, `--rights`          |
+| `get-permission`          | `<filterId> <permissionId>` | —                      | —                                                                                              |
+| `delete-permission`       | `<filterId> <permissionId>` | —                      | —                                                                                              |
+| `get-default-share-scope` | —                           | —                      | —                                                                                              |
+| `set-default-share-scope` | —                           | `--share-scope`        | —                                                                                              |
+
+- `--share-scope` ∈ `GLOBAL`, `AUTHENTICATED`, `PRIVATE`.
+- `--share-type` ∈ `user`, `group`, `project`, `projectRole`, `global`, `loggedin`, `authenticated`. Each kind expects additional flags: `project` → `--project-id`; `projectRole` → `--project-id` + `--role-id`; `group` → `--group-name` or `--group-id`; `user` → `--account-id`.
+- `--ids` (on `search`) is a **comma-separated** list of numeric filter IDs.
+- `--columns` (on `set-columns`) is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`); the Jira endpoint expects repeated form fields, which the transport handles.
+- `--share-permissions` and `--edit-permissions` (on `create`/`update`) are **JSON arrays** of `FilterSharePermission` objects.
+
+```sh
+# Search filters
+atlas jira filters search --order-by name --max-results 50
+
+# Get a filter by ID
+atlas jira filters get 10001
+
+# Mark / unmark favourite
+atlas jira filters add-favourite 10001
+atlas jira filters remove-favourite 10001
+
+# Reassign filter owner
+atlas jira filters change-owner 10001 --account-id 5b10a2844c20165700ede21g
+
+# Replace the filter's saved column configuration
+atlas jira filters set-columns 10001 --columns issuekey,summary,assignee,status
+
+# Reset to the system default columns
+atlas jira filters reset-columns 10001
+
+# Share with a project role
+atlas jira filters add-permission 10001 --share-type projectRole --project-id 10000 --role-id 10100
+
+# List/get/delete a single permission
+atlas jira filters list-permissions 10001
+atlas jira filters get-permission 10001 20001
+atlas jira filters delete-permission 10001 20001
+
+# Default share scope
+atlas jira filters get-default-share-scope
+atlas jira filters set-default-share-scope --share-scope PRIVATE
 ```
 
 ## Errors specific to Jira

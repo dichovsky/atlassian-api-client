@@ -222,6 +222,17 @@ const GLOBAL_OPTIONS = {
   'working-days-per-week': { type: 'string' as const },
   'time-format': { type: 'string' as const },
   'default-unit': { type: 'string' as const },
+  // filters options (B452-B466)
+  'account-id': { type: 'string' as const },
+  'group-name': { type: 'string' as const },
+  'group-id': { type: 'string' as const },
+  'share-scope': { type: 'string' as const },
+  'share-type': { type: 'string' as const },
+  'include-favourites': { type: 'boolean' as const },
+  rights: { type: 'string' as const },
+  favourite: { type: 'boolean' as const },
+  'edit-permissions': { type: 'string' as const },
+  'share-permissions': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
