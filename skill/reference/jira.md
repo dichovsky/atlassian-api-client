@@ -63,6 +63,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `roles`                  | `list`, `get`, `create`, `update`, `partial-update`, `delete`, `get-actors`, `add-actors`, `delete-actors`                                                                                                                                                                                                                                                                                                               |
 | `issue-comments`         | `list-properties`, `get-property`, `set-property`, `delete-property`, `bulk-fetch`                                                                                                                                                                                                                                                                                                                                       |
 | `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                     |
+| `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                   |
 
 ## `issue-type-schemes`
 
@@ -2202,4 +2203,67 @@ atlas jira issue-comments bulk-fetch --ids 10001,10002,10003
 
 # Bulk fetch with rendered body
 atlas jira issue-comments bulk-fetch --ids 10001,10002 --expand renderedBody,properties
+```
+
+## `priority-schemes`
+
+Priority scheme management (B644–B651). Covers the full `/rest/api/3/priorityscheme` surface: paginated listing, create/update/delete, scheme-scoped priority and project listings, and helper endpoints for suggested mappings and available priorities.
+
+`create` returns either `{ id }` (synchronous, 201) or `{ id, task }` (asynchronous, 202). `update` always returns asynchronously with `{ task, priorityScheme }`. `delete` is `204 No Content` and is only available for schemes without associated projects.
+
+| Action                 | Positional   | Required flags                                                                                                 | Optional flags                                                                                                                                     |
+| ---------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                 | —            | —                                                                                                              | `--start-at`, `--max-results`, `--priority-ids` (CSV ints), `--scheme-ids` (CSV ints), `--scheme-name`, `--only-default`, `--order-by`, `--expand` |
+| `create`               | —            | `--name`, `--default-priority-id` (int), `--priority-ids` (CSV ints)                                           | `--description`, `--project-ids` (CSV ints), `--mappings` (JSON)                                                                                   |
+| `delete`               | `<schemeId>` | —                                                                                                              | —                                                                                                                                                  |
+| `update`               | `<schemeId>` | at least one of `--name`, `--description`, `--default-priority-id`, `--priorities`, `--projects`, `--mappings` | —                                                                                                                                                  |
+| `list-priorities`      | `<schemeId>` | —                                                                                                              | `--start-at`, `--max-results`                                                                                                                      |
+| `list-projects`        | `<schemeId>` | —                                                                                                              | `--start-at`, `--max-results`, `--project-ids` (CSV ints), `--query`                                                                               |
+| `suggested-mappings`   | —            | —                                                                                                              | `--scheme-id` (int), `--priorities` (JSON `{add,remove}`), `--projects` (JSON `{add}`), `--start-at`, `--max-results`                              |
+| `available-priorities` | —            | `--scheme-id` (string)                                                                                         | `--query`, `--exclude` (CSV ids), `--start-at`, `--max-results`                                                                                    |
+
+- `--order-by` must be one of `name`, `+name`, `-name`.
+- `--expand` accepts comma-separated tokens (`priorities`, `projects`); inlines those sub-pages in each scheme.
+- `--mappings` for `create` and `update` is a JSON object with optional `in` and `out` keys, each mapping old priority ID → new priority ID. `out` is required when updating in a way that removes projects from the scheme.
+- `--priorities` for `update` is a JSON object `{ "add": { "ids": [..] }, "remove": { "ids": [..] } }`; for `suggested-mappings` it is the simpler `{ "add": [..], "remove": [..] }`.
+- `--projects` for `update` follows the same `{ add: { ids: [..] }, remove: { ids: [..] } }` shape; for `suggested-mappings` it is `{ "add": [..] }` only (add-only on this endpoint).
+- `available-priorities` requires `--scheme-id` as a query parameter (string per the spec). It returns the priorities you could still add to the scheme.
+
+```sh
+# List schemes (paginated, with priorities + projects inlined)
+atlas jira priority-schemes list --start-at 0 --max-results 50 --expand priorities,projects
+
+# Filter by IDs / name / default
+atlas jira priority-schemes list --scheme-ids 10000,10001 --order-by -name
+atlas jira priority-schemes list --scheme-name "Critical" --only-default
+
+# Create a scheme
+atlas jira priority-schemes create \
+  --name "Critical Bugs" \
+  --default-priority-id 10001 \
+  --priority-ids 10001,10002,10003 \
+  --description "Scheme for critical projects" \
+  --project-ids 10100,10101
+
+# Update a scheme (rename + add/remove priorities + mapping)
+atlas jira priority-schemes update 10000 --name "Renamed Scheme" --description "Updated"
+atlas jira priority-schemes update 10000 \
+  --priorities '{"add":{"ids":[10003]},"remove":{"ids":[10004]}}' \
+  --mappings '{"in":{"10004":10003}}'
+
+# Delete a scheme (only if no projects use it)
+atlas jira priority-schemes delete 10000
+
+# Priorities and projects in a scheme
+atlas jira priority-schemes list-priorities 10000 --start-at 0 --max-results 25
+atlas jira priority-schemes list-projects 10000 --project-ids 10100,10101 --query example
+
+# Get suggested priority mappings before applying a change
+atlas jira priority-schemes suggested-mappings \
+  --scheme-id 10000 \
+  --priorities '{"add":[10003],"remove":[10004]}' \
+  --projects '{"add":[10100]}'
+
+# List priorities still available to add to a scheme
+atlas jira priority-schemes available-priorities --scheme-id 10000 --query high --exclude 10005,10006
 ```

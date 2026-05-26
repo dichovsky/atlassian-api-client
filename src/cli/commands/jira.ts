@@ -137,6 +137,8 @@ export async function executeJiraCommand(
       return executeFieldConfiguration(client, cmd);
     case 'notification-schemes':
       return executeNotificationSchemes(client, cmd);
+    case 'priority-schemes':
+      return executePrioritySchemeResource(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3428,6 +3430,228 @@ async function executeNotificationSchemes(
     default:
       throw new Error(
         `Unknown notification-schemes action: ${cmd.action}. Actions: ${NOTIFICATION_SCHEMES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── priorityscheme (B644-B651) ───────────────────────────────────────────────
+
+const PRIORITYSCHEME_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'update',
+  'list-priorities',
+  'list-projects',
+  'suggested-mappings',
+  'available-priorities',
+] as const;
+
+function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'name' || s === '+name' || s === '-name') return s;
+  throw new Error(`--order-by must be one of: name, +name, -name. Got: ${s}`);
+}
+
+function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined {
+  const arr = parseCsv(value);
+  if (arr === undefined) return undefined;
+  return arr.map((s) => {
+    const n = Number(s);
+    if (!Number.isInteger(n)) {
+      throw new Error(`${flag} must contain integers, got: ${s}`);
+    }
+    return n;
+  });
+}
+
+async function executePrioritySchemeResource(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const priorityId = parseIntCsv(opts['priority-ids'], '--priority-ids');
+      const schemeId = parseIntCsv(opts['scheme-ids'], '--scheme-ids');
+      const schemeName = asString(opts['scheme-name']);
+      const onlyDefault = asBoolFlag(opts['only-default']);
+      const orderBy = asOrderBy(opts['order-by']);
+      const expand = asString(opts['expand']);
+      return client.prioritySchemes.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(priorityId !== undefined && { priorityId }),
+        ...(schemeId !== undefined && { schemeId }),
+        ...(schemeName !== undefined && { schemeName }),
+        ...(onlyDefault !== undefined && { onlyDefault }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(expand !== undefined && { expand }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const defaultPriorityIdStr = requireOpt(opts['default-priority-id'], '--default-priority-id');
+      const defaultPriorityId = parsePositiveIntArg(defaultPriorityIdStr, '--default-priority-id');
+      requireOpt(opts['priority-ids'], '--priority-ids');
+      const priorityIds = parseIntCsv(opts['priority-ids'], '--priority-ids');
+      if (priorityIds === undefined || priorityIds.length === 0) {
+        throw new Error('--priority-ids must contain at least one priority ID');
+      }
+      const description = asString(opts['description']);
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      const mappingsRaw = asString(opts['mappings']);
+      const mappings =
+        mappingsRaw !== undefined
+          ? (parseJsonObjectFlag(mappingsRaw, '--mappings') as {
+              in?: Record<string, number>;
+              out?: Record<string, number>;
+            })
+          : undefined;
+      return client.prioritySchemes.create({
+        name,
+        defaultPriorityId,
+        priorityIds,
+        ...(description !== undefined && { description }),
+        ...(projectIds !== undefined && { projectIds }),
+        ...(mappings !== undefined && { mappings }),
+      });
+    }
+    case 'delete': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      await client.prioritySchemes.delete(schemeId);
+      return { deleted: true };
+    }
+    case 'update': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const defaultPriorityId = asPositiveInt(opts['default-priority-id'], '--default-priority-id');
+      const prioritiesRaw = asString(opts['priorities']);
+      const priorities =
+        prioritiesRaw !== undefined
+          ? (parseJsonObjectFlag(prioritiesRaw, '--priorities') as {
+              add?: { ids: number[] };
+              remove?: { ids: number[] };
+            })
+          : undefined;
+      const projectsRaw = asString(opts['projects']);
+      const projects =
+        projectsRaw !== undefined
+          ? (parseJsonObjectFlag(projectsRaw, '--projects') as {
+              add?: { ids: number[] };
+              remove?: { ids: number[] };
+            })
+          : undefined;
+      const mappingsRaw = asString(opts['mappings']);
+      const mappings =
+        mappingsRaw !== undefined
+          ? (parseJsonObjectFlag(mappingsRaw, '--mappings') as {
+              in?: Record<string, number>;
+              out?: Record<string, number>;
+            })
+          : undefined;
+      if (
+        name === undefined &&
+        description === undefined &&
+        defaultPriorityId === undefined &&
+        priorities === undefined &&
+        projects === undefined &&
+        mappings === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --default-priority-id, --priorities, --projects, --mappings',
+        );
+      }
+      return client.prioritySchemes.update(schemeId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(defaultPriorityId !== undefined && { defaultPriorityId }),
+        ...(priorities !== undefined && { priorities }),
+        ...(projects !== undefined && { projects }),
+        ...(mappings !== undefined && { mappings }),
+      });
+    }
+    case 'list-priorities': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      return client.prioritySchemes.listPriorities(schemeId, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'list-projects': {
+      const schemeId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'schemeId'),
+        'schemeId',
+      );
+      const projectId = parseIntCsv(opts['project-ids'], '--project-ids');
+      const query = asString(opts['query']);
+      return client.prioritySchemes.listProjects(schemeId, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(projectId !== undefined && { projectId }),
+        ...(query !== undefined && { query }),
+      });
+    }
+    case 'suggested-mappings': {
+      const schemeId = asPositiveInt(opts['scheme-id'], '--scheme-id');
+      const prioritiesRaw = asString(opts['priorities']);
+      const priorities =
+        prioritiesRaw !== undefined
+          ? (parseJsonObjectFlag(prioritiesRaw, '--priorities') as {
+              add?: number[];
+              remove?: number[];
+            })
+          : undefined;
+      const projectsRaw = asString(opts['projects']);
+      const projects =
+        projectsRaw !== undefined
+          ? (parseJsonObjectFlag(projectsRaw, '--projects') as { add?: number[] })
+          : undefined;
+      const data: {
+        schemeId?: number;
+        priorities?: { add?: number[]; remove?: number[] };
+        projects?: { add?: number[] };
+        startAt?: number;
+        maxResults?: number;
+      } = {};
+      if (schemeId !== undefined) data.schemeId = schemeId;
+      if (priorities !== undefined) data.priorities = priorities;
+      if (projects !== undefined) data.projects = projects;
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      if (startAt !== undefined) data.startAt = startAt;
+      if (maxResults !== undefined) data.maxResults = maxResults;
+      return client.prioritySchemes.suggestedMappings(
+        Object.keys(data).length > 0 ? data : undefined,
+      );
+    }
+    case 'available-priorities': {
+      const schemeId = requireOpt(opts['scheme-id'], '--scheme-id');
+      const query = asString(opts['query']);
+      const exclude = parseCsv(opts['exclude']);
+      return client.prioritySchemes.listAvailablePriorities({
+        schemeId,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(query !== undefined && { query }),
+        ...(exclude !== undefined && { exclude }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown priority-schemes action: ${cmd.action}. Actions: ${PRIORITYSCHEME_ACTIONS.join(', ')}`,
       );
   }
 }

@@ -269,6 +269,7 @@ RESOURCES:
   expression             analyse, eval, evaluate
   issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
   fieldconfiguration     list, create, delete, update, list-fields, update-fields
+  priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -431,6 +432,16 @@ EXAMPLES:
   atlas jira fieldconfiguration delete 10001
   atlas jira fieldconfiguration list-fields 10001 --start-at 0 --max-results 50
   atlas jira fieldconfiguration update-fields 10001 --field-configuration-items '[{"id":"customfield_10010","isHidden":false,"isRequired":true}]'
+  atlas jira priority-schemes list --start-at 0 --max-results 50
+  atlas jira priority-schemes list --scheme-ids 10000,10001 --expand priorities,projects
+  atlas jira priority-schemes create --name "Critical Bugs" --default-priority-id 10001 --priority-ids 10001,10002 --description "Scheme for critical projects" --project-ids 10100,10101
+  atlas jira priority-schemes update 10000 --name "Renamed Scheme" --description "Updated"
+  atlas jira priority-schemes update 10000 --priorities '{"add":{"ids":[10003]},"remove":{"ids":[10004]}}' --mappings '{"in":{"10004":10003}}'
+  atlas jira priority-schemes delete 10000
+  atlas jira priority-schemes list-priorities 10000 --start-at 0 --max-results 25
+  atlas jira priority-schemes list-projects 10000 --project-ids 10100,10101 --query example
+  atlas jira priority-schemes suggested-mappings --scheme-id 10000 --priorities '{"add":[10003],"remove":[10004]}' --projects '{"add":[10100]}'
+  atlas jira priority-schemes available-priorities --scheme-id 10000 --query high --exclude 10005,10006
 `;
 
 /** Get help text for the given level. */
