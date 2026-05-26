@@ -1780,7 +1780,7 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
       const { readFile } = await import('node:fs/promises');
       const { basename } = await import('node:path');
       const buffer = await readFile(filePath);
-      const blob = new Blob([new Uint8Array(buffer)]);
+      const blob = new Blob([buffer]);
       return client.issueAttachments.upload(
         issueIdOrKey,
         filename ?? basename(filePath),

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "afd2b3115faea713fcce5c3511c961ecf82aceb294228231aaffec28b9d7e9c2",
+  "sourceHash": "519a4220db495ba00cde8259efabc06f44b5c036ece923d121f19a478a46edb5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -19292,7 +19292,7 @@
           "line": 6,
           "exported": true,
           "signature": "export interface IssueAttachmentsResponse { readonly attachments: IssueAttachment[]; }",
-          "jsdoc": "Response wrapper for issue attachments list."
+          "jsdoc": "@deprecated Unused; kept for backward compatibility until next major."
         },
         {
           "name": "AttachmentArchiveEntry",
@@ -19396,26 +19396,19 @@
             {
               "name": "getMeta",
               "kind": "method",
-              "line": 189
+              "line": 190
             },
             {
               "name": "downloadThumbnail",
               "kind": "method",
-              "line": 211
+              "line": 212
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 239
+              "line": 240
             }
           ]
-        },
-        {
-          "name": "buildBoolQuery",
-          "kind": "function",
-          "line": 267,
-          "signature": "function buildBoolQuery( flags: Record<string, boolean | undefined>, ): Record<string, string> | undefined",
-          "jsdoc": "Build a query bag from a record of optional booleans. Returns `undefined` when no flag is set so the call site can spread-merge it conditionally instead of attaching an empty `query: {}` to the request options."
         }
       ],
       "imports": [

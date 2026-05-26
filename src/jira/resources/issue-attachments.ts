@@ -2,7 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { IssueAttachment } from '../types.js';
 
-/** Response wrapper for issue attachments list. */
+/** @deprecated Unused; kept for backward compatibility until next major. */
 export interface IssueAttachmentsResponse {
   readonly attachments: IssueAttachment[];
 }
@@ -170,11 +170,12 @@ export class IssueAttachmentsResource {
     attachmentId: string,
     params?: DownloadAttachmentContentParams,
   ): Promise<ArrayBuffer> {
-    const query = buildBoolQuery({ redirect: params?.redirect });
+    const query: Record<string, string> = {};
+    if (params?.redirect !== undefined) query.redirect = String(params.redirect);
     const response = await this.transport.request<ArrayBuffer>({
       method: 'GET',
       path: `${this.baseUrl}/attachment/content/${encodePathSegment(attachmentId)}`,
-      ...(query !== undefined && { query }),
+      ...(Object.keys(query).length > 0 && { query }),
       responseType: 'arrayBuffer',
     });
     return response.data;
@@ -257,19 +258,4 @@ export class IssueAttachmentsResource {
     });
     return response.data;
   }
-}
-
-/**
- * Build a query bag from a record of optional booleans. Returns `undefined`
- * when no flag is set so the call site can spread-merge it conditionally
- * instead of attaching an empty `query: {}` to the request options.
- */
-function buildBoolQuery(
-  flags: Record<string, boolean | undefined>,
-): Record<string, string> | undefined {
-  const query: Record<string, string> = {};
-  for (const [key, value] of Object.entries(flags)) {
-    if (value !== undefined) query[key] = String(value);
-  }
-  return Object.keys(query).length > 0 ? query : undefined;
 }
