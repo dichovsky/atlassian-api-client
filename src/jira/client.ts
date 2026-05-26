@@ -62,6 +62,7 @@ import { IssueTypeScreenSchemeResource } from './resources/issuetypescreenscheme
 import { PermissionSchemeResource } from './resources/permissionscheme.js';
 import { IssueTypeSchemeResource } from './resources/issuetypescheme.js';
 import { RoleResource } from './resources/role.js';
+import { ResolutionResource } from './resources/resolution.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -184,6 +185,8 @@ export class JiraClient {
   readonly issueTypeSchemes: IssueTypeSchemeResource;
   /** Jira global project-role definitions resource (B737-B745). */
   readonly roles: RoleResource;
+  /** Jira issue resolutions resource (B931, B712-B718). */
+  readonly resolutions: ResolutionResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -272,5 +275,6 @@ export class JiraClient {
     this.permissionSchemes = new PermissionSchemeResource(transport, baseUrl);
     this.issueTypeSchemes = new IssueTypeSchemeResource(transport, baseUrl);
     this.roles = new RoleResource(transport, baseUrl);
+    this.resolutions = new ResolutionResource(transport, baseUrl);
   }
 }

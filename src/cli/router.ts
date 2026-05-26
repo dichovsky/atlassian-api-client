@@ -242,6 +242,15 @@ const GLOBAL_OPTIONS = {
   user: { type: 'string' as const },
   group: { type: 'string' as const },
   swap: { type: 'string' as const },
+  // resolution options (B931, B712-B718)
+  'query-string': { type: 'string' as const },
+  'only-default': { type: 'boolean' as const },
+  'replace-with': { type: 'string' as const },
+  // statuses extended options (B777-B784)
+  'next-page-token': { type: 'string' as const },
+  names: { type: 'string' as const },
+  'search-string': { type: 'string' as const },
+  'status-category': { type: 'string' as const },
   // filters options (B452-B466)
   'share-scope': { type: 'string' as const },
   'share-type': { type: 'string' as const },

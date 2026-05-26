@@ -1345,3 +1345,51 @@
 - [x] 🔴 🧩 API: B745 Jira: expose POST /rest/api/3/role/{id}/actors
   - **Impl:** `RoleResource.addActors(roleId, data)` returns `Role`. CLI `atlas jira roles add-actors <roleId> --user <csv>|--group <csv>|--group-id <csv>`.
   - **Rat:** Add default actors (users/groups) to a global project role.
+- [x] 🔴 🧩 API: B712 Jira: expose GET /rest/api/3/resolution
+  - **Impl:** Branch `api/resolution-statuses`; new `ResolutionResource` (`src/jira/resources/resolution.ts`) exposes `list()` (marked `@deprecated`) issuing `GET /rest/api/3/resolution`, returning `Resolution[]`. Wired as `JiraClient.resolutions`; types exported from `src/jira/index.ts`. CLI: `atlas jira resolutions list`. Covered by `test/jira/resolution.test.ts`.
+  - **Rat:** Deprecated list endpoint preserved for backward-compat; superseded by `search` (B719) but required for existing consumers pinned to the old endpoint.
+- [x] 🔴 🧩 API: B713 Jira: expose GET /rest/api/3/resolution/{id}
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.get(id)` issues `GET /rest/api/3/resolution/{id}` with `encodePathSegment`. CLI: `atlas jira resolutions get <id>`.
+  - **Rat:** Single resolution lookup by ID — avoids full-list pagination when the ID is known.
+- [x] 🔴 🧩 API: B714 Jira: expose POST /rest/api/3/resolution
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.create(data: CreateResolutionData)` issues `POST /rest/api/3/resolution` with `name` (required), optional `description`. Returns created `Resolution`. CLI: `atlas jira resolutions create --name <n> [--description <d>]`.
+  - **Rat:** Programmatic resolution creation for project setup automation.
+- [x] 🔴 🧩 API: B715 Jira: expose PUT /rest/api/3/resolution/{id}
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.update(id, data: UpdateResolutionData)` issues `PUT /rest/api/3/resolution/{id}`. Required: `name`. Optional: `description`. CLI: `atlas jira resolutions update <id> --name <n> [--description <d>]`.
+  - **Rat:** Full-replace update for resolution metadata; `name` required matches Jira API contract.
+- [x] 🔴 🧩 API: B716 Jira: expose DELETE /rest/api/3/resolution/{id}
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.delete(id, params: DeleteResolutionParams)` issues `DELETE /rest/api/3/resolution/{id}` with required `replaceWith` query param. CLI: `atlas jira resolutions delete <id> --replace-with <replacementId>`.
+  - **Rat:** Safe delete requiring a replacement resolution ID — prevents orphaned issues when removing a resolution.
+- [x] 🔴 🧩 API: B717 Jira: expose PUT /rest/api/3/resolution/default
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.setDefault(data: SetDefaultResolutionData)` issues `PUT /rest/api/3/resolution/default` with `{ id: string }` body. CLI: `atlas jira resolutions set-default --id <resolutionId>`.
+  - **Rat:** Sets the workspace default resolution applied when issues are resolved without an explicit choice.
+- [x] 🔴 🧩 API: B718 Jira: expose PUT /rest/api/3/resolution/move
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.moveResolutions(data: MoveResolutionData)` issues `PUT /rest/api/3/resolution/move` with required `ids` array and required `after` or `before` position. CLI: `atlas jira resolutions move --ids r1,r2 [--after <id>] [--before <id>]`. `asPositiveInt` validates `--after`/`--before`.
+  - **Rat:** Reorders resolutions in the picker; position control via `after`/`before` matches Jira's ordered-list model.
+- [x] 🔴 🧩 API: B777 Jira: expose DELETE /rest/api/3/statuses
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.bulkDelete(params: { id: string[] })` issues `DELETE /rest/api/3/statuses` with `id` CSV query param. CLI: `atlas jira statuses bulk-delete --ids s1,s2`. Extends existing `StatusesResource`.
+  - **Rat:** Batch-delete custom workflow statuses; CSV param matches Jira API spec for multi-value DELETE.
+- [x] 🔴 🧩 API: B778 Jira: expose POST /rest/api/3/statuses
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.bulkCreate(data: { statuses: CreateStatusData[] })` issues `POST /rest/api/3/statuses` returning `Status[]`. CLI: `atlas jira statuses bulk-create --value '<JSON-array>'`.
+  - **Rat:** Batch-creates custom statuses across workflow contexts; JSON array body enables precise multi-status provisioning.
+- [x] 🔴 🧩 API: B779 Jira: expose PUT /rest/api/3/statuses
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.bulkUpdate(data: { statuses: UpdateStatusData[] })` issues `PUT /rest/api/3/statuses` returning `void`. CLI: `atlas jira statuses bulk-update --value '<JSON-array>'`.
+  - **Rat:** Batch-rename/recategorize statuses in one round-trip; void return signals success via HTTP 204.
+- [x] 🔴 🧩 API: B780 Jira: expose GET /rest/api/3/statuses/{statusId}/project/{projectId}/issueTypeUsages
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.getIssueTypeUsages(statusId, projectId, params?)` issues `GET /rest/api/3/statuses/{statusId}/project/{projectId}/issueTypeUsages` with optional `nextPageToken` and `maxResults` query params. Returns `StatusUsagesPage<StatusIssueTypeUsage>`. CLI: `atlas jira statuses get-issue-type-usages <statusId> --project-id <pId> [--next-page-token <tok>] [--max-results N]`.
+  - **Rat:** Cursor-based enumeration of issue types in a project that use a status — required for dependency analysis before deleting a status.
+- [x] 🔴 🧩 API: B781 Jira: expose GET /rest/api/3/statuses/{statusId}/projectUsages
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.getProjectUsages(statusId, params?)` issues `GET /rest/api/3/statuses/{statusId}/projectUsages` with optional `nextPageToken`. Returns `StatusUsagesPage<StatusProjectUsage>`. CLI: `atlas jira statuses get-project-usages <statusId> [--next-page-token <tok>]`.
+  - **Rat:** Lists all projects referencing a status — allows impact assessment before bulk-deleting workflow statuses.
+- [x] 🔴 🧩 API: B782 Jira: expose GET /rest/api/3/statuses/{statusId}/workflowUsages
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.getWorkflowUsages(statusId, params?)` issues `GET /rest/api/3/statuses/{statusId}/workflowUsages` with optional `nextPageToken` and `maxResults`. Returns `StatusUsagesPage<StatusWorkflowUsage>`. CLI: `atlas jira statuses get-workflow-usages <statusId> [--next-page-token <tok>] [--max-results N]`.
+  - **Rat:** Enumerates workflows using a status — prevents dangling references when modifying or deleting workflow statuses.
+- [x] 🔴 🧩 API: B783 Jira: expose GET /rest/api/3/statuses/byNames
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.byNames(params: { names: string[] })` issues `GET /rest/api/3/statuses/byNames` with `statusName` CSV query param, returning `Status[]`. CLI: `atlas jira statuses by-names --names 'In Progress,Done'`.
+  - **Rat:** Resolve status objects by display name — useful when building workflow automation that only knows human-readable status names.
+- [x] 🔴 🧩 API: B784 Jira: expose GET /rest/api/3/statuses/search
+  - **Impl:** Branch `api/resolution-statuses`; `StatusesResource.search(params?)` and `StatusesResource.searchAll()` async generator, both using `paginateOffset`. Supports `projectId`, `startAt`, `maxResults`, `searchString`, `statusCategory`. CLI: `atlas jira statuses search [--project-id <pId>] [--search-string <s>] [--status-category <cat>] [--start-at N] [--max-results N]`. New router flags: `--search-string`, `--status-category`.
+  - **Rat:** Full-text and category-filtered search across statuses; auto-pagination via `searchAll` enables bulk export without manual cursor management.
+- [x] 🔴 🧩 API: B931 Jira: expose GET /rest/api/3/resolution/search
+  - **Impl:** Branch `api/resolution-statuses`; `ResolutionResource.search(params?)` and `ResolutionResource.searchAll()` async generator, both using `paginateOffset`. Supports optional `startAt`, `maxResults`, `id` (CSV), `onlyDefault`. CLI: `atlas jira resolutions search [--start-at N] [--max-results N] [--ids id1,id2] [--only-default]`. New router flags: `--query-string`, `--only-default`, `--replace-with`, `--next-page-token`, `--names`.
+  - **Rat:** Paginated resolution search supersedes deprecated `list` (B712); `searchAll` auto-paginates for full-export use cases without manual offset management.

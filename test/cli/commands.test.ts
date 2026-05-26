@@ -367,6 +367,14 @@ const jiraPrioritiesMock = {
 };
 const jiraStatusesMock = {
   list: vi.fn(),
+  bulkDelete: vi.fn(),
+  bulkCreate: vi.fn(),
+  bulkUpdate: vi.fn(),
+  getIssueTypeUsages: vi.fn(),
+  getProjectUsages: vi.fn(),
+  getWorkflowUsages: vi.fn(),
+  byNames: vi.fn(),
+  search: vi.fn(),
 };
 const jiraBoardsMock = {
   list: vi.fn(),
@@ -625,6 +633,17 @@ const jiraConfigurationMock = {
   updateTimeTrackingOptions: vi.fn(),
 };
 
+const jiraResolutionsMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  setDefault: vi.fn(),
+  moveResolutions: vi.fn(),
+  search: vi.fn(),
+};
+
 const jiraFiltersMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -762,6 +781,7 @@ vi.mock('../../src/jira/client.js', () => {
       permissionSchemes: jiraPermissionSchemesMock,
       issueTypeSchemes: jiraIssueTypeSchemesMock,
       roles: jiraRolesMock,
+      resolutions: jiraResolutionsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -13222,6 +13242,7 @@ describe('executeJiraCommand', () => {
     });
   });
 
+
   // ── issue-type-screen-schemes ─────────────────────────────────────────────
 
   describe('issue-type-screen-schemes resource', () => {
@@ -14346,6 +14367,310 @@ describe('executeJiraCommand', () => {
     it('roles unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('roles', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown roles action',
+      );
+    });
+  });
+
+    // ── statuses extended (B777-B784) ─────────────────────────────────────────
+
+  describe('statuses extended resource', () => {
+    it('statuses bulk-delete calls client.statuses.bulkDelete with ids', async () => {
+      jiraStatusesMock.bulkDelete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'bulk-delete', [], { ids: '1,2,3' }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.bulkDelete).toHaveBeenCalledWith({ id: ['1', '2', '3'] });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('statuses bulk-delete throws when --ids missing', async () => {
+      await expect(executeJiraCommand(cmd('statuses', 'bulk-delete'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --ids',
+      );
+    });
+
+    it('statuses bulk-create calls client.statuses.bulkCreate with parsed value', async () => {
+      const created = [{ id: '10', name: 'Blocked' }];
+      jiraStatusesMock.bulkCreate.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'bulk-create', [], {
+          value: '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.bulkCreate).toHaveBeenCalledWith({
+        statuses: [{ name: 'Blocked', statusCategory: 'IN_PROGRESS' }],
+      });
+      expect(result).toEqual(created);
+    });
+
+    it('statuses bulk-update calls client.statuses.bulkUpdate with parsed value', async () => {
+      jiraStatusesMock.bulkUpdate.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'bulk-update', [], {
+          value: '[{"id":"1","name":"Renamed"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.bulkUpdate).toHaveBeenCalledWith({
+        statuses: [{ id: '1', name: 'Renamed' }],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('statuses get-issue-type-usages calls client.statuses.getIssueTypeUsages', async () => {
+      const page = { values: [], nextPageToken: undefined };
+      jiraStatusesMock.getIssueTypeUsages.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'get-issue-type-usages', ['s1', 'p1']),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.getIssueTypeUsages).toHaveBeenCalledWith('s1', 'p1', {
+        nextPageToken: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('statuses get-project-usages calls client.statuses.getProjectUsages', async () => {
+      const page = { values: [] };
+      jiraStatusesMock.getProjectUsages.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'get-project-usages', ['s1'], { 'next-page-token': 'tok1' }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.getProjectUsages).toHaveBeenCalledWith('s1', {
+        nextPageToken: 'tok1',
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('statuses get-workflow-usages calls client.statuses.getWorkflowUsages', async () => {
+      const page = { values: [] };
+      jiraStatusesMock.getWorkflowUsages.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'get-workflow-usages', ['s1']),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.getWorkflowUsages).toHaveBeenCalledWith('s1', {
+        nextPageToken: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('statuses by-names calls client.statuses.byNames with names array', async () => {
+      const statusList = [{ id: '1', name: 'In Progress' }];
+      jiraStatusesMock.byNames.mockResolvedValue(statusList);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'by-names', [], { names: 'In Progress,Done' }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.byNames).toHaveBeenCalledWith({
+        names: ['In Progress', 'Done'],
+      });
+      expect(result).toEqual(statusList);
+    });
+
+    it('statuses by-names throws when --names missing', async () => {
+      await expect(executeJiraCommand(cmd('statuses', 'by-names'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --names',
+      );
+    });
+
+    it('statuses search calls client.statuses.search with params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraStatusesMock.search.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('statuses', 'search', [], {
+          'project-id': 'p1',
+          'start-at': '0',
+          'max-results': '10',
+          'search-string': 'In',
+          'status-category': 'IN_PROGRESS',
+        }),
+        GLOBALS,
+      );
+      expect(jiraStatusesMock.search).toHaveBeenCalledWith({
+        projectId: 'p1',
+        startAt: 0,
+        maxResults: 10,
+        searchString: 'In',
+        statusCategory: 'IN_PROGRESS',
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('statuses search rejects invalid --status-category', async () => {
+      await expect(
+        executeJiraCommand(cmd('statuses', 'search', [], { 'status-category': 'NOPE' }), GLOBALS),
+      ).rejects.toThrow('--status-category must be one of');
+    });
+
+    it('statuses search with no --status-category passes undefined', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraStatusesMock.search.mockResolvedValue(page);
+      await executeJiraCommand(cmd('statuses', 'search', [], {}), GLOBALS);
+      expect(jiraStatusesMock.search).toHaveBeenCalledWith(
+        expect.objectContaining({ statusCategory: undefined }),
+      );
+    });
+  });
+
+  // ── resolutions (B931, B712-B718) ─────────────────────────────────────────
+
+  describe('resolutions resource', () => {
+    it('resolutions list calls client.resolutions.list', async () => {
+      const resList = [{ id: '1', name: 'Fixed' }];
+      jiraResolutionsMock.list.mockResolvedValue(resList);
+      const result = await executeJiraCommand(cmd('resolutions', 'list'), GLOBALS);
+      expect(jiraResolutionsMock.list).toHaveBeenCalled();
+      expect(result).toEqual(resList);
+    });
+
+    it('resolutions get calls client.resolutions.get with id', async () => {
+      const res = { id: '1', name: 'Fixed' };
+      jiraResolutionsMock.get.mockResolvedValue(res);
+      const result = await executeJiraCommand(cmd('resolutions', 'get', ['1']), GLOBALS);
+      expect(jiraResolutionsMock.get).toHaveBeenCalledWith('1');
+      expect(result).toEqual(res);
+    });
+
+    it('resolutions create calls client.resolutions.create with name', async () => {
+      const res = { id: '99', name: 'New' };
+      jiraResolutionsMock.create.mockResolvedValue(res);
+      const result = await executeJiraCommand(
+        cmd('resolutions', 'create', [], { name: 'New' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.create).toHaveBeenCalledWith({ name: 'New' });
+      expect(result).toEqual(res);
+    });
+
+    it('resolutions create includes optional description', async () => {
+      jiraResolutionsMock.create.mockResolvedValue({ id: '99', name: 'New' });
+      await executeJiraCommand(
+        cmd('resolutions', 'create', [], { name: 'New', description: 'Desc' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.create).toHaveBeenCalledWith({
+        name: 'New',
+        description: 'Desc',
+      });
+    });
+
+    it('resolutions create throws when --name missing', async () => {
+      await expect(executeJiraCommand(cmd('resolutions', 'create'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('resolutions update calls client.resolutions.update', async () => {
+      jiraResolutionsMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('resolutions', 'update', ['1'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.update).toHaveBeenCalledWith('1', { name: 'Renamed' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('resolutions update with description includes description', async () => {
+      jiraResolutionsMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('resolutions', 'update', ['1'], { description: 'Desc' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.update).toHaveBeenCalledWith('1', { description: 'Desc' });
+    });
+
+    it('resolutions update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('resolutions', 'update', ['1']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('resolutions delete calls client.resolutions.delete', async () => {
+      jiraResolutionsMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('resolutions', 'delete', ['1'], { 'replace-with': '2' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.delete).toHaveBeenCalledWith('1', { replaceWith: '2' });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('resolutions delete without replace-with', async () => {
+      jiraResolutionsMock.delete.mockResolvedValue(undefined);
+      await executeJiraCommand(cmd('resolutions', 'delete', ['1']), GLOBALS);
+      expect(jiraResolutionsMock.delete).toHaveBeenCalledWith('1', {});
+    });
+
+    it('resolutions set-default calls client.resolutions.setDefault', async () => {
+      jiraResolutionsMock.setDefault.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('resolutions', 'set-default', ['5']), GLOBALS);
+      expect(jiraResolutionsMock.setDefault).toHaveBeenCalledWith({ id: '5' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('resolutions move calls client.resolutions.moveResolutions', async () => {
+      jiraResolutionsMock.moveResolutions.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('resolutions', 'move', [], { ids: '1,2', after: '0' }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.moveResolutions).toHaveBeenCalledWith({
+        ids: ['1', '2'],
+        after: '0',
+      });
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('resolutions move with before flag', async () => {
+      jiraResolutionsMock.moveResolutions.mockResolvedValue(undefined);
+      await executeJiraCommand(cmd('resolutions', 'move', [], { ids: '1', before: '3' }), GLOBALS);
+      expect(jiraResolutionsMock.moveResolutions).toHaveBeenCalledWith({
+        ids: ['1'],
+        before: '3',
+      });
+    });
+
+    it('resolutions search calls client.resolutions.search', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraResolutionsMock.search.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('resolutions', 'search', [], {
+          'start-at': '0',
+          'max-results': '10',
+          ids: '1,2',
+          'only-default': true,
+          'query-string': 'Fix',
+        }),
+        GLOBALS,
+      );
+      expect(jiraResolutionsMock.search).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 10,
+        id: ['1', '2'],
+        onlyDefault: true,
+        queryString: 'Fix',
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('resolutions search without --ids omits id field', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraResolutionsMock.search.mockResolvedValue(page);
+      await executeJiraCommand(cmd('resolutions', 'search', [], {}), GLOBALS);
+      const callArg = jiraResolutionsMock.search.mock.calls[0]?.[0] as Record<string, unknown>;
+      expect(callArg).not.toHaveProperty('id');
+    });
+
+    it('resolutions unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('resolutions', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown resolutions action',
       );
     });
   });

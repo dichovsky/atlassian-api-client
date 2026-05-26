@@ -980,28 +980,28 @@
 - [ ] 🔴 🧩 API: B709 Jira: expose GET /rest/api/3/projectvalidate/validProjectName
   - files: `src/jira/resources/projectvalidate.ts`, `test/jira/projectvalidate.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B931 Jira: expose GET /rest/api/3/resolution
+- [x] 🔴 🧩 API: B931 Jira: expose GET /rest/api/3/resolution
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B712 Jira: expose POST /rest/api/3/resolution
+- [x] 🔴 🧩 API: B712 Jira: expose POST /rest/api/3/resolution
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B713 Jira: expose DELETE /rest/api/3/resolution/{id}
+- [x] 🔴 🧩 API: B713 Jira: expose DELETE /rest/api/3/resolution/{id}
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B714 Jira: expose GET /rest/api/3/resolution/{id}
+- [x] 🔴 🧩 API: B714 Jira: expose GET /rest/api/3/resolution/{id}
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B715 Jira: expose PUT /rest/api/3/resolution/{id}
+- [x] 🔴 🧩 API: B715 Jira: expose PUT /rest/api/3/resolution/{id}
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B716 Jira: expose PUT /rest/api/3/resolution/default
+- [x] 🔴 🧩 API: B716 Jira: expose PUT /rest/api/3/resolution/default
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B717 Jira: expose PUT /rest/api/3/resolution/move
+- [x] 🔴 🧩 API: B717 Jira: expose PUT /rest/api/3/resolution/move
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B718 Jira: expose GET /rest/api/3/resolution/search
+- [x] 🔴 🧩 API: B718 Jira: expose GET /rest/api/3/resolution/search
   - files: `src/jira/resources/resolution.ts`, `test/jira/resolution.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B746 Jira: expose GET /rest/api/3/screens
@@ -1076,28 +1076,28 @@
 - [ ] 🔴 🧩 API: B768 Jira: expose POST /rest/api/3/search/jql
   - files: `src/jira/resources/search.ts`, `test/jira/search.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B777 Jira: expose DELETE /rest/api/3/statuses
+- [x] 🔴 🧩 API: B777 Jira: expose DELETE /rest/api/3/statuses
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B778 Jira: expose POST /rest/api/3/statuses
+- [x] 🔴 🧩 API: B778 Jira: expose POST /rest/api/3/statuses
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B779 Jira: expose PUT /rest/api/3/statuses
+- [x] 🔴 🧩 API: B779 Jira: expose PUT /rest/api/3/statuses
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B780 Jira: expose GET /rest/api/3/statuses/{statusId}/project/{projectId}/issueTypeUsages
+- [x] 🔴 🧩 API: B780 Jira: expose GET /rest/api/3/statuses/{statusId}/project/{projectId}/issueTypeUsages
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B781 Jira: expose GET /rest/api/3/statuses/{statusId}/projectUsages
+- [x] 🔴 🧩 API: B781 Jira: expose GET /rest/api/3/statuses/{statusId}/projectUsages
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B782 Jira: expose GET /rest/api/3/statuses/{statusId}/workflowUsages
+- [x] 🔴 🧩 API: B782 Jira: expose GET /rest/api/3/statuses/{statusId}/workflowUsages
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B783 Jira: expose GET /rest/api/3/statuses/byNames
+- [x] 🔴 🧩 API: B783 Jira: expose GET /rest/api/3/statuses/byNames
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B784 Jira: expose GET /rest/api/3/statuses/search
+- [x] 🔴 🧩 API: B784 Jira: expose GET /rest/api/3/statuses/search
   - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B787 Jira: expose GET /rest/api/3/uiModifications
