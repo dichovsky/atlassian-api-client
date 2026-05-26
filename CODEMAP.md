@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "ea2d3b0151307b49cfc2af8327ae9f9e6637cb9a587260432706dfb537579340",
+  "sourceHash": "fb746da43cc9f3d2b62476efab8a4598863ace74bcc29c69496313b0921c0b48",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -625,7 +625,7 @@
       "name": "CreateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 36,
+      "line": 44,
       "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
       "typeOnly": true
     },
@@ -1061,7 +1061,7 @@
       "name": "Filter",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 14,
+      "line": 22,
       "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…",
       "typeOnly": true
     },
@@ -1069,8 +1069,9 @@
       "name": "FilterSharePermission",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 6,
+      "line": 14,
       "signature": "export interface FilterSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonly p…",
+      "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs from the write shape {@link AddFilterSharePermissionData}: Jira normalises incoming permission payloads, so values like `projectRole` and `authenticated` (accepted on write) surface in responses as `project` / `loggedin` with the relevant nested object populated.",
       "typeOnly": true
     },
     {
@@ -1877,7 +1878,7 @@
       "name": "ListFiltersParams",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 28,
+      "line": 36,
       "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …",
       "typeOnly": true
     },
@@ -2955,7 +2956,7 @@
       "name": "UpdateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 45,
+      "line": 53,
       "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…",
       "typeOnly": true
     },
@@ -4411,19 +4412,19 @@
           "name": "parseJsonValueFlag",
           "kind": "function",
           "line": 1618,
-          "signature": "function parseJsonValueFlag(raw: string, label: string): unknown"
+          "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
           "line": 1626,
-          "signature": "function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown>"
+          "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
           "line": 1634,
-          "signature": "function parseJsonArrayFlag(raw: string, label: string): unknown[]"
+          "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
@@ -4434,115 +4435,115 @@
         {
           "name": "executeIssueAttachments",
           "kind": "function",
-          "line": 1752,
+          "line": 1755,
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
-          "line": 1816,
+          "line": 1819,
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 1905,
+          "line": 1908,
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
-          "line": 1912,
+          "line": 1915,
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
-          "line": 1925,
+          "line": 1928,
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
-          "line": 1926,
+          "line": 1929,
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
-          "line": 1927,
+          "line": 1930,
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
-          "line": 1928,
+          "line": 1931,
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
-          "line": 1930,
+          "line": 1933,
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
-          "line": 1937,
+          "line": 1940,
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
-          "line": 1944,
+          "line": 1947,
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
-          "line": 1953,
+          "line": 1956,
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
-          "line": 1987,
+          "line": 1990,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-          "line": 2049,
+          "line": 2052,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-          "line": 2071,
+          "line": 2074,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-          "line": 2080,
+          "line": 2083,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-          "line": 2088,
+          "line": 2091,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-          "line": 2117,
+          "line": 2120,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-          "line": 2125,
+          "line": 2128,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -19218,42 +19219,43 @@
         {
           "name": "FilterSharePermission",
           "kind": "interface",
-          "line": 6,
+          "line": 14,
           "exported": true,
-          "signature": "export interface FilterSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonly p…"
+          "signature": "export interface FilterSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonly p…",
+          "jsdoc": "Read shape returned by Jira for an existing share permission on a filter (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs from the write shape {@link AddFilterSharePermissionData}: Jira normalises incoming permission payloads, so values like `projectRole` and `authenticated` (accepted on write) surface in responses as `project` / `loggedin` with the relevant nested object populated."
         },
         {
           "name": "Filter",
           "kind": "interface",
-          "line": 14,
+          "line": 22,
           "exported": true,
           "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…"
         },
         {
           "name": "ListFiltersParams",
           "kind": "interface",
-          "line": 28,
+          "line": 36,
           "exported": true,
           "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …"
         },
         {
           "name": "CreateFilterData",
           "kind": "interface",
-          "line": 36,
+          "line": 44,
           "exported": true,
           "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…"
         },
         {
           "name": "UpdateFilterData",
           "kind": "interface",
-          "line": 45,
+          "line": 53,
           "exported": true,
           "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…"
         },
         {
           "name": "FilterShareScope",
           "kind": "type",
-          "line": 61,
+          "line": 69,
           "exported": true,
           "signature": "export type FilterShareScope = 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE';",
           "jsdoc": "Default sharing scope for newly created filters."
@@ -19261,22 +19263,22 @@
         {
           "name": "DefaultShareScopeResponse",
           "kind": "interface",
-          "line": 63,
+          "line": 71,
           "exported": true,
           "signature": "export interface DefaultShareScopeResponse { readonly scope: FilterShareScope; }"
         },
         {
           "name": "AddFilterSharePermissionData",
           "kind": "interface",
-          "line": 75,
+          "line": 92,
           "exported": true,
           "signature": "export interface AddFilterSharePermissionData { readonly type: | 'user' | 'group' | 'project' | 'projectRole' | 'global'…",
-          "jsdoc": "Body shape for `POST /rest/api/3/filter/{id}/permission`."
+          "jsdoc": "Write shape for share permission entries on a filter. Used by:"
         },
         {
           "name": "FilterColumn",
           "kind": "interface",
-          "line": 93,
+          "line": 110,
           "exported": true,
           "signature": "export interface FilterColumn { readonly label: string; readonly value: string; }",
           "jsdoc": "A single column in the user's saved column configuration for a filter."
@@ -19284,7 +19286,7 @@
         {
           "name": "ListFavouriteFiltersParams",
           "kind": "interface",
-          "line": 99,
+          "line": 116,
           "exported": true,
           "signature": "export interface ListFavouriteFiltersParams { readonly expand?: string; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/favourite`."
@@ -19292,7 +19294,7 @@
         {
           "name": "ListMyFiltersParams",
           "kind": "interface",
-          "line": 104,
+          "line": 121,
           "exported": true,
           "signature": "export interface ListMyFiltersParams { readonly expand?: string; readonly includeFavourites?: boolean; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/my`."
@@ -19300,114 +19302,114 @@
         {
           "name": "FiltersResource",
           "kind": "class",
-          "line": 109,
+          "line": 126,
           "exported": true,
           "signature": "export class FiltersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 110
+              "line": 127
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 116
+              "line": 133
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 138
+              "line": 155
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 147
+              "line": 164
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 157
+              "line": 174
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 167
+              "line": 184
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 177
+              "line": 194
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 192
+              "line": 211
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 201
+              "line": 220
             },
             {
               "name": "addFavourite",
               "kind": "method",
-              "line": 211
+              "line": 230
             },
             {
               "name": "removeFavourite",
               "kind": "method",
-              "line": 223
+              "line": 242
             },
             {
               "name": "listFavourites",
               "kind": "method",
-              "line": 235
+              "line": 254
             },
             {
               "name": "listMy",
               "kind": "method",
-              "line": 249
+              "line": 268
             },
             {
               "name": "changeOwner",
               "kind": "method",
-              "line": 266
+              "line": 285
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 277
+              "line": 296
             },
             {
               "name": "addPermission",
               "kind": "method",
-              "line": 286
+              "line": 305
             },
             {
               "name": "getPermission",
               "kind": "method",
-              "line": 299
+              "line": 318
             },
             {
               "name": "deletePermission",
               "kind": "method",
-              "line": 308
+              "line": 327
             },
             {
               "name": "getDefaultShareScope",
               "kind": "method",
-              "line": 318
+              "line": 337
             },
             {
               "name": "setDefaultShareScope",
               "kind": "method",
-              "line": 327
+              "line": 346
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 337
+              "line": 356
             }
           ]
         }

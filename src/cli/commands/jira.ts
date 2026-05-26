@@ -1,6 +1,6 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
-import type { FilterSharePermission } from '../../jira/index.js';
+import type { AddFilterSharePermissionData } from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -1615,26 +1615,26 @@ function splitCsvIds(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-function parseJsonValueFlag(raw: string, label: string): unknown {
+function parseJsonValueFlag(raw: string, flag: string): unknown {
   try {
     return JSON.parse(raw);
   } catch {
-    throw new Error(`--value must be valid JSON (${label})`);
+    throw new Error(`${flag} must be valid JSON`);
   }
 }
 
-function parseJsonObjectFlag(raw: string, label: string): Record<string, unknown> {
-  const parsed = parseJsonValueFlag(raw, label);
+function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown> {
+  const parsed = parseJsonValueFlag(raw, flag);
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`--value must be a JSON object (not array/null/primitive) (${label})`);
+    throw new Error(`${flag} must be a JSON object (not array/null/primitive)`);
   }
   return parsed as Record<string, unknown>;
 }
 
-function parseJsonArrayFlag(raw: string, label: string): unknown[] {
-  const parsed = parseJsonValueFlag(raw, label);
+function parseJsonArrayFlag(raw: string, flag: string): unknown[] {
+  const parsed = parseJsonValueFlag(raw, flag);
   if (!Array.isArray(parsed)) {
-    throw new Error(`--value must be a JSON array (${label})`);
+    throw new Error(`${flag} must be a JSON array`);
   }
   return parsed;
 }
@@ -1665,7 +1665,7 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       const selectedActions = splitCsvIds(requireOpt(opts['actions'], '--actions'));
       const editedFieldsInput = parseJsonObjectFlag(
         requireOpt(opts['value'], '--value'),
-        'editedFieldsInput object',
+        '--value (editedFieldsInput object)',
       );
       const sendBulkNotification = asBoolFlag(opts['send-notification']);
       return client.bulk.editIssueFieldsBulk({
@@ -1678,7 +1678,7 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     case 'move-issues': {
       const targetToSourcesMapping = parseJsonObjectFlag(
         requireOpt(opts['value'], '--value'),
-        'targetToSourcesMapping object',
+        '--value (targetToSourcesMapping object)',
       );
       const sendBulkNotification = asBoolFlag(opts['send-notification']);
       return client.bulk.moveIssuesBulk({
@@ -1693,7 +1693,7 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     case 'transition-issues': {
       const bulkTransitionInputs = parseJsonArrayFlag(
         requireOpt(opts['value'], '--value'),
-        'array of bulkTransitionInputs',
+        '--value (array of bulkTransitionInputs)',
       ) as { selectedIssueIdsOrKeys: string[]; transitionId: string }[];
       const sendBulkNotification = asBoolFlag(opts['send-notification']);
       return client.bulk.transitionIssuesBulk({
@@ -1714,35 +1714,38 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     }
     case 'submit-builds':
       return client.bulk.submitBuilds(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'builds payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (builds payload)'),
       );
     case 'submit-deployments':
       return client.bulk.submitDeployments(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'deployments payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (deployments payload)'),
       );
     case 'submit-devinfo':
       return client.bulk.submitDevInfo(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'devinfo payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (devinfo payload)'),
       );
     case 'submit-devops-components':
       return client.bulk.submitDevopsComponents(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'devops-components payload'),
+        parseJsonValueFlag(
+          requireOpt(opts['value'], '--value'),
+          '--value (devops-components payload)',
+        ),
       );
     case 'submit-feature-flags':
       return client.bulk.submitFeatureFlags(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'feature-flags payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (feature-flags payload)'),
       );
     case 'submit-operations':
       return client.bulk.submitOperations(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'operations payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (operations payload)'),
       );
     case 'submit-remote-links':
       return client.bulk.submitRemoteLinks(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'remote-links payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (remote-links payload)'),
       );
     case 'submit-security':
       return client.bulk.submitSecurity(
-        parseJsonValueFlag(requireOpt(opts['value'], '--value'), 'security payload'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value (security payload)'),
       );
     default:
       throw new Error(`Unknown bulk action: ${cmd.action}. Actions: ${BULK_ACTIONS.join(', ')}`);
@@ -2159,14 +2162,14 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
           ? (parseJsonArrayFlag(
               sharePermissionsRaw,
               '--share-permissions',
-            ) as FilterSharePermission[])
+            ) as AddFilterSharePermissionData[])
           : undefined;
       const editPermissions =
         editPermissionsRaw !== undefined
           ? (parseJsonArrayFlag(
               editPermissionsRaw,
               '--edit-permissions',
-            ) as FilterSharePermission[])
+            ) as AddFilterSharePermissionData[])
           : undefined;
       return client.filters.create({
         name,
@@ -2190,14 +2193,14 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
           ? (parseJsonArrayFlag(
               sharePermissionsRaw,
               '--share-permissions',
-            ) as FilterSharePermission[])
+            ) as AddFilterSharePermissionData[])
           : undefined;
       const editPermissions =
         editPermissionsRaw !== undefined
           ? (parseJsonArrayFlag(
               editPermissionsRaw,
               '--edit-permissions',
-            ) as FilterSharePermission[])
+            ) as AddFilterSharePermissionData[])
           : undefined;
       if (
         name === undefined &&

@@ -3,6 +3,14 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
+/**
+ * Read shape returned by Jira for an existing share permission on a filter
+ * (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs
+ * from the write shape {@link AddFilterSharePermissionData}: Jira normalises
+ * incoming permission payloads, so values like `projectRole` and
+ * `authenticated` (accepted on write) surface in responses as `project` /
+ * `loggedin` with the relevant nested object populated.
+ */
 export interface FilterSharePermission {
   readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user';
   readonly project?: { readonly id: string };
@@ -38,8 +46,8 @@ export interface CreateFilterData {
   readonly description?: string;
   readonly jql?: string;
   readonly favourite?: boolean;
-  readonly sharePermissions?: FilterSharePermission[];
-  readonly editPermissions?: FilterSharePermission[];
+  readonly sharePermissions?: AddFilterSharePermissionData[];
+  readonly editPermissions?: AddFilterSharePermissionData[];
 }
 
 export interface UpdateFilterData {
@@ -47,8 +55,8 @@ export interface UpdateFilterData {
   readonly description?: string;
   readonly jql?: string;
   readonly favourite?: boolean;
-  readonly sharePermissions?: FilterSharePermission[];
-  readonly editPermissions?: FilterSharePermission[];
+  readonly sharePermissions?: AddFilterSharePermissionData[];
+  readonly editPermissions?: AddFilterSharePermissionData[];
 }
 
 /**
@@ -65,12 +73,21 @@ export interface DefaultShareScopeResponse {
 }
 
 /**
- * Body shape for `POST /rest/api/3/filter/{id}/permission`.
+ * Write shape for share permission entries on a filter. Used by:
+ *
+ * - `POST /rest/api/3/filter/{id}/permission`
+ * - `sharePermissions` / `editPermissions` arrays on
+ *   `POST /rest/api/3/filter` and `PUT /rest/api/3/filter/{id}`
  *
  * `type` is required; the other fields are conditionally required by Jira
  * depending on the permission kind (e.g. `project` requires `projectId`,
  * `group` requires `groupname` or `groupId`, `user` requires `accountId`,
  * `projectRole` requires `projectId` + `projectRoleId`).
+ *
+ * The accepted `type` union is broader than the response shape
+ * {@link FilterSharePermission} — write values `projectRole` and
+ * `authenticated` are normalised by Jira and surface back as `project` and
+ * `loggedin` respectively when the filter is read.
  */
 export interface AddFilterSharePermissionData {
   readonly type:
@@ -185,9 +202,11 @@ export class FiltersResource {
   /**
    * Replace the column configuration for a filter.
    *
-   * The Jira endpoint accepts the column list as repeated `columns` form
-   * fields, not a JSON array, so callers pass an array of column keys; the
-   * transport serialises the array as `columns=key1&columns=key2&...`.
+   * Callers pass an array of column keys, which the transport JSON-encodes as
+   * a `{ "columns": ["key1", "key2", ...] }` request body. Jira's
+   * documentation calls for repeated `columns` form fields, but Cloud accepts
+   * the JSON object form, which matches how every other resource in this
+   * library serialises array payloads.
    */
   async setColumns(id: string, columns: string[]): Promise<void> {
     await this.transport.request<undefined>({
