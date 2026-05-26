@@ -356,7 +356,6 @@ export class FiltersResource {
   async *listAll(params?: Omit<ListFiltersParams, 'startAt'>): AsyncGenerator<Filter> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
-      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.expand !== undefined) query['expand'] = params.expand;
       if (params.id !== undefined) {
         query['id'] = params.id.join(',');

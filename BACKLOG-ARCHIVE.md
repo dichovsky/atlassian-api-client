@@ -1483,3 +1483,6 @@
 - [x] 🔴 🧩 API: B651 Jira: expose GET /rest/api/3/priorityscheme/priorities/available
   - **Impl:** `PrioritySchemeResource.listAvailablePriorities(params)` returns `OffsetPaginatedResponse<PriorityWithSequence>` plus `listAvailablePrioritiesAll()` generator. Requires `schemeId` (string per spec). Optional: `query`, `exclude[]`, `startAt`, `maxResults`. CLI: `atlas jira priority-schemes available-priorities --scheme-id <id> [--query s] [--exclude csv] [--start-at N] [--max-results N]`.
   - **Rat:** Returns priorities that could still be added to the scheme — drives UX pickers that hide already-included priorities.
+- [x] 🟢 ♻️ Jira: B566 Drop redundant `maxResults` from `listAll` base query in `filters.ts`
+  - **Impl:** `FiltersResource.listAll` no longer copies `params.maxResults` into the base query; the page size is passed solely as the 4th argument to `paginateOffset`, which sets it per request. End-state behavior is unchanged (paginateOffset overwrites `maxResults` on every page); the base-query line was misleading dead-write.
+  - **Rat:** Mirror fix of PR #85 (`groups.listAllBulk` / `listAllMembers`). Removes the only remaining listAll generator that double-set the page size between its own base query and paginateOffset.

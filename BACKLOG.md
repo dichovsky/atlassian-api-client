@@ -43,10 +43,6 @@
 - [ ] 🔴 ♻️ Jira: B008 Split types by domain
   - files: `src/jira/types/*`, `src/jira/index.ts`
   - deps: B007
-- [ ] 🟢 ♻️ Jira: B566 Drop redundant `maxResults` from `listAll` base query in `filters.ts`
-  - files: `src/jira/resources/filters.ts`, `test/jira/filters.test.ts`
-  - deps: none
-  - rat: `paginateOffset` overwrites `startAt`/`maxResults` per page; including them in the base query is misleading. Mirror fix already applied to `groups.listAllBulk`/`listAllMembers` (PR #85).
 
 ## 🖥️ CLI
 
