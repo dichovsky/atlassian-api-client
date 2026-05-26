@@ -729,6 +729,14 @@ const jiraIssueTypeSchemesMock = {
   assignToProject: vi.fn(),
 };
 
+const jiraIssueCommentsMock = {
+  listProperties: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  bulkFetch: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -789,6 +797,7 @@ vi.mock('../../src/jira/client.js', () => {
       roles: jiraRolesMock,
       resolutions: jiraResolutionsMock,
       expression: jiraExpressionMock,
+      issueComments: jiraIssueCommentsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -14861,6 +14870,142 @@ describe('executeJiraCommand', () => {
         ),
       ).rejects.toThrow(
         'Invalid --check value "invalid". Must be one of: syntax, type, complexity',
+      );
+    });
+  });
+
+  // ── issue-comments (B356-B360) ────────────────────────────────────────────
+
+  describe('issue-comments resource', () => {
+    it('issue-comments list-properties calls client.issueComments.listProperties', async () => {
+      jiraIssueCommentsMock.listProperties.mockResolvedValue({ keys: [] });
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'list-properties', ['1001']),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.listProperties).toHaveBeenCalledWith('1001');
+      expect(result).toEqual({ keys: [] });
+    });
+
+    it('issue-comments list-properties throws when commentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: commentId');
+    });
+
+    it('issue-comments get-property calls client.issueComments.getProperty', async () => {
+      jiraIssueCommentsMock.getProperty.mockResolvedValue({ key: 'foo', value: 1 });
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'get-property', ['1001', 'foo']),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.getProperty).toHaveBeenCalledWith('1001', 'foo');
+      expect(result).toEqual({ key: 'foo', value: 1 });
+    });
+
+    it('issue-comments get-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'get-property', ['1001']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('issue-comments set-property calls client.issueComments.setProperty with parsed JSON', async () => {
+      jiraIssueCommentsMock.setProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'set-property', ['1001', 'foo'], { value: '{"approved":true}' }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.setProperty).toHaveBeenCalledWith('1001', 'foo', {
+        approved: true,
+      });
+      expect(result).toEqual({ set: true });
+    });
+
+    it('issue-comments set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'set-property', ['1001', 'foo']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('issue-comments set-property throws when --value is not valid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-comments', 'set-property', ['1001', 'foo'], { value: 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be valid JSON');
+    });
+
+    it('issue-comments delete-property calls client.issueComments.deleteProperty', async () => {
+      jiraIssueCommentsMock.deleteProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'delete-property', ['1001', 'foo']),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.deleteProperty).toHaveBeenCalledWith('1001', 'foo');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-comments bulk-fetch calls client.issueComments.bulkFetch with parsed ids', async () => {
+      const page = { values: [], startAt: 0, maxResults: 100, total: 0, isLast: true };
+      jiraIssueCommentsMock.bulkFetch.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'bulk-fetch', [], { ids: '1001, 1002 ,1003' }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.bulkFetch).toHaveBeenCalledWith({ ids: [1001, 1002, 1003] }, {});
+      expect(result).toEqual(page);
+    });
+
+    it('issue-comments bulk-fetch passes --expand', async () => {
+      jiraIssueCommentsMock.bulkFetch.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 100,
+        total: 0,
+        isLast: true,
+      });
+      await executeJiraCommand(
+        cmd('issue-comments', 'bulk-fetch', [], {
+          ids: '1001',
+          expand: 'renderedBody,properties',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.bulkFetch).toHaveBeenCalledWith(
+        { ids: [1001] },
+        { expand: 'renderedBody,properties' },
+      );
+    });
+
+    it('issue-comments bulk-fetch throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'bulk-fetch', []), GLOBALS),
+      ).rejects.toThrow('Missing required option: --ids');
+    });
+
+    it('issue-comments bulk-fetch rejects non-positive integer in --ids', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'bulk-fetch', [], { ids: '1001,abc' }), GLOBALS),
+      ).rejects.toThrow('--ids must be a positive integer');
+    });
+
+    it('issue-comments bulk-fetch rejects empty --ids after CSV split', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'bulk-fetch', [], { ids: ' , , ' }), GLOBALS),
+      ).rejects.toThrow('--ids must contain at least one ID');
+    });
+
+    it('issue-comments bulk-fetch rejects more than 1000 IDs', async () => {
+      const tooMany = Array.from({ length: 1001 }, (_, i) => i + 1).join(',');
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'bulk-fetch', [], { ids: tooMany }), GLOBALS),
+      ).rejects.toThrow('--ids cannot exceed 1000');
+    });
+
+    it('issue-comments unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('issue-comments', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown issue-comments action',
       );
     });
   });

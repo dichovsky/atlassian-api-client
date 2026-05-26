@@ -1393,7 +1393,6 @@
 - [x] 🔴 🧩 API: B931 Jira: expose GET /rest/api/3/resolution
   - **Impl:** Branch `api/resolution-statuses`; new `ResolutionResource` (`src/jira/resources/resolution.ts`) exposes `list()` (marked `@deprecated`) issuing `GET /rest/api/3/resolution`, returning `Resolution[]`. Wired as `JiraClient.resolutions`; types exported from `src/jira/index.ts`. CLI: `atlas jira resolutions list`. Covered by `test/jira/resolution.test.ts`. New router flags added: `--query-string`, `--only-default`, `--replace-with`, `--next-page-token`, `--names`.
   - **Rat:** Deprecated list endpoint preserved for backward-compat; superseded by `search` (B718) but retained for existing consumers pinned to the old endpoint.
-
 - [x] 🔴 🧩 API: B409 Jira: expose POST /rest/api/3/expression/analyse
   - **Impl:** Branch `feat/jira-expression`; new `ExpressionResource` (`src/jira/resources/expression.ts`) exposes `analyse(data, params?)` issuing `POST /rest/api/3/expression/analyse` with required `expressions: string[]` body, optional `contextVariables: Record<string,string>`, optional `check` query param. Returns `AnalyseJiraExpressionsResponse`. Wired as `JiraClient.expression`; types exported from `src/jira/index.ts`. CLI: `atlas jira expression analyse --expressions '<JSON-array>' [--context-variables '<JSON-object>'] [--check <mode>]`. Covered by `test/jira/expression.test.ts`. New router flags added: `--expression`, `--expressions`, `--context`, `--context-variables`, `--check`.
   - **Rat:** Validates and optionally type-checks Jira expressions before runtime evaluation — catches syntax/type errors at build time rather than during deployment.
@@ -1403,3 +1402,18 @@
 - [x] 🔴 🧩 API: B410 Jira: expose POST /rest/api/3/expression/evaluate
   - **Impl:** Branch `feat/jira-expression`; `ExpressionResource.evaluate(data, params?)` issues `POST /rest/api/3/expression/evaluate` with required `expression: string` body, optional `context: JiraExpressionEvalContext`, optional `expand` query param. Returns `EvaluateJiraExpressionResponse` with paginated JQL meta (`startAt`/`totalCount`). CLI: `atlas jira expression evaluate --expression <expr> [--context '<JSON>'] [--expand <keys>]`.
   - **Rat:** Legacy strongly-consistent Jira expression evaluator — retained alongside `eval` for callers that need the paginated JQL view or strong-consistency semantics.
+- [x] 🔴 🧩 API: B356 Jira: expose GET /rest/api/3/comment/{commentId}/properties
+  - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.listProperties(commentId)` returns `IssueCommentPropertyKeys`. CLI: `atlas jira issue-comments list-properties <commentId>`. Resource newly wired into CLI dispatch (`executeIssueComments`).
+  - **Rat:** Property surface for issue comments; mirrors `IssueTypeResource.listProperties` shape. New `issue-comments` CLI subcommand created — SDK CRUD (`list`/`get`/`create`/`update`/`delete`) remains library-only and is documented as such in `skill/reference/jira.md`.
+- [x] 🔴 🧩 API: B357 Jira: expose DELETE /rest/api/3/comment/{commentId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.deleteProperty(commentId, propertyKey)` returns `void`. CLI: `atlas jira issue-comments delete-property <commentId> <propertyKey>`.
+  - **Rat:** Standard property CRUD sibling of B356; both path params positional per CLI convention.
+- [x] 🔴 🧩 API: B358 Jira: expose GET /rest/api/3/comment/{commentId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.getProperty(commentId, propertyKey)` returns `IssueCommentProperty`. CLI: `atlas jira issue-comments get-property <commentId> <propertyKey>`.
+  - **Rat:** Read sibling of B357; same positional-params pattern.
+- [x] 🔴 🧩 API: B359 Jira: expose PUT /rest/api/3/comment/{commentId}/properties/{propertyKey}
+  - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.setProperty(commentId, propertyKey, value)` sends `value` as raw body; returns `void` (Jira returns 200 on update or 201 on create — both discarded). CLI: `atlas jira issue-comments set-property <commentId> <propertyKey> --value <JSON>`.
+  - **Rat:** Arbitrary JSON value flag (`--value`) parsed with the existing `parseJsonValueFlag` helper; reuses already-registered `--value` flag in `GLOBAL_OPTIONS`.
+- [x] 🔴 🧩 API: B360 Jira: expose POST /rest/api/3/comment/list
+  - **Impl:** Branch `feat/jira-comment-properties`; `IssueCommentsResource.bulkFetch(data, params?)` returns `BulkFetchIssueCommentsResponse` (`PageBeanComment` shape: `values`, `startAt`, `maxResults`, `total`, `isLast`, optional `self`/`nextPage`). CLI: `atlas jira issue-comments bulk-fetch --ids 1001,1002,1003 [--expand renderedBody,properties]`.
+  - **Rat:** API spec uses int64 IDs and returns a `PageBeanComment` (NOT `{ comments }`) — preserved exact spec field names. `--ids` and `--expand` are pre-existing flags in `GLOBAL_OPTIONS`; no new router flags required.

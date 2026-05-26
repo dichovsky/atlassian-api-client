@@ -129,6 +129,8 @@ export async function executeJiraCommand(
       return executeResolutions(client, cmd);
     case 'expression':
       return executeExpression(client, cmd);
+    case 'issue-comments':
+      return executeIssueComments(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3180,6 +3182,61 @@ async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promis
     default:
       throw new Error(
         `Unknown expression action: ${cmd.action}. Actions: ${EXPRESSION_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── issue-comments (B356-B360) ────────────────────────────────────────────────
+
+const ISSUE_COMMENTS_ACTIONS = [
+  'list-properties',
+  'get-property',
+  'set-property',
+  'delete-property',
+  'bulk-fetch',
+] as const;
+
+async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-properties': {
+      const commentId = requireArg(cmd.positionalArgs[0], 'commentId');
+      return client.issueComments.listProperties(commentId);
+    }
+    case 'get-property': {
+      const commentId = requireArg(cmd.positionalArgs[0], 'commentId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      return client.issueComments.getProperty(commentId, propertyKey);
+    }
+    case 'set-property': {
+      const commentId = requireArg(cmd.positionalArgs[0], 'commentId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      const value = parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value');
+      await client.issueComments.setProperty(commentId, propertyKey, value);
+      return { set: true };
+    }
+    case 'delete-property': {
+      const commentId = requireArg(cmd.positionalArgs[0], 'commentId');
+      const propertyKey = requireArg(cmd.positionalArgs[1], 'propertyKey');
+      await client.issueComments.deleteProperty(commentId, propertyKey);
+      return { deleted: true };
+    }
+    case 'bulk-fetch': {
+      const idsRaw = requireOpt(opts['ids'], '--ids');
+      const ids = splitCsvIds(idsRaw).map((s) => parsePositiveIntArg(s, '--ids'));
+      if (ids.length === 0) {
+        throw new Error('--ids must contain at least one ID');
+      }
+      if (ids.length > 1000) {
+        throw new Error('--ids cannot exceed 1000 (Atlassian API limit)');
+      }
+      const expand = asString(opts['expand']);
+      return client.issueComments.bulkFetch({ ids }, { ...(expand !== undefined && { expand }) });
+    }
+    default:
+      throw new Error(
+        `Unknown issue-comments action: ${cmd.action}. Actions: ${ISSUE_COMMENTS_ACTIONS.join(', ')}`,
       );
   }
 }
