@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "653877ffd1d33c44e9944c22101e73757cb98fe42cb2bc85db1c1afe6f4f69b3",
+  "sourceHash": "6e89ee0d889521fd460ae9f90eec178c1b51132f98f1b899def5f5b84597a9d4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -23014,49 +23014,49 @@
             {
               "name": "bulkCreate",
               "kind": "method",
-              "line": 133
+              "line": 136
             },
             {
               "name": "bulkUpdate",
               "kind": "method",
-              "line": 151
+              "line": 154
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 169
+              "line": 172
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 193
+              "line": 196
             },
             {
               "name": "getWorkflowUsages",
               "kind": "method",
-              "line": 216
+              "line": 219
             },
             {
               "name": "byNames",
               "kind": "method",
-              "line": 236
+              "line": 239
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 251
+              "line": 254
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 266
+              "line": 269
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 282,
+          "line": 285,
           "signature": "function buildSearchQuery( params: SearchStatusesParams | undefined, ): Record<string, string | number | boolean | undef…"
         }
       ],
