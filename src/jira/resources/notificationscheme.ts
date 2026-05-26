@@ -23,8 +23,10 @@ export interface NotificationSchemeNotification {
 }
 
 /**
- * A `(event, notifications[])` mapping inside a notification scheme — the
- * server-side primary key of the scheme is `event.id`.
+ * A `(event, notifications[])` mapping inside a notification scheme. `event.id`
+ * identifies the Jira event that triggers this notification list (e.g. issue
+ * created, issue updated); the notification scheme itself is identified by
+ * `NotificationScheme.id`.
  */
 export interface NotificationSchemeEvent {
   readonly event: NotificationEventRef;
