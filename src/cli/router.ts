@@ -275,6 +275,9 @@ const GLOBAL_OPTIONS = {
   context: { type: 'string' as const },
   'context-variables': { type: 'string' as const },
   check: { type: 'string' as const },
+  // fieldconfiguration options (B908-B913)
+  'is-default': { type: 'boolean' as const },
+  'field-configuration-items': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

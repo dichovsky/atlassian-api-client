@@ -4,6 +4,7 @@ import type {
   AddFilterSharePermissionData,
   CreateStatusData,
   UpdateStatusData,
+  FieldConfigurationItem,
 } from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
@@ -131,6 +132,8 @@ export async function executeJiraCommand(
       return executeExpression(client, cmd);
     case 'issue-comments':
       return executeIssueComments(client, cmd);
+    case 'fieldconfiguration':
+      return executeFieldConfiguration(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3237,6 +3240,82 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
     default:
       throw new Error(
         `Unknown issue-comments action: ${cmd.action}. Actions: ${ISSUE_COMMENTS_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── fieldconfiguration (B908-B913) ───────────────────────────────────────────
+
+const FIELD_CONFIGURATION_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'update',
+  'list-fields',
+  'update-fields',
+] as const;
+
+async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const idsRaw = parseCsv(opts['ids']);
+      const ids = idsRaw?.map((s) => parsePositiveIntArg(s, '--ids'));
+      const isDefault = asBoolFlag(opts['is-default']);
+      const query = asString(opts['query']);
+      return client.fieldConfigurations.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(isDefault !== undefined && { isDefault }),
+        ...(query !== undefined && { query }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.fieldConfigurations.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'delete': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      await client.fieldConfigurations.delete(id);
+      return { deleted: true };
+    }
+    case 'update': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      // The Jira API treats `name` as required on the PUT body, so we mirror
+      // that contract at the CLI layer rather than fail with an opaque 400.
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      await client.fieldConfigurations.update(id, {
+        name,
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'list-fields': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      return client.fieldConfigurations.listFields(id, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'update-fields': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const raw = requireOpt(opts['field-configuration-items'], '--field-configuration-items');
+      const items = parseJsonArrayFlag(raw, '--field-configuration-items');
+      await client.fieldConfigurations.updateFields(id, {
+        fieldConfigurationItems: items as FieldConfigurationItem[],
+      });
+      return { updated: true };
+    }
+    default:
+      throw new Error(
+        `Unknown fieldconfiguration action: ${cmd.action}. Actions: ${FIELD_CONFIGURATION_ACTIONS.join(', ')}`,
       );
   }
 }
