@@ -15,9 +15,23 @@
 3. If non-Atlassian/proxied host: include explicit allowlist entry for the base-url host.
 4. Never echo or pass secrets as flags.
 
+## Self-hosted instances
+
+By default the CLI only allows `*.atlassian.net` / `*.atlassian.com` / `*.jira-dev.com` / `*.jira.com` as base URL hosts. Non-Atlassian or proxied hosts require an explicit allowlist entry, otherwise the call fails with `ValidationError: not on the default Atlassian host allowlist`.
+
+Use `--allowed-hosts` (or `ATLASSIAN_ALLOWED_HOSTS`) with bare hostnames (no scheme, no port):
+
+```sh
+atlas confluence spaces list \
+  --base-url https://confluence.internal.example \
+  --allowed-hosts confluence.internal.example
+```
+
+Multiple comma-separated entries are permitted. The `baseUrl` host itself must be included.
+
 ## Error handling
 
-- `401`: auth invalid/expired; stop and request new credentials.
+- `401`: auth invalid or expired — STOP. Do not retry. Surface to user and request new credentials. Retrying on 401 may trigger account lockout.
 - `403`: scope/permission issue; report missing access.
 - `404`: verify tenant URL and identifier.
 - `429`: respect retry/backoff; reduce call rate.

@@ -1,4 +1,4 @@
-# Examples (copy-paste safe)
+# Examples (illustrative, parameters may need values from API probes)
 
 ```sh
 # Confluence

@@ -6,6 +6,10 @@
 - Prefer IDs/keys/names over full objects.
 - Use `--format minimal` when downstream steps only need identifiers.
 
+## Output parsing
+
+`--format minimal` emits one line per record. Field extraction order is **id → key → name**. Pipe through `awk` / `cut` with this order assumption; do not assume `name` is first. For Jira issues this yields the issue key (e.g. `PROJ-123`); for Confluence pages it yields the page ID.
+
 ## Request policy
 
 - Use strict filters (`--fields`, narrow JQL, resource IDs).
@@ -52,9 +56,9 @@ Inner double-quotes inside JQL do not need escaping when wrapped in single quote
 
 ## Escalation
 
-Use TypeScript SDK for:
+Use TypeScript SDK (`import { ConfluenceClient, JiraClient } from 'atlassian-api-client'`) for:
 
-- bulk orchestration,
-- unsupported CLI update fields,
-- custom transport/middleware,
-- programmatic pagination loops.
+- bulk orchestration across many resources (avoid hundreds of CLI subprocesses),
+- unsupported CLI update fields (description, assignee, custom fields, ADF body authoring),
+- custom transport (proxy, mTLS, logging) or middleware composition,
+- programmatic pagination: `paginateCursor` (Confluence cursor), `paginateOffset` (Jira offset), `paginateSearch` (Jira search-API).

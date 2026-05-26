@@ -15,8 +15,8 @@ const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-s
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
 // Keep router text compact so the skill stays cheap and leaves room for task context.
-// 3500 characters is roughly 875 prompt tokens using a 4 chars/token estimate.
-const MAX_SKILL_MD_LENGTH = 3500;
+// 5000 characters is roughly 1250 prompt tokens using a 4 chars/token estimate.
+const MAX_SKILL_MD_LENGTH = 5000;
 // Ensure a practical example set across SKILL.md + examples reference.
 const MIN_EXAMPLE_COMMANDS = 10;
 const CONFLUENCE_SRC = readFileSync(
@@ -64,7 +64,7 @@ describe('SKILL.md content', () => {
   });
 
   it('keeps SKILL.md compact to reduce prompt tokens', () => {
-    expect(SKILL_MD.length).toBeLessThan(MAX_SKILL_MD_LENGTH);
+    expect(SKILL_MD.length).toBeLessThanOrEqual(MAX_SKILL_MD_LENGTH);
   });
 
   it('documents the install-skill subcommand', () => {

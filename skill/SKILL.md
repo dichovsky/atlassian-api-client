@@ -27,7 +27,7 @@ source: atlassian-api-client npm package
 ## Always-on rules
 
 - Use env-var auth only (`ATLASSIAN_BASE_URL`, `ATLASSIAN_API_TOKEN`, and `ATLASSIAN_EMAIL` for basic auth).
-- Never place secrets in CLI flags.
+- Never place secrets in CLI flags. Specifically avoid `--token <secret>` or `--email <addr>` in shell history, transcripts, CI logs, or chat. Use environment variables (`ATLASSIAN_API_TOKEN`, `ATLASSIAN_EMAIL`) or a config file with restricted permissions.
 - Ask user for missing auth env; do not guess.
 - Return minimal output first (`--format minimal` when IDs/keys are sufficient).
 - Prefer pagination limits and cursors over bulk dumps.
@@ -35,7 +35,7 @@ source: atlassian-api-client npm package
 
 ## Command shape (compact schema)
 
-```yaml
+```text
 command: atlas <api> <resource> <action> [id] [--flags]
 api: [confluence, jira]
 format: [json, table, minimal]
