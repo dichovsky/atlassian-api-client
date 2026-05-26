@@ -226,6 +226,9 @@ describe('runInstall against bundled skill', () => {
     expect(result.files).toContain('SKILL.md');
     expect(result.files).toContain('reference/confluence.md');
     expect(result.files).toContain('reference/jira.md');
+    expect(result.files).toContain('reference/auth-and-safety.md');
+    expect(result.files).toContain('reference/payload-rules.md');
+    expect(result.files).toContain('reference/examples.md');
 
     const installed = readFileSync(join(target, 'SKILL.md'), 'utf8');
     expect(readSkillVersion(installed)).toBe('9.9.9');
