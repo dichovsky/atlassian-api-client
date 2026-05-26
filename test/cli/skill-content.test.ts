@@ -14,7 +14,7 @@ const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8'
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
-// Keep the router concise enough to stay in a small prompt chunk.
+// Keep router text under ~3.5k chars (~875 tokens at 4 chars/token heuristic).
 const MAX_SKILL_MD_LENGTH = 3500;
 // Ensure a practical example set across SKILL.md + examples reference.
 const MIN_EXAMPLE_COMMANDS = 10;

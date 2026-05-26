@@ -16,7 +16,7 @@
 
 - Truncate long text in summaries; keep source ID for retrieval.
 - Avoid repeating unchanged context between steps.
-- Pass compact structured specs using YAML over verbose JSON when both are viable.
+- Pass compact structured specs using YAML over verbose JSON when the interface accepts either format.
 
 ## Escalation
 

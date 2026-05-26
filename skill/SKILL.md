@@ -1,7 +1,7 @@
 ---
 name: atlassian-api-client-cli
 description: |
-  Operate Atlassian Cloud via `atlas` CLI with minimal-token, high-accuracy execution.
+  Operate Atlassian Cloud via `atlas` CLI with prompt-token-efficient, high-accuracy execution.
   TRIGGER when: user needs Jira/Confluence Cloud CLI operations or asks for `atlas` command construction.
   DO NOT TRIGGER when: request is for TypeScript SDK internals, Atlassian Server/Data Center, Bitbucket, Trello, or web UI workflows.
 version: 0.0.0-dev
