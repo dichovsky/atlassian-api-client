@@ -128,6 +128,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   component: 'executeComponent',
   filters: 'executeFilters',
   'issue-type-screen-schemes': 'executeIssueTypeScreenSchemes',
+  'permission-schemes': 'executePermissionSchemes',
 };
 
 /**

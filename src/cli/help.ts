@@ -261,6 +261,7 @@ RESOURCES:
   component              list, create, get, update, delete, related-issue-counts
   filters                search, get, create, update, delete, list-favourites, list-my, add-favourite, remove-favourite, change-owner, get-columns, set-columns, reset-columns, list-permissions, add-permission, get-permission, delete-permission, get-default-share-scope, set-default-share-scope
   issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
+  permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -353,6 +354,15 @@ EXAMPLES:
   atlas jira issue-type-screen-schemes list-mapping --scheme-ids 10001,10002
   atlas jira issue-type-screen-schemes list-project-mappings --project-ids 10001,10002
   atlas jira issue-type-screen-schemes assign-to-project --scheme-id 10001 --project-id 10002
+  atlas jira permission-schemes list
+  atlas jira permission-schemes get 10000
+  atlas jira permission-schemes create --name "Default scheme"
+  atlas jira permission-schemes update 10000 --name "Updated scheme" --description "Updated"
+  atlas jira permission-schemes delete 10000
+  atlas jira permission-schemes list-permissions 10000
+  atlas jira permission-schemes create-permission 10000 --holder-type anyone --permissions BROWSE_PROJECTS
+  atlas jira permission-schemes get-permission 10000 10001
+  atlas jira permission-schemes delete-permission 10000 10001
 `;
 
 /** Get help text for the given level. */

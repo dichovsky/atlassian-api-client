@@ -1261,3 +1261,30 @@
 - [x] 🔴 🧩 API: B586 Jira: expose PUT /rest/api/3/issuetypescreenscheme/project
   - **Impl:** `IssueTypeScreenSchemeResource.assignToProject(data)` returns `void`. CLI `atlas jira issue-type-screen-schemes assign-to-project --scheme-id <id> --project-id <id>`.
   - **Rat:** Assign or reassign a project's issue type screen scheme without navigating the admin UI.
+- [x] 🔴 🧩 API: B616 Jira: expose GET /rest/api/3/permissionscheme
+  - **Impl:** `PermissionSchemeResource.list(params?)` returns `{ permissionSchemes: PermissionScheme[] }`. CLI `atlas jira permission-schemes list [--expand]`.
+  - **Rat:** List all permission schemes available in the Jira instance.
+- [x] 🔴 🧩 API: B617 Jira: expose POST /rest/api/3/permissionscheme
+  - **Impl:** `PermissionSchemeResource.create(data, params?)` returns `PermissionScheme`. CLI `atlas jira permission-schemes create --name <n> [--description] [--permissions JSON] [--expand]`.
+  - **Rat:** Create a new named permission scheme, optionally pre-populated with grants.
+- [x] 🔴 🧩 API: B618 Jira: expose DELETE /rest/api/3/permissionscheme/{schemeId}
+  - **Impl:** `PermissionSchemeResource.delete(schemeId)` returns `void`. CLI `atlas jira permission-schemes delete <schemeId>`.
+  - **Rat:** Remove a permission scheme by numeric ID.
+- [x] 🔴 🧩 API: B619 Jira: expose GET /rest/api/3/permissionscheme/{schemeId}
+  - **Impl:** `PermissionSchemeResource.get(schemeId, params?)` returns `PermissionScheme`. CLI `atlas jira permission-schemes get <schemeId> [--expand]`.
+  - **Rat:** Retrieve a single permission scheme by its numeric ID.
+- [x] 🔴 🧩 API: B620 Jira: expose PUT /rest/api/3/permissionscheme/{schemeId}
+  - **Impl:** `PermissionSchemeResource.update(schemeId, data, params?)` returns `PermissionScheme`. CLI `atlas jira permission-schemes update <schemeId> [--name] [--description] [--permissions JSON] [--expand]`. Requires at least one of `--name`, `--description`, `--permissions`.
+  - **Rat:** Rename or modify a permission scheme.
+- [x] 🔴 🧩 API: B621 Jira: expose GET /rest/api/3/permissionscheme/{schemeId}/permission
+  - **Impl:** `PermissionSchemeResource.listPermissions(schemeId, params?)` returns `{ permissions: PermissionGrant[] }`. CLI `atlas jira permission-schemes list-permissions <schemeId> [--expand]`.
+  - **Rat:** Enumerate all permission grants attached to a scheme.
+- [x] 🔴 🧩 API: B622 Jira: expose POST /rest/api/3/permissionscheme/{schemeId}/permission
+  - **Impl:** `PermissionSchemeResource.createPermission(schemeId, data, params?)` returns `PermissionGrant`. CLI `atlas jira permission-schemes create-permission <schemeId> [--holder-type] [--holder-parameter] [--holder-value] [--permissions] [--expand]`.
+  - **Rat:** Add a new permission grant to an existing scheme.
+- [x] 🔴 🧩 API: B623 Jira: expose DELETE /rest/api/3/permissionscheme/{schemeId}/permission/{permissionId}
+  - **Impl:** `PermissionSchemeResource.deletePermission(schemeId, permissionId)` returns `void`. CLI `atlas jira permission-schemes delete-permission <schemeId> <permissionId>` (both positional).
+  - **Rat:** Revoke a single permission grant from a scheme.
+- [x] 🔴 🧩 API: B624 Jira: expose GET /rest/api/3/permissionscheme/{schemeId}/permission/{permissionId}
+  - **Impl:** `PermissionSchemeResource.getPermission(schemeId, permissionId, params?)` returns `PermissionGrant`. CLI `atlas jira permission-schemes get-permission <schemeId> <permissionId> [--expand]`.
+  - **Rat:** Inspect a single permission grant entry within a scheme.
