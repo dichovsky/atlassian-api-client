@@ -5,6 +5,7 @@ import type {
   CreateStatusData,
   UpdateStatusData,
   FieldConfigurationItem,
+  NotificationSchemeEvent,
 } from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
@@ -134,6 +135,8 @@ export async function executeJiraCommand(
       return executeIssueComments(client, cmd);
     case 'fieldconfiguration':
       return executeFieldConfiguration(client, cmd);
+    case 'notification-schemes':
+      return executeNotificationSchemes(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3316,6 +3319,115 @@ async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand)
     default:
       throw new Error(
         `Unknown fieldconfiguration action: ${cmd.action}. Actions: ${FIELD_CONFIGURATION_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── notification-schemes (B605-B612) ─────────────────────────────────────────
+
+const NOTIFICATION_SCHEMES_ACTIONS = [
+  'list',
+  'create',
+  'get',
+  'update',
+  'add-notifications',
+  'delete',
+  'remove-notification',
+  'list-projects',
+] as const;
+
+async function executeNotificationSchemes(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const ids = parseCsv(opts['ids']);
+      const projectIds = parseCsv(opts['project-ids']);
+      const expand = asString(opts['expand']);
+      const onlyDefault =
+        opts['only-default'] !== undefined ? asBoolFlag(opts['only-default']) : undefined;
+      return client.notificationSchemes.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+        ...(expand !== undefined && { expand }),
+        ...(onlyDefault !== undefined && { onlyDefault }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const eventsRaw = asString(opts['notification-scheme-events']);
+      const notificationSchemeEvents =
+        eventsRaw !== undefined
+          ? (parseJsonArrayFlag(
+              eventsRaw,
+              '--notification-scheme-events',
+            ) as NotificationSchemeEvent[])
+          : undefined;
+      return client.notificationSchemes.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(notificationSchemeEvents !== undefined && { notificationSchemeEvents }),
+      });
+    }
+    case 'get': {
+      const id = requireArg(cmd.positionalArgs[0], 'notificationSchemeId');
+      const expand = asString(opts['expand']);
+      return client.notificationSchemes.get(id, expand !== undefined ? { expand } : undefined);
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'notificationSchemeId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      await client.notificationSchemes.update(id, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'add-notifications': {
+      const id = requireArg(cmd.positionalArgs[0], 'notificationSchemeId');
+      const eventsRaw = requireOpt(
+        opts['notification-scheme-events'],
+        '--notification-scheme-events',
+      );
+      const notificationSchemeEvents = parseJsonArrayFlag(
+        eventsRaw,
+        '--notification-scheme-events',
+      ) as NotificationSchemeEvent[];
+      await client.notificationSchemes.addNotifications(id, { notificationSchemeEvents });
+      return { updated: true };
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'notificationSchemeId');
+      await client.notificationSchemes.delete(id);
+      return { deleted: true };
+    }
+    case 'remove-notification': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'notificationSchemeId');
+      const notificationId = requireArg(cmd.positionalArgs[1], 'notificationId');
+      await client.notificationSchemes.removeNotification(schemeId, notificationId);
+      return { deleted: true };
+    }
+    case 'list-projects': {
+      const projectIds = parseCsv(opts['project-ids']);
+      return client.notificationSchemes.listProjects({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown notification-schemes action: ${cmd.action}. Actions: ${NOTIFICATION_SCHEMES_ACTIONS.join(', ')}`,
       );
   }
 }

@@ -59,6 +59,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `filters`                | `search`, `get`, `create`, `update`, `delete`, `list-favourites`, `list-my`, `add-favourite`, `remove-favourite`, `change-owner`, `get-columns`, `set-columns`, `reset-columns`, `list-permissions`, `add-permission`, `get-permission`, `delete-permission`, `get-default-share-scope`, `set-default-share-scope`                                                                                                       |
 | `permission-schemes`     | `list`, `get`, `create`, `update`, `delete`, `list-permissions`, `create-permission`, `get-permission`, `delete-permission`                                                                                                                                                                                                                                                                                              |
 | `issue-type-schemes`     | `list`, `list-mapping`, `list-project`, `create`, `update`, `delete`, `add-issue-types`, `remove-issue-type`, `move-issue-types`, `assign-to-project`                                                                                                                                                                                                                                                                    |
+| `notification-schemes`   | `list`, `create`, `get`, `update`, `add-notifications`, `delete`, `remove-notification`, `list-projects`                                                                                                                                                                                                                                                                                                                 |
 | `roles`                  | `list`, `get`, `create`, `update`, `partial-update`, `delete`, `get-actors`, `add-actors`, `delete-actors`                                                                                                                                                                                                                                                                                                               |
 | `issue-comments`         | `list-properties`, `get-property`, `set-property`, `delete-property`, `bulk-fetch`                                                                                                                                                                                                                                                                                                                                       |
 | `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                     |
@@ -153,6 +154,60 @@ atlas jira fieldconfiguration list-fields 10001 --start-at 0 --max-results 50
 
 # Bulk-update field items (JSON array of {id, description?, isHidden?, isRequired?, renderer?})
 atlas jira fieldconfiguration update-fields 10001 --field-configuration-items '[{"id":"customfield_10010","isHidden":false,"isRequired":true}]'
+```
+
+## `notification-schemes`
+
+Notification scheme management (B605–B612). Covers the full `/rest/api/3/notificationscheme` surface: paginated listing, CRUD, notification membership management, and project-association queries.
+
+| Action                | Positional                                | Required flags                            | Optional flags                                                                                    |
+| --------------------- | ----------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `list`                | —                                         | —                                         | `--start-at`, `--max-results`, `--ids` (CSV), `--project-ids` (CSV), `--expand`, `--only-default` |
+| `create`              | —                                         | `--name`                                  | `--description`, `--notification-scheme-events` (JSON)                                            |
+| `get`                 | `<notificationSchemeId>`                  | —                                         | `--expand`                                                                                        |
+| `update`              | `<notificationSchemeId>`                  | at least one of `--name`, `--description` | —                                                                                                 |
+| `add-notifications`   | `<notificationSchemeId>`                  | `--notification-scheme-events` (JSON)     | —                                                                                                 |
+| `delete`              | `<notificationSchemeId>`                  | —                                         | —                                                                                                 |
+| `remove-notification` | `<notificationSchemeId> <notificationId>` | —                                         | —                                                                                                 |
+| `list-projects`       | —                                         | —                                         | `--start-at`, `--max-results`, `--project-ids` (CSV)                                              |
+
+- `--notification-scheme-events` is a **JSON array** of `{ event: { id }, notifications: [ ... ] }` entries. Each notification has a `notificationType` (e.g. `CurrentAssignee`, `Group`, `User`, `ProjectLead`, `EmailAddress`) and an optional `parameter` (group name, accountId, email, etc.).
+- `--expand` accepts the standard server-side expander keys, most commonly `notificationSchemeEvents`, `user`, `group`, `projectRole`, `field`, `all`.
+- `--only-default` (boolean) restricts the list to default schemes.
+- `update` is `PUT` 204 No Content — only `name` and `description` are mutable.
+- `add-notifications` is `PUT` 204 — appends events/notifications to an existing scheme without replacing existing entries.
+- `remove-notification` deletes a single notification entry by its server-assigned `notificationId`.
+- `list-projects` returns the per-project `{ notificationSchemeId, projectId }` mapping; combine with `--project-ids` to filter.
+
+```bash
+# List notification schemes (paginated)
+atlas jira notification-schemes list --start-at 0 --max-results 50
+
+# List specific schemes with their events expanded
+atlas jira notification-schemes list --ids 10000,10001 --expand notificationSchemeEvents
+
+# Get one scheme by ID
+atlas jira notification-schemes get 10000 --expand notificationSchemeEvents
+
+# Create a scheme with initial events
+atlas jira notification-schemes create --name "Default" --description "Default scheme" \
+  --notification-scheme-events '[{"event":{"id":"1"},"notifications":[{"notificationType":"CurrentAssignee"},{"notificationType":"Group","parameter":"jira-users"}]}]'
+
+# Rename a scheme
+atlas jira notification-schemes update 10000 --name "Renamed"
+
+# Append more event notifications
+atlas jira notification-schemes add-notifications 10000 \
+  --notification-scheme-events '[{"event":{"id":"2"},"notifications":[{"notificationType":"Reporter"}]}]'
+
+# Remove a single notification entry
+atlas jira notification-schemes remove-notification 10000 5
+
+# Delete a scheme
+atlas jira notification-schemes delete 10000
+
+# List scheme-to-project associations
+atlas jira notification-schemes list-projects --project-ids 10100,10101
 ```
 
 ## `app`

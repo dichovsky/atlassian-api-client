@@ -450,3 +450,18 @@ export type {
   UpdateFieldConfigurationItemsData,
 } from './resources/fieldconfiguration.js';
 export { FieldConfigurationResource } from './resources/fieldconfiguration.js';
+export type {
+  NotificationScheme,
+  NotificationSchemeEvent,
+  NotificationSchemeNotification,
+  NotificationEventRef,
+  NotificationSchemeProjectAssociation,
+  CreatedNotificationScheme,
+  CreateNotificationSchemeData,
+  UpdateNotificationSchemeData,
+  AddNotificationsData,
+  ListNotificationSchemesParams,
+  GetNotificationSchemeParams,
+  ListNotificationSchemeProjectsParams,
+} from './resources/notificationscheme.js';
+export { NotificationSchemeResource } from './resources/notificationscheme.js';

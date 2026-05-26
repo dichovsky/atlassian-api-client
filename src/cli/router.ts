@@ -278,6 +278,8 @@ const GLOBAL_OPTIONS = {
   // fieldconfiguration options (B908-B913)
   'is-default': { type: 'boolean' as const },
   'field-configuration-items': { type: 'string' as const },
+  // notification-schemes options (B605-B612)
+  'notification-scheme-events': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
