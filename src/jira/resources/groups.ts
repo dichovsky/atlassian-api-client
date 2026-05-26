@@ -280,7 +280,10 @@ export class GroupsResource {
     params?: Omit<ListBulkGroupsParams, 'startAt'>,
   ): AsyncGenerator<BulkGroupDetails> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    const query = buildBulkQuery({ ...params, startAt: undefined });
+    // Omit `startAt` and `maxResults` from the base query — `paginateOffset`
+    // always overwrites them per page (`startAt` from its cursor, `maxResults`
+    // from the `pageSize` argument). Including them here would be misleading.
+    const query = buildBulkQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<BulkGroupDetails>(
       this.transport,
       `${this.baseUrl}/group/bulk`,
@@ -314,7 +317,10 @@ export class GroupsResource {
     params?: Omit<ListGroupMembersParams, 'startAt'>,
   ): AsyncGenerator<GroupMember> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    const query = buildMemberQuery({ ...params, startAt: undefined });
+    // Omit `startAt` and `maxResults` from the base query — `paginateOffset`
+    // always overwrites them per page (`startAt` from its cursor, `maxResults`
+    // from the `pageSize` argument). Including them here would be misleading.
+    const query = buildMemberQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<GroupMember>(
       this.transport,
       `${this.baseUrl}/group/member`,

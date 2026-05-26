@@ -10670,7 +10670,7 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      // splitCsv returns undefined when all entries are blank, so the
+      // parseCsv returns undefined when all entries are blank, so the
       // call site should not include groupId/groupName keys.
       expect(jiraGroupsMock.listBulk).toHaveBeenCalledWith({});
     });

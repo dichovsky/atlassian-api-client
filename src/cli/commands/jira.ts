@@ -1144,8 +1144,8 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
       return { deleted: true };
     }
     case 'list-bulk': {
-      const groupIds = splitCsv(asString(opts['group-ids']));
-      const groupNames = splitCsv(asString(opts['group-names']));
+      const groupIds = parseCsv(opts['group-ids']);
+      const groupNames = parseCsv(opts['group-names']);
       const accessType = asAccessType(opts['access-type']);
       const applicationKey = asString(opts['application-key']);
       return client.groups.listBulk({
@@ -1190,15 +1190,6 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         `Unknown groups action: ${cmd.action}. Actions: picker, get, create, delete, list-bulk, list-members, remove-user, add-user`,
       );
   }
-}
-
-function splitCsv(value: string | undefined): string[] | undefined {
-  if (value === undefined) return undefined;
-  const parts = value
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-  return parts.length > 0 ? parts : undefined;
 }
 
 async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
