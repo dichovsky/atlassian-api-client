@@ -55,6 +55,7 @@ import { RemoteLinkResource } from './resources/remote-link.js';
 import { ServiceRegistryResource } from './resources/service-registry.js';
 import { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
 import { AppResource } from './resources/app.js';
+import { ComponentResource } from './resources/component.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -163,6 +164,8 @@ export class JiraClient {
    * `/rest/api/3`, `/rest/atlassian-connect/1`, `/rest/forge/1`.
    */
   readonly app: AppResource;
+  /** Jira project components resource (flat `/component` surface). */
+  readonly component: ComponentResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -244,5 +247,6 @@ export class JiraClient {
     this.serviceRegistry = new ServiceRegistryResource(transport, serviceRegistryBaseUrl);
     this.existsByProperties = new ExistsByPropertiesResource(transport, devInfoBaseUrl);
     this.app = new AppResource(transport, baseUrl, serviceRegistryBaseUrl, forgeBaseUrl);
+    this.component = new ComponentResource(transport, baseUrl);
   }
 }

@@ -427,6 +427,14 @@ const jiraAnnouncementBannerMock = {
   get: vi.fn(),
   update: vi.fn(),
 };
+const jiraComponentMock = {
+  list: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  getRelatedIssueCounts: vi.fn(),
+};
 const jiraApplicationRoleMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -645,6 +653,7 @@ vi.mock('../../src/jira/client.js', () => {
       app: jiraAppMock,
       bulk: jiraBulkMock,
       issueAttachments: jiraIssueAttachmentsMock,
+      component: jiraComponentMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -11870,6 +11879,249 @@ describe('executeJiraCommand', () => {
     it('issue-attachments unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('issue-attachments', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issue-attachments action',
+      );
+    });
+  });
+
+  // ── component ─────────────────────────────────────────────────────────────
+
+  describe('component resource', () => {
+    it('component list calls client.component.list with no flags', async () => {
+      jiraComponentMock.list.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(cmd('component', 'list'), GLOBALS);
+      expect(jiraComponentMock.list).toHaveBeenCalledWith({});
+    });
+
+    it('component list forwards all supported flags (start-at 0 is accepted)', async () => {
+      jiraComponentMock.list.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 25,
+        total: 0,
+      });
+      await executeJiraCommand(
+        cmd('component', 'list', [], {
+          'project-ids-or-keys': 'HSP,PROJ',
+          'start-at': '0',
+          'max-results': '25',
+          'order-by': 'name',
+          query: 'auth',
+        }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.list).toHaveBeenCalledWith({
+        projectIdsOrKeys: ['HSP', 'PROJ'],
+        startAt: 0,
+        maxResults: 25,
+        orderBy: 'name',
+        query: 'auth',
+      });
+    });
+
+    it('component list rejects negative --start-at', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'list', [], { 'start-at': '-1' }), GLOBALS),
+      ).rejects.toThrow('--start-at must be a non-negative integer');
+    });
+
+    it('component list rejects non-positive --max-results', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'list', [], { 'max-results': '0' }), GLOBALS),
+      ).rejects.toThrow('--max-results must be a positive integer');
+    });
+
+    it('component create with required flags only (--name + --project)', async () => {
+      const created = { id: '10000', name: 'C1', self: 'x' };
+      jiraComponentMock.create.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('component', 'create', [], { name: 'C1', project: 'HSP' }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.create).toHaveBeenCalledWith({ name: 'C1', project: 'HSP' });
+      expect(result).toEqual(created);
+    });
+
+    it('component create throws when neither --project nor --project-id is provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'create', [], { name: 'C1' }), GLOBALS),
+      ).rejects.toThrow('component create requires --project or --project-id');
+    });
+
+    it('component create with all flags forwards full body', async () => {
+      jiraComponentMock.create.mockResolvedValue({ id: '1', name: 'Full' });
+      await executeJiraCommand(
+        cmd('component', 'create', [], {
+          name: 'Full',
+          description: 'desc',
+          'lead-account-id': 'acc-1',
+          'lead-user-name': 'legacy',
+          'assignee-type': 'PROJECT_LEAD',
+          'is-assignee-type-valid': true,
+          project: 'HSP',
+          'project-id': '10000',
+        }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.create).toHaveBeenCalledWith({
+        name: 'Full',
+        description: 'desc',
+        leadAccountId: 'acc-1',
+        leadUserName: 'legacy',
+        assigneeType: 'PROJECT_LEAD',
+        isAssigneeTypeValid: true,
+        project: 'HSP',
+        projectId: 10000,
+      });
+    });
+
+    it('component create with --is-assignee-type-valid false forwards false', async () => {
+      jiraComponentMock.create.mockResolvedValue({ id: '1', name: 'N' });
+      await executeJiraCommand(
+        cmd('component', 'create', [], {
+          name: 'N',
+          project: 'HSP',
+          'is-assignee-type-valid': false,
+        }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.create).toHaveBeenCalledWith({
+        name: 'N',
+        project: 'HSP',
+        isAssigneeTypeValid: false,
+      });
+    });
+
+    it('component create requires --name', async () => {
+      await expect(executeJiraCommand(cmd('component', 'create', [], {}), GLOBALS)).rejects.toThrow(
+        '--name',
+      );
+    });
+
+    it('component create rejects invalid --assignee-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('component', 'create', [], { name: 'X', project: 'HSP', 'assignee-type': 'BAD' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--assignee-type must be one of');
+    });
+
+    it('component create rejects non-positive --project-id', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('component', 'create', [], { name: 'X', 'project-id': '0' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--project-id must be a positive integer');
+    });
+
+    it('component get returns client.component.get result', async () => {
+      const c = { id: '10000', name: 'C' };
+      jiraComponentMock.get.mockResolvedValue(c);
+      const result = await executeJiraCommand(cmd('component', 'get', ['10000']), GLOBALS);
+      expect(jiraComponentMock.get).toHaveBeenCalledWith('10000');
+      expect(result).toEqual(c);
+    });
+
+    it('component get requires positional id', async () => {
+      await expect(executeJiraCommand(cmd('component', 'get'), GLOBALS)).rejects.toThrow(
+        'component id',
+      );
+    });
+
+    it('component update with --name only forwards name', async () => {
+      jiraComponentMock.update.mockResolvedValue({ id: '1', name: 'New' });
+      await executeJiraCommand(cmd('component', 'update', ['1'], { name: 'New' }), GLOBALS);
+      expect(jiraComponentMock.update).toHaveBeenCalledWith('1', { name: 'New' });
+    });
+
+    it('component update with all flags forwards full body', async () => {
+      jiraComponentMock.update.mockResolvedValue({ id: '1', name: 'X' });
+      await executeJiraCommand(
+        cmd('component', 'update', ['1'], {
+          name: 'X',
+          description: 'd',
+          'lead-account-id': 'a',
+          'lead-user-name': 'u',
+          'assignee-type': 'UNASSIGNED',
+        }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.update).toHaveBeenCalledWith('1', {
+        name: 'X',
+        description: 'd',
+        leadAccountId: 'a',
+        leadUserName: 'u',
+        assigneeType: 'UNASSIGNED',
+      });
+    });
+
+    it('component update with no body flags throws validation error', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'update', ['1'], {}), GLOBALS),
+      ).rejects.toThrow(
+        'update requires at least one of: --name, --description, --lead-account-id, --lead-user-name, --assignee-type',
+      );
+    });
+
+    it('component update rejects invalid --assignee-type', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'update', ['1'], { 'assignee-type': 'BAD' }), GLOBALS),
+      ).rejects.toThrow('--assignee-type must be one of');
+    });
+
+    it('component update requires positional id', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'update', [], { name: 'X' }), GLOBALS),
+      ).rejects.toThrow('component id');
+    });
+
+    it('component delete without --move-issues-to', async () => {
+      jiraComponentMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('component', 'delete', ['1']), GLOBALS);
+      expect(jiraComponentMock.delete).toHaveBeenCalledWith('1', {});
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('component delete with --move-issues-to', async () => {
+      jiraComponentMock.delete.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('component', 'delete', ['1'], { 'move-issues-to': '99' }),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.delete).toHaveBeenCalledWith('1', { moveIssuesTo: '99' });
+    });
+
+    it('component delete requires positional id', async () => {
+      await expect(executeJiraCommand(cmd('component', 'delete'), GLOBALS)).rejects.toThrow(
+        'component id',
+      );
+    });
+
+    it('component related-issue-counts returns counts', async () => {
+      jiraComponentMock.getRelatedIssueCounts.mockResolvedValue({ issueCount: 23 });
+      const result = await executeJiraCommand(
+        cmd('component', 'related-issue-counts', ['1']),
+        GLOBALS,
+      );
+      expect(jiraComponentMock.getRelatedIssueCounts).toHaveBeenCalledWith('1');
+      expect(result).toEqual({ issueCount: 23 });
+    });
+
+    it('component related-issue-counts requires positional id', async () => {
+      await expect(
+        executeJiraCommand(cmd('component', 'related-issue-counts'), GLOBALS),
+      ).rejects.toThrow('component id');
+    });
+
+    it('component unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('component', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown component action',
       );
     });
   });

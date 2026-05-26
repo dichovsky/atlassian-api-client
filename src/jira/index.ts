@@ -288,3 +288,14 @@ export type {
   ForgeAppPropertyKeys,
 } from './resources/app.js';
 export { AppResource } from './resources/app.js';
+export type {
+  Component,
+  ComponentAssigneeType,
+  ComponentUserRef,
+  ComponentRelatedIssueCounts,
+  ListComponentsParams,
+  CreateComponentData,
+  UpdateComponentData,
+  DeleteComponentParams,
+} from './resources/component.js';
+export { ComponentResource } from './resources/component.js';
