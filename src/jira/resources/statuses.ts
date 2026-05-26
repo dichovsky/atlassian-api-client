@@ -14,7 +14,7 @@ export interface CreateStatusData {
   readonly statusCategory: 'TODO' | 'IN_PROGRESS' | 'DONE';
   /**
    * Scope for the new status. When omitted the status is global.
-   * When provided, `type` must be `'PROJECT'` and `projectId` must be set.
+   * When provided, `type` must be `'PROJECT'` and `project.id` must be set.
    */
   readonly scope?: {
     readonly type: 'PROJECT';

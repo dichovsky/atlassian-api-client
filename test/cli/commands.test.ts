@@ -14640,6 +14640,16 @@ describe('executeJiraCommand', () => {
       });
     });
 
+    it('resolutions move rejects both --after and --before', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('resolutions', 'move', [], { ids: '1', after: '2', before: '3' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('resolutions move accepts either --after or --before, not both');
+      expect(jiraResolutionsMock.moveResolutions).not.toHaveBeenCalled();
+    });
+
     it('resolutions search calls client.resolutions.search', async () => {
       const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
       jiraResolutionsMock.search.mockResolvedValue(page);

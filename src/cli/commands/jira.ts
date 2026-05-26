@@ -1,7 +1,10 @@
 import type { GlobalOptions, ParsedCommand } from '../types.js';
 import { JiraClient } from '../../jira/client.js';
-import type { AddFilterSharePermissionData } from '../../jira/index.js';
-import type { CreateStatusData, UpdateStatusData } from '../../jira/resources/statuses.js';
+import type {
+  AddFilterSharePermissionData,
+  CreateStatusData,
+  UpdateStatusData,
+} from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -2250,6 +2253,9 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       const ids = splitCsvIds(idsRaw);
       const after = asString(opts['after']);
       const before = asString(opts['before']);
+      if (after !== undefined && before !== undefined) {
+        throw new Error('resolutions move accepts either --after or --before, not both');
+      }
       await client.resolutions.moveResolutions({
         ids,
         ...(after !== undefined && { after }),
