@@ -381,3 +381,14 @@ export type {
   AssignIssueTypeSchemeToProjectData,
 } from './resources/issuetypescheme.js';
 export { IssueTypeSchemeResource } from './resources/issuetypescheme.js';
+export type {
+  Role,
+  Actor,
+  CreateRoleData,
+  UpdateRoleData,
+  PartialUpdateRoleData,
+  DeleteRoleParams,
+  AddActorsData,
+  DeleteActorsParams,
+} from './resources/role.js';
+export { RoleResource } from './resources/role.js';

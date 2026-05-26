@@ -1318,3 +1318,30 @@
 - [x] 🔴 🧩 API: B624 Jira: expose GET /rest/api/3/permissionscheme/{schemeId}/permission/{permissionId}
   - **Impl:** `PermissionSchemeResource.getPermission(schemeId, permissionId, params?)` returns `PermissionGrant`. CLI `atlas jira permission-schemes get-permission <schemeId> <permissionId> [--expand]`.
   - **Rat:** Inspect a single permission grant entry within a scheme.
+- [x] 🔴 🧩 API: B737 Jira: expose GET /rest/api/3/role
+  - **Impl:** `RoleResource.list()` returns `Role[]`. CLI `atlas jira roles list`.
+  - **Rat:** List all global project-role definitions for the Jira instance.
+- [x] 🔴 🧩 API: B738 Jira: expose POST /rest/api/3/role
+  - **Impl:** `RoleResource.create(data)` returns `Role`. CLI `atlas jira roles create --name <n> [--description <d>]`.
+  - **Rat:** Create a new global project role.
+- [x] 🔴 🧩 API: B739 Jira: expose DELETE /rest/api/3/role/{id}
+  - **Impl:** `RoleResource.delete(roleId, params?)` returns `void`. CLI `atlas jira roles delete <roleId> [--swap <id>]`.
+  - **Rat:** Remove a global project role, optionally reassigning permissions to another role.
+- [x] 🔴 🧩 API: B740 Jira: expose GET /rest/api/3/role/{id}
+  - **Impl:** `RoleResource.get(roleId)` returns `Role`. CLI `atlas jira roles get <roleId>`.
+  - **Rat:** Retrieve a specific global project role by numeric ID.
+- [x] 🔴 🧩 API: B741 Jira: expose POST /rest/api/3/role/{id}
+  - **Impl:** `RoleResource.partialUpdate(roleId, data)` returns `Role`. CLI `atlas jira roles partial-update <roleId> --name <n>|--description <d>`.
+  - **Rat:** Partially update a role's name and/or description (Jira POST ≠ PUT semantics).
+- [x] 🔴 🧩 API: B742 Jira: expose PUT /rest/api/3/role/{id}
+  - **Impl:** `RoleResource.update(roleId, data)` returns `Role`. CLI `atlas jira roles update <roleId> --name <n>|--description <d>`.
+  - **Rat:** Full update of a role's representation.
+- [x] 🔴 🧩 API: B743 Jira: expose DELETE /rest/api/3/role/{id}/actors
+  - **Impl:** `RoleResource.deleteActors(roleId, params?)` returns `void`. CLI `atlas jira roles delete-actors <roleId> [--user <id>] [--group <name>] [--group-id <id>]`.
+  - **Rat:** Remove default actors (users/groups) from a global project role.
+- [x] 🔴 🧩 API: B744 Jira: expose GET /rest/api/3/role/{id}/actors
+  - **Impl:** `RoleResource.getActors(roleId)` returns `Role` (with actors array). CLI `atlas jira roles get-actors <roleId>`.
+  - **Rat:** List the default users and groups assigned to a global project role.
+- [x] 🔴 🧩 API: B745 Jira: expose POST /rest/api/3/role/{id}/actors
+  - **Impl:** `RoleResource.addActors(roleId, data)` returns `Role`. CLI `atlas jira roles add-actors <roleId> --user <csv>|--group <csv>|--group-id <csv>`.
+  - **Rat:** Add default actors (users/groups) to a global project role.

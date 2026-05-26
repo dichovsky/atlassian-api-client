@@ -238,6 +238,10 @@ const GLOBAL_OPTIONS = {
   'holder-parameter': { type: 'string' as const },
   'holder-value': { type: 'string' as const },
   permission: { type: 'string' as const },
+  // roles options (B737-B745)
+  user: { type: 'string' as const },
+  group: { type: 'string' as const },
+  swap: { type: 'string' as const },
   // filters options (B452-B466)
   'share-scope': { type: 'string' as const },
   'share-type': { type: 'string' as const },

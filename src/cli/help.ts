@@ -263,6 +263,7 @@ RESOURCES:
   issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
   permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
   issue-type-schemes     list, list-mapping, list-project, create, update, delete, add-issue-types, remove-issue-type, move-issue-types, assign-to-project
+  roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -376,6 +377,19 @@ EXAMPLES:
   atlas jira issue-type-schemes list-mapping --scheme-ids 10000,10001
   atlas jira issue-type-schemes list-project --project-ids 10100,10101
   atlas jira issue-type-schemes assign-to-project --scheme-id 10000 --project-id 10100
+  atlas jira roles list
+  atlas jira roles get 10001
+  atlas jira roles create --name "Developers" --description "Development team role"
+  atlas jira roles update 10001 --name "Developers" --description "Updated description"
+  atlas jira roles partial-update 10001 --description "Partially updated"
+  atlas jira roles delete 10001
+  atlas jira roles delete 10001 --swap 10002
+  atlas jira roles get-actors 10001
+  atlas jira roles add-actors 10001 --user acc-1,acc-2
+  atlas jira roles add-actors 10001 --group-id grp-1,grp-2
+  atlas jira roles delete-actors 10001 --account-id acc-1
+  atlas jira roles delete-actors 10001 --group-name my-group
+  atlas jira roles delete-actors 10001 --group-id grp-1
 `;
 
 /** Get help text for the given level. */
