@@ -22,7 +22,6 @@ export interface PriorityScheme {
   readonly self?: string;
   readonly description?: string;
   readonly defaultPriorityId?: string;
-  readonly default?: boolean;
   readonly isDefault?: boolean;
   readonly priorities?: OffsetPaginatedResponse<PriorityWithSequence>;
   readonly projects?: OffsetPaginatedResponse<PrioritySchemeProject>;
@@ -257,10 +256,10 @@ export class PrioritySchemeResource {
    *
    * Only available for schemes with no associated projects.
    */
-  async delete(schemeId: number): Promise<void> {
+  async delete(schemeId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}`,
+      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}`,
     });
   }
 
@@ -269,7 +268,7 @@ export class PrioritySchemeResource {
    * PUT /rest/api/3/priorityscheme/{schemeId}
    */
   async update(
-    schemeId: number,
+    schemeId: string,
     data: UpdatePrioritySchemeData,
   ): Promise<UpdatePrioritySchemeResponse> {
     const body: Record<string, unknown> = {};
@@ -281,7 +280,7 @@ export class PrioritySchemeResource {
     if (data.mappings !== undefined) body['mappings'] = data.mappings;
     const response = await this.transport.request<UpdatePrioritySchemeResponse>({
       method: 'PUT',
-      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}`,
+      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}`,
       body,
     });
     return response.data;
@@ -292,14 +291,14 @@ export class PrioritySchemeResource {
    * GET /rest/api/3/priorityscheme/{schemeId}/priorities
    */
   async listPriorities(
-    schemeId: number,
+    schemeId: string,
     params?: ListPrioritySchemePrioritiesParams,
   ): Promise<OffsetPaginatedResponse<PriorityWithSequence>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildPaginationQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<PriorityWithSequence>>({
       method: 'GET',
-      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}/priorities`,
+      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/priorities`,
       query,
     });
     return response.data;
@@ -309,14 +308,14 @@ export class PrioritySchemeResource {
    * B648: Iterate every priority in a scheme. Delegates to {@link paginateOffset}.
    */
   async *listPrioritiesAll(
-    schemeId: number,
+    schemeId: string,
     params?: Omit<ListPrioritySchemePrioritiesParams, 'startAt'>,
   ): AsyncGenerator<PriorityWithSequence> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildPaginationQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<PriorityWithSequence>(
       this.transport,
-      `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}/priorities`,
+      `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/priorities`,
       query,
       params?.maxResults,
     );
@@ -327,14 +326,14 @@ export class PrioritySchemeResource {
    * GET /rest/api/3/priorityscheme/{schemeId}/projects
    */
   async listProjects(
-    schemeId: number,
+    schemeId: string,
     params?: ListPrioritySchemeProjectsParams,
   ): Promise<OffsetPaginatedResponse<PrioritySchemeProject>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<PrioritySchemeProject>>({
       method: 'GET',
-      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}/projects`,
+      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
       query,
     });
     return response.data;
@@ -344,14 +343,14 @@ export class PrioritySchemeResource {
    * B649: Iterate every project in a scheme. Delegates to {@link paginateOffset}.
    */
   async *listProjectsAll(
-    schemeId: number,
+    schemeId: string,
     params?: Omit<ListPrioritySchemeProjectsParams, 'startAt'>,
   ): AsyncGenerator<PrioritySchemeProject> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<PrioritySchemeProject>(
       this.transport,
-      `${this.baseUrl}/priorityscheme/${encodePathSegment(String(schemeId))}/projects`,
+      `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
       query,
       params?.maxResults,
     );

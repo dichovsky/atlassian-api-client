@@ -15665,7 +15665,7 @@ describe('executeJiraCommand', () => {
         cmd('priority-schemes', 'delete', ['10001']),
         GLOBALS,
       );
-      expect(jiraPrioritySchemesMock.delete).toHaveBeenCalledWith(10001);
+      expect(jiraPrioritySchemesMock.delete).toHaveBeenCalledWith('10001');
       expect(result).toEqual({ deleted: true });
     });
 
@@ -15682,7 +15682,7 @@ describe('executeJiraCommand', () => {
         cmd('priority-schemes', 'update', ['10001'], { name: 'Renamed' }),
         GLOBALS,
       );
-      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith(10001, { name: 'Renamed' });
+      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith('10001', { name: 'Renamed' });
       expect(result).toEqual(response);
     });
 
@@ -15699,7 +15699,7 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith(10001, {
+      expect(jiraPrioritySchemesMock.update).toHaveBeenCalledWith('10001', {
         name: 'X',
         description: 'd',
         defaultPriorityId: 10002,
@@ -15731,7 +15731,7 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraPrioritySchemesMock.listPriorities).toHaveBeenCalledWith(10001, {
+      expect(jiraPrioritySchemesMock.listPriorities).toHaveBeenCalledWith('10001', {
         startAt: 0,
         maxResults: 25,
       });
@@ -15754,7 +15754,7 @@ describe('executeJiraCommand', () => {
         }),
         GLOBALS,
       );
-      expect(jiraPrioritySchemesMock.listProjects).toHaveBeenCalledWith(10001, {
+      expect(jiraPrioritySchemesMock.listProjects).toHaveBeenCalledWith('10001', {
         projectId: [10100, 10101],
         query: 'EX',
       });

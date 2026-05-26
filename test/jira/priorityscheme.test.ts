@@ -238,7 +238,7 @@ describe('PrioritySchemeResource', () => {
     it('calls DELETE /priorityscheme/{schemeId}', async () => {
       transport.respondWith(undefined);
 
-      await resource.delete(10001);
+      await resource.delete('10001');
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
@@ -265,7 +265,7 @@ describe('PrioritySchemeResource', () => {
       };
       transport.respondWith(response);
 
-      const result = await resource.update(10001, { name: 'Renamed' });
+      const result = await resource.update('10001', { name: 'Renamed' });
 
       expect(result).toEqual(response);
       expect(transport.lastCall?.options).toMatchObject({
@@ -278,7 +278,7 @@ describe('PrioritySchemeResource', () => {
     it('only sends defined fields', async () => {
       transport.respondWith({});
 
-      await resource.update(10001, { description: 'new desc' });
+      await resource.update('10001', { description: 'new desc' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['name']).toBeUndefined();
@@ -288,7 +288,7 @@ describe('PrioritySchemeResource', () => {
     it('forwards all optional body fields', async () => {
       transport.respondWith({});
 
-      await resource.update(10001, {
+      await resource.update('10001', {
         name: 'X',
         description: 'd',
         defaultPriorityId: 10002,
@@ -315,7 +315,7 @@ describe('PrioritySchemeResource', () => {
       const page = makePageOf([makePriority()]);
       transport.respondWith(page);
 
-      const result = await resource.listPriorities(10001);
+      const result = await resource.listPriorities('10001');
 
       expect(result).toEqual(page);
       expect(transport.lastCall?.options).toMatchObject({
@@ -327,13 +327,13 @@ describe('PrioritySchemeResource', () => {
     it('forwards startAt and maxResults', async () => {
       transport.respondWith(makePageOf([]));
 
-      await resource.listPriorities(10001, { startAt: 5, maxResults: 25 });
+      await resource.listPriorities('10001', { startAt: 5, maxResults: 25 });
 
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 25 });
     });
 
     it('throws on invalid maxResults', async () => {
-      await expect(resource.listPriorities(10001, { maxResults: 0 })).rejects.toThrow();
+      await expect(resource.listPriorities('10001', { maxResults: 0 })).rejects.toThrow();
     });
   });
 
@@ -345,7 +345,7 @@ describe('PrioritySchemeResource', () => {
       transport.respondWith(makePageOf([priority]));
 
       const results: unknown[] = [];
-      for await (const item of resource.listPrioritiesAll(10001)) {
+      for await (const item of resource.listPrioritiesAll('10001')) {
         results.push(item);
       }
 
@@ -356,7 +356,7 @@ describe('PrioritySchemeResource', () => {
     it('paginateOffset starts from startAt=0', async () => {
       transport.respondWith(makePageOf([]));
 
-      for await (const _item of resource.listPrioritiesAll(10001)) {
+      for await (const _item of resource.listPrioritiesAll('10001')) {
         break;
       }
 
@@ -366,7 +366,7 @@ describe('PrioritySchemeResource', () => {
 
     it('throws on invalid maxResults', async () => {
       await expect(async () => {
-        for await (const _item of resource.listPrioritiesAll(10001, { maxResults: 0 })) {
+        for await (const _item of resource.listPrioritiesAll('10001', { maxResults: 0 })) {
           break;
         }
       }).rejects.toThrow();
@@ -380,7 +380,7 @@ describe('PrioritySchemeResource', () => {
       const page = makePageOf([makeProject()]);
       transport.respondWith(page);
 
-      const result = await resource.listProjects(10001);
+      const result = await resource.listProjects('10001');
 
       expect(result).toEqual(page);
       expect(transport.lastCall?.options).toMatchObject({
@@ -392,7 +392,7 @@ describe('PrioritySchemeResource', () => {
     it('forwards projectId as comma-joined string and query', async () => {
       transport.respondWith(makePageOf([]));
 
-      await resource.listProjects(10001, { projectId: [10100, 10101], query: 'EX' });
+      await resource.listProjects('10001', { projectId: [10100, 10101], query: 'EX' });
 
       expect(transport.lastCall?.options.query).toMatchObject({
         projectId: '10100,10101',
@@ -403,7 +403,7 @@ describe('PrioritySchemeResource', () => {
     it('omits empty projectId array from query', async () => {
       transport.respondWith(makePageOf([]));
 
-      await resource.listProjects(10001, { projectId: [] });
+      await resource.listProjects('10001', { projectId: [] });
 
       const query = transport.lastCall?.options.query as Record<string, unknown>;
       expect(query['projectId']).toBeUndefined();
@@ -412,13 +412,13 @@ describe('PrioritySchemeResource', () => {
     it('forwards startAt and maxResults', async () => {
       transport.respondWith(makePageOf([]));
 
-      await resource.listProjects(10001, { startAt: 10, maxResults: 5 });
+      await resource.listProjects('10001', { startAt: 10, maxResults: 5 });
 
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 5 });
     });
 
     it('throws on invalid maxResults', async () => {
-      await expect(resource.listProjects(10001, { maxResults: 0 })).rejects.toThrow();
+      await expect(resource.listProjects('10001', { maxResults: 0 })).rejects.toThrow();
     });
   });
 
@@ -430,7 +430,7 @@ describe('PrioritySchemeResource', () => {
       transport.respondWith(makePageOf([project]));
 
       const results: unknown[] = [];
-      for await (const item of resource.listProjectsAll(10001)) {
+      for await (const item of resource.listProjectsAll('10001')) {
         results.push(item);
       }
 
@@ -441,7 +441,7 @@ describe('PrioritySchemeResource', () => {
     it('paginateOffset starts from startAt=0 and forwards filter', async () => {
       transport.respondWith(makePageOf([]));
 
-      for await (const _item of resource.listProjectsAll(10001, { query: 'foo' })) {
+      for await (const _item of resource.listProjectsAll('10001', { query: 'foo' })) {
         break;
       }
 
@@ -452,7 +452,7 @@ describe('PrioritySchemeResource', () => {
 
     it('throws on invalid maxResults', async () => {
       await expect(async () => {
-        for await (const _item of resource.listProjectsAll(10001, { maxResults: 0 })) {
+        for await (const _item of resource.listProjectsAll('10001', { maxResults: 0 })) {
           break;
         }
       }).rejects.toThrow();

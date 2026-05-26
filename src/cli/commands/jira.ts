@@ -3520,18 +3520,12 @@ async function executePrioritySchemeResource(
       });
     }
     case 'delete': {
-      const schemeId = parsePositiveIntArg(
-        requireArg(cmd.positionalArgs[0], 'schemeId'),
-        'schemeId',
-      );
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       await client.prioritySchemes.delete(schemeId);
       return { deleted: true };
     }
     case 'update': {
-      const schemeId = parsePositiveIntArg(
-        requireArg(cmd.positionalArgs[0], 'schemeId'),
-        'schemeId',
-      );
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       const name = asString(opts['name']);
       const description = asString(opts['description']);
       const defaultPriorityId = asPositiveInt(opts['default-priority-id'], '--default-priority-id');
@@ -3581,20 +3575,14 @@ async function executePrioritySchemeResource(
       });
     }
     case 'list-priorities': {
-      const schemeId = parsePositiveIntArg(
-        requireArg(cmd.positionalArgs[0], 'schemeId'),
-        'schemeId',
-      );
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       return client.prioritySchemes.listPriorities(schemeId, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
     case 'list-projects': {
-      const schemeId = parsePositiveIntArg(
-        requireArg(cmd.positionalArgs[0], 'schemeId'),
-        'schemeId',
-      );
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
       const projectId = parseIntCsv(opts['project-ids'], '--project-ids');
       const query = asString(opts['query']);
       return client.prioritySchemes.listProjects(schemeId, {
