@@ -33,6 +33,14 @@ export type {
 export type { OffsetPaginatedResponse } from '../core/pagination.js';
 export { IssuesResource } from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';
+export type {
+  ProjectType,
+  ListLegacyProjectsParams,
+  CreateProjectData,
+  UpdateProjectData,
+  DeleteProjectParams,
+  RecentProjectsParams,
+} from './resources/projects.js';
 export { SearchResource } from './resources/search.js';
 export { UsersResource } from './resources/users.js';
 export { IssueTypesResource } from './resources/issue-types.js';

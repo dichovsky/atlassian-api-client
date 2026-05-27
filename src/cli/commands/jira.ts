@@ -226,15 +226,107 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
 }
 
 async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
       return client.projects.list({
-        maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     case 'get':
       return client.projects.get(requireArg(cmd.positionalArgs[0], 'project key'));
+    case 'list-legacy': {
+      const typeKeyRaw = asString(opts['type-key']);
+      const expandRaw = asString(opts['expand']);
+      return client.projects.listLegacy({
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        ...(expandRaw !== undefined && { expand: expandRaw.split(',').map((s) => s.trim()) }),
+        ...(typeKeyRaw !== undefined && { typeKey: typeKeyRaw.split(',').map((s) => s.trim()) }),
+        categoryId: asPositiveInt(opts['category-id'], '--category-id'),
+        action: asString(opts['action']),
+        query: asString(opts['query']),
+      });
+    }
+    case 'create': {
+      const key = requireOpt(opts['key'], '--key');
+      const name = requireOpt(opts['name'], '--name');
+      const projectTypeKey = requireOpt(opts['project-type-key'], '--project-type-key');
+      const assigneeTypeRaw = asString(opts['assignee-type']);
+      if (
+        assigneeTypeRaw !== undefined &&
+        assigneeTypeRaw !== 'PROJECT_LEAD' &&
+        assigneeTypeRaw !== 'UNASSIGNED'
+      ) {
+        throw new Error(
+          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
+        );
+      }
+      return client.projects.create({
+        key,
+        name,
+        projectTypeKey,
+        description: asString(opts['description']),
+        leadAccountId: asString(opts['lead-account-id']),
+        url: asString(opts['url']),
+        ...(assigneeTypeRaw !== undefined && {
+          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
+        }),
+        avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
+        permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
+        notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
+        categoryId: asPositiveInt(opts['category-id'], '--category-id'),
+      });
+    }
+    case 'update': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const assigneeTypeRaw = asString(opts['assignee-type']);
+      if (
+        assigneeTypeRaw !== undefined &&
+        assigneeTypeRaw !== 'PROJECT_LEAD' &&
+        assigneeTypeRaw !== 'UNASSIGNED'
+      ) {
+        throw new Error(
+          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
+        );
+      }
+      return client.projects.update(projectIdOrKey, {
+        name: asString(opts['name']),
+        description: asString(opts['description']),
+        leadAccountId: asString(opts['lead-account-id']),
+        url: asString(opts['url']),
+        ...(assigneeTypeRaw !== undefined && {
+          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
+        }),
+      });
+    }
+    case 'delete': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      await client.projects.delete(projectIdOrKey, {
+        ...(opts['enable-undo'] !== undefined && { enableUndo: asBoolFlag(opts['enable-undo']) }),
+      });
+      return { deleted: true };
+    }
+    case 'recent': {
+      const expandRaw = asString(opts['expand']);
+      return client.projects.recent({
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(expandRaw !== undefined && { expand: expandRaw.split(',').map((s) => s.trim()) }),
+      });
+    }
+    case 'list-types':
+      return client.projects.listTypes();
+    case 'get-type':
+      return client.projects.getType(requireArg(cmd.positionalArgs[0], 'typeKey'));
+    case 'get-accessible-type':
+      return client.projects.getAccessibleType(requireArg(cmd.positionalArgs[0], 'typeKey'));
+    case 'list-accessible-types':
+      return client.projects.listAccessibleTypes();
     default:
-      throw new Error(`Unknown projects action: ${cmd.action}. Actions: list, get`);
+      throw new Error(
+        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types`,
+      );
   }
 }
 
