@@ -58,6 +58,22 @@ export type {
 } from './resources/announcement-banner.js';
 export type { OffsetPaginatedResponse } from '../core/pagination.js';
 export { IssuesResource } from './resources/issues.js';
+export type {
+  IssueChangelogEntry,
+  IssueChangelog,
+  ListChangelogParams,
+  IssuePropertyKey,
+  IssuePropertyKeys,
+  IssueProperty,
+  RemoteIssueLinkObject,
+  RemoteIssueLink,
+  CreateRemoteLinkData,
+  CreateRemoteLinkResult,
+  IssueVotes,
+  IssueWatchers,
+  IssueNotifyData,
+  AssignIssueData,
+} from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';
 export type {
   ProjectType,

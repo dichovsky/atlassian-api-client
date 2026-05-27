@@ -1620,3 +1620,66 @@
 - [x] 🔴 🧩 API: B709 Jira: expose GET /rest/api/3/projectvalidate/validProjectName
   - **Impl:** `ProjectsResource.getValidProjectName(name)` returns `{ name: string }`. CLI: `atlas jira projects get-valid-project-name --name <name>`.
   - **Rat:** Standard extension of ProjectsResource for valid name suggestion.
+- [x] 🔴 🧩 API: B478 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/assignee
+  - **Impl:** `IssuesResource.assign(issueIdOrKey, data)` — PUT /assignee, void. Pass `accountId: null` to unassign. CLI: `atlas jira issues assign <issueKey> [--account-id <id>]` (omit to unassign).
+  - **Rat:** Standard extension of IssuesResource to cover assignee management.
+- [x] 🔴 🧩 API: B480 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/changelog
+  - **Impl:** `IssuesResource.getChangelog(issueIdOrKey, params?)` — GET /changelog, returns `IssueChangelog`. Supports `startAt`, `maxResults`. CLI: `atlas jira issues get-changelog <issueKey> [--start-at N] [--max-results N]`.
+  - **Rat:** Standard extension of IssuesResource for paginated changelog access.
+- [x] 🔴 🧩 API: B481 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/changelog/list
+  - **Impl:** `IssuesResource.filterChangelog(issueIdOrKey, ids)` — POST /changelog/list with `{ changelogIds: ids }`, returns `IssueChangelog`. CLI: `atlas jira issues filter-changelog <issueKey> --ids <csv>`.
+  - **Rat:** Standard extension of IssuesResource for targeted changelog retrieval by ID.
+- [x] 🔴 🧩 API: B487 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/editmeta
+  - **Impl:** `IssuesResource.getEditMeta(issueIdOrKey)` — GET /editmeta, returns `Record<string, unknown>`. CLI: `atlas jira issues get-editmeta <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource to expose field editability metadata.
+- [x] 🔴 🧩 API: B488 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/notify
+  - **Impl:** `IssuesResource.notify(issueIdOrKey, data)` — POST /notify, void. CLI: `atlas jira issues notify <issueKey> --body <json>`.
+  - **Rat:** Standard extension of IssuesResource for sending issue notifications.
+- [x] 🔴 🧩 API: B489 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties
+  - **Impl:** `IssuesResource.listProperties(issueIdOrKey)` — GET /properties, returns `IssuePropertyKeys`. CLI: `atlas jira issues list-properties <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource for issue property key discovery.
+- [x] 🔴 🧩 API: B490 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.deleteProperty(issueIdOrKey, propertyKey)` — DELETE, void. CLI: `atlas jira issues delete-property <issueKey> <propertyKey>`.
+  - **Rat:** Standard extension of IssuesResource for issue property CRUD.
+- [x] 🔴 🧩 API: B491 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.getProperty(issueIdOrKey, propertyKey)` — GET, returns `IssueProperty`. CLI: `atlas jira issues get-property <issueKey> <propertyKey>`.
+  - **Rat:** Standard extension of IssuesResource for issue property CRUD.
+- [x] 🔴 🧩 API: B492 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.setProperty(issueIdOrKey, propertyKey, value)` — PUT, void. CLI: `atlas jira issues set-property <issueKey> <propertyKey> --value <json>`.
+  - **Rat:** Standard extension of IssuesResource for issue property CRUD.
+- [x] 🔴 🧩 API: B493 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink
+  - **Impl:** `IssuesResource.deleteAllRemoteLinks(issueIdOrKey, params?)` — DELETE /remotelink with optional `globalId` query param, void. CLI: `atlas jira issues delete-all-remotelinks <issueKey> [--global-id <id>]`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B494 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink
+  - **Impl:** `IssuesResource.listRemoteLinks(issueIdOrKey, params?)` — GET /remotelink with optional `globalId` filter, returns `RemoteIssueLink[]`. CLI: `atlas jira issues list-remotelinks <issueKey> [--global-id <id>]`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B495 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/remotelink
+  - **Impl:** `IssuesResource.createRemoteLink(issueIdOrKey, data)` — POST /remotelink, returns `CreateRemoteLinkResult`. CLI: `atlas jira issues create-remotelink <issueKey> --body <json>`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B496 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+  - **Impl:** `IssuesResource.deleteRemoteLink(issueIdOrKey, linkId)` — DELETE, void. CLI: `atlas jira issues delete-remotelink <issueKey> <linkId>`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B497 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+  - **Impl:** `IssuesResource.getRemoteLink(issueIdOrKey, linkId)` — GET, returns `RemoteIssueLink`. CLI: `atlas jira issues get-remotelink <issueKey> <linkId>`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B498 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+  - **Impl:** `IssuesResource.updateRemoteLink(issueIdOrKey, linkId, data)` — PUT, void. CLI: `atlas jira issues update-remotelink <issueKey> <linkId> --body <json>`.
+  - **Rat:** Standard extension of IssuesResource for remote link management.
+- [x] 🔴 🧩 API: B499 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/votes
+  - **Impl:** `IssuesResource.removeVote(issueIdOrKey)` — DELETE /votes, void. CLI: `atlas jira issues remove-vote <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource for vote management.
+- [x] 🔴 🧩 API: B500 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/votes
+  - **Impl:** `IssuesResource.getVotes(issueIdOrKey)` — GET /votes, returns `IssueVotes`. CLI: `atlas jira issues get-votes <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource for vote management.
+- [x] 🔴 🧩 API: B501 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/votes
+  - **Impl:** `IssuesResource.addVote(issueIdOrKey)` — POST /votes with empty body, void. CLI: `atlas jira issues add-vote <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource for vote management.
+- [x] 🔴 🧩 API: B502 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/watchers
+  - **Impl:** `IssuesResource.removeWatcher(issueIdOrKey, params?)` — DELETE /watchers with optional `accountId` query param, void. CLI: `atlas jira issues remove-watcher <issueKey> [--account-id <id>]`.
+  - **Rat:** Standard extension of IssuesResource for watcher management.
+- [x] 🔴 🧩 API: B503 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/watchers
+  - **Impl:** `IssuesResource.getWatchers(issueIdOrKey)` — GET /watchers, returns `IssueWatchers`. CLI: `atlas jira issues get-watchers <issueKey>`.
+  - **Rat:** Standard extension of IssuesResource for watcher management.
+- [x] 🔴 🧩 API: B504 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/watchers
+  - **Impl:** `IssuesResource.addWatcher(issueIdOrKey, accountId)` — POST /watchers with body = raw quoted accountId string, void. CLI: `atlas jira issues add-watcher <issueKey> --account-id <id>`.
+  - **Rat:** Standard extension of IssuesResource for watcher management.

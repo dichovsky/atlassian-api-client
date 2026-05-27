@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { IssuesResource } from '../../src/jira/resources/issues.js';
+import { IssuesResource, type CreateRemoteLinkData } from '../../src/jira/resources/issues.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -15,10 +15,13 @@ const makeIssue = (id: string, key: string) => ({
 describe('IssuesResource', () => {
   let transport: MockTransport;
   let issues: IssuesResource;
+  // Alias used in sub-resource tests
+  let resource: IssuesResource;
 
   beforeEach(() => {
     transport = new MockTransport();
     issues = new IssuesResource(transport, BASE_URL, AGILE_BASE_URL);
+    resource = issues;
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -387,6 +390,368 @@ describe('IssuesResource', () => {
         issues.rank({ issues: ['PROJ-1'], rankBeforeIssue: 'PROJ-2', rankAfterIssue: 'PROJ-3' }),
       ).rejects.toThrow('mutually exclusive');
       expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── assign (B478) ─────────────────────────────────────────────────────────
+
+  describe('assign() — B478', () => {
+    it('sends PUT /issue/:key/assignee with accountId', async () => {
+      transport.respondWith(undefined);
+      await resource.assign('PROJ-1', { accountId: 'acc-1' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/PROJ-1/assignee`,
+        body: { accountId: 'acc-1' },
+      });
+    });
+
+    it('sends null accountId to unassign', async () => {
+      transport.respondWith(undefined);
+      await resource.assign('PROJ-1', { accountId: null });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        body: { accountId: null },
+      });
+    });
+
+    it('encodes issueIdOrKey in assign()', async () => {
+      transport.respondWith(undefined);
+      await resource.assign('../admin', { accountId: 'acc' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/assignee`);
+    });
+  });
+
+  // ── getChangelog (B480) ───────────────────────────────────────────────────
+
+  describe('getChangelog() — B480', () => {
+    it('sends GET /issue/:key/changelog', async () => {
+      const payload = { startAt: 0, maxResults: 50, total: 1, values: [] };
+      transport.respondWith(payload);
+      const result = await resource.getChangelog('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/changelog`,
+      });
+    });
+
+    it('passes pagination params as query', async () => {
+      transport.respondWith({ startAt: 10, maxResults: 25, total: 100, values: [] });
+      await resource.getChangelog('PROJ-1', { startAt: 10, maxResults: 25 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
+    });
+
+    it('omits query params when not provided', async () => {
+      transport.respondWith({ startAt: 0, maxResults: 50, total: 0, values: [] });
+      await resource.getChangelog('PROJ-1');
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['startAt']).toBeUndefined();
+      expect(query['maxResults']).toBeUndefined();
+    });
+  });
+
+  // ── filterChangelog (B481) ────────────────────────────────────────────────
+
+  describe('filterChangelog() — B481', () => {
+    it('sends POST /issue/:key/changelog/list with changelogIds', async () => {
+      const payload = { startAt: 0, maxResults: 50, total: 2, values: [] };
+      transport.respondWith(payload);
+      const result = await resource.filterChangelog('PROJ-1', [10001, 10002]);
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/changelog/list`,
+        body: { changelogIds: [10001, 10002] },
+      });
+    });
+  });
+
+  // ── getEditMeta (B487) ────────────────────────────────────────────────────
+
+  describe('getEditMeta() — B487', () => {
+    it('sends GET /issue/:key/editmeta', async () => {
+      const payload = { fields: { summary: { required: true } } };
+      transport.respondWith(payload);
+      const result = await resource.getEditMeta('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/editmeta`,
+      });
+    });
+  });
+
+  // ── notify (B488) ─────────────────────────────────────────────────────────
+
+  describe('notify() — B488', () => {
+    it('sends POST /issue/:key/notify', async () => {
+      transport.respondWith(undefined);
+      const data = { subject: 'Hello', textBody: 'World' };
+      await resource.notify('PROJ-1', data);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/notify`,
+        body: data,
+      });
+    });
+  });
+
+  // ── listProperties (B489) ─────────────────────────────────────────────────
+
+  describe('listProperties() — B489', () => {
+    it('sends GET /issue/:key/properties', async () => {
+      const payload = { keys: [{ key: 'myProp', self: 'url' }] };
+      transport.respondWith(payload);
+      const result = await resource.listProperties('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/properties`,
+      });
+    });
+  });
+
+  // ── deleteProperty (B490) ─────────────────────────────────────────────────
+
+  describe('deleteProperty() — B490', () => {
+    it('sends DELETE /issue/:key/properties/:propertyKey', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteProperty('PROJ-1', 'myProp');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/properties/myProp`,
+      });
+    });
+
+    it('encodes propertyKey', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteProperty('PROJ-1', 'my/prop');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/PROJ-1/properties/my%2Fprop`,
+      );
+    });
+  });
+
+  // ── getProperty (B491) ────────────────────────────────────────────────────
+
+  describe('getProperty() — B491', () => {
+    it('sends GET /issue/:key/properties/:propertyKey', async () => {
+      const payload = { key: 'myProp', value: { foo: 'bar' } };
+      transport.respondWith(payload);
+      const result = await resource.getProperty('PROJ-1', 'myProp');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/properties/myProp`,
+      });
+    });
+  });
+
+  // ── setProperty (B492) ────────────────────────────────────────────────────
+
+  describe('setProperty() — B492', () => {
+    it('sends PUT /issue/:key/properties/:propertyKey with value', async () => {
+      transport.respondWith(undefined);
+      await resource.setProperty('PROJ-1', 'myProp', { foo: 'bar' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/PROJ-1/properties/myProp`,
+        body: { foo: 'bar' },
+      });
+    });
+  });
+
+  // ── deleteAllRemoteLinks (B493) ───────────────────────────────────────────
+
+  describe('deleteAllRemoteLinks() — B493', () => {
+    it('sends DELETE /issue/:key/remotelink without params', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteAllRemoteLinks('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink`,
+      });
+    });
+
+    it('passes globalId as query param', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteAllRemoteLinks('PROJ-1', { globalId: 'global-abc' });
+      expect(transport.lastCall?.options.query).toMatchObject({ globalId: 'global-abc' });
+    });
+  });
+
+  // ── listRemoteLinks (B494) ────────────────────────────────────────────────
+
+  describe('listRemoteLinks() — B494', () => {
+    it('sends GET /issue/:key/remotelink', async () => {
+      const payload = [{ id: 1, relationship: 'blocks' }];
+      transport.respondWith(payload);
+      const result = await resource.listRemoteLinks('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink`,
+      });
+    });
+
+    it('passes globalId as query param', async () => {
+      transport.respondWith([]);
+      await resource.listRemoteLinks('PROJ-1', { globalId: 'global-abc' });
+      expect(transport.lastCall?.options.query).toMatchObject({ globalId: 'global-abc' });
+    });
+  });
+
+  // ── createRemoteLink (B495) ───────────────────────────────────────────────
+
+  describe('createRemoteLink() — B495', () => {
+    it('sends POST /issue/:key/remotelink with data', async () => {
+      const payload = { id: 10001, self: 'url' };
+      transport.respondWith(payload);
+      const data: CreateRemoteLinkData = {
+        object: { url: 'https://example.com', title: 'Example' },
+      };
+      const result = await resource.createRemoteLink('PROJ-1', data);
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink`,
+        body: data,
+      });
+    });
+  });
+
+  // ── deleteRemoteLink (B496) ───────────────────────────────────────────────
+
+  describe('deleteRemoteLink() — B496', () => {
+    it('sends DELETE /issue/:key/remotelink/:linkId', async () => {
+      transport.respondWith(undefined);
+      await resource.deleteRemoteLink('PROJ-1', '10001');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink/10001`,
+      });
+    });
+  });
+
+  // ── getRemoteLink (B497) ──────────────────────────────────────────────────
+
+  describe('getRemoteLink() — B497', () => {
+    it('sends GET /issue/:key/remotelink/:linkId', async () => {
+      const payload = { id: 10001, relationship: 'blocks' };
+      transport.respondWith(payload);
+      const result = await resource.getRemoteLink('PROJ-1', '10001');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink/10001`,
+      });
+    });
+  });
+
+  // ── updateRemoteLink (B498) ───────────────────────────────────────────────
+
+  describe('updateRemoteLink() — B498', () => {
+    it('sends PUT /issue/:key/remotelink/:linkId with data', async () => {
+      transport.respondWith(undefined);
+      const data: CreateRemoteLinkData = {
+        object: { url: 'https://example.com', title: 'Updated' },
+      };
+      await resource.updateRemoteLink('PROJ-1', '10001', data);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/PROJ-1/remotelink/10001`,
+        body: data,
+      });
+    });
+  });
+
+  // ── removeVote (B499) ─────────────────────────────────────────────────────
+
+  describe('removeVote() — B499', () => {
+    it('sends DELETE /issue/:key/votes', async () => {
+      transport.respondWith(undefined);
+      await resource.removeVote('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/votes`,
+      });
+    });
+  });
+
+  // ── getVotes (B500) ───────────────────────────────────────────────────────
+
+  describe('getVotes() — B500', () => {
+    it('sends GET /issue/:key/votes', async () => {
+      const payload = { self: 'url', votes: 3, hasVoted: false, voters: [] };
+      transport.respondWith(payload);
+      const result = await resource.getVotes('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/votes`,
+      });
+    });
+  });
+
+  // ── addVote (B501) ────────────────────────────────────────────────────────
+
+  describe('addVote() — B501', () => {
+    it('sends POST /issue/:key/votes', async () => {
+      transport.respondWith(undefined);
+      await resource.addVote('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/votes`,
+      });
+    });
+  });
+
+  // ── removeWatcher (B502) ──────────────────────────────────────────────────
+
+  describe('removeWatcher() — B502', () => {
+    it('sends DELETE /issue/:key/watchers without params', async () => {
+      transport.respondWith(undefined);
+      await resource.removeWatcher('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/watchers`,
+      });
+    });
+
+    it('passes accountId as query param', async () => {
+      transport.respondWith(undefined);
+      await resource.removeWatcher('PROJ-1', { accountId: 'acc-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
+    });
+  });
+
+  // ── getWatchers (B503) ────────────────────────────────────────────────────
+
+  describe('getWatchers() — B503', () => {
+    it('sends GET /issue/:key/watchers', async () => {
+      const payload = { self: 'url', isWatching: true, watchCount: 2, watchers: [] };
+      transport.respondWith(payload);
+      const result = await resource.getWatchers('PROJ-1');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/watchers`,
+      });
+    });
+  });
+
+  // ── addWatcher (B504) ─────────────────────────────────────────────────────
+
+  describe('addWatcher() — B504', () => {
+    it('sends POST /issue/:key/watchers with accountId as body', async () => {
+      transport.respondWith(undefined);
+      await resource.addWatcher('PROJ-1', 'acc-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/watchers`,
+        body: 'acc-1',
+      });
     });
   });
 });

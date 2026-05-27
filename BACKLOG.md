@@ -331,70 +331,70 @@
 - [ ] 🔴 🧩 API: B922 Jira: expose PUT /rest/api/3/fieldconfigurationscheme/project
   - files: `src/jira/resources/fieldconfigurationscheme.ts`, `test/jira/fieldconfigurationscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B478 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/assignee
+- [x] 🔴 🧩 API: B478 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/assignee
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🟡 🖥️ API: B479 Jira: add CLI + skill for POST /rest/api/3/issue/{issueIdOrKey}/attachments
   - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B480 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/changelog
+- [x] 🔴 🧩 API: B480 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/changelog
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B481 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/changelog/list
+- [x] 🔴 🧩 API: B481 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/changelog/list
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B487 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/editmeta
+- [x] 🔴 🧩 API: B487 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/editmeta
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B488 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/notify
+- [x] 🔴 🧩 API: B488 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/notify
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B489 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties
+- [x] 🔴 🧩 API: B489 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B490 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B490 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B491 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B491 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B492 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B492 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B493 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink
+- [x] 🔴 🧩 API: B493 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B494 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink
+- [x] 🔴 🧩 API: B494 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B495 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/remotelink
+- [x] 🔴 🧩 API: B495 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/remotelink
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B496 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+- [x] 🔴 🧩 API: B496 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B497 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+- [x] 🔴 🧩 API: B497 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B498 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
+- [x] 🔴 🧩 API: B498 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/remotelink/{linkId}
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B499 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/votes
+- [x] 🔴 🧩 API: B499 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/votes
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B500 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/votes
+- [x] 🔴 🧩 API: B500 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/votes
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B501 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/votes
+- [x] 🔴 🧩 API: B501 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/votes
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B502 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/watchers
+- [x] 🔴 🧩 API: B502 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/watchers
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B503 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/watchers
+- [x] 🔴 🧩 API: B503 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/watchers
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B504 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/watchers
+- [x] 🔴 🧩 API: B504 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/watchers
   - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B505 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/worklog

@@ -6,6 +6,7 @@ import type {
   UpdateStatusData,
   FieldConfigurationItem,
   NotificationSchemeEvent,
+  CreateRemoteLinkData,
 } from '../../jira/index.js';
 import { buildClientConfig } from '../config.js';
 
@@ -218,9 +219,125 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       });
       return { ranked: true };
     }
+    case 'assign': {
+      const accountId = opts['account-id'] !== undefined ? asString(opts['account-id']) : null;
+      await client.issues.assign(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        accountId: accountId ?? null,
+      });
+      return { assigned: true };
+    }
+    case 'get-changelog':
+      return client.issues.getChangelog(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'filter-changelog':
+      return client.issues.filterChangelog(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        splitCsvIds(requireOpt(opts['ids'], '--ids')).map(Number),
+      );
+    case 'get-editmeta':
+      return client.issues.getEditMeta(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'notify': {
+      await client.issues.notify(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as Parameters<
+          typeof client.issues.notify
+        >[1],
+      );
+      return { sent: true };
+    }
+    case 'list-properties':
+      return client.issues.listProperties(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'delete-property': {
+      await client.issues.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+      return { deleted: true };
+    }
+    case 'get-property':
+      return client.issues.getProperty(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+    case 'set-property': {
+      await client.issues.setProperty(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+      return { updated: true };
+    }
+    case 'delete-all-remotelinks': {
+      await client.issues.deleteAllRemoteLinks(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        globalId: asString(opts['global-id']),
+      });
+      return { deleted: true };
+    }
+    case 'list-remotelinks':
+      return client.issues.listRemoteLinks(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        globalId: asString(opts['global-id']),
+      });
+    case 'create-remotelink':
+      return client.issues.createRemoteLink(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        parseJsonObjectFlag(
+          requireOpt(opts['body'], '--body'),
+          '--body',
+        ) as unknown as CreateRemoteLinkData,
+      );
+    case 'delete-remotelink': {
+      await client.issues.deleteRemoteLink(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'linkId'),
+      );
+      return { deleted: true };
+    }
+    case 'get-remotelink':
+      return client.issues.getRemoteLink(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'linkId'),
+      );
+    case 'update-remotelink': {
+      await client.issues.updateRemoteLink(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireArg(cmd.positionalArgs[1], 'linkId'),
+        parseJsonObjectFlag(
+          requireOpt(opts['body'], '--body'),
+          '--body',
+        ) as unknown as CreateRemoteLinkData,
+      );
+      return { updated: true };
+    }
+    case 'remove-vote': {
+      await client.issues.removeVote(requireArg(cmd.positionalArgs[0], 'issue key'));
+      return { removed: true };
+    }
+    case 'get-votes':
+      return client.issues.getVotes(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'add-vote': {
+      await client.issues.addVote(requireArg(cmd.positionalArgs[0], 'issue key'));
+      return { voted: true };
+    }
+    case 'remove-watcher': {
+      await client.issues.removeWatcher(requireArg(cmd.positionalArgs[0], 'issue key'), {
+        accountId: asString(opts['account-id']),
+      });
+      return { removed: true };
+    }
+    case 'get-watchers':
+      return client.issues.getWatchers(requireArg(cmd.positionalArgs[0], 'issue key'));
+    case 'add-watcher': {
+      await client.issues.addWatcher(
+        requireArg(cmd.positionalArgs[0], 'issue key'),
+        requireOpt(opts['account-id'], '--account-id'),
+      );
+      return { watching: true };
+    }
     default:
       throw new Error(
-        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank`,
+        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher`,
       );
   }
 }
