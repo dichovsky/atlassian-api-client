@@ -254,8 +254,14 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       const name = requireOpt(opts['name'], '--name');
       const projectTypeKey = requireOpt(opts['project-type-key'], '--project-type-key');
       const assigneeTypeRaw = asString(opts['assignee-type']);
-      if (assigneeTypeRaw !== undefined && assigneeTypeRaw !== 'PROJECT_LEAD' && assigneeTypeRaw !== 'UNASSIGNED') {
-        throw new Error(`--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`);
+      if (
+        assigneeTypeRaw !== undefined &&
+        assigneeTypeRaw !== 'PROJECT_LEAD' &&
+        assigneeTypeRaw !== 'UNASSIGNED'
+      ) {
+        throw new Error(
+          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
+        );
       }
       return client.projects.create({
         key,
@@ -264,7 +270,9 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        ...(assigneeTypeRaw !== undefined && { assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED' }),
+        ...(assigneeTypeRaw !== undefined && {
+          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
+        }),
         avatarId: asPositiveInt(opts['avatar-id'], '--avatar-id'),
         permissionScheme: asPositiveInt(opts['permission-scheme'], '--permission-scheme'),
         notificationScheme: asPositiveInt(opts['notification-scheme'], '--notification-scheme'),
@@ -274,15 +282,23 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
     case 'update': {
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
       const assigneeTypeRaw = asString(opts['assignee-type']);
-      if (assigneeTypeRaw !== undefined && assigneeTypeRaw !== 'PROJECT_LEAD' && assigneeTypeRaw !== 'UNASSIGNED') {
-        throw new Error(`--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`);
+      if (
+        assigneeTypeRaw !== undefined &&
+        assigneeTypeRaw !== 'PROJECT_LEAD' &&
+        assigneeTypeRaw !== 'UNASSIGNED'
+      ) {
+        throw new Error(
+          `--assignee-type must be PROJECT_LEAD or UNASSIGNED, got: ${assigneeTypeRaw}`,
+        );
       }
       return client.projects.update(projectIdOrKey, {
         name: asString(opts['name']),
         description: asString(opts['description']),
         leadAccountId: asString(opts['lead-account-id']),
         url: asString(opts['url']),
-        ...(assigneeTypeRaw !== undefined && { assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED' }),
+        ...(assigneeTypeRaw !== undefined && {
+          assigneeType: assigneeTypeRaw as 'PROJECT_LEAD' | 'UNASSIGNED',
+        }),
       });
     }
     case 'delete': {

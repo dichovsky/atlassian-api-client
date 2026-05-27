@@ -531,7 +531,9 @@ describe('ProjectsResource', () => {
   describe('listTypes()', () => {
     it('calls GET /project/type', async () => {
       // Arrange
-      const payload = [{ key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' }];
+      const payload = [
+        { key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' },
+      ];
       transport.respondWith(payload);
 
       // Act
@@ -551,7 +553,11 @@ describe('ProjectsResource', () => {
   describe('getType()', () => {
     it('calls GET /project/type/{typeKey}', async () => {
       // Arrange
-      const payload = { key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' };
+      const payload = {
+        key: 'software',
+        color: '#0052cc',
+        descriptionI18nKey: 'project.type.software',
+      };
       transport.respondWith(payload);
 
       // Act
@@ -577,7 +583,11 @@ describe('ProjectsResource', () => {
   describe('getAccessibleType()', () => {
     it('calls GET /project/type/{typeKey}/accessible', async () => {
       // Arrange
-      const payload = { key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' };
+      const payload = {
+        key: 'software',
+        color: '#0052cc',
+        descriptionI18nKey: 'project.type.software',
+      };
       transport.respondWith(payload);
 
       // Act
@@ -597,7 +607,9 @@ describe('ProjectsResource', () => {
   describe('listAccessibleTypes()', () => {
     it('calls GET /project/type/accessible', async () => {
       // Arrange
-      const payload = [{ key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' }];
+      const payload = [
+        { key: 'software', color: '#0052cc', descriptionI18nKey: 'project.type.software' },
+      ];
       transport.respondWith(payload);
 
       // Act

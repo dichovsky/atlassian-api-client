@@ -7621,7 +7621,11 @@ describe('executeJiraCommand', () => {
 
       // Act
       const result = await executeJiraCommand(
-        cmd('projects', 'create', [], { key: 'EX', name: 'Example', 'project-type-key': 'software' }),
+        cmd('projects', 'create', [], {
+          key: 'EX',
+          name: 'Example',
+          'project-type-key': 'software',
+        }),
         GLOBALS,
       );
 
@@ -7690,9 +7694,9 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects update throws when projectIdOrKey is missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('projects', 'update', []), GLOBALS),
-      ).rejects.toThrow('Missing required argument: projectIdOrKey');
+      await expect(executeJiraCommand(cmd('projects', 'update', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: projectIdOrKey',
+      );
     });
 
     it('projects update throws for invalid --assignee-type', async () => {
@@ -7775,7 +7779,9 @@ describe('executeJiraCommand', () => {
 
     it('projects list-types calls client.projects.listTypes', async () => {
       // Arrange
-      jiraProjectsMock.listTypes.mockResolvedValue([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+      jiraProjectsMock.listTypes.mockResolvedValue([
+        { key: 'software', color: 'blue', descriptionI18nKey: 'x' },
+      ]);
 
       // Act
       const result = await executeJiraCommand(cmd('projects', 'list-types'), GLOBALS);
@@ -7787,7 +7793,11 @@ describe('executeJiraCommand', () => {
 
     it('projects get-type calls client.projects.getType with typeKey', async () => {
       // Arrange
-      jiraProjectsMock.getType.mockResolvedValue({ key: 'software', color: 'blue', descriptionI18nKey: 'x' });
+      jiraProjectsMock.getType.mockResolvedValue({
+        key: 'software',
+        color: 'blue',
+        descriptionI18nKey: 'x',
+      });
 
       // Act
       const result = await executeJiraCommand(cmd('projects', 'get-type', ['software']), GLOBALS);
@@ -7798,14 +7808,18 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects get-type throws when typeKey is missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('projects', 'get-type', []), GLOBALS),
-      ).rejects.toThrow('Missing required argument: typeKey');
+      await expect(executeJiraCommand(cmd('projects', 'get-type', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: typeKey',
+      );
     });
 
     it('projects get-accessible-type calls client.projects.getAccessibleType', async () => {
       // Arrange
-      jiraProjectsMock.getAccessibleType.mockResolvedValue({ key: 'software', color: 'blue', descriptionI18nKey: 'x' });
+      jiraProjectsMock.getAccessibleType.mockResolvedValue({
+        key: 'software',
+        color: 'blue',
+        descriptionI18nKey: 'x',
+      });
 
       // Act
       const result = await executeJiraCommand(
@@ -7820,7 +7834,9 @@ describe('executeJiraCommand', () => {
 
     it('projects list-accessible-types calls client.projects.listAccessibleTypes', async () => {
       // Arrange
-      jiraProjectsMock.listAccessibleTypes.mockResolvedValue([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+      jiraProjectsMock.listAccessibleTypes.mockResolvedValue([
+        { key: 'software', color: 'blue', descriptionI18nKey: 'x' },
+      ]);
 
       // Act
       const result = await executeJiraCommand(cmd('projects', 'list-accessible-types'), GLOBALS);

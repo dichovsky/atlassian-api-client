@@ -157,14 +157,17 @@ export class ProjectsResource {
     if (data.url !== undefined) body['url'] = data.url;
     if (data.assigneeType !== undefined) body['assigneeType'] = data.assigneeType;
     if (data.avatarId !== undefined) body['avatarId'] = data.avatarId;
-    if (data.issueSecurityScheme !== undefined) body['issueSecurityScheme'] = data.issueSecurityScheme;
+    if (data.issueSecurityScheme !== undefined)
+      body['issueSecurityScheme'] = data.issueSecurityScheme;
     if (data.permissionScheme !== undefined) body['permissionScheme'] = data.permissionScheme;
     if (data.notificationScheme !== undefined) body['notificationScheme'] = data.notificationScheme;
     if (data.categoryId !== undefined) body['categoryId'] = data.categoryId;
     if (data.workflowScheme !== undefined) body['workflowScheme'] = data.workflowScheme;
     if (data.issueTypeScheme !== undefined) body['issueTypeScheme'] = data.issueTypeScheme;
-    if (data.issueTypeScreenScheme !== undefined) body['issueTypeScreenScheme'] = data.issueTypeScreenScheme;
-    if (data.fieldConfigurationScheme !== undefined) body['fieldConfigurationScheme'] = data.fieldConfigurationScheme;
+    if (data.issueTypeScreenScheme !== undefined)
+      body['issueTypeScreenScheme'] = data.issueTypeScreenScheme;
+    if (data.fieldConfigurationScheme !== undefined)
+      body['fieldConfigurationScheme'] = data.fieldConfigurationScheme;
     if (data.priorityScheme !== undefined) body['priorityScheme'] = data.priorityScheme;
 
     const response = await this.transport.request<Project>({
@@ -197,7 +200,8 @@ export class ProjectsResource {
     if (data.url !== undefined) body['url'] = data.url;
     if (data.assigneeType !== undefined) body['assigneeType'] = data.assigneeType;
     if (data.avatarId !== undefined) body['avatarId'] = data.avatarId;
-    if (data.issueSecurityScheme !== undefined) body['issueSecurityScheme'] = data.issueSecurityScheme;
+    if (data.issueSecurityScheme !== undefined)
+      body['issueSecurityScheme'] = data.issueSecurityScheme;
     if (data.permissionScheme !== undefined) body['permissionScheme'] = data.permissionScheme;
     if (data.notificationScheme !== undefined) body['notificationScheme'] = data.notificationScheme;
     if (data.categoryId !== undefined) body['categoryId'] = data.categoryId;
