@@ -345,6 +345,27 @@ const jiraProjectsMock = {
   getType: vi.fn(),
   getAccessibleType: vi.fn(),
   listAccessibleTypes: vi.fn(),
+  getEmail: vi.fn(),
+  setEmail: vi.fn(),
+  getHierarchy: vi.fn(),
+  archive: vi.fn(),
+  setAvatar: vi.fn(),
+  deleteAvatar: vi.fn(),
+  loadAvatar: vi.fn(),
+  getAvatars: vi.fn(),
+  getClassificationConfig: vi.fn(),
+  deleteClassificationLevel: vi.fn(),
+  getClassificationLevel: vi.fn(),
+  setClassificationLevel: vi.fn(),
+  listComponents: vi.fn(),
+  listAllComponents: vi.fn(),
+  deleteAsync: vi.fn(),
+  getFeatures: vi.fn(),
+  setFeatureState: vi.fn(),
+  listProperties: vi.fn(),
+  deleteProperty: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
 };
 const jiraSearchMock = {
   search: vi.fn(),
@@ -7871,6 +7892,284 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraProjectsMock.listAccessibleTypes).toHaveBeenCalled();
       expect(result).toEqual([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+    });
+
+    it('projects get-email calls client.projects.getEmail', async () => {
+      jiraProjectsMock.getEmail.mockResolvedValue({ projectId: 1, emailAddress: 'a@b.com' });
+      const result = await executeJiraCommand(cmd('projects', 'get-email', ['PROJ']), GLOBALS);
+      expect(jiraProjectsMock.getEmail).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ emailAddress: 'a@b.com' });
+    });
+
+    it('projects get-email throws when projectId missing', async () => {
+      await expect(executeJiraCommand(cmd('projects', 'get-email', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: projectId',
+      );
+    });
+
+    it('projects set-email calls client.projects.setEmail', async () => {
+      jiraProjectsMock.setEmail.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'set-email', ['PROJ'], { 'email-address': 'new@ex.com' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.setEmail).toHaveBeenCalledWith('PROJ', {
+        emailAddress: 'new@ex.com',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('projects get-hierarchy calls client.projects.getHierarchy', async () => {
+      jiraProjectsMock.getHierarchy.mockResolvedValue({ projectId: 10001, hierarchy: [] });
+      const result = await executeJiraCommand(cmd('projects', 'get-hierarchy', ['10001']), GLOBALS);
+      expect(jiraProjectsMock.getHierarchy).toHaveBeenCalledWith('10001');
+      expect(result).toMatchObject({ projectId: 10001 });
+    });
+
+    it('projects archive calls client.projects.archive', async () => {
+      jiraProjectsMock.archive.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('projects', 'archive', ['PROJ']), GLOBALS);
+      expect(jiraProjectsMock.archive).toHaveBeenCalledWith('PROJ');
+      expect(result).toEqual({ archived: true });
+    });
+
+    it('projects archive throws when projectIdOrKey missing', async () => {
+      await expect(executeJiraCommand(cmd('projects', 'archive', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: projectIdOrKey',
+      );
+    });
+
+    it('projects set-avatar calls client.projects.setAvatar', async () => {
+      jiraProjectsMock.setAvatar.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'set-avatar', ['PROJ'], { 'avatar-id': 'av-123' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.setAvatar).toHaveBeenCalledWith('PROJ', { id: 'av-123' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('projects set-avatar throws when --avatar-id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'set-avatar', ['PROJ']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --avatar-id');
+    });
+
+    it('projects delete-avatar calls client.projects.deleteAvatar', async () => {
+      jiraProjectsMock.deleteAvatar.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'delete-avatar', ['PROJ', '10100']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.deleteAvatar).toHaveBeenCalledWith('PROJ', '10100');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('projects delete-avatar throws when avatarId missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'delete-avatar', ['PROJ']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: avatarId');
+    });
+
+    it('projects load-avatar calls client.projects.loadAvatar', async () => {
+      jiraProjectsMock.loadAvatar.mockResolvedValue({ id: 'av-new' });
+      const result = await executeJiraCommand(
+        cmd('projects', 'load-avatar', ['PROJ'], { value: '{"data":"base64"}' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.loadAvatar).toHaveBeenCalledWith('PROJ', { data: 'base64' });
+      expect(result).toMatchObject({ id: 'av-new' });
+    });
+
+    it('projects load-avatar throws when --value missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'load-avatar', ['PROJ']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('projects get-avatars calls client.projects.getAvatars', async () => {
+      jiraProjectsMock.getAvatars.mockResolvedValue({ system: [], custom: [] });
+      const result = await executeJiraCommand(cmd('projects', 'get-avatars', ['PROJ']), GLOBALS);
+      expect(jiraProjectsMock.getAvatars).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ system: [], custom: [] });
+    });
+
+    it('projects get-classification-config calls client.projects.getClassificationConfig', async () => {
+      jiraProjectsMock.getClassificationConfig.mockResolvedValue({ id: 'cl-1' });
+      const result = await executeJiraCommand(
+        cmd('projects', 'get-classification-config', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.getClassificationConfig).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ id: 'cl-1' });
+    });
+
+    it('projects delete-classification-level calls client.projects.deleteClassificationLevel', async () => {
+      jiraProjectsMock.deleteClassificationLevel.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'delete-classification-level', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.deleteClassificationLevel).toHaveBeenCalledWith('PROJ');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('projects get-classification-level calls client.projects.getClassificationLevel', async () => {
+      jiraProjectsMock.getClassificationLevel.mockResolvedValue({ id: 'cl-1' });
+      const result = await executeJiraCommand(
+        cmd('projects', 'get-classification-level', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.getClassificationLevel).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ id: 'cl-1' });
+    });
+
+    it('projects set-classification-level calls client.projects.setClassificationLevel', async () => {
+      jiraProjectsMock.setClassificationLevel.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'set-classification-level', ['PROJ'], { 'classification-id': 'cl-2' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.setClassificationLevel).toHaveBeenCalledWith('PROJ', { id: 'cl-2' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('projects list-components calls client.projects.listComponents', async () => {
+      jiraProjectsMock.listComponents.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      const result = await executeJiraCommand(
+        cmd('projects', 'list-components', ['PROJ'], {
+          'start-at': '0',
+          'max-results': '50',
+          'order-by': 'name',
+          'component-source': 'auto',
+          query: 'backend',
+        }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.listComponents).toHaveBeenCalledWith('PROJ', {
+        startAt: 0,
+        maxResults: 50,
+        orderBy: 'name',
+        componentSource: 'auto',
+        query: 'backend',
+      });
+      expect(result).toMatchObject({ values: [] });
+    });
+
+    it('projects list-all-components calls client.projects.listAllComponents', async () => {
+      jiraProjectsMock.listAllComponents.mockResolvedValue([{ id: 'comp-1', name: 'Backend' }]);
+      const result = await executeJiraCommand(
+        cmd('projects', 'list-all-components', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.listAllComponents).toHaveBeenCalledWith('PROJ');
+      expect(result).toEqual([{ id: 'comp-1', name: 'Backend' }]);
+    });
+
+    it('projects delete-async calls client.projects.deleteAsync', async () => {
+      jiraProjectsMock.deleteAsync.mockResolvedValue({ id: 'task-123' });
+      const result = await executeJiraCommand(cmd('projects', 'delete-async', ['PROJ']), GLOBALS);
+      expect(jiraProjectsMock.deleteAsync).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ id: 'task-123' });
+    });
+
+    it('projects get-features calls client.projects.getFeatures', async () => {
+      jiraProjectsMock.getFeatures.mockResolvedValue({ features: [] });
+      const result = await executeJiraCommand(cmd('projects', 'get-features', ['PROJ']), GLOBALS);
+      expect(jiraProjectsMock.getFeatures).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ features: [] });
+    });
+
+    it('projects set-feature-state calls client.projects.setFeatureState', async () => {
+      jiraProjectsMock.setFeatureState.mockResolvedValue({ features: [] });
+      const result = await executeJiraCommand(
+        cmd('projects', 'set-feature-state', ['PROJ', 'jsw.roadmap'], { state: 'ENABLED' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.setFeatureState).toHaveBeenCalledWith(
+        'PROJ',
+        'jsw.roadmap',
+        'ENABLED',
+      );
+      expect(result).toMatchObject({ features: [] });
+    });
+
+    it('projects set-feature-state throws when --state missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'set-feature-state', ['PROJ', 'feat']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --state');
+    });
+
+    it('projects set-feature-state throws when --state is invalid', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('projects', 'set-feature-state', ['PROJ', 'feat'], { state: 'INVALID' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--state must be ENABLED or DISABLED');
+    });
+
+    it('projects list-properties calls client.projects.listProperties', async () => {
+      jiraProjectsMock.listProperties.mockResolvedValue({ keys: [] });
+      const result = await executeJiraCommand(
+        cmd('projects', 'list-properties', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.listProperties).toHaveBeenCalledWith('PROJ');
+      expect(result).toMatchObject({ keys: [] });
+    });
+
+    it('projects delete-property calls client.projects.deleteProperty', async () => {
+      jiraProjectsMock.deleteProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'delete-property', ['PROJ', 'my.prop']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.deleteProperty).toHaveBeenCalledWith('PROJ', 'my.prop');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('projects delete-property throws when propertyKey missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'delete-property', ['PROJ']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('projects get-property calls client.projects.getProperty', async () => {
+      jiraProjectsMock.getProperty.mockResolvedValue({ key: 'my.prop', value: 42 });
+      const result = await executeJiraCommand(
+        cmd('projects', 'get-property', ['PROJ', 'my.prop']),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.getProperty).toHaveBeenCalledWith('PROJ', 'my.prop');
+      expect(result).toMatchObject({ key: 'my.prop', value: 42 });
+    });
+
+    it('projects get-property throws when propertyKey missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'get-property', ['PROJ']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: propertyKey');
+    });
+
+    it('projects set-property calls client.projects.setProperty', async () => {
+      jiraProjectsMock.setProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('projects', 'set-property', ['PROJ', 'my.prop'], { value: '{"answer":42}' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.setProperty).toHaveBeenCalledWith('PROJ', 'my.prop', { answer: 42 });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('projects set-property throws when --value missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'set-property', ['PROJ', 'my.prop']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --value');
     });
   });
 

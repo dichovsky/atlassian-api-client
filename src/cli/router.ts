@@ -295,6 +295,10 @@ const GLOBAL_OPTIONS = {
   'notification-scheme': { type: 'string' as const },
   'enable-undo': { type: 'string' as const },
   action: { type: 'string' as const },
+  // projects sub-resource options (B658-B680)
+  'email-address': { type: 'string' as const },
+  'component-source': { type: 'string' as const },
+  'classification-id': { type: 'string' as const },
   // users options (B797-B819)
   'project-keys': { type: 'string' as const },
   'display-name': { type: 'string' as const },

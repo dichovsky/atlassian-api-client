@@ -1486,3 +1486,66 @@
 - [x] 🟢 ♻️ Jira: B566 Drop redundant `maxResults` from `listAll` base query in `filters.ts`
   - **Impl:** `FiltersResource.listAll` no longer copies `params.maxResults` into the base query; the page size is passed solely as the 4th argument to `paginateOffset`, which sets it per request. End-state behavior is unchanged (paginateOffset overwrites `maxResults` on every page); the base-query line was misleading dead-write.
   - **Rat:** Mirror fix of PR #85 (`groups.listAllBulk` / `listAllMembers`). Removes the only remaining listAll generator that double-set the page size between its own base query and paginateOffset.
+- [x] 🔴 🧩 API: B658 Jira: expose GET /rest/api/3/project/{projectId}/email
+  - **Impl:** `ProjectsResource.getEmail(projectId)` returns `ProjectEmail`. CLI: `atlas jira projects get-email <projectId>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B659 Jira: expose PUT /rest/api/3/project/{projectId}/email
+  - **Impl:** `ProjectsResource.setEmail(projectId, { emailAddress? })` returns `void`. CLI: `atlas jira projects set-email <projectId> [--email-address <addr>]`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B660 Jira: expose GET /rest/api/3/project/{projectId}/hierarchy
+  - **Impl:** `ProjectsResource.getHierarchy(projectId)` returns `ProjectHierarchy`. CLI: `atlas jira projects get-hierarchy <projectId>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B663 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/archive
+  - **Impl:** `ProjectsResource.archive(projectIdOrKey)` returns `void`. CLI: `atlas jira projects archive <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B664 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/avatar
+  - **Impl:** `ProjectsResource.setAvatar(projectIdOrKey, { id })` returns `void`. CLI: `atlas jira projects set-avatar <projectIdOrKey> --avatar-id <id>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B665 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/avatar/{id}
+  - **Impl:** `ProjectsResource.deleteAvatar(projectIdOrKey, avatarId)` returns `void`. CLI: `atlas jira projects delete-avatar <projectIdOrKey> <avatarId>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B666 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/avatar2
+  - **Impl:** `ProjectsResource.loadAvatar(projectIdOrKey, body)` returns `ProjectAvatar`. CLI: `atlas jira projects load-avatar <projectIdOrKey> --value '<JSON>'`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B667 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/avatars
+  - **Impl:** `ProjectsResource.getAvatars(projectIdOrKey)` returns `ProjectAvatars`. CLI: `atlas jira projects get-avatars <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B668 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-config
+  - **Impl:** `ProjectsResource.getClassificationConfig(projectIdOrKey)` returns `ProjectClassificationConfig`. CLI: `atlas jira projects get-classification-config <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B669 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/classification-level/default
+  - **Impl:** `ProjectsResource.deleteClassificationLevel(projectIdOrKey)` returns `void`. CLI: `atlas jira projects delete-classification-level <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B670 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-level/default
+  - **Impl:** `ProjectsResource.getClassificationLevel(projectIdOrKey)` returns `ProjectClassificationLevel`. CLI: `atlas jira projects get-classification-level <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B671 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/classification-level/default
+  - **Impl:** `ProjectsResource.setClassificationLevel(projectIdOrKey, { id? })` returns `void`. CLI: `atlas jira projects set-classification-level <projectIdOrKey> [--classification-id <id>]`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B672 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/component
+  - **Impl:** `ProjectsResource.listComponents(projectIdOrKey, params?)` returns `OffsetPaginatedResponse<ProjectComponent>`. CLI: `atlas jira projects list-components <projectIdOrKey> [--start-at N] [--max-results N] [--order-by s] [--component-source s] [--query s]`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B673 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/components
+  - **Impl:** `ProjectsResource.listAllComponents(projectIdOrKey)` returns `ProjectComponent[]`. CLI: `atlas jira projects list-all-components <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B674 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/delete
+  - **Impl:** `ProjectsResource.deleteAsync(projectIdOrKey)` returns `TaskId`. CLI: `atlas jira projects delete-async <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B675 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/features
+  - **Impl:** `ProjectsResource.getFeatures(projectIdOrKey)` returns `ProjectFeatures`. CLI: `atlas jira projects get-features <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B676 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/features/{featureKey}
+  - **Impl:** `ProjectsResource.setFeatureState(projectIdOrKey, featureKey, state)` returns `ProjectFeatures`. CLI: `atlas jira projects set-feature-state <projectIdOrKey> <featureKey> --state ENABLED|DISABLED`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B677 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties
+  - **Impl:** `ProjectsResource.listProperties(projectIdOrKey)` returns `{ keys: Array<{ self, key }> }`. CLI: `atlas jira projects list-properties <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B678 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+  - **Impl:** `ProjectsResource.deleteProperty(projectIdOrKey, propertyKey)` returns `void`. CLI: `atlas jira projects delete-property <projectIdOrKey> <propertyKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B679 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+  - **Impl:** `ProjectsResource.getProperty(projectIdOrKey, propertyKey)` returns `{ key, value }`. CLI: `atlas jira projects get-property <projectIdOrKey> <propertyKey>`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+- [x] 🔴 🧩 API: B680 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+  - **Impl:** `ProjectsResource.setProperty(projectIdOrKey, propertyKey, value)` returns `void`. CLI: `atlas jira projects set-property <projectIdOrKey> <propertyKey> --value '<JSON>'`.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
