@@ -280,13 +280,83 @@ async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promis
 }
 
 async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
   switch (cmd.action) {
     case 'list':
       return client.priorities.list();
     case 'get':
       return client.priorities.get(requireArg(cmd.positionalArgs[0], 'priority ID'));
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const iconUrl = asString(opts['icon-url']);
+      const statusColor = asString(opts['status-color']);
+      return client.priorities.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(iconUrl !== undefined && { iconUrl }),
+        ...(statusColor !== undefined && { statusColor }),
+      });
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'priority ID');
+      const replaceWith = asString(opts['replace-with']);
+      await client.priorities.delete(id, {
+        ...(replaceWith !== undefined && { replaceWith }),
+      });
+      return { deleted: true };
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'priority ID');
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const iconUrl = asString(opts['icon-url']);
+      const statusColor = asString(opts['status-color']);
+      await client.priorities.update(id, {
+        name,
+        ...(description !== undefined && { description }),
+        ...(iconUrl !== undefined && { iconUrl }),
+        ...(statusColor !== undefined && { statusColor }),
+      });
+      return { updated: true };
+    }
+    case 'set-default': {
+      const id = requireOpt(opts['id'], '--id');
+      await client.priorities.setDefault({ id });
+      return { updated: true };
+    }
+    case 'move': {
+      const idsRaw = requireOpt(opts['ids'], '--ids');
+      const ids = splitCsvIds(idsRaw);
+      const after = asString(opts['after']);
+      const before = asString(opts['before']);
+      if (after !== undefined && before !== undefined) {
+        throw new Error('priorities move accepts either --after or --before, not both');
+      }
+      await client.priorities.move({
+        ids,
+        ...(after !== undefined && { after }),
+        ...(before !== undefined && { before }),
+      });
+      return { moved: true };
+    }
+    case 'search': {
+      const idsRaw = asString(opts['ids']);
+      const id = idsRaw ? splitCsvIds(idsRaw) : undefined;
+      return client.priorities.search({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(id !== undefined && { id }),
+        onlyDefault: asBoolFlag(opts['only-default']),
+        priorityName: asString(opts['priority-name']),
+        expand: asString(opts['expand']),
+      });
+    }
     default:
-      throw new Error(`Unknown priorities action: ${cmd.action}. Actions: list, get`);
+      throw new Error(
+        `Unknown priorities action: ${cmd.action}. Actions: list, get, create, update, delete, set-default, move, search`,
+      );
   }
 }
 
