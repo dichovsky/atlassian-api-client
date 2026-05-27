@@ -357,6 +357,18 @@ const jiraUsersMock = {
   get: vi.fn(),
   getCurrentUser: vi.fn(),
   search: vi.fn(),
+  deleteUser: vi.fn(),
+  createUser: vi.fn(),
+  assignableMultiProjectSearch: vi.fn(),
+  assignableSearch: vi.fn(),
+  bulkGet: vi.fn(),
+  bulkMigration: vi.fn(),
+  resetColumns: vi.fn(),
+  getColumns: vi.fn(),
+  setColumns: vi.fn(),
+  getEmail: vi.fn(),
+  bulkGetEmails: vi.fn(),
+  getGroups: vi.fn(),
 };
 const jiraIssueTypesMock = {
   list: vi.fn(),
@@ -8061,6 +8073,210 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraUsersMock.search).toHaveBeenCalledWith(
         expect.objectContaining({ query: 'jane', maxResults: 5 }),
+      );
+    });
+
+    it('users delete calls client.users.deleteUser and returns { deleted: true }', async () => {
+      jiraUsersMock.deleteUser.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'delete', [], { 'account-id': 'acc-del' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.deleteUser).toHaveBeenCalledWith('acc-del');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('users delete throws when --account-id is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'delete', [], {}), GLOBALS)).rejects.toThrow(
+        '--account-id',
+      );
+    });
+
+    it('users create calls client.users.createUser with email', async () => {
+      jiraUsersMock.createUser.mockResolvedValue({ accountId: 'new-acc' });
+      const parsed = cmd('users', 'create', [], { email: 'new@example.com' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({ emailAddress: 'new@example.com' }),
+      );
+      expect(result).toMatchObject({ accountId: 'new-acc' });
+    });
+
+    it('users create includes display-name when provided', async () => {
+      jiraUsersMock.createUser.mockResolvedValue({ accountId: 'new-acc' });
+      const parsed = cmd('users', 'create', [], {
+        email: 'new@example.com',
+        'display-name': 'New User',
+      });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({ emailAddress: 'new@example.com', displayName: 'New User' }),
+      );
+    });
+
+    it('users create throws when --email is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'create', [], {}), GLOBALS)).rejects.toThrow(
+        '--email',
+      );
+    });
+
+    it('users assignable-multi-project calls assignableMultiProjectSearch', async () => {
+      jiraUsersMock.assignableMultiProjectSearch.mockResolvedValue([]);
+      const parsed = cmd('users', 'assignable-multi-project', [], {
+        query: 'alice',
+        'project-keys': 'PROJ,TEAM',
+      });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.assignableMultiProjectSearch).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'alice', projectKeys: ['PROJ', 'TEAM'] }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('users assignable calls assignableSearch with required project', async () => {
+      jiraUsersMock.assignableSearch.mockResolvedValue([]);
+      const parsed = cmd('users', 'assignable', [], { project: 'PROJ' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.assignableSearch).toHaveBeenCalledWith(
+        expect.objectContaining({ project: 'PROJ' }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('users assignable throws when --project is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'assignable', [], {}), GLOBALS)).rejects.toThrow(
+        '--project',
+      );
+    });
+
+    it('users bulk calls bulkGet with parsed account IDs', async () => {
+      const bulkResp = { maxResults: 50, startAt: 0, total: 2, isLast: true, values: [] };
+      jiraUsersMock.bulkGet.mockResolvedValue(bulkResp);
+      const parsed = cmd('users', 'bulk', [], { 'account-ids': 'acc-1,acc-2' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.bulkGet).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: ['acc-1', 'acc-2'] }),
+      );
+      expect(result).toEqual(bulkResp);
+    });
+
+    it('users bulk throws when --account-ids is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'bulk', [], {}), GLOBALS)).rejects.toThrow(
+        '--account-ids',
+      );
+    });
+
+    it('users bulk-migration calls bulkMigration', async () => {
+      jiraUsersMock.bulkMigration.mockResolvedValue([]);
+      const parsed = cmd('users', 'bulk-migration', [], { 'user-name': 'alice,bob', key: 'k1' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.bulkMigration).toHaveBeenCalledWith(
+        expect.objectContaining({ username: ['alice', 'bob'], key: ['k1'] }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('users bulk-migration works with no params', async () => {
+      jiraUsersMock.bulkMigration.mockResolvedValue([]);
+      const parsed = cmd('users', 'bulk-migration', [], {});
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.bulkMigration).toHaveBeenCalledWith({});
+    });
+
+    it('users reset-columns calls resetColumns and returns { reset: true }', async () => {
+      jiraUsersMock.resetColumns.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'reset-columns', [], { 'account-id': 'acc-1' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.resetColumns).toHaveBeenCalledWith('acc-1');
+      expect(result).toEqual({ reset: true });
+    });
+
+    it('users reset-columns works without account-id', async () => {
+      jiraUsersMock.resetColumns.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'reset-columns', [], {});
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.resetColumns).toHaveBeenCalledWith(undefined);
+    });
+
+    it('users get-columns calls getColumns', async () => {
+      jiraUsersMock.getColumns.mockResolvedValue([{ label: 'Summary', value: 'summary' }]);
+      const parsed = cmd('users', 'get-columns', [], {});
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.getColumns).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual([{ label: 'Summary', value: 'summary' }]);
+    });
+
+    it('users get-columns passes account-id when provided', async () => {
+      jiraUsersMock.getColumns.mockResolvedValue([]);
+      const parsed = cmd('users', 'get-columns', [], { 'account-id': 'acc-1' });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.getColumns).toHaveBeenCalledWith('acc-1');
+    });
+
+    it('users set-columns calls setColumns with parsed columns', async () => {
+      jiraUsersMock.setColumns.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'set-columns', [], { columns: 'summary,status' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.setColumns).toHaveBeenCalledWith(['summary', 'status'], undefined);
+      expect(result).toEqual({ set: true });
+    });
+
+    it('users set-columns passes account-id when provided', async () => {
+      jiraUsersMock.setColumns.mockResolvedValue(undefined);
+      const parsed = cmd('users', 'set-columns', [], {
+        columns: 'summary',
+        'account-id': 'acc-1',
+      });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.setColumns).toHaveBeenCalledWith(['summary'], 'acc-1');
+    });
+
+    it('users set-columns throws when --columns is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'set-columns', [], {}), GLOBALS),
+      ).rejects.toThrow('--columns');
+    });
+
+    it('users email calls getEmail with account-id', async () => {
+      jiraUsersMock.getEmail.mockResolvedValue({ accountId: 'acc-1', email: 'a@example.com' });
+      const parsed = cmd('users', 'email', [], { 'account-id': 'acc-1' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.getEmail).toHaveBeenCalledWith('acc-1');
+      expect(result).toMatchObject({ accountId: 'acc-1', email: 'a@example.com' });
+    });
+
+    it('users email throws when --account-id is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'email', [], {}), GLOBALS)).rejects.toThrow(
+        '--account-id',
+      );
+    });
+
+    it('users bulk-emails calls bulkGetEmails with parsed account IDs', async () => {
+      const bulkResp = { values: [{ accountId: 'acc-1', email: 'a@example.com' }] };
+      jiraUsersMock.bulkGetEmails.mockResolvedValue(bulkResp);
+      const parsed = cmd('users', 'bulk-emails', [], { 'account-ids': 'acc-1,acc-2' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.bulkGetEmails).toHaveBeenCalledWith(['acc-1', 'acc-2']);
+      expect(result).toEqual(bulkResp);
+    });
+
+    it('users bulk-emails throws when --account-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'bulk-emails', [], {}), GLOBALS),
+      ).rejects.toThrow('--account-ids');
+    });
+
+    it('users groups calls getGroups with account-id', async () => {
+      jiraUsersMock.getGroups.mockResolvedValue([{ name: 'jira-users', self: 'url' }]);
+      const parsed = cmd('users', 'groups', [], { 'account-id': 'acc-1' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.getGroups).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: 'acc-1' }),
+      );
+      expect(result).toEqual([{ name: 'jira-users', self: 'url' }]);
+    });
+
+    it('users groups throws when --account-id is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'groups', [], {}), GLOBALS)).rejects.toThrow(
+        '--account-id',
       );
     });
 

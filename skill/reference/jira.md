@@ -9,7 +9,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                                                                                                                                                                                                                                                                                |
 | `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`                                                                                                                                                                                                                                                                           |
 | `search`                 | `search`, `get`, `approximate-count`, `jql-get`, `jql-post`                                                                                                                                                                                                                                                                                                                                                              |
-| `users`                  | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `users`                  | `get`, `me`, `search`, `delete`, `create`, `assignable-multi-project`, `assignable`, `bulk`, `bulk-migration`, `reset-columns`, `get-columns`, `set-columns`, `email`, `bulk-emails`, `groups`                                                                                                                                                                                                                           |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `priorities`             | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                             |
 | `statuses`               | `list`, `bulk-delete`, `bulk-create`, `bulk-update`, `get-issue-type-usages`, `get-project-usages`, `get-workflow-usages`, `by-names`, `search`                                                                                                                                                                                                                                                                          |
@@ -718,13 +718,31 @@ atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
 
 ## `users`
 
-| Action   | Positional    | Required flags | Optional flags  |
-| -------- | ------------- | -------------- | --------------- |
-| `get`    | `<accountId>` | —              | —               |
-| `me`     | —             | —              | —               |
-| `search` | —             | `--query`      | `--max-results` |
+| Action                     | Positional    | Required flags  | Optional flags                                                                            |
+| -------------------------- | ------------- | --------------- | ----------------------------------------------------------------------------------------- |
+| `get`                      | `<accountId>` | —               | —                                                                                         |
+| `me`                       | —             | —               | —                                                                                         |
+| `search`                   | —             | `--query`       | `--max-results`                                                                           |
+| `delete`                   | —             | `--account-id`  | —                                                                                         |
+| `create`                   | —             | `--email`       | `--display-name`                                                                          |
+| `assignable-multi-project` | —             | —               | `--query`, `--user-name`, `--account-id`, `--project-keys`, `--max-results`, `--start-at` |
+| `assignable`               | —             | `--project`     | `--query`, `--user-name`, `--account-id`, `--start-at`, `--max-results`                   |
+| `bulk`                     | —             | `--account-ids` | `--start-at`, `--max-results`                                                             |
+| `bulk-migration`           | —             | —               | `--user-name`, `--key`, `--start-at`, `--max-results`                                     |
+| `reset-columns`            | —             | —               | `--account-id`                                                                            |
+| `get-columns`              | —             | —               | `--account-id`                                                                            |
+| `set-columns`              | —             | `--columns`     | `--account-id`                                                                            |
+| `email`                    | —             | `--account-id`  | —                                                                                         |
+| `bulk-emails`              | —             | `--account-ids` | —                                                                                         |
+| `groups`                   | —             | `--account-id`  | `--user-name`, `--key`                                                                    |
 
 - `users me` returns the caller's profile — a fast way to verify auth env vars are working without touching tenant data.
+- `users delete` requires `--account-id`. Returns `{ deleted: true }` on success.
+- `users create` requires `--email`; `--display-name` is optional.
+- `users assignable-multi-project` accepts `--project-keys` as a comma-separated list.
+- `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list.
+- `users bulk-migration` accepts `--user-name` and `--key` as comma-separated lists to translate legacy identifiers to account IDs.
+- `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
 
 ## `issue-types` / `priorities` / `statuses`
 

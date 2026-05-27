@@ -278,3 +278,94 @@ export interface ListLabelsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
 }
+
+// --- User Management Types (B797-B808) ---
+
+/** Request body for creating a Jira user (B798). */
+export interface CreateUserData {
+  readonly emailAddress: string;
+  readonly displayName?: string;
+  readonly name?: string;
+  readonly password?: string;
+  readonly applicationKeys?: string[];
+}
+
+/** Parameters for searching assignable users across multiple projects (B799). */
+export interface AssignableMultiProjectSearchParams {
+  readonly query?: string;
+  readonly username?: string;
+  readonly accountId?: string;
+  readonly projectKeys?: string[];
+  readonly maxResults?: number;
+  readonly startAt?: number;
+}
+
+/** Parameters for searching assignable users for a project (B800). */
+export interface AssignableSearchParams {
+  readonly project: string;
+  readonly query?: string;
+  readonly username?: string;
+  readonly accountId?: string;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Parameters for bulk fetching users (B801). */
+export interface BulkUsersParams {
+  readonly accountId: string[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Paginated response wrapper for bulk user fetch (B801). */
+export interface BulkUsersResponse {
+  readonly maxResults: number;
+  readonly startAt: number;
+  readonly total: number;
+  readonly isLast: boolean;
+  readonly values: User[];
+}
+
+/** Parameters for bulk account ID migration (B802). */
+export interface BulkMigrationParams {
+  readonly username?: string[];
+  readonly key?: string[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Migration mapping from legacy key to accountId (B802). */
+export interface UserMigrationRecord {
+  readonly key: string;
+  readonly accountId: string;
+}
+
+/** A user column setting (B804/B805). */
+export interface UserColumnItem {
+  readonly label: string;
+  readonly value: string;
+}
+
+/** Response for the user email endpoint (B806). */
+export interface UserEmailRecord {
+  readonly accountId: string;
+  readonly email: string;
+}
+
+/** Bulk email response wrapper (B807). */
+export interface BulkUserEmailsResponse {
+  readonly values: UserEmailRecord[];
+}
+
+/** A group entry returned by the user groups endpoint (B808). */
+export interface UserGroupEntry {
+  readonly name: string;
+  readonly self: string;
+}
+
+/** Parameters for getting groups for a user (B808). */
+export interface GetUserGroupsParams {
+  readonly accountId: string;
+  readonly username?: string;
+  readonly key?: string;
+}

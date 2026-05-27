@@ -295,6 +295,9 @@ const GLOBAL_OPTIONS = {
   'notification-scheme': { type: 'string' as const },
   'enable-undo': { type: 'string' as const },
   action: { type: 'string' as const },
+  // users options (B797-B808)
+  'project-keys': { type: 'string' as const },
+  'display-name': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

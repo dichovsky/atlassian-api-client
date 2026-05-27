@@ -381,6 +381,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
 }
 
 async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
   switch (cmd.action) {
     case 'get':
       return client.users.get(requireArg(cmd.positionalArgs[0], 'account ID'));
@@ -388,11 +389,101 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
       return client.users.getCurrentUser();
     case 'search':
       return client.users.search({
-        query: requireOpt(cmd.options['query'], '--query'),
-        maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
+        query: requireOpt(opts['query'], '--query'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'delete': {
+      await client.users.deleteUser(requireOpt(opts['account-id'], '--account-id'));
+      return { deleted: true };
+    }
+    case 'create':
+      return client.users.createUser({
+        emailAddress: requireOpt(opts['email'], '--email'),
+        displayName: asString(opts['display-name']),
+      });
+    case 'assignable-multi-project': {
+      const projectKeysRaw = asString(opts['project-keys']);
+      return client.users.assignableMultiProjectSearch({
+        query: asString(opts['query']),
+        username: asString(opts['user-name']),
+        accountId: asString(opts['account-id']),
+        ...(projectKeysRaw !== undefined && {
+          projectKeys: projectKeysRaw.split(',').map((s) => s.trim()),
+        }),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+      });
+    }
+    case 'assignable':
+      return client.users.assignableSearch({
+        project: requireOpt(opts['project'], '--project'),
+        query: asString(opts['query']),
+        username: asString(opts['user-name']),
+        accountId: asString(opts['account-id']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'bulk': {
+      const accountIdsRaw = requireOpt(opts['account-ids'], '--account-ids');
+      const accountIds = accountIdsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      return client.users.bulkGet({
+        accountId: accountIds,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'bulk-migration': {
+      const usernameRaw = asString(opts['user-name']);
+      const keyRaw = asString(opts['key']);
+      return client.users.bulkMigration({
+        ...(usernameRaw !== undefined && {
+          username: usernameRaw.split(',').map((s) => s.trim()),
+        }),
+        ...(keyRaw !== undefined && {
+          key: keyRaw.split(',').map((s) => s.trim()),
+        }),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'reset-columns': {
+      await client.users.resetColumns(asString(opts['account-id']));
+      return { reset: true };
+    }
+    case 'get-columns':
+      return client.users.getColumns(asString(opts['account-id']));
+    case 'set-columns': {
+      const columnsRaw = requireOpt(opts['columns'], '--columns');
+      const columnList = columnsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.users.setColumns(columnList, asString(opts['account-id']));
+      return { set: true };
+    }
+    case 'email':
+      return client.users.getEmail(requireOpt(opts['account-id'], '--account-id'));
+    case 'bulk-emails': {
+      const accountIdsRaw = requireOpt(opts['account-ids'], '--account-ids');
+      const accountIds = accountIdsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      return client.users.bulkGetEmails(accountIds);
+    }
+    case 'groups':
+      return client.users.getGroups({
+        accountId: requireOpt(opts['account-id'], '--account-id'),
+        username: asString(opts['user-name']),
+        key: asString(opts['key']),
       });
     default:
-      throw new Error(`Unknown users action: ${cmd.action}. Actions: get, me, search`);
+      throw new Error(
+        `Unknown users action: ${cmd.action}. Actions: get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups`,
+      );
   }
 }
 
