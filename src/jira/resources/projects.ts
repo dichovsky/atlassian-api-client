@@ -110,8 +110,12 @@ export interface ProjectRoleActor {
   readonly type?: string;
   readonly name?: string;
   readonly avatarUrl?: string;
-  readonly actorGroup?: { displayName?: string; groupId?: string; name?: string };
-  readonly actorUser?: { accountId?: string };
+  readonly actorGroup?: {
+    readonly displayName?: string;
+    readonly groupId?: string;
+    readonly name?: string;
+  };
+  readonly actorUser?: { readonly accountId?: string };
 }
 
 export interface ProjectRole {
@@ -136,10 +140,10 @@ export interface UpdateProjectRoleData {
 }
 
 export interface ProjectRoleActorInput {
-  id?: number;
-  user?: string[];
-  group?: string[];
-  groupId?: string[];
+  readonly id?: number;
+  readonly user?: readonly string[];
+  readonly group?: readonly string[];
+  readonly groupId?: readonly string[];
 }
 
 export interface SetProjectRoleData {

@@ -891,6 +891,7 @@ describe('ProjectsResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/project/PROJ/role/10001`,
+        body: { actors: [{ user: ['acc-1'] }] },
       });
     });
   });
@@ -975,6 +976,7 @@ describe('ProjectsResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/project/PROJ/role/10001`,
+        body: { categorisedActors: { 'atlassian-user-role-actor': ['acc-1'] } },
       });
     });
   });
