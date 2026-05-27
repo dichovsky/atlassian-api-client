@@ -299,6 +299,8 @@ const GLOBAL_OPTIONS = {
   'email-address': { type: 'string' as const },
   'component-source': { type: 'string' as const },
   'classification-id': { type: 'string' as const },
+  // issue sub-resource options (B478-B504)
+  'global-id': { type: 'string' as const },
   // users options (B797-B819)
   'project-keys': { type: 'string' as const },
   'display-name': { type: 'string' as const },

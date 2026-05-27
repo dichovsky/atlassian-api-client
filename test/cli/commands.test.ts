@@ -332,6 +332,27 @@ const jiraIssuesMock = {
   getEstimation: vi.fn(),
   setEstimation: vi.fn(),
   rank: vi.fn(),
+  assign: vi.fn(),
+  getChangelog: vi.fn(),
+  filterChangelog: vi.fn(),
+  getEditMeta: vi.fn(),
+  notify: vi.fn(),
+  listProperties: vi.fn(),
+  deleteProperty: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  deleteAllRemoteLinks: vi.fn(),
+  listRemoteLinks: vi.fn(),
+  createRemoteLink: vi.fn(),
+  deleteRemoteLink: vi.fn(),
+  getRemoteLink: vi.fn(),
+  updateRemoteLink: vi.fn(),
+  removeVote: vi.fn(),
+  getVotes: vi.fn(),
+  addVote: vi.fn(),
+  removeWatcher: vi.fn(),
+  getWatchers: vi.fn(),
+  addWatcher: vi.fn(),
 };
 const jiraProjectsMock = {
   list: vi.fn(),
@@ -7406,6 +7427,355 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('issues', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issues action',
       );
+    });
+
+    // ── assign (B478) ──────────────────────────────────────────────────────
+
+    it('issues assign calls client.issues.assign and returns { assigned: true }', async () => {
+      jiraIssuesMock.assign.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'assign', ['PROJ-1'], { 'account-id': 'acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.assign).toHaveBeenCalledWith('PROJ-1', { accountId: 'acc-1' });
+      expect(result).toEqual({ assigned: true });
+    });
+
+    it('issues assign sends null when --account-id is omitted (unassign)', async () => {
+      jiraIssuesMock.assign.mockResolvedValue(undefined);
+      await executeJiraCommand(cmd('issues', 'assign', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.assign).toHaveBeenCalledWith('PROJ-1', { accountId: null });
+    });
+
+    it('issues assign throws when issue key is missing', async () => {
+      await expect(executeJiraCommand(cmd('issues', 'assign', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: issue key',
+      );
+    });
+
+    // ── get-changelog (B480) ───────────────────────────────────────────────
+
+    it('issues get-changelog calls client.issues.getChangelog', async () => {
+      const payload = { startAt: 0, maxResults: 50, total: 1, values: [] };
+      jiraIssuesMock.getChangelog.mockResolvedValue(payload);
+      const result = await executeJiraCommand(cmd('issues', 'get-changelog', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.getChangelog).toHaveBeenCalledWith('PROJ-1', {
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(payload);
+    });
+
+    it('issues get-changelog passes pagination params', async () => {
+      jiraIssuesMock.getChangelog.mockResolvedValue({
+        startAt: 10,
+        maxResults: 25,
+        total: 100,
+        values: [],
+      });
+      await executeJiraCommand(
+        cmd('issues', 'get-changelog', ['PROJ-1'], { 'start-at': '10', 'max-results': '25' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getChangelog).toHaveBeenCalledWith('PROJ-1', {
+        startAt: 10,
+        maxResults: 25,
+      });
+    });
+
+    // ── filter-changelog (B481) ────────────────────────────────────────────
+
+    it('issues filter-changelog calls client.issues.filterChangelog', async () => {
+      const payload = { startAt: 0, maxResults: 50, total: 2, values: [] };
+      jiraIssuesMock.filterChangelog.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('issues', 'filter-changelog', ['PROJ-1'], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.filterChangelog).toHaveBeenCalledWith('PROJ-1', [10001, 10002]);
+      expect(result).toEqual(payload);
+    });
+
+    it('issues filter-changelog throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'filter-changelog', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--ids');
+    });
+
+    it('issues filter-changelog throws when --ids contains non-integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'filter-changelog', ['PROJ-1'], { ids: 'abc' }), GLOBALS),
+      ).rejects.toThrow('--ids must be comma-separated positive integers');
+    });
+
+    it('issues filter-changelog throws when --ids is empty after parsing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'filter-changelog', ['PROJ-1'], { ids: ',' }), GLOBALS),
+      ).rejects.toThrow('--ids must not be empty');
+    });
+
+    // ── get-editmeta (B487) ────────────────────────────────────────────────
+
+    it('issues get-editmeta calls client.issues.getEditMeta', async () => {
+      const payload = { fields: {} };
+      jiraIssuesMock.getEditMeta.mockResolvedValue(payload);
+      const result = await executeJiraCommand(cmd('issues', 'get-editmeta', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.getEditMeta).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual(payload);
+    });
+
+    // ── notify (B488) ─────────────────────────────────────────────────────
+
+    it('issues notify calls client.issues.notify and returns { sent: true }', async () => {
+      jiraIssuesMock.notify.mockResolvedValue(undefined);
+      const body = JSON.stringify({ subject: 'Hello', textBody: 'World' });
+      const result = await executeJiraCommand(
+        cmd('issues', 'notify', ['PROJ-1'], { body }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.notify).toHaveBeenCalledWith('PROJ-1', {
+        subject: 'Hello',
+        textBody: 'World',
+      });
+      expect(result).toEqual({ sent: true });
+    });
+
+    it('issues notify throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'notify', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── list-properties (B489) ─────────────────────────────────────────────
+
+    it('issues list-properties calls client.issues.listProperties', async () => {
+      const payload = { keys: [{ key: 'myProp' }] };
+      jiraIssuesMock.listProperties.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('issues', 'list-properties', ['PROJ-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.listProperties).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual(payload);
+    });
+
+    // ── delete-property (B490) ─────────────────────────────────────────────
+
+    it('issues delete-property calls client.issues.deleteProperty', async () => {
+      jiraIssuesMock.deleteProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-property', ['PROJ-1', 'myProp']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteProperty).toHaveBeenCalledWith('PROJ-1', 'myProp');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    // ── get-property (B491) ────────────────────────────────────────────────
+
+    it('issues get-property calls client.issues.getProperty', async () => {
+      const payload = { key: 'myProp', value: 42 };
+      jiraIssuesMock.getProperty.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-property', ['PROJ-1', 'myProp']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getProperty).toHaveBeenCalledWith('PROJ-1', 'myProp');
+      expect(result).toEqual(payload);
+    });
+
+    // ── set-property (B492) ────────────────────────────────────────────────
+
+    it('issues set-property calls client.issues.setProperty and returns { updated: true }', async () => {
+      jiraIssuesMock.setProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-property', ['PROJ-1', 'myProp'], { value: '{"foo":"bar"}' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.setProperty).toHaveBeenCalledWith('PROJ-1', 'myProp', { foo: 'bar' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('issues set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'set-property', ['PROJ-1', 'myProp']), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    // ── delete-all-remotelinks (B493) ──────────────────────────────────────
+
+    it('issues delete-all-remotelinks calls client.issues.deleteAllRemoteLinks', async () => {
+      jiraIssuesMock.deleteAllRemoteLinks.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-all-remotelinks', ['PROJ-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteAllRemoteLinks).toHaveBeenCalledWith('PROJ-1', {
+        globalId: undefined,
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issues delete-all-remotelinks passes globalId', async () => {
+      jiraIssuesMock.deleteAllRemoteLinks.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'delete-all-remotelinks', ['PROJ-1'], { 'global-id': 'gid-1' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteAllRemoteLinks).toHaveBeenCalledWith('PROJ-1', {
+        globalId: 'gid-1',
+      });
+    });
+
+    // ── list-remotelinks (B494) ────────────────────────────────────────────
+
+    it('issues list-remotelinks calls client.issues.listRemoteLinks', async () => {
+      const payload = [{ id: 1, relationship: 'blocks' }];
+      jiraIssuesMock.listRemoteLinks.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('issues', 'list-remotelinks', ['PROJ-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.listRemoteLinks).toHaveBeenCalledWith('PROJ-1', {
+        globalId: undefined,
+      });
+      expect(result).toEqual(payload);
+    });
+
+    // ── create-remotelink (B495) ───────────────────────────────────────────
+
+    it('issues create-remotelink calls client.issues.createRemoteLink', async () => {
+      const payload = { id: 10001, self: 'url' };
+      jiraIssuesMock.createRemoteLink.mockResolvedValue(payload);
+      const bodyData = { object: { url: 'https://example.com', title: 'Example' } };
+      const result = await executeJiraCommand(
+        cmd('issues', 'create-remotelink', ['PROJ-1'], { body: JSON.stringify(bodyData) }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.createRemoteLink).toHaveBeenCalledWith('PROJ-1', bodyData);
+      expect(result).toEqual(payload);
+    });
+
+    it('issues create-remotelink throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'create-remotelink', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── delete-remotelink (B496) ───────────────────────────────────────────
+
+    it('issues delete-remotelink calls client.issues.deleteRemoteLink', async () => {
+      jiraIssuesMock.deleteRemoteLink.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-remotelink', ['PROJ-1', '10001']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteRemoteLink).toHaveBeenCalledWith('PROJ-1', '10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    // ── get-remotelink (B497) ──────────────────────────────────────────────
+
+    it('issues get-remotelink calls client.issues.getRemoteLink', async () => {
+      const payload = { id: 10001, relationship: 'blocks' };
+      jiraIssuesMock.getRemoteLink.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-remotelink', ['PROJ-1', '10001']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getRemoteLink).toHaveBeenCalledWith('PROJ-1', '10001');
+      expect(result).toEqual(payload);
+    });
+
+    // ── update-remotelink (B498) ───────────────────────────────────────────
+
+    it('issues update-remotelink calls client.issues.updateRemoteLink', async () => {
+      jiraIssuesMock.updateRemoteLink.mockResolvedValue(undefined);
+      const bodyData = { object: { url: 'https://example.com', title: 'Updated' } };
+      const result = await executeJiraCommand(
+        cmd('issues', 'update-remotelink', ['PROJ-1', '10001'], { body: JSON.stringify(bodyData) }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.updateRemoteLink).toHaveBeenCalledWith('PROJ-1', '10001', bodyData);
+      expect(result).toEqual({ updated: true });
+    });
+
+    // ── remove-vote (B499) ─────────────────────────────────────────────────
+
+    it('issues remove-vote calls client.issues.removeVote and returns { removed: true }', async () => {
+      jiraIssuesMock.removeVote.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issues', 'remove-vote', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.removeVote).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual({ removed: true });
+    });
+
+    // ── get-votes (B500) ───────────────────────────────────────────────────
+
+    it('issues get-votes calls client.issues.getVotes', async () => {
+      const payload = { votes: 3, hasVoted: false };
+      jiraIssuesMock.getVotes.mockResolvedValue(payload);
+      const result = await executeJiraCommand(cmd('issues', 'get-votes', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.getVotes).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual(payload);
+    });
+
+    // ── add-vote (B501) ────────────────────────────────────────────────────
+
+    it('issues add-vote calls client.issues.addVote and returns { voted: true }', async () => {
+      jiraIssuesMock.addVote.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issues', 'add-vote', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.addVote).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual({ voted: true });
+    });
+
+    // ── remove-watcher (B502) ──────────────────────────────────────────────
+
+    it('issues remove-watcher calls client.issues.removeWatcher and returns { removed: true }', async () => {
+      jiraIssuesMock.removeWatcher.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issues', 'remove-watcher', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.removeWatcher).toHaveBeenCalledWith('PROJ-1', {
+        accountId: undefined,
+      });
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('issues remove-watcher passes accountId', async () => {
+      jiraIssuesMock.removeWatcher.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'remove-watcher', ['PROJ-1'], { 'account-id': 'acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.removeWatcher).toHaveBeenCalledWith('PROJ-1', {
+        accountId: 'acc-1',
+      });
+    });
+
+    // ── get-watchers (B503) ────────────────────────────────────────────────
+
+    it('issues get-watchers calls client.issues.getWatchers', async () => {
+      const payload = { isWatching: true, watchCount: 2, watchers: [] };
+      jiraIssuesMock.getWatchers.mockResolvedValue(payload);
+      const result = await executeJiraCommand(cmd('issues', 'get-watchers', ['PROJ-1']), GLOBALS);
+      expect(jiraIssuesMock.getWatchers).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual(payload);
+    });
+
+    // ── add-watcher (B504) ─────────────────────────────────────────────────
+
+    it('issues add-watcher calls client.issues.addWatcher and returns { watching: true }', async () => {
+      jiraIssuesMock.addWatcher.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'add-watcher', ['PROJ-1'], { 'account-id': 'acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.addWatcher).toHaveBeenCalledWith('PROJ-1', 'acc-1');
+      expect(result).toEqual({ watching: true });
+    });
+
+    it('issues add-watcher throws when --account-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'add-watcher', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--account-id');
     });
 
     // ── get-agile ────────────────────────────────────────────────────────────
