@@ -303,9 +303,8 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
     }
     case 'delete': {
       const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
-      const enableUndoRaw = asString(opts['enable-undo']);
       await client.projects.delete(projectIdOrKey, {
-        ...(enableUndoRaw !== undefined && { enableUndo: enableUndoRaw === 'true' }),
+        ...(opts['enable-undo'] !== undefined && { enableUndo: asBoolFlag(opts['enable-undo']) }),
       });
       return { deleted: true };
     }

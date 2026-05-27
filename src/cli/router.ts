@@ -286,6 +286,15 @@ const GLOBAL_OPTIONS = {
   'scheme-name': { type: 'string' as const },
   priorities: { type: 'string' as const },
   projects: { type: 'string' as const },
+  // projects CRUD options (B929, B652, B661, B662, B696-B700)
+  'project-type-key': { type: 'string' as const },
+  'type-key': { type: 'string' as const },
+  'category-id': { type: 'string' as const },
+  'avatar-id': { type: 'string' as const },
+  'permission-scheme': { type: 'string' as const },
+  'notification-scheme': { type: 'string' as const },
+  'enable-undo': { type: 'string' as const },
+  action: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
