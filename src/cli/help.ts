@@ -211,7 +211,7 @@ const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 RESOURCES:
   issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
   projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types
-  search        search (via JQL)
+  search        search, get, approximate-count, jql-get, jql-post
   users         get, me, search
   issue-types   list, get
   issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
@@ -274,7 +274,10 @@ RESOURCES:
 EXAMPLES:
   atlas jira issues get PROJ-123
   atlas jira issues create --project PROJ --type Bug --summary "Fix this"
-  atlas jira search --jql "project = PROJ AND status = Open"
+  atlas jira search get --jql "project = PROJ AND status = Open"
+  atlas jira search approximate-count --jql "project = PROJ"
+  atlas jira search jql-get --jql "project = PROJ" --max-results 50
+  atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
   atlas jira projects list
   atlas jira incidents get INC-123
   atlas jira incidents delete INC-123

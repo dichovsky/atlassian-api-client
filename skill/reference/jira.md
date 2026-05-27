@@ -8,7 +8,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                                                                                                                                                                                                                                                                                |
 | `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`                                                                                                                                                                                                                                                                           |
-| `search`                 | (no sub-action; uses `--jql`)                                                                                                                                                                                                                                                                                                                                                                                            |
+| `search`                 | `search`, `get`, `approximate-count`, `jql-get`, `jql-post`                                                                                                                                                                                                                                                                                                                                                              |
 | `users`                  | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `priorities`             | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                             |
@@ -699,11 +699,22 @@ atlas jira projects list-accessible-types
 
 ## `search`
 
+| Action              | Required flags | Optional flags                                                        |
+| ------------------- | -------------- | --------------------------------------------------------------------- |
+| `(default)` / `get` | `--jql`        | `--max-results`, `--fields`                                           |
+| `approximate-count` | `--jql`        | —                                                                     |
+| `jql-get`           | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
+| `jql-post`          | —              | `--jql`, `--next-page-token`, `--max-results`, `--fields`, `--expand` |
+
 ```sh
-atlas jira search --jql "<JQL>" [--max-results <n>] [--fields <csv>] [--expand <csv>]
+atlas jira search get --jql "project = PROJ AND status = Open"
+atlas jira search approximate-count --jql "project = PROJ"
+atlas jira search jql-get --jql "project = PROJ" --max-results 50
+atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
 ```
 
-No positional or action argument; the resource itself takes the JQL.
+- `(default)` and `get` use offset-based pagination (`startAt` / `maxResults`) — `POST /search` and `GET /search` respectively.
+- `jql-get` / `jql-post` use cursor-based pagination via `--next-page-token`; pass the `nextPageToken` from the previous response to continue.
 
 ## `users`
 

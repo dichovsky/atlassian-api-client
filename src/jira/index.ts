@@ -42,6 +42,11 @@ export type {
   RecentProjectsParams,
 } from './resources/projects.js';
 export { SearchResource } from './resources/search.js';
+export type {
+  ApproximateCountResult,
+  JqlSearchParams,
+  JqlSearchResult,
+} from './resources/search.js';
 export { UsersResource } from './resources/users.js';
 export { IssueTypesResource } from './resources/issue-types.js';
 export { IssueTypeResource } from './resources/issuetype.js';

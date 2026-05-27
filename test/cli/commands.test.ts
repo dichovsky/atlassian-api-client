@@ -348,6 +348,10 @@ const jiraProjectsMock = {
 };
 const jiraSearchMock = {
   search: vi.fn(),
+  searchGet: vi.fn(),
+  approximateCount: vi.fn(),
+  searchJqlGet: vi.fn(),
+  searchJqlPost: vi.fn(),
 };
 const jiraUsersMock = {
   get: vi.fn(),
@@ -7903,6 +7907,92 @@ describe('executeJiraCommand', () => {
           jql: 'project = PROJ',
           maxResults: 25,
           fields: ['summary', 'status'],
+        }),
+      );
+    });
+
+    it('search action=get calls searchGet with jql', async () => {
+      // Arrange
+      jiraSearchMock.searchGet.mockResolvedValue({ issues: [], startAt: 0, maxResults: 50 });
+      const parsed = cmd('search', 'get', [], { jql: 'project = PROJ' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSearchMock.searchGet).toHaveBeenCalledWith(
+        expect.objectContaining({ jql: 'project = PROJ' }),
+      );
+      expect(result).toMatchObject({ issues: [] });
+    });
+
+    it('search action=get throws when --jql is missing', async () => {
+      await expect(executeJiraCommand(cmd('search', 'get', [], {}), GLOBALS)).rejects.toThrow(
+        '--jql',
+      );
+    });
+
+    it('search action=approximate-count calls approximateCount with jql', async () => {
+      // Arrange
+      jiraSearchMock.approximateCount.mockResolvedValue({ count: 17 });
+      const parsed = cmd('search', 'approximate-count', [], { jql: 'project = PROJ' });
+
+      // Act
+      const result = await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSearchMock.approximateCount).toHaveBeenCalledWith('project = PROJ');
+      expect(result).toEqual({ count: 17 });
+    });
+
+    it('search action=approximate-count throws when --jql is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('search', 'approximate-count', [], {}), GLOBALS),
+      ).rejects.toThrow('--jql');
+    });
+
+    it('search action=jql-get calls searchJqlGet with params', async () => {
+      // Arrange
+      jiraSearchMock.searchJqlGet.mockResolvedValue({ issues: [] });
+      const parsed = cmd('search', 'jql-get', [], {
+        jql: 'project = PROJ',
+        'max-results': '50',
+        fields: 'summary,status',
+        expand: 'changelog',
+        'next-page-token': 'tok-2',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSearchMock.searchJqlGet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jql: 'project = PROJ',
+          maxResults: 50,
+          fields: ['summary', 'status'],
+          expand: ['changelog'],
+          nextPageToken: 'tok-2',
+        }),
+      );
+    });
+
+    it('search action=jql-post calls searchJqlPost with params', async () => {
+      // Arrange
+      jiraSearchMock.searchJqlPost.mockResolvedValue({ issues: [] });
+      const parsed = cmd('search', 'jql-post', [], {
+        jql: 'project = PROJ AND assignee = currentUser()',
+        'max-results': '25',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraSearchMock.searchJqlPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jql: 'project = PROJ AND assignee = currentUser()',
+          maxResults: 25,
         }),
       );
     });
