@@ -8111,6 +8111,25 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ updated: true });
     });
 
+    it('priorities update passes optional fields when provided', async () => {
+      jiraPrioritiesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('priorities', 'update', ['10'], {
+          name: 'Renamed',
+          description: 'desc',
+          'icon-url': 'https://ex.com/icon.png',
+          'status-color': '#FF0000',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.update).toHaveBeenCalledWith('10', {
+        name: 'Renamed',
+        description: 'desc',
+        iconUrl: 'https://ex.com/icon.png',
+        statusColor: '#FF0000',
+      });
+    });
+
     it('priorities update throws when --name is missing', async () => {
       await expect(
         executeJiraCommand(cmd('priorities', 'update', ['10']), GLOBALS),
