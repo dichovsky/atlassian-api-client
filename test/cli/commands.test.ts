@@ -7604,6 +7604,17 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('projects list-legacy passes --expand as array', async () => {
+      jiraProjectsMock.listLegacy.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('projects', 'list-legacy', [], { expand: 'description,lead' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: ['description', 'lead'] }),
+      );
+    });
+
     it('projects create calls client.projects.create with required fields', async () => {
       // Arrange
       jiraProjectsMock.create.mockResolvedValue({ id: '10002', key: 'EX' });
@@ -7644,6 +7655,22 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--assignee-type must be PROJECT_LEAD or UNASSIGNED');
     });
 
+    it('projects create passes valid --assignee-type', async () => {
+      jiraProjectsMock.create.mockResolvedValue({ id: '1', key: 'EX' });
+      await executeJiraCommand(
+        cmd('projects', 'create', [], {
+          key: 'EX',
+          name: 'Example',
+          'project-type-key': 'software',
+          'assignee-type': 'PROJECT_LEAD',
+        }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ assigneeType: 'PROJECT_LEAD' }),
+      );
+    });
+
     it('projects update calls client.projects.update', async () => {
       // Arrange
       jiraProjectsMock.update.mockResolvedValue({ id: '1', key: 'PROJ', name: 'Updated' });
@@ -7666,6 +7693,27 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('projects', 'update', []), GLOBALS),
       ).rejects.toThrow('Missing required argument: projectIdOrKey');
+    });
+
+    it('projects update throws for invalid --assignee-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('projects', 'update', ['PROJ'], { 'assignee-type': 'INVALID' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--assignee-type must be PROJECT_LEAD or UNASSIGNED');
+    });
+
+    it('projects update passes valid --assignee-type', async () => {
+      jiraProjectsMock.update.mockResolvedValue({ id: '1', key: 'PROJ' });
+      await executeJiraCommand(
+        cmd('projects', 'update', ['PROJ'], { 'assignee-type': 'UNASSIGNED' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.update).toHaveBeenCalledWith(
+        'PROJ',
+        expect.objectContaining({ assigneeType: 'UNASSIGNED' }),
+      );
     });
 
     it('projects delete calls client.projects.delete and returns deleted', async () => {
@@ -7712,6 +7760,17 @@ describe('executeJiraCommand', () => {
         expect.objectContaining({ maxResults: 5 }),
       );
       expect(result).toEqual([{ id: '1', key: 'P' }]);
+    });
+
+    it('projects recent passes --expand as array', async () => {
+      jiraProjectsMock.recent.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('projects', 'recent', [], { expand: 'description,lead' }),
+        GLOBALS,
+      );
+      expect(jiraProjectsMock.recent).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: ['description', 'lead'] }),
+      );
     });
 
     it('projects list-types calls client.projects.listTypes', async () => {

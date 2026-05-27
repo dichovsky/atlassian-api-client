@@ -347,7 +347,7 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('includes optional fields in body when provided', async () => {
+    it('includes all optional fields in body when provided', async () => {
       // Arrange
       transport.respondWith(makeProject('10003', 'TEST'));
 
@@ -358,19 +358,36 @@ describe('ProjectsResource', () => {
         projectTypeKey: 'business',
         description: 'A test project',
         leadAccountId: 'abc123',
+        url: 'https://ex.com',
         assigneeType: 'PROJECT_LEAD',
+        avatarId: 10100,
+        issueSecurityScheme: 1,
         permissionScheme: 10001,
+        notificationScheme: 2,
+        categoryId: 3,
+        workflowScheme: 4,
+        issueTypeScheme: 5,
+        issueTypeScreenScheme: 6,
+        fieldConfigurationScheme: 7,
+        priorityScheme: 8,
       });
 
       // Assert
       expect(transport.lastCall?.options.body).toMatchObject({
-        key: 'TEST',
-        name: 'Test Project',
-        projectTypeKey: 'business',
         description: 'A test project',
         leadAccountId: 'abc123',
+        url: 'https://ex.com',
         assigneeType: 'PROJECT_LEAD',
+        avatarId: 10100,
+        issueSecurityScheme: 1,
         permissionScheme: 10001,
+        notificationScheme: 2,
+        categoryId: 3,
+        workflowScheme: 4,
+        issueTypeScheme: 5,
+        issueTypeScreenScheme: 6,
+        fieldConfigurationScheme: 7,
+        priorityScheme: 8,
       });
     });
   });
@@ -442,6 +459,35 @@ describe('ProjectsResource', () => {
         name: 'New Name',
         description: 'New desc',
         assigneeType: 'UNASSIGNED',
+      });
+    });
+
+    it('includes all optional fields when provided', async () => {
+      // Arrange
+      transport.respondWith(makeProject('10001', 'PROJ'));
+
+      // Act
+      await projects.update('PROJ', {
+        key: 'NEWKEY',
+        leadAccountId: 'acc1',
+        url: 'https://ex.com',
+        avatarId: 42,
+        issueSecurityScheme: 1,
+        permissionScheme: 2,
+        notificationScheme: 3,
+        categoryId: 4,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        key: 'NEWKEY',
+        leadAccountId: 'acc1',
+        url: 'https://ex.com',
+        avatarId: 42,
+        issueSecurityScheme: 1,
+        permissionScheme: 2,
+        notificationScheme: 3,
+        categoryId: 4,
       });
     });
   });
