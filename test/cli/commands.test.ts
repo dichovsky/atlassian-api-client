@@ -336,6 +336,15 @@ const jiraIssuesMock = {
 const jiraProjectsMock = {
   list: vi.fn(),
   get: vi.fn(),
+  listLegacy: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  recent: vi.fn(),
+  listTypes: vi.fn(),
+  getType: vi.fn(),
+  getAccessibleType: vi.fn(),
+  listAccessibleTypes: vi.fn(),
 };
 const jiraSearchMock = {
   search: vi.fn(),
@@ -7565,6 +7574,201 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('projects', 'invalid'), GLOBALS)).rejects.toThrow(
         'Unknown projects action',
       );
+    });
+
+    it('projects list-legacy calls client.projects.listLegacy', async () => {
+      // Arrange
+      jiraProjectsMock.listLegacy.mockResolvedValue([{ id: '1', key: 'P' }]);
+
+      // Act
+      const result = await executeJiraCommand(cmd('projects', 'list-legacy'), GLOBALS);
+
+      // Assert
+      expect(jiraProjectsMock.listLegacy).toHaveBeenCalled();
+      expect(result).toEqual([{ id: '1', key: 'P' }]);
+    });
+
+    it('projects list-legacy passes --query and --type-key', async () => {
+      // Arrange
+      jiraProjectsMock.listLegacy.mockResolvedValue([]);
+
+      // Act
+      await executeJiraCommand(
+        cmd('projects', 'list-legacy', [], { query: 'ex', 'type-key': 'software,business' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.listLegacy).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'ex', typeKey: ['software', 'business'] }),
+      );
+    });
+
+    it('projects create calls client.projects.create with required fields', async () => {
+      // Arrange
+      jiraProjectsMock.create.mockResolvedValue({ id: '10002', key: 'EX' });
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('projects', 'create', [], { key: 'EX', name: 'Example', 'project-type-key': 'software' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'EX', name: 'Example', projectTypeKey: 'software' }),
+      );
+      expect(result).toMatchObject({ key: 'EX' });
+    });
+
+    it('projects create throws when --key is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('projects', 'create', [], { name: 'Test', 'project-type-key': 'software' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--key');
+    });
+
+    it('projects create throws for invalid --assignee-type', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('projects', 'create', [], {
+            key: 'EX',
+            name: 'Example',
+            'project-type-key': 'software',
+            'assignee-type': 'INVALID',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--assignee-type must be PROJECT_LEAD or UNASSIGNED');
+    });
+
+    it('projects update calls client.projects.update', async () => {
+      // Arrange
+      jiraProjectsMock.update.mockResolvedValue({ id: '1', key: 'PROJ', name: 'Updated' });
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('projects', 'update', ['PROJ'], { name: 'Updated' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.update).toHaveBeenCalledWith(
+        'PROJ',
+        expect.objectContaining({ name: 'Updated' }),
+      );
+      expect(result).toMatchObject({ key: 'PROJ' });
+    });
+
+    it('projects update throws when projectIdOrKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'update', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: projectIdOrKey');
+    });
+
+    it('projects delete calls client.projects.delete and returns deleted', async () => {
+      // Arrange
+      jiraProjectsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(cmd('projects', 'delete', ['PROJ']), GLOBALS);
+
+      // Assert
+      expect(jiraProjectsMock.delete).toHaveBeenCalledWith('PROJ', expect.any(Object));
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('projects delete passes --enable-undo', async () => {
+      // Arrange
+      jiraProjectsMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('projects', 'delete', ['PROJ'], { 'enable-undo': 'true' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.delete).toHaveBeenCalledWith(
+        'PROJ',
+        expect.objectContaining({ enableUndo: true }),
+      );
+    });
+
+    it('projects recent calls client.projects.recent', async () => {
+      // Arrange
+      jiraProjectsMock.recent.mockResolvedValue([{ id: '1', key: 'P' }]);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('projects', 'recent', [], { 'max-results': '5' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.recent).toHaveBeenCalledWith(
+        expect.objectContaining({ maxResults: 5 }),
+      );
+      expect(result).toEqual([{ id: '1', key: 'P' }]);
+    });
+
+    it('projects list-types calls client.projects.listTypes', async () => {
+      // Arrange
+      jiraProjectsMock.listTypes.mockResolvedValue([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+
+      // Act
+      const result = await executeJiraCommand(cmd('projects', 'list-types'), GLOBALS);
+
+      // Assert
+      expect(jiraProjectsMock.listTypes).toHaveBeenCalled();
+      expect(result).toEqual([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+    });
+
+    it('projects get-type calls client.projects.getType with typeKey', async () => {
+      // Arrange
+      jiraProjectsMock.getType.mockResolvedValue({ key: 'software', color: 'blue', descriptionI18nKey: 'x' });
+
+      // Act
+      const result = await executeJiraCommand(cmd('projects', 'get-type', ['software']), GLOBALS);
+
+      // Assert
+      expect(jiraProjectsMock.getType).toHaveBeenCalledWith('software');
+      expect(result).toMatchObject({ key: 'software' });
+    });
+
+    it('projects get-type throws when typeKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('projects', 'get-type', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: typeKey');
+    });
+
+    it('projects get-accessible-type calls client.projects.getAccessibleType', async () => {
+      // Arrange
+      jiraProjectsMock.getAccessibleType.mockResolvedValue({ key: 'software', color: 'blue', descriptionI18nKey: 'x' });
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('projects', 'get-accessible-type', ['software']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraProjectsMock.getAccessibleType).toHaveBeenCalledWith('software');
+      expect(result).toMatchObject({ key: 'software' });
+    });
+
+    it('projects list-accessible-types calls client.projects.listAccessibleTypes', async () => {
+      // Arrange
+      jiraProjectsMock.listAccessibleTypes.mockResolvedValue([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
+
+      // Act
+      const result = await executeJiraCommand(cmd('projects', 'list-accessible-types'), GLOBALS);
+
+      // Assert
+      expect(jiraProjectsMock.listAccessibleTypes).toHaveBeenCalled();
+      expect(result).toEqual([{ key: 'software', color: 'blue', descriptionI18nKey: 'x' }]);
     });
   });
 

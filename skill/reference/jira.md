@@ -7,7 +7,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                                                                                                                                                                                                                                                                                |
-| `projects`               | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`                                                                                                                                                                                                                                                                          |
 | `search`                 | (no sub-action; uses `--jql`)                                                                                                                                                                                                                                                                                                                                                                                            |
 | `users`                  | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -650,10 +650,52 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 ## `projects`
 
-| Action | Positional         | Optional flags             |
-| ------ | ------------------ | -------------------------- |
-| `list` | —                  | `--query`, `--max-results` |
-| `get`  | `<projectKeyOrId>` | —                          |
+| Action                  | Positional         | Required flags                            | Optional flags                                                                                         |
+| ----------------------- | ------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `list`                  | —                  | —                                         | `--query`, `--max-results`                                                                             |
+| `get`                   | `<projectKeyOrId>` | —                                         | —                                                                                                      |
+| `list-legacy`           | —                  | —                                         | `--max-results`, `--order-by`, `--start-at`, `--expand` (CSV), `--type-key` (CSV), `--category-id`, `--action`, `--query` |
+| `create`                | —                  | `--key`, `--name`, `--project-type-key`   | `--description`, `--lead-account-id`, `--url`, `--assignee-type`, `--avatar-id`, `--permission-scheme`, `--notification-scheme`, `--category-id` |
+| `update`                | `<projectIdOrKey>` | —                                         | `--name`, `--description`, `--lead-account-id`, `--url`, `--assignee-type`                             |
+| `delete`                | `<projectIdOrKey>` | —                                         | `--enable-undo`                                                                                        |
+| `recent`                | —                  | —                                         | `--max-results`, `--expand` (CSV)                                                                      |
+| `list-types`            | —                  | —                                         | —                                                                                                      |
+| `get-type`              | `<typeKey>`        | —                                         | —                                                                                                      |
+| `get-accessible-type`   | `<typeKey>`        | —                                         | —                                                                                                      |
+| `list-accessible-types` | —                  | —                                         | —                                                                                                      |
+
+- `--assignee-type` accepts `PROJECT_LEAD` or `UNASSIGNED`.
+- `list-legacy` calls the deprecated `GET /project` endpoint (returns a flat array, not paginated).
+- `list` uses `GET /project/search` (paginated, preferred).
+
+```sh
+# List projects (paginated, preferred)
+atlas jira projects list --max-results 50
+
+# List projects using legacy endpoint with filters
+atlas jira projects list-legacy --query "example" --type-key software
+
+# Create a project
+atlas jira projects create --key EX --name "Example" --project-type-key software
+
+# Update a project
+atlas jira projects update EX --name "Updated Name" --description "New desc"
+
+# Delete a project
+atlas jira projects delete EX
+
+# List recently viewed projects
+atlas jira projects recent --max-results 10
+
+# List all project types
+atlas jira projects list-types
+
+# Get a specific project type
+atlas jira projects get-type software
+
+# List accessible project types
+atlas jira projects list-accessible-types
+```
 
 ## `search`
 

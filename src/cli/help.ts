@@ -210,7 +210,7 @@ const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 
 RESOURCES:
   issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
-  projects      list, get
+  projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types
   search        search (via JQL)
   users         get, me, search
   issue-types   list, get
