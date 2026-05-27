@@ -283,7 +283,9 @@ describe('PrioritiesResource', () => {
     });
 
     it('throws ValidationError when ids is empty array', async () => {
-      await expect(priorities.move({ ids: [], after: '3' })).rejects.toBeInstanceOf(ValidationError);
+      await expect(priorities.move({ ids: [], after: '3' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
     });
 
     it('throws ValidationError when both after and before are missing', async () => {
@@ -291,9 +293,9 @@ describe('PrioritiesResource', () => {
     });
 
     it('throws ValidationError when both after and before are provided', async () => {
-      await expect(
-        priorities.move({ ids: ['1'], after: '2', before: '3' }),
-      ).rejects.toBeInstanceOf(ValidationError);
+      await expect(priorities.move({ ids: ['1'], after: '2', before: '3' })).rejects.toBeInstanceOf(
+        ValidationError,
+      );
     });
   });
 

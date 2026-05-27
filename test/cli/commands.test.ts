@@ -8163,9 +8163,9 @@ describe('executeJiraCommand', () => {
     });
 
     it('priorities set-default throws when --id missing', async () => {
-      await expect(
-        executeJiraCommand(cmd('priorities', 'set-default'), GLOBALS),
-      ).rejects.toThrow('--id');
+      await expect(executeJiraCommand(cmd('priorities', 'set-default'), GLOBALS)).rejects.toThrow(
+        '--id',
+      );
     });
 
     it('priorities move calls client.priorities.move', async () => {
@@ -8180,10 +8180,7 @@ describe('executeJiraCommand', () => {
 
     it('priorities move with before flag', async () => {
       jiraPrioritiesMock.move.mockResolvedValue(undefined);
-      await executeJiraCommand(
-        cmd('priorities', 'move', [], { ids: '1', before: '3' }),
-        GLOBALS,
-      );
+      await executeJiraCommand(cmd('priorities', 'move', [], { ids: '1', before: '3' }), GLOBALS);
       expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], before: '3' });
     });
 
