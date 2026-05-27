@@ -11,7 +11,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `search`                 | (no sub-action; uses `--jql`)                                                                                                                                                                                                                                                                                                                                                                                            |
 | `users`                  | `get`, `me`, `search`                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `priorities`             | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `priorities`             | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                             |
 | `statuses`               | `list`, `bulk-delete`, `bulk-create`, `bulk-update`, `get-issue-type-usages`, `get-project-usages`, `get-workflow-usages`, `by-names`, `search`                                                                                                                                                                                                                                                                          |
 | `resolutions`            | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                             |
 | `boards`                 | `list`, `get`, `create`, `delete`, `backlog`, `configuration`, `list-epics`, `epic-issues`, `issues-without-epic`, `get-features`, `toggle-feature`, `get-issues`, `move-issues`, `list-projects`, `list-projects-full`, `list-sprints`, `list-versions`, `sprint-issues`, `list-by-filter`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports` |
@@ -675,13 +675,22 @@ No positional or action argument; the resource itself takes the JQL.
 
 ## `issue-types` / `priorities` / `statuses`
 
-All three are read-only lookups:
+`issue-types` and `statuses` are read-only lookups. `priorities` supports full CRUD and management:
 
 ```sh
 atlas jira issue-types list
 atlas jira issue-types get <id>
 atlas jira priorities list
 atlas jira priorities get <id>
+atlas jira priorities create --name "Critical" --description "Highest urgency" --status-color "#FF0000"
+atlas jira priorities update <id> --name "Renamed" --description "Updated description"
+atlas jira priorities delete <id>
+atlas jira priorities delete <id> --replace-with <other-id>
+atlas jira priorities set-default --id <id>
+atlas jira priorities move --ids 10001,10002 --after 10000
+atlas jira priorities move --ids 10001,10002 --before 10003
+atlas jira priorities search --priority-name High --only-default false
+atlas jira priorities search --ids 10001,10002 --max-results 25
 atlas jira statuses list
 ```
 

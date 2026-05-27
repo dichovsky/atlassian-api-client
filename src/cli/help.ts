@@ -215,7 +215,7 @@ RESOURCES:
   users         get, me, search
   issue-types   list, get
   issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
-  priorities    list, get
+  priorities    list, get, create, update, delete, set-default, move, search
   statuses      list, bulk-delete, bulk-create, bulk-update, get-issue-type-usages, get-project-usages, get-workflow-usages, by-names, search
   resolutions   list, get, create, update, delete, set-default, move, search
   status        list, get

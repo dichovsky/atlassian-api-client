@@ -364,6 +364,12 @@ const jiraIssueTypeMock = {
 const jiraPrioritiesMock = {
   list: vi.fn(),
   get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  setDefault: vi.fn(),
+  move: vi.fn(),
+  search: vi.fn(),
 };
 const jiraStatusesMock = {
   list: vi.fn(),
@@ -8057,6 +8063,152 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('priorities', 'get', []), GLOBALS)).rejects.toThrow(
         'Missing required argument: priority ID',
       );
+    });
+
+    it('priorities create calls client.priorities.create with name', async () => {
+      const priority = { id: '99', name: 'Critical' };
+      jiraPrioritiesMock.create.mockResolvedValue(priority);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'create', [], { name: 'Critical' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({ name: 'Critical' });
+      expect(result).toEqual(priority);
+    });
+
+    it('priorities create includes optional description and iconUrl and statusColor', async () => {
+      jiraPrioritiesMock.create.mockResolvedValue({ id: '99', name: 'Critical' });
+      await executeJiraCommand(
+        cmd('priorities', 'create', [], {
+          name: 'Critical',
+          description: 'Highest',
+          'icon-url': 'https://example.com/icon.png',
+          'status-color': '#FF0000',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.create).toHaveBeenCalledWith({
+        name: 'Critical',
+        description: 'Highest',
+        iconUrl: 'https://example.com/icon.png',
+        statusColor: '#FF0000',
+      });
+    });
+
+    it('priorities create throws when --name missing', async () => {
+      await expect(executeJiraCommand(cmd('priorities', 'create'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('priorities update calls client.priorities.update', async () => {
+      jiraPrioritiesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'update', ['10'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.update).toHaveBeenCalledWith('10', { name: 'Renamed' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('priorities update throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('priorities', 'update', ['10']), GLOBALS),
+      ).rejects.toThrow('--name');
+    });
+
+    it('priorities delete calls client.priorities.delete', async () => {
+      jiraPrioritiesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'delete', ['10'], { 'replace-with': '1' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', { replaceWith: '1' });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('priorities delete without --replace-with', async () => {
+      jiraPrioritiesMock.delete.mockResolvedValue(undefined);
+      await executeJiraCommand(cmd('priorities', 'delete', ['10']), GLOBALS);
+      expect(jiraPrioritiesMock.delete).toHaveBeenCalledWith('10', {});
+    });
+
+    it('priorities set-default calls client.priorities.setDefault', async () => {
+      jiraPrioritiesMock.setDefault.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'set-default', [], { id: '5' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.setDefault).toHaveBeenCalledWith({ id: '5' });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('priorities set-default throws when --id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('priorities', 'set-default'), GLOBALS),
+      ).rejects.toThrow('--id');
+    });
+
+    it('priorities move calls client.priorities.move', async () => {
+      jiraPrioritiesMock.move.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'move', [], { ids: '1,2', after: '0' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1', '2'], after: '0' });
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('priorities move with before flag', async () => {
+      jiraPrioritiesMock.move.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('priorities', 'move', [], { ids: '1', before: '3' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], before: '3' });
+    });
+
+    it('priorities move rejects both --after and --before', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('priorities', 'move', [], { ids: '1', after: '2', before: '3' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('priorities move accepts either --after or --before, not both');
+      expect(jiraPrioritiesMock.move).not.toHaveBeenCalled();
+    });
+
+    it('priorities search calls client.priorities.search', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritiesMock.search.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('priorities', 'search', [], {
+          'start-at': '0',
+          'max-results': '10',
+          ids: '1,2',
+          'only-default': true,
+          'priority-name': 'High',
+          expand: 'schemes',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.search).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 10,
+        id: ['1', '2'],
+        onlyDefault: true,
+        priorityName: 'High',
+        expand: 'schemes',
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('priorities search without --ids omits id field', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
+      jiraPrioritiesMock.search.mockResolvedValue(page);
+      await executeJiraCommand(cmd('priorities', 'search', [], {}), GLOBALS);
+      const callArg = jiraPrioritiesMock.search.mock.calls[0]?.[0] as Record<string, unknown>;
+      expect(callArg).not.toHaveProperty('id');
     });
 
     it('priorities unknown action throws', async () => {
