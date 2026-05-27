@@ -369,6 +369,17 @@ const jiraUsersMock = {
   getEmail: vi.fn(),
   bulkGetEmails: vi.fn(),
   getGroups: vi.fn(),
+  getPermissionUsers: vi.fn(),
+  picker: vi.fn(),
+  listProperties: vi.fn(),
+  deleteProperty: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  searchQuery: vi.fn(),
+  searchQueryKey: vi.fn(),
+  viewIssueSearch: vi.fn(),
+  list: vi.fn(),
+  listSearch: vi.fn(),
 };
 const jiraIssueTypesMock = {
   list: vi.fn(),
@@ -8284,6 +8295,283 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('users', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown users action',
       );
+    });
+
+    // ── permission-search ──────────────────────────────────────────────────
+
+    it('users permission-search calls client.users.getPermissionUsers', async () => {
+      jiraUsersMock.getPermissionUsers.mockResolvedValue([]);
+      const parsed = cmd('users', 'permission-search', [], {
+        query: 'alice',
+        permissions: 'BROWSE,CREATE_ISSUES',
+        'project-key': 'PROJ',
+      });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.getPermissionUsers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: 'alice',
+          permissions: ['BROWSE', 'CREATE_ISSUES'],
+          projectKey: 'PROJ',
+        }),
+      );
+    });
+
+    it('users permission-search works without optional params', async () => {
+      jiraUsersMock.getPermissionUsers.mockResolvedValue([]);
+      await executeJiraCommand(cmd('users', 'permission-search'), GLOBALS);
+      expect(jiraUsersMock.getPermissionUsers).toHaveBeenCalledWith(
+        expect.not.objectContaining({ projectKey: expect.anything() }),
+      );
+    });
+
+    // ── picker ────────────────────────────────────────────────────────────
+
+    it('users picker calls client.users.picker with required query', async () => {
+      jiraUsersMock.picker.mockResolvedValue({ users: [] });
+      const parsed = cmd('users', 'picker', [], { query: 'bob' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.picker).toHaveBeenCalledWith(expect.objectContaining({ query: 'bob' }));
+      expect(result).toMatchObject({ users: [] });
+    });
+
+    it('users picker throws when --query is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'picker'), GLOBALS)).rejects.toThrow('--query');
+    });
+
+    it('users picker passes avatar-size and exclude-connect-users', async () => {
+      jiraUsersMock.picker.mockResolvedValue({ users: [] });
+      const parsed = cmd('users', 'picker', [], {
+        query: 'alice',
+        'avatar-size': '32x32',
+        'exclude-connect-users': true,
+        'show-avatar': true,
+      });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          avatarSize: '32x32',
+          excludeConnectUsers: true,
+          showAvatar: true,
+        }),
+      );
+    });
+
+    it('users picker passes exclude and exclude-account-ids as arrays', async () => {
+      jiraUsersMock.picker.mockResolvedValue({ users: [] });
+      const parsed = cmd('users', 'picker', [], {
+        query: 'alice',
+        exclude: 'acc-x,acc-y',
+        'exclude-account-ids': 'acc-z',
+      });
+      await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          exclude: ['acc-x', 'acc-y'],
+          excludeAccountIds: ['acc-z'],
+        }),
+      );
+    });
+
+    // ── list-properties ────────────────────────────────────────────────────
+
+    it('users list-properties calls client.users.listProperties', async () => {
+      jiraUsersMock.listProperties.mockResolvedValue({ keys: [] });
+      const parsed = cmd('users', 'list-properties', [], { 'account-id': 'acc-1' });
+      const result = await executeJiraCommand(parsed, GLOBALS);
+      expect(jiraUsersMock.listProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: 'acc-1' }),
+      );
+      expect(result).toMatchObject({ keys: [] });
+    });
+
+    it('users list-properties passes user-key', async () => {
+      jiraUsersMock.listProperties.mockResolvedValue({ keys: [] });
+      await executeJiraCommand(
+        cmd('users', 'list-properties', [], { 'user-key': 'uk-1' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.listProperties).toHaveBeenCalledWith(
+        expect.objectContaining({ userKey: 'uk-1' }),
+      );
+    });
+
+    // ── delete-property ────────────────────────────────────────────────────
+
+    it('users delete-property calls client.users.deleteProperty', async () => {
+      jiraUsersMock.deleteProperty.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('users', 'delete-property', ['my-prop'], { 'account-id': 'acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.deleteProperty).toHaveBeenCalledWith(
+        'my-prop',
+        expect.objectContaining({ accountId: 'acc-1' }),
+      );
+    });
+
+    it('users delete-property throws when property key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'delete-property', []), GLOBALS),
+      ).rejects.toThrow('property key');
+    });
+
+    // ── get-property ───────────────────────────────────────────────────────
+
+    it('users get-property calls client.users.getProperty', async () => {
+      jiraUsersMock.getProperty.mockResolvedValue({ key: 'p', value: 42 });
+      const result = await executeJiraCommand(
+        cmd('users', 'get-property', ['p'], { 'account-id': 'acc-2' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.getProperty).toHaveBeenCalledWith(
+        'p',
+        expect.objectContaining({ accountId: 'acc-2' }),
+      );
+      expect(result).toMatchObject({ key: 'p', value: 42 });
+    });
+
+    it('users get-property throws when property key is missing', async () => {
+      await expect(executeJiraCommand(cmd('users', 'get-property', []), GLOBALS)).rejects.toThrow(
+        'property key',
+      );
+    });
+
+    // ── set-property ───────────────────────────────────────────────────────
+
+    it('users set-property calls client.users.setProperty', async () => {
+      jiraUsersMock.setProperty.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('users', 'set-property', ['my-prop'], {
+          value: '{"role":"admin"}',
+          'account-id': 'acc-1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.setProperty).toHaveBeenCalledWith(
+        'my-prop',
+        { role: 'admin' },
+        expect.objectContaining({ accountId: 'acc-1' }),
+      );
+    });
+
+    it('users set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'set-property', ['p']), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('users set-property throws when property key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('users', 'set-property', [], { value: '{}' }), GLOBALS),
+      ).rejects.toThrow('property key');
+    });
+
+    // ── search-query ───────────────────────────────────────────────────────
+
+    it('users search-query calls client.users.searchQuery', async () => {
+      const result = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraUsersMock.searchQuery.mockResolvedValue(result);
+      const res = await executeJiraCommand(
+        cmd('users', 'search-query', [], { query: 'alice', 'max-results': '10' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.searchQuery).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'alice', maxResults: 10 }),
+      );
+      expect(res).toMatchObject({ total: 0 });
+    });
+
+    it('users search-query works without options', async () => {
+      jiraUsersMock.searchQuery.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(cmd('users', 'search-query'), GLOBALS);
+      expect(jiraUsersMock.searchQuery).toHaveBeenCalled();
+    });
+
+    // ── search-query-key ───────────────────────────────────────────────────
+
+    it('users search-query-key calls client.users.searchQueryKey', async () => {
+      const result = { values: [{ key: 'uk-1' }], startAt: 0, maxResults: 50, total: 1 };
+      jiraUsersMock.searchQueryKey.mockResolvedValue(result);
+      const res = await executeJiraCommand(
+        cmd('users', 'search-query-key', [], { query: 'bob' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.searchQueryKey).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'bob' }),
+      );
+      expect(res).toMatchObject({ total: 1 });
+    });
+
+    it('users search-query-key works without options', async () => {
+      jiraUsersMock.searchQueryKey.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(cmd('users', 'search-query-key'), GLOBALS);
+      expect(jiraUsersMock.searchQueryKey).toHaveBeenCalled();
+    });
+
+    // ── viewissue-search ───────────────────────────────────────────────────
+
+    it('users viewissue-search calls client.users.viewIssueSearch', async () => {
+      jiraUsersMock.viewIssueSearch.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('users', 'viewissue-search', [], { 'issue-key': 'PROJ-1', query: 'alice' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.viewIssueSearch).toHaveBeenCalledWith(
+        expect.objectContaining({ issueKey: 'PROJ-1', query: 'alice' }),
+      );
+    });
+
+    it('users viewissue-search works without options', async () => {
+      jiraUsersMock.viewIssueSearch.mockResolvedValue([]);
+      await executeJiraCommand(cmd('users', 'viewissue-search'), GLOBALS);
+      expect(jiraUsersMock.viewIssueSearch).toHaveBeenCalled();
+    });
+
+    // ── list ──────────────────────────────────────────────────────────────
+
+    it('users list calls client.users.list', async () => {
+      jiraUsersMock.list.mockResolvedValue([{ accountId: 'acc-1', displayName: 'User 1' }]);
+      const result = await executeJiraCommand(
+        cmd('users', 'list', [], { 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.list).toHaveBeenCalledWith(expect.objectContaining({ maxResults: 50 }));
+      expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('users list works without options', async () => {
+      jiraUsersMock.list.mockResolvedValue([]);
+      await executeJiraCommand(cmd('users', 'list'), GLOBALS);
+      expect(jiraUsersMock.list).toHaveBeenCalled();
+    });
+
+    // ── list-search ───────────────────────────────────────────────────────
+
+    it('users list-search calls client.users.listSearch', async () => {
+      jiraUsersMock.listSearch.mockResolvedValue([]);
+      await executeJiraCommand(
+        cmd('users', 'list-search', [], { query: 'alice', 'start-at': '5' }),
+        GLOBALS,
+      );
+      expect(jiraUsersMock.listSearch).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'alice', startAt: 5 }),
+      );
+    });
+
+    it('users list-search works without options', async () => {
+      jiraUsersMock.listSearch.mockResolvedValue([]);
+      await executeJiraCommand(cmd('users', 'list-search'), GLOBALS);
+      expect(jiraUsersMock.listSearch).toHaveBeenCalled();
     });
   });
 

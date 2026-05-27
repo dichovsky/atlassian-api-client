@@ -212,7 +212,7 @@ RESOURCES:
   issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
   projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types
   search        search, get, approximate-count, jql-get, jql-post
-  users         get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups
+  users         get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups, permission-search, picker, list-properties, delete-property, get-property, set-property, search-query, search-query-key, viewissue-search, list, list-search
   issue-types   list, get
   issuetype     create, delete, update, list-alternatives, load-avatar, list-properties, delete-property, get-property, set-property, list-for-project
   priorities    list, get, create, update, delete, set-default, move, search

@@ -369,3 +369,114 @@ export interface GetUserGroupsParams {
   readonly username?: string;
   readonly key?: string;
 }
+
+// --- User property / extended search types (B809-B819) ---
+
+/** Parameters for searching users by permission. */
+export interface GetPermissionUsersParams {
+  readonly projectKey?: string;
+  readonly projectUuid?: string;
+  readonly issueKey?: string;
+  readonly query?: string;
+  readonly permissions?: string[];
+  readonly username?: string;
+  readonly accountId?: string;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** A compact user entry returned by the user picker endpoint. */
+export interface UserPickerEntry {
+  readonly accountId: string;
+  readonly displayName: string;
+  readonly avatarUrl?: string;
+  readonly html?: string;
+}
+
+/** Response from the user picker endpoint (B810). */
+export interface UserPickerResponse {
+  readonly users: readonly UserPickerEntry[];
+  readonly header?: string;
+  readonly total?: number;
+}
+
+/** Parameters for the user picker endpoint. */
+export interface UserPickerParams {
+  readonly query: string;
+  readonly maxResults?: number;
+  readonly showAvatar?: boolean;
+  readonly exclude?: string[];
+  readonly excludeAccountIds?: string[];
+  readonly avatarSize?: string;
+  readonly excludeConnectUsers?: boolean;
+}
+
+/** A single property key entry returned by the list-properties endpoint. */
+export interface UserPropertyKey {
+  readonly key: string;
+  readonly self: string;
+}
+
+/** Response from the list user properties endpoint (B811). */
+export interface UserPropertyKeys {
+  readonly keys: readonly UserPropertyKey[];
+}
+
+/** Response from the get user property endpoint (B813). */
+export interface UserProperty {
+  readonly key: string;
+  readonly value: unknown;
+}
+
+/** Parameters identifying a user by key or account ID (used across property endpoints). */
+export interface UserIdentifierParams {
+  readonly userKey?: string;
+  readonly accountId?: string;
+}
+
+/** Paginated response wrapping User values (B815/B816). */
+export interface UserSearchQueryResult {
+  readonly values: readonly User[];
+  readonly startAt: number;
+  readonly maxResults: number;
+  readonly total: number;
+}
+
+/** Paginated response wrapping user keys (B816). */
+export interface UserKeySearchQueryResult {
+  readonly values: readonly { readonly key: string }[];
+  readonly startAt: number;
+  readonly maxResults: number;
+  readonly total: number;
+}
+
+/** Parameters for GET /rest/api/3/user/search/query (B815) and key variant (B816). */
+export interface SearchUsersQueryParams {
+  readonly query?: string;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Parameters for GET /rest/api/3/user/viewissue/search (B817). */
+export interface ViewIssueSearchUsersParams {
+  readonly issueKey?: string;
+  readonly query?: string;
+  readonly maxResults?: number;
+  readonly username?: string;
+  readonly accountId?: string;
+  readonly startAt?: number;
+}
+
+/** Parameters for GET /rest/api/3/users (B818). */
+export interface ListAllUsersParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Parameters for GET /rest/api/3/users/search (B819). */
+export interface SearchAllUsersParams {
+  readonly query?: string;
+  readonly username?: string;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}

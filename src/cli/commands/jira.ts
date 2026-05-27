@@ -480,9 +480,92 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
         username: asString(opts['user-name']),
         key: asString(opts['key']),
       });
+    case 'permission-search': {
+      return client.users.getPermissionUsers({
+        projectKey: asString(opts['project-key']),
+        projectUuid: asString(opts['project-uuid']),
+        issueKey: asString(opts['issue-key']),
+        query: asString(opts['query']),
+        permissions: parseCsv(opts['permissions']),
+        accountId: asString(opts['account-id']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'picker': {
+      return client.users.picker({
+        query: requireOpt(opts['query'], '--query'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        showAvatar: opts['show-avatar'] === true ? true : undefined,
+        exclude: parseCsv(opts['exclude']),
+        excludeAccountIds: parseCsv(opts['exclude-account-ids']),
+        avatarSize: asString(opts['avatar-size']),
+        excludeConnectUsers: opts['exclude-connect-users'] === true ? true : undefined,
+      });
+    }
+    case 'list-properties':
+      return client.users.listProperties({
+        userKey: asString(opts['user-key']),
+        accountId: asString(opts['account-id']),
+      });
+    case 'delete-property': {
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
+      await client.users.deleteProperty(propertyKey, {
+        userKey: asString(opts['user-key']),
+        accountId: asString(opts['account-id']),
+      });
+      return undefined;
+    }
+    case 'get-property': {
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
+      return client.users.getProperty(propertyKey, {
+        userKey: asString(opts['user-key']),
+        accountId: asString(opts['account-id']),
+      });
+    }
+    case 'set-property': {
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
+      const value = parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value');
+      await client.users.setProperty(propertyKey, value, {
+        userKey: asString(opts['user-key']),
+        accountId: asString(opts['account-id']),
+      });
+      return undefined;
+    }
+    case 'search-query':
+      return client.users.searchQuery({
+        query: asString(opts['query']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'search-query-key':
+      return client.users.searchQueryKey({
+        query: asString(opts['query']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'viewissue-search':
+      return client.users.viewIssueSearch({
+        issueKey: asString(opts['issue-key']),
+        query: asString(opts['query']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        accountId: asString(opts['account-id']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+      });
+    case 'list':
+      return client.users.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    case 'list-search':
+      return client.users.listSearch({
+        query: asString(opts['query']),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
     default:
       throw new Error(
-        `Unknown users action: ${cmd.action}. Actions: get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups`,
+        `Unknown users action: ${cmd.action}. Actions: get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups, permission-search, picker, list-properties, delete-property, get-property, set-property, search-query, search-query-key, viewissue-search, list, list-search`,
       );
   }
 }
