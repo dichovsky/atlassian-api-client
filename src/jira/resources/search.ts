@@ -2,6 +2,28 @@ import type { Transport } from '../../core/types.js';
 import { paginateSearch, validatePageSize } from '../../core/pagination.js';
 import type { SearchResult, SearchParams, Issue } from '../types.js';
 
+export interface ApproximateCountResult {
+  readonly count: number;
+}
+
+export interface JqlSearchParams {
+  readonly jql?: string;
+  readonly nextPageToken?: string;
+  readonly maxResults?: number;
+  readonly fields?: string[];
+  readonly expand?: string[];
+  readonly properties?: string[];
+  readonly fieldsByKeys?: boolean;
+}
+
+export interface JqlSearchResult {
+  readonly issues: Issue[];
+  readonly nextPageToken?: string;
+  readonly maxResults?: number;
+  readonly total?: number;
+  readonly startAt?: number;
+}
+
 export class SearchResource {
   constructor(
     private readonly transport: Transport,
@@ -56,5 +78,51 @@ export class SearchResource {
       },
       params.maxResults,
     );
+  }
+
+  /** Get approximate count of issues matching a JQL query (POST). B766 */
+  async approximateCount(jql: string): Promise<ApproximateCountResult> {
+    const response = await this.transport.request<ApproximateCountResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/search/approximate-count`,
+      body: { jql },
+    });
+    return response.data;
+  }
+
+  /** Search for issues using JQL cursor-based pagination (GET). B767 */
+  async searchJqlGet(params: JqlSearchParams): Promise<JqlSearchResult> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.jql) query['jql'] = params.jql;
+    if (params.nextPageToken) query['nextPageToken'] = params.nextPageToken;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.fields) query['fields'] = params.fields.join(',');
+    if (params.expand) query['expand'] = params.expand.join(',');
+    if (params.properties) query['properties'] = params.properties.join(',');
+    if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
+    const response = await this.transport.request<JqlSearchResult>({
+      method: 'GET',
+      path: `${this.baseUrl}/search/jql`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Search for issues using JQL cursor-based pagination (POST). B768 */
+  async searchJqlPost(params: JqlSearchParams): Promise<JqlSearchResult> {
+    const body: Record<string, unknown> = {};
+    if (params.jql) body['jql'] = params.jql;
+    if (params.nextPageToken) body['nextPageToken'] = params.nextPageToken;
+    if (params.maxResults !== undefined) body['maxResults'] = params.maxResults;
+    if (params.fields) body['fields'] = params.fields;
+    if (params.expand) body['expand'] = params.expand;
+    if (params.properties) body['properties'] = params.properties;
+    if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
+    const response = await this.transport.request<JqlSearchResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/search/jql`,
+      body,
+    });
+    return response.data;
   }
 }

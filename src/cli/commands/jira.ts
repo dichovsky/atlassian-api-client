@@ -331,17 +331,53 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
 }
 
 async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
-  const jql = asString(cmd.options['jql']);
-
-  if (!jql) {
-    throw new Error('Missing --jql option for search');
+  const opts = cmd.options;
+  switch (cmd.action) {
+    case 'get': {
+      // B932: GET /search (existing searchGet method)
+      const jql = requireOpt(opts['jql'], '--jql');
+      return client.search.searchGet({
+        jql,
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        fields: asString(opts['fields'])?.split(','),
+      });
+    }
+    case 'approximate-count': {
+      // B766
+      const jql = requireOpt(opts['jql'], '--jql');
+      return client.search.approximateCount(jql);
+    }
+    case 'jql-get': {
+      // B767
+      return client.search.searchJqlGet({
+        jql: asString(opts['jql']),
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        fields: asString(opts['fields'])?.split(','),
+        expand: asString(opts['expand'])?.split(','),
+      });
+    }
+    case 'jql-post': {
+      // B768
+      return client.search.searchJqlPost({
+        jql: asString(opts['jql']),
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        fields: asString(opts['fields'])?.split(','),
+        expand: asString(opts['expand'])?.split(','),
+      });
+    }
+    default: {
+      // Backwards compat: atlas jira search --jql "..." still works
+      const jql = asString(opts['jql']);
+      if (!jql) throw new Error('Missing --jql option for search');
+      return client.search.search({
+        jql,
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        fields: asString(opts['fields'])?.split(','),
+      });
+    }
   }
-
-  return client.search.search({
-    jql,
-    maxResults: asPositiveInt(cmd.options['max-results'], '--max-results'),
-    fields: asString(cmd.options['fields'])?.split(','),
-  });
 }
 
 async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
