@@ -794,6 +794,108 @@ describe('ProjectsResource', () => {
     });
   });
 
+  // ── restore ───────────────────────────────────────────────────────────────
+
+  describe('restore()', () => {
+    it('sends POST /project/:id/restore', async () => {
+      transport.respondWith(undefined);
+      await projects.restore('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/project/PROJ/restore`,
+      });
+    });
+
+    it('encodes projectIdOrKey in path', async () => {
+      transport.respondWith(undefined);
+      await projects.restore('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/..%2Fadmin/restore`);
+    });
+  });
+
+  // ── listRoles ─────────────────────────────────────────────────────────────
+
+  describe('listRoles()', () => {
+    it('sends GET /project/:id/role', async () => {
+      transport.respondWith({ Developer: 'https://example.com/role/10001' });
+      const result = await projects.listRoles('PROJ');
+      expect(result).toEqual({ Developer: 'https://example.com/role/10001' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/role`,
+      });
+    });
+  });
+
+  // ── deleteRoleActors ──────────────────────────────────────────────────────
+
+  describe('deleteRoleActors()', () => {
+    it('sends DELETE /project/:id/role/:roleId with user param', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteRoleActors('PROJ', 10001, { user: 'acc-1' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/project/PROJ/role/10001`,
+        query: { user: 'acc-1' },
+      });
+    });
+
+    it('sends DELETE with groupId param', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteRoleActors('PROJ', 10001, { groupId: 'grp-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ groupId: 'grp-1' });
+    });
+
+    it('sends DELETE with group param', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteRoleActors('PROJ', 10001, { group: 'my-group' });
+      expect(transport.lastCall?.options.query).toMatchObject({ group: 'my-group' });
+    });
+  });
+
+  // ── getRole ───────────────────────────────────────────────────────────────
+
+  describe('getRole()', () => {
+    it('sends GET /project/:id/role/:roleId', async () => {
+      transport.respondWith({ id: 10001, name: 'Developer' });
+      const result = await projects.getRole('PROJ', 10001);
+      expect(result).toMatchObject({ id: 10001, name: 'Developer' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/role/10001`,
+      });
+    });
+
+    it('passes excludeInactiveUsers param', async () => {
+      transport.respondWith({ id: 10001 });
+      await projects.getRole('PROJ', 10001, { excludeInactiveUsers: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ excludeInactiveUsers: true });
+    });
+
+    it('omits excludeInactiveUsers when not provided', async () => {
+      transport.respondWith({ id: 10001 });
+      await projects.getRole('PROJ', 10001);
+      expect(transport.lastCall?.options.query?.['excludeInactiveUsers']).toBeUndefined();
+    });
+  });
+
+  // ── addRoleActors ─────────────────────────────────────────────────────────
+
+  describe('addRoleActors()', () => {
+    it('sends POST /project/:id/role/:roleId with actors body', async () => {
+      transport.respondWith({ id: 10001, actors: [] });
+      const result = await projects.addRoleActors('PROJ', 10001, {
+        actors: [{ user: ['acc-1'] }],
+      });
+      expect(result).toMatchObject({ id: 10001 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/project/PROJ/role/10001`,
+        body: { actors: [{ user: ['acc-1'] }] },
+      });
+    });
+  });
+
   // ── getClassificationLevel ────────────────────────────────────────────────
 
   describe('getClassificationLevel()', () => {
@@ -858,6 +960,99 @@ describe('ProjectsResource', () => {
         orderBy: 'name',
         componentSource: 'auto',
         query: 'comp',
+      });
+    });
+  });
+
+  // ── setRoleActors ─────────────────────────────────────────────────────────
+
+  describe('setRoleActors()', () => {
+    it('sends PUT /project/:id/role/:roleId with categorisedActors body', async () => {
+      transport.respondWith({ id: 10001 });
+      const result = await projects.setRoleActors('PROJ', 10001, {
+        categorisedActors: { 'atlassian-user-role-actor': ['acc-1'] },
+      });
+      expect(result).toMatchObject({ id: 10001 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/role/10001`,
+        body: { categorisedActors: { 'atlassian-user-role-actor': ['acc-1'] } },
+      });
+    });
+  });
+
+  // ── getRoleDetails ────────────────────────────────────────────────────────
+
+  describe('getRoleDetails()', () => {
+    it('sends GET /project/:id/roledetails', async () => {
+      transport.respondWith([{ id: 10001, name: 'Developer', roleConfigurable: true }]);
+      const result = await projects.getRoleDetails('PROJ');
+      expect(result).toHaveLength(1);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/roledetails`,
+      });
+    });
+
+    it('passes currentMember param', async () => {
+      transport.respondWith([]);
+      await projects.getRoleDetails('PROJ', { currentMember: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ currentMember: true });
+    });
+
+    it('passes excludeConnectAddons param', async () => {
+      transport.respondWith([]);
+      await projects.getRoleDetails('PROJ', { excludeConnectAddons: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ excludeConnectAddons: true });
+    });
+  });
+
+  // ── getStatuses ───────────────────────────────────────────────────────────
+
+  describe('getStatuses()', () => {
+    it('sends GET /project/:id/statuses', async () => {
+      const payload = [{ id: '10001', name: 'Bug', statuses: [{ id: '1', name: 'Open' }] }];
+      transport.respondWith(payload);
+      const result = await projects.getStatuses('PROJ');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/statuses`,
+      });
+    });
+  });
+
+  // ── listVersions ──────────────────────────────────────────────────────────
+
+  describe('listVersions()', () => {
+    it('sends GET /project/:id/version', async () => {
+      const payload = { values: [{ id: 'v1', name: '1.0' }], startAt: 0, maxResults: 50, total: 1 };
+      transport.respondWith(payload);
+      const result = await projects.listVersions('PROJ');
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/version`,
+      });
+    });
+
+    it('passes all optional params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 10, total: 0 });
+      await projects.listVersions('PROJ', {
+        startAt: 5,
+        maxResults: 10,
+        orderBy: 'name',
+        query: 'v1',
+        status: 'released',
+        expand: 'issuesstatus',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 5,
+        maxResults: 10,
+        orderBy: 'name',
+        query: 'v1',
+        status: 'released',
+        expand: 'issuesstatus',
       });
     });
   });
@@ -998,6 +1193,292 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/project/PROJ/properties/my.prop`,
       });
       expect(transport.lastCall?.options.body).toMatchObject({ answer: 42 });
+    });
+  });
+
+  // ── listAllVersions ───────────────────────────────────────────────────────
+
+  describe('listAllVersions()', () => {
+    it('sends GET /project/:id/versions', async () => {
+      transport.respondWith([{ id: 'v1', name: '1.0' }]);
+      const result = await projects.listAllVersions('PROJ');
+      expect(result).toEqual([{ id: 'v1', name: '1.0' }]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/versions`,
+      });
+    });
+
+    it('passes optional params', async () => {
+      transport.respondWith([]);
+      await projects.listAllVersions('PROJ', { orderBy: '-releaseDate', status: 'released' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        orderBy: '-releaseDate',
+        status: 'released',
+      });
+    });
+
+    it('passes all optional params including maxResults, query, and expand', async () => {
+      transport.respondWith([]);
+      await projects.listAllVersions('PROJ', {
+        maxResults: 10,
+        orderBy: 'name',
+        query: 'v1',
+        status: 'unreleased',
+        expand: 'issuesstatus',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        maxResults: 10,
+        orderBy: 'name',
+        query: 'v1',
+        status: 'unreleased',
+        expand: 'issuesstatus',
+      });
+    });
+  });
+
+  // ── getIssueSecurityScheme ────────────────────────────────────────────────
+
+  describe('getIssueSecurityScheme()', () => {
+    it('sends GET /project/:id/issuesecuritylevelscheme', async () => {
+      transport.respondWith({ id: 1, name: 'Scheme' });
+      const result = await projects.getIssueSecurityScheme('PROJ');
+      expect(result).toMatchObject({ id: 1 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/issuesecuritylevelscheme`,
+      });
+    });
+  });
+
+  // ── getNotificationScheme ─────────────────────────────────────────────────
+
+  describe('getNotificationScheme()', () => {
+    it('sends GET /project/:id/notificationscheme', async () => {
+      transport.respondWith({ id: 2, name: 'Default' });
+      await projects.getNotificationScheme('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/notificationscheme`,
+      });
+    });
+
+    it('passes expand param', async () => {
+      transport.respondWith({ id: 2 });
+      await projects.getNotificationScheme('PROJ', { expand: 'all' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'all' });
+    });
+  });
+
+  // ── getPermissionScheme ───────────────────────────────────────────────────
+
+  describe('getPermissionScheme()', () => {
+    it('sends GET /project/:id/permissionscheme', async () => {
+      transport.respondWith({ id: 3, name: 'Default Permission Scheme' });
+      await projects.getPermissionScheme('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/permissionscheme`,
+      });
+    });
+
+    it('passes expand param', async () => {
+      transport.respondWith({ id: 3 });
+      await projects.getPermissionScheme('PROJ', { expand: 'permissions' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'permissions' });
+    });
+  });
+
+  // ── setPermissionScheme ───────────────────────────────────────────────────
+
+  describe('setPermissionScheme()', () => {
+    it('sends PUT /project/:id/permissionscheme with id body', async () => {
+      transport.respondWith({ id: 10001 });
+      const result = await projects.setPermissionScheme('PROJ', { id: 10001 });
+      expect(result).toMatchObject({ id: 10001 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/permissionscheme`,
+        body: { id: 10001 },
+      });
+    });
+  });
+
+  // ── getSecurityLevels ─────────────────────────────────────────────────────
+
+  describe('getSecurityLevels()', () => {
+    it('sends GET /project/:id/securitylevel', async () => {
+      transport.respondWith({ levels: [{ id: '1', name: 'Private' }] });
+      const result = await projects.getSecurityLevels('PROJ');
+      expect(result.levels).toHaveLength(1);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/securitylevel`,
+      });
+    });
+  });
+
+  // ── listCategories ────────────────────────────────────────────────────────
+
+  describe('listCategories()', () => {
+    it('sends GET /projectCategory', async () => {
+      transport.respondWith([{ id: '1', name: 'Infrastructure' }]);
+      const result = await projects.listCategories();
+      expect(result).toEqual([{ id: '1', name: 'Infrastructure' }]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projectCategory`,
+      });
+    });
+  });
+
+  // ── createCategory ────────────────────────────────────────────────────────
+
+  describe('createCategory()', () => {
+    it('sends POST /projectCategory with name', async () => {
+      transport.respondWith({ id: '2', name: 'DevOps' });
+      const result = await projects.createCategory({ name: 'DevOps' });
+      expect(result).toMatchObject({ name: 'DevOps' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/projectCategory`,
+        body: { name: 'DevOps' },
+      });
+    });
+
+    it('includes description when provided', async () => {
+      transport.respondWith({ id: '3', name: 'Platform' });
+      await projects.createCategory({ name: 'Platform', description: 'Platform team' });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        name: 'Platform',
+        description: 'Platform team',
+      });
+    });
+  });
+
+  // ── deleteCategory ────────────────────────────────────────────────────────
+
+  describe('deleteCategory()', () => {
+    it('sends DELETE /projectCategory/:id', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteCategory('42');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/projectCategory/42`,
+      });
+    });
+
+    it('encodes categoryId in path', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteCategory('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/projectCategory/..%2Fadmin`);
+    });
+  });
+
+  // ── getCategory ───────────────────────────────────────────────────────────
+
+  describe('getCategory()', () => {
+    it('sends GET /projectCategory/:id', async () => {
+      transport.respondWith({ id: '42', name: 'DevOps' });
+      const result = await projects.getCategory('42');
+      expect(result).toMatchObject({ id: '42' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projectCategory/42`,
+      });
+    });
+  });
+
+  // ── updateCategory ────────────────────────────────────────────────────────
+
+  describe('updateCategory()', () => {
+    it('sends PUT /projectCategory/:id with updated fields', async () => {
+      transport.respondWith({ id: '42', name: 'Renamed' });
+      const result = await projects.updateCategory('42', { name: 'Renamed' });
+      expect(result).toMatchObject({ name: 'Renamed' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/projectCategory/42`,
+        body: { name: 'Renamed' },
+      });
+    });
+
+    it('includes description when provided', async () => {
+      transport.respondWith({ id: '42', name: 'X' });
+      await projects.updateCategory('42', { name: 'X', description: 'Updated' });
+      expect(transport.lastCall?.options.body).toMatchObject({ description: 'Updated' });
+    });
+
+    it('omits undefined fields', async () => {
+      transport.respondWith({ id: '42' });
+      await projects.updateCategory('42', {});
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── getProjectsFields ─────────────────────────────────────────────────────
+
+  describe('getProjectsFields()', () => {
+    it('sends GET /projects/fields', async () => {
+      transport.respondWith([{ id: 'f1' }, { id: 'f2' }]);
+      const result = await projects.getProjectsFields();
+      expect(result).toHaveLength(2);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projects/fields`,
+      });
+    });
+  });
+
+  // ── validateProjectKey ────────────────────────────────────────────────────
+
+  describe('validateProjectKey()', () => {
+    it('sends GET /projectvalidate/key with key query param', async () => {
+      transport.respondWith({ valid: true });
+      const result = await projects.validateProjectKey('MYPROJ');
+      expect(result).toEqual({ valid: true });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projectvalidate/key`,
+        query: { key: 'MYPROJ' },
+      });
+    });
+
+    it('returns validation errors when invalid', async () => {
+      transport.respondWith({ valid: false, errors: ['Key already exists'] });
+      const result = await projects.validateProjectKey('TAKEN');
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain('Key already exists');
+    });
+  });
+
+  // ── getValidProjectKey ────────────────────────────────────────────────────
+
+  describe('getValidProjectKey()', () => {
+    it('sends GET /projectvalidate/validProjectKey', async () => {
+      transport.respondWith({ key: 'MYPROJ' });
+      const result = await projects.getValidProjectKey('myproj');
+      expect(result).toEqual({ key: 'MYPROJ' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projectvalidate/validProjectKey`,
+        query: { key: 'myproj' },
+      });
+    });
+  });
+
+  // ── getValidProjectName ───────────────────────────────────────────────────
+
+  describe('getValidProjectName()', () => {
+    it('sends GET /projectvalidate/validProjectName', async () => {
+      transport.respondWith({ name: 'My Project' });
+      const result = await projects.getValidProjectName('My Project');
+      expect(result).toEqual({ name: 'My Project' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/projectvalidate/validProjectName`,
+        query: { name: 'My Project' },
+      });
     });
   });
 });
