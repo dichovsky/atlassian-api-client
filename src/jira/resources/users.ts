@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 import type {
   User,
   SearchUsersParams,
@@ -14,6 +15,18 @@ import type {
   BulkUserEmailsResponse,
   UserGroupEntry,
   GetUserGroupsParams,
+  GetPermissionUsersParams,
+  UserPickerParams,
+  UserPickerResponse,
+  UserPropertyKeys,
+  UserIdentifierParams,
+  UserProperty,
+  SearchUsersQueryParams,
+  UserSearchQueryResult,
+  UserKeySearchQueryResult,
+  ViewIssueSearchUsersParams,
+  ListAllUsersParams,
+  SearchAllUsersParams,
 } from '../types.js';
 
 export class UsersResource {
@@ -204,6 +217,173 @@ export class UsersResource {
     const response = await this.transport.request<UserGroupEntry[]>({
       method: 'GET',
       path: `${this.baseUrl}/user/groups`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Search for users with a specific permission (B809). */
+  async getPermissionUsers(params: GetPermissionUsersParams): Promise<User[]> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.projectKey !== undefined) query['projectKey'] = params.projectKey;
+    if (params.projectUuid !== undefined) query['projectUuid'] = params.projectUuid;
+    if (params.issueKey !== undefined) query['issueKey'] = params.issueKey;
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.permissions !== undefined) query['permissions'] = params.permissions.join(',');
+    if (params.username !== undefined) query['username'] = params.username;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<User[]>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/permission/search`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Returns a list of users matching a query string for use in a user picker (B810). */
+  async picker(params: UserPickerParams): Promise<UserPickerResponse> {
+    const query: Record<string, string | number | boolean | undefined> = { query: params.query };
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.showAvatar !== undefined) query['showAvatar'] = params.showAvatar;
+    if (params.exclude !== undefined) query['exclude'] = params.exclude.join(',');
+    if (params.excludeAccountIds !== undefined)
+      query['excludeAccountIds'] = params.excludeAccountIds.join(',');
+    if (params.avatarSize !== undefined) query['avatarSize'] = params.avatarSize;
+    if (params.excludeConnectUsers !== undefined)
+      query['excludeConnectUsers'] = params.excludeConnectUsers;
+    const response = await this.transport.request<UserPickerResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/picker`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Returns the keys of all properties for a user (B811). */
+  async listProperties(params: UserIdentifierParams = {}): Promise<UserPropertyKeys> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.userKey !== undefined) query['userKey'] = params.userKey;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    const response = await this.transport.request<UserPropertyKeys>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/properties`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Deletes a property from a user account (B812). */
+  async deleteProperty(propertyKey: string, params: UserIdentifierParams = {}): Promise<void> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.userKey !== undefined) query['userKey'] = params.userKey;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/user/properties/${encodePathSegment(propertyKey)}`,
+      query,
+    });
+  }
+
+  /** Returns the value of a user's property (B813). */
+  async getProperty(propertyKey: string, params: UserIdentifierParams = {}): Promise<UserProperty> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.userKey !== undefined) query['userKey'] = params.userKey;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    const response = await this.transport.request<UserProperty>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/properties/${encodePathSegment(propertyKey)}`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Sets the value of a property on a user account (B814). */
+  async setProperty(
+    propertyKey: string,
+    value: unknown,
+    params: UserIdentifierParams = {},
+  ): Promise<void> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.userKey !== undefined) query['userKey'] = params.userKey;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/user/properties/${encodePathSegment(propertyKey)}`,
+      query,
+      body: value,
+    });
+  }
+
+  /** Searches for users using structured query parameters (B815). */
+  async searchQuery(params: SearchUsersQueryParams = {}): Promise<UserSearchQueryResult> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<UserSearchQueryResult>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/search/query`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Searches for users by query and returns user keys (B816). */
+  async searchQueryKey(params: SearchUsersQueryParams = {}): Promise<UserKeySearchQueryResult> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<UserKeySearchQueryResult>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/search/query/key`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Returns users who can be assigned to an issue based on view permissions (B817). */
+  async viewIssueSearch(params: ViewIssueSearchUsersParams = {}): Promise<User[]> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.issueKey !== undefined) query['issueKey'] = params.issueKey;
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params.username !== undefined) query['username'] = params.username;
+    if (params.accountId !== undefined) query['accountId'] = params.accountId;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    const response = await this.transport.request<User[]>({
+      method: 'GET',
+      path: `${this.baseUrl}/user/viewissue/search`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Returns a list of all users (B818). */
+  async list(params: ListAllUsersParams = {}): Promise<User[]> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<User[]>({
+      method: 'GET',
+      path: `${this.baseUrl}/users`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Returns a list of users matching a search string (B819). */
+  async listSearch(params: SearchAllUsersParams = {}): Promise<User[]> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params.query !== undefined) query['query'] = params.query;
+    if (params.username !== undefined) query['username'] = params.username;
+    if (params.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<User[]>({
+      method: 'GET',
+      path: `${this.baseUrl}/users/search`,
       query,
     });
     return response.data;

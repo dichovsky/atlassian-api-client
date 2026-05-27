@@ -412,4 +412,405 @@ describe('UsersResource', () => {
       });
     });
   });
+
+  // ── getPermissionUsers (B809) ─────────────────────────────────────────────
+
+  describe('getPermissionUsers()', () => {
+    it('calls GET /user/permission/search with query and permissions', async () => {
+      transport.respondWith([makeUser('acc-1')]);
+      await users.getPermissionUsers({ query: 'john', permissions: ['BROWSE'] });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/permission/search`,
+        query: { query: 'john', permissions: 'BROWSE' },
+      });
+    });
+
+    it('joins multiple permissions with comma', async () => {
+      transport.respondWith([]);
+      await users.getPermissionUsers({ permissions: ['BROWSE', 'CREATE_ISSUES'] });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        permissions: 'BROWSE,CREATE_ISSUES',
+      });
+    });
+
+    it('includes optional params when provided', async () => {
+      transport.respondWith([]);
+      await users.getPermissionUsers({
+        projectKey: 'PROJ',
+        projectUuid: 'uuid-1',
+        issueKey: 'PROJ-1',
+        username: 'jdoe',
+        accountId: 'acc-1',
+        startAt: 10,
+        maxResults: 50,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectKey: 'PROJ',
+        projectUuid: 'uuid-1',
+        issueKey: 'PROJ-1',
+        username: 'jdoe',
+        accountId: 'acc-1',
+        startAt: 10,
+        maxResults: 50,
+      });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith([]);
+      await users.getPermissionUsers({});
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── picker (B810) ─────────────────────────────────────────────────────────
+
+  describe('picker()', () => {
+    it('calls GET /user/picker with required query param', async () => {
+      const pickerResponse = { users: [{ accountId: 'acc-1', displayName: 'User acc-1' }] };
+      transport.respondWith(pickerResponse);
+      await users.picker({ query: 'alice' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/picker`,
+        query: { query: 'alice' },
+      });
+    });
+
+    it('includes optional params when provided', async () => {
+      transport.respondWith({ users: [] });
+      await users.picker({
+        query: 'bob',
+        maxResults: 5,
+        showAvatar: true,
+        exclude: ['acc-x', 'acc-y'],
+        excludeAccountIds: ['acc-z'],
+        avatarSize: '16x16',
+        excludeConnectUsers: true,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        query: 'bob',
+        maxResults: 5,
+        showAvatar: true,
+        exclude: 'acc-x,acc-y',
+        excludeAccountIds: 'acc-z',
+        avatarSize: '16x16',
+        excludeConnectUsers: true,
+      });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith({ users: [] });
+      await users.picker({ query: 'test' });
+      const q = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(q).not.toHaveProperty('maxResults');
+      expect(q).not.toHaveProperty('showAvatar');
+      expect(q).not.toHaveProperty('exclude');
+    });
+  });
+
+  // ── listProperties (B811) ─────────────────────────────────────────────────
+
+  describe('listProperties()', () => {
+    it('calls GET /user/properties', async () => {
+      const keysResponse = { keys: [{ key: 'prop-1', self: 'https://...' }] };
+      transport.respondWith(keysResponse);
+      const result = await users.listProperties();
+      expect(result).toEqual(keysResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/properties`,
+        query: {},
+      });
+    });
+
+    it('includes accountId when provided', async () => {
+      transport.respondWith({ keys: [] });
+      await users.listProperties({ accountId: 'acc-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
+    });
+
+    it('includes userKey when provided', async () => {
+      transport.respondWith({ keys: [] });
+      await users.listProperties({ userKey: 'uk-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ userKey: 'uk-1' });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith({ keys: [] });
+      await users.listProperties({});
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── deleteProperty (B812) ─────────────────────────────────────────────────
+
+  describe('deleteProperty()', () => {
+    it('calls DELETE /user/properties/{propertyKey}', async () => {
+      transport.respondWith(undefined, 204);
+      await users.deleteProperty('my-prop');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/user/properties/my-prop`,
+        query: {},
+      });
+    });
+
+    it('encodes special characters in propertyKey', async () => {
+      transport.respondWith(undefined, 204);
+      await users.deleteProperty('prop/with spaces');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/user/properties/prop%2Fwith%20spaces`,
+      );
+    });
+
+    it('includes accountId when provided', async () => {
+      transport.respondWith(undefined, 204);
+      await users.deleteProperty('my-prop', { accountId: 'acc-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
+    });
+
+    it('includes userKey when provided', async () => {
+      transport.respondWith(undefined, 204);
+      await users.deleteProperty('my-prop', { userKey: 'uk-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ userKey: 'uk-1' });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith(undefined, 204);
+      await users.deleteProperty('my-prop', {});
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── getProperty (B813) ────────────────────────────────────────────────────
+
+  describe('getProperty()', () => {
+    it('calls GET /user/properties/{propertyKey}', async () => {
+      const propResponse = { key: 'my-prop', value: { foo: 'bar' } };
+      transport.respondWith(propResponse);
+      const result = await users.getProperty('my-prop');
+      expect(result).toEqual(propResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/properties/my-prop`,
+        query: {},
+      });
+    });
+
+    it('includes accountId when provided', async () => {
+      transport.respondWith({ key: 'p', value: null });
+      await users.getProperty('p', { accountId: 'acc-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
+    });
+
+    it('includes userKey when provided', async () => {
+      transport.respondWith({ key: 'p', value: null });
+      await users.getProperty('p', { userKey: 'uk-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ userKey: 'uk-1' });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith({ key: 'p', value: null });
+      await users.getProperty('p');
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── setProperty (B814) ────────────────────────────────────────────────────
+
+  describe('setProperty()', () => {
+    it('calls PUT /user/properties/{propertyKey} with body', async () => {
+      transport.respondWith(undefined, 200);
+      await users.setProperty('my-prop', { foo: 'bar' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/user/properties/my-prop`,
+        query: {},
+        body: { foo: 'bar' },
+      });
+    });
+
+    it('includes accountId when provided', async () => {
+      transport.respondWith(undefined, 200);
+      await users.setProperty('p', 'value', { accountId: 'acc-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ accountId: 'acc-1' });
+    });
+
+    it('includes userKey when provided', async () => {
+      transport.respondWith(undefined, 200);
+      await users.setProperty('p', 42, { userKey: 'uk-1' });
+      expect(transport.lastCall?.options.query).toMatchObject({ userKey: 'uk-1' });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith(undefined, 200);
+      await users.setProperty('p', true, {});
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── searchQuery (B815) ────────────────────────────────────────────────────
+
+  describe('searchQuery()', () => {
+    it('calls GET /user/search/query', async () => {
+      const result = { values: [makeUser('acc-1')], startAt: 0, maxResults: 50, total: 1 };
+      transport.respondWith(result);
+      const res = await users.searchQuery({ query: 'alice' });
+      expect(res).toEqual(result);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/search/query`,
+        query: { query: 'alice' },
+      });
+    });
+
+    it('includes pagination params when provided', async () => {
+      transport.respondWith({ values: [], startAt: 10, maxResults: 20, total: 0 });
+      await users.searchQuery({ startAt: 10, maxResults: 20 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 20 });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0 });
+      await users.searchQuery();
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── searchQueryKey (B816) ─────────────────────────────────────────────────
+
+  describe('searchQueryKey()', () => {
+    it('calls GET /user/search/query/key', async () => {
+      const result = { values: [{ key: 'uk-1' }], startAt: 0, maxResults: 50, total: 1 };
+      transport.respondWith(result);
+      const res = await users.searchQueryKey({ query: 'alice' });
+      expect(res).toEqual(result);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/search/query/key`,
+        query: { query: 'alice' },
+      });
+    });
+
+    it('includes pagination params when provided', async () => {
+      transport.respondWith({ values: [], startAt: 5, maxResults: 10, total: 0 });
+      await users.searchQueryKey({ startAt: 5, maxResults: 10 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0 });
+      await users.searchQueryKey();
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── viewIssueSearch (B817) ────────────────────────────────────────────────
+
+  describe('viewIssueSearch()', () => {
+    it('calls GET /user/viewissue/search', async () => {
+      transport.respondWith([makeUser('acc-1')]);
+      await users.viewIssueSearch({ issueKey: 'PROJ-1' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/user/viewissue/search`,
+        query: { issueKey: 'PROJ-1' },
+      });
+    });
+
+    it('includes all optional params when provided', async () => {
+      transport.respondWith([]);
+      await users.viewIssueSearch({
+        issueKey: 'PROJ-2',
+        query: 'bob',
+        maxResults: 10,
+        username: 'bob',
+        accountId: 'acc-2',
+        startAt: 5,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        issueKey: 'PROJ-2',
+        query: 'bob',
+        maxResults: 10,
+        username: 'bob',
+        accountId: 'acc-2',
+        startAt: 5,
+      });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith([]);
+      await users.viewIssueSearch();
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── list (B818) ───────────────────────────────────────────────────────────
+
+  describe('list()', () => {
+    it('calls GET /users', async () => {
+      const userList = [makeUser('acc-1'), makeUser('acc-2')];
+      transport.respondWith(userList);
+      const result = await users.list();
+      expect(result).toEqual(userList);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/users`,
+        query: {},
+      });
+    });
+
+    it('includes startAt when provided', async () => {
+      transport.respondWith([]);
+      await users.list({ startAt: 20 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 20 });
+    });
+
+    it('includes maxResults when provided', async () => {
+      transport.respondWith([]);
+      await users.list({ maxResults: 100 });
+      expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 100 });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith([]);
+      await users.list({});
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── listSearch (B819) ─────────────────────────────────────────────────────
+
+  describe('listSearch()', () => {
+    it('calls GET /users/search', async () => {
+      const userList = [makeUser('acc-1')];
+      transport.respondWith(userList);
+      const result = await users.listSearch({ query: 'alice' });
+      expect(result).toEqual(userList);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/users/search`,
+        query: { query: 'alice' },
+      });
+    });
+
+    it('includes username when provided', async () => {
+      transport.respondWith([]);
+      await users.listSearch({ username: 'jdoe' });
+      expect(transport.lastCall?.options.query).toMatchObject({ username: 'jdoe' });
+    });
+
+    it('includes pagination params when provided', async () => {
+      transport.respondWith([]);
+      await users.listSearch({ startAt: 10, maxResults: 25 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
+    });
+
+    it('omits undefined optional params', async () => {
+      transport.respondWith([]);
+      await users.listSearch();
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
 });
