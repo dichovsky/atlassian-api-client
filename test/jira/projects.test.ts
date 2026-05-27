@@ -633,4 +633,371 @@ describe('ProjectsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/..%2Fadmin`);
     });
   });
+
+  // ── getEmail ──────────────────────────────────────────────────────────────
+
+  describe('getEmail()', () => {
+    it('sends GET /project/:id/email', async () => {
+      const payload = { projectId: 1, emailAddress: 'test@example.com' };
+      transport.respondWith(payload);
+      const result = await projects.getEmail('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/email`,
+      });
+      expect(result).toMatchObject({ emailAddress: 'test@example.com' });
+    });
+
+    it('encodes projectId in path', async () => {
+      transport.respondWith({});
+      await projects.getEmail('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/..%2Fadmin/email`);
+    });
+  });
+
+  // ── setEmail ──────────────────────────────────────────────────────────────
+
+  describe('setEmail()', () => {
+    it('sends PUT /project/:id/email with emailAddress', async () => {
+      transport.respondWith(undefined);
+      await projects.setEmail('PROJ', { emailAddress: 'new@example.com' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/email`,
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ emailAddress: 'new@example.com' });
+    });
+
+    it('sends PUT with empty body when no emailAddress', async () => {
+      transport.respondWith(undefined);
+      await projects.setEmail('PROJ', {});
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── getHierarchy ──────────────────────────────────────────────────────────
+
+  describe('getHierarchy()', () => {
+    it('sends GET /project/:id/hierarchy', async () => {
+      const payload = { projectId: 10001, hierarchy: [] };
+      transport.respondWith(payload);
+      const result = await projects.getHierarchy('10001');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/10001/hierarchy`,
+      });
+      expect(result).toMatchObject({ projectId: 10001 });
+    });
+  });
+
+  // ── archive ───────────────────────────────────────────────────────────────
+
+  describe('archive()', () => {
+    it('sends POST /project/:key/archive', async () => {
+      transport.respondWith(undefined);
+      await projects.archive('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/project/PROJ/archive`,
+      });
+    });
+  });
+
+  // ── setAvatar ─────────────────────────────────────────────────────────────
+
+  describe('setAvatar()', () => {
+    it('sends PUT /project/:key/avatar with id', async () => {
+      transport.respondWith(undefined);
+      await projects.setAvatar('PROJ', { id: 'avi-123' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/avatar`,
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ id: 'avi-123' });
+    });
+  });
+
+  // ── deleteAvatar ──────────────────────────────────────────────────────────
+
+  describe('deleteAvatar()', () => {
+    it('sends DELETE /project/:key/avatar/:avatarId', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteAvatar('PROJ', '10100');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/project/PROJ/avatar/10100`,
+      });
+    });
+
+    it('encodes avatarId in path', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteAvatar('PROJ', 'av/123');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/PROJ/avatar/av%2F123`);
+    });
+  });
+
+  // ── loadAvatar ────────────────────────────────────────────────────────────
+
+  describe('loadAvatar()', () => {
+    it('sends POST /project/:key/avatar2 with body', async () => {
+      const payload = { id: 'av-new' };
+      transport.respondWith(payload);
+      const result = await projects.loadAvatar('PROJ', { data: 'base64...' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/project/PROJ/avatar2`,
+      });
+      expect(result).toMatchObject({ id: 'av-new' });
+    });
+  });
+
+  // ── getAvatars ────────────────────────────────────────────────────────────
+
+  describe('getAvatars()', () => {
+    it('sends GET /project/:key/avatars', async () => {
+      const payload = { system: [], custom: [] };
+      transport.respondWith(payload);
+      const result = await projects.getAvatars('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/avatars`,
+      });
+      expect(result).toMatchObject({ system: [], custom: [] });
+    });
+  });
+
+  // ── getClassificationConfig ───────────────────────────────────────────────
+
+  describe('getClassificationConfig()', () => {
+    it('sends GET /project/:key/classification-config', async () => {
+      const payload = { id: 'cl-1', name: 'Public' };
+      transport.respondWith(payload);
+      const result = await projects.getClassificationConfig('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/classification-config`,
+      });
+      expect(result).toMatchObject({ id: 'cl-1' });
+    });
+  });
+
+  // ── deleteClassificationLevel ─────────────────────────────────────────────
+
+  describe('deleteClassificationLevel()', () => {
+    it('sends DELETE /project/:key/classification-level/default', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteClassificationLevel('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/project/PROJ/classification-level/default`,
+      });
+    });
+  });
+
+  // ── getClassificationLevel ────────────────────────────────────────────────
+
+  describe('getClassificationLevel()', () => {
+    it('sends GET /project/:key/classification-level/default', async () => {
+      const payload = { id: 'cl-1', name: 'Public' };
+      transport.respondWith(payload);
+      const result = await projects.getClassificationLevel('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/classification-level/default`,
+      });
+      expect(result).toMatchObject({ id: 'cl-1' });
+    });
+  });
+
+  // ── setClassificationLevel ────────────────────────────────────────────────
+
+  describe('setClassificationLevel()', () => {
+    it('sends PUT /project/:key/classification-level/default with id', async () => {
+      transport.respondWith(undefined);
+      await projects.setClassificationLevel('PROJ', { id: 'cl-1' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/classification-level/default`,
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ id: 'cl-1' });
+    });
+
+    it('sends PUT with empty body when no id provided', async () => {
+      transport.respondWith(undefined);
+      await projects.setClassificationLevel('PROJ', {});
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── listComponents ────────────────────────────────────────────────────────
+
+  describe('listComponents()', () => {
+    it('sends GET /project/:key/component', async () => {
+      const payload = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      transport.respondWith(payload);
+      const result = await projects.listComponents('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/component`,
+      });
+      expect(result).toMatchObject({ values: [] });
+    });
+
+    it('passes pagination and filter params', async () => {
+      transport.respondWith({ values: [], startAt: 10, maxResults: 25, total: 0 });
+      await projects.listComponents('PROJ', {
+        startAt: 10,
+        maxResults: 25,
+        orderBy: 'name',
+        componentSource: 'auto',
+        query: 'comp',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 10,
+        maxResults: 25,
+        orderBy: 'name',
+        componentSource: 'auto',
+        query: 'comp',
+      });
+    });
+  });
+
+  // ── listAllComponents ─────────────────────────────────────────────────────
+
+  describe('listAllComponents()', () => {
+    it('sends GET /project/:key/components', async () => {
+      const payload = [{ id: 'comp-1', name: 'Backend' }];
+      transport.respondWith(payload);
+      const result = await projects.listAllComponents('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/components`,
+      });
+      expect(result).toEqual(payload);
+    });
+  });
+
+  // ── deleteAsync ───────────────────────────────────────────────────────────
+
+  describe('deleteAsync()', () => {
+    it('sends POST /project/:key/delete and returns TaskId', async () => {
+      transport.respondWith({ id: 'task-123' });
+      const result = await projects.deleteAsync('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/project/PROJ/delete`,
+      });
+      expect(result).toMatchObject({ id: 'task-123' });
+    });
+  });
+
+  // ── getFeatures ───────────────────────────────────────────────────────────
+
+  describe('getFeatures()', () => {
+    it('sends GET /project/:key/features', async () => {
+      const payload = { features: [{ feature: 'jsw.classic.roadmap', state: 'ENABLED' }] };
+      transport.respondWith(payload);
+      const result = await projects.getFeatures('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/features`,
+      });
+      expect(result).toMatchObject({ features: expect.any(Array) });
+    });
+  });
+
+  // ── setFeatureState ───────────────────────────────────────────────────────
+
+  describe('setFeatureState()', () => {
+    it('sends PUT /project/:key/features/:featureKey with state', async () => {
+      const payload = { features: [] };
+      transport.respondWith(payload);
+      const result = await projects.setFeatureState('PROJ', 'jsw.classic.roadmap', 'ENABLED');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/features/jsw.classic.roadmap`,
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ state: 'ENABLED' });
+      expect(result).toMatchObject({ features: [] });
+    });
+
+    it('sends DISABLED state', async () => {
+      transport.respondWith({ features: [] });
+      await projects.setFeatureState('PROJ', 'some.feature', 'DISABLED');
+      expect(transport.lastCall?.options.body).toMatchObject({ state: 'DISABLED' });
+    });
+
+    it('encodes featureKey in path', async () => {
+      transport.respondWith({ features: [] });
+      await projects.setFeatureState('PROJ', 'feature/key', 'ENABLED');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project/PROJ/features/feature%2Fkey`,
+      );
+    });
+  });
+
+  // ── listProperties ────────────────────────────────────────────────────────
+
+  describe('listProperties()', () => {
+    it('sends GET /project/:key/properties', async () => {
+      const payload = { keys: [{ self: 'url', key: 'prop1' }] };
+      transport.respondWith(payload);
+      const result = await projects.listProperties('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/properties`,
+      });
+      expect(result).toMatchObject({ keys: expect.any(Array) });
+    });
+  });
+
+  // ── deleteProperty ────────────────────────────────────────────────────────
+
+  describe('deleteProperty()', () => {
+    it('sends DELETE /project/:key/properties/:propertyKey', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteProperty('PROJ', 'my.prop');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/project/PROJ/properties/my.prop`,
+      });
+    });
+
+    it('encodes propertyKey in path', async () => {
+      transport.respondWith(undefined);
+      await projects.deleteProperty('PROJ', 'key/with/slashes');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project/PROJ/properties/key%2Fwith%2Fslashes`,
+      );
+    });
+  });
+
+  // ── getProperty ───────────────────────────────────────────────────────────
+
+  describe('getProperty()', () => {
+    it('sends GET /project/:key/properties/:propertyKey', async () => {
+      const payload = { key: 'my.prop', value: { foo: 'bar' } };
+      transport.respondWith(payload);
+      const result = await projects.getProperty('PROJ', 'my.prop');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/project/PROJ/properties/my.prop`,
+      });
+      expect(result).toMatchObject({ key: 'my.prop', value: { foo: 'bar' } });
+    });
+  });
+
+  // ── setProperty ───────────────────────────────────────────────────────────
+
+  describe('setProperty()', () => {
+    it('sends PUT /project/:key/properties/:propertyKey with value', async () => {
+      transport.respondWith(undefined);
+      await projects.setProperty('PROJ', 'my.prop', { answer: 42 });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/project/PROJ/properties/my.prop`,
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({ answer: 42 });
+    });
+  });
 });

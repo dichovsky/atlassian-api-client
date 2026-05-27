@@ -670,67 +670,67 @@
 - [ ] 🔴 🧩 API: B657 Jira: expose POST /rest/api/3/project-template/save-template
   - files: `src/jira/resources/project-template.ts`, `test/jira/project-template.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B658 Jira: expose GET /rest/api/3/project/{projectId}/email
+- [x] 🔴 🧩 API: B658 Jira: expose GET /rest/api/3/project/{projectId}/email
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B659 Jira: expose PUT /rest/api/3/project/{projectId}/email
+- [x] 🔴 🧩 API: B659 Jira: expose PUT /rest/api/3/project/{projectId}/email
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B660 Jira: expose GET /rest/api/3/project/{projectId}/hierarchy
+- [x] 🔴 🧩 API: B660 Jira: expose GET /rest/api/3/project/{projectId}/hierarchy
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B663 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/archive
+- [x] 🔴 🧩 API: B663 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/archive
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B664 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/avatar
+- [x] 🔴 🧩 API: B664 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/avatar
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B665 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/avatar/{id}
+- [x] 🔴 🧩 API: B665 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/avatar/{id}
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B666 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/avatar2
+- [x] 🔴 🧩 API: B666 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/avatar2
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B667 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/avatars
+- [x] 🔴 🧩 API: B667 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/avatars
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B668 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-config
+- [x] 🔴 🧩 API: B668 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-config
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B669 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/classification-level/default
+- [x] 🔴 🧩 API: B669 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/classification-level/default
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B670 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-level/default
+- [x] 🔴 🧩 API: B670 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/classification-level/default
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B671 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/classification-level/default
+- [x] 🔴 🧩 API: B671 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/classification-level/default
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B672 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/component
+- [x] 🔴 🧩 API: B672 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/component
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B673 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/components
+- [x] 🔴 🧩 API: B673 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/components
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B674 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/delete
+- [x] 🔴 🧩 API: B674 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/delete
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B675 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/features
+- [x] 🔴 🧩 API: B675 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/features
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B676 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/features/{featureKey}
+- [x] 🔴 🧩 API: B676 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/features/{featureKey}
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B677 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties
+- [x] 🔴 🧩 API: B677 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B678 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B678 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B679 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B679 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B680 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
+- [x] 🔴 🧩 API: B680 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
   - files: `src/jira/resources/projects.ts`, `test/jira/projects.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B681 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/restore

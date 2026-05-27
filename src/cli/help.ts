@@ -210,7 +210,7 @@ const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 
 RESOURCES:
   issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
-  projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types
+  projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property
   search        search, get, approximate-count, jql-get, jql-post
   users         get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups, permission-search, picker, list-properties, delete-property, get-property, set-property, search-query, search-query-key, viewissue-search, list, list-search
   issue-types   list, get

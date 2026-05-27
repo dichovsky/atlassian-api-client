@@ -323,9 +323,98 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.getAccessibleType(requireArg(cmd.positionalArgs[0], 'typeKey'));
     case 'list-accessible-types':
       return client.projects.listAccessibleTypes();
+    case 'get-email':
+      return client.projects.getEmail(requireArg(cmd.positionalArgs[0], 'projectId'));
+    case 'set-email':
+      await client.projects.setEmail(requireArg(cmd.positionalArgs[0], 'projectId'), {
+        emailAddress: asString(opts['email-address']),
+      });
+      return { updated: true };
+    case 'get-hierarchy':
+      return client.projects.getHierarchy(requireArg(cmd.positionalArgs[0], 'projectId'));
+    case 'archive':
+      await client.projects.archive(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+      return { archived: true };
+    case 'set-avatar':
+      await client.projects.setAvatar(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'), {
+        id: requireOpt(opts['avatar-id'], '--avatar-id'),
+      });
+      return { updated: true };
+    case 'delete-avatar':
+      await client.projects.deleteAvatar(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'avatarId'),
+      );
+      return { deleted: true };
+    case 'load-avatar':
+      return client.projects.loadAvatar(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+    case 'get-avatars':
+      return client.projects.getAvatars(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'get-classification-config':
+      return client.projects.getClassificationConfig(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+      );
+    case 'delete-classification-level':
+      await client.projects.deleteClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+      );
+      return { deleted: true };
+    case 'get-classification-level':
+      return client.projects.getClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+      );
+    case 'set-classification-level':
+      await client.projects.setClassificationLevel(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        { id: asString(opts['classification-id']) },
+      );
+      return { updated: true };
+    case 'list-components':
+      return client.projects.listComponents(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'), {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        componentSource: asString(opts['component-source']),
+        query: asString(opts['query']),
+      });
+    case 'list-all-components':
+      return client.projects.listAllComponents(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'delete-async':
+      return client.projects.deleteAsync(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'get-features':
+      return client.projects.getFeatures(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'set-feature-state':
+      return client.projects.setFeatureState(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'featureKey'),
+        asFeatureState(requireOpt(opts['state'], '--state')),
+      );
+    case 'list-properties':
+      return client.projects.listProperties(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'delete-property':
+      await client.projects.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+      return { deleted: true };
+    case 'get-property':
+      return client.projects.getProperty(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+    case 'set-property':
+      await client.projects.setProperty(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+      return { updated: true };
     default:
       throw new Error(
-        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types`,
+        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property`,
       );
   }
 }
@@ -1252,6 +1341,13 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
     default:
       throw new Error(`Unknown webhooks action: ${cmd.action}. Actions: list-failed`);
   }
+}
+
+function asFeatureState(raw: string): 'ENABLED' | 'DISABLED' {
+  if (raw !== 'ENABLED' && raw !== 'DISABLED') {
+    throw new Error(`--state must be ENABLED or DISABLED, got: ${raw}`);
+  }
+  return raw;
 }
 
 function asAnnouncementBannerVisibility(
