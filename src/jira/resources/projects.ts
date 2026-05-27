@@ -99,7 +99,10 @@ export interface ProjectFeatures {
 }
 
 export interface TaskId {
-  readonly id: string;// ── Roles ──────────────────────────────────────────────────────────────────
+  readonly id: string;
+}
+
+// ── Roles ──────────────────────────────────────────────────────────────────
 
 export interface ProjectRoleActor {
   readonly id?: number;
@@ -214,7 +217,8 @@ export interface UpdateProjectCategoryData {
 
 export interface ProjectKeyValidation {
   readonly valid: boolean;
-  readonly errors?: string[];}
+  readonly errors?: string[];
+}
 
 export interface ProjectType {
   readonly key: string;
@@ -544,7 +548,12 @@ export class ProjectsResource {
   async getAvatars(projectIdOrKey: string): Promise<ProjectAvatars> {
     const response = await this.transport.request<ProjectAvatars>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/avatars`,  // ── B681-B695: roles, statuses, versions, schemes ────────────────────────
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/avatars`,
+    });
+    return response.data;
+  }
+
+  // ── B681-B695: roles, statuses, versions, schemes ────────────────────────
 
   /** Restore a deleted project (B681). */
   async restore(projectIdOrKey: string): Promise<void> {
@@ -558,7 +567,8 @@ export class ProjectsResource {
   async listRoles(projectIdOrKey: string): Promise<Record<string, string>> {
     const response = await this.transport.request<Record<string, string>>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role`,    });
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role`,
+    });
     return response.data;
   }
 
@@ -613,7 +623,13 @@ export class ProjectsResource {
 
     const response = await this.transport.request<OffsetPaginatedResponse<ProjectComponent>>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/component`,  /** Delete actors from a project role (B683). */
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/component`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Delete actors from a project role (B683). */
   async deleteRoleActors(
     projectIdOrKey: string,
     roleId: number,
@@ -643,7 +659,8 @@ export class ProjectsResource {
 
     const response = await this.transport.request<ProjectRole>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,      query,
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
+      query,
     });
     return response.data;
   }
@@ -684,7 +701,12 @@ export class ProjectsResource {
     const response = await this.transport.request<ProjectFeatures>({
       method: 'PUT',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/features/${encodePathSegment(featureKey)}`,
-      body: { state },  /** Add actors to a project role (B685). */
+      body: { state },
+    });
+    return response.data;
+  }
+
+  /** Add actors to a project role (B685). */
   async addRoleActors(
     projectIdOrKey: string,
     roleId: number,
@@ -707,7 +729,8 @@ export class ProjectsResource {
     const response = await this.transport.request<ProjectRole>({
       method: 'PUT',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
-      body: data as unknown as Record<string, unknown>,    });
+      body: data as unknown as Record<string, unknown>,
+    });
     return response.data;
   }
 
@@ -715,7 +738,12 @@ export class ProjectsResource {
   async listProperties(projectIdOrKey: string): Promise<{ keys: { self: string; key: string }[] }> {
     const response = await this.transport.request<{ keys: { self: string; key: string }[] }>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/properties`,  /** Get project role details for a project (B687). */
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/properties`,
+    });
+    return response.data;
+  }
+
+  /** Get project role details for a project (B687). */
   async getRoleDetails(
     projectIdOrKey: string,
     params?: { currentMember?: boolean; excludeConnectAddons?: boolean },
@@ -728,7 +756,8 @@ export class ProjectsResource {
     const response = await this.transport.request<ProjectRoleDetails[]>({
       method: 'GET',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/roledetails`,
-      query,    });
+      query,
+    });
     return response.data;
   }
 
@@ -747,7 +776,12 @@ export class ProjectsResource {
   ): Promise<{ key: string; value: unknown }> {
     const response = await this.transport.request<{ key: string; value: unknown }>({
       method: 'GET',
-      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,  /** Get the issue types and statuses for a project (B688). */
+      path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,
+    });
+    return response.data;
+  }
+
+  /** Get the issue types and statuses for a project (B688). */
   async getStatuses(projectIdOrKey: string): Promise<ProjectIssueTypeWithStatuses[]> {
     const response = await this.transport.request<ProjectIssueTypeWithStatuses[]>({
       method: 'GET',
@@ -896,7 +930,8 @@ export class ProjectsResource {
   async getCategory(categoryId: string): Promise<ProjectCategory> {
     const response = await this.transport.request<ProjectCategory>({
       method: 'GET',
-      path: `${this.baseUrl}/projectCategory/${encodePathSegment(categoryId)}`,    });
+      path: `${this.baseUrl}/projectCategory/${encodePathSegment(categoryId)}`,
+    });
     return response.data;
   }
 
@@ -906,7 +941,10 @@ export class ProjectsResource {
       method: 'PUT',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,
       body: value as Record<string, unknown>,
-    });  /** Update a project category (B705). */
+    });
+  }
+
+  /** Update a project category (B705). */
   async updateCategory(
     categoryId: string,
     data: UpdateProjectCategoryData,
@@ -963,5 +1001,6 @@ export class ProjectsResource {
       path: `${this.baseUrl}/projectvalidate/validProjectName`,
       query: { name },
     });
-    return response.data;  }
+    return response.data;
+  }
 }

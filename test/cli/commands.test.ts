@@ -365,7 +365,8 @@ const jiraProjectsMock = {
   listProperties: vi.fn(),
   deleteProperty: vi.fn(),
   getProperty: vi.fn(),
-  setProperty: vi.fn(),  restore: vi.fn(),
+  setProperty: vi.fn(),
+  restore: vi.fn(),
   listRoles: vi.fn(),
   deleteRoleActors: vi.fn(),
   getRole: vi.fn(),
@@ -388,7 +389,8 @@ const jiraProjectsMock = {
   getProjectsFields: vi.fn(),
   validateProjectKey: vi.fn(),
   getValidProjectKey: vi.fn(),
-  getValidProjectName: vi.fn(),};
+  getValidProjectName: vi.fn(),
+};
 const jiraSearchMock = {
   search: vi.fn(),
   searchGet: vi.fn(),
@@ -7956,7 +7958,12 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects archive throws when projectIdOrKey missing', async () => {
-      await expect(executeJiraCommand(cmd('projects', 'archive', []), GLOBALS)).rejects.toThrow(    it('projects restore calls client.projects.restore and returns restored:true', async () => {
+      await expect(executeJiraCommand(cmd('projects', 'archive', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: projectIdOrKey',
+      );
+    });
+
+    it('projects restore calls client.projects.restore and returns restored:true', async () => {
       jiraProjectsMock.restore.mockResolvedValue(undefined);
       const result = await executeJiraCommand(cmd('projects', 'restore', ['PROJ']), GLOBALS);
       expect(jiraProjectsMock.restore).toHaveBeenCalledWith('PROJ');
@@ -7964,7 +7971,8 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects restore throws when projectIdOrKey is missing', async () => {
-      await expect(executeJiraCommand(cmd('projects', 'restore', []), GLOBALS)).rejects.toThrow(        'Missing required argument: projectIdOrKey',
+      await expect(executeJiraCommand(cmd('projects', 'restore', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: projectIdOrKey',
       );
     });
 
@@ -8198,7 +8206,10 @@ describe('executeJiraCommand', () => {
     it('projects set-property throws when --value missing', async () => {
       await expect(
         executeJiraCommand(cmd('projects', 'set-property', ['PROJ', 'my.prop']), GLOBALS),
-      ).rejects.toThrow('Missing required option: --value');    it('projects list-roles calls client.projects.listRoles', async () => {
+      ).rejects.toThrow('Missing required option: --value');
+    });
+
+    it('projects list-roles calls client.projects.listRoles', async () => {
       jiraProjectsMock.listRoles.mockResolvedValue({ Developer: 'https://example.com/role/1' });
       const result = await executeJiraCommand(cmd('projects', 'list-roles', ['PROJ']), GLOBALS);
       expect(jiraProjectsMock.listRoles).toHaveBeenCalledWith('PROJ');
@@ -8532,7 +8543,8 @@ describe('executeJiraCommand', () => {
     it('projects unknown action error includes all new actions', async () => {
       await expect(executeJiraCommand(cmd('projects', 'invalid'), GLOBALS)).rejects.toThrow(
         'Unknown projects action',
-      );    });
+      );
+    });
   });
 
   // ── search ────────────────────────────────────────────────────────────────

@@ -789,7 +789,12 @@ describe('ProjectsResource', () => {
       await projects.deleteClassificationLevel('PROJ');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
-        path: `${BASE_URL}/project/PROJ/classification-level/default`,  // ── restore ───────────────────────────────────────────────────────────────
+        path: `${BASE_URL}/project/PROJ/classification-level/default`,
+      });
+    });
+  });
+
+  // ── restore ───────────────────────────────────────────────────────────────
 
   describe('restore()', () => {
     it('sends POST /project/:id/restore', async () => {
@@ -885,7 +890,8 @@ describe('ProjectsResource', () => {
       expect(result).toMatchObject({ id: 10001 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
-        path: `${BASE_URL}/project/PROJ/role/10001`,      });
+        path: `${BASE_URL}/project/PROJ/role/10001`,
+      });
     });
   });
 
@@ -952,7 +958,12 @@ describe('ProjectsResource', () => {
         maxResults: 25,
         orderBy: 'name',
         componentSource: 'auto',
-        query: 'comp',  // ── setRoleActors ─────────────────────────────────────────────────────────
+        query: 'comp',
+      });
+    });
+  });
+
+  // ── setRoleActors ─────────────────────────────────────────────────────────
 
   describe('setRoleActors()', () => {
     it('sends PUT /project/:id/role/:roleId with categorisedActors body', async () => {
@@ -1039,7 +1050,8 @@ describe('ProjectsResource', () => {
         orderBy: 'name',
         query: 'v1',
         status: 'released',
-        expand: 'issuesstatus',      });
+        expand: 'issuesstatus',
+      });
     });
   });
 
@@ -1178,7 +1190,11 @@ describe('ProjectsResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/project/PROJ/properties/my.prop`,
       });
-      expect(transport.lastCall?.options.body).toMatchObject({ answer: 42 });  // ── listAllVersions ───────────────────────────────────────────────────────
+      expect(transport.lastCall?.options.body).toMatchObject({ answer: 42 });
+    });
+  });
+
+  // ── listAllVersions ───────────────────────────────────────────────────────
 
   describe('listAllVersions()', () => {
     it('sends GET /project/:id/versions', async () => {
@@ -1460,6 +1476,7 @@ describe('ProjectsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/projectvalidate/validProjectName`,
         query: { name: 'My Project' },
-      });    });
+      });
+    });
   });
 });

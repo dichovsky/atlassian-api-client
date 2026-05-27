@@ -412,9 +412,7 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
         parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
       );
       return { updated: true };
-    default:
-      throw new Error(
-        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property`,    case 'restore':
+    case 'restore':
       await client.projects.restore(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
       return { restored: true };
     case 'list-roles':
@@ -545,7 +543,8 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.projects.getValidProjectName(requireOpt(opts['name'], '--name'));
     default:
       throw new Error(
-        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name`,      );
+        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name`,
+      );
   }
 }
 
