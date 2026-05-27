@@ -301,6 +301,35 @@ const GLOBAL_OPTIONS = {
   'classification-id': { type: 'string' as const },
   // issue sub-resource options (B478-B504)
   'global-id': { type: 'string' as const },
+  // worklog options (B505-B515)
+  'notify-users': { type: 'boolean' as const },
+  'adjust-estimate': { type: 'string' as const },
+  'new-estimate': { type: 'string' as const },
+  'reduce-by': { type: 'string' as const },
+  'increase-by': { type: 'string' as const },
+  'override-editable-flag': { type: 'boolean' as const },
+  'started-after': { type: 'string' as const },
+  'started-before': { type: 'string' as const },
+  'target-issue': { type: 'string' as const },
+  // bulk-fetch options (B519)
+  'fields-by-keys': { type: 'boolean' as const },
+  // shared: bulk-fetch property keys (CSV) + set-properties-by-entity-ids payload (JSON object)
+  properties: { type: 'string' as const },
+  // watch-issues-bulk options (B529)
+  'issue-ids': { type: 'string' as const },
+  // set-properties-by-entity-ids options (B524)
+  'entity-ids': { type: 'string' as const },
+  // issue picker options (B523)
+  'current-jql': { type: 'string' as const },
+  'current-issue-key': { type: 'string' as const },
+  'current-project-id': { type: 'string' as const },
+  'show-sub-tasks': { type: 'boolean' as const },
+  'show-sub-task-parent': { type: 'boolean' as const },
+  // archive export options (B538)
+  'export-type': { type: 'string' as const },
+  // createmeta options (B520, B521)
+  'issuetype-ids': { type: 'string' as const },
+  'issuetype-names': { type: 'string' as const },
   // users options (B797-B819)
   'project-keys': { type: 'string' as const },
   'display-name': { type: 'string' as const },

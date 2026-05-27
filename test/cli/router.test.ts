@@ -186,4 +186,90 @@ describe('parseCommand', () => {
     expect(result.options['dry-run']).toBe(true);
     expect(result.options['print']).toBe(true);
   });
+
+  // Regression guard: flags used by handlers must be registered in GLOBAL_OPTIONS,
+  // otherwise strict parseArgs throws "Unknown option" at runtime. The cmd()-based
+  // command tests bypass parseArgs, so these must be exercised through parseCommand.
+  it('parses jira issues bulk-fetch with --issues, --properties and --fields-by-keys', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'bulk-fetch',
+      '--issues',
+      'PROJ-1,PROJ-2',
+      '--properties',
+      'p1,p2',
+      '--fields-by-keys',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.action).toBe('bulk-fetch');
+    expect(result.options['issues']).toBe('PROJ-1,PROJ-2');
+    expect(result.options['properties']).toBe('p1,p2');
+    expect(result.options['fields-by-keys']).toBe(true);
+  });
+
+  it('parses jira issues set-properties-by-entity-ids with --entity-ids and --properties', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'set-properties-by-entity-ids',
+      '--entity-ids',
+      '10001,10002',
+      '--properties',
+      '{"k":"v"}',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.action).toBe('set-properties-by-entity-ids');
+    expect(result.options['entity-ids']).toBe('10001,10002');
+    expect(result.options['properties']).toBe('{"k":"v"}');
+  });
+
+  it('parses jira issues move-worklog with --ids, --target-issue and --override-editable-flag', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'move-worklog',
+      'PROJ-1',
+      '--ids',
+      '1,2',
+      '--target-issue',
+      'PROJ-2',
+      '--override-editable-flag',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.action).toBe('move-worklog');
+    expect(result.positionalArgs).toEqual(['PROJ-1']);
+    expect(result.options['ids']).toBe('1,2');
+    expect(result.options['target-issue']).toBe('PROJ-2');
+    expect(result.options['override-editable-flag']).toBe(true);
+  });
+
+  it('parses jira issues watch-issues-bulk with --issue-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issues',
+      'watch-issues-bulk',
+      '--issue-ids',
+      '10001,10002',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.action).toBe('watch-issues-bulk');
+    expect(result.options['issue-ids']).toBe('10001,10002');
+  });
 });
