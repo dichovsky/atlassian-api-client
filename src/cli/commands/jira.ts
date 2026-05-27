@@ -481,33 +481,24 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
         key: asString(opts['key']),
       });
     case 'permission-search': {
-      const permissionsRaw = asString(opts['permissions']);
       return client.users.getPermissionUsers({
         projectKey: asString(opts['project-key']),
         projectUuid: asString(opts['project-uuid']),
         issueKey: asString(opts['issue-key']),
         query: asString(opts['query']),
-        ...(permissionsRaw !== undefined && {
-          permissions: permissionsRaw.split(',').map((s) => s.trim()),
-        }),
+        permissions: parseCsv(opts['permissions']),
         accountId: asString(opts['account-id']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
     case 'picker': {
-      const excludeRaw = asString(opts['exclude']);
-      const excludeAccountIdsRaw = asString(opts['exclude-account-ids']);
       return client.users.picker({
         query: requireOpt(opts['query'], '--query'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: opts['show-avatar'] === true ? true : undefined,
-        ...(excludeRaw !== undefined && {
-          exclude: excludeRaw.split(',').map((s) => s.trim()),
-        }),
-        ...(excludeAccountIdsRaw !== undefined && {
-          excludeAccountIds: excludeAccountIdsRaw.split(',').map((s) => s.trim()),
-        }),
+        exclude: parseCsv(opts['exclude']),
+        excludeAccountIds: parseCsv(opts['exclude-account-ids']),
         avatarSize: asString(opts['avatar-size']),
         excludeConnectUsers: opts['exclude-connect-users'] === true ? true : undefined,
       });
@@ -534,7 +525,7 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     case 'set-property': {
       const propertyKey = requireArg(cmd.positionalArgs[0], 'property key');
-      const value = JSON.parse(requireOpt(opts['value'], '--value'));
+      const value = parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value');
       await client.users.setProperty(propertyKey, value, {
         userKey: asString(opts['user-key']),
         accountId: asString(opts['account-id']),

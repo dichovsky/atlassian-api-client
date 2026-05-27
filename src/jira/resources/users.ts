@@ -223,7 +223,7 @@ export class UsersResource {
   }
 
   /** Search for users with a specific permission (B809). */
-  async getPermissionUsers(params: GetPermissionUsersParams): Promise<User[]> {
+  async getPermissionUsers(params: GetPermissionUsersParams = {}): Promise<User[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.projectKey !== undefined) query['projectKey'] = params.projectKey;
     if (params.projectUuid !== undefined) query['projectUuid'] = params.projectUuid;
