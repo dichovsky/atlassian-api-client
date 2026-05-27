@@ -1548,4 +1548,75 @@
   - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
 - [x] 🔴 🧩 API: B680 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/properties/{propertyKey}
   - **Impl:** `ProjectsResource.setProperty(projectIdOrKey, propertyKey, value)` returns `void`. CLI: `atlas jira projects set-property <projectIdOrKey> <propertyKey> --value '<JSON>'`.
-  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.
+  - **Rat:** Standard extension of ProjectsResource with project sub-resource endpoint.- [x] 🔴 🧩 API: B681 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/restore
+  - **Impl:** `ProjectsResource.restore(projectIdOrKey)` issues `POST /rest/api/3/project/{projectIdOrKey}/restore` returning `void`. CLI: `atlas jira projects restore <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource with restore support.
+- [x] 🔴 🧩 API: B682 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/role
+  - **Impl:** `ProjectsResource.listRoles(projectIdOrKey)` returns `Record<string, string>` (role name → self URL map). CLI: `atlas jira projects list-roles <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource for role listing.
+- [x] 🔴 🧩 API: B683 Jira: expose DELETE /rest/api/3/project/{projectIdOrKey}/role/{id}
+  - **Impl:** `ProjectsResource.deleteRoleActors(projectIdOrKey, roleId, { user?, groupId?, group? })` issues `DELETE` with actor query params returning `void`. CLI: `atlas jira projects delete-role-actors <projectIdOrKey> <roleId> [--user] [--group-id] [--group]`.
+  - **Rat:** Standard extension of ProjectsResource for role actor removal.
+- [x] 🔴 🧩 API: B684 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/role/{id}
+  - **Impl:** `ProjectsResource.getRole(projectIdOrKey, roleId, params?)` returns `ProjectRole`. Optional `excludeInactiveUsers`. CLI: `atlas jira projects get-role <projectIdOrKey> <roleId> [--exclude-inactive-users]`.
+  - **Rat:** Standard extension of ProjectsResource for role retrieval.
+- [x] 🔴 🧩 API: B685 Jira: expose POST /rest/api/3/project/{projectIdOrKey}/role/{id}
+  - **Impl:** `ProjectsResource.addRoleActors(projectIdOrKey, roleId, data)` returns `ProjectRole`. Body via `--body` JSON flag. CLI: `atlas jira projects add-role-actors <projectIdOrKey> <roleId> --body '<json>'`.
+  - **Rat:** Standard extension of ProjectsResource for role actor addition.
+- [x] 🔴 🧩 API: B686 Jira: expose PUT /rest/api/3/project/{projectIdOrKey}/role/{id}
+  - **Impl:** `ProjectsResource.setRoleActors(projectIdOrKey, roleId, data)` returns `ProjectRole`. Body via `--body` JSON flag. CLI: `atlas jira projects set-role-actors <projectIdOrKey> <roleId> --body '<json>'`.
+  - **Rat:** Standard extension of ProjectsResource for role actor replacement.
+- [x] 🔴 🧩 API: B687 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/roledetails
+  - **Impl:** `ProjectsResource.getRoleDetails(projectIdOrKey, params?)` returns `ProjectRoleDetails[]`. Optional `currentMember`, `excludeConnectAddons`. CLI: `atlas jira projects get-role-details <projectIdOrKey> [--current-member] [--exclude-connect-addons]`.
+  - **Rat:** Standard extension of ProjectsResource for role details.
+- [x] 🔴 🧩 API: B688 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/statuses
+  - **Impl:** `ProjectsResource.getStatuses(projectIdOrKey)` returns `ProjectIssueTypeWithStatuses[]`. CLI: `atlas jira projects get-statuses <projectIdOrKey>`.
+  - **Rat:** Standard extension of ProjectsResource for status listing.
+- [x] 🔴 🧩 API: B689 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/version
+  - **Impl:** `ProjectsResource.listVersions(projectIdOrKey, params?)` returns `OffsetPaginatedResponse<ProjectVersion>`. Supports `startAt`, `maxResults`, `orderBy`, `query`, `status`, `expand`. CLI: `atlas jira projects list-versions <projectIdOrKey> [opts]`.
+  - **Rat:** Paginated version listing for a project.
+- [x] 🔴 🧩 API: B690 Jira: expose GET /rest/api/3/project/{projectIdOrKey}/versions
+  - **Impl:** `ProjectsResource.listAllVersions(projectIdOrKey, params?)` returns `ProjectVersion[]` (flat array, no pagination). CLI: `atlas jira projects list-all-versions <projectIdOrKey> [opts]`.
+  - **Rat:** Full version array for a project (no pagination).
+- [x] 🔴 🧩 API: B691 Jira: expose GET /rest/api/3/project/{projectKeyOrId}/issuesecuritylevelscheme
+  - **Impl:** `ProjectsResource.getIssueSecurityScheme(projectKeyOrId)` returns `Record<string, unknown>`. CLI: `atlas jira projects get-issue-security-scheme <projectKeyOrId>`.
+  - **Rat:** Standard extension of ProjectsResource for scheme lookup.
+- [x] 🔴 🧩 API: B692 Jira: expose GET /rest/api/3/project/{projectKeyOrId}/notificationscheme
+  - **Impl:** `ProjectsResource.getNotificationScheme(projectKeyOrId, params?)` returns `Record<string, unknown>`. Optional `expand`. CLI: `atlas jira projects get-notification-scheme <projectKeyOrId> [--expand]`.
+  - **Rat:** Standard extension of ProjectsResource for scheme lookup.
+- [x] 🔴 🧩 API: B693 Jira: expose GET /rest/api/3/project/{projectKeyOrId}/permissionscheme
+  - **Impl:** `ProjectsResource.getPermissionScheme(projectKeyOrId, params?)` returns `Record<string, unknown>`. Optional `expand`. CLI: `atlas jira projects get-permission-scheme <projectKeyOrId> [--expand]`.
+  - **Rat:** Standard extension of ProjectsResource for scheme lookup.
+- [x] 🔴 🧩 API: B694 Jira: expose PUT /rest/api/3/project/{projectKeyOrId}/permissionscheme
+  - **Impl:** `ProjectsResource.setPermissionScheme(projectKeyOrId, { id })` returns `Record<string, unknown>`. CLI: `atlas jira projects set-permission-scheme <projectKeyOrId> --permission-scheme <id>`.
+  - **Rat:** Standard extension of ProjectsResource for scheme assignment.
+- [x] 🔴 🧩 API: B695 Jira: expose GET /rest/api/3/project/{projectKeyOrId}/securitylevel
+  - **Impl:** `ProjectsResource.getSecurityLevels(projectKeyOrId)` returns `{ levels: [...] }`. CLI: `atlas jira projects get-security-levels <projectKeyOrId>`.
+  - **Rat:** Standard extension of ProjectsResource for security level listing.
+- [x] 🔴 🧩 API: B701 Jira: expose GET /rest/api/3/projectCategory
+  - **Impl:** `ProjectsResource.listCategories()` returns `ProjectCategory[]`. CLI: `atlas jira projects list-categories`.
+  - **Rat:** Standard extension of ProjectsResource for category listing.
+- [x] 🔴 🧩 API: B702 Jira: expose POST /rest/api/3/projectCategory
+  - **Impl:** `ProjectsResource.createCategory({ name, description? })` returns `ProjectCategory`. CLI: `atlas jira projects create-category --name <n> [--description <d>]`.
+  - **Rat:** Standard extension of ProjectsResource for category creation.
+- [x] 🔴 🧩 API: B703 Jira: expose DELETE /rest/api/3/projectCategory/{id}
+  - **Impl:** `ProjectsResource.deleteCategory(categoryId)` returns `void`. CLI: `atlas jira projects delete-category <categoryId>`.
+  - **Rat:** Standard extension of ProjectsResource for category deletion.
+- [x] 🔴 🧩 API: B704 Jira: expose GET /rest/api/3/projectCategory/{id}
+  - **Impl:** `ProjectsResource.getCategory(categoryId)` returns `ProjectCategory`. CLI: `atlas jira projects get-category <categoryId>`.
+  - **Rat:** Standard extension of ProjectsResource for category retrieval.
+- [x] 🔴 🧩 API: B705 Jira: expose PUT /rest/api/3/projectCategory/{id}
+  - **Impl:** `ProjectsResource.updateCategory(categoryId, { name?, description? })` returns `ProjectCategory`. CLI: `atlas jira projects update-category <categoryId> [--name] [--description]`.
+  - **Rat:** Standard extension of ProjectsResource for category update.
+- [x] 🔴 🧩 API: B706 Jira: expose GET /rest/api/3/projects/fields
+  - **Impl:** `ProjectsResource.getProjectsFields()` returns `unknown[]`. CLI: `atlas jira projects get-projects-fields`.
+  - **Rat:** Standard extension of ProjectsResource for fields listing.
+- [x] 🔴 🧩 API: B707 Jira: expose GET /rest/api/3/projectvalidate/key
+  - **Impl:** `ProjectsResource.validateProjectKey(key)` returns `ProjectKeyValidation`. CLI: `atlas jira projects validate-project-key --key <key>`.
+  - **Rat:** Standard extension of ProjectsResource for key validation.
+- [x] 🔴 🧩 API: B708 Jira: expose GET /rest/api/3/projectvalidate/validProjectKey
+  - **Impl:** `ProjectsResource.getValidProjectKey(key)` returns `{ key: string }`. CLI: `atlas jira projects get-valid-project-key --key <key>`.
+  - **Rat:** Standard extension of ProjectsResource for valid key suggestion.
+- [x] 🔴 🧩 API: B709 Jira: expose GET /rest/api/3/projectvalidate/validProjectName
+  - **Impl:** `ProjectsResource.getValidProjectName(name)` returns `{ name: string }`. CLI: `atlas jira projects get-valid-project-name --name <name>`.
+  - **Rat:** Standard extension of ProjectsResource for valid name suggestion.

@@ -7,7 +7,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`, `get-email`, `set-email`, `get-hierarchy`, `archive`, `set-avatar`, `delete-avatar`, `load-avatar`, `get-avatars`, `get-classification-config`, `delete-classification-level`, `get-classification-level`, `set-classification-level`, `list-components`, `list-all-components`, `delete-async`, `get-features`, `set-feature-state`, `list-properties`, `delete-property`, `get-property`, `set-property` |
+| `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`, `get-email`, `set-email`, `get-hierarchy`, `archive`, `set-avatar`, `delete-avatar`, `load-avatar`, `get-avatars`, `get-classification-config`, `delete-classification-level`, `get-classification-level`, `set-classification-level`, `list-components`, `list-all-components`, `delete-async`, `get-features`, `set-feature-state`, `list-properties`, `delete-property`, `get-property`, `set-property`, `restore`, `list-roles`, `delete-role-actors`, `get-role`, `add-role-actors`, `set-role-actors`, `get-role-details`, `get-statuses`, `list-versions`, `list-all-versions`, `get-issue-security-scheme`, `get-notification-scheme`, `get-permission-scheme`, `set-permission-scheme`, `get-security-levels`, `list-categories`, `create-category`, `delete-category`, `get-category`, `update-category`, `get-projects-fields`, `validate-project-key`, `get-valid-project-key`, `get-valid-project-name` |
 | `search`                 | `search`, `get`, `approximate-count`, `jql-get`, `jql-post`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `users`                  | `get`, `me`, `search`, `delete`, `create`, `assignable-multi-project`, `assignable`, `bulk`, `bulk-migration`, `reset-columns`, `get-columns`, `set-columns`, `email`, `bulk-emails`, `groups`, `permission-search`, `picker`, `list-properties`, `delete-property`, `get-property`, `set-property`, `search-query`, `search-query-key`, `viewissue-search`, `list`, `list-search`                                                                                                                                                                         |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -64,7 +64,6 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issue-comments`         | `list-properties`, `get-property`, `set-property`, `delete-property`, `bulk-fetch`                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-
 ## `issue-type-schemes`
 
 Issue type scheme management (B566–B575). Covers the full `/rest/api/3/issuetypescheme` surface.
@@ -650,23 +649,50 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 ## `projects`
 
-| Action                  | Positional         | Required flags                          | Optional flags                                                                                                                                   |
-| ----------------------- | ------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `list`                  | —                  | —                                       | `--query`, `--max-results`                                                                                                                       |
-| `get`                   | `<projectKeyOrId>` | —                                       | —                                                                                                                                                |
-| `list-legacy`           | —                  | —                                       | `--max-results`, `--order-by`, `--start-at`, `--expand` (CSV), `--type-key` (CSV), `--category-id`, `--action`, `--query`                        |
-| `create`                | —                  | `--key`, `--name`, `--project-type-key` | `--description`, `--lead-account-id`, `--url`, `--assignee-type`, `--avatar-id`, `--permission-scheme`, `--notification-scheme`, `--category-id` |
-| `update`                | `<projectIdOrKey>` | —                                       | `--name`, `--description`, `--lead-account-id`, `--url`, `--assignee-type`                                                                       |
-| `delete`                | `<projectIdOrKey>` | —                                       | `--enable-undo`                                                                                                                                  |
-| `recent`                | —                  | —                                       | `--max-results`, `--expand` (CSV)                                                                                                                |
-| `list-types`            | —                  | —                                       | —                                                                                                                                                |
-| `get-type`              | `<typeKey>`        | —                                       | —                                                                                                                                                |
-| `get-accessible-type`   | `<typeKey>`        | —                                       | —                                                                                                                                                |
-| `list-accessible-types` | —                  | —                                       | —                                                                                                                                                |
+| Action                      | Positional                    | Required flags                          | Optional flags                                                                                                                                   |
+| --------------------------- | ----------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `list`                      | —                             | —                                       | `--query`, `--max-results`                                                                                                                       |
+| `get`                       | `<projectKeyOrId>`            | —                                       | —                                                                                                                                                |
+| `list-legacy`               | —                             | —                                       | `--max-results`, `--order-by`, `--start-at`, `--expand` (CSV), `--type-key` (CSV), `--category-id`, `--action`, `--query`                        |
+| `create`                    | —                             | `--key`, `--name`, `--project-type-key` | `--description`, `--lead-account-id`, `--url`, `--assignee-type`, `--avatar-id`, `--permission-scheme`, `--notification-scheme`, `--category-id` |
+| `update`                    | `<projectIdOrKey>`            | —                                       | `--name`, `--description`, `--lead-account-id`, `--url`, `--assignee-type`                                                                       |
+| `delete`                    | `<projectIdOrKey>`            | —                                       | `--enable-undo`                                                                                                                                  |
+| `recent`                    | —                             | —                                       | `--max-results`, `--expand` (CSV)                                                                                                                |
+| `list-types`                | —                             | —                                       | —                                                                                                                                                |
+| `get-type`                  | `<typeKey>`                   | —                                       | —                                                                                                                                                |
+| `get-accessible-type`       | `<typeKey>`                   | —                                       | —                                                                                                                                                |
+| `list-accessible-types`     | —                             | —                                       | —                                                                                                                                                |
+| `restore`                   | `<projectIdOrKey>`            | —                                       | —                                                                                                                                                |
+| `list-roles`                | `<projectIdOrKey>`            | —                                       | —                                                                                                                                                |
+| `get-role`                  | `<projectIdOrKey>` `<roleId>` | —                                       | `--exclude-inactive-users`                                                                                                                       |
+| `delete-role-actors`        | `<projectIdOrKey>` `<roleId>` | —                                       | `--user`, `--group-id`, `--group`                                                                                                                |
+| `add-role-actors`           | `<projectIdOrKey>` `<roleId>` | `--body` (JSON)                         | —                                                                                                                                                |
+| `set-role-actors`           | `<projectIdOrKey>` `<roleId>` | `--body` (JSON)                         | —                                                                                                                                                |
+| `get-role-details`          | `<projectIdOrKey>`            | —                                       | `--current-member`, `--exclude-connect-addons`                                                                                                   |
+| `get-statuses`              | `<projectIdOrKey>`            | —                                       | —                                                                                                                                                |
+| `list-versions`             | `<projectIdOrKey>`            | —                                       | `--start-at`, `--max-results`, `--order-by`, `--query`, `--status`, `--expand`                                                                   |
+| `list-all-versions`         | `<projectIdOrKey>`            | —                                       | `--max-results`, `--order-by`, `--query`, `--status`, `--expand`                                                                                 |
+| `get-issue-security-scheme` | `<projectKeyOrId>`            | —                                       | —                                                                                                                                                |
+| `get-notification-scheme`   | `<projectKeyOrId>`            | —                                       | `--expand`                                                                                                                                       |
+| `get-permission-scheme`     | `<projectKeyOrId>`            | —                                       | `--expand`                                                                                                                                       |
+| `set-permission-scheme`     | `<projectKeyOrId>`            | `--permission-scheme`                   | —                                                                                                                                                |
+| `get-security-levels`       | `<projectKeyOrId>`            | —                                       | —                                                                                                                                                |
+| `list-categories`           | —                             | —                                       | —                                                                                                                                                |
+| `create-category`           | —                             | `--name`                                | `--description`                                                                                                                                  |
+| `delete-category`           | `<categoryId>`                | —                                       | —                                                                                                                                                |
+| `get-category`              | `<categoryId>`                | —                                       | —                                                                                                                                                |
+| `update-category`           | `<categoryId>`                | —                                       | `--name`, `--description`                                                                                                                        |
+| `get-projects-fields`       | —                             | —                                       | —                                                                                                                                                |
+| `validate-project-key`      | —                             | `--key`                                 | —                                                                                                                                                |
+| `get-valid-project-key`     | —                             | `--key`                                 | —                                                                                                                                                |
+| `get-valid-project-name`    | —                             | `--name`                                | —                                                                                                                                                |
 
 - `--assignee-type` accepts `PROJECT_LEAD` or `UNASSIGNED`.
 - `list-legacy` calls the deprecated `GET /project` endpoint (returns a flat array, not paginated).
 - `list` uses `GET /project/search` (paginated, preferred).
+- `list-versions` returns a paginated response; `list-all-versions` returns a flat array.
+- `add-role-actors` / `set-role-actors` accept `--body` as a JSON object.
+- `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name).
 
 ```sh
 # List projects (paginated, preferred)
@@ -695,6 +721,56 @@ atlas jira projects get-type software
 
 # List accessible project types
 atlas jira projects list-accessible-types
+
+# Restore a deleted project
+atlas jira projects restore PROJ
+
+# List all roles for a project (name -> URL map)
+atlas jira projects list-roles PROJ
+
+# Get a specific project role with its actors
+atlas jira projects get-role PROJ 10001
+
+# Delete a user actor from a project role
+atlas jira projects delete-role-actors PROJ 10001 --user acc-1
+
+# Add actors to a project role
+atlas jira projects add-role-actors PROJ 10001 --body '{"actors":[{"user":["acc-1"]}]}'
+
+# Replace all actors for a project role
+atlas jira projects set-role-actors PROJ 10001 --body '{"categorisedActors":{"atlassian-user-role-actor":["acc-1"]}}'
+
+# Get all role details for a project
+atlas jira projects get-role-details PROJ --current-member
+
+# Get issue types and their statuses for a project
+atlas jira projects get-statuses PROJ
+
+# List project versions (paginated)
+atlas jira projects list-versions PROJ --order-by name --status released
+
+# List all project versions (flat array)
+atlas jira projects list-all-versions PROJ --order-by -releaseDate
+
+# Get scheme associations
+atlas jira projects get-issue-security-scheme PROJ
+atlas jira projects get-notification-scheme PROJ --expand all
+atlas jira projects get-permission-scheme PROJ --expand permissions
+atlas jira projects set-permission-scheme PROJ --permission-scheme 10001
+atlas jira projects get-security-levels PROJ
+
+# Project categories
+atlas jira projects list-categories
+atlas jira projects create-category --name "Infrastructure" --description "Infra projects"
+atlas jira projects get-category 10001
+atlas jira projects update-category 10001 --name "Renamed"
+atlas jira projects delete-category 10001
+
+# Projects fields and validation
+atlas jira projects get-projects-fields
+atlas jira projects validate-project-key --key MYPROJ
+atlas jira projects get-valid-project-key --key myproj
+atlas jira projects get-valid-project-name --name "My Project"
 ```
 
 ## `search`

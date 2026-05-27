@@ -10,7 +10,11 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
+<<<<<<< HEAD
   "sourceHash": "fb8d40c0220af5cb7b8aa8097f3c990f66774a67c93f41d4fbf1fe723c412ce6",
+=======
+  "sourceHash": "6af266a207e8935e0057a9b45a768b3c36de98a8cc3de4eae404cceaf48f0d99",
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4051,73 +4055,121 @@
         {
           "name": "executeSearch",
           "kind": "function",
+<<<<<<< HEAD
           "line": 422,
+=======
+          "line": 462,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUsers",
           "kind": "function",
+<<<<<<< HEAD
           "line": 472,
+=======
+          "line": 512,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
+<<<<<<< HEAD
           "line": 662,
+=======
+          "line": 702,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
+<<<<<<< HEAD
           "line": 673,
+=======
+          "line": 713,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
+<<<<<<< HEAD
           "line": 754,
+=======
+          "line": 794,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
+<<<<<<< HEAD
           "line": 819,
+=======
+          "line": 859,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1028,
+=======
+          "line": 1068,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1166,
+=======
+          "line": 1206,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1238,
+=======
+          "line": 1278,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1262,
+=======
+          "line": 1302,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1301,
+=======
+          "line": 1341,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1328,
+=======
+          "line": 1368,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
@@ -4129,577 +4181,961 @@
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1353,
+=======
+          "line": 1386,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1362,
+=======
+          "line": 1395,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1371,
+=======
+          "line": 1404,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1376,
+=======
+          "line": 1409,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1381,
+=======
+          "line": 1414,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1385,
+=======
+          "line": 1418,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1394,
+=======
+          "line": 1427,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1403,
+=======
+          "line": 1436,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1411,
+=======
+          "line": 1444,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "asAccessType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1420,
+=======
+          "line": 1453,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asAccessType( value: string | boolean | undefined, ): 'site-admin' | 'admin' | 'user' | undefined"
         },
         {
           "name": "asExpressionCheck",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1429,
+=======
+          "line": 1462,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asExpressionCheck( value: string | boolean | undefined, ): 'syntax' | 'type' | 'complexity' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1438,
+=======
+          "line": 1471,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1445,
+=======
+          "line": 1478,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1453,
+=======
+          "line": 1486,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1466,
+=======
+          "line": 1499,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1477,
+=======
+          "line": 1510,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1488,
+=======
+          "line": 1521,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1497,
+=======
+          "line": 1530,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1506,
+=======
+          "line": 1539,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1526,
+=======
+          "line": 1559,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1543,
+=======
+          "line": 1576,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1552,
+=======
+          "line": 1585,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1589,
+=======
+          "line": 1622,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIncidents",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1608,
+=======
+          "line": 1641,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePostIncidentReviews",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1620,
+=======
+          "line": 1653,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeVulnerability",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1635,
+=======
+          "line": 1668,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDevopscomponents",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1647,
+=======
+          "line": 1680,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroups",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1659,
+=======
+          "line": 1692,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroupUserPicker",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1754,
+=======
+          "line": 1787,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSecurityLevel",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1788,
+=======
+          "line": 1821,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1797,
+=======
+          "line": 1830,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1812,
+=======
+          "line": 1845,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1834,
+=======
+          "line": 1867,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1858,
+=======
+          "line": 1891,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1870,
+=======
+          "line": 1903,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1882,
+=======
+          "line": 1915,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1891,
+=======
+          "line": 1924,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1900,
+=======
+          "line": 1933,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1912,
+=======
+          "line": 1945,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1937,
+=======
+          "line": 1970,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1949,
+=======
+          "line": 1982,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1958,
+=======
+          "line": 1991,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 1972,
+=======
+          "line": 2005,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2081,
+=======
+          "line": 2114,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2088,
+=======
+          "line": 2121,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2203,
+=======
+          "line": 2236,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2213,
+=======
+          "line": 2246,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2221,
+=======
+          "line": 2254,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 2229,
+=======
+          "line": 2262,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const BULK_ACTIONS = [ 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', 'transition-issue…"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2249,
+=======
+          "line": 2282,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2256,
+=======
+          "line": 2289,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2264,
+=======
+          "line": 2297,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2272,
+=======
+          "line": 2305,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2280,
+=======
+          "line": 2313,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueAttachments",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2393,
+=======
+          "line": 2426,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2457,
+=======
+          "line": 2490,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 2546,
+=======
+          "line": 2579,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2553,
+=======
+          "line": 2586,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 2566,
+=======
+          "line": 2599,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 2567,
+=======
+          "line": 2600,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
+<<<<<<< HEAD
           "line": 2568,
+=======
+          "line": 2601,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
+<<<<<<< HEAD
           "line": 2569,
+=======
+          "line": 2602,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2571,
+=======
+          "line": 2604,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2578,
+=======
+          "line": 2611,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2585,
+=======
+          "line": 2618,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2594,
+=======
+          "line": 2627,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2628,
+=======
+          "line": 2661,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asStatusCategory",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2690,
+=======
+          "line": 2723,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asStatusCategory( value: string | boolean | undefined, ): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined"
         },
         {
           "name": "executeResolutions",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2701,
+=======
+          "line": 2734,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 2775,
+=======
+          "line": 2808,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2797,
+=======
+          "line": 2830,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2806,
+=======
+          "line": 2839,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2814,
+=======
+          "line": 2847,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2843,
+=======
+          "line": 2876,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
+<<<<<<< HEAD
           "line": 2851,
+=======
+          "line": 2884,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3056,
+=======
+          "line": 3089,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [ 'list', 'create', 'update', 'delete', 'update-mapping', 'update-default-mapp…"
         },
         {
           "name": "executeIssueTypeScreenSchemes",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3070,
+=======
+          "line": 3103,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueTypeScreenSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PERMISSION_SCHEMES_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3197,
+=======
+          "line": 3230,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const PERMISSION_SCHEMES_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-permissions', 'create-permission…"
         },
         {
           "name": "executePermissionSchemes",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3209,
+=======
+          "line": 3242,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3358,
+=======
+          "line": 3391,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3371,
+=======
+          "line": 3404,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asMovePosition",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3482,
+=======
+          "line": 3515,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asMovePosition(value: string): 'First' | 'Last'"
         },
         {
           "name": "ROLES_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3489,
+=======
+          "line": 3522,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const ROLES_ACTIONS = [ 'list', 'get', 'create', 'update', 'partial-update', 'delete', 'get-actors', 'add-actors', 'dele…"
         },
         {
           "name": "executeRoles",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3501,
+=======
+          "line": 3534,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "EXPRESSION_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3597,
+=======
+          "line": 3630,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;"
         },
         {
           "name": "executeExpression",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3599,
+=======
+          "line": 3632,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_COMMENTS_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3667,
+=======
+          "line": 3700,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const ISSUE_COMMENTS_ACTIONS = [ 'list-properties', 'get-property', 'set-property', 'delete-property', 'bulk-fetch', ] a…"
         },
         {
           "name": "executeIssueComments",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3675,
+=======
+          "line": 3708,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELD_CONFIGURATION_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3722,
+=======
+          "line": 3755,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const FIELD_CONFIGURATION_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-fields', 'update-fields', ] as const;"
         },
         {
           "name": "executeFieldConfiguration",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3731,
+=======
+          "line": 3764,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "NOTIFICATION_SCHEMES_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3798,
+=======
+          "line": 3831,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const NOTIFICATION_SCHEMES_ACTIONS = [ 'list', 'create', 'get', 'update', 'add-notifications', 'delete', 'remove-notific…"
         },
         {
           "name": "executeNotificationSchemes",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3809,
+=======
+          "line": 3842,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executeNotificationSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PRIORITYSCHEME_ACTIONS",
           "kind": "variable",
+<<<<<<< HEAD
           "line": 3907,
+=======
+          "line": 3940,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "const PRIORITYSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-priorities', 'list-projects', 'suggested-ma…"
         },
         {
           "name": "asOrderBy",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3918,
+=======
+          "line": 3951,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined"
         },
         {
           "name": "parseIntCsv",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3925,
+=======
+          "line": 3958,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined"
         },
         {
           "name": "executePrioritySchemeResource",
           "kind": "function",
+<<<<<<< HEAD
           "line": 3937,
+=======
+          "line": 3970,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "signature": "async function executePrioritySchemeResource( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         }
       ],
@@ -4790,7 +5226,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 451,
+          "line": 479,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -23561,9 +23997,118 @@
       "path": "src/jira/resources/projects.ts",
       "symbols": [
         {
+<<<<<<< HEAD
           "name": "ProjectEmail",
+=======
+          "name": "ProjectRoleActor",
           "kind": "interface",
-          "line": 7,
+          "line": 9,
+          "exported": true,
+          "signature": "export interface ProjectRoleActor { readonly id?: number; readonly displayName?: string; readonly type?: string; readonl…"
+        },
+        {
+          "name": "ProjectRole",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface ProjectRole { readonly self?: string; readonly name?: string; readonly id?: number; readonly descriptio…"
+        },
+        {
+          "name": "ProjectRoleDetails",
+          "kind": "interface",
+          "line": 28,
+          "exported": true,
+          "signature": "export interface ProjectRoleDetails extends ProjectRole { readonly roleConfigurable?: boolean; readonly translatedName?:…"
+        },
+        {
+          "name": "UpdateProjectRoleData",
+          "kind": "interface",
+          "line": 36,
+          "exported": true,
+          "signature": "export interface UpdateProjectRoleData { readonly categorisedActors?: Record<string, string[]>; }"
+        },
+        {
+          "name": "ProjectRoleActorInput",
+          "kind": "interface",
+          "line": 40,
+          "exported": true,
+          "signature": "export interface ProjectRoleActorInput { id?: number; user?: string[]; group?: string[]; groupId?: string[]; }"
+        },
+        {
+          "name": "SetProjectRoleData",
+          "kind": "interface",
+          "line": 47,
+          "exported": true,
+          "signature": "export interface SetProjectRoleData { readonly actors?: ProjectRoleActorInput[]; }"
+        },
+        {
+          "name": "ProjectIssueTypeStatus",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface ProjectIssueTypeStatus { readonly id?: string; readonly name?: string; readonly self?: string; readonly…"
+        },
+        {
+          "name": "ProjectIssueTypeWithStatuses",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface ProjectIssueTypeWithStatuses { readonly id?: string; readonly name?: string; readonly statuses?: Projec…"
+        },
+        {
+          "name": "ProjectVersion",
+          "kind": "interface",
+          "line": 69,
+          "exported": true,
+          "signature": "export interface ProjectVersion { readonly id?: string; readonly name?: string; readonly description?: string; readonly …"
+        },
+        {
+          "name": "ListProjectVersionsParams",
+          "kind": "interface",
+          "line": 81,
+          "exported": true,
+          "signature": "export interface ListProjectVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?:…"
+        },
+        {
+          "name": "ProjectSecurityLevel",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface ProjectSecurityLevel { readonly self?: string; readonly id?: string; readonly description?: string; rea…"
+        },
+        {
+          "name": "ProjectCategory",
+          "kind": "interface",
+          "line": 101,
+          "exported": true,
+          "signature": "export interface ProjectCategory { readonly id?: string; readonly name?: string; readonly description?: string; readonly…"
+        },
+        {
+          "name": "CreateProjectCategoryData",
+          "kind": "interface",
+          "line": 108,
+          "exported": true,
+          "signature": "export interface CreateProjectCategoryData { readonly name: string; readonly description?: string; }"
+        },
+        {
+          "name": "UpdateProjectCategoryData",
+          "kind": "interface",
+          "line": 113,
+          "exported": true,
+          "signature": "export interface UpdateProjectCategoryData { readonly name?: string; readonly description?: string; }"
+        },
+        {
+          "name": "ProjectKeyValidation",
+          "kind": "interface",
+          "line": 120,
+          "exported": true,
+          "signature": "export interface ProjectKeyValidation { readonly valid: boolean; readonly errors?: string[]; }"
+        },
+        {
+          "name": "ProjectType",
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
+          "kind": "interface",
+          "line": 125,
           "exported": true,
           "signature": "export interface ProjectEmail { readonly projectId?: number; readonly emailAddress?: string; readonly emailAddressStatus…"
         },
@@ -23654,108 +24199,181 @@
         {
           "name": "ListLegacyProjectsParams",
           "kind": "interface",
+<<<<<<< HEAD
           "line": 113,
+=======
+          "line": 133,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export interface ListLegacyProjectsParams { readonly maxResults?: number; readonly orderBy?: string; readonly startAt?: …"
         },
         {
           "name": "CreateProjectData",
           "kind": "interface",
+<<<<<<< HEAD
           "line": 124,
+=======
+          "line": 144,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey: string; reado…"
         },
         {
           "name": "UpdateProjectData",
           "kind": "interface",
+<<<<<<< HEAD
           "line": 144,
+=======
+          "line": 164,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export interface UpdateProjectData { readonly key?: string; readonly name?: string; readonly description?: string; reado…"
         },
         {
           "name": "DeleteProjectParams",
           "kind": "interface",
+<<<<<<< HEAD
           "line": 158,
+=======
+          "line": 178,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export interface DeleteProjectParams { readonly enableUndo?: boolean; }"
         },
         {
           "name": "RecentProjectsParams",
           "kind": "interface",
+<<<<<<< HEAD
           "line": 162,
+=======
+          "line": 182,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export interface RecentProjectsParams { readonly maxResults?: number; readonly expand?: string[]; }"
         },
         {
           "name": "ProjectsResource",
           "kind": "class",
+<<<<<<< HEAD
           "line": 167,
+=======
+          "line": 187,
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
           "exported": true,
           "signature": "export class ProjectsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
+<<<<<<< HEAD
               "line": 168
+=======
+              "line": 188
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "list",
               "kind": "method",
+<<<<<<< HEAD
               "line": 174
+=======
+              "line": 194
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "get",
               "kind": "method",
+<<<<<<< HEAD
               "line": 195
+=======
+              "line": 215
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "listAll",
               "kind": "method",
+<<<<<<< HEAD
               "line": 208
+=======
+              "line": 228
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "listLegacy",
               "kind": "method",
+<<<<<<< HEAD
               "line": 227
+=======
+              "line": 247
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "create",
               "kind": "method",
+<<<<<<< HEAD
               "line": 247
+=======
+              "line": 267
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "delete",
               "kind": "method",
+<<<<<<< HEAD
               "line": 280
+=======
+              "line": 300
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "update",
               "kind": "method",
+<<<<<<< HEAD
               "line": 292
+=======
+              "line": 312
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "recent",
               "kind": "method",
+<<<<<<< HEAD
               "line": 316
+=======
+              "line": 336
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "listTypes",
               "kind": "method",
+<<<<<<< HEAD
               "line": 330
+=======
+              "line": 350
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "getType",
               "kind": "method",
+<<<<<<< HEAD
               "line": 339
+=======
+              "line": 359
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "getAccessibleType",
               "kind": "method",
+<<<<<<< HEAD
               "line": 348
+=======
+              "line": 368
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             },
             {
               "name": "listAccessibleTypes",
               "kind": "method",
+<<<<<<< HEAD
               "line": 357
             },
             {
@@ -23825,10 +24443,57 @@
             },
             {
               "name": "listAllComponents",
+=======
+              "line": 377
+            },
+            {
+              "name": "restore",
+              "kind": "method",
+              "line": 388
+            },
+            {
+              "name": "listRoles",
+              "kind": "method",
+              "line": 396
+            },
+            {
+              "name": "deleteRoleActors",
+              "kind": "method",
+              "line": 405
+            },
+            {
+              "name": "getRole",
+              "kind": "method",
+              "line": 423
+            },
+            {
+              "name": "addRoleActors",
+              "kind": "method",
+              "line": 441
+            },
+            {
+              "name": "setRoleActors",
+              "kind": "method",
+              "line": 455
+            },
+            {
+              "name": "getRoleDetails",
+              "kind": "method",
+              "line": 469
+            },
+            {
+              "name": "getStatuses",
+              "kind": "method",
+              "line": 487
+            },
+            {
+              "name": "listVersions",
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
               "kind": "method",
               "line": 496
             },
             {
+<<<<<<< HEAD
               "name": "deleteAsync",
               "kind": "method",
               "line": 505
@@ -23845,15 +24510,28 @@
             },
             {
               "name": "listProperties",
+=======
+              "name": "listAllVersions",
+              "kind": "method",
+              "line": 517
+            },
+            {
+              "name": "getIssueSecurityScheme",
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
               "kind": "method",
               "line": 537
             },
             {
+<<<<<<< HEAD
               "name": "deleteProperty",
+=======
+              "name": "getNotificationScheme",
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
               "kind": "method",
               "line": 546
             },
             {
+<<<<<<< HEAD
               "name": "getProperty",
               "kind": "method",
               "line": 554
@@ -23862,6 +24540,66 @@
               "name": "setProperty",
               "kind": "method",
               "line": 566
+=======
+              "name": "getPermissionScheme",
+              "kind": "method",
+              "line": 562
+            },
+            {
+              "name": "setPermissionScheme",
+              "kind": "method",
+              "line": 578
+            },
+            {
+              "name": "getSecurityLevels",
+              "kind": "method",
+              "line": 591
+            },
+            {
+              "name": "listCategories",
+              "kind": "method",
+              "line": 602
+            },
+            {
+              "name": "createCategory",
+              "kind": "method",
+              "line": 611
+            },
+            {
+              "name": "deleteCategory",
+              "kind": "method",
+              "line": 624
+            },
+            {
+              "name": "getCategory",
+              "kind": "method",
+              "line": 632
+            },
+            {
+              "name": "updateCategory",
+              "kind": "method",
+              "line": 641
+            },
+            {
+              "name": "getProjectsFields",
+              "kind": "method",
+              "line": 660
+            },
+            {
+              "name": "validateProjectKey",
+              "kind": "method",
+              "line": 671
+            },
+            {
+              "name": "getValidProjectKey",
+              "kind": "method",
+              "line": 681
+            },
+            {
+              "name": "getValidProjectName",
+              "kind": "method",
+              "line": 691
+>>>>>>> 86d7585 (feat(jira): project roles, categories, and meta API coverage (24 endpoints B681-B709))
             }
           ]
         }

@@ -304,6 +304,10 @@ const GLOBAL_OPTIONS = {
   'display-name': { type: 'string' as const },
   'avatar-size': { type: 'string' as const },
   'user-key': { type: 'string' as const },
+  // projects roles / meta options (B681-B709)
+  'exclude-inactive-users': { type: 'boolean' as const },
+  'current-member': { type: 'boolean' as const },
+  'exclude-connect-addons': { type: 'boolean' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

@@ -210,7 +210,7 @@ const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3
 
 RESOURCES:
   issues        get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank
-  projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property
+  projects      list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name
   search        search, get, approximate-count, jql-get, jql-post
   users         get, me, search, delete, create, assignable-multi-project, assignable, bulk, bulk-migration, reset-columns, get-columns, set-columns, email, bulk-emails, groups, permission-search, picker, list-properties, delete-property, get-property, set-property, search-query, search-query-key, viewissue-search, list, list-search
   issue-types   list, get
@@ -445,6 +445,34 @@ EXAMPLES:
   atlas jira priority-schemes list-projects 10000 --project-ids 10100,10101 --query example
   atlas jira priority-schemes suggested-mappings --scheme-id 10000 --priorities '{"add":[10003],"remove":[10004]}' --projects '{"add":[10100]}'
   atlas jira priority-schemes available-priorities --scheme-id 10000 --query high --exclude 10005,10006
+  atlas jira projects restore PROJ
+  atlas jira projects list-roles PROJ
+  atlas jira projects get-role PROJ 10001
+  atlas jira projects get-role PROJ 10001 --exclude-inactive-users
+  atlas jira projects delete-role-actors PROJ 10001 --user acc-1
+  atlas jira projects delete-role-actors PROJ 10001 --group-id grp-1
+  atlas jira projects add-role-actors PROJ 10001 --body '{"actors":[{"user":["acc-1"]}]}'
+  atlas jira projects set-role-actors PROJ 10001 --body '{"categorisedActors":{"atlassian-user-role-actor":["acc-1"]}}'
+  atlas jira projects get-role-details PROJ
+  atlas jira projects get-role-details PROJ --current-member --exclude-connect-addons
+  atlas jira projects get-statuses PROJ
+  atlas jira projects list-versions PROJ --order-by name --status released
+  atlas jira projects list-all-versions PROJ --order-by -releaseDate
+  atlas jira projects get-issue-security-scheme PROJ
+  atlas jira projects get-notification-scheme PROJ --expand all
+  atlas jira projects get-permission-scheme PROJ --expand permissions
+  atlas jira projects set-permission-scheme PROJ --permission-scheme 10001
+  atlas jira projects get-security-levels PROJ
+  atlas jira projects list-categories
+  atlas jira projects create-category --name "Infrastructure"
+  atlas jira projects create-category --name "Infrastructure" --description "Infra projects"
+  atlas jira projects delete-category 10001
+  atlas jira projects get-category 10001
+  atlas jira projects update-category 10001 --name "Renamed" --description "Updated"
+  atlas jira projects get-projects-fields
+  atlas jira projects validate-project-key --key MYPROJ
+  atlas jira projects get-valid-project-key --key myproj
+  atlas jira projects get-valid-project-name --name "My Project"
 `;
 
 /** Get help text for the given level. */

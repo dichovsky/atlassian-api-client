@@ -414,8 +414,138 @@ async function executeProjects(client: JiraClient, cmd: ParsedCommand): Promise<
       return { updated: true };
     default:
       throw new Error(
-        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property`,
+        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, get-email, set-email, get-hierarchy, archive, set-avatar, delete-avatar, load-avatar, get-avatars, get-classification-config, delete-classification-level, get-classification-level, set-classification-level, list-components, list-all-components, delete-async, get-features, set-feature-state, list-properties, delete-property, get-property, set-property`,    case 'restore':
+      await client.projects.restore(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+      return { restored: true };
+    case 'list-roles':
+      return client.projects.listRoles(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'delete-role-actors': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
+      if (roleId === undefined) throw new Error('Missing required argument: roleId');
+      await client.projects.deleteRoleActors(projectIdOrKey, roleId, {
+        user: asString(opts['user']),
+        groupId: asString(opts['group-id']),
+        group: asString(opts['group']),
+      });
+      return { deleted: true };
+    }
+    case 'get-role': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
+      if (roleId === undefined) throw new Error('Missing required argument: roleId');
+      const excludeInactiveUsers = asBoolFlag(opts['exclude-inactive-users']);
+      return client.projects.getRole(projectIdOrKey, roleId, {
+        ...(excludeInactiveUsers !== undefined && { excludeInactiveUsers }),
+      });
+    }
+    case 'add-role-actors': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
+      if (roleId === undefined) throw new Error('Missing required argument: roleId');
+      return client.projects.addRoleActors(
+        projectIdOrKey,
+        roleId,
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as Parameters<
+          typeof client.projects.addRoleActors
+        >[2],
       );
+    }
+    case 'set-role-actors': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const roleId = asPositiveInt(cmd.positionalArgs[1], 'roleId');
+      if (roleId === undefined) throw new Error('Missing required argument: roleId');
+      return client.projects.setRoleActors(
+        projectIdOrKey,
+        roleId,
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as Parameters<
+          typeof client.projects.setRoleActors
+        >[2],
+      );
+    }
+    case 'get-role-details': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      const currentMember = asBoolFlag(opts['current-member']);
+      const excludeConnectAddons = asBoolFlag(opts['exclude-connect-addons']);
+      return client.projects.getRoleDetails(projectIdOrKey, {
+        ...(currentMember !== undefined && { currentMember }),
+        ...(excludeConnectAddons !== undefined && { excludeConnectAddons }),
+      });
+    }
+    case 'get-statuses':
+      return client.projects.getStatuses(requireArg(cmd.positionalArgs[0], 'projectIdOrKey'));
+    case 'list-versions': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      return client.projects.listVersions(projectIdOrKey, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        query: asString(opts['query']),
+        status: asString(opts['status']),
+        expand: asString(opts['expand']),
+      });
+    }
+    case 'list-all-versions': {
+      const projectIdOrKey = requireArg(cmd.positionalArgs[0], 'projectIdOrKey');
+      return client.projects.listAllVersions(projectIdOrKey, {
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        query: asString(opts['query']),
+        status: asString(opts['status']),
+        expand: asString(opts['expand']),
+      });
+    }
+    case 'get-issue-security-scheme':
+      return client.projects.getIssueSecurityScheme(
+        requireArg(cmd.positionalArgs[0], 'projectKeyOrId'),
+      );
+    case 'get-notification-scheme':
+      return client.projects.getNotificationScheme(
+        requireArg(cmd.positionalArgs[0], 'projectKeyOrId'),
+        { expand: asString(opts['expand']) },
+      );
+    case 'get-permission-scheme':
+      return client.projects.getPermissionScheme(
+        requireArg(cmd.positionalArgs[0], 'projectKeyOrId'),
+        { expand: asString(opts['expand']) },
+      );
+    case 'set-permission-scheme': {
+      const projectKeyOrId = requireArg(cmd.positionalArgs[0], 'projectKeyOrId');
+      const permSchemeId = asPositiveInt(opts['permission-scheme'], '--permission-scheme');
+      if (permSchemeId === undefined)
+        throw new Error('Missing required option: --permission-scheme');
+      return client.projects.setPermissionScheme(projectKeyOrId, { id: permSchemeId });
+    }
+    case 'get-security-levels':
+      return client.projects.getSecurityLevels(requireArg(cmd.positionalArgs[0], 'projectKeyOrId'));
+    case 'list-categories':
+      return client.projects.listCategories();
+    case 'create-category':
+      return client.projects.createCategory({
+        name: requireOpt(opts['name'], '--name'),
+        description: asString(opts['description']),
+      });
+    case 'delete-category':
+      await client.projects.deleteCategory(requireArg(cmd.positionalArgs[0], 'categoryId'));
+      return { deleted: true };
+    case 'get-category':
+      return client.projects.getCategory(requireArg(cmd.positionalArgs[0], 'categoryId'));
+    case 'update-category':
+      return client.projects.updateCategory(requireArg(cmd.positionalArgs[0], 'categoryId'), {
+        name: asString(opts['name']),
+        description: asString(opts['description']),
+      });
+    case 'get-projects-fields':
+      return client.projects.getProjectsFields();
+    case 'validate-project-key':
+      return client.projects.validateProjectKey(requireOpt(opts['key'], '--key'));
+    case 'get-valid-project-key':
+      return client.projects.getValidProjectKey(requireOpt(opts['key'], '--key'));
+    case 'get-valid-project-name':
+      return client.projects.getValidProjectName(requireOpt(opts['name'], '--name'));
+    default:
+      throw new Error(
+        `Unknown projects action: ${cmd.action}. Actions: list, get, list-legacy, create, update, delete, recent, list-types, get-type, get-accessible-type, list-accessible-types, restore, list-roles, delete-role-actors, get-role, add-role-actors, set-role-actors, get-role-details, get-statuses, list-versions, list-all-versions, get-issue-security-scheme, get-notification-scheme, get-permission-scheme, set-permission-scheme, get-security-levels, list-categories, create-category, delete-category, get-category, update-category, get-projects-fields, validate-project-key, get-valid-project-key, get-valid-project-name`,      );
   }
 }
 
