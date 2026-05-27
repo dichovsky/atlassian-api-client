@@ -423,6 +423,9 @@ export class IssuesResource {
    * DELETE /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
    */
   async deleteProperty(issueIdOrKey: string, propertyKey: string): Promise<void> {
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,
@@ -434,6 +437,9 @@ export class IssuesResource {
    * GET /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
    */
   async getProperty(issueIdOrKey: string, propertyKey: string): Promise<IssueProperty> {
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
     const response = await this.transport.request<IssueProperty>({
       method: 'GET',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,
@@ -446,6 +452,9 @@ export class IssuesResource {
    * PUT /rest/api/3/issue/{issueIdOrKey}/properties/{propertyKey}
    */
   async setProperty(issueIdOrKey: string, propertyKey: string, value: unknown): Promise<void> {
+    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
+      throw new ValidationError('propertyKey must be a non-empty string');
+    }
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/properties/${encodePathSegment(propertyKey)}`,

@@ -531,6 +531,12 @@ describe('IssuesResource', () => {
         `${BASE_URL}/issue/PROJ-1/properties/my%2Fprop`,
       );
     });
+
+    it('throws ValidationError when propertyKey is empty', async () => {
+      await expect(resource.deleteProperty('PROJ-1', '')).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
+    });
   });
 
   // ── getProperty (B491) ────────────────────────────────────────────────────
@@ -546,6 +552,12 @@ describe('IssuesResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/properties/myProp`,
       });
     });
+
+    it('throws ValidationError when propertyKey is empty', async () => {
+      await expect(resource.getProperty('PROJ-1', '')).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
+    });
   });
 
   // ── setProperty (B492) ────────────────────────────────────────────────────
@@ -559,6 +571,12 @@ describe('IssuesResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/properties/myProp`,
         body: { foo: 'bar' },
       });
+    });
+
+    it('throws ValidationError when propertyKey is empty', async () => {
+      await expect(resource.setProperty('PROJ-1', '', {})).rejects.toThrow(
+        'propertyKey must be a non-empty string',
+      );
     });
   });
 

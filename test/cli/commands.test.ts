@@ -7502,6 +7502,18 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--ids');
     });
 
+    it('issues filter-changelog throws when --ids contains non-integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'filter-changelog', ['PROJ-1'], { ids: 'abc' }), GLOBALS),
+      ).rejects.toThrow('--ids must be comma-separated positive integers');
+    });
+
+    it('issues filter-changelog throws when --ids is empty after parsing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'filter-changelog', ['PROJ-1'], { ids: ',' }), GLOBALS),
+      ).rejects.toThrow('--ids must not be empty');
+    });
+
     // ── get-editmeta (B487) ────────────────────────────────────────────────
 
     it('issues get-editmeta calls client.issues.getEditMeta', async () => {

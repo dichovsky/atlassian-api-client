@@ -231,11 +231,20 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
-    case 'filter-changelog':
+    case 'filter-changelog': {
+      const rawIds = splitCsvIds(requireOpt(opts['ids'], '--ids'));
+      const numericIds = rawIds.map((token) => {
+        const n = Number(token);
+        if (!Number.isInteger(n) || n <= 0)
+          throw new Error(`--ids must be comma-separated positive integers, got: ${token}`);
+        return n;
+      });
+      if (numericIds.length === 0) throw new Error('--ids must not be empty');
       return client.issues.filterChangelog(
         requireArg(cmd.positionalArgs[0], 'issue key'),
-        splitCsvIds(requireOpt(opts['ids'], '--ids')).map(Number),
+        numericIds,
       );
+    }
     case 'get-editmeta':
       return client.issues.getEditMeta(requireArg(cmd.positionalArgs[0], 'issue key'));
     case 'notify': {
