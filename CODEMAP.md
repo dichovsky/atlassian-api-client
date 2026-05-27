@@ -10,11 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-<<<<<<< HEAD
-  "sourceHash": "475038ce1313fa3090628d8ae4839b2a080ca94c355b4cfe37d3ad6e73b2d393",
-=======
-  "sourceHash": "f682edb8ed8bb8350b52fe6c84ea5ae268b3a8cf02183bcf44cbd9cf604b4e2e",
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+  "sourceHash": "a077dccae7ac4e43b41ea09ae97a1337421637a9d9c6829beb982f06fa42ca91",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4067,1061 +4063,637 @@
         {
           "name": "executeIssueTypes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 490,
-=======
-          "line": 495,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 582,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 501,
-=======
-          "line": 506,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 593,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 582,
-=======
-          "line": 587,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 674,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 647,
-=======
-          "line": 652,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 739,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 856,
-=======
-          "line": 861,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 948,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 994,
-=======
-          "line": 999,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1086,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1066,
-=======
-          "line": 1071,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1158,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1090,
-=======
-          "line": 1095,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1182,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1129,
-=======
-          "line": 1134,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1221,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1156,
-=======
-          "line": 1161,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1248,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1174,
-=======
-          "line": 1179,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1266,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1183,
-=======
-          "line": 1188,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1275,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1192,
-=======
-          "line": 1197,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1284,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1197,
-=======
-          "line": 1202,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1289,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1202,
-=======
-          "line": 1207,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1294,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1206,
-=======
-          "line": 1211,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1298,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1215,
-=======
-          "line": 1220,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1307,
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1224,
-=======
-          "line": 1229,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1316,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1232,
-=======
-          "line": 1237,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1324,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "asAccessType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1241,
-=======
-          "line": 1246,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1333,
           "signature": "function asAccessType( value: string | boolean | undefined, ): 'site-admin' | 'admin' | 'user' | undefined"
         },
         {
           "name": "asExpressionCheck",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1250,
-=======
-          "line": 1255,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1342,
           "signature": "function asExpressionCheck( value: string | boolean | undefined, ): 'syntax' | 'type' | 'complexity' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1259,
-=======
-          "line": 1264,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1351,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1266,
-=======
-          "line": 1271,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1358,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1274,
-=======
-          "line": 1279,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1366,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1287,
-=======
-          "line": 1292,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1379,
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1298,
-=======
-          "line": 1303,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1390,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1309,
-=======
-          "line": 1314,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1401,
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1318,
-=======
-          "line": 1323,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1410,
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1327,
-=======
-          "line": 1332,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1419,
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1347,
-=======
-          "line": 1352,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1439,
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1364,
-=======
-          "line": 1369,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1456,
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1373,
-=======
-          "line": 1378,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1465,
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1410,
-=======
-          "line": 1415,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1502,
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIncidents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1429,
-=======
-          "line": 1434,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1521,
           "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePostIncidentReviews",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1441,
-=======
-          "line": 1446,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1533,
           "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeVulnerability",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1456,
-=======
-          "line": 1461,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1548,
           "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDevopscomponents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1468,
-=======
-          "line": 1473,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1560,
           "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroups",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1480,
-=======
-          "line": 1485,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1572,
           "signature": "async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroupUserPicker",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1575,
-=======
-          "line": 1580,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1667,
           "signature": "async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSecurityLevel",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1609,
-=======
-          "line": 1614,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1701,
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1618,
-=======
-          "line": 1623,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1710,
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1633,
-=======
-          "line": 1638,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1725,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1655,
-=======
-          "line": 1660,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1747,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1679,
-=======
-          "line": 1684,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1771,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1691,
-=======
-          "line": 1696,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1783,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1703,
-=======
-          "line": 1708,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1795,
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1712,
-=======
-          "line": 1717,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1804,
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1721,
-=======
-          "line": 1726,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1813,
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1733,
-=======
-          "line": 1738,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1825,
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1758,
-=======
-          "line": 1763,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1850,
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1770,
-=======
-          "line": 1775,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1862,
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1779,
-=======
-          "line": 1784,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1871,
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1793,
-=======
-          "line": 1798,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1885,
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1902,
-=======
-          "line": 1907,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 1994,
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1909,
-=======
-          "line": 1914,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2001,
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2024,
-=======
-          "line": 2029,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2116,
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2034,
-=======
-          "line": 2039,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2126,
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2042,
-=======
-          "line": 2047,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2134,
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2050,
-=======
-          "line": 2055,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2142,
           "signature": "const BULK_ACTIONS = [ 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', 'transition-issue…"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2070,
-=======
-          "line": 2075,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2162,
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2077,
-=======
-          "line": 2082,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2169,
           "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2085,
-=======
-          "line": 2090,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2177,
           "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2093,
-=======
-          "line": 2098,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2185,
           "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2101,
-=======
-          "line": 2106,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2193,
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueAttachments",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2214,
-=======
-          "line": 2219,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2306,
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2278,
-=======
-          "line": 2283,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2370,
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2367,
-=======
-          "line": 2372,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2459,
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2374,
-=======
-          "line": 2379,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2466,
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2387,
-=======
-          "line": 2392,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2479,
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2388,
-=======
-          "line": 2393,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2480,
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
-<<<<<<< HEAD
-          "line": 2389,
-=======
-          "line": 2394,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2481,
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
-<<<<<<< HEAD
-          "line": 2390,
-=======
-          "line": 2395,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2482,
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2392,
-=======
-          "line": 2397,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2484,
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2399,
-=======
-          "line": 2404,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2491,
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2406,
-=======
-          "line": 2411,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2498,
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2415,
-=======
-          "line": 2420,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2507,
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2449,
-=======
-          "line": 2454,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2541,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asStatusCategory",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2511,
-=======
-          "line": 2516,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2603,
           "signature": "function asStatusCategory( value: string | boolean | undefined, ): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined"
         },
         {
           "name": "executeResolutions",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2522,
-=======
-          "line": 2527,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2614,
           "signature": "async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2596,
-=======
-          "line": 2601,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2688,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2618,
-=======
-          "line": 2623,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2710,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2627,
-=======
-          "line": 2632,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2719,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2635,
-=======
-          "line": 2640,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2727,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2664,
-=======
-          "line": 2669,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2756,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2672,
-=======
-          "line": 2677,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2764,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2877,
-=======
-          "line": 2882,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2969,
           "signature": "const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [ 'list', 'create', 'update', 'delete', 'update-mapping', 'update-default-mapp…"
         },
         {
           "name": "executeIssueTypeScreenSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2891,
-=======
-          "line": 2896,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 2983,
           "signature": "async function executeIssueTypeScreenSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PERMISSION_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3018,
-=======
-          "line": 3023,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3110,
           "signature": "const PERMISSION_SCHEMES_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-permissions', 'create-permission…"
         },
         {
           "name": "executePermissionSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3030,
-=======
-          "line": 3035,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3122,
           "signature": "async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3179,
-=======
-          "line": 3184,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3271,
           "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3192,
-=======
-          "line": 3197,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3284,
           "signature": "async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asMovePosition",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3303,
-=======
-          "line": 3308,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3395,
           "signature": "function asMovePosition(value: string): 'First' | 'Last'"
         },
         {
           "name": "ROLES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3310,
-=======
-          "line": 3315,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3402,
           "signature": "const ROLES_ACTIONS = [ 'list', 'get', 'create', 'update', 'partial-update', 'delete', 'get-actors', 'add-actors', 'dele…"
         },
         {
           "name": "executeRoles",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3322,
-=======
-          "line": 3327,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3414,
           "signature": "async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "EXPRESSION_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3418,
-=======
-          "line": 3423,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3510,
           "signature": "const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;"
         },
         {
           "name": "executeExpression",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3420,
-=======
-          "line": 3425,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3512,
           "signature": "async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_COMMENTS_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3488,
-=======
-          "line": 3493,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3580,
           "signature": "const ISSUE_COMMENTS_ACTIONS = [ 'list-properties', 'get-property', 'set-property', 'delete-property', 'bulk-fetch', ] a…"
         },
         {
           "name": "executeIssueComments",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3496,
-=======
-          "line": 3501,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3588,
           "signature": "async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELD_CONFIGURATION_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3543,
-=======
-          "line": 3548,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3635,
           "signature": "const FIELD_CONFIGURATION_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-fields', 'update-fields', ] as const;"
         },
         {
           "name": "executeFieldConfiguration",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3552,
-=======
-          "line": 3557,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3644,
           "signature": "async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "NOTIFICATION_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3619,
-=======
-          "line": 3624,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3711,
           "signature": "const NOTIFICATION_SCHEMES_ACTIONS = [ 'list', 'create', 'get', 'update', 'add-notifications', 'delete', 'remove-notific…"
         },
         {
           "name": "executeNotificationSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3630,
-=======
-          "line": 3635,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3722,
           "signature": "async function executeNotificationSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PRIORITYSCHEME_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3728,
-=======
-          "line": 3733,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3820,
           "signature": "const PRIORITYSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-priorities', 'list-projects', 'suggested-ma…"
         },
         {
           "name": "asOrderBy",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3739,
-=======
-          "line": 3744,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3831,
           "signature": "function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined"
         },
         {
           "name": "parseIntCsv",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3746,
-=======
-          "line": 3751,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3838,
           "signature": "function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined"
         },
         {
           "name": "executePrioritySchemeResource",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3758,
-=======
-          "line": 3763,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 3850,
           "signature": "async function executePrioritySchemeResource( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         }
       ],
@@ -5373,7 +4945,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 303,
+          "line": 305,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -25131,163 +24703,144 @@
         {
           "name": "UsersResource",
           "kind": "class",
-<<<<<<< HEAD
-          "line": 19,
-=======
-          "line": 20,
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+          "line": 32,
           "exported": true,
           "signature": "export class UsersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-<<<<<<< HEAD
-              "line": 20
-=======
-              "line": 21
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+              "line": 33
             },
             {
               "name": "get",
               "kind": "method",
-<<<<<<< HEAD
-              "line": 26
-=======
-              "line": 27
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+              "line": 39
             },
             {
               "name": "getCurrentUser",
               "kind": "method",
-<<<<<<< HEAD
-              "line": 36
-=======
-              "line": 37
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+              "line": 49
             },
             {
               "name": "search",
               "kind": "method",
-<<<<<<< HEAD
-              "line": 45
+              "line": 58
             },
             {
               "name": "deleteUser",
               "kind": "method",
-              "line": 59
+              "line": 72
             },
             {
               "name": "createUser",
               "kind": "method",
-              "line": 68
+              "line": 81
             },
             {
               "name": "assignableMultiProjectSearch",
               "kind": "method",
-              "line": 78
+              "line": 91
             },
             {
               "name": "assignableSearch",
               "kind": "method",
-              "line": 95
+              "line": 108
             },
             {
               "name": "bulkGet",
               "kind": "method",
-              "line": 113
+              "line": 126
             },
             {
               "name": "bulkMigration",
-=======
-              "line": 46
-            },
-            {
-              "name": "getPermissionUsers",
               "kind": "method",
-              "line": 60
+              "line": 141
             },
             {
-              "name": "picker",
-              "kind": "method",
-              "line": 81
-            },
-            {
-              "name": "listProperties",
-              "kind": "method",
-              "line": 101
-            },
-            {
-              "name": "deleteProperty",
-              "kind": "method",
-              "line": 115
-            },
-            {
-              "name": "getProperty",
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
-              "kind": "method",
-              "line": 128
-            },
-            {
-<<<<<<< HEAD
               "name": "resetColumns",
               "kind": "method",
-              "line": 143
+              "line": 156
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 154
+              "line": 167
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 166
+              "line": 179
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 178
+              "line": 191
             },
             {
               "name": "bulkGetEmails",
               "kind": "method",
-              "line": 188
+              "line": 201
             },
             {
               "name": "getGroups",
               "kind": "method",
-              "line": 198
-=======
+              "line": 211
+            },
+            {
+              "name": "getPermissionUsers",
+              "kind": "method",
+              "line": 226
+            },
+            {
+              "name": "picker",
+              "kind": "method",
+              "line": 246
+            },
+            {
+              "name": "listProperties",
+              "kind": "method",
+              "line": 265
+            },
+            {
+              "name": "deleteProperty",
+              "kind": "method",
+              "line": 278
+            },
+            {
+              "name": "getProperty",
+              "kind": "method",
+              "line": 290
+            },
+            {
               "name": "setProperty",
               "kind": "method",
-              "line": 142
+              "line": 303
             },
             {
               "name": "searchQuery",
               "kind": "method",
-              "line": 160
+              "line": 320
             },
             {
               "name": "searchQueryKey",
               "kind": "method",
-              "line": 175
+              "line": 334
             },
             {
               "name": "viewIssueSearch",
               "kind": "method",
-              "line": 190
+              "line": 348
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 208
+              "line": 365
             },
             {
               "name": "listSearch",
               "kind": "method",
-              "line": 222
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
+              "line": 378
             }
           ]
         }
@@ -25715,7 +25268,6 @@
           "jsdoc": "Parameters for listing Jira labels."
         },
         {
-<<<<<<< HEAD
           "name": "CreateUserData",
           "kind": "interface",
           "line": 285,
@@ -25810,10 +25362,11 @@
           "exported": true,
           "signature": "export interface GetUserGroupsParams { readonly accountId: string; readonly username?: string; readonly key?: string; }",
           "jsdoc": "Parameters for getting groups for a user (B808)."
-=======
+        },
+        {
           "name": "GetPermissionUsersParams",
           "kind": "interface",
-          "line": 285,
+          "line": 376,
           "exported": true,
           "signature": "export interface GetPermissionUsersParams { readonly projectKey?: string; readonly projectUuid?: string; readonly issueK…",
           "jsdoc": "Parameters for searching users by permission."
@@ -25821,7 +25374,7 @@
         {
           "name": "UserPickerEntry",
           "kind": "interface",
-          "line": 298,
+          "line": 389,
           "exported": true,
           "signature": "export interface UserPickerEntry { readonly accountId: string; readonly displayName: string; readonly avatarUrl?: string…",
           "jsdoc": "A compact user entry returned by the user picker endpoint."
@@ -25829,7 +25382,7 @@
         {
           "name": "UserPickerResponse",
           "kind": "interface",
-          "line": 306,
+          "line": 397,
           "exported": true,
           "signature": "export interface UserPickerResponse { readonly users: readonly UserPickerEntry[]; readonly header?: string; readonly tot…",
           "jsdoc": "Response from the user picker endpoint (B810)."
@@ -25837,7 +25390,7 @@
         {
           "name": "UserPickerParams",
           "kind": "interface",
-          "line": 313,
+          "line": 404,
           "exported": true,
           "signature": "export interface UserPickerParams { readonly query: string; readonly maxResults?: number; readonly showAvatar?: boolean;…",
           "jsdoc": "Parameters for the user picker endpoint."
@@ -25845,7 +25398,7 @@
         {
           "name": "UserPropertyKey",
           "kind": "interface",
-          "line": 324,
+          "line": 415,
           "exported": true,
           "signature": "export interface UserPropertyKey { readonly key: string; readonly self: string; }",
           "jsdoc": "A single property key entry returned by the list-properties endpoint."
@@ -25853,7 +25406,7 @@
         {
           "name": "UserPropertyKeys",
           "kind": "interface",
-          "line": 330,
+          "line": 421,
           "exported": true,
           "signature": "export interface UserPropertyKeys { readonly keys: readonly UserPropertyKey[]; }",
           "jsdoc": "Response from the list user properties endpoint (B811)."
@@ -25861,7 +25414,7 @@
         {
           "name": "UserProperty",
           "kind": "interface",
-          "line": 335,
+          "line": 426,
           "exported": true,
           "signature": "export interface UserProperty { readonly key: string; readonly value: unknown; }",
           "jsdoc": "Response from the get user property endpoint (B813)."
@@ -25869,7 +25422,7 @@
         {
           "name": "UserIdentifierParams",
           "kind": "interface",
-          "line": 341,
+          "line": 432,
           "exported": true,
           "signature": "export interface UserIdentifierParams { readonly userKey?: string; readonly accountId?: string; }",
           "jsdoc": "Parameters identifying a user by key or account ID (used across property endpoints)."
@@ -25877,7 +25430,7 @@
         {
           "name": "UserSearchQueryResult",
           "kind": "interface",
-          "line": 347,
+          "line": 438,
           "exported": true,
           "signature": "export interface UserSearchQueryResult { readonly values: readonly User[]; readonly startAt: number; readonly maxResults…",
           "jsdoc": "Paginated response wrapping User values (B815/B816)."
@@ -25885,7 +25438,7 @@
         {
           "name": "UserKeySearchQueryResult",
           "kind": "interface",
-          "line": 355,
+          "line": 446,
           "exported": true,
           "signature": "export interface UserKeySearchQueryResult { readonly values: readonly { readonly key: string }[]; readonly startAt: numb…",
           "jsdoc": "Paginated response wrapping user keys (B816)."
@@ -25893,7 +25446,7 @@
         {
           "name": "SearchUsersQueryParams",
           "kind": "interface",
-          "line": 363,
+          "line": 454,
           "exported": true,
           "signature": "export interface SearchUsersQueryParams { readonly query?: string; readonly startAt?: number; readonly maxResults?: numb…",
           "jsdoc": "Parameters for GET /rest/api/3/user/search/query (B815) and key variant (B816)."
@@ -25901,7 +25454,7 @@
         {
           "name": "ViewIssueSearchUsersParams",
           "kind": "interface",
-          "line": 370,
+          "line": 461,
           "exported": true,
           "signature": "export interface ViewIssueSearchUsersParams { readonly issueKey?: string; readonly query?: string; readonly maxResults?:…",
           "jsdoc": "Parameters for GET /rest/api/3/user/viewissue/search (B817)."
@@ -25909,7 +25462,7 @@
         {
           "name": "ListAllUsersParams",
           "kind": "interface",
-          "line": 380,
+          "line": 471,
           "exported": true,
           "signature": "export interface ListAllUsersParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Parameters for GET /rest/api/3/users (B818)."
@@ -25917,11 +25470,10 @@
         {
           "name": "SearchAllUsersParams",
           "kind": "interface",
-          "line": 386,
+          "line": 477,
           "exported": true,
           "signature": "export interface SearchAllUsersParams { readonly query?: string; readonly username?: string; readonly startAt?: number; …",
           "jsdoc": "Parameters for GET /rest/api/3/users/search (B819)."
->>>>>>> 8ca01c0 (feat(jira): users properties and search endpoints (11 endpoints) (#B809-B819))
         }
       ]
     }
