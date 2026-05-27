@@ -315,6 +315,10 @@ describe('SearchResource', () => {
       const query = transport.lastCall?.options.query ?? {};
       expect(query['jql']).toBeUndefined();
     });
+
+    it('throws RangeError when maxResults is invalid', async () => {
+      await expect(search.searchJqlGet({ maxResults: 0 })).rejects.toThrow(RangeError);
+    });
   });
 
   // ── searchJqlPost ─────────────────────────────────────────────────────────
@@ -389,6 +393,10 @@ describe('SearchResource', () => {
       // Assert
       const body = transport.lastCall?.options.body ?? {};
       expect(body).not.toHaveProperty('jql');
+    });
+
+    it('throws RangeError when maxResults is invalid', async () => {
+      await expect(search.searchJqlPost({ maxResults: 0 })).rejects.toThrow(RangeError);
     });
   });
 });

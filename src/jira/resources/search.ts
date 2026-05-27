@@ -92,9 +92,10 @@ export class SearchResource {
 
   /** Search for issues using JQL cursor-based pagination (GET). B767 */
   async searchJqlGet(params: JqlSearchParams): Promise<JqlSearchResult> {
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
-    if (params.jql) query['jql'] = params.jql;
-    if (params.nextPageToken) query['nextPageToken'] = params.nextPageToken;
+    if (params.jql !== undefined) query['jql'] = params.jql;
+    if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params.fields) query['fields'] = params.fields.join(',');
     if (params.expand) query['expand'] = params.expand.join(',');
@@ -110,9 +111,10 @@ export class SearchResource {
 
   /** Search for issues using JQL cursor-based pagination (POST). B768 */
   async searchJqlPost(params: JqlSearchParams): Promise<JqlSearchResult> {
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const body: Record<string, unknown> = {};
-    if (params.jql) body['jql'] = params.jql;
-    if (params.nextPageToken) body['nextPageToken'] = params.nextPageToken;
+    if (params.jql !== undefined) body['jql'] = params.jql;
+    if (params.nextPageToken !== undefined) body['nextPageToken'] = params.nextPageToken;
     if (params.maxResults !== undefined) body['maxResults'] = params.maxResults;
     if (params.fields) body['fields'] = params.fields;
     if (params.expand) body['expand'] = params.expand;
