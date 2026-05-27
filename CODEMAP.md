@@ -10,15 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-<<<<<<< HEAD
-  "sourceHash": "6608f8b5ca9211e56563ea9f3833b5f96c38a62cda1fb4d0b19c7166d6f46599",
-=======
-<<<<<<< HEAD
-  "sourceHash": "b25ccc9fe3726ee445c73f42025dda2ece3ff7c88bbaf8d2cf6aa9ac5ef9a106",
-=======
-  "sourceHash": "563be355f3d15ab7010b2e880978537dcbc31ee3558e095c794e3391c2b59a27",
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+  "sourceHash": "f874944c884dad25635336d622006ed49dc0f6f8ad03c837383e42c38a1eeee2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4065,1487 +4057,643 @@
         {
           "name": "executeUsers",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 347,
-=======
-          "line": 291,
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 383,
           "signature": "async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueTypes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 363,
-=======
-          "line": 307,
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 399,
           "signature": "async function executeIssueTypes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePriorities",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 374,
-=======
-          "line": 318,
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 410,
           "signature": "async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatuses",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 455,
-=======
-<<<<<<< HEAD
-          "line": 363,
-=======
-          "line": 329,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 491,
           "signature": "async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBoards",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 520,
-=======
-<<<<<<< HEAD
-          "line": 428,
-=======
-          "line": 394,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 556,
           "signature": "async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSprints",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 729,
-=======
-<<<<<<< HEAD
-          "line": 637,
-=======
-          "line": 603,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 765,
           "signature": "async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEpic",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 867,
-=======
-<<<<<<< HEAD
-          "line": 775,
-=======
-          "line": 741,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 903,
           "signature": "async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeBacklog",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 939,
-=======
-<<<<<<< HEAD
-          "line": 847,
-=======
-          "line": 813,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 975,
           "signature": "async function executeBacklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAnnouncementBanner",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 963,
-=======
-<<<<<<< HEAD
-          "line": 871,
-=======
-          "line": 837,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 999,
           "signature": "async function executeAnnouncementBanner(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDataPolicy",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1002,
-=======
-<<<<<<< HEAD
-          "line": 910,
-=======
-          "line": 876,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1038,
           "signature": "async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeWebhooks",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1029,
-=======
-<<<<<<< HEAD
-          "line": 937,
-=======
-          "line": 903,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1065,
           "signature": "async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asAnnouncementBannerVisibility",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1047,
-=======
-<<<<<<< HEAD
-          "line": 955,
-=======
-          "line": 921,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1083,
           "signature": "function asAnnouncementBannerVisibility( value: string | boolean | undefined, ): 'PUBLIC' | 'PRIVATE' | undefined"
         },
         {
           "name": "asSprintState",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1056,
-=======
-<<<<<<< HEAD
-          "line": 964,
-=======
-          "line": 930,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1092,
           "signature": "function asSprintState( value: string | boolean | undefined, ): 'active' | 'closed' | 'future' | undefined"
         },
         {
           "name": "requireArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1065,
-=======
-<<<<<<< HEAD
-          "line": 973,
-=======
-          "line": 939,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1101,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1070,
-=======
-<<<<<<< HEAD
-          "line": 978,
-=======
-          "line": 944,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1106,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1075,
-=======
-<<<<<<< HEAD
-          "line": 983,
-=======
-          "line": 949,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1111,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1079,
-=======
-<<<<<<< HEAD
-          "line": 987,
-=======
-          "line": 953,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1115,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "asNonNegativeInt",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1088,
-=======
-<<<<<<< HEAD
-          "line": 996,
-=======
-          "line": 962,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1124,
           "signature": "function asNonNegativeInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "parsePositiveIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1097,
-=======
-<<<<<<< HEAD
-          "line": 1005,
-=======
-          "line": 971,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1133,
           "signature": "function parsePositiveIntArg(value: string, name: string): number"
         },
         {
           "name": "asBoardType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1105,
-=======
-<<<<<<< HEAD
-          "line": 1013,
-=======
-          "line": 979,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1141,
           "signature": "function asBoardType( value: string | boolean | undefined, ): 'scrum' | 'kanban' | 'simple' | undefined"
         },
         {
           "name": "asAccessType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1114,
-=======
-<<<<<<< HEAD
-          "line": 1022,
-=======
-          "line": 988,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1150,
           "signature": "function asAccessType( value: string | boolean | undefined, ): 'site-admin' | 'admin' | 'user' | undefined"
         },
         {
           "name": "asExpressionCheck",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1123,
-=======
-<<<<<<< HEAD
-          "line": 1031,
-=======
-          "line": 997,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1159,
           "signature": "function asExpressionCheck( value: string | boolean | undefined, ): 'syntax' | 'type' | 'complexity' | undefined"
         },
         {
           "name": "requireBoardType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1132,
-=======
-<<<<<<< HEAD
-          "line": 1040,
-=======
-          "line": 1006,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1168,
           "signature": "function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple'"
         },
         {
           "name": "asBoolFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1139,
-=======
-<<<<<<< HEAD
-          "line": 1047,
-=======
-          "line": 1013,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1175,
           "signature": "function asBoolFlag(value: string | boolean | undefined): boolean | undefined"
         },
         {
           "name": "executeApplicationRole",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1147,
-=======
-<<<<<<< HEAD
-          "line": 1055,
-=======
-          "line": 1021,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1183,
           "signature": "async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatus",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1160,
-=======
-<<<<<<< HEAD
-          "line": 1068,
-=======
-          "line": 1034,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1196,
           "signature": "async function executeStatus(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeStatusCategory",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1171,
-=======
-<<<<<<< HEAD
-          "line": 1079,
-=======
-          "line": 1045,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1207,
           "signature": "async function executeStatusCategory(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServerInfo",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1182,
-=======
-<<<<<<< HEAD
-          "line": 1090,
-=======
-          "line": 1056,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1218,
           "signature": "async function executeServerInfo(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeInstance",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1191,
-=======
-<<<<<<< HEAD
-          "line": 1099,
-=======
-          "line": 1065,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1227,
           "signature": "async function executeInstance(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeMyPermissions",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1200,
-=======
-<<<<<<< HEAD
-          "line": 1108,
-=======
-          "line": 1074,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1236,
           "signature": "async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAuditing",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1220,
-=======
-<<<<<<< HEAD
-          "line": 1128,
-=======
-          "line": 1094,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1256,
           "signature": "async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEvents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1237,
-=======
-<<<<<<< HEAD
-          "line": 1145,
-=======
-          "line": 1111,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1273,
           "signature": "async function executeEvents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeChangelog",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1246,
-=======
-<<<<<<< HEAD
-          "line": 1154,
-=======
-          "line": 1120,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1282,
           "signature": "async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeForge",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1283,
-=======
-<<<<<<< HEAD
-          "line": 1191,
-=======
-          "line": 1157,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1319,
           "signature": "async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIncidents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1302,
-=======
-<<<<<<< HEAD
-          "line": 1210,
-=======
-          "line": 1176,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1338,
           "signature": "async function executeIncidents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePostIncidentReviews",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1314,
-=======
-<<<<<<< HEAD
-          "line": 1222,
-=======
-          "line": 1188,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1350,
           "signature": "async function executePostIncidentReviews( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeVulnerability",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1329,
-=======
-<<<<<<< HEAD
-          "line": 1237,
-=======
-          "line": 1203,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1365,
           "signature": "async function executeVulnerability(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDevopscomponents",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1341,
-=======
-<<<<<<< HEAD
-          "line": 1249,
-=======
-          "line": 1215,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1377,
           "signature": "async function executeDevopscomponents(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroups",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1353,
-=======
-<<<<<<< HEAD
-          "line": 1261,
-=======
-          "line": 1227,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1389,
           "signature": "async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeGroupUserPicker",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1448,
-=======
-<<<<<<< HEAD
-          "line": 1356,
-=======
-          "line": 1322,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1484,
           "signature": "async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSecurityLevel",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1482,
-=======
-<<<<<<< HEAD
-          "line": 1390,
-=======
-          "line": 1356,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1518,
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1491,
-=======
-<<<<<<< HEAD
-          "line": 1399,
-=======
-          "line": 1365,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1527,
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1506,
-=======
-<<<<<<< HEAD
-          "line": 1414,
-=======
-          "line": 1380,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1542,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1528,
-=======
-<<<<<<< HEAD
-          "line": 1436,
-=======
-          "line": 1402,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1564,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1552,
-=======
-<<<<<<< HEAD
-          "line": 1460,
-=======
-          "line": 1426,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1588,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1564,
-=======
-<<<<<<< HEAD
-          "line": 1472,
-=======
-          "line": 1438,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1600,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1576,
-=======
-<<<<<<< HEAD
-          "line": 1484,
-=======
-          "line": 1450,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1612,
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1585,
-=======
-<<<<<<< HEAD
-          "line": 1493,
-=======
-          "line": 1459,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1621,
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1594,
-=======
-<<<<<<< HEAD
-          "line": 1502,
-=======
-          "line": 1468,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1630,
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1606,
-=======
-<<<<<<< HEAD
-          "line": 1514,
-=======
-          "line": 1480,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1642,
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1631,
-=======
-<<<<<<< HEAD
-          "line": 1539,
-=======
-          "line": 1505,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1667,
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1643,
-=======
-<<<<<<< HEAD
-          "line": 1551,
-=======
-          "line": 1517,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1679,
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1652,
-=======
-<<<<<<< HEAD
-          "line": 1560,
-=======
-          "line": 1526,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1688,
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1666,
-=======
-<<<<<<< HEAD
-          "line": 1574,
-=======
-          "line": 1540,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1702,
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1775,
-=======
-<<<<<<< HEAD
-          "line": 1683,
-=======
-          "line": 1649,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1811,
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1782,
-=======
-<<<<<<< HEAD
-          "line": 1690,
-=======
-          "line": 1656,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1818,
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1897,
-=======
-<<<<<<< HEAD
-          "line": 1805,
-=======
-          "line": 1771,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1933,
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1907,
-=======
-<<<<<<< HEAD
-          "line": 1815,
-=======
-          "line": 1781,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1943,
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1915,
-=======
-<<<<<<< HEAD
-          "line": 1823,
-=======
-          "line": 1789,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1951,
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 1923,
-=======
-<<<<<<< HEAD
-          "line": 1831,
-=======
-          "line": 1797,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1959,
           "signature": "const BULK_ACTIONS = [ 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', 'transition-issue…"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1943,
-=======
-<<<<<<< HEAD
-          "line": 1851,
-=======
-          "line": 1817,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1979,
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1950,
-=======
-<<<<<<< HEAD
-          "line": 1858,
-=======
-          "line": 1824,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1986,
           "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1958,
-=======
-<<<<<<< HEAD
-          "line": 1866,
-=======
-          "line": 1832,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 1994,
           "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1966,
-=======
-<<<<<<< HEAD
-          "line": 1874,
-=======
-          "line": 1840,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2002,
           "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 1974,
-=======
-<<<<<<< HEAD
-          "line": 1882,
-=======
-          "line": 1848,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2010,
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueAttachments",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2087,
-=======
-<<<<<<< HEAD
-          "line": 1995,
-=======
-          "line": 1961,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2123,
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2151,
-=======
-<<<<<<< HEAD
-          "line": 2059,
-=======
-          "line": 2025,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2187,
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2240,
-=======
-<<<<<<< HEAD
-          "line": 2148,
-=======
-          "line": 2114,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2276,
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2247,
-=======
-<<<<<<< HEAD
-          "line": 2155,
-=======
-          "line": 2121,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2283,
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2260,
-=======
-<<<<<<< HEAD
-          "line": 2168,
-=======
-          "line": 2134,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2296,
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2261,
-=======
-<<<<<<< HEAD
-          "line": 2169,
-=======
-          "line": 2135,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2297,
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
-<<<<<<< HEAD
-          "line": 2262,
-=======
-<<<<<<< HEAD
-          "line": 2170,
-=======
-          "line": 2136,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2298,
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
-<<<<<<< HEAD
-          "line": 2263,
-=======
-<<<<<<< HEAD
-          "line": 2171,
-=======
-          "line": 2137,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2299,
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2265,
-=======
-<<<<<<< HEAD
-          "line": 2173,
-=======
-          "line": 2139,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2301,
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2272,
-=======
-<<<<<<< HEAD
-          "line": 2180,
-=======
-          "line": 2146,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2308,
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2279,
-=======
-<<<<<<< HEAD
-          "line": 2187,
-=======
-          "line": 2153,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2315,
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2288,
-=======
-<<<<<<< HEAD
-          "line": 2196,
-=======
-          "line": 2162,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2324,
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2322,
-=======
-<<<<<<< HEAD
-          "line": 2230,
-=======
-          "line": 2196,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2358,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asStatusCategory",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2384,
-=======
-<<<<<<< HEAD
-          "line": 2292,
-=======
-          "line": 2258,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2420,
           "signature": "function asStatusCategory( value: string | boolean | undefined, ): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined"
         },
         {
           "name": "executeResolutions",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2395,
-=======
-<<<<<<< HEAD
-          "line": 2303,
-=======
-          "line": 2269,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2431,
           "signature": "async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2469,
-=======
-<<<<<<< HEAD
-          "line": 2377,
-=======
-          "line": 2343,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2505,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2491,
-=======
-<<<<<<< HEAD
-          "line": 2399,
-=======
-          "line": 2365,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2527,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2500,
-=======
-<<<<<<< HEAD
-          "line": 2408,
-=======
-          "line": 2374,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2536,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2508,
-=======
-<<<<<<< HEAD
-          "line": 2416,
-=======
-          "line": 2382,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2544,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2537,
-=======
-<<<<<<< HEAD
-          "line": 2445,
-=======
-          "line": 2411,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2573,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2545,
-=======
-<<<<<<< HEAD
-          "line": 2453,
-=======
-          "line": 2419,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2581,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2750,
-=======
-<<<<<<< HEAD
-          "line": 2658,
-=======
-          "line": 2624,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2786,
           "signature": "const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [ 'list', 'create', 'update', 'delete', 'update-mapping', 'update-default-mapp…"
         },
         {
           "name": "executeIssueTypeScreenSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2764,
-=======
-<<<<<<< HEAD
-          "line": 2672,
-=======
-          "line": 2638,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2800,
           "signature": "async function executeIssueTypeScreenSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PERMISSION_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 2891,
-=======
-<<<<<<< HEAD
-          "line": 2799,
-=======
-          "line": 2765,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2927,
           "signature": "const PERMISSION_SCHEMES_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-permissions', 'create-permission…"
         },
         {
           "name": "executePermissionSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 2903,
-=======
-<<<<<<< HEAD
-          "line": 2811,
-=======
-          "line": 2777,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 2939,
           "signature": "async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3052,
-=======
-<<<<<<< HEAD
-          "line": 2960,
-=======
-          "line": 2926,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3088,
           "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3065,
-=======
-<<<<<<< HEAD
-          "line": 2973,
-=======
-          "line": 2939,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3101,
           "signature": "async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asMovePosition",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3176,
-=======
-<<<<<<< HEAD
-          "line": 3084,
-=======
-          "line": 3050,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3212,
           "signature": "function asMovePosition(value: string): 'First' | 'Last'"
         },
         {
           "name": "ROLES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3183,
-=======
-<<<<<<< HEAD
-          "line": 3091,
-=======
-          "line": 3057,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3219,
           "signature": "const ROLES_ACTIONS = [ 'list', 'get', 'create', 'update', 'partial-update', 'delete', 'get-actors', 'add-actors', 'dele…"
         },
         {
           "name": "executeRoles",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3195,
-=======
-<<<<<<< HEAD
-          "line": 3103,
-=======
-          "line": 3069,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3231,
           "signature": "async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "EXPRESSION_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3291,
-=======
-<<<<<<< HEAD
-          "line": 3199,
-=======
-          "line": 3165,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3327,
           "signature": "const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;"
         },
         {
           "name": "executeExpression",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3293,
-=======
-<<<<<<< HEAD
-          "line": 3201,
-=======
-          "line": 3167,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3329,
           "signature": "async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_COMMENTS_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3361,
-=======
-<<<<<<< HEAD
-          "line": 3269,
-=======
-          "line": 3235,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3397,
           "signature": "const ISSUE_COMMENTS_ACTIONS = [ 'list-properties', 'get-property', 'set-property', 'delete-property', 'bulk-fetch', ] a…"
         },
         {
           "name": "executeIssueComments",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3369,
-=======
-<<<<<<< HEAD
-          "line": 3277,
-=======
-          "line": 3243,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3405,
           "signature": "async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELD_CONFIGURATION_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3416,
-=======
-<<<<<<< HEAD
-          "line": 3324,
-=======
-          "line": 3290,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3452,
           "signature": "const FIELD_CONFIGURATION_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-fields', 'update-fields', ] as const;"
         },
         {
           "name": "executeFieldConfiguration",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3425,
-=======
-<<<<<<< HEAD
-          "line": 3333,
-=======
-          "line": 3299,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3461,
           "signature": "async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "NOTIFICATION_SCHEMES_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3492,
-=======
-<<<<<<< HEAD
-          "line": 3400,
-=======
-          "line": 3366,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3528,
           "signature": "const NOTIFICATION_SCHEMES_ACTIONS = [ 'list', 'create', 'get', 'update', 'add-notifications', 'delete', 'remove-notific…"
         },
         {
           "name": "executeNotificationSchemes",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3503,
-=======
-<<<<<<< HEAD
-          "line": 3411,
-=======
-          "line": 3377,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3539,
           "signature": "async function executeNotificationSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PRIORITYSCHEME_ACTIONS",
           "kind": "variable",
-<<<<<<< HEAD
-          "line": 3601,
-=======
-<<<<<<< HEAD
-          "line": 3509,
-=======
-          "line": 3475,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3637,
           "signature": "const PRIORITYSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-priorities', 'list-projects', 'suggested-ma…"
         },
         {
           "name": "asOrderBy",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3612,
-=======
-<<<<<<< HEAD
-          "line": 3520,
-=======
-          "line": 3486,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3648,
           "signature": "function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined"
         },
         {
           "name": "parseIntCsv",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3619,
-=======
-<<<<<<< HEAD
-          "line": 3527,
-=======
-          "line": 3493,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3655,
           "signature": "function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined"
         },
         {
           "name": "executePrioritySchemeResource",
           "kind": "function",
-<<<<<<< HEAD
-          "line": 3631,
-=======
-<<<<<<< HEAD
-          "line": 3539,
-=======
-          "line": 3505,
->>>>>>> c8b5b23 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
->>>>>>> 7684462 (feat(jira): search JQL endpoints + CLI wiring (3 endpoints + CLI))
+          "line": 3667,
           "signature": "async function executePrioritySchemeResource( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         }
       ],
@@ -24856,7 +24004,7 @@
             {
               "name": "searchJqlPost",
               "kind": "method",
-              "line": 112
+              "line": 113
             }
           ]
         }
