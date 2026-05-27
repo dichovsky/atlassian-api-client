@@ -25,6 +25,18 @@ export type {
   CreateIssueCommentData,
   UpdateIssueCommentData,
   ListLabelsParams,
+  CreateUserData,
+  AssignableMultiProjectSearchParams,
+  AssignableSearchParams,
+  BulkUsersParams,
+  BulkUsersResponse,
+  BulkMigrationParams,
+  UserMigrationRecord,
+  UserColumnItem,
+  UserEmailRecord,
+  BulkUserEmailsResponse,
+  UserGroupEntry,
+  GetUserGroupsParams,
 } from './types.js';
 export type {
   AnnouncementBanner,

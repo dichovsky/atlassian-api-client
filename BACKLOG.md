@@ -895,40 +895,40 @@
 - [ ] 🔴 🧩 API: B796 Jira: expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
   - files: `src/jira/resources/universal-avatar.ts`, `test/jira/universal-avatar.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B797 Jira: expose DELETE /rest/api/3/user
+- [x] 🔴 🧩 API: B797 Jira: expose DELETE /rest/api/3/user
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B798 Jira: expose POST /rest/api/3/user
+- [x] 🔴 🧩 API: B798 Jira: expose POST /rest/api/3/user
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B799 Jira: expose GET /rest/api/3/user/assignable/multiProjectSearch
+- [x] 🔴 🧩 API: B799 Jira: expose GET /rest/api/3/user/assignable/multiProjectSearch
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B800 Jira: expose GET /rest/api/3/user/assignable/search
+- [x] 🔴 🧩 API: B800 Jira: expose GET /rest/api/3/user/assignable/search
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B801 Jira: expose GET /rest/api/3/user/bulk
+- [x] 🔴 🧩 API: B801 Jira: expose GET /rest/api/3/user/bulk
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B802 Jira: expose GET /rest/api/3/user/bulk/migration
+- [x] 🔴 🧩 API: B802 Jira: expose GET /rest/api/3/user/bulk/migration
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B803 Jira: expose DELETE /rest/api/3/user/columns
+- [x] 🔴 🧩 API: B803 Jira: expose DELETE /rest/api/3/user/columns
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B804 Jira: expose GET /rest/api/3/user/columns
+- [x] 🔴 🧩 API: B804 Jira: expose GET /rest/api/3/user/columns
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B805 Jira: expose PUT /rest/api/3/user/columns
+- [x] 🔴 🧩 API: B805 Jira: expose PUT /rest/api/3/user/columns
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B806 Jira: expose GET /rest/api/3/user/email
+- [x] 🔴 🧩 API: B806 Jira: expose GET /rest/api/3/user/email
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B807 Jira: expose GET /rest/api/3/user/email/bulk
+- [x] 🔴 🧩 API: B807 Jira: expose GET /rest/api/3/user/email/bulk
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B808 Jira: expose GET /rest/api/3/user/groups
+- [x] 🔴 🧩 API: B808 Jira: expose GET /rest/api/3/user/groups
   - files: `src/jira/resources/users.ts`, `test/jira/users.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B809 Jira: expose GET /rest/api/3/user/permission/search
