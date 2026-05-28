@@ -11,6 +11,195 @@ import type {
   Transition,
 } from '../types.js';
 
+// ── Worklog ───────────────────────────────────────────────────────────────────
+
+export interface IssueWorklog {
+  readonly id?: string;
+  readonly self?: string;
+  readonly author?: Record<string, unknown>;
+  readonly updateAuthor?: Record<string, unknown>;
+  readonly comment?: Record<string, unknown>;
+  readonly created?: string;
+  readonly updated?: string;
+  readonly visibility?: Record<string, unknown>;
+  readonly started?: string;
+  readonly timeSpent?: string;
+  readonly timeSpentSeconds?: number;
+  readonly issueId?: string;
+}
+
+export interface WorklogList {
+  readonly startAt: number;
+  readonly maxResults: number;
+  readonly total: number;
+  readonly worklogs: IssueWorklog[];
+}
+
+export interface ListWorklogsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly startedAfter?: number;
+  readonly startedBefore?: number;
+  readonly expand?: string;
+}
+
+export interface AddWorklogData {
+  readonly comment?: Record<string, unknown>;
+  readonly visibility?: Record<string, unknown>;
+  readonly started?: string;
+  readonly timeSpentSeconds?: number;
+  readonly timeSpent?: string;
+}
+
+export type UpdateWorklogData = AddWorklogData;
+
+export interface AddWorklogParams {
+  readonly notifyUsers?: boolean;
+  readonly adjustEstimate?: string;
+  readonly newEstimate?: string;
+  readonly reduceBy?: string;
+  readonly expand?: string;
+  readonly overrideEditableFlag?: boolean;
+}
+
+export interface DeleteWorklogParams {
+  readonly notifyUsers?: boolean;
+  readonly adjustEstimate?: string;
+  readonly newEstimate?: string;
+  readonly increaseBy?: string;
+  readonly overrideEditableFlag?: boolean;
+}
+
+export interface GetWorklogParams {
+  readonly expand?: string;
+}
+
+export interface UpdateWorklogParams {
+  readonly notifyUsers?: boolean;
+  readonly adjustEstimate?: string;
+  readonly newEstimate?: string;
+  readonly expand?: string;
+  readonly overrideEditableFlag?: boolean;
+}
+
+export interface WorklogMoveData {
+  /** Worklog IDs (int64) to move. */
+  readonly ids: number[];
+  /** Destination issue ID or key. */
+  readonly issueIdOrKey?: string;
+}
+
+export interface MoveWorklogParams {
+  readonly adjustEstimate?: string;
+  readonly overrideEditableFlag?: boolean;
+}
+
+// ── Worklog properties ────────────────────────────────────────────────────────
+
+export interface WorklogPropertyKey {
+  readonly self?: string;
+  readonly key?: string;
+}
+
+export interface WorklogPropertyKeys {
+  readonly keys: WorklogPropertyKey[];
+}
+
+export interface WorklogProperty {
+  readonly key: string;
+  readonly value: unknown;
+}
+
+// ── Issue archive ─────────────────────────────────────────────────────────────
+
+export interface IssueArchiveResult {
+  readonly archived?: number;
+  readonly errors?: Record<string, unknown>;
+  readonly failed?: number;
+}
+
+// ── Bulk fetch ────────────────────────────────────────────────────────────────
+
+export interface BulkFetchData {
+  readonly issueIdsOrKeys: string[];
+  readonly fieldsByKeys?: boolean;
+  readonly fields?: string[];
+  readonly properties?: string[];
+  readonly expand?: string[];
+}
+
+export interface BulkFetchResult {
+  readonly issues?: Record<string, unknown>[];
+  readonly errors?: Record<string, unknown>[];
+}
+
+// ── Create meta ───────────────────────────────────────────────────────────────
+
+export interface CreateMetaParams {
+  readonly projectIds?: string[];
+  readonly projectKeys?: string[];
+  readonly issuetypeIds?: string[];
+  readonly issuetypeNames?: string[];
+  readonly expand?: string;
+}
+
+export interface CreateMetaIssueTypesParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+// ── Issue limit report ────────────────────────────────────────────────────────
+
+export interface IssueLimitReport {
+  readonly issueIds?: number[];
+}
+
+// ── Issue picker ──────────────────────────────────────────────────────────────
+
+export interface IssuePickerResult {
+  readonly sections?: {
+    id?: string;
+    label?: string;
+    sub?: string;
+    issues?: unknown[];
+    msg?: string;
+  }[];
+}
+
+export interface IssuePickerParams {
+  readonly query?: string;
+  readonly currentJQL?: string;
+  readonly currentIssueKey?: string;
+  readonly currentProjectId?: string;
+  readonly showSubTasks?: boolean;
+  readonly showSubTaskParent?: boolean;
+}
+
+// ── Issue properties bulk ─────────────────────────────────────────────────────
+
+export interface SetIssuePropertiesData {
+  readonly entitiesIds?: number[];
+  readonly properties?: Record<string, unknown>;
+}
+
+export interface MultiIssueProperties {
+  readonly issues: { issueID?: number; properties?: Record<string, unknown> }[];
+}
+
+// ── Issue watching ────────────────────────────────────────────────────────────
+
+export interface IssueBulkWatchResult {
+  readonly watched?: number;
+  readonly failed?: Record<string, unknown>;
+}
+
+// ── Archive export ────────────────────────────────────────────────────────────
+
+export interface IssueArchiveExportData {
+  readonly jql?: string;
+  readonly exportType?: 'CSV' | 'XLSX';
+}
+
 /**
  * Agile view of a Jira issue as returned by /rest/agile/1.0/issue/{key}.
  *
@@ -620,6 +809,430 @@ export class IssuesResource {
       method: 'POST',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/watchers`,
       body: accountId,
+    });
+  }
+
+  // ── Worklog (B505–B515) ───────────────────────────────────────────────────
+
+  /**
+   * Delete all worklogs for an issue (B505).
+   * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog
+   */
+  async deleteAllWorklogs(issueIdOrKey: string): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
+    });
+  }
+
+  /**
+   * List worklogs for an issue (B506).
+   * GET /rest/api/3/issue/{issueIdOrKey}/worklog
+   */
+  async listWorklogs(issueIdOrKey: string, params?: ListWorklogsParams): Promise<WorklogList> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params?.startedAfter !== undefined) query['startedAfter'] = params.startedAfter;
+    if (params?.startedBefore !== undefined) query['startedBefore'] = params.startedBefore;
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    const response = await this.transport.request<WorklogList>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Add a worklog to an issue (B507).
+   * POST /rest/api/3/issue/{issueIdOrKey}/worklog
+   */
+  async addWorklog(
+    issueIdOrKey: string,
+    data: AddWorklogData,
+    params?: AddWorklogParams,
+  ): Promise<IssueWorklog> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.notifyUsers !== undefined) query['notifyUsers'] = params.notifyUsers;
+    if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
+    if (params?.newEstimate !== undefined) query['newEstimate'] = params.newEstimate;
+    if (params?.reduceBy !== undefined) query['reduceBy'] = params.reduceBy;
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
+    const response = await this.transport.request<IssueWorklog>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
+      query,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * Delete a specific worklog from an issue (B508).
+   * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+   */
+  async deleteWorklog(
+    issueIdOrKey: string,
+    worklogId: string,
+    params?: DeleteWorklogParams,
+  ): Promise<void> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.notifyUsers !== undefined) query['notifyUsers'] = params.notifyUsers;
+    if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
+    if (params?.newEstimate !== undefined) query['newEstimate'] = params.newEstimate;
+    if (params?.increaseBy !== undefined) query['increaseBy'] = params.increaseBy;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}`,
+      query,
+    });
+  }
+
+  /**
+   * Get a specific worklog from an issue (B509).
+   * GET /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+   */
+  async getWorklog(
+    issueIdOrKey: string,
+    worklogId: string,
+    params?: GetWorklogParams,
+  ): Promise<IssueWorklog> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    const response = await this.transport.request<IssueWorklog>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Update a specific worklog on an issue (B510).
+   * PUT /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+   */
+  async updateWorklog(
+    issueIdOrKey: string,
+    worklogId: string,
+    data: UpdateWorklogData,
+    params?: UpdateWorklogParams,
+  ): Promise<IssueWorklog> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.notifyUsers !== undefined) query['notifyUsers'] = params.notifyUsers;
+    if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
+    if (params?.newEstimate !== undefined) query['newEstimate'] = params.newEstimate;
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
+    const response = await this.transport.request<IssueWorklog>({
+      method: 'PUT',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}`,
+      query,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /**
+   * List worklog properties (B511).
+   * GET /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties
+   */
+  async listWorklogProperties(
+    issueIdOrKey: string,
+    worklogId: string,
+  ): Promise<WorklogPropertyKeys> {
+    const response = await this.transport.request<WorklogPropertyKeys>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}/properties`,
+    });
+    return response.data;
+  }
+
+  /**
+   * Delete a worklog property (B512).
+   * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+   */
+  async deleteWorklogProperty(
+    issueIdOrKey: string,
+    worklogId: string,
+    propertyKey: string,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}/properties/${encodePathSegment(propertyKey)}`,
+    });
+  }
+
+  /**
+   * Get a worklog property (B513).
+   * GET /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+   */
+  async getWorklogProperty(
+    issueIdOrKey: string,
+    worklogId: string,
+    propertyKey: string,
+  ): Promise<WorklogProperty> {
+    const response = await this.transport.request<WorklogProperty>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}/properties/${encodePathSegment(propertyKey)}`,
+    });
+    return response.data;
+  }
+
+  /**
+   * Set a worklog property (B514).
+   * PUT /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+   */
+  async setWorklogProperty(
+    issueIdOrKey: string,
+    worklogId: string,
+    propertyKey: string,
+    value: unknown,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/${encodePathSegment(worklogId)}/properties/${encodePathSegment(propertyKey)}`,
+      body: value,
+    });
+  }
+
+  /**
+   * Move a worklog (B515).
+   * POST /rest/api/3/issue/{issueIdOrKey}/worklog/move
+   * issueIdOrKey = SOURCE issue (path). data.issueIdOrKey = DESTINATION issue (body).
+   */
+  async moveWorklog(
+    issueIdOrKey: string,
+    data: WorklogMoveData,
+    params?: MoveWorklogParams,
+  ): Promise<void> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.adjustEstimate !== undefined) query['adjustEstimate'] = params.adjustEstimate;
+    if (params?.overrideEditableFlag !== undefined)
+      query['overrideEditableFlag'] = params.overrideEditableFlag;
+    const body: Record<string, unknown> = { ids: data.ids };
+    if (data.issueIdOrKey !== undefined) body['issueIdOrKey'] = data.issueIdOrKey;
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog/move`,
+      query,
+      body,
+    });
+  }
+
+  // ── Issue archive (B516, B517, B528) ─────────────────────────────────────
+
+  /**
+   * Archive issues by IDs (synchronous) (B516).
+   * PUT /rest/api/3/issue/archive
+   */
+  async archiveIssues(issueIdsOrKeys: string[]): Promise<IssueArchiveResult> {
+    const response = await this.transport.request<IssueArchiveResult>({
+      method: 'PUT',
+      path: `${this.baseUrl}/issue/archive`,
+      body: { issueIdsOrKeys },
+    });
+    return response.data;
+  }
+
+  /**
+   * Archive issues by JQL (async) (B517).
+   * POST /rest/api/3/issue/archive
+   */
+  async archiveIssuesByJql(jql: string): Promise<IssueArchiveResult> {
+    const response = await this.transport.request<IssueArchiveResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/archive`,
+      body: { jql },
+    });
+    return response.data;
+  }
+
+  /**
+   * Unarchive issues (B528).
+   * PUT /rest/api/3/issue/unarchive
+   */
+  async unarchiveIssues(issueIdsOrKeys: string[]): Promise<IssueArchiveResult> {
+    const response = await this.transport.request<IssueArchiveResult>({
+      method: 'PUT',
+      path: `${this.baseUrl}/issue/unarchive`,
+      body: { issueIdsOrKeys },
+    });
+    return response.data;
+  }
+
+  // ── Bulk fetch (B519) ─────────────────────────────────────────────────────
+
+  /**
+   * Bulk fetch issues (B519).
+   * POST /rest/api/3/issue/bulkfetch
+   */
+  async bulkFetch(data: BulkFetchData): Promise<BulkFetchResult> {
+    const response = await this.transport.request<BulkFetchResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/bulkfetch`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  // ── Create meta (B924, B520, B521) ───────────────────────────────────────
+
+  /**
+   * Get issue create metadata (B924).
+   * GET /rest/api/3/issue/createmeta
+   */
+  async getCreateMeta(params?: CreateMetaParams): Promise<Record<string, unknown>> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.projectIds) query['projectIds'] = params.projectIds.join(',');
+    if (params?.projectKeys) query['projectKeys'] = params.projectKeys.join(',');
+    if (params?.issuetypeIds) query['issuetypeIds'] = params.issuetypeIds.join(',');
+    if (params?.issuetypeNames) query['issuetypeNames'] = params.issuetypeNames.join(',');
+    if (params?.expand) query['expand'] = params.expand;
+    const response = await this.transport.request<Record<string, unknown>>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/createmeta`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get issue types for create meta (B520).
+   * GET /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes
+   */
+  async getCreateMetaIssueTypes(
+    projectIdOrKey: string,
+    params?: CreateMetaIssueTypesParams,
+  ): Promise<Record<string, unknown>> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<Record<string, unknown>>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/createmeta/${encodePathSegment(projectIdOrKey)}/issuetypes`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get fields for an issue type in create meta (B521).
+   * GET /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes/{issueTypeId}
+   */
+  async getCreateMetaIssueType(
+    projectIdOrKey: string,
+    issueTypeId: string,
+    params?: CreateMetaIssueTypesParams,
+  ): Promise<Record<string, unknown>> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const response = await this.transport.request<Record<string, unknown>>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/createmeta/${encodePathSegment(projectIdOrKey)}/issuetypes/${encodePathSegment(issueTypeId)}`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Issue limit report (B522) ─────────────────────────────────────────────
+
+  /**
+   * Get issue limit report (B522).
+   * GET /rest/api/3/issue/limit/report
+   */
+  async getLimitReport(): Promise<IssueLimitReport> {
+    const response = await this.transport.request<IssueLimitReport>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/limit/report`,
+    });
+    return response.data;
+  }
+
+  // ── Issue picker (B523) ───────────────────────────────────────────────────
+
+  /**
+   * Get issue suggestions for a picker (B523).
+   * GET /rest/api/3/issue/picker
+   */
+  async picker(params?: IssuePickerParams): Promise<IssuePickerResult> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.query !== undefined) query['query'] = params.query;
+    if (params?.currentJQL !== undefined) query['currentJQL'] = params.currentJQL;
+    if (params?.currentIssueKey !== undefined) query['currentIssueKey'] = params.currentIssueKey;
+    if (params?.currentProjectId !== undefined) query['currentProjectId'] = params.currentProjectId;
+    if (params?.showSubTasks !== undefined) query['showSubTasks'] = params.showSubTasks;
+    if (params?.showSubTaskParent !== undefined)
+      query['showSubTaskParent'] = params.showSubTaskParent;
+    const response = await this.transport.request<IssuePickerResult>({
+      method: 'GET',
+      path: `${this.baseUrl}/issue/picker`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Issue properties bulk (B524, B527) ───────────────────────────────────
+
+  /**
+   * Set issue properties by entity IDs (B524).
+   * POST /rest/api/3/issue/properties
+   */
+  async setPropertiesByEntityIds(data: SetIssuePropertiesData): Promise<void> {
+    const body: Record<string, unknown> = {};
+    if (data.entitiesIds !== undefined) body['entitiesIds'] = data.entitiesIds;
+    if (data.properties !== undefined) body['properties'] = data.properties;
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/properties`,
+      body,
+    });
+  }
+
+  /**
+   * Set issue properties for multiple issues (B527).
+   * POST /rest/api/3/issue/properties/multi
+   */
+  async setPropertiesMulti(data: MultiIssueProperties): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/properties/multi`,
+      body: data,
+    });
+  }
+
+  // ── Issue watching bulk (B529) ────────────────────────────────────────────
+
+  /**
+   * Start watching issues in bulk (B529).
+   * POST /rest/api/3/issue/watching
+   */
+  async watchIssuesBulk(data: { issueIds: string[] }): Promise<IssueBulkWatchResult> {
+    const response = await this.transport.request<IssueBulkWatchResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/watching`,
+      body: { issueIds: data.issueIds },
+    });
+    return response.data;
+  }
+
+  // ── Archive export (B538) ─────────────────────────────────────────────────
+
+  /**
+   * Export archived issues (B538).
+   * PUT /rest/api/3/issues/archive/export   (note: plural "issues")
+   */
+  async exportArchivedIssues(data: IssueArchiveExportData): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/issues/archive/export`,
+      body: data,
     });
   }
 }

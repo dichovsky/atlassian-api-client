@@ -772,4 +772,587 @@ describe('IssuesResource', () => {
       });
     });
   });
+
+  // ── Worklog (B505–B515) ───────────────────────────────────────────────────
+
+  describe('deleteAllWorklogs() — B505', () => {
+    it('sends DELETE /issue/:key/worklog', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteAllWorklogs('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/worklog`,
+      });
+    });
+
+    it('encodes issueIdOrKey', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteAllWorklogs('../admin');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/worklog`);
+    });
+  });
+
+  describe('listWorklogs() — B506', () => {
+    it('sends GET /issue/:key/worklog', async () => {
+      transport.respondWith({ startAt: 0, maxResults: 50, total: 0, worklogs: [] });
+      const result = await issues.listWorklogs('PROJ-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/worklog`,
+      });
+      expect(result).toMatchObject({ worklogs: [] });
+    });
+
+    it('passes pagination params', async () => {
+      transport.respondWith({ startAt: 10, maxResults: 5, total: 50, worklogs: [] });
+      await issues.listWorklogs('PROJ-1', { startAt: 10, maxResults: 5 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 5 });
+    });
+
+    it('passes startedAfter/startedBefore/expand params', async () => {
+      transport.respondWith({ startAt: 0, maxResults: 50, total: 0, worklogs: [] });
+      await issues.listWorklogs('PROJ-1', {
+        startedAfter: 1000000,
+        startedBefore: 2000000,
+        expand: 'properties',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startedAfter: 1000000,
+        startedBefore: 2000000,
+        expand: 'properties',
+      });
+    });
+  });
+
+  describe('addWorklog() — B507', () => {
+    it('sends POST /issue/:key/worklog with body', async () => {
+      const worklog = { id: 'wl-1', timeSpentSeconds: 3600 };
+      transport.respondWith(worklog);
+      const data = { timeSpentSeconds: 3600, started: '2024-01-01T09:00:00.000+0000' };
+      const result = await issues.addWorklog('PROJ-1', data);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/worklog`,
+        body: data,
+      });
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('passes query params when provided', async () => {
+      transport.respondWith({ id: 'wl-1' });
+      await issues.addWorklog(
+        'PROJ-1',
+        { timeSpentSeconds: 3600 },
+        { notifyUsers: false, adjustEstimate: 'leave', newEstimate: '2h' },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({
+        notifyUsers: false,
+        adjustEstimate: 'leave',
+        newEstimate: '2h',
+      });
+    });
+
+    it('passes overrideEditableFlag when provided', async () => {
+      transport.respondWith({ id: 'wl-3' });
+      await issues.addWorklog('PROJ-1', { timeSpentSeconds: 1800 }, { overrideEditableFlag: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ overrideEditableFlag: true });
+    });
+
+    it('passes reduceBy and expand when provided', async () => {
+      transport.respondWith({ id: 'wl-4' });
+      await issues.addWorklog(
+        'PROJ-1',
+        { timeSpentSeconds: 1800 },
+        { reduceBy: '1h', expand: 'properties' },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({
+        reduceBy: '1h',
+        expand: 'properties',
+      });
+    });
+
+    it('sends without optional params when not provided', async () => {
+      transport.respondWith({ id: 'wl-2' });
+      await issues.addWorklog('PROJ-2', { timeSpentSeconds: 1800 });
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['notifyUsers']).toBeUndefined();
+    });
+  });
+
+  describe('deleteWorklog() — B508', () => {
+    it('sends DELETE /issue/:key/worklog/:id', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklog('PROJ-1', 'wl-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1`,
+      });
+    });
+
+    it('passes query params when provided', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklog('PROJ-1', 'wl-1', {
+        notifyUsers: true,
+        adjustEstimate: 'manual',
+        increaseBy: '1h',
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        notifyUsers: true,
+        adjustEstimate: 'manual',
+        increaseBy: '1h',
+      });
+    });
+
+    it('passes overrideEditableFlag when provided', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklog('PROJ-1', 'wl-1', { overrideEditableFlag: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ overrideEditableFlag: true });
+    });
+
+    it('passes newEstimate when provided', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklog('PROJ-1', 'wl-1', { newEstimate: '2h' });
+      expect(transport.lastCall?.options.query).toMatchObject({ newEstimate: '2h' });
+    });
+
+    it('encodes worklogId in path', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklog('PROJ-1', 'wl/2');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/PROJ-1/worklog/wl%2F2`);
+    });
+  });
+
+  describe('getWorklog() — B509', () => {
+    it('sends GET /issue/:key/worklog/:id', async () => {
+      const worklog = { id: 'wl-1', timeSpentSeconds: 3600 };
+      transport.respondWith(worklog);
+      const result = await issues.getWorklog('PROJ-1', 'wl-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1`,
+      });
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('passes expand param when provided', async () => {
+      transport.respondWith({ id: 'wl-1' });
+      await issues.getWorklog('PROJ-1', 'wl-1', { expand: 'properties' });
+      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'properties' });
+    });
+  });
+
+  describe('updateWorklog() — B510', () => {
+    it('sends PUT /issue/:key/worklog/:id with body', async () => {
+      const worklog = { id: 'wl-1', timeSpentSeconds: 7200 };
+      transport.respondWith(worklog);
+      const data = { timeSpentSeconds: 7200 };
+      const result = await issues.updateWorklog('PROJ-1', 'wl-1', data);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1`,
+        body: data,
+      });
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('passes query params when provided', async () => {
+      transport.respondWith({ id: 'wl-1' });
+      await issues.updateWorklog(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 3600 },
+        { notifyUsers: false, adjustEstimate: 'new', newEstimate: '1h', expand: 'properties' },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({
+        notifyUsers: false,
+        adjustEstimate: 'new',
+        newEstimate: '1h',
+        expand: 'properties',
+      });
+    });
+
+    it('passes overrideEditableFlag when provided', async () => {
+      transport.respondWith({ id: 'wl-1' });
+      await issues.updateWorklog(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 3600 },
+        { overrideEditableFlag: true },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({ overrideEditableFlag: true });
+    });
+  });
+
+  describe('listWorklogProperties() — B511', () => {
+    it('sends GET /issue/:key/worklog/:wid/properties', async () => {
+      transport.respondWith({ keys: [{ key: 'prop1' }] });
+      const result = await issues.listWorklogProperties('PROJ-1', 'wl-1');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1/properties`,
+      });
+      expect(result).toMatchObject({ keys: [{ key: 'prop1' }] });
+    });
+  });
+
+  describe('deleteWorklogProperty() — B512', () => {
+    it('sends DELETE /issue/:key/worklog/:wid/properties/:propKey', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklogProperty('PROJ-1', 'wl-1', 'myProp');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1/properties/myProp`,
+      });
+    });
+
+    it('encodes propertyKey', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteWorklogProperty('PROJ-1', 'wl-1', 'prop/key');
+      expect(transport.lastCall?.options.path).toContain('prop%2Fkey');
+    });
+  });
+
+  describe('getWorklogProperty() — B513', () => {
+    it('sends GET /issue/:key/worklog/:wid/properties/:propKey', async () => {
+      const prop = { key: 'myProp', value: true };
+      transport.respondWith(prop);
+      const result = await issues.getWorklogProperty('PROJ-1', 'wl-1', 'myProp');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1/properties/myProp`,
+      });
+      expect(result).toMatchObject({ key: 'myProp', value: true });
+    });
+  });
+
+  describe('setWorklogProperty() — B514', () => {
+    it('sends PUT /issue/:key/worklog/:wid/properties/:propKey with value body', async () => {
+      transport.respondWith(undefined);
+      await issues.setWorklogProperty('PROJ-1', 'wl-1', 'myProp', true);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/wl-1/properties/myProp`,
+        body: true,
+      });
+    });
+  });
+
+  describe('moveWorklog() — B515', () => {
+    it('sends POST /issue/:key/worklog/move with correct body', async () => {
+      transport.respondWith(undefined);
+      await issues.moveWorklog('PROJ-1', { ids: [10001, 10002] });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/PROJ-1/worklog/move`,
+        body: { ids: [10001, 10002] },
+      });
+    });
+
+    it('includes destination issueIdOrKey in body when provided', async () => {
+      transport.respondWith(undefined);
+      await issues.moveWorklog('PROJ-1', { ids: [10001], issueIdOrKey: 'PROJ-2' });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        ids: [10001],
+        issueIdOrKey: 'PROJ-2',
+      });
+    });
+
+    it('sends adjustEstimate and overrideEditableFlag as query params', async () => {
+      transport.respondWith(undefined);
+      await issues.moveWorklog(
+        'PROJ-1',
+        { ids: [10001] },
+        { adjustEstimate: 'leave', overrideEditableFlag: true },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({
+        adjustEstimate: 'leave',
+        overrideEditableFlag: true,
+      });
+    });
+  });
+
+  // ── Issue archive (B516, B517, B528) ─────────────────────────────────────
+
+  describe('archiveIssues() — B516', () => {
+    it('sends PUT /issue/archive with issueIdsOrKeys body', async () => {
+      transport.respondWith({ archived: 2, failed: 0 });
+      const result = await issues.archiveIssues(['PROJ-1', 'PROJ-2']);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/archive`,
+        body: { issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] },
+      });
+      expect(result).toMatchObject({ archived: 2 });
+    });
+  });
+
+  describe('archiveIssuesByJql() — B517', () => {
+    it('sends POST /issue/archive with jql body', async () => {
+      transport.respondWith({ archived: 3, failed: 0 });
+      const result = await issues.archiveIssuesByJql('project = PROJ AND status = Done');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/archive`,
+        body: { jql: 'project = PROJ AND status = Done' },
+      });
+      expect(result).toMatchObject({ archived: 3 });
+    });
+  });
+
+  describe('unarchiveIssues() — B528', () => {
+    it('sends PUT /issue/unarchive with issueIdsOrKeys body', async () => {
+      transport.respondWith({ archived: 1, failed: 0 });
+      const result = await issues.unarchiveIssues(['PROJ-1']);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issue/unarchive`,
+        body: { issueIdsOrKeys: ['PROJ-1'] },
+      });
+      expect(result).toMatchObject({ archived: 1 });
+    });
+  });
+
+  // ── Bulk fetch (B519) ─────────────────────────────────────────────────────
+
+  describe('bulkFetch() — B519', () => {
+    it('sends POST /issue/bulkfetch', async () => {
+      transport.respondWith({ issues: [], errors: [] });
+      const result = await issues.bulkFetch({ issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/bulkfetch`,
+        body: { issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] },
+      });
+      expect(result).toMatchObject({ issues: [] });
+    });
+
+    it('passes fields and expand when provided', async () => {
+      transport.respondWith({ issues: [] });
+      await issues.bulkFetch({
+        issueIdsOrKeys: ['PROJ-1'],
+        fields: ['summary', 'status'],
+        expand: ['changelog'],
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        fields: ['summary', 'status'],
+        expand: ['changelog'],
+      });
+    });
+  });
+
+  // ── Create meta (B924, B520, B521) ───────────────────────────────────────
+
+  describe('getCreateMeta() — B924', () => {
+    it('sends GET /issue/createmeta', async () => {
+      transport.respondWith({ projects: [] });
+      const result = await issues.getCreateMeta();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/createmeta`,
+      });
+      expect(result).toMatchObject({ projects: [] });
+    });
+
+    it('passes projectKeys and expand params', async () => {
+      transport.respondWith({ projects: [] });
+      await issues.getCreateMeta({ projectKeys: ['PROJ', 'OPS'], expand: 'projects.issuetypes' });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectKeys: 'PROJ,OPS',
+        expand: 'projects.issuetypes',
+      });
+    });
+
+    it('passes issuetypeIds and issuetypeNames', async () => {
+      transport.respondWith({});
+      await issues.getCreateMeta({
+        projectIds: ['10001'],
+        issuetypeIds: ['10000'],
+        issuetypeNames: ['Bug'],
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectIds: '10001',
+        issuetypeIds: '10000',
+        issuetypeNames: 'Bug',
+      });
+    });
+  });
+
+  describe('getCreateMetaIssueTypes() — B520', () => {
+    it('sends GET /issue/createmeta/:project/issuetypes', async () => {
+      transport.respondWith({ issueTypes: [], total: 0 });
+      const result = await issues.getCreateMetaIssueTypes('PROJ');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/createmeta/PROJ/issuetypes`,
+      });
+      expect(result).toMatchObject({ issueTypes: [] });
+    });
+
+    it('passes pagination params', async () => {
+      transport.respondWith({ issueTypes: [] });
+      await issues.getCreateMetaIssueTypes('PROJ', { startAt: 0, maxResults: 10 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0, maxResults: 10 });
+    });
+
+    it('encodes projectIdOrKey', async () => {
+      transport.respondWith({});
+      await issues.getCreateMetaIssueTypes('PROJ/A');
+      expect(transport.lastCall?.options.path).toContain('PROJ%2FA');
+    });
+  });
+
+  describe('getCreateMetaIssueType() — B521', () => {
+    it('sends GET /issue/createmeta/:project/issuetypes/:issueTypeId', async () => {
+      transport.respondWith({ fields: {}, total: 0 });
+      const result = await issues.getCreateMetaIssueType('PROJ', '10000');
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/createmeta/PROJ/issuetypes/10000`,
+      });
+      expect(result).toMatchObject({ fields: {} });
+    });
+
+    it('passes pagination params', async () => {
+      transport.respondWith({ fields: {} });
+      await issues.getCreateMetaIssueType('PROJ', '10000', { startAt: 5, maxResults: 20 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 20 });
+    });
+  });
+
+  // ── Issue limit report (B522) ─────────────────────────────────────────────
+
+  describe('getLimitReport() — B522', () => {
+    it('sends GET /issue/limit/report', async () => {
+      transport.respondWith({ issueIds: [10001, 10002] });
+      const result = await issues.getLimitReport();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/limit/report`,
+      });
+      expect(result).toMatchObject({ issueIds: [10001, 10002] });
+    });
+  });
+
+  // ── Issue picker (B523) ───────────────────────────────────────────────────
+
+  describe('picker() — B523', () => {
+    it('sends GET /issue/picker', async () => {
+      transport.respondWith({ sections: [] });
+      const result = await issues.picker();
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/issue/picker`,
+      });
+      expect(result).toMatchObject({ sections: [] });
+    });
+
+    it('passes query params when provided', async () => {
+      transport.respondWith({ sections: [] });
+      await issues.picker({
+        query: 'bug',
+        currentJQL: 'project = PROJ',
+        currentIssueKey: 'PROJ-1',
+        currentProjectId: '10001',
+        showSubTasks: true,
+        showSubTaskParent: false,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        query: 'bug',
+        currentJQL: 'project = PROJ',
+        currentIssueKey: 'PROJ-1',
+        currentProjectId: '10001',
+        showSubTasks: true,
+        showSubTaskParent: false,
+      });
+    });
+
+    it('sends without optional params when not provided', async () => {
+      transport.respondWith({ sections: [] });
+      await issues.picker();
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['query']).toBeUndefined();
+    });
+  });
+
+  // ── Bulk properties (B524, B527) ──────────────────────────────────────────
+
+  describe('setPropertiesByEntityIds() — B524', () => {
+    it('sends POST /issue/properties with entitiesIds and properties', async () => {
+      transport.respondWith(undefined);
+      await issues.setPropertiesByEntityIds({
+        entitiesIds: [10001, 10002],
+        properties: { flagged: true },
+      });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/properties`,
+        body: { entitiesIds: [10001, 10002], properties: { flagged: true } },
+      });
+    });
+
+    it('sends empty body when no fields provided', async () => {
+      transport.respondWith(undefined);
+      await issues.setPropertiesByEntityIds({});
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/properties`,
+      });
+    });
+  });
+
+  describe('setPropertiesMulti() — B527', () => {
+    it('sends POST /issue/properties/multi with issues array', async () => {
+      transport.respondWith(undefined);
+      await issues.setPropertiesMulti({
+        issues: [{ issueID: 10001, properties: { key: 'val' } }],
+      });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/properties/multi`,
+        body: { issues: [{ issueID: 10001, properties: { key: 'val' } }] },
+      });
+    });
+  });
+
+  // ── Bulk watching (B529) ──────────────────────────────────────────────────
+
+  describe('watchIssuesBulk() — B529', () => {
+    it('sends POST /issue/watching with issueIds body field', async () => {
+      transport.respondWith({ watched: 2, failed: {} });
+      const result = await issues.watchIssuesBulk({ issueIds: ['PROJ-1', 'PROJ-2'] });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/issue/watching`,
+        body: { issueIds: ['PROJ-1', 'PROJ-2'] },
+      });
+      expect(result).toMatchObject({ watched: 2 });
+    });
+  });
+
+  // ── Archive export (B538) ─────────────────────────────────────────────────
+
+  describe('exportArchivedIssues() — B538', () => {
+    it('sends PUT /issues/archive/export (plural issues)', async () => {
+      transport.respondWith(undefined);
+      await issues.exportArchivedIssues({ jql: 'project = PROJ', exportType: 'CSV' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/issues/archive/export`,
+        body: { jql: 'project = PROJ', exportType: 'CSV' },
+      });
+    });
+
+    it('supports XLSX export type', async () => {
+      transport.respondWith(undefined);
+      await issues.exportArchivedIssues({ exportType: 'XLSX' });
+      expect(transport.lastCall?.options.body).toMatchObject({ exportType: 'XLSX' });
+    });
+
+    it('sends without exportType when not provided', async () => {
+      transport.respondWith(undefined);
+      await issues.exportArchivedIssues({ jql: 'project = PROJ' });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['exportType']).toBeUndefined();
+    });
+  });
 });

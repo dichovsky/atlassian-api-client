@@ -8,6 +8,11 @@ import type {
   NotificationSchemeEvent,
   CreateRemoteLinkData,
 } from '../../jira/index.js';
+import type {
+  AddWorklogData,
+  UpdateWorklogData,
+  MultiIssueProperties,
+} from '../../jira/resources/issues.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -344,9 +349,191 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
       return { watching: true };
     }
+    case 'delete-all-worklogs':
+      await client.issues.deleteAllWorklogs(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'));
+      return { deleted: true };
+    case 'list-worklogs':
+      return client.issues.listWorklogs(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'), {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        startedAfter: asNonNegativeInt(opts['started-after'], '--started-after'),
+        startedBefore: asNonNegativeInt(opts['started-before'], '--started-before'),
+        expand: asString(opts['expand']),
+      });
+    case 'add-worklog':
+      return client.issues.addWorklog(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as AddWorklogData,
+        {
+          notifyUsers: asBoolFlag(opts['notify-users']),
+          adjustEstimate: asString(opts['adjust-estimate']),
+          newEstimate: asString(opts['new-estimate']),
+          reduceBy: asString(opts['reduce-by']),
+          expand: asString(opts['expand']),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+        },
+      );
+    case 'delete-worklog':
+      await client.issues.deleteWorklog(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        {
+          notifyUsers: asBoolFlag(opts['notify-users']),
+          adjustEstimate: asString(opts['adjust-estimate']),
+          newEstimate: asString(opts['new-estimate']),
+          increaseBy: asString(opts['increase-by']),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+        },
+      );
+      return { deleted: true };
+    case 'get-worklog':
+      return client.issues.getWorklog(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        { expand: asString(opts['expand']) },
+      );
+    case 'update-worklog':
+      return client.issues.updateWorklog(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as UpdateWorklogData,
+        {
+          notifyUsers: asBoolFlag(opts['notify-users']),
+          adjustEstimate: asString(opts['adjust-estimate']),
+          newEstimate: asString(opts['new-estimate']),
+          expand: asString(opts['expand']),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+        },
+      );
+    case 'list-worklog-properties':
+      return client.issues.listWorklogProperties(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+      );
+    case 'delete-worklog-property':
+      await client.issues.deleteWorklogProperty(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+      );
+      return { deleted: true };
+    case 'get-worklog-property':
+      return client.issues.getWorklogProperty(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+      );
+    case 'set-worklog-property':
+      await client.issues.setWorklogProperty(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'worklogId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+      return { updated: true };
+    case 'move-worklog': {
+      const rawMoveIds = requireOpt(opts['ids'], '--ids');
+      const moveIds = splitCsvIds(rawMoveIds).map((s) => parsePositiveIntArg(s, '--ids'));
+      await client.issues.moveWorklog(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        {
+          ids: moveIds,
+          ...(opts['target-issue'] !== undefined && {
+            issueIdOrKey: asString(opts['target-issue']),
+          }),
+        },
+        {
+          adjustEstimate: asString(opts['adjust-estimate']),
+          overrideEditableFlag: asBoolFlag(opts['override-editable-flag']),
+        },
+      );
+      return { moved: true };
+    }
+    case 'archive-issues':
+      return client.issues.archiveIssues(splitCsvIds(requireOpt(opts['ids'], '--ids')));
+    case 'archive-issues-jql':
+      return client.issues.archiveIssuesByJql(requireOpt(opts['jql'], '--jql'));
+    case 'bulk-fetch':
+      return client.issues.bulkFetch({
+        issueIdsOrKeys: splitCsvIds(requireOpt(opts['issues'], '--issues')),
+        fieldsByKeys: asBoolFlag(opts['fields-by-keys']),
+        fields: parseCsv(opts['fields']),
+        properties: parseCsv(opts['properties']),
+        expand: parseCsv(opts['expand']),
+      });
+    case 'get-create-meta':
+      return client.issues.getCreateMeta({
+        projectIds: parseCsv(opts['project-ids']),
+        projectKeys: parseCsv(opts['project-keys']),
+        issuetypeIds: parseCsv(opts['issuetype-ids']),
+        issuetypeNames: parseCsv(opts['issuetype-names']),
+        expand: asString(opts['expand']),
+      });
+    case 'get-create-meta-issuetypes':
+      return client.issues.getCreateMetaIssueTypes(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        {
+          startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+          maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        },
+      );
+    case 'get-create-meta-issuetype':
+      return client.issues.getCreateMetaIssueType(
+        requireArg(cmd.positionalArgs[0], 'projectIdOrKey'),
+        requireArg(cmd.positionalArgs[1], 'issueTypeId'),
+        {
+          startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+          maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        },
+      );
+    case 'get-limit-report':
+      return client.issues.getLimitReport();
+    case 'picker':
+      return client.issues.picker({
+        query: asString(opts['query']),
+        currentJQL: asString(opts['current-jql']),
+        currentIssueKey: asString(opts['current-issue-key']),
+        currentProjectId: asString(opts['current-project-id']),
+        showSubTasks: asBoolFlag(opts['show-sub-tasks']),
+        showSubTaskParent: asBoolFlag(opts['show-sub-task-parent']),
+      });
+    case 'set-properties-by-entity-ids': {
+      const entityIds = parseCsv(opts['entity-ids'])?.map((s) =>
+        parsePositiveIntArg(s, '--entity-ids'),
+      );
+      const propertiesRaw = asString(opts['properties']);
+      await client.issues.setPropertiesByEntityIds({
+        ...(entityIds !== undefined && { entitiesIds: entityIds }),
+        ...(propertiesRaw !== undefined && {
+          properties: parseJsonObjectFlag(propertiesRaw, '--properties'),
+        }),
+      });
+      return { submitted: true };
+    }
+    case 'set-properties-multi': {
+      const issuesRaw = requireOpt(opts['issues'], '--issues');
+      const issuesList = parseJsonArrayFlag(
+        issuesRaw,
+        '--issues',
+      ) as MultiIssueProperties['issues'];
+      await client.issues.setPropertiesMulti({ issues: issuesList });
+      return { submitted: true };
+    }
+    case 'unarchive-issues':
+      return client.issues.unarchiveIssues(splitCsvIds(requireOpt(opts['ids'], '--ids')));
+    case 'watch-issues-bulk':
+      return client.issues.watchIssuesBulk({
+        issueIds: splitCsvIds(requireOpt(opts['issue-ids'], '--issue-ids')),
+      });
+    case 'export-archived':
+      await client.issues.exportArchivedIssues({
+        jql: asString(opts['jql']),
+        exportType: asExportType(asString(opts['export-type'])),
+      });
+      return { submitted: true };
     default:
       throw new Error(
-        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher`,
+        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, export-archived`,
       );
   }
 }
@@ -4365,4 +4552,10 @@ async function executePrioritySchemeResource(
         `Unknown priority-schemes action: ${cmd.action}. Actions: ${PRIORITYSCHEME_ACTIONS.join(', ')}`,
       );
   }
+}
+
+function asExportType(raw: string | undefined): 'CSV' | 'XLSX' | undefined {
+  if (raw === undefined) return undefined;
+  if (raw !== 'CSV' && raw !== 'XLSX') throw new Error('--export-type must be CSV or XLSX');
+  return raw;
 }

@@ -1683,3 +1683,75 @@
 - [x] 🔴 🧩 API: B504 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/watchers
   - **Impl:** `IssuesResource.addWatcher(issueIdOrKey, accountId)` — POST /watchers with body = raw quoted accountId string, void. CLI: `atlas jira issues add-watcher <issueKey> --account-id <id>`.
   - **Rat:** Standard extension of IssuesResource for watcher management.
+- [x] 🔴 🧩 API: B505 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/worklog
+  - **Impl:** `IssuesResource.deleteAllWorklogs(issueIdOrKey)` — DELETE /worklog, returns void. CLI: `atlas jira issues delete-all-worklogs <issueIdOrKey>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B506 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/worklog
+  - **Impl:** `IssuesResource.listWorklogs(issueIdOrKey, params?)` returns `WorklogList`. CLI: `atlas jira issues list-worklogs <issueIdOrKey> [--start-at N] [--max-results N] [--expand s]`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B507 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/worklog
+  - **Impl:** `IssuesResource.addWorklog(issueIdOrKey, data, params?)` returns `IssueWorklog`. CLI: `atlas jira issues add-worklog <issueIdOrKey> --body <json>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B508 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+  - **Impl:** `IssuesResource.deleteWorklog(issueIdOrKey, worklogId, params?)` returns void. CLI: `atlas jira issues delete-worklog <issueIdOrKey> <worklogId>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B509 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+  - **Impl:** `IssuesResource.getWorklog(issueIdOrKey, worklogId, params?)` returns `IssueWorklog`. CLI: `atlas jira issues get-worklog <issueIdOrKey> <worklogId>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B510 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/worklog/{id}
+  - **Impl:** `IssuesResource.updateWorklog(issueIdOrKey, worklogId, data, params?)` returns `IssueWorklog`. CLI: `atlas jira issues update-worklog <issueIdOrKey> <worklogId> --body <json>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B511 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties
+  - **Impl:** `IssuesResource.listWorklogProperties(issueIdOrKey, worklogId)` returns `WorklogPropertyKeys`. CLI: `atlas jira issues list-worklog-properties <issueIdOrKey> <worklogId>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B512 Jira: expose DELETE /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.deleteWorklogProperty(issueIdOrKey, worklogId, propertyKey)` returns void. CLI: `atlas jira issues delete-worklog-property <issueIdOrKey> <worklogId> <propertyKey>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B513 Jira: expose GET /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.getWorklogProperty(issueIdOrKey, worklogId, propertyKey)` returns `WorklogProperty`. CLI: `atlas jira issues get-worklog-property <issueIdOrKey> <worklogId> <propertyKey>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B514 Jira: expose PUT /rest/api/3/issue/{issueIdOrKey}/worklog/{worklogId}/properties/{propertyKey}
+  - **Impl:** `IssuesResource.setWorklogProperty(issueIdOrKey, worklogId, propertyKey, value)` returns void. CLI: `atlas jira issues set-worklog-property <issueIdOrKey> <worklogId> <propertyKey> --value <json>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B515 Jira: expose POST /rest/api/3/issue/{issueIdOrKey}/worklog/move
+  - **Impl:** `IssuesResource.moveWorklog(issueIdOrKey, data, params?)` returns void. Body: `{ ids: number[], issueIdOrKey?: string }` (source=path, dest=body). Query: `adjustEstimate`, `overrideEditableFlag`. CLI: `atlas jira issues move-worklog <issueIdOrKey> --ids <csv> [--target-issue <dest>] [--adjust-estimate s] [--override-editable-flag]`.
+  - **Rat:** Corrected: body must carry `ids` (worklog IDs) and optional destination `issueIdOrKey`; query params for estimate/flag.
+- [x] 🔴 🧩 API: B516 Jira: expose PUT /rest/api/3/issue/archive
+  - **Impl:** `IssuesResource.archiveIssues(issueIdsOrKeys: string[])` returns `IssueArchiveResult`. PUT with body `{ issueIdsOrKeys }` — synchronous archive by ID list. CLI: `atlas jira issues archive-issues --ids <csv>`.
+  - **Rat:** Corrected: verb is PUT (not POST), body field is `issueIdsOrKeys` array, signature is `string[]` not object.
+- [x] 🔴 🧩 API: B517 Jira: expose POST /rest/api/3/issue/archive
+  - **Impl:** `IssuesResource.archiveIssuesByJql(jql: string)` returns `IssueArchiveResult`. POST with body `{ jql }` — async archive by JQL. CLI: `atlas jira issues archive-issues-jql --jql <jql>`.
+  - **Rat:** Corrected: verb is POST (not PUT), body field is `jql` string, signature is `string` not object.
+- [x] 🔴 🧩 API: B519 Jira: expose POST /rest/api/3/issue/bulkfetch
+  - **Impl:** `IssuesResource.bulkFetch(data)` returns `BulkFetchResult`. CLI: `atlas jira issues bulk-fetch --issues <csv>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B924 Jira: expose GET /rest/api/3/issue/createmeta
+  - **Impl:** `IssuesResource.getCreateMeta(params?)` returns `Record<string, unknown>`. CLI: `atlas jira issues get-create-meta [--project-keys csv] [--expand s]`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B520 Jira: expose GET /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes
+  - **Impl:** `IssuesResource.getCreateMetaIssueTypes(projectIdOrKey, params?)` returns `Record<string, unknown>`. CLI: `atlas jira issues get-create-meta-issuetypes <projectIdOrKey>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B521 Jira: expose GET /rest/api/3/issue/createmeta/{projectIdOrKey}/issuetypes/{issueTypeId}
+  - **Impl:** `IssuesResource.getCreateMetaIssueType(projectIdOrKey, issueTypeId, params?)` returns `Record<string, unknown>`. CLI: `atlas jira issues get-create-meta-issuetype <projectIdOrKey> <issueTypeId>`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B522 Jira: expose GET /rest/api/3/issue/limit/report
+  - **Impl:** `IssuesResource.getLimitReport()` returns `IssueLimitReport`. CLI: `atlas jira issues get-limit-report`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B523 Jira: expose GET /rest/api/3/issue/picker
+  - **Impl:** `IssuesResource.picker(params?)` returns `IssuePickerResult`. CLI: `atlas jira issues picker [--query s] [--current-jql s]`.
+  - **Rat:** Standard extension of IssuesResource.
+- [x] 🔴 🧩 API: B524 Jira: expose POST /rest/api/3/issue/properties
+  - **Impl:** `IssuesResource.setPropertiesByEntityIds(data)` returns void. Body: `{ entitiesIds?, properties? }`. CLI: `atlas jira issues set-properties-by-entity-ids [--entity-ids csv] [--properties json]`.
+  - **Rat:** Corrected: renamed from setPropertiesByJql (no JQL on this endpoint); removed spurious `currentEntityIds`/`filter` body fields. CLI action renamed `set-properties-by-entity-ids`.
+- [x] 🔴 🧩 API: B527 Jira: expose POST /rest/api/3/issue/properties/multi
+  - **Impl:** `IssuesResource.setPropertiesMulti(data: MultiIssueProperties)` returns void. Body: `{ issues: Array<{ issueID?, properties? }> }`. CLI: `atlas jira issues set-properties-multi --issues <json-array>`.
+  - **Rat:** Corrected: body shape is `{ issues: [...] }`, not the old `{ entitiesIds, properties }`. `--issues` flag takes a JSON array.
+- [x] 🔴 🧩 API: B528 Jira: expose PUT /rest/api/3/issue/unarchive
+  - **Impl:** `IssuesResource.unarchiveIssues(issueIdsOrKeys: string[])` returns `IssueArchiveResult`. Body: `{ issueIdsOrKeys }`. CLI: `atlas jira issues unarchive-issues --ids <csv>`.
+  - **Rat:** Corrected signature to string[] matching archiveIssues pattern.
+- [x] 🔴 🧩 API: B529 Jira: expose POST /rest/api/3/issue/watching
+  - **Impl:** `IssuesResource.watchIssuesBulk(data: { issueIds: string[] })` returns `IssueBulkWatchResult`. Body field is `issueIds` (not `issueIdsOrKeys`). CLI: `atlas jira issues watch-issues-bulk --issue-ids <csv>`.
+  - **Rat:** Corrected: body field is `issueIds`; CLI flag changed from `--issues` to `--issue-ids`.
+- [x] 🔴 🧩 API: B538 Jira: expose PUT /rest/api/3/issues/archive/export
+  - **Impl:** `IssuesResource.exportArchivedIssues(data)` returns void (202 async). Uses path `/rest/api/3/issues/archive/export` (plural "issues"). CLI: `atlas jira issues export-archived [--jql s] [--export-type CSV|XLSX]`.
+  - **Rat:** Standard extension of IssuesResource; note plural endpoint path vs singular /issue.

@@ -353,6 +353,32 @@ const jiraIssuesMock = {
   removeWatcher: vi.fn(),
   getWatchers: vi.fn(),
   addWatcher: vi.fn(),
+  // worklog (B505-B515)
+  deleteAllWorklogs: vi.fn(),
+  listWorklogs: vi.fn(),
+  addWorklog: vi.fn(),
+  deleteWorklog: vi.fn(),
+  getWorklog: vi.fn(),
+  updateWorklog: vi.fn(),
+  listWorklogProperties: vi.fn(),
+  deleteWorklogProperty: vi.fn(),
+  getWorklogProperty: vi.fn(),
+  setWorklogProperty: vi.fn(),
+  moveWorklog: vi.fn(),
+  // archive/bulk/meta/picker/watching (B516, B517, B519, B924, B520-B524, B527-B529, B538)
+  archiveIssues: vi.fn(),
+  archiveIssuesByJql: vi.fn(),
+  bulkFetch: vi.fn(),
+  getCreateMeta: vi.fn(),
+  getCreateMetaIssueTypes: vi.fn(),
+  getCreateMetaIssueType: vi.fn(),
+  getLimitReport: vi.fn(),
+  picker: vi.fn(),
+  setPropertiesByEntityIds: vi.fn(),
+  setPropertiesMulti: vi.fn(),
+  unarchiveIssues: vi.fn(),
+  watchIssuesBulk: vi.fn(),
+  exportArchivedIssues: vi.fn(),
 };
 const jiraProjectsMock = {
   list: vi.fn(),
@@ -7961,6 +7987,611 @@ describe('executeJiraCommand', () => {
     it('issues rank throws when --issues is missing', async () => {
       await expect(executeJiraCommand(cmd('issues', 'rank', []), GLOBALS)).rejects.toThrow(
         '--issues',
+      );
+    });
+
+    // ── worklog ───────────────────────────────────────────────────────────────
+
+    it('issues delete-all-worklogs calls deleteAllWorklogs and returns { deleted: true }', async () => {
+      jiraIssuesMock.deleteAllWorklogs.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-all-worklogs', ['PROJ-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteAllWorklogs).toHaveBeenCalledWith('PROJ-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issues delete-all-worklogs throws when issueIdOrKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'delete-all-worklogs', []), GLOBALS),
+      ).rejects.toThrow('issueIdOrKey');
+    });
+
+    it('issues list-worklogs calls listWorklogs', async () => {
+      jiraIssuesMock.listWorklogs.mockResolvedValue({
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        worklogs: [],
+      });
+      const result = await executeJiraCommand(
+        cmd('issues', 'list-worklogs', ['PROJ-1'], { 'start-at': '0', 'max-results': '10' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.listWorklogs).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({ startAt: 0, maxResults: 10 }),
+      );
+      expect(result).toMatchObject({ worklogs: [] });
+    });
+
+    it('issues list-worklogs passes started-after and started-before', async () => {
+      jiraIssuesMock.listWorklogs.mockResolvedValue({
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        worklogs: [],
+      });
+      await executeJiraCommand(
+        cmd('issues', 'list-worklogs', ['PROJ-1'], {
+          'started-after': '1700000000000',
+          'started-before': '1710000000000',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.listWorklogs).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({ startedAfter: 1700000000000, startedBefore: 1710000000000 }),
+      );
+    });
+
+    it('issues add-worklog calls addWorklog', async () => {
+      const worklog = { id: 'wl-1' };
+      jiraIssuesMock.addWorklog.mockResolvedValue(worklog);
+      const result = await executeJiraCommand(
+        cmd('issues', 'add-worklog', ['PROJ-1'], {
+          body: '{"timeSpentSeconds":3600}',
+          'notify-users': true,
+          'adjust-estimate': 'leave',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.addWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        { timeSpentSeconds: 3600 },
+        expect.objectContaining({ notifyUsers: true, adjustEstimate: 'leave' }),
+      );
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('issues add-worklog passes notify-users false when provided', async () => {
+      jiraIssuesMock.addWorklog.mockResolvedValue({ id: 'wl-2' });
+      await executeJiraCommand(
+        cmd('issues', 'add-worklog', ['PROJ-1'], {
+          body: '{"timeSpentSeconds":1800}',
+          'notify-users': false,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.addWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        { timeSpentSeconds: 1800 },
+        expect.objectContaining({ notifyUsers: false }),
+      );
+    });
+
+    it('issues add-worklog passes reduce-by, expand, override-editable-flag', async () => {
+      jiraIssuesMock.addWorklog.mockResolvedValue({ id: 'wl-3' });
+      await executeJiraCommand(
+        cmd('issues', 'add-worklog', ['PROJ-1'], {
+          body: '{"timeSpentSeconds":3600}',
+          'reduce-by': '1h',
+          expand: 'properties',
+          'override-editable-flag': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.addWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        { timeSpentSeconds: 3600 },
+        expect.objectContaining({
+          reduceBy: '1h',
+          expand: 'properties',
+          overrideEditableFlag: true,
+        }),
+      );
+    });
+
+    it('issues add-worklog throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'add-worklog', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    it('issues delete-worklog calls deleteWorklog and returns { deleted: true }', async () => {
+      jiraIssuesMock.deleteWorklog.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-worklog', ['PROJ-1', 'wl-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        expect.any(Object),
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issues delete-worklog passes notify-users when provided', async () => {
+      jiraIssuesMock.deleteWorklog.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'delete-worklog', ['PROJ-1', 'wl-1'], { 'notify-users': false }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        expect.objectContaining({ notifyUsers: false }),
+      );
+    });
+
+    it('issues delete-worklog passes increase-by and override-editable-flag', async () => {
+      jiraIssuesMock.deleteWorklog.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'delete-worklog', ['PROJ-1', 'wl-1'], {
+          'increase-by': '1h',
+          'override-editable-flag': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        expect.objectContaining({ increaseBy: '1h', overrideEditableFlag: true }),
+      );
+    });
+
+    it('issues delete-worklog throws when worklogId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'delete-worklog', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('worklogId');
+    });
+
+    it('issues get-worklog calls getWorklog', async () => {
+      jiraIssuesMock.getWorklog.mockResolvedValue({ id: 'wl-1' });
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-worklog', ['PROJ-1', 'wl-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getWorklog).toHaveBeenCalledWith('PROJ-1', 'wl-1', expect.any(Object));
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('issues update-worklog calls updateWorklog', async () => {
+      jiraIssuesMock.updateWorklog.mockResolvedValue({ id: 'wl-1', timeSpentSeconds: 7200 });
+      const result = await executeJiraCommand(
+        cmd('issues', 'update-worklog', ['PROJ-1', 'wl-1'], { body: '{"timeSpentSeconds":7200}' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.updateWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 7200 },
+        expect.any(Object),
+      );
+      expect(result).toMatchObject({ id: 'wl-1' });
+    });
+
+    it('issues update-worklog passes notify-users when provided', async () => {
+      jiraIssuesMock.updateWorklog.mockResolvedValue({ id: 'wl-1' });
+      await executeJiraCommand(
+        cmd('issues', 'update-worklog', ['PROJ-1', 'wl-1'], {
+          body: '{"timeSpentSeconds":3600}',
+          'notify-users': true,
+          'adjust-estimate': 'leave',
+          'new-estimate': '2h',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.updateWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 3600 },
+        expect.objectContaining({ notifyUsers: true, adjustEstimate: 'leave', newEstimate: '2h' }),
+      );
+    });
+
+    it('issues update-worklog passes expand and override-editable-flag', async () => {
+      jiraIssuesMock.updateWorklog.mockResolvedValue({ id: 'wl-1' });
+      await executeJiraCommand(
+        cmd('issues', 'update-worklog', ['PROJ-1', 'wl-1'], {
+          body: '{"timeSpentSeconds":3600}',
+          expand: 'properties',
+          'override-editable-flag': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.updateWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        { timeSpentSeconds: 3600 },
+        expect.objectContaining({ expand: 'properties', overrideEditableFlag: true }),
+      );
+    });
+
+    it('issues update-worklog throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'update-worklog', ['PROJ-1', 'wl-1']), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    it('issues list-worklog-properties calls listWorklogProperties', async () => {
+      jiraIssuesMock.listWorklogProperties.mockResolvedValue({ keys: [] });
+      const result = await executeJiraCommand(
+        cmd('issues', 'list-worklog-properties', ['PROJ-1', 'wl-1']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.listWorklogProperties).toHaveBeenCalledWith('PROJ-1', 'wl-1');
+      expect(result).toMatchObject({ keys: [] });
+    });
+
+    it('issues delete-worklog-property calls deleteWorklogProperty and returns { deleted: true }', async () => {
+      jiraIssuesMock.deleteWorklogProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'delete-worklog-property', ['PROJ-1', 'wl-1', 'myProp']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.deleteWorklogProperty).toHaveBeenCalledWith('PROJ-1', 'wl-1', 'myProp');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issues delete-worklog-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'delete-worklog-property', ['PROJ-1', 'wl-1']), GLOBALS),
+      ).rejects.toThrow('propertyKey');
+    });
+
+    it('issues get-worklog-property calls getWorklogProperty', async () => {
+      jiraIssuesMock.getWorklogProperty.mockResolvedValue({ key: 'myProp', value: true });
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-worklog-property', ['PROJ-1', 'wl-1', 'myProp']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getWorklogProperty).toHaveBeenCalledWith('PROJ-1', 'wl-1', 'myProp');
+      expect(result).toMatchObject({ key: 'myProp', value: true });
+    });
+
+    it('issues set-worklog-property calls setWorklogProperty and returns { updated: true }', async () => {
+      jiraIssuesMock.setWorklogProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-worklog-property', ['PROJ-1', 'wl-1', 'myProp'], {
+          value: 'true',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.setWorklogProperty).toHaveBeenCalledWith(
+        'PROJ-1',
+        'wl-1',
+        'myProp',
+        true,
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('issues set-worklog-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issues', 'set-worklog-property', ['PROJ-1', 'wl-1', 'myProp']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('issues move-worklog calls moveWorklog with ids and returns { moved: true }', async () => {
+      jiraIssuesMock.moveWorklog.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'move-worklog', ['PROJ-1'], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.moveWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({ ids: [10001, 10002] }),
+        expect.any(Object),
+      );
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('issues move-worklog passes target-issue and query params', async () => {
+      jiraIssuesMock.moveWorklog.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issues', 'move-worklog', ['PROJ-1'], {
+          ids: '10001',
+          'target-issue': 'PROJ-2',
+          'adjust-estimate': 'leave',
+          'override-editable-flag': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.moveWorklog).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({ ids: [10001], issueIdOrKey: 'PROJ-2' }),
+        expect.objectContaining({ adjustEstimate: 'leave', overrideEditableFlag: true }),
+      );
+    });
+
+    it('issues move-worklog throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'move-worklog', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--ids');
+    });
+
+    // ── archive/bulk/meta/picker ──────────────────────────────────────────────
+
+    it('issues archive-issues calls archiveIssues with ids (PUT)', async () => {
+      jiraIssuesMock.archiveIssues.mockResolvedValue({ archived: 2, failed: 0 });
+      const result = await executeJiraCommand(
+        cmd('issues', 'archive-issues', [], { ids: 'PROJ-1,PROJ-2' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.archiveIssues).toHaveBeenCalledWith(['PROJ-1', 'PROJ-2']);
+      expect(result).toMatchObject({ archived: 2 });
+    });
+
+    it('issues archive-issues throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'archive-issues', []), GLOBALS),
+      ).rejects.toThrow('--ids');
+    });
+
+    it('issues archive-issues-jql calls archiveIssuesByJql with jql (POST)', async () => {
+      jiraIssuesMock.archiveIssuesByJql.mockResolvedValue({ archived: 5, failed: 0 });
+      const result = await executeJiraCommand(
+        cmd('issues', 'archive-issues-jql', [], { jql: 'project = PROJ AND status = Done' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.archiveIssuesByJql).toHaveBeenCalledWith(
+        'project = PROJ AND status = Done',
+      );
+      expect(result).toMatchObject({ archived: 5 });
+    });
+
+    it('issues archive-issues-jql throws when --jql is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'archive-issues-jql', []), GLOBALS),
+      ).rejects.toThrow('--jql');
+    });
+
+    it('issues bulk-fetch calls bulkFetch', async () => {
+      jiraIssuesMock.bulkFetch.mockResolvedValue({ issues: [], errors: [] });
+      const result = await executeJiraCommand(
+        cmd('issues', 'bulk-fetch', [], { issues: 'PROJ-1,PROJ-2' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.bulkFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] }),
+      );
+      expect(result).toMatchObject({ issues: [] });
+    });
+
+    it('issues bulk-fetch passes fields-by-keys and properties flags', async () => {
+      jiraIssuesMock.bulkFetch.mockResolvedValue({ issues: [] });
+      await executeJiraCommand(
+        cmd('issues', 'bulk-fetch', [], {
+          issues: 'PROJ-1',
+          'fields-by-keys': true,
+          properties: 'prop1,prop2',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.bulkFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldsByKeys: true, properties: ['prop1', 'prop2'] }),
+      );
+    });
+
+    it('issues bulk-fetch throws when --issues is missing', async () => {
+      await expect(executeJiraCommand(cmd('issues', 'bulk-fetch', []), GLOBALS)).rejects.toThrow(
+        '--issues',
+      );
+    });
+
+    it('issues get-create-meta calls getCreateMeta', async () => {
+      jiraIssuesMock.getCreateMeta.mockResolvedValue({ projects: [] });
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-create-meta', [], { 'project-keys': 'PROJ,OPS' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getCreateMeta).toHaveBeenCalledWith(
+        expect.objectContaining({ projectKeys: ['PROJ', 'OPS'] }),
+      );
+      expect(result).toMatchObject({ projects: [] });
+    });
+
+    it('issues get-create-meta-issuetypes calls getCreateMetaIssueTypes', async () => {
+      jiraIssuesMock.getCreateMetaIssueTypes.mockResolvedValue({ issueTypes: [] });
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-create-meta-issuetypes', ['PROJ']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getCreateMetaIssueTypes).toHaveBeenCalledWith(
+        'PROJ',
+        expect.any(Object),
+      );
+      expect(result).toMatchObject({ issueTypes: [] });
+    });
+
+    it('issues get-create-meta-issuetype calls getCreateMetaIssueType', async () => {
+      jiraIssuesMock.getCreateMetaIssueType.mockResolvedValue({ fields: {} });
+      const result = await executeJiraCommand(
+        cmd('issues', 'get-create-meta-issuetype', ['PROJ', '10000']),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.getCreateMetaIssueType).toHaveBeenCalledWith(
+        'PROJ',
+        '10000',
+        expect.any(Object),
+      );
+      expect(result).toMatchObject({ fields: {} });
+    });
+
+    it('issues get-limit-report calls getLimitReport', async () => {
+      jiraIssuesMock.getLimitReport.mockResolvedValue({ issueIds: [10001] });
+      const result = await executeJiraCommand(cmd('issues', 'get-limit-report', []), GLOBALS);
+      expect(jiraIssuesMock.getLimitReport).toHaveBeenCalled();
+      expect(result).toMatchObject({ issueIds: [10001] });
+    });
+
+    it('issues picker calls picker', async () => {
+      jiraIssuesMock.picker.mockResolvedValue({ sections: [] });
+      const result = await executeJiraCommand(
+        cmd('issues', 'picker', [], { query: 'bug' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.picker).toHaveBeenCalledWith(expect.objectContaining({ query: 'bug' }));
+      expect(result).toMatchObject({ sections: [] });
+    });
+
+    it('issues picker passes boolean flags when provided', async () => {
+      jiraIssuesMock.picker.mockResolvedValue({ sections: [] });
+      await executeJiraCommand(
+        cmd('issues', 'picker', [], {
+          'show-sub-tasks': true,
+          'show-sub-task-parent': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.picker).toHaveBeenCalledWith(
+        expect.objectContaining({ showSubTasks: true, showSubTaskParent: true }),
+      );
+    });
+
+    it('issues set-properties-by-entity-ids calls setPropertiesByEntityIds and returns { submitted: true }', async () => {
+      jiraIssuesMock.setPropertiesByEntityIds.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-properties-by-entity-ids', [], {
+          'entity-ids': '10001,10002',
+          properties: '{"flagged":true}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.setPropertiesByEntityIds).toHaveBeenCalledWith(
+        expect.objectContaining({ entitiesIds: [10001, 10002] }),
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues set-properties-by-entity-ids works without flags', async () => {
+      jiraIssuesMock.setPropertiesByEntityIds.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-properties-by-entity-ids', []),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.setPropertiesByEntityIds).toHaveBeenCalledWith({});
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues set-properties-multi calls setPropertiesMulti with issues array and returns { submitted: true }', async () => {
+      jiraIssuesMock.setPropertiesMulti.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'set-properties-multi', [], {
+          issues: '[{"issueID":10001,"properties":{"key":"val"}}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.setPropertiesMulti).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issues: [{ issueID: 10001, properties: { key: 'val' } }],
+        }),
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues set-properties-multi throws when --issues is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'set-properties-multi', []), GLOBALS),
+      ).rejects.toThrow('--issues');
+    });
+
+    it('issues unarchive-issues calls unarchiveIssues with ids', async () => {
+      jiraIssuesMock.unarchiveIssues.mockResolvedValue({ archived: 1, failed: 0 });
+      const result = await executeJiraCommand(
+        cmd('issues', 'unarchive-issues', [], { ids: 'PROJ-1' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.unarchiveIssues).toHaveBeenCalledWith(['PROJ-1']);
+      expect(result).toMatchObject({ archived: 1 });
+    });
+
+    it('issues unarchive-issues throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'unarchive-issues', []), GLOBALS),
+      ).rejects.toThrow('--ids');
+    });
+
+    it('issues watch-issues-bulk calls watchIssuesBulk with issueIds', async () => {
+      jiraIssuesMock.watchIssuesBulk.mockResolvedValue({ watched: 2, failed: {} });
+      const result = await executeJiraCommand(
+        cmd('issues', 'watch-issues-bulk', [], { 'issue-ids': 'PROJ-1,PROJ-2' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.watchIssuesBulk).toHaveBeenCalledWith({
+        issueIds: ['PROJ-1', 'PROJ-2'],
+      });
+      expect(result).toMatchObject({ watched: 2 });
+    });
+
+    it('issues watch-issues-bulk throws when --issue-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'watch-issues-bulk', []), GLOBALS),
+      ).rejects.toThrow('--issue-ids');
+    });
+
+    it('issues export-archived calls exportArchivedIssues and returns { submitted: true }', async () => {
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'export-archived', [], { jql: 'project = PROJ', 'export-type': 'CSV' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ jql: 'project = PROJ', exportType: 'CSV' }),
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues export-archived without export-type passes undefined exportType', async () => {
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'export-archived', [], { jql: 'project = PROJ' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ exportType: undefined }),
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues export-archived with XLSX export type calls exportArchivedIssues', async () => {
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issues', 'export-archived', [], { 'export-type': 'XLSX' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.exportArchivedIssues).toHaveBeenCalledWith(
+        expect.objectContaining({ exportType: 'XLSX' }),
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('issues export-archived throws when --export-type is invalid', async () => {
+      jiraIssuesMock.exportArchivedIssues.mockResolvedValue(undefined);
+      await expect(
+        executeJiraCommand(cmd('issues', 'export-archived', [], { 'export-type': 'PDF' }), GLOBALS),
+      ).rejects.toThrow('--export-type must be CSV or XLSX');
+    });
+
+    it('issues unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('issues', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown issues action',
       );
     });
   });

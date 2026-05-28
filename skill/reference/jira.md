@@ -6,7 +6,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
 | `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`, `get-email`, `set-email`, `get-hierarchy`, `archive`, `set-avatar`, `delete-avatar`, `load-avatar`, `get-avatars`, `get-classification-config`, `delete-classification-level`, `get-classification-level`, `set-classification-level`, `list-components`, `list-all-components`, `delete-async`, `get-features`, `set-feature-state`, `list-properties`, `delete-property`, `get-property`, `set-property`, `restore`, `list-roles`, `delete-role-actors`, `get-role`, `add-role-actors`, `set-role-actors`, `get-role-details`, `get-statuses`, `list-versions`, `list-all-versions`, `get-issue-security-scheme`, `get-notification-scheme`, `get-permission-scheme`, `set-permission-scheme`, `get-security-levels`, `list-categories`, `create-category`, `delete-category`, `get-category`, `update-category`, `get-projects-fields`, `validate-project-key`, `get-valid-project-key`, `get-valid-project-name` |
 | `search`                 | `search`, `get`, `approximate-count`, `jql-get`, `jql-post`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `users`                  | `get`, `me`, `search`, `delete`, `create`, `assignable-multi-project`, `assignable`, `bulk`, `bulk-migration`, `reset-columns`, `get-columns`, `set-columns`, `email`, `bulk-emails`, `groups`, `permission-search`, `picker`, `list-properties`, `delete-property`, `get-property`, `set-property`, `search-query`, `search-query-key`, `viewissue-search`, `list`, `list-search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -66,8 +66,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
+| `projects`               | `list`, `get`, `list-legacy`, `create`, `update`, `delete`, `recent`, `list-types`, `get-type`, `get-accessible-type`, `list-accessible-types`, `get-email`, `set-email`, `get-hierarchy`, `archive`, `set-avatar`, `delete-avatar`, `load-avatar`, `get-avatars`, `get-classification-config`, `delete-classification-level`, `get-classification-level`, `set-classification-level`, `list-components`, `list-all-components`, `delete-async`, `get-features`, `set-feature-state`, `list-properties`, `delete-property`, `get-property`, `set-property`, `restore`, `list-roles`, `delete-role-actors`, `get-role`, `add-role-actors`, `set-role-actors`, `get-role-details`, `get-statuses`, `list-versions`, `list-all-versions`, `get-issue-security-scheme`, `get-notification-scheme`, `get-permission-scheme`, `set-permission-scheme`, `get-security-levels`, `list-categories`, `create-category`, `delete-category`, `get-category`, `update-category`, `get-projects-fields`, `validate-project-key`, `get-valid-project-key`, `get-valid-project-name` |
 | `search`                 | `search`, `get`, `approximate-count`, `jql-get`, `jql-post`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `users`                  | `get`, `me`, `search`, `delete`, `create`, `assignable-multi-project`, `assignable`, `bulk`, `bulk-migration`, `reset-columns`, `get-columns`, `set-columns`, `email`, `bulk-emails`, `groups`, `permission-search`, `picker`, `list-properties`, `delete-property`, `get-property`, `set-property`, `search-query`, `search-query-key`, `viewissue-search`, `list`, `list-search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `issue-types`            | `list`, `get`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -706,6 +706,140 @@ atlas jira issues rank --issues PROJ-1,PROJ-2 --before PROJ-3
 
 # Rank PROJ-1 immediately after PROJ-5
 atlas jira issues rank --issues PROJ-1 --after PROJ-5
+```
+
+### Worklog (B505–B515)
+
+| Action                    | Positional                                 | Required flags | Optional flags                                                                                                 |
+| ------------------------- | ------------------------------------------ | -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `delete-all-worklogs`     | `<issueIdOrKey>`                           | —              | —                                                                                                              |
+| `list-worklogs`           | `<issueIdOrKey>`                           | —              | `--start-at`, `--max-results`, `--started-after`, `--started-before`, `--expand`                               |
+| `add-worklog`             | `<issueIdOrKey>`                           | `--body`       | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--reduce-by`, `--expand`, `--override-editable-flag` |
+| `delete-worklog`          | `<issueIdOrKey>` `<worklogId>`             | —              | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--increase-by`, `--override-editable-flag`           |
+| `get-worklog`             | `<issueIdOrKey>` `<worklogId>`             | —              | `--expand`                                                                                                     |
+| `update-worklog`          | `<issueIdOrKey>` `<worklogId>`             | `--body`       | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--expand`, `--override-editable-flag`                |
+| `list-worklog-properties` | `<issueIdOrKey>` `<worklogId>`             | —              | —                                                                                                              |
+| `delete-worklog-property` | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                              |
+| `get-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | —              | —                                                                                                              |
+| `set-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | `--value`      | —                                                                                                              |
+| `move-worklog`            | `<issueIdOrKey>`                           | `--ids`        | `--target-issue`, `--adjust-estimate`, `--override-editable-flag`                                              |
+
+- `--body` is a JSON object string, e.g. `--body '{"timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}'`.
+- `--adjust-estimate` accepts: `new`, `leave`, `manual`, `auto`.
+- `--notify-users`, `--override-editable-flag` are bare boolean flags.
+- `move-worklog`: `<issueIdOrKey>` = SOURCE issue (path); `--ids` = comma-separated worklog IDs (integers); `--target-issue` = DESTINATION issue key (body).
+
+### Issue Archive/Unarchive (B516, B517, B528)
+
+| Action               | Positional | Required flags | Optional flags |
+| -------------------- | ---------- | -------------- | -------------- |
+| `archive-issues`     | —          | `--ids`        | —              |
+| `archive-issues-jql` | —          | `--jql`        | —              |
+| `unarchive-issues`   | —          | `--ids`        | —              |
+
+- `archive-issues` uses PUT (synchronous, by ID list); `archive-issues-jql` uses POST (async, by JQL).
+- `--ids` is comma-separated issue IDs or keys for `archive-issues` and `unarchive-issues`.
+
+### Bulk Fetch (B519)
+
+| Action       | Positional | Required flags | Optional flags                                                               |
+| ------------ | ---------- | -------------- | ---------------------------------------------------------------------------- |
+| `bulk-fetch` | —          | `--issues`     | `--fields-by-keys`, `--fields` (CSV), `--properties` (CSV), `--expand` (CSV) |
+
+### Create Meta (B924, B520, B521)
+
+| Action                       | Positional                         | Required flags | Optional flags                                                                        |
+| ---------------------------- | ---------------------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| `get-create-meta`            | —                                  | —              | `--project-ids`, `--project-keys`, `--issuetype-ids`, `--issuetype-names`, `--expand` |
+| `get-create-meta-issuetypes` | `<projectIdOrKey>`                 | —              | `--start-at`, `--max-results`                                                         |
+| `get-create-meta-issuetype`  | `<projectIdOrKey>` `<issueTypeId>` | —              | `--start-at`, `--max-results`                                                         |
+
+### Issue Limit Report (B522)
+
+| Action             | Positional | Required flags | Optional flags |
+| ------------------ | ---------- | -------------- | -------------- |
+| `get-limit-report` | —          | —              | —              |
+
+### Issue Picker (B523)
+
+| Action   | Positional | Required flags | Optional flags                                                                                                          |
+| -------- | ---------- | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `picker` | —          | —              | `--query`, `--current-jql`, `--current-issue-key`, `--current-project-id`, `--show-sub-tasks`, `--show-sub-task-parent` |
+
+### Bulk Properties (B524, B527)
+
+| Action                         | Positional | Required flags | Optional flags                                         |
+| ------------------------------ | ---------- | -------------- | ------------------------------------------------------ |
+| `set-properties-by-entity-ids` | —          | —              | `--entity-ids` (CSV int), `--properties` (JSON object) |
+| `set-properties-multi`         | —          | `--issues`     | —                                                      |
+
+- `set-properties-by-entity-ids`: sets properties on issues identified by numeric IDs. `--entity-ids` is CSV integers, `--properties` is a JSON object string.
+- `set-properties-multi`: `--issues` is a JSON array of `{ issueID, properties }` objects.
+- Both return `{ submitted: true }`.
+
+### Bulk Watching (B529)
+
+| Action              | Positional | Required flags | Optional flags |
+| ------------------- | ---------- | -------------- | -------------- |
+| `watch-issues-bulk` | —          | `--issue-ids`  | —              |
+
+- `--issue-ids` is comma-separated issue IDs or keys.
+
+### Archive Export (B538)
+
+| Action            | Positional | Required flags | Optional flags           |
+| ----------------- | ---------- | -------------- | ------------------------ |
+| `export-archived` | —          | —              | `--jql`, `--export-type` |
+
+- `--export-type` accepts `CSV` or `XLSX`.
+- This is async (202); the CLI returns `{ submitted: true }`.
+- **Note**: uses `/rest/api/3/issues/archive/export` (plural "issues").
+
+```sh
+# List worklogs for an issue
+atlas jira issues list-worklogs PROJ-42
+
+# Add a worklog
+atlas jira issues add-worklog PROJ-42 --body '{"timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}'
+
+# Get a worklog
+atlas jira issues get-worklog PROJ-42 10001
+
+# Delete a worklog
+atlas jira issues delete-worklog PROJ-42 10001
+
+# Archive issues by ID list (PUT, synchronous)
+atlas jira issues archive-issues --ids PROJ-1,PROJ-2
+
+# Archive issues by JQL (POST, async)
+atlas jira issues archive-issues-jql --jql "project = PROJ AND status = Done"
+
+# Bulk fetch issues
+atlas jira issues bulk-fetch --issues PROJ-1,PROJ-2,PROJ-3
+
+# Bulk fetch with fieldsByKeys and properties
+atlas jira issues bulk-fetch --issues PROJ-1 --fields-by-keys --properties prop1,prop2
+
+# Get create metadata
+atlas jira issues get-create-meta --project-keys PROJ
+
+# Get issue suggestions
+atlas jira issues picker --query "bug"
+
+# Set issue properties by entity IDs
+atlas jira issues set-properties-by-entity-ids --entity-ids 10001,10002 --properties '{"flagged":true}'
+
+# Set properties on multiple issues (JSON array body)
+atlas jira issues set-properties-multi --issues '[{"issueID":10001,"properties":{"flagged":true}}]'
+
+# Watch issues in bulk (--issue-ids, not --issues)
+atlas jira issues watch-issues-bulk --issue-ids PROJ-1,PROJ-2
+
+# Move a worklog (source issue as positional, --ids = worklog IDs, --target-issue = destination)
+atlas jira issues move-worklog PROJ-1 --ids 10001,10002 --target-issue PROJ-2
+
+# Export archived issues
+atlas jira issues export-archived --jql "project = PROJ AND isArchived = true" --export-type CSV
 ```
 
 ## `projects`
