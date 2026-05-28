@@ -145,6 +145,8 @@ export async function executeJiraCommand(
       return executeNotificationSchemes(client, cmd);
     case 'priority-schemes':
       return executePrioritySchemeResource(client, cmd);
+    case 'version':
+      return executeVersionResource(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3926,6 +3928,13 @@ function asMovePosition(value: string): 'First' | 'Last' {
   throw new Error(`--position must be one of: First, Last. Got: ${value}`);
 }
 
+function asVersionMovePosition(value: string): 'Earlier' | 'Later' | 'First' | 'Last' {
+  if (value === 'Earlier' || value === 'Later' || value === 'First' || value === 'Last') {
+    return value;
+  }
+  throw new Error(`--position must be one of: Earlier, Later, First, Last. Got: ${value}`);
+}
+
 // ── roles (B737-B745) ────────────────────────────────────────────────────────
 
 const ROLES_ACTIONS = [
@@ -4558,4 +4567,191 @@ function asExportType(raw: string | undefined): 'CSV' | 'XLSX' | undefined {
   if (raw === undefined) return undefined;
   if (raw !== 'CSV' && raw !== 'XLSX') throw new Error('--export-type must be CSV or XLSX');
   return raw;
+}
+
+// ── version (B820-B831, B933) ────────────────────────────────────────────────
+
+const VERSION_ACTIONS = [
+  'create',
+  'get',
+  'update',
+  'delete',
+  'merge',
+  'move',
+  'related-issue-counts',
+  'list-related-work',
+  'create-related-work',
+  'update-related-work',
+  'delete-and-replace',
+  'unresolved-issue-count',
+  'delete-related-work',
+] as const;
+
+async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const archived = asBoolFlag(opts['archived']);
+      const released = asBoolFlag(opts['released']);
+      const startDate = asString(opts['start-date']);
+      const releaseDate = asString(opts['release-date']);
+      const project = asString(opts['project']);
+      const projectId = asPositiveInt(opts['project-id'], '--project-id');
+      const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
+      const driver = asString(opts['driver']);
+      return client.version.create({
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(archived !== undefined && { archived }),
+        ...(released !== undefined && { released }),
+        ...(startDate !== undefined && { startDate }),
+        ...(releaseDate !== undefined && { releaseDate }),
+        ...(project !== undefined && { project }),
+        ...(projectId !== undefined && { projectId }),
+        ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
+        ...(driver !== undefined && { driver }),
+      });
+    }
+    case 'get': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const expand = asString(opts['expand']);
+      return client.version.get(id, expand !== undefined ? { expand } : undefined);
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const archived = asBoolFlag(opts['archived']);
+      const released = asBoolFlag(opts['released']);
+      const startDate = asString(opts['start-date']);
+      const releaseDate = asString(opts['release-date']);
+      const project = asString(opts['project']);
+      const projectId = asPositiveInt(opts['project-id'], '--project-id');
+      const moveUnfixedIssuesTo = asString(opts['move-unfixed-issues-to']);
+      const driver = asString(opts['driver']);
+      if (
+        name === undefined &&
+        description === undefined &&
+        archived === undefined &&
+        released === undefined &&
+        startDate === undefined &&
+        releaseDate === undefined &&
+        project === undefined &&
+        projectId === undefined &&
+        moveUnfixedIssuesTo === undefined &&
+        driver === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --archived, --released, --start-date, --release-date, --project, --project-id, --move-unfixed-issues-to, --driver',
+        );
+      }
+      return client.version.update(id, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(archived !== undefined && { archived }),
+        ...(released !== undefined && { released }),
+        ...(startDate !== undefined && { startDate }),
+        ...(releaseDate !== undefined && { releaseDate }),
+        ...(project !== undefined && { project }),
+        ...(projectId !== undefined && { projectId }),
+        ...(moveUnfixedIssuesTo !== undefined && { moveUnfixedIssuesTo }),
+        ...(driver !== undefined && { driver }),
+      });
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const moveFixIssuesTo = asString(opts['move-fix-issues-to']);
+      const moveAffectedIssuesTo = asString(opts['move-affected-issues-to']);
+      await client.version.delete(id, {
+        ...(moveFixIssuesTo !== undefined && { moveFixIssuesTo }),
+        ...(moveAffectedIssuesTo !== undefined && { moveAffectedIssuesTo }),
+      });
+      return { deleted: true };
+    }
+    case 'merge': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const moveIssuesTo = requireArg(cmd.positionalArgs[1], 'moveIssuesTo');
+      await client.version.merge(id, moveIssuesTo);
+      return { merged: true };
+    }
+    case 'move': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const after = asString(opts['after']);
+      const posRaw = asString(opts['position']);
+      const pos = posRaw !== undefined ? asVersionMovePosition(posRaw) : undefined;
+      if (after === undefined && pos === undefined) {
+        throw new Error('move requires at least one of: --after, --position');
+      }
+      return client.version.move(id, {
+        ...(after !== undefined && { after }),
+        ...(pos !== undefined && { position: pos }),
+      });
+    }
+    case 'related-issue-counts': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.version.relatedIssueCounts(id);
+    }
+    case 'list-related-work': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.version.listRelatedWork(id);
+    }
+    case 'create-related-work': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const category = requireOpt(opts['category'], '--category');
+      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
+      const title = asString(opts['title']);
+      const url = asString(opts['url']);
+      return client.version.createRelatedWork(id, {
+        category,
+        ...(issueId !== undefined && { issueId }),
+        ...(title !== undefined && { title }),
+        ...(url !== undefined && { url }),
+      });
+    }
+    case 'update-related-work': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const category = requireOpt(opts['category'], '--category');
+      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
+      const title = asString(opts['title']);
+      const url = asString(opts['url']);
+      const relatedWorkId = asString(opts['related-work-id']);
+      return client.version.updateRelatedWork(id, {
+        category,
+        ...(issueId !== undefined && { issueId }),
+        ...(title !== undefined && { title }),
+        ...(url !== undefined && { url }),
+        ...(relatedWorkId !== undefined && { relatedWorkId }),
+      });
+    }
+    case 'delete-and-replace': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const moveFixIssuesTo = asPositiveInt(opts['move-fix-issues-to'], '--move-fix-issues-to');
+      const moveAffectedIssuesTo = asPositiveInt(
+        opts['move-affected-issues-to'],
+        '--move-affected-issues-to',
+      );
+      await client.version.deleteAndReplace(id, {
+        ...(moveFixIssuesTo !== undefined && { moveFixIssuesTo }),
+        ...(moveAffectedIssuesTo !== undefined && { moveAffectedIssuesTo }),
+      });
+      return { deleted: true };
+    }
+    case 'unresolved-issue-count': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.version.unresolvedIssueCount(id);
+    }
+    case 'delete-related-work': {
+      const versionId = requireArg(cmd.positionalArgs[0], 'versionId');
+      const relatedWorkId = requireArg(cmd.positionalArgs[1], 'relatedWorkId');
+      await client.version.deleteRelatedWork(versionId, relatedWorkId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown version action: ${cmd.action}. Actions: ${VERSION_ACTIONS.join(', ')}`,
+      );
+  }
 }

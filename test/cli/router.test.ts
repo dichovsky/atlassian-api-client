@@ -272,4 +272,60 @@ describe('parseCommand', () => {
     expect(result.action).toBe('watch-issues-bulk');
     expect(result.options['issue-ids']).toBe('10001,10002');
   });
+
+  it('parses version resource flags through real parseCommand', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'version',
+      'create',
+      '--name',
+      'v1.0',
+      '--project',
+      'PROJ',
+      '--release-date',
+      '2026-06-01',
+      '--released',
+      '--archived',
+      '--move-unfixed-issues-to',
+      'https://example.atlassian.net/rest/api/3/version/10002',
+      '--move-fix-issues-to',
+      'https://example.atlassian.net/rest/api/3/version/10003',
+      '--move-affected-issues-to',
+      'https://example.atlassian.net/rest/api/3/version/10004',
+      '--driver',
+      'account-123',
+      '--related-work-id',
+      'rw-abc',
+      '--category',
+      'Design',
+      '--issue-id',
+      '20001',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.api).toBe('jira');
+    expect(result.resource).toBe('version');
+    expect(result.action).toBe('create');
+    expect(result.options['name']).toBe('v1.0');
+    expect(result.options['project']).toBe('PROJ');
+    expect(result.options['release-date']).toBe('2026-06-01');
+    expect(result.options['released']).toBe(true);
+    expect(result.options['archived']).toBe(true);
+    expect(result.options['move-unfixed-issues-to']).toBe(
+      'https://example.atlassian.net/rest/api/3/version/10002',
+    );
+    expect(result.options['move-fix-issues-to']).toBe(
+      'https://example.atlassian.net/rest/api/3/version/10003',
+    );
+    expect(result.options['move-affected-issues-to']).toBe(
+      'https://example.atlassian.net/rest/api/3/version/10004',
+    );
+    expect(result.options['driver']).toBe('account-123');
+    expect(result.options['related-work-id']).toBe('rw-abc');
+    expect(result.options['category']).toBe('Design');
+    expect(result.options['issue-id']).toBe('20001');
+  });
 });

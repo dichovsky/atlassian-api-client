@@ -270,6 +270,7 @@ RESOURCES:
   issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
   fieldconfiguration     list, create, delete, update, list-fields, update-fields
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
+  version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
 
 EXAMPLES:
   atlas jira issues get PROJ-123
