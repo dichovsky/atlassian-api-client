@@ -814,6 +814,76 @@
   - **Impl:** Branch `feat/jira-incident-bundle`; `VulnerabilityResource.get(vulnerabilityId)` issues `GET /rest/security/1.0/vulnerability/{vulnerabilityId}` returning `Vulnerability` (only `id` required). CLI: `atlas jira vulnerability get <vulnerabilityId>`.
   - **Rat:** Reads a single vulnerability record — foundation for security-posture dashboards and SLA tracking on findings.
 
+- [x] 🔴 🧩 API: B797 Jira: expose DELETE /rest/api/3/user
+  - **Impl:** `UsersResource.deleteUser(accountId)` — DELETE /rest/api/3/user, returns `void`. CLI: `atlas jira users delete --account-id`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B798 Jira: expose POST /rest/api/3/user
+  - **Impl:** `UsersResource.createUser(data)` — POST /rest/api/3/user, returns `User`. CLI: `atlas jira users create --email <email>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B799 Jira: expose GET /rest/api/3/user/assignable/multiProjectSearch
+  - **Impl:** `UsersResource.assignableMultiProjectSearch(params)` — GET /rest/api/3/user/assignable/multiProjectSearch, returns `User[]`. CLI: `atlas jira users assignable-multi-project [--project-keys csv]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B800 Jira: expose GET /rest/api/3/user/assignable/search
+  - **Impl:** `UsersResource.assignableSearch(params)` — GET /rest/api/3/user/assignable/search, returns `User[]`. CLI: `atlas jira users assignable --project <key>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B801 Jira: expose GET /rest/api/3/user/bulk
+  - **Impl:** `UsersResource.bulkGet(params)` — GET /rest/api/3/user/bulk, returns `BulkUsersResponse`. CLI: `atlas jira users bulk --account-ids csv`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B802 Jira: expose GET /rest/api/3/user/bulk/migration
+  - **Impl:** `UsersResource.bulkMigration(params)` — GET /rest/api/3/user/bulk/migration, returns `UserMigrationRecord[]`. CLI: `atlas jira users bulk-migration [--user-name csv] [--key csv]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B803 Jira: expose DELETE /rest/api/3/user/columns
+  - **Impl:** `UsersResource.resetColumns(accountId?)` — DELETE /rest/api/3/user/columns, returns `void`. CLI: `atlas jira users reset-columns [--account-id]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B804 Jira: expose GET /rest/api/3/user/columns
+  - **Impl:** `UsersResource.getColumns(accountId?)` — GET /rest/api/3/user/columns, returns `UserColumnItem[]`. CLI: `atlas jira users get-columns [--account-id]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B805 Jira: expose PUT /rest/api/3/user/columns
+  - **Impl:** `UsersResource.setColumns(columns, accountId?)` — PUT /rest/api/3/user/columns, returns `void`. CLI: `atlas jira users set-columns --columns csv`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B806 Jira: expose GET /rest/api/3/user/email
+  - **Impl:** `UsersResource.getEmail(accountId)` — GET /rest/api/3/user/email, returns `UserEmailRecord`. CLI: `atlas jira users email --account-id`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B807 Jira: expose GET /rest/api/3/user/email/bulk
+  - **Impl:** `UsersResource.bulkGetEmails(accountIds)` — GET /rest/api/3/user/email/bulk, returns `BulkUserEmailsResponse`. CLI: `atlas jira users bulk-emails --account-ids csv`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B808 Jira: expose GET /rest/api/3/user/groups
+  - **Impl:** `UsersResource.getGroups(params)` — GET /rest/api/3/user/groups, returns `UserGroupEntry[]`. CLI: `atlas jira users groups --account-id`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B809 Jira: expose GET /rest/api/3/user/permission/search
+  - **Impl:** `UsersResource.getPermissionUsers(params?)` — GET /rest/api/3/user/permission/search, returns `User[]`. CLI: `atlas jira users permission-search [--permissions csv]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B810 Jira: expose GET /rest/api/3/user/picker
+  - **Impl:** `UsersResource.picker(params)` — GET /rest/api/3/user/picker, returns `UserPickerResponse`. CLI: `atlas jira users picker --query <q>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B811 Jira: expose GET /rest/api/3/user/properties
+  - **Impl:** `UsersResource.listProperties(params?)` — GET /rest/api/3/user/properties, returns `UserPropertyKeys`. CLI: `atlas jira users list-properties [--account-id]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B812 Jira: expose DELETE /rest/api/3/user/properties/{propertyKey}
+  - **Impl:** `UsersResource.deleteProperty(propertyKey, params?)` — DELETE /rest/api/3/user/properties/{propertyKey}, returns `void`. CLI: `atlas jira users delete-property <propertyKey>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B813 Jira: expose GET /rest/api/3/user/properties/{propertyKey}
+  - **Impl:** `UsersResource.getProperty(propertyKey, params?)` — GET /rest/api/3/user/properties/{propertyKey}, returns `UserProperty`. CLI: `atlas jira users get-property <propertyKey>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B814 Jira: expose PUT /rest/api/3/user/properties/{propertyKey}
+  - **Impl:** `UsersResource.setProperty(propertyKey, value, params?)` — PUT /rest/api/3/user/properties/{propertyKey}, returns `void`. CLI: `atlas jira users set-property <propertyKey> --value <json>`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B815 Jira: expose GET /rest/api/3/user/search/query
+  - **Impl:** `UsersResource.searchQuery(params?)` — GET /rest/api/3/user/search/query, returns `UserSearchQueryResult`. CLI: `atlas jira users search-query [--query s]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B816 Jira: expose GET /rest/api/3/user/search/query/key
+  - **Impl:** `UsersResource.searchQueryKey(params?)` — GET /rest/api/3/user/search/query/key, returns `UserKeySearchQueryResult`. CLI: `atlas jira users search-query-key [--query s]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B817 Jira: expose GET /rest/api/3/user/viewissue/search
+  - **Impl:** `UsersResource.viewIssueSearch(params?)` — GET /rest/api/3/user/viewissue/search, returns `User[]`. CLI: `atlas jira users viewissue-search [--issue-key s]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B818 Jira: expose GET /rest/api/3/users
+  - **Impl:** `UsersResource.list(params?)` — GET /rest/api/3/users, returns `User[]`. CLI: `atlas jira users list [--start-at N]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+- [x] 🔴 🧩 API: B819 Jira: expose GET /rest/api/3/users/search
+  - **Impl:** `UsersResource.listSearch(params?)` — GET /rest/api/3/users/search, returns `User[]`. CLI: `atlas jira users list-search [--query s]`.
+  - **Rat:** Standard extension of UsersResource for user management.
+
 ## 🖥️ CLI
 
 - [x] 🔴 🐛 CLI: B027 Terminal escape injection (normal output)
