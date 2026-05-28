@@ -7,6 +7,11 @@ import type {
   FieldConfigurationItem,
   NotificationSchemeEvent,
   CreateRemoteLinkData,
+  RemoveFieldAssociationsBody,
+  UpdateFieldAssociationsBody,
+  RemoveFieldParametersBody,
+  UpdateFieldParametersBody,
+  AssociateProjectsBody,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -147,6 +152,8 @@ export async function executeJiraCommand(
       return executePrioritySchemeResource(client, cmd);
     case 'version':
       return executeVersionResource(client, cmd);
+    case 'config':
+      return executeConfig(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -4752,6 +4759,148 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown version action: ${cmd.action}. Actions: ${VERSION_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── config (B367-B381) ────────────────────────────────────────────────────────
+
+const CONFIG_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'get',
+  'update',
+  'clone',
+  'list-fields',
+  'get-field-parameters',
+  'list-projects',
+  'remove-field-associations',
+  'update-field-associations',
+  'remove-field-parameters',
+  'update-field-parameters',
+  'get-projects-with-schemes',
+  'associate-projects',
+] as const;
+
+async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      const query = asString(opts['query']);
+      return client.config.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+        ...(query !== undefined && { query }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.config.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'delete': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      return client.config.delete(id);
+    }
+    case 'get': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      return client.config.get(id);
+    }
+    case 'update': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      return client.config.update(id, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'clone': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.config.clone(id, {
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'list-fields': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const fieldIds = parseCsv(opts['field-id']);
+      return client.config.listFields(id, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(fieldIds !== undefined && { fieldId: fieldIds }),
+      });
+    }
+    case 'get-field-parameters': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const fieldId = requireArg(cmd.positionalArgs[1], 'fieldId');
+      return client.config.getFieldParameters(id, fieldId);
+    }
+    case 'list-projects': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      return client.config.listProjects(id, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+      });
+    }
+    case 'remove-field-associations': {
+      const raw = requireOpt(opts['body'], '--body');
+      const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldAssociationsBody;
+      await client.config.removeFieldAssociations(body);
+      return { deleted: true };
+    }
+    case 'update-field-associations': {
+      const raw = requireOpt(opts['body'], '--body');
+      const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldAssociationsBody;
+      await client.config.updateFieldAssociations(body);
+      return { updated: true };
+    }
+    case 'remove-field-parameters': {
+      const raw = requireOpt(opts['body'], '--body');
+      const body = parseJsonObjectFlag(raw, '--body') as RemoveFieldParametersBody;
+      await client.config.removeFieldParameters(body);
+      return { deleted: true };
+    }
+    case 'update-field-parameters': {
+      const raw = requireOpt(opts['body'], '--body');
+      const body = parseJsonObjectFlag(raw, '--body') as UpdateFieldParametersBody;
+      await client.config.updateFieldParameters(body);
+      return { updated: true };
+    }
+    case 'get-projects-with-schemes': {
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
+      if (projectIds === undefined || projectIds.length === 0) {
+        throw new Error('get-projects-with-schemes requires --project-ids');
+      }
+      return client.config.getProjectsWithSchemes({
+        projectId: projectIds,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'associate-projects': {
+      const raw = requireOpt(opts['body'], '--body');
+      const body = parseJsonObjectFlag(raw, '--body') as AssociateProjectsBody;
+      await client.config.associateProjects(body);
+      return { updated: true };
+    }
+    default:
+      throw new Error(
+        `Unknown config action: ${cmd.action}. Actions: ${CONFIG_ACTIONS.join(', ')}`,
       );
   }
 }
