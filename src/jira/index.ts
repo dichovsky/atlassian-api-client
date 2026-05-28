@@ -540,3 +540,17 @@ export type {
   ListAvailablePrioritiesParams,
 } from './resources/priorityscheme.js';
 export { PrioritySchemeResource } from './resources/priorityscheme.js';
+export type {
+  Version,
+  VersionRelatedWork,
+  VersionRelatedIssueCounts,
+  VersionUnresolvedIssueCount,
+  VersionData,
+  MoveVersionData,
+  CreateVersionRelatedWorkData,
+  UpdateVersionRelatedWorkData,
+  DeleteAndReplaceVersionData,
+  GetVersionParams,
+  DeleteVersionParams,
+} from './resources/version.js';
+export { VersionResource } from './resources/version.js';

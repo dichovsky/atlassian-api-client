@@ -137,6 +137,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'issue-comments': 'executeIssueComments',
   fieldconfiguration: 'executeFieldConfiguration',
   'priority-schemes': 'executePrioritySchemeResource',
+  version: 'executeVersionResource',
 };
 
 /**

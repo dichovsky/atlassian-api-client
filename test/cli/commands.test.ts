@@ -910,6 +910,22 @@ const jiraPrioritySchemesMock = {
   listAvailablePrioritiesAll: vi.fn(),
 };
 
+const jiraVersionMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  merge: vi.fn(),
+  move: vi.fn(),
+  relatedIssueCounts: vi.fn(),
+  listRelatedWork: vi.fn(),
+  createRelatedWork: vi.fn(),
+  updateRelatedWork: vi.fn(),
+  deleteAndReplace: vi.fn(),
+  unresolvedIssueCount: vi.fn(),
+  deleteRelatedWork: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -974,6 +990,7 @@ vi.mock('../../src/jira/client.js', () => {
       fieldConfigurations: jiraFieldConfigurationsMock,
       notificationSchemes: jiraNotificationSchemesMock,
       prioritySchemes: jiraPrioritySchemesMock,
+      version: jiraVersionMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -18545,6 +18562,413 @@ describe('executeJiraCommand', () => {
     it('priorityscheme unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('priority-schemes', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown priority-schemes action',
+      );
+    });
+  });
+
+  // ── version (B820-B831, B933) ─────────────────────────────────────────────
+
+  describe('version resource', () => {
+    const makeVersion = (id = '10001') => ({
+      id,
+      name: 'v1.0',
+      released: false,
+      archived: false,
+    });
+
+    const makeRelatedWork = (relatedWorkId = 'rw-1') => ({
+      relatedWorkId,
+      category: 'Design',
+      title: 'Design doc',
+    });
+
+    it('version create calls client.version.create', async () => {
+      const version = makeVersion();
+      jiraVersionMock.create.mockResolvedValue(version);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'create', [], {
+          name: 'v1.0',
+          project: 'PROJ',
+          'project-id': '10100',
+          'release-date': '2026-06-01',
+          released: true,
+          archived: false,
+          driver: 'driver-id',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(version);
+      expect(jiraVersionMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'v1.0',
+          project: 'PROJ',
+          projectId: 10100,
+          releaseDate: '2026-06-01',
+          released: true,
+          driver: 'driver-id',
+        }),
+      );
+    });
+
+    it('version create with start-date, description, and move-unfixed-issues-to', async () => {
+      const version = makeVersion();
+      jiraVersionMock.create.mockResolvedValue(version);
+
+      await executeJiraCommand(
+        cmd('version', 'create', [], {
+          description: 'My version',
+          'start-date': '2026-01-01',
+          'move-unfixed-issues-to': 'https://test.atlassian.net/rest/api/3/version/10002',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraVersionMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'My version',
+          startDate: '2026-01-01',
+          moveUnfixedIssuesTo: 'https://test.atlassian.net/rest/api/3/version/10002',
+        }),
+      );
+    });
+
+    it('version get calls client.version.get with id and expand', async () => {
+      const version = makeVersion();
+      jiraVersionMock.get.mockResolvedValue(version);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'get', ['10001'], { expand: 'issuesstatus' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(version);
+      expect(jiraVersionMock.get).toHaveBeenCalledWith('10001', { expand: 'issuesstatus' });
+    });
+
+    it('version get without expand passes undefined params', async () => {
+      jiraVersionMock.get.mockResolvedValue(makeVersion());
+
+      await executeJiraCommand(cmd('version', 'get', ['10001']), GLOBALS);
+
+      expect(jiraVersionMock.get).toHaveBeenCalledWith('10001', undefined);
+    });
+
+    it('version update calls client.version.update', async () => {
+      const version = makeVersion();
+      jiraVersionMock.update.mockResolvedValue(version);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'update', ['10001'], { name: 'v1.1', released: true }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(version);
+      expect(jiraVersionMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ name: 'v1.1', released: true }),
+      );
+    });
+
+    it('version update with description calls client.version.update', async () => {
+      jiraVersionMock.update.mockResolvedValue(makeVersion());
+
+      await executeJiraCommand(
+        cmd('version', 'update', ['10001'], { description: 'Updated desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraVersionMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ description: 'Updated desc' }),
+      );
+    });
+
+    it('version update with all optional flags calls client.version.update', async () => {
+      jiraVersionMock.update.mockResolvedValue(makeVersion());
+
+      await executeJiraCommand(
+        cmd('version', 'update', ['10001'], {
+          archived: true,
+          'start-date': '2026-01-01',
+          'release-date': '2026-06-01',
+          project: 'PROJ',
+          'project-id': '10100',
+          'move-unfixed-issues-to': 'https://test.atlassian.net/rest/api/3/version/10002',
+          driver: 'driver-id',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraVersionMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({
+          archived: true,
+          startDate: '2026-01-01',
+          releaseDate: '2026-06-01',
+          project: 'PROJ',
+          projectId: 10100,
+          moveUnfixedIssuesTo: 'https://test.atlassian.net/rest/api/3/version/10002',
+          driver: 'driver-id',
+        }),
+      );
+    });
+
+    it('version update throws if no body flags provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one');
+    });
+
+    it('version update requires positional id', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'update', [], { name: 'v1.1' }), GLOBALS),
+      ).rejects.toThrow('id');
+    });
+
+    it('version delete calls client.version.delete with query params', async () => {
+      jiraVersionMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'delete', ['10001'], {
+          'move-fix-issues-to': 'https://test.atlassian.net/rest/api/3/version/10002',
+          'move-affected-issues-to': 'https://test.atlassian.net/rest/api/3/version/10003',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraVersionMock.delete).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({
+          moveFixIssuesTo: 'https://test.atlassian.net/rest/api/3/version/10002',
+          moveAffectedIssuesTo: 'https://test.atlassian.net/rest/api/3/version/10003',
+        }),
+      );
+    });
+
+    it('version delete requires positional id', async () => {
+      await expect(executeJiraCommand(cmd('version', 'delete'), GLOBALS)).rejects.toThrow('id');
+    });
+
+    it('version merge calls client.version.merge with two positional args', async () => {
+      jiraVersionMock.merge.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('version', 'merge', ['10001', '10002']), GLOBALS);
+
+      expect(result).toEqual({ merged: true });
+      expect(jiraVersionMock.merge).toHaveBeenCalledWith('10001', '10002');
+    });
+
+    it('version merge requires two positional args', async () => {
+      await expect(executeJiraCommand(cmd('version', 'merge', ['10001']), GLOBALS)).rejects.toThrow(
+        'moveIssuesTo',
+      );
+    });
+
+    it('version move calls client.version.move with position', async () => {
+      const version = makeVersion();
+      jiraVersionMock.move.mockResolvedValue(version);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'move', ['10001'], { position: 'Last' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(version);
+      expect(jiraVersionMock.move).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ position: 'Last' }),
+      );
+    });
+
+    it('version move calls client.version.move with after', async () => {
+      jiraVersionMock.move.mockResolvedValue(makeVersion());
+
+      await executeJiraCommand(
+        cmd('version', 'move', ['10001'], {
+          after: 'https://test.atlassian.net/rest/api/3/version/10002',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraVersionMock.move).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ after: 'https://test.atlassian.net/rest/api/3/version/10002' }),
+      );
+    });
+
+    it('version move throws if neither --after nor --position provided', async () => {
+      await expect(executeJiraCommand(cmd('version', 'move', ['10001']), GLOBALS)).rejects.toThrow(
+        'move requires at least one of',
+      );
+    });
+
+    it('version move accepts position Earlier', async () => {
+      jiraVersionMock.move.mockResolvedValue(makeVersion());
+
+      await executeJiraCommand(cmd('version', 'move', ['10001'], { position: 'Earlier' }), GLOBALS);
+
+      expect(jiraVersionMock.move).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ position: 'Earlier' }),
+      );
+    });
+
+    it('version move rejects an invalid --position value', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'move', ['10001'], { position: 'Sideways' }), GLOBALS),
+      ).rejects.toThrow('--position must be one of: Earlier, Later, First, Last');
+    });
+
+    it('version related-issue-counts calls client.version.relatedIssueCounts', async () => {
+      const counts = { issuesFixedCount: 5, issuesAffectedCount: 3 };
+      jiraVersionMock.relatedIssueCounts.mockResolvedValue(counts);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'related-issue-counts', ['10001']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(counts);
+      expect(jiraVersionMock.relatedIssueCounts).toHaveBeenCalledWith('10001');
+    });
+
+    it('version list-related-work calls client.version.listRelatedWork', async () => {
+      const items = [makeRelatedWork()];
+      jiraVersionMock.listRelatedWork.mockResolvedValue(items);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'list-related-work', ['10001']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(items);
+      expect(jiraVersionMock.listRelatedWork).toHaveBeenCalledWith('10001');
+    });
+
+    it('version create-related-work calls client.version.createRelatedWork', async () => {
+      const rw = makeRelatedWork();
+      jiraVersionMock.createRelatedWork.mockResolvedValue(rw);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'create-related-work', ['10001'], {
+          category: 'Design',
+          title: 'Design doc',
+          url: 'https://example.com',
+          'issue-id': '20001',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(rw);
+      expect(jiraVersionMock.createRelatedWork).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ category: 'Design', title: 'Design doc', issueId: 20001 }),
+      );
+    });
+
+    it('version create-related-work requires --category', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'create-related-work', ['10001']), GLOBALS),
+      ).rejects.toThrow('--category');
+    });
+
+    it('version update-related-work calls client.version.updateRelatedWork', async () => {
+      const rw = makeRelatedWork();
+      jiraVersionMock.updateRelatedWork.mockResolvedValue(rw);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'update-related-work', ['10001'], {
+          category: 'Design',
+          'related-work-id': 'rw-1',
+          'issue-id': '20001',
+          title: 'Updated doc',
+          url: 'https://example.com',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(rw);
+      expect(jiraVersionMock.updateRelatedWork).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({
+          category: 'Design',
+          relatedWorkId: 'rw-1',
+          issueId: 20001,
+          title: 'Updated doc',
+          url: 'https://example.com',
+        }),
+      );
+    });
+
+    it('version update-related-work requires --category', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'update-related-work', ['10001']), GLOBALS),
+      ).rejects.toThrow('--category');
+    });
+
+    it('version delete-and-replace calls client.version.deleteAndReplace', async () => {
+      jiraVersionMock.deleteAndReplace.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'delete-and-replace', ['10001'], {
+          'move-fix-issues-to': '10002',
+          'move-affected-issues-to': '10003',
+        }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraVersionMock.deleteAndReplace).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ moveFixIssuesTo: 10002, moveAffectedIssuesTo: 10003 }),
+      );
+    });
+
+    it('version delete-and-replace with no optional flags still calls with empty object', async () => {
+      jiraVersionMock.deleteAndReplace.mockResolvedValue(undefined);
+
+      await executeJiraCommand(cmd('version', 'delete-and-replace', ['10001']), GLOBALS);
+
+      expect(jiraVersionMock.deleteAndReplace).toHaveBeenCalledWith('10001', {});
+    });
+
+    it('version unresolved-issue-count calls client.version.unresolvedIssueCount', async () => {
+      const count = { issuesUnresolvedCount: 7, issuesCount: 12 };
+      jiraVersionMock.unresolvedIssueCount.mockResolvedValue(count);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'unresolved-issue-count', ['10001']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(count);
+      expect(jiraVersionMock.unresolvedIssueCount).toHaveBeenCalledWith('10001');
+    });
+
+    it('version delete-related-work calls client.version.deleteRelatedWork', async () => {
+      jiraVersionMock.deleteRelatedWork.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('version', 'delete-related-work', ['10001', 'rw-abc']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraVersionMock.deleteRelatedWork).toHaveBeenCalledWith('10001', 'rw-abc');
+    });
+
+    it('version delete-related-work requires two positional args', async () => {
+      await expect(
+        executeJiraCommand(cmd('version', 'delete-related-work', ['10001']), GLOBALS),
+      ).rejects.toThrow('relatedWorkId');
+    });
+
+    it('version unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('version', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown version action',
       );
     });
   });

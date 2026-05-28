@@ -1825,3 +1825,42 @@
 - [x] 🔴 🧩 API: B538 Jira: expose PUT /rest/api/3/issues/archive/export
   - **Impl:** `IssuesResource.exportArchivedIssues(data)` returns void (202 async). Uses path `/rest/api/3/issues/archive/export` (plural "issues"). CLI: `atlas jira issues export-archived [--jql s] [--export-type CSV|XLSX]`.
   - **Rat:** Standard extension of IssuesResource; note plural endpoint path vs singular /issue.
+- [x] 🔴 🧩 API: B820 Jira: expose POST /rest/api/3/version
+  - **Impl:** `VersionResource.create(data)` issues `POST /rest/api/3/version`. All body fields optional per spec. CLI: `atlas jira version create [flags]`.
+  - **Rat:** Create project versions (fix/release versions) programmatically.
+- [x] 🔴 🧩 API: B821 Jira: expose GET /rest/api/3/version/{id}
+  - **Impl:** `VersionResource.get(id, params?)` issues `GET /rest/api/3/version/{id}`. Optional `--expand` query param. CLI: `atlas jira version get <id>`.
+  - **Rat:** Retrieve a single project version by ID.
+- [x] 🔴 🧩 API: B822 Jira: expose PUT /rest/api/3/version/{id}
+  - **Impl:** `VersionResource.update(id, data)` issues `PUT /rest/api/3/version/{id}`. Requires at least one body flag. CLI: `atlas jira version update <id> [flags]`.
+  - **Rat:** Update project version attributes (name, dates, released status, etc.).
+- [x] 🔴 🧩 API: B823 Jira: expose PUT /rest/api/3/version/{id}/mergeto/{moveIssuesTo}
+  - **Impl:** `VersionResource.merge(id, moveIssuesTo)` issues `PUT /rest/api/3/version/{id}/mergeto/{moveIssuesTo}`. Both IDs are positional args. Returns void (204). CLI: `atlas jira version merge <id> <moveIssuesTo>`.
+  - **Rat:** Merge one version into another, transferring all issue fix-version associations.
+- [x] 🔴 🧩 API: B824 Jira: expose POST /rest/api/3/version/{id}/move
+  - **Impl:** `VersionResource.move(id, data)` issues `POST /rest/api/3/version/{id}/move`. Body: `after` (URL) XOR `position` string. CLI: `atlas jira version move <id> --position <pos>` or `--after <url>`.
+  - **Rat:** Reorder project versions relative to each other.
+- [x] 🔴 🧩 API: B825 Jira: expose GET /rest/api/3/version/{id}/relatedIssueCounts
+  - **Impl:** `VersionResource.relatedIssueCounts(id)` issues `GET /rest/api/3/version/{id}/relatedIssueCounts`. CLI: `atlas jira version related-issue-counts <id>`.
+  - **Rat:** Get fix/affected issue counts for a version without fetching all issues.
+- [x] 🔴 🧩 API: B826 Jira: expose GET /rest/api/3/version/{id}/relatedwork
+  - **Impl:** `VersionResource.listRelatedWork(id)` issues `GET /rest/api/3/version/{id}/relatedwork`. Returns `VersionRelatedWork[]`. CLI: `atlas jira version list-related-work <id>`.
+  - **Rat:** List all related work entries (Confluence pages, external links) associated with a version.
+- [x] 🔴 🧩 API: B827 Jira: expose POST /rest/api/3/version/{id}/relatedwork
+  - **Impl:** `VersionResource.createRelatedWork(id, data)` issues `POST /rest/api/3/version/{id}/relatedwork`. `category` is required; others optional. CLI: `atlas jira version create-related-work <id> --category <c>`.
+  - **Rat:** Associate external work (Confluence pages, docs) with a project version.
+- [x] 🔴 🧩 API: B828 Jira: expose PUT /rest/api/3/version/{id}/relatedwork
+  - **Impl:** `VersionResource.updateRelatedWork(id, data)` issues `PUT /rest/api/3/version/{id}/relatedwork`. `category` is required per spec. CLI: `atlas jira version update-related-work <id> --category <c>`.
+  - **Rat:** Update an existing related-work entry linked to a version.
+- [x] 🔴 🧩 API: B829 Jira: expose POST /rest/api/3/version/{id}/removeAndSwap
+  - **Impl:** `VersionResource.deleteAndReplace(id, data?)` issues `POST /rest/api/3/version/{id}/removeAndSwap`. Body: `moveFixIssuesTo` and `moveAffectedIssuesTo` are integers (version IDs). Returns void (204). CLI: `atlas jira version delete-and-replace <id>`.
+  - **Rat:** Atomically delete a version and reassign all associated issues to a replacement version.
+- [x] 🔴 🧩 API: B830 Jira: expose GET /rest/api/3/version/{id}/unresolvedIssueCount
+  - **Impl:** `VersionResource.unresolvedIssueCount(id)` issues `GET /rest/api/3/version/{id}/unresolvedIssueCount`. CLI: `atlas jira version unresolved-issue-count <id>`.
+  - **Rat:** Quick count of unresolved issues for a version (no need to run JQL).
+- [x] 🔴 🧩 API: B831 Jira: expose DELETE /rest/api/3/version/{versionId}/relatedwork/{relatedWorkId}
+  - **Impl:** `VersionResource.deleteRelatedWork(versionId, relatedWorkId)` issues `DELETE /rest/api/3/version/{versionId}/relatedwork/{relatedWorkId}`. Both IDs positional. Returns void (204). CLI: `atlas jira version delete-related-work <versionId> <relatedWorkId>`.
+  - **Rat:** Remove a specific related-work entry from a version.
+- [x] 🔴 🧩 API: B933 Jira: expose DELETE /rest/api/3/version/{id}
+  - **Impl:** `VersionResource.delete(id, params?)` issues `DELETE /rest/api/3/version/{id}`. Query params: `moveFixIssuesTo`, `moveAffectedIssuesTo` (version URLs). Returns void (204). CLI: `atlas jira version delete <id>`.
+  - **Rat:** Delete a project version with optional issue migration to another version.

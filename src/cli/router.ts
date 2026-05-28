@@ -286,6 +286,15 @@ const GLOBAL_OPTIONS = {
   'scheme-name': { type: 'string' as const },
   priorities: { type: 'string' as const },
   projects: { type: 'string' as const },
+  // version options (B820-B831, B933)
+  'move-unfixed-issues-to': { type: 'string' as const },
+  'release-date': { type: 'string' as const },
+  'move-fix-issues-to': { type: 'string' as const },
+  'move-affected-issues-to': { type: 'string' as const },
+  archived: { type: 'boolean' as const },
+  category: { type: 'string' as const },
+  'related-work-id': { type: 'string' as const },
+  driver: { type: 'string' as const },
   // projects CRUD options (B929, B652, B661, B662, B696-B700)
   'project-type-key': { type: 'string' as const },
   'type-key': { type: 'string' as const },
