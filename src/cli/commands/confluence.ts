@@ -108,11 +108,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         body: makeBody(asString(opts['body'])),
       });
     case 'update': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
         id: requireArg(cmd.positionalArgs[0], 'page ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -267,11 +263,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const propVersionStr = requireOpt(opts['version-number'], '--version-number');
-      const propVersionNum = Number(propVersionStr);
-      if (!Number.isInteger(propVersionNum) || propVersionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${propVersionStr}`);
-      }
+      const propVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.pages.updateProperty(
         requireArg(cmd.positionalArgs[0], 'page ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -291,11 +283,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
 
     // ── versions (B188 single version — CLI+skill only) ───────────────────
     case 'version': {
-      const singleVerStr = requireOpt(opts['version-number'], '--version-number');
-      const singleVerNum = Number(singleVerStr);
-      if (!Number.isInteger(singleVerNum) || singleVerNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${singleVerStr}`);
-      }
+      const singleVerNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.versions.getForPage(requireArg(cmd.positionalArgs[0], 'page ID'), singleVerNum);
     }
 
@@ -519,11 +507,7 @@ async function executeSpaces(client: ConfluenceClient, cmd: ParsedCommand): Prom
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.spaces.updateProperty(
         requireArg(cmd.positionalArgs[0], 'space ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -571,11 +555,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         body: makeBody(asString(opts['body'])),
       });
     case 'update': {
-      const blogVersionStr = requireOpt(opts['version-number'], '--version-number');
-      const blogVersionNum = Number(blogVersionStr);
-      if (!Number.isInteger(blogVersionNum) || blogVersionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${blogVersionStr}`);
-      }
+      const blogVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.blogPosts.update(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
         id: requireArg(cmd.positionalArgs[0], 'blog post ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -608,11 +588,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const propVersionStr = requireOpt(opts['version-number'], '--version-number');
-      const propVersionNum = Number(propVersionStr);
-      if (!Number.isInteger(propVersionNum) || propVersionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${propVersionStr}`);
-      }
+      const propVersionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.blogPosts.updateProperty(
         requireArg(cmd.positionalArgs[0], 'blog post ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -788,11 +764,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
       });
     }
     case 'version': {
-      const singleVerStr = requireOpt(opts['version-number'], '--version-number');
-      const singleVerNum = Number(singleVerStr);
-      if (!Number.isInteger(singleVerNum) || singleVerNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${singleVerStr}`);
-      }
+      const singleVerNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.versions.getForBlogPost(
         requireArg(cmd.positionalArgs[0], 'blog post ID'),
         singleVerNum,
@@ -821,23 +793,18 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         return client.comments.getInline(requireArg(cmd.positionalArgs[0], 'comment ID'));
       }
       return client.comments.getFooter(requireArg(cmd.positionalArgs[0], 'comment ID'));
-    case 'create':
-      if (commentType === 'inline') {
-        return client.comments.createInline({
-          pageId: asString(opts['page-id']),
-          body: {
-            representation: 'storage',
-            value: requireOpt(opts['body'], '--body'),
-          },
-        });
-      }
-      return client.comments.createFooter({
+    case 'create': {
+      const payload = {
         pageId: asString(opts['page-id']),
         body: {
-          representation: 'storage',
+          representation: 'storage' as const,
           value: requireOpt(opts['body'], '--body'),
         },
-      });
+      };
+      return commentType === 'inline'
+        ? client.comments.createInline(payload)
+        : client.comments.createFooter(payload);
+    }
     case 'delete':
       if (commentType === 'inline') {
         await client.comments.deleteInline(requireArg(cmd.positionalArgs[0], 'comment ID'));
@@ -863,11 +830,7 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.comments.updateProperty(
         requireArg(cmd.positionalArgs[0], 'comment ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -948,11 +911,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.attachments.updateProperty(
         requireArg(cmd.positionalArgs[0], 'attachment ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -978,11 +937,7 @@ async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand):
       });
     }
     case 'get-version': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.attachments.getVersion(
         requireArg(cmd.positionalArgs[0], 'attachment ID'),
         versionNum,
@@ -1300,11 +1255,7 @@ async function executeCustomContent(
       });
     }
     case 'update': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       const id = requireArg(cmd.positionalArgs[0], 'custom content ID');
       const body = makeCustomContentBody(requireOpt(opts['body'], '--body'));
       return client.customContent.update(id, {
@@ -1354,11 +1305,7 @@ async function executeCustomContent(
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.customContent.updateProperty(
         requireArg(cmd.positionalArgs[0], 'custom content ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -1391,11 +1338,7 @@ async function executeCustomContent(
       );
     }
     case 'version': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.customContent.getVersion(
         requireArg(cmd.positionalArgs[0], 'custom content ID'),
         versionNum,
@@ -1698,33 +1641,41 @@ async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promi
 }
 
 /**
+ * Split a required comma-separated CLI flag into a non-empty, trimmed list.
+ * Surrounding whitespace per entry is trimmed and empty entries are dropped;
+ * an all-empty payload throws `emptyError` so callers fail fast before the
+ * HTTP round trip. Shared by `--emails` (users) and `--account-ids`
+ * (users-bulk) so both get identical comma-separated batch semantics.
+ */
+function parseRequiredCsvList(raw: string, emptyError: string): readonly string[] {
+  const items = raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  if (items.length === 0) {
+    throw new Error(emptyError);
+  }
+  return items;
+}
+
+/**
  * Parse `--emails` from the CLI into a non-empty list. Mirrors the
  * `--account-ids` parsing used by `users-bulk` so callers get consistent
  * comma-separated batch semantics across both user resources: surrounding
  * whitespace per entry is trimmed and empty entries are dropped.
  */
 function parseEmailList(raw: string): readonly string[] {
-  const emails = raw
-    .split(',')
-    .map((e) => e.trim())
-    .filter((e) => e.length > 0);
-  if (emails.length === 0) {
-    throw new Error('--emails must contain at least one non-empty email address');
-  }
-  return emails;
+  return parseRequiredCsvList(raw, '--emails must contain at least one non-empty email address');
 }
 
 async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown> {
   switch (cmd.action) {
     case 'lookup': {
       const raw = requireOpt(cmd.options['account-ids'], '--account-ids');
-      const accountIds = raw
-        .split(',')
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0);
-      if (accountIds.length === 0) {
-        throw new Error('--account-ids must contain at least one non-empty account ID');
-      }
+      const accountIds = parseRequiredCsvList(
+        raw,
+        '--account-ids must contain at least one non-empty account ID',
+      );
       return client.usersBulk.lookup({ accountIds });
     }
     default:
@@ -1810,11 +1761,7 @@ async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): P
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.databases.updateProperty(
         requireArg(cmd.positionalArgs[0], 'database ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -1897,11 +1844,7 @@ async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Prom
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.embeds.updateProperty(
         requireArg(cmd.positionalArgs[0], 'embed ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -1983,11 +1926,7 @@ async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Pro
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.folders.updateProperty(
         requireArg(cmd.positionalArgs[0], 'folder ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -2041,11 +1980,7 @@ async function executeFooterComments(
       });
     }
     case 'update': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       // NOTE: deliberate cross-resource call — see CommentsResource.updateFooter for single source of truth
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         version: { number: versionNum },
@@ -2085,11 +2020,7 @@ async function executeFooterComments(
       });
     }
     case 'version': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.footerComments.getVersion(
         requireArg(cmd.positionalArgs[0], 'comment ID'),
         versionNum,
@@ -2190,11 +2121,7 @@ async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand):
         requireOpt(opts['property-id'], '--property-id'),
       );
     case 'update-property': {
-      const versionStr = requireOpt(opts['version-number'], '--version-number');
-      const versionNum = Number(versionStr);
-      if (!Number.isInteger(versionNum) || versionNum <= 0) {
-        throw new Error(`--version-number must be a positive integer, got: ${versionStr}`);
-      }
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
       return client.whiteboards.updateProperty(
         requireArg(cmd.positionalArgs[0], 'whiteboard ID'),
         requireOpt(opts['property-id'], '--property-id'),
@@ -2237,6 +2164,21 @@ function asPositiveInt(value: string | boolean | undefined, name: string): numbe
   const n = Number(value);
   if (!Number.isInteger(n) || n <= 0) {
     throw new Error(`${name} must be a positive integer, got: ${value}`);
+  }
+  return n;
+}
+
+/**
+ * Like {@link asPositiveInt} but rejects missing values: requires the flag,
+ * then validates it is a positive integer. Returns the parsed number. The
+ * thrown message matches the hand-rolled sites it replaces
+ * (`<name> must be a positive integer, got: <value>`).
+ */
+function requirePositiveInt(value: string | boolean | undefined, name: string): number {
+  const raw = requireOpt(value, name);
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got: ${raw}`);
   }
   return n;
 }
