@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
+import { resolveAuthIdentity, serializeQueryKey } from './auth-identity.js';
 
 /** Options for the response caching middleware. */
 export interface CacheOptions {
@@ -121,58 +121,12 @@ function sweepExpired(cache: Map<string, CacheEntry>, now: number): void {
 }
 
 function buildCacheKey(opts: RequestOptions): string {
-  const queryStr = opts.query
-    ? '?' +
-      Object.entries(opts.query)
-        .filter(([, v]) => v !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-        .join('&')
-    : '';
+  const queryStr = serializeQueryKey(opts.query);
   // B022: scope the cache key to the caller's auth identity so a shared
   // transport never serves Tenant A's cached body to Tenant B. The auth
   // identifier prefers an explicit `headers.Authorization` (set by upstream
   // middleware like createOAuthRefreshMiddleware) and falls back to a
   // shared-tenant marker when no Authorization header is on the in-flight
   // options (single-tenant deployments).
-  return `${authScope(opts)}|${opts.method}:${opts.path}${queryStr}`;
-}
-
-/**
- * Derive the stable identifier the cache key partitions on.
- *
- * Preferred source (PR review of round 4 → round 5): the precomputed
- * `RequestOptions.authIdentity` hash that `HttpTransport` injects before the
- * middleware chain runs. Using this means the cache never observes the raw
- * `Authorization` value — even when a user-installed logging middleware
- * dumps the whole options object.
- *
- * Fallback: hash the in-flight `Authorization` header. This keeps manually
- * constructed `RequestOptions` (legacy callers, tests) partitioned correctly
- * even when no transport pre-injection happened. When multiple Authorization-
- * like keys are present in the headers map (e.g. a caller passes
- * `authorization: 'old'` and middleware later spreads in `Authorization:
- * 'new'`), the LAST occurrence wins — matching `fetch` semantics for
- * duplicate-key plain-object headers maps.
- *
- * Returns the stable sentinel `'no-auth'` when neither source is present.
- */
-function authScope(opts: RequestOptions): string {
-  if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
-    return opts.authIdentity;
-  }
-  const auth = pickAuthorizationHeader(opts.headers);
-  if (auth === undefined || auth === '') return 'no-auth';
-  return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
-}
-
-function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined {
-  if (headers === undefined) return undefined;
-  let last: string | undefined;
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === 'authorization') {
-      last = value;
-    }
-  }
-  return last;
+  return `${resolveAuthIdentity(opts)}|${opts.method}:${opts.path}${queryStr}`;
 }
