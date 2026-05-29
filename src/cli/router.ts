@@ -297,6 +297,22 @@ const GLOBAL_OPTIONS = {
   driver: { type: 'string' as const },
   // config field association schemes options (B367-B381)
   'field-id': { type: 'string' as const },
+  // plans options (B625-B640)
+  'include-trashed': { type: 'boolean' as const },
+  'include-archived': { type: 'boolean' as const },
+  'use-group-id': { type: 'boolean' as const },
+  'issue-sources': { type: 'string' as const },
+  scheduling: { type: 'string' as const },
+  'cross-project-releases': { type: 'string' as const },
+  'custom-fields': { type: 'string' as const },
+  'exclusion-rules': { type: 'string' as const },
+  'plan-permissions': { type: 'string' as const },
+  'atlassian-team-id': { type: 'string' as const },
+  'planning-style': { type: 'string' as const },
+  capacity: { type: 'string' as const },
+  'issue-source-id': { type: 'string' as const },
+  'sprint-length': { type: 'string' as const },
+  'member-account-ids': { type: 'string' as const },
   // projects CRUD options (B929, B652, B661, B662, B696-B700)
   'project-type-key': { type: 'string' as const },
   'type-key': { type: 'string' as const },

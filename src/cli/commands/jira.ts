@@ -12,6 +12,11 @@ import type {
   RemoveFieldParametersBody,
   UpdateFieldParametersBody,
   AssociateProjectsBody,
+  CreatePlanData,
+  AddAtlassianTeamData,
+  CreatePlanOnlyTeamData,
+  PlanningStyle,
+  IssueSourceType,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -154,6 +159,8 @@ export async function executeJiraCommand(
       return executeVersionResource(client, cmd);
     case 'config':
       return executeConfig(client, cmd);
+    case 'plans':
+      return executePlans(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -4902,5 +4909,232 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
       throw new Error(
         `Unknown config action: ${cmd.action}. Actions: ${CONFIG_ACTIONS.join(', ')}`,
       );
+  }
+}
+
+// ─── Plans (B625-B640) ─────────────────────────────────────────────────────
+
+const PLANS_ACTIONS = [
+  'list',
+  'create',
+  'get',
+  'update',
+  'archive',
+  'duplicate',
+  'list-teams',
+  'add-atlassian-team',
+  'delete-atlassian-team',
+  'get-atlassian-team',
+  'update-atlassian-team',
+  'create-plan-only-team',
+  'delete-plan-only-team',
+  'get-plan-only-team',
+  'update-plan-only-team',
+  'trash',
+] as const;
+
+const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];
+
+function asEnumPlans<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
+function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n)) throw new Error(`${name} must be a finite number, got: ${value}`);
+  return n;
+}
+
+async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      return client.plans.list({
+        cursor: asString(opts['cursor']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['include-trashed'] !== undefined && {
+          includeTrashed: opts['include-trashed'] === true,
+        }),
+        ...(opts['include-archived'] !== undefined && {
+          includeArchived: opts['include-archived'] === true,
+        }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const issueSourcesRaw = requireOpt(opts['issue-sources'], '--issue-sources');
+      const issueSourcesParsed = parseJsonArrayFlag(issueSourcesRaw, '--issue-sources') as {
+        type: IssueSourceType;
+        value: number;
+      }[];
+      const schedulingRaw = requireOpt(opts['scheduling'], '--scheduling');
+      const scheduling = parseJsonObjectFlag(
+        schedulingRaw,
+        '--scheduling',
+      ) as unknown as CreatePlanData['scheduling'];
+      const createBody: Record<string, unknown> = {
+        name,
+        issueSources: issueSourcesParsed,
+        scheduling,
+      };
+      const crossProjectReleasesRaw = asString(opts['cross-project-releases']);
+      if (crossProjectReleasesRaw !== undefined) {
+        createBody['crossProjectReleases'] = parseJsonArrayFlag(
+          crossProjectReleasesRaw,
+          '--cross-project-releases',
+        );
+      }
+      const customFieldsRaw = asString(opts['custom-fields']);
+      if (customFieldsRaw !== undefined) {
+        createBody['customFields'] = parseJsonArrayFlag(customFieldsRaw, '--custom-fields');
+      }
+      const exclusionRulesRaw = asString(opts['exclusion-rules']);
+      if (exclusionRulesRaw !== undefined) {
+        createBody['exclusionRules'] = parseJsonObjectFlag(exclusionRulesRaw, '--exclusion-rules');
+      }
+      const leadAccountId = asString(opts['lead-account-id']);
+      if (leadAccountId !== undefined) createBody['leadAccountId'] = leadAccountId;
+      const permissionsRaw = asString(opts['plan-permissions']);
+      if (permissionsRaw !== undefined) {
+        createBody['permissions'] = parseJsonArrayFlag(permissionsRaw, '--plan-permissions');
+      }
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      return client.plans.create(createBody as unknown as CreatePlanData, useGroupId);
+    }
+    case 'get': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      return client.plans.get(planId, { ...(useGroupId !== undefined && { useGroupId }) });
+    }
+    case 'update': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      await client.plans.update(planId, patch, useGroupId);
+      return { updated: true };
+    }
+    case 'archive': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      await client.plans.archive(planId);
+      return { archived: true };
+    }
+    case 'duplicate': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const name = requireOpt(opts['name'], '--name');
+      return client.plans.duplicate(planId, { name });
+    }
+    case 'list-teams': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      return client.plans.listTeams(planId, {
+        cursor: asString(opts['cursor']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'add-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const id = requireOpt(opts['atlassian-team-id'], '--atlassian-team-id');
+      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      if (planningStyle === undefined) {
+        throw new Error('add-atlassian-team requires --planning-style (Scrum or Kanban)');
+      }
+      const addTeamBody: Record<string, unknown> = { id, planningStyle };
+      const capacity = asFiniteNumber(opts['capacity'], '--capacity');
+      if (capacity !== undefined) addTeamBody['capacity'] = capacity;
+      const issueSourceId = asPositiveInt(opts['issue-source-id'], '--issue-source-id');
+      if (issueSourceId !== undefined) addTeamBody['issueSourceId'] = issueSourceId;
+      const sprintLength = asPositiveInt(opts['sprint-length'], '--sprint-length');
+      if (sprintLength !== undefined) addTeamBody['sprintLength'] = sprintLength;
+      await client.plans.addAtlassianTeam(planId, addTeamBody as unknown as AddAtlassianTeamData);
+      return { added: true };
+    }
+    case 'delete-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      await client.plans.deleteAtlassianTeam(planId, atlassianTeamId);
+      return { deleted: true };
+    }
+    case 'get-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      return client.plans.getAtlassianTeam(planId, atlassianTeamId);
+    }
+    case 'update-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      await client.plans.updateAtlassianTeam(planId, atlassianTeamId, patch);
+      return { updated: true };
+    }
+    case 'create-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const name = requireOpt(opts['name'], '--name');
+      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      if (planningStyle === undefined) {
+        throw new Error('create-plan-only-team requires --planning-style (Scrum or Kanban)');
+      }
+      const planOnlyBody: Record<string, unknown> = { name, planningStyle };
+      const capacity = asFiniteNumber(opts['capacity'], '--capacity');
+      if (capacity !== undefined) planOnlyBody['capacity'] = capacity;
+      const issueSourceId = asPositiveInt(opts['issue-source-id'], '--issue-source-id');
+      if (issueSourceId !== undefined) planOnlyBody['issueSourceId'] = issueSourceId;
+      const memberAccountIds = parseCsv(opts['member-account-ids']);
+      if (memberAccountIds !== undefined) planOnlyBody['memberAccountIds'] = memberAccountIds;
+      const sprintLength = asPositiveInt(opts['sprint-length'], '--sprint-length');
+      if (sprintLength !== undefined) planOnlyBody['sprintLength'] = sprintLength;
+      return client.plans.createPlanOnlyTeam(
+        planId,
+        planOnlyBody as unknown as CreatePlanOnlyTeamData,
+      );
+    }
+    case 'delete-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      await client.plans.deletePlanOnlyTeam(planId, planOnlyTeamId);
+      return { deleted: true };
+    }
+    case 'get-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      return client.plans.getPlanOnlyTeam(planId, planOnlyTeamId);
+    }
+    case 'update-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      await client.plans.updatePlanOnlyTeam(planId, planOnlyTeamId, patch);
+      return { updated: true };
+    }
+    case 'trash': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      await client.plans.trash(planId);
+      return { trashed: true };
+    }
+    default:
+      throw new Error(`Unknown plans action: ${cmd.action}. Actions: ${PLANS_ACTIONS.join(', ')}`);
   }
 }
