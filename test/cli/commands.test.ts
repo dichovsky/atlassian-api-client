@@ -969,6 +969,27 @@ const jiraConfigMock = {
   associateProjects: vi.fn(),
 };
 
+const jiraPlansMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  archive: vi.fn(),
+  duplicate: vi.fn(),
+  listTeams: vi.fn(),
+  listTeamsAll: vi.fn(),
+  addAtlassianTeam: vi.fn(),
+  deleteAtlassianTeam: vi.fn(),
+  getAtlassianTeam: vi.fn(),
+  updateAtlassianTeam: vi.fn(),
+  createPlanOnlyTeam: vi.fn(),
+  deletePlanOnlyTeam: vi.fn(),
+  getPlanOnlyTeam: vi.fn(),
+  updatePlanOnlyTeam: vi.fn(),
+  trash: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -1036,6 +1057,7 @@ vi.mock('../../src/jira/client.js', () => {
       version: jiraVersionMock,
       config: jiraConfigMock,
       screens: jiraScreensMock,
+      plans: jiraPlansMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -19637,6 +19659,388 @@ describe('executeJiraCommand', () => {
     it('screens unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('screens', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown screens action',
+      );
+    });
+  });
+
+  // ── plans (B625-B640) ──────────────────────────────────────────────────────
+
+  describe('plans resource', () => {
+    it('plans list calls client.plans.list with no params', async () => {
+      const page = { values: [], last: true };
+      jiraPlansMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(cmd('plans', 'list'), GLOBALS);
+      expect(jiraPlansMock.list).toHaveBeenCalledOnce();
+      expect(result).toEqual(page);
+    });
+
+    it('plans list passes include-trashed and include-archived', async () => {
+      jiraPlansMock.list.mockResolvedValue({ values: [], last: true });
+      await executeJiraCommand(
+        cmd('plans', 'list', [], { 'include-trashed': true, 'include-archived': true }),
+        GLOBALS,
+      );
+      const call = jiraPlansMock.list.mock.calls[0]![0] as Record<string, unknown>;
+      expect(call['includeTrashed']).toBe(true);
+      expect(call['includeArchived']).toBe(true);
+    });
+
+    it('plans list passes cursor and max-results', async () => {
+      jiraPlansMock.list.mockResolvedValue({ values: [], last: true });
+      await executeJiraCommand(
+        cmd('plans', 'list', [], { cursor: 'abc', 'max-results': '10' }),
+        GLOBALS,
+      );
+      const call = jiraPlansMock.list.mock.calls[0]![0] as Record<string, unknown>;
+      expect(call['cursor']).toBe('abc');
+      expect(call['maxResults']).toBe(10);
+    });
+
+    it('plans create calls client.plans.create with required fields', async () => {
+      jiraPlansMock.create.mockResolvedValue(42);
+      const issueSources = JSON.stringify([{ type: 'Board', value: 1 }]);
+      const scheduling = JSON.stringify({ estimation: 'StoryPoints' });
+      const result = await executeJiraCommand(
+        cmd('plans', 'create', [], {
+          name: 'Q3 Plan',
+          'issue-sources': issueSources,
+          scheduling,
+        }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Q3 Plan' }),
+        undefined,
+      );
+      expect(result).toBe(42);
+    });
+
+    it('plans create passes optional fields', async () => {
+      jiraPlansMock.create.mockResolvedValue(99);
+      const issueSources = JSON.stringify([{ type: 'Project', value: 2 }]);
+      const scheduling = JSON.stringify({ estimation: 'Days' });
+      const crossProjectReleases = JSON.stringify([{ id: 1 }]);
+      const customFields = JSON.stringify([{ fieldId: 'cf_1' }]);
+      const exclusionRules = JSON.stringify({ numberOfDays: 14 });
+      const planPermissions = JSON.stringify([{ type: 'AccountId', identifier: 'acc1' }]);
+      await executeJiraCommand(
+        cmd('plans', 'create', [], {
+          name: 'My Plan',
+          'issue-sources': issueSources,
+          scheduling,
+          'cross-project-releases': crossProjectReleases,
+          'custom-fields': customFields,
+          'exclusion-rules': exclusionRules,
+          'lead-account-id': 'lead-acc',
+          'plan-permissions': planPermissions,
+          'use-group-id': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          crossProjectReleases: [{ id: 1 }],
+          customFields: [{ fieldId: 'cf_1' }],
+          exclusionRules: { numberOfDays: 14 },
+          leadAccountId: 'lead-acc',
+          permissions: [{ type: 'AccountId', identifier: 'acc1' }],
+        }),
+        true,
+      );
+    });
+
+    it('plans create requires --name', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('plans', 'create', [], {
+            'issue-sources': '[]',
+            scheduling: '{"estimation":"StoryPoints"}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--name');
+    });
+
+    it('plans get calls client.plans.get with planId', async () => {
+      const plan = { id: 101, name: 'Q3', status: 'Active', scheduling: {} };
+      jiraPlansMock.get.mockResolvedValue(plan);
+      const result = await executeJiraCommand(cmd('plans', 'get', ['101']), GLOBALS);
+      expect(jiraPlansMock.get).toHaveBeenCalledWith(101, {});
+      expect(result).toEqual(plan);
+    });
+
+    it('plans get passes use-group-id', async () => {
+      jiraPlansMock.get.mockResolvedValue({});
+      await executeJiraCommand(cmd('plans', 'get', ['101'], { 'use-group-id': true }), GLOBALS);
+      expect(jiraPlansMock.get).toHaveBeenCalledWith(101, { useGroupId: true });
+    });
+
+    it('plans get requires planId', async () => {
+      await expect(executeJiraCommand(cmd('plans', 'get', []), GLOBALS)).rejects.toThrow('planId');
+    });
+
+    it('plans update calls client.plans.update with patch', async () => {
+      jiraPlansMock.update.mockResolvedValue(undefined);
+      const patch = JSON.stringify({ op: 'replace', path: '/name', value: 'New' });
+      const result = await executeJiraCommand(
+        cmd('plans', 'update', ['101'], { body: patch }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.update).toHaveBeenCalledWith(
+        101,
+        { op: 'replace', path: '/name', value: 'New' },
+        undefined,
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('plans update passes use-group-id', async () => {
+      jiraPlansMock.update.mockResolvedValue(undefined);
+      const patch = JSON.stringify({ op: 'replace', path: '/name', value: 'New' });
+      await executeJiraCommand(
+        cmd('plans', 'update', ['101'], { body: patch, 'use-group-id': true }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.update).toHaveBeenCalledWith(
+        101,
+        { op: 'replace', path: '/name', value: 'New' },
+        true,
+      );
+    });
+
+    it('plans update requires --body', async () => {
+      await expect(executeJiraCommand(cmd('plans', 'update', ['101']), GLOBALS)).rejects.toThrow(
+        '--body',
+      );
+    });
+
+    it('plans archive calls client.plans.archive', async () => {
+      jiraPlansMock.archive.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('plans', 'archive', ['101']), GLOBALS);
+      expect(jiraPlansMock.archive).toHaveBeenCalledWith(101);
+      expect(result).toEqual({ archived: true });
+    });
+
+    it('plans duplicate calls client.plans.duplicate with name', async () => {
+      jiraPlansMock.duplicate.mockResolvedValue(55);
+      const result = await executeJiraCommand(
+        cmd('plans', 'duplicate', ['101'], { name: 'Copy' }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.duplicate).toHaveBeenCalledWith(101, { name: 'Copy' });
+      expect(result).toBe(55);
+    });
+
+    it('plans trash calls client.plans.trash', async () => {
+      jiraPlansMock.trash.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('plans', 'trash', ['101']), GLOBALS);
+      expect(jiraPlansMock.trash).toHaveBeenCalledWith(101);
+      expect(result).toEqual({ trashed: true });
+    });
+
+    it('plans list-teams calls client.plans.listTeams', async () => {
+      const page = { values: [], last: true };
+      jiraPlansMock.listTeams.mockResolvedValue(page);
+      const result = await executeJiraCommand(cmd('plans', 'list-teams', ['101']), GLOBALS);
+      expect(jiraPlansMock.listTeams).toHaveBeenCalledWith(101, {
+        cursor: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('plans add-atlassian-team calls client.plans.addAtlassianTeam', async () => {
+      jiraPlansMock.addAtlassianTeam.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('plans', 'add-atlassian-team', ['101'], {
+          'atlassian-team-id': 'team-abc',
+          'planning-style': 'Scrum',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.addAtlassianTeam).toHaveBeenCalledWith(101, {
+        id: 'team-abc',
+        planningStyle: 'Scrum',
+      });
+      expect(result).toEqual({ added: true });
+    });
+
+    it('plans add-atlassian-team passes optional fields', async () => {
+      jiraPlansMock.addAtlassianTeam.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('plans', 'add-atlassian-team', ['101'], {
+          'atlassian-team-id': 'team-abc',
+          'planning-style': 'Kanban',
+          capacity: '5.5',
+          'issue-source-id': '1',
+          'sprint-length': '14',
+        }),
+        GLOBALS,
+      );
+      const call = jiraPlansMock.addAtlassianTeam.mock.calls[0]![1] as Record<string, unknown>;
+      expect(call['capacity']).toBe(5.5);
+      expect(call['issueSourceId']).toBe(1);
+      expect(call['sprintLength']).toBe(14);
+    });
+
+    it('plans add-atlassian-team requires --planning-style', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('plans', 'add-atlassian-team', ['101'], { 'atlassian-team-id': 'team-abc' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('planning-style');
+    });
+
+    it('plans add-atlassian-team rejects invalid planning-style', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('plans', 'add-atlassian-team', ['101'], {
+            'atlassian-team-id': 'team-abc',
+            'planning-style': 'InvalidStyle',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('planning-style');
+    });
+
+    it('plans delete-atlassian-team calls client.plans.deleteAtlassianTeam', async () => {
+      jiraPlansMock.deleteAtlassianTeam.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('plans', 'delete-atlassian-team', ['101', 'team-abc']),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.deleteAtlassianTeam).toHaveBeenCalledWith(101, 'team-abc');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('plans get-atlassian-team calls client.plans.getAtlassianTeam', async () => {
+      const team = { id: 'team-abc', planningStyle: 'Scrum' };
+      jiraPlansMock.getAtlassianTeam.mockResolvedValue(team);
+      const result = await executeJiraCommand(
+        cmd('plans', 'get-atlassian-team', ['101', 'team-abc']),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.getAtlassianTeam).toHaveBeenCalledWith(101, 'team-abc');
+      expect(result).toEqual(team);
+    });
+
+    it('plans update-atlassian-team calls client.plans.updateAtlassianTeam', async () => {
+      jiraPlansMock.updateAtlassianTeam.mockResolvedValue(undefined);
+      const patch = JSON.stringify({ op: 'replace', path: '/sprintLength', value: 21 });
+      const result = await executeJiraCommand(
+        cmd('plans', 'update-atlassian-team', ['101', 'team-abc'], { body: patch }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.updateAtlassianTeam).toHaveBeenCalledWith(101, 'team-abc', {
+        op: 'replace',
+        path: '/sprintLength',
+        value: 21,
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('plans create-plan-only-team calls client.plans.createPlanOnlyTeam', async () => {
+      jiraPlansMock.createPlanOnlyTeam.mockResolvedValue(2001);
+      const result = await executeJiraCommand(
+        cmd('plans', 'create-plan-only-team', ['101'], {
+          name: 'My Team',
+          'planning-style': 'Kanban',
+          'member-account-ids': 'acc-1,acc-2',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.createPlanOnlyTeam).toHaveBeenCalledWith(101, {
+        name: 'My Team',
+        planningStyle: 'Kanban',
+        memberAccountIds: ['acc-1', 'acc-2'],
+      });
+      expect(result).toBe(2001);
+    });
+
+    it('plans create-plan-only-team passes optional fields', async () => {
+      jiraPlansMock.createPlanOnlyTeam.mockResolvedValue(3001);
+      await executeJiraCommand(
+        cmd('plans', 'create-plan-only-team', ['101'], {
+          name: 'Optional Team',
+          'planning-style': 'Scrum',
+          capacity: '8.5',
+          'issue-source-id': '5',
+          'sprint-length': '21',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.createPlanOnlyTeam).toHaveBeenCalledWith(
+        101,
+        expect.objectContaining({
+          capacity: 8.5,
+          issueSourceId: 5,
+          sprintLength: 21,
+        }),
+      );
+    });
+
+    it('plans create-plan-only-team rejects non-finite capacity', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('plans', 'create-plan-only-team', ['101'], {
+            name: 'Team',
+            'planning-style': 'Scrum',
+            capacity: 'not-a-number',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('finite number');
+    });
+
+    it('plans create-plan-only-team requires --planning-style', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('plans', 'create-plan-only-team', ['101'], { name: 'Team' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('planning-style');
+    });
+
+    it('plans delete-plan-only-team calls client.plans.deletePlanOnlyTeam', async () => {
+      jiraPlansMock.deletePlanOnlyTeam.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('plans', 'delete-plan-only-team', ['101', '2001']),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.deletePlanOnlyTeam).toHaveBeenCalledWith(101, 2001);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('plans get-plan-only-team calls client.plans.getPlanOnlyTeam', async () => {
+      const team = { id: 2001, name: 'My Team', planningStyle: 'Kanban' };
+      jiraPlansMock.getPlanOnlyTeam.mockResolvedValue(team);
+      const result = await executeJiraCommand(
+        cmd('plans', 'get-plan-only-team', ['101', '2001']),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.getPlanOnlyTeam).toHaveBeenCalledWith(101, 2001);
+      expect(result).toEqual(team);
+    });
+
+    it('plans update-plan-only-team calls client.plans.updatePlanOnlyTeam', async () => {
+      jiraPlansMock.updatePlanOnlyTeam.mockResolvedValue(undefined);
+      const patch = JSON.stringify({ op: 'replace', path: '/name', value: 'Renamed' });
+      const result = await executeJiraCommand(
+        cmd('plans', 'update-plan-only-team', ['101', '2001'], { body: patch }),
+        GLOBALS,
+      );
+      expect(jiraPlansMock.updatePlanOnlyTeam).toHaveBeenCalledWith(101, 2001, {
+        op: 'replace',
+        path: '/name',
+        value: 'Renamed',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('plans unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('plans', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown plans action',
       );
     });
   });

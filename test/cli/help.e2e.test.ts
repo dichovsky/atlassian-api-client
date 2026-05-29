@@ -140,6 +140,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   version: 'executeVersionResource',
   config: 'executeConfig',
   screens: 'executeScreens',
+  plans: 'executePlans',
 };
 
 /**

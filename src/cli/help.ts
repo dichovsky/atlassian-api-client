@@ -273,6 +273,7 @@ RESOURCES:
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
   config                 list, create, delete, get, update, clone, list-fields, get-field-parameters, list-projects, remove-field-associations, update-field-associations, remove-field-parameters, update-field-parameters, get-projects-with-schemes, associate-projects
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
+  plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -485,6 +486,18 @@ EXAMPLES:
   atlas jira screens move-tab 10001 1 0
   atlas jira screens add-to-default summary
   atlas jira screens list-all-tabs --ids 10001,10002
+  atlas jira plans list --max-results 50
+  atlas jira plans list --include-trashed --include-archived
+  atlas jira plans get 10001
+  atlas jira plans get 10001 --use-group-id
+  atlas jira plans archive 10001
+  atlas jira plans trash 10001
+  atlas jira plans duplicate 10001 --name "Copy of My Plan"
+  atlas jira plans list-teams 10001 --max-results 20
+  atlas jira plans get-atlassian-team 10001 team-abc-123
+  atlas jira plans delete-atlassian-team 10001 team-abc-123
+  atlas jira plans get-plan-only-team 10001 2001
+  atlas jira plans delete-plan-only-team 10001 2001
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001

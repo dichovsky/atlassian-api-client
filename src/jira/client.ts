@@ -70,6 +70,7 @@ import { PrioritySchemeResource } from './resources/priorityscheme.js';
 import { VersionResource } from './resources/version.js';
 import { ConfigResource } from './resources/config.js';
 import { ScreensResource } from './resources/screens.js';
+import { PlansResource } from './resources/plans.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -208,6 +209,8 @@ export class JiraClient {
   readonly config: ConfigResource;
   /** Jira screens resource (B746-B761). */
   readonly screens: ScreensResource;
+  /** Jira Advanced Roadmaps plans resource (B625-B640). */
+  readonly plans: PlansResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -304,5 +307,6 @@ export class JiraClient {
     this.version = new VersionResource(transport, baseUrl);
     this.config = new ConfigResource(transport, baseUrl);
     this.screens = new ScreensResource(transport, baseUrl);
+    this.plans = new PlansResource(transport, baseUrl);
   }
 }
