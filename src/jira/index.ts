@@ -586,6 +586,23 @@ export type {
 export { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
 
 export type {
+  Screen,
+  ScreenableTab,
+  ScreenableField,
+  ScreenTabRef,
+  CreateScreenData,
+  UpdateScreenData,
+  CreateScreenTabData,
+  UpdateScreenTabData,
+  AddFieldToTabData,
+  MoveFieldData,
+  ListScreensParams,
+  ListTabFieldsParams,
+  ListAllTabsParams,
+} from './resources/screens.js';
+export { ScreensResource } from './resources/screens.js';
+
+export type {
   FieldAssociationSchemeLinks,
   FieldAssociationSchemeMatchedFilters,
   FieldAssociationSchemeResponse,
@@ -614,3 +631,45 @@ export type {
   GetProjectsWithFieldSchemesParams,
 } from './resources/config.js';
 export { ConfigResource } from './resources/config.js';
+
+export type {
+  PlanPage,
+  PlanTeamPage,
+  PlanSummary,
+  PlanTeamSummary,
+  PlanDateField,
+  PlanScheduling,
+  PlanExclusionRules,
+  PlanCrossProjectRelease,
+  PlanCustomField,
+  PlanIssueSource,
+  PlanPermission,
+  PlanPermissionHolder,
+  PlanResponse,
+  AtlassianTeamResponse,
+  PlanOnlyTeamResponse,
+  PlanStatus,
+  PlanningStyle,
+  SchedulingDependencies,
+  SchedulingEstimation,
+  SchedulingInferredDates,
+  DateFieldType,
+  IssueSourceType,
+  PermissionHolderType,
+  CreateDateFieldData,
+  CreateSchedulingData,
+  CreateExclusionRulesData,
+  CreateCrossProjectReleaseData,
+  CreateCustomFieldData,
+  CreateIssueSourceData,
+  CreatePermissionHolderData,
+  CreatePermissionData,
+  CreatePlanData,
+  DuplicatePlanData,
+  AddAtlassianTeamData,
+  CreatePlanOnlyTeamData,
+  ListPlansParams,
+  GetPlanParams,
+  ListPlanTeamsParams,
+} from './resources/plans.js';
+export { PlansResource } from './resources/plans.js';

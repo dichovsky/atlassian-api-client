@@ -483,4 +483,209 @@ describe('parseCommand', () => {
     expect(result.action).toBe('set-default-levels');
     expect(result.options['default-values']).toBe(defaultValues);
   });
+
+  it('parses jira screens list with --ids and --query-string', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'list',
+      '--ids',
+      '10001,10002',
+      '--query-string',
+      'Default',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('list');
+    expect(result.options['ids']).toBe('10001,10002');
+    expect(result.options['query-string']).toBe('Default');
+  });
+
+  it('parses jira screens create with --name and --description', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'create',
+      '--name',
+      'Default Screen',
+      '--description',
+      'A screen',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('create');
+    expect(result.options['name']).toBe('Default Screen');
+    expect(result.options['description']).toBe('A screen');
+  });
+
+  it('parses jira screens delete with positional screenId', () => {
+    const argv = ['node', 'atlas', 'jira', 'screens', 'delete', '10001'];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('delete');
+    expect(result.positionalArgs).toEqual(['10001']);
+  });
+
+  it('parses jira screens add-field-to-tab with --field-id and --skip-field-association', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'add-field-to-tab',
+      '10001',
+      '1',
+      '--field-id',
+      'summary',
+      '--skip-field-association',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('add-field-to-tab');
+    expect(result.positionalArgs).toEqual(['10001', '1']);
+    expect(result.options['field-id']).toBe('summary');
+    expect(result.options['skip-field-association']).toBe(true);
+  });
+
+  it('parses jira screens list-all-tabs with --ids and --tab-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'list-all-tabs',
+      '--ids',
+      '10001,10002',
+      '--tab-ids',
+      '1,2',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('list-all-tabs');
+    expect(result.options['ids']).toBe('10001,10002');
+    expect(result.options['tab-ids']).toBe('1,2');
+  });
+
+  it('parses jira screens move-field with --position', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'move-field',
+      '10001',
+      '1',
+      'summary',
+      '--position',
+      'First',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('move-field');
+    expect(result.positionalArgs).toEqual(['10001', '1', 'summary']);
+    expect(result.options['position']).toBe('First');
+  });
+
+  it('parses jira plans list with --include-trashed', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'plans',
+      'list',
+      '--include-trashed',
+      '--max-results',
+      '25',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('list');
+    expect(result.options['include-trashed']).toBe(true);
+    expect(result.options['max-results']).toBe('25');
+  });
+
+  it('parses jira plans get with planId positional arg', () => {
+    const argv = ['node', 'atlas', 'jira', 'plans', 'get', '101'];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('get');
+    expect(result.positionalArgs).toEqual(['101']);
+  });
+
+  it('parses jira plans add-atlassian-team with --planning-style', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'plans',
+      'add-atlassian-team',
+      '101',
+      '--atlassian-team-id',
+      'team-abc',
+      '--planning-style',
+      'Scrum',
+      '--sprint-length',
+      '14',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('add-atlassian-team');
+    expect(result.positionalArgs).toEqual(['101']);
+    expect(result.options['atlassian-team-id']).toBe('team-abc');
+    expect(result.options['planning-style']).toBe('Scrum');
+    expect(result.options['sprint-length']).toBe('14');
+  });
+
+  it('parses jira plans delete-atlassian-team with two positional args', () => {
+    const argv = ['node', 'atlas', 'jira', 'plans', 'delete-atlassian-team', '101', 'team-abc'];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('delete-atlassian-team');
+    expect(result.positionalArgs).toEqual(['101', 'team-abc']);
+  });
+
+  it('parses jira plans update with --body and --use-group-id', () => {
+    const bodyJson = JSON.stringify({ op: 'replace', path: '/name', value: 'New Name' });
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'plans',
+      'update',
+      '101',
+      '--body',
+      bodyJson,
+      '--use-group-id',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('update');
+    expect(result.options['body']).toBe(bodyJson);
+    expect(result.options['use-group-id']).toBe(true);
+  });
+
+  it('parses jira plans create-plan-only-team with --member-account-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'plans',
+      'create-plan-only-team',
+      '101',
+      '--name',
+      'My Team',
+      '--planning-style',
+      'Kanban',
+      '--member-account-ids',
+      'acc-1,acc-2',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('plans');
+    expect(result.action).toBe('create-plan-only-team');
+    expect(result.options['member-account-ids']).toBe('acc-1,acc-2');
+  });
 });

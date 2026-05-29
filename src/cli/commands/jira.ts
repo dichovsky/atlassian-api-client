@@ -17,6 +17,11 @@ import type {
   SecuritySchemeLevelMemberBean,
   DefaultLevelValue,
   OldToNewSecurityLevelMapping,
+  CreatePlanData,
+  AddAtlassianTeamData,
+  CreatePlanOnlyTeamData,
+  PlanningStyle,
+  IssueSourceType,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -161,6 +166,10 @@ export async function executeJiraCommand(
       return executeConfig(client, cmd);
     case 'issuesecurityschemes':
       return executeIssueSecuritySchemes(client, cmd);
+    case 'screens':
+      return executeScreens(client, cmd);
+    case 'plans':
+      return executePlans(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -4387,6 +4396,17 @@ function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-na
   throw new Error(`--order-by must be one of: name, +name, -name. Got: ${s}`);
 }
 
+function asScreensOrderBy(
+  value: string | boolean | undefined,
+): 'name' | '-name' | '+name' | 'id' | '-id' | '+id' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'name' || s === '-name' || s === '+name' || s === 'id' || s === '-id' || s === '+id') {
+    return s;
+  }
+  throw new Error(`--order-by must be one of: name, -name, +name, id, -id, +id. Got: ${s}`);
+}
+
 function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined {
   const arr = parseCsv(value);
   if (arr === undefined) return undefined;
@@ -5120,5 +5140,443 @@ async function executeIssueSecuritySchemes(
       throw new Error(
         `Unknown issuesecurityschemes action: ${cmd.action}. Actions: ${ISSUE_SECURITY_SCHEMES_ACTIONS.join(', ')}`,
       );
+  }
+}
+
+// ── screens (B746-B761) ──────────────────────────────────────────────────────
+
+const MOVE_FIELD_POSITIONS = ['Earlier', 'Later', 'First', 'Last'] as const;
+
+function asMoveFieldPosition(
+  value: string | boolean | undefined,
+): 'Earlier' | 'Later' | 'First' | 'Last' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'Earlier' || s === 'Later' || s === 'First' || s === 'Last') {
+    return s;
+  }
+  throw new Error(`--position must be one of: ${MOVE_FIELD_POSITIONS.join(', ')}. Got: ${s}`);
+}
+
+const SCREENS_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'update',
+  'list-available-fields',
+  'list-tabs',
+  'create-tab',
+  'delete-tab',
+  'update-tab',
+  'list-tab-fields',
+  'add-field-to-tab',
+  'remove-field-from-tab',
+  'move-field',
+  'move-tab',
+  'add-to-default',
+  'list-all-tabs',
+] as const;
+
+async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const ids = parseCsv(opts['ids']);
+      const scope = parseCsv(opts['scope']);
+      const orderBy = asScreensOrderBy(opts['order-by']);
+      return client.screens.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids.map(Number) }),
+        ...(opts['query-string'] !== undefined && { queryString: asString(opts['query-string']) }),
+        ...(scope !== undefined && { scope }),
+        ...(orderBy !== undefined && { orderBy }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.screens.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'delete': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      await client.screens.delete(screenId);
+      return { deleted: true };
+    }
+    case 'update': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      return client.screens.update(screenId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'list-available-fields': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      return client.screens.listAvailableFields(screenId);
+    }
+    case 'list-tabs': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const projectKey = asString(opts['project-key']);
+      return client.screens.listTabs(screenId, projectKey);
+    }
+    case 'create-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const name = requireOpt(opts['name'], '--name');
+      return client.screens.createTab(screenId, { name });
+    }
+    case 'delete-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      await client.screens.deleteTab(screenId, tabId);
+      return { deleted: true };
+    }
+    case 'update-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const name = requireOpt(opts['name'], '--name');
+      return client.screens.updateTab(screenId, tabId, { name });
+    }
+    case 'list-tab-fields': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const projectKey = asString(opts['project-key']);
+      return client.screens.listTabFields(screenId, tabId, {
+        ...(projectKey !== undefined && { projectKey }),
+      });
+    }
+    case 'add-field-to-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const skipFieldAssociation =
+        typeof opts['skip-field-association'] === 'boolean'
+          ? opts['skip-field-association']
+          : undefined;
+      return client.screens.addFieldToTab(screenId, tabId, { fieldId }, skipFieldAssociation);
+    }
+    case 'remove-field-from-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const id = requireArg(cmd.positionalArgs[2], 'id');
+      await client.screens.removeFieldFromTab(screenId, tabId, id);
+      return { deleted: true };
+    }
+    case 'move-field': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const id = requireArg(cmd.positionalArgs[2], 'id');
+      const position = asMoveFieldPosition(opts['position']);
+      const after = asString(opts['after']);
+      await client.screens.moveField(screenId, tabId, id, {
+        ...(position !== undefined && { position }),
+        ...(after !== undefined && { after }),
+      });
+      return { moved: true };
+    }
+    case 'move-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const posStr = requireArg(cmd.positionalArgs[2], 'pos');
+      const posNum = Number(posStr);
+      if (!Number.isInteger(posNum) || posNum < 0) {
+        throw new Error(`pos must be a non-negative integer, got: ${posStr}`);
+      }
+      await client.screens.moveTab(screenId, tabId, posNum);
+      return { moved: true };
+    }
+    case 'add-to-default': {
+      const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
+      return client.screens.addToDefault(fieldId);
+    }
+    case 'list-all-tabs': {
+      const screenIds = parseCsv(opts['ids']);
+      const tabIds = parseCsv(opts['tab-ids']);
+      return client.screens.listScreenTabs({
+        ...(screenIds !== undefined && { screenId: screenIds.map(Number) }),
+        ...(tabIds !== undefined && { tabId: tabIds.map(Number) }),
+        ...(opts['start-at'] !== undefined && {
+          startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        }),
+        ...(opts['max-results'] !== undefined && {
+          maxResult: asPositiveInt(opts['max-results'], '--max-results'),
+        }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown screens action: ${cmd.action}. Actions: ${SCREENS_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ─── Plans (B625-B640) ─────────────────────────────────────────────────────
+
+const PLANS_ACTIONS = [
+  'list',
+  'create',
+  'get',
+  'update',
+  'archive',
+  'duplicate',
+  'list-teams',
+  'add-atlassian-team',
+  'delete-atlassian-team',
+  'get-atlassian-team',
+  'update-atlassian-team',
+  'create-plan-only-team',
+  'delete-plan-only-team',
+  'get-plan-only-team',
+  'update-plan-only-team',
+  'trash',
+] as const;
+
+const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];
+
+function asEnumPlans<T extends string>(
+  value: string | boolean | undefined,
+  allowed: readonly T[],
+  flagName: string,
+): T | undefined {
+  if (typeof value !== 'string') return undefined;
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new Error(`--${flagName} must be one of: ${allowed.join(', ')}, got: ${value}`);
+  }
+  return value as T;
+}
+
+function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined {
+  if (typeof value !== 'string') return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n)) throw new Error(`${name} must be a finite number, got: ${value}`);
+  return n;
+}
+
+async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      return client.plans.list({
+        cursor: asString(opts['cursor']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['include-trashed'] !== undefined && {
+          includeTrashed: opts['include-trashed'] === true,
+        }),
+        ...(opts['include-archived'] !== undefined && {
+          includeArchived: opts['include-archived'] === true,
+        }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const issueSourcesRaw = requireOpt(opts['issue-sources'], '--issue-sources');
+      const issueSourcesParsed = parseJsonArrayFlag(issueSourcesRaw, '--issue-sources') as {
+        type: IssueSourceType;
+        value: number;
+      }[];
+      const schedulingRaw = requireOpt(opts['scheduling'], '--scheduling');
+      const scheduling = parseJsonObjectFlag(
+        schedulingRaw,
+        '--scheduling',
+      ) as unknown as CreatePlanData['scheduling'];
+      const createBody: Record<string, unknown> = {
+        name,
+        issueSources: issueSourcesParsed,
+        scheduling,
+      };
+      const crossProjectReleasesRaw = asString(opts['cross-project-releases']);
+      if (crossProjectReleasesRaw !== undefined) {
+        createBody['crossProjectReleases'] = parseJsonArrayFlag(
+          crossProjectReleasesRaw,
+          '--cross-project-releases',
+        );
+      }
+      const customFieldsRaw = asString(opts['custom-fields']);
+      if (customFieldsRaw !== undefined) {
+        createBody['customFields'] = parseJsonArrayFlag(customFieldsRaw, '--custom-fields');
+      }
+      const exclusionRulesRaw = asString(opts['exclusion-rules']);
+      if (exclusionRulesRaw !== undefined) {
+        createBody['exclusionRules'] = parseJsonObjectFlag(exclusionRulesRaw, '--exclusion-rules');
+      }
+      const leadAccountId = asString(opts['lead-account-id']);
+      if (leadAccountId !== undefined) createBody['leadAccountId'] = leadAccountId;
+      const permissionsRaw = asString(opts['plan-permissions']);
+      if (permissionsRaw !== undefined) {
+        createBody['permissions'] = parseJsonArrayFlag(permissionsRaw, '--plan-permissions');
+      }
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      return client.plans.create(createBody as unknown as CreatePlanData, useGroupId);
+    }
+    case 'get': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      return client.plans.get(planId, { ...(useGroupId !== undefined && { useGroupId }) });
+    }
+    case 'update': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      const useGroupId =
+        opts['use-group-id'] !== undefined ? (opts['use-group-id'] as boolean) : undefined;
+      await client.plans.update(planId, patch, useGroupId);
+      return { updated: true };
+    }
+    case 'archive': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      await client.plans.archive(planId);
+      return { archived: true };
+    }
+    case 'duplicate': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const name = requireOpt(opts['name'], '--name');
+      return client.plans.duplicate(planId, { name });
+    }
+    case 'list-teams': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      return client.plans.listTeams(planId, {
+        cursor: asString(opts['cursor']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'add-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const id = requireOpt(opts['atlassian-team-id'], '--atlassian-team-id');
+      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      if (planningStyle === undefined) {
+        throw new Error('add-atlassian-team requires --planning-style (Scrum or Kanban)');
+      }
+      const addTeamBody: Record<string, unknown> = { id, planningStyle };
+      const capacity = asFiniteNumber(opts['capacity'], '--capacity');
+      if (capacity !== undefined) addTeamBody['capacity'] = capacity;
+      const issueSourceId = asPositiveInt(opts['issue-source-id'], '--issue-source-id');
+      if (issueSourceId !== undefined) addTeamBody['issueSourceId'] = issueSourceId;
+      const sprintLength = asPositiveInt(opts['sprint-length'], '--sprint-length');
+      if (sprintLength !== undefined) addTeamBody['sprintLength'] = sprintLength;
+      await client.plans.addAtlassianTeam(planId, addTeamBody as unknown as AddAtlassianTeamData);
+      return { added: true };
+    }
+    case 'delete-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      await client.plans.deleteAtlassianTeam(planId, atlassianTeamId);
+      return { deleted: true };
+    }
+    case 'get-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      return client.plans.getAtlassianTeam(planId, atlassianTeamId);
+    }
+    case 'update-atlassian-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const atlassianTeamId = requireArg(cmd.positionalArgs[1], 'atlassianTeamId');
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      await client.plans.updateAtlassianTeam(planId, atlassianTeamId, patch);
+      return { updated: true };
+    }
+    case 'create-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const name = requireOpt(opts['name'], '--name');
+      const planningStyle = asEnumPlans(opts['planning-style'], PLANNING_STYLES, 'planning-style');
+      if (planningStyle === undefined) {
+        throw new Error('create-plan-only-team requires --planning-style (Scrum or Kanban)');
+      }
+      const planOnlyBody: Record<string, unknown> = { name, planningStyle };
+      const capacity = asFiniteNumber(opts['capacity'], '--capacity');
+      if (capacity !== undefined) planOnlyBody['capacity'] = capacity;
+      const issueSourceId = asPositiveInt(opts['issue-source-id'], '--issue-source-id');
+      if (issueSourceId !== undefined) planOnlyBody['issueSourceId'] = issueSourceId;
+      const memberAccountIds = parseCsv(opts['member-account-ids']);
+      if (memberAccountIds !== undefined) planOnlyBody['memberAccountIds'] = memberAccountIds;
+      const sprintLength = asPositiveInt(opts['sprint-length'], '--sprint-length');
+      if (sprintLength !== undefined) planOnlyBody['sprintLength'] = sprintLength;
+      return client.plans.createPlanOnlyTeam(
+        planId,
+        planOnlyBody as unknown as CreatePlanOnlyTeamData,
+      );
+    }
+    case 'delete-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      await client.plans.deletePlanOnlyTeam(planId, planOnlyTeamId);
+      return { deleted: true };
+    }
+    case 'get-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      return client.plans.getPlanOnlyTeam(planId, planOnlyTeamId);
+    }
+    case 'update-plan-only-team': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      const planOnlyTeamId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'planOnlyTeamId'),
+        'planOnlyTeamId',
+      );
+      const raw = requireOpt(opts['body'], '--body');
+      const patch = parseJsonObjectFlag(raw, '--body');
+      await client.plans.updatePlanOnlyTeam(planId, planOnlyTeamId, patch);
+      return { updated: true };
+    }
+    case 'trash': {
+      const planId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'planId'), 'planId');
+      await client.plans.trash(planId);
+      return { trashed: true };
+    }
+    default:
+      throw new Error(`Unknown plans action: ${cmd.action}. Actions: ${PLANS_ACTIONS.join(', ')}`);
   }
 }
