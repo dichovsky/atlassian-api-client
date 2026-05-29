@@ -66,3 +66,16 @@ export function serializeQueryKey(query: RequestOptions['query']): string {
       .join('&')
   );
 }
+
+/**
+ * Append the canonical query-key serialization to a path that may itself
+ * already carry a query string (e.g. resources that embed repeated query
+ * params like `?accountId=a&accountId=b` directly into the path because the
+ * transport's `query` map collapses duplicate keys). Yields exactly one `?`
+ * separator regardless of which side holds query params.
+ */
+export function appendQueryKey(path: string, query: RequestOptions['query']): string {
+  const qs = serializeQueryKey(query);
+  if (qs === '') return path;
+  return path.includes('?') ? `${path}&${qs.slice(1)}` : `${path}${qs}`;
+}

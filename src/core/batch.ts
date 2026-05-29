@@ -1,5 +1,5 @@
 import type { Middleware, RequestOptions, ApiResponse } from './types.js';
-import { resolveAuthIdentity, serializeQueryKey } from './auth-identity.js';
+import { resolveAuthIdentity, appendQueryKey } from './auth-identity.js';
 
 /**
  * Creates a middleware that deduplicates concurrent identical in-flight requests.
@@ -48,7 +48,7 @@ export function createBatchMiddleware(): Middleware {
 }
 
 function buildRequestKey(opts: RequestOptions): string {
-  const queryStr = serializeQueryKey(opts.query);
+  const pathWithQuery = appendQueryKey(opts.path, opts.query);
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
   // B024: prefix with an auth-identity hash so two concurrent requests that
@@ -56,7 +56,7 @@ function buildRequestKey(opts: RequestOptions): string {
   // (e.g. OAuth-refresh middleware rotating tokens, or multi-tenant request
   // routing) are NOT coalesced — the loser would otherwise receive the
   // winner's authenticated response.
-  return `${resolveAuthIdentity(opts)}|${opts.method}:${opts.path}${queryStr}:${bodyStr}:${headersStr}`;
+  return `${resolveAuthIdentity(opts)}|${opts.method}:${pathWithQuery}:${bodyStr}:${headersStr}`;
 }
 
 /**

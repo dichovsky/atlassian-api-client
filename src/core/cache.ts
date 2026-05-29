@@ -1,6 +1,6 @@
 import type { Middleware, RequestOptions, ApiResponse, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
-import { resolveAuthIdentity, serializeQueryKey } from './auth-identity.js';
+import { resolveAuthIdentity, appendQueryKey } from './auth-identity.js';
 
 /** Options for the response caching middleware. */
 export interface CacheOptions {
@@ -121,12 +121,11 @@ function sweepExpired(cache: Map<string, CacheEntry>, now: number): void {
 }
 
 function buildCacheKey(opts: RequestOptions): string {
-  const queryStr = serializeQueryKey(opts.query);
   // B022: scope the cache key to the caller's auth identity so a shared
   // transport never serves Tenant A's cached body to Tenant B. The auth
   // identifier prefers an explicit `headers.Authorization` (set by upstream
   // middleware like createOAuthRefreshMiddleware) and falls back to a
   // shared-tenant marker when no Authorization header is on the in-flight
   // options (single-tenant deployments).
-  return `${resolveAuthIdentity(opts)}|${opts.method}:${opts.path}${queryStr}`;
+  return `${resolveAuthIdentity(opts)}|${opts.method}:${appendQueryKey(opts.path, opts.query)}`;
 }
