@@ -4942,18 +4942,7 @@ async function executeIssueSecuritySchemes(
 
   switch (cmd.action) {
     case 'get-all': {
-      const ids = parseCsv(opts['id']);
-      const projectIds = parseCsv(opts['project-ids']);
-      return client.issueSecuritySchemes.getAll({
-        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        ...(ids !== undefined && { id: ids }),
-        ...(projectIds !== undefined && { projectId: projectIds }),
-        ...(opts['only-default'] !== undefined && {
-          onlyDefault: asBoolFlag(opts['only-default']),
-        }),
-        ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
-      });
+      return client.issueSecuritySchemes.getAll();
     }
     case 'create': {
       const name = requireOpt(opts['name'], '--name');

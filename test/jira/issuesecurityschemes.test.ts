@@ -16,13 +16,12 @@ const makeLevel = (id = '10100', name = 'Public') => ({
   name,
   description: 'A test level',
   isDefault: false,
-  schemeId: '10001',
+  issueSecuritySchemeId: '10001',
 });
 
 const makeMember = (id = '10200') => ({
   id,
   issueSecurityLevelId: '10100',
-  issueSecuritySchemeId: '10001',
 });
 
 const makePageOf = <T>(values: T[], startAt = 0, total = values.length) => ({
@@ -45,7 +44,7 @@ describe('IssueSecuritySchemesResource', () => {
   // ── B539: getAll ───────────────────────────────────────────────────────────
 
   describe('getAll()', () => {
-    it('calls GET /issuesecurityschemes with no params', async () => {
+    it('calls GET /issuesecurityschemes with no params and no query', async () => {
       const resp = { issueSecuritySchemes: [makeScheme()] };
       transport.respondWith(resp);
 
@@ -56,49 +55,7 @@ describe('IssueSecuritySchemesResource', () => {
         method: 'GET',
         path: `${BASE_URL}/issuesecurityschemes`,
       });
-    });
-
-    it('forwards id and projectId filters', async () => {
-      transport.respondWith({ issueSecuritySchemes: [] });
-
-      await resource.getAll({ id: ['10001', '10002'], projectId: ['10100'] });
-
-      expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10001,10002',
-        projectId: '10100',
-      });
-    });
-
-    it('forwards onlyDefault flag', async () => {
-      transport.respondWith({ issueSecuritySchemes: [] });
-
-      await resource.getAll({ onlyDefault: true });
-
-      expect(transport.lastCall?.options.query).toMatchObject({ onlyDefault: true });
-    });
-
-    it('forwards expand param', async () => {
-      transport.respondWith({ issueSecuritySchemes: [] });
-
-      await resource.getAll({ expand: 'levels' });
-
-      expect(transport.lastCall?.options.query).toMatchObject({ expand: 'levels' });
-    });
-
-    it('forwards startAt and maxResults to getAll', async () => {
-      transport.respondWith({ issueSecuritySchemes: [] });
-
-      await resource.getAll({ startAt: 10, maxResults: 25 });
-
-      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
-    });
-
-    it('omits empty id array', async () => {
-      transport.respondWith({ issueSecuritySchemes: [] });
-
-      await resource.getAll({ id: [] });
-
-      expect(transport.lastCall?.options.query?.['id']).toBeUndefined();
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 

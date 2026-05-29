@@ -19294,36 +19294,15 @@ describe('executeJiraCommand', () => {
   });
 
   describe('issuesecurityschemes resource', () => {
-    it('get-all calls client.issueSecuritySchemes.getAll', async () => {
+    it('get-all calls client.issueSecuritySchemes.getAll with no args', async () => {
       const resp = { issueSecuritySchemes: [] };
       jiraIssueSecuritySchemesMock.getAll.mockResolvedValue(resp);
       const result = await executeJiraCommand(
         cmd('issuesecurityschemes', 'get-all', [], {}),
         GLOBALS,
       );
-      expect(jiraIssueSecuritySchemesMock.getAll).toHaveBeenCalledOnce();
+      expect(jiraIssueSecuritySchemesMock.getAll).toHaveBeenCalledWith();
       expect(result).toEqual(resp);
-    });
-
-    it('get-all forwards id, project-ids, only-default, expand', async () => {
-      jiraIssueSecuritySchemesMock.getAll.mockResolvedValue({ issueSecuritySchemes: [] });
-      await executeJiraCommand(
-        cmd('issuesecurityschemes', 'get-all', [], {
-          id: '10001,10002',
-          'project-ids': '10100',
-          'only-default': true,
-          expand: 'levels',
-        }),
-        GLOBALS,
-      );
-      expect(jiraIssueSecuritySchemesMock.getAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: ['10001', '10002'],
-          projectId: ['10100'],
-          onlyDefault: true,
-          expand: 'levels',
-        }),
-      );
     });
 
     it('create calls client.issueSecuritySchemes.create with name', async () => {

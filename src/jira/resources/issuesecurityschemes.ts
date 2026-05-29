@@ -33,8 +33,8 @@ export interface IssueSecurityLevel {
   readonly description?: string;
   readonly id?: string;
   readonly isDefault?: boolean;
+  readonly issueSecuritySchemeId?: string;
   readonly name?: string;
-  readonly schemeId?: string;
   readonly self?: string;
 }
 
@@ -63,7 +63,7 @@ export interface IssueSecuritySchemeToProjectMapping {
 
 /** An issue security scheme with associated project IDs. */
 export interface SecuritySchemeWithProjects {
-  readonly defaultSecurityLevelId?: number;
+  readonly defaultLevel?: number;
   readonly description?: string;
   readonly id?: number;
   readonly name?: string;
@@ -75,22 +75,7 @@ export interface SecuritySchemeWithProjects {
 export interface IssueSecurityLevelMember {
   readonly holder?: SecurityLevelMemberHolder;
   readonly id?: number;
-  readonly issueSecurityLevel?: IssueSecurityLevelRef;
-  readonly issueSecurityScheme?: IssueSecuritySchemeRef;
-}
-
-/** Reference to an issue security level in a member response. */
-export interface IssueSecurityLevelRef {
-  readonly id?: string;
-  readonly name?: string;
-  readonly self?: string;
-}
-
-/** Reference to an issue security scheme in a member response. */
-export interface IssueSecuritySchemeRef {
-  readonly id?: string;
-  readonly name?: string;
-  readonly self?: string;
+  readonly issueSecurityLevelId?: string;
 }
 
 // ─── Request body types ───────────────────────────────────────────────────
@@ -169,18 +154,6 @@ export interface AssociateSchemesToProjectsData {
 
 // ─── Query param interfaces ───────────────────────────────────────────────
 
-/** Query parameters for GET /rest/api/3/issuesecurityschemes (B539). */
-export interface ListIssueSecuritySchemesParams {
-  readonly startAt?: number;
-  readonly maxResults?: number;
-  /** Filter by scheme IDs. */
-  readonly id?: string[];
-  /** Filter by project IDs. */
-  readonly projectId?: string[];
-  readonly onlyDefault?: boolean;
-  readonly expand?: string;
-}
-
 /** Query parameters for GET /rest/api/3/issuesecurityschemes/{issueSecuritySchemeId}/members (B543). */
 export interface ListSecurityLevelMembersParams {
   readonly startAt?: number;
@@ -258,12 +231,10 @@ export class IssueSecuritySchemesResource {
    * B539: Get all issue security schemes.
    * GET /rest/api/3/issuesecurityschemes
    */
-  async getAll(params?: ListIssueSecuritySchemesParams): Promise<SecuritySchemesResponse> {
-    const query = buildGetAllQuery(params);
+  async getAll(): Promise<SecuritySchemesResponse> {
     const response = await this.transport.request<SecuritySchemesResponse>({
       method: 'GET',
       path: `${this.baseUrl}/issuesecurityschemes`,
-      query,
     });
     return response.data;
   }
@@ -616,21 +587,6 @@ export class IssueSecuritySchemesResource {
 }
 
 // ─── Internal helpers (file-private) ──────────────────────────────────────
-
-function buildGetAllQuery(
-  params: ListIssueSecuritySchemesParams | undefined,
-): Record<string, string | number | boolean | undefined> {
-  const query: Record<string, string | number | boolean | undefined> = {};
-  if (params?.startAt !== undefined) query['startAt'] = params.startAt;
-  if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) query['id'] = params.id.join(',');
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
-  if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
-  if (params?.expand !== undefined) query['expand'] = params.expand;
-  return query;
-}
 
 function buildListMembersQuery(
   params: ListSecurityLevelMembersParams | undefined,

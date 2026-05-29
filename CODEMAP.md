@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "e78ac50b10b38d91315e55814a0a45bdf3392e5c8fb647190c33752c5de7d9cc",
+  "sourceHash": "c2cf39dc4d83ad4933a83321d73c8a0fa500ec5ffb4cabfef6a6a1a52d13fef2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17046,14 +17046,6 @@
               "original": "IssueSecurityLevelMember"
             },
             {
-              "exported": "IssueSecurityLevelRef",
-              "original": "IssueSecurityLevelRef"
-            },
-            {
-              "exported": "IssueSecuritySchemeRef",
-              "original": "IssueSecuritySchemeRef"
-            },
-            {
               "exported": "SecuritySchemeLevelMemberBean",
               "original": "SecuritySchemeLevelMemberBean"
             },
@@ -17096,10 +17088,6 @@
             {
               "exported": "AssociateSchemesToProjectsData",
               "original": "AssociateSchemesToProjectsData"
-            },
-            {
-              "exported": "ListIssueSecuritySchemesParams",
-              "original": "ListIssueSecuritySchemesParams"
             },
             {
               "exported": "ListSecurityLevelMembersParams",
@@ -23268,7 +23256,7 @@
           "kind": "interface",
           "line": 65,
           "exported": true,
-          "signature": "export interface SecuritySchemeWithProjects { readonly defaultSecurityLevelId?: number; readonly description?: string; r…",
+          "signature": "export interface SecuritySchemeWithProjects { readonly defaultLevel?: number; readonly description?: string; readonly id…",
           "jsdoc": "An issue security scheme with associated project IDs."
         },
         {
@@ -23280,25 +23268,9 @@
           "jsdoc": "A member of an issue security level (legacy endpoint B543)."
         },
         {
-          "name": "IssueSecurityLevelRef",
-          "kind": "interface",
-          "line": 83,
-          "exported": true,
-          "signature": "export interface IssueSecurityLevelRef { readonly id?: string; readonly name?: string; readonly self?: string; }",
-          "jsdoc": "Reference to an issue security level in a member response."
-        },
-        {
-          "name": "IssueSecuritySchemeRef",
-          "kind": "interface",
-          "line": 90,
-          "exported": true,
-          "signature": "export interface IssueSecuritySchemeRef { readonly id?: string; readonly name?: string; readonly self?: string; }",
-          "jsdoc": "Reference to an issue security scheme in a member response."
-        },
-        {
           "name": "SecuritySchemeLevelMemberBean",
           "kind": "interface",
-          "line": 99,
+          "line": 84,
           "exported": true,
           "signature": "export interface SecuritySchemeLevelMemberBean { readonly type: string; readonly parameter?: string; }",
           "jsdoc": "A member item in a security scheme level."
@@ -23306,7 +23278,7 @@
         {
           "name": "SecuritySchemeLevelBean",
           "kind": "interface",
-          "line": 106,
+          "line": 91,
           "exported": true,
           "signature": "export interface SecuritySchemeLevelBean { readonly name: string; readonly description?: string; readonly isDefault?: bo…",
           "jsdoc": "A level item for create/add-level operations."
@@ -23314,7 +23286,7 @@
         {
           "name": "CreateIssueSecuritySchemeData",
           "kind": "interface",
-          "line": 114,
+          "line": 99,
           "exported": true,
           "signature": "export interface CreateIssueSecuritySchemeData { readonly name: string; readonly description?: string; readonly levels?:…",
           "jsdoc": "Request body for POST /rest/api/3/issuesecurityschemes (B540)."
@@ -23322,7 +23294,7 @@
         {
           "name": "UpdateIssueSecuritySchemeData",
           "kind": "interface",
-          "line": 122,
+          "line": 107,
           "exported": true,
           "signature": "export interface UpdateIssueSecuritySchemeData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/{id} (B542)."
@@ -23330,7 +23302,7 @@
         {
           "name": "AddSecuritySchemeLevelsData",
           "kind": "interface",
-          "line": 128,
+          "line": 113,
           "exported": true,
           "signature": "export interface AddSecuritySchemeLevelsData { readonly levels?: SecuritySchemeLevelBean[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/{schemeId}/level (B545)."
@@ -23338,7 +23310,7 @@
         {
           "name": "UpdateIssueSecurityLevelData",
           "kind": "interface",
-          "line": 133,
+          "line": 118,
           "exported": true,
           "signature": "export interface UpdateIssueSecurityLevelData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B547)."
@@ -23346,7 +23318,7 @@
         {
           "name": "AddSecurityLevelMembersData",
           "kind": "interface",
-          "line": 139,
+          "line": 124,
           "exported": true,
           "signature": "export interface AddSecurityLevelMembersData { readonly members?: SecuritySchemeLevelMemberBean[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}/member (B548)."
@@ -23354,7 +23326,7 @@
         {
           "name": "DefaultLevelValue",
           "kind": "interface",
-          "line": 144,
+          "line": 129,
           "exported": true,
           "signature": "export interface DefaultLevelValue { readonly defaultLevelId: string; readonly issueSecuritySchemeId: string; }",
           "jsdoc": "A default level value entry for PUT /rest/api/3/issuesecurityschemes/level/default (B551)."
@@ -23362,7 +23334,7 @@
         {
           "name": "SetDefaultLevelsData",
           "kind": "interface",
-          "line": 151,
+          "line": 136,
           "exported": true,
           "signature": "export interface SetDefaultLevelsData { readonly defaultValues: DefaultLevelValue[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/level/default (B551)."
@@ -23370,7 +23342,7 @@
         {
           "name": "OldToNewSecurityLevelMapping",
           "kind": "interface",
-          "line": 156,
+          "line": 141,
           "exported": true,
           "signature": "export interface OldToNewSecurityLevelMapping { readonly newLevelId: string; readonly oldLevelId: string; }",
           "jsdoc": "An old-to-new security level mapping entry for associate-to-project (B554)."
@@ -23378,23 +23350,15 @@
         {
           "name": "AssociateSchemesToProjectsData",
           "kind": "interface",
-          "line": 164,
+          "line": 149,
           "exported": true,
           "signature": "export interface AssociateSchemesToProjectsData { readonly projectId: string; readonly schemeId: string; readonly oldToN…",
           "jsdoc": "Request body for PUT /rest/api/3/issuesecurityschemes/project (B554)."
         },
         {
-          "name": "ListIssueSecuritySchemesParams",
-          "kind": "interface",
-          "line": 173,
-          "exported": true,
-          "signature": "export interface ListIssueSecuritySchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id?:…",
-          "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes (B539)."
-        },
-        {
           "name": "ListSecurityLevelMembersParams",
           "kind": "interface",
-          "line": 185,
+          "line": 158,
           "exported": true,
           "signature": "export interface ListSecurityLevelMembersParams { readonly startAt?: number; readonly maxResults?: number; readonly issu…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/{issueSecuritySchemeId}/members (B543)."
@@ -23402,7 +23366,7 @@
         {
           "name": "RemoveSecurityLevelParams",
           "kind": "interface",
-          "line": 194,
+          "line": 167,
           "exported": true,
           "signature": "export interface RemoveSecurityLevelParams { readonly replaceWith?: string; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId} (B546)."
@@ -23410,7 +23374,7 @@
         {
           "name": "GetSecurityLevelsParams",
           "kind": "interface",
-          "line": 200,
+          "line": 173,
           "exported": true,
           "signature": "export interface GetSecurityLevelsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/level (B550)."
@@ -23418,7 +23382,7 @@
         {
           "name": "GetSecurityLevelMembersParams",
           "kind": "interface",
-          "line": 211,
+          "line": 184,
           "exported": true,
           "signature": "export interface GetSecurityLevelMembersParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: …",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/level/member (B552)."
@@ -23426,7 +23390,7 @@
         {
           "name": "SearchProjectsUsingSecuritySchemesParams",
           "kind": "interface",
-          "line": 224,
+          "line": 197,
           "exported": true,
           "signature": "export interface SearchProjectsUsingSecuritySchemesParams { readonly startAt?: number; readonly maxResults?: number; rea…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/project (B553)."
@@ -23434,7 +23398,7 @@
         {
           "name": "SearchSecuritySchemesParams",
           "kind": "interface",
-          "line": 234,
+          "line": 207,
           "exported": true,
           "signature": "export interface SearchSecuritySchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: st…",
           "jsdoc": "Query parameters for GET /rest/api/3/issuesecurityschemes/search (B555)."
@@ -23442,7 +23406,7 @@
         {
           "name": "IssueSecuritySchemesResource",
           "kind": "class",
-          "line": 251,
+          "line": 224,
           "exported": true,
           "signature": "export class IssueSecuritySchemesResource",
           "jsdoc": "Jira Issue Security Schemes resource — B539-B555.",
@@ -23450,154 +23414,148 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 252
+              "line": 225
             },
             {
               "name": "getAll",
               "kind": "method",
-              "line": 261
+              "line": 234
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 275
+              "line": 246
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 291
+              "line": 262
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 303
+              "line": 274
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 318
+              "line": 289
             },
             {
               "name": "listMembersAll",
               "kind": "method",
-              "line": 337
+              "line": 308
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 355
+              "line": 326
             },
             {
               "name": "addLevels",
               "kind": "method",
-              "line": 366
+              "line": 337
             },
             {
               "name": "removeLevel",
               "kind": "method",
-              "line": 380
+              "line": 351
             },
             {
               "name": "updateLevel",
               "kind": "method",
-              "line": 398
+              "line": 369
             },
             {
               "name": "addLevelMembers",
               "kind": "method",
-              "line": 417
+              "line": 388
             },
             {
               "name": "removeLevelMember",
               "kind": "method",
-              "line": 435
+              "line": 406
             },
             {
               "name": "listLevels",
               "kind": "method",
-              "line": 446
+              "line": 417
             },
             {
               "name": "listLevelsAll",
               "kind": "method",
-              "line": 462
+              "line": 433
             },
             {
               "name": "setDefaultLevels",
               "kind": "method",
-              "line": 483
+              "line": 454
             },
             {
               "name": "listLevelMembers",
               "kind": "method",
-              "line": 495
+              "line": 466
             },
             {
               "name": "listLevelMembersAll",
               "kind": "method",
-              "line": 511
+              "line": 482
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 532
+              "line": 503
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 550
+              "line": 521
             },
             {
               "name": "associateToProject",
               "kind": "method",
-              "line": 567
+              "line": 538
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 586
+              "line": 557
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 604
+              "line": 575
             }
           ]
         },
         {
-          "name": "buildGetAllQuery",
-          "kind": "function",
-          "line": 620,
-          "signature": "function buildGetAllQuery( params: ListIssueSecuritySchemesParams | undefined, ): Record<string, string | number | boole…"
-        },
-        {
           "name": "buildListMembersQuery",
           "kind": "function",
-          "line": 635,
+          "line": 591,
           "signature": "function buildListMembersQuery( params: ListSecurityLevelMembersParams | undefined, ): Record<string, string | number | …"
         },
         {
           "name": "buildGetSecurityLevelsQuery",
           "kind": "function",
-          "line": 648,
+          "line": 604,
           "signature": "function buildGetSecurityLevelsQuery( params: GetSecurityLevelsParams | undefined, ): Record<string, string | number | b…"
         },
         {
           "name": "buildGetSecurityLevelMembersQuery",
           "kind": "function",
-          "line": 662,
+          "line": 618,
           "signature": "function buildGetSecurityLevelMembersQuery( params: GetSecurityLevelMembersParams | undefined, ): Record<string, string …"
         },
         {
           "name": "buildListProjectsQuery",
           "kind": "function",
-          "line": 679,
+          "line": 635,
           "signature": "function buildListProjectsQuery( params: SearchProjectsUsingSecuritySchemesParams | undefined, ): Record<string, string …"
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 694,
+          "line": 650,
           "signature": "function buildSearchQuery( params: SearchSecuritySchemesParams | undefined, ): Record<string, string | number | boolean …"
         }
       ],
