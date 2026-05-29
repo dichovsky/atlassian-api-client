@@ -154,6 +154,8 @@ export async function executeJiraCommand(
       return executeVersionResource(client, cmd);
     case 'config':
       return executeConfig(client, cmd);
+    case 'screens':
+      return executeScreens(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -4901,6 +4903,216 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     default:
       throw new Error(
         `Unknown config action: ${cmd.action}. Actions: ${CONFIG_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── screens (B746-B761) ──────────────────────────────────────────────────────
+
+const MOVE_FIELD_POSITIONS = ['Earlier', 'Later', 'First', 'Last'] as const;
+
+function asMoveFieldPosition(
+  value: string | boolean | undefined,
+): 'Earlier' | 'Later' | 'First' | 'Last' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'Earlier' || s === 'Later' || s === 'First' || s === 'Last') {
+    return s;
+  }
+  throw new Error(`--position must be one of: ${MOVE_FIELD_POSITIONS.join(', ')}. Got: ${s}`);
+}
+
+const SCREENS_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'update',
+  'list-available-fields',
+  'list-tabs',
+  'create-tab',
+  'delete-tab',
+  'update-tab',
+  'list-tab-fields',
+  'add-field-to-tab',
+  'remove-field-from-tab',
+  'move-field',
+  'move-tab',
+  'add-to-default',
+  'list-all-tabs',
+] as const;
+
+async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const ids = parseCsv(opts['ids']);
+      const scope = parseCsv(opts['scope']);
+      return client.screens.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids.map(Number) }),
+        ...(opts['query-string'] !== undefined && { queryString: asString(opts['query-string']) }),
+        ...(scope !== undefined && { scope }),
+        ...(opts['order-by'] !== undefined && { orderBy: asString(opts['order-by']) }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.screens.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'delete': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      await client.screens.delete(screenId);
+      return { deleted: true };
+    }
+    case 'update': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      return client.screens.update(screenId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'list-available-fields': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      return client.screens.listAvailableFields(screenId);
+    }
+    case 'list-tabs': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const projectKey = asString(opts['project-key']);
+      return client.screens.listTabs(screenId, projectKey);
+    }
+    case 'create-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const name = requireOpt(opts['name'], '--name');
+      return client.screens.createTab(screenId, { name });
+    }
+    case 'delete-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      await client.screens.deleteTab(screenId, tabId);
+      return { deleted: true };
+    }
+    case 'update-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const name = requireOpt(opts['name'], '--name');
+      return client.screens.updateTab(screenId, tabId, { name });
+    }
+    case 'list-tab-fields': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const projectKey = asString(opts['project-key']);
+      return client.screens.listTabFields(screenId, tabId, {
+        ...(projectKey !== undefined && { projectKey }),
+      });
+    }
+    case 'add-field-to-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const skipFieldAssociation =
+        typeof opts['skip-field-association'] === 'boolean'
+          ? opts['skip-field-association']
+          : undefined;
+      return client.screens.addFieldToTab(screenId, tabId, { fieldId }, skipFieldAssociation);
+    }
+    case 'remove-field-from-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const id = requireArg(cmd.positionalArgs[2], 'id');
+      await client.screens.removeFieldFromTab(screenId, tabId, id);
+      return { deleted: true };
+    }
+    case 'move-field': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const id = requireArg(cmd.positionalArgs[2], 'id');
+      const position = asMoveFieldPosition(opts['position']);
+      const after = asString(opts['after']);
+      await client.screens.moveField(screenId, tabId, id, {
+        ...(position !== undefined && { position }),
+        ...(after !== undefined && { after }),
+      });
+      return { moved: true };
+    }
+    case 'move-tab': {
+      const screenId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'screenId'),
+        'screenId',
+      );
+      const tabId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'tabId'), 'tabId');
+      const posStr = requireArg(cmd.positionalArgs[2], 'pos');
+      const posNum = Number(posStr);
+      if (!Number.isInteger(posNum) || posNum < 0) {
+        throw new Error(`pos must be a non-negative integer, got: ${posStr}`);
+      }
+      await client.screens.moveTab(screenId, tabId, posNum);
+      return { moved: true };
+    }
+    case 'add-to-default': {
+      const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
+      return client.screens.addToDefault(fieldId);
+    }
+    case 'list-all-tabs': {
+      const screenIds = parseCsv(opts['ids']);
+      const tabIds = parseCsv(opts['tab-ids']);
+      return client.screens.listAllTabs({
+        ...(screenIds !== undefined && { screenId: screenIds.map(Number) }),
+        ...(tabIds !== undefined && { tabId: tabIds.map(Number) }),
+        ...(opts['start-at'] !== undefined && {
+          startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        }),
+        ...(opts['max-results'] !== undefined && {
+          maxResult: asPositiveInt(opts['max-results'], '--max-results'),
+        }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown screens action: ${cmd.action}. Actions: ${SCREENS_ACTIONS.join(', ')}`,
       );
   }
 }

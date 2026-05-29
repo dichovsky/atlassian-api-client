@@ -272,6 +272,7 @@ RESOURCES:
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
   config                 list, create, delete, get, update, clone, list-fields, get-field-parameters, list-projects, remove-field-associations, update-field-associations, remove-field-parameters, update-field-parameters, get-projects-with-schemes, associate-projects
+  screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -464,6 +465,26 @@ EXAMPLES:
   atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001],"parameters":{"isRequired":true}}]}'
   atlas jira config get-projects-with-schemes --project-ids 10100,10101
   atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
+  atlas jira screens list --max-results 50
+  atlas jira screens list --ids 10001,10002 --query-string Default
+  atlas jira screens create --name "Default Screen" --description "Main screen"
+  atlas jira screens delete 10001
+  atlas jira screens update 10001 --name "Renamed Screen"
+  atlas jira screens list-available-fields 10001
+  atlas jira screens list-tabs 10001
+  atlas jira screens list-tabs 10001 --project-key PROJ
+  atlas jira screens create-tab 10001 --name "Field Tab"
+  atlas jira screens delete-tab 10001 1
+  atlas jira screens update-tab 10001 1 --name "Renamed Tab"
+  atlas jira screens list-tab-fields 10001 1 --project-key PROJ
+  atlas jira screens add-field-to-tab 10001 1 --field-id summary
+  atlas jira screens add-field-to-tab 10001 1 --field-id summary --skip-field-association
+  atlas jira screens remove-field-from-tab 10001 1 summary
+  atlas jira screens move-field 10001 1 summary --position First
+  atlas jira screens move-field 10001 1 summary --after description
+  atlas jira screens move-tab 10001 1 0
+  atlas jira screens add-to-default summary
+  atlas jira screens list-all-tabs --ids 10001,10002
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001

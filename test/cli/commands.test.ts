@@ -926,6 +926,26 @@ const jiraVersionMock = {
   deleteRelatedWork: vi.fn(),
 };
 
+const jiraScreensMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+  update: vi.fn(),
+  listAvailableFields: vi.fn(),
+  listTabs: vi.fn(),
+  createTab: vi.fn(),
+  deleteTab: vi.fn(),
+  updateTab: vi.fn(),
+  listTabFields: vi.fn(),
+  addFieldToTab: vi.fn(),
+  removeFieldFromTab: vi.fn(),
+  moveField: vi.fn(),
+  moveTab: vi.fn(),
+  addToDefault: vi.fn(),
+  listAllTabs: vi.fn(),
+};
+
 const jiraConfigMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1014,6 +1034,7 @@ vi.mock('../../src/jira/client.js', () => {
       prioritySchemes: jiraPrioritySchemesMock,
       version: jiraVersionMock,
       config: jiraConfigMock,
+      screens: jiraScreensMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -19263,6 +19284,342 @@ describe('executeJiraCommand', () => {
     it('config unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('config', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown config action',
+      );
+    });
+  });
+
+  // ── screens resource (B746-B761) ──────────────────────────────────────────
+
+  describe('screens resource', () => {
+    it('list calls client.screens.list with pagination params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraScreensMock.list.mockResolvedValue(page);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('list forwards ids and queryString', async () => {
+      jiraScreensMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('screens', 'list', [], { ids: '10001,10002', 'query-string': 'Default' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ id: [10001, 10002], queryString: 'Default' }),
+      );
+    });
+
+    it('list forwards scope and order-by', async () => {
+      jiraScreensMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('screens', 'list', [], { scope: 'PROJECT,GLOBAL', 'order-by': 'name' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ scope: ['PROJECT', 'GLOBAL'], orderBy: 'name' }),
+      );
+    });
+
+    it('create calls client.screens.create with name', async () => {
+      const screen = { id: 10001, name: 'Default Screen' };
+      jiraScreensMock.create.mockResolvedValue(screen);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'create', [], { name: 'Default Screen' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.create).toHaveBeenCalledWith({ name: 'Default Screen' });
+      expect(result).toEqual(screen);
+    });
+
+    it('create includes description when provided', async () => {
+      jiraScreensMock.create.mockResolvedValue({ id: 10001 });
+
+      await executeJiraCommand(
+        cmd('screens', 'create', [], { name: 'Default Screen', description: 'A screen' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.create).toHaveBeenCalledWith({
+        name: 'Default Screen',
+        description: 'A screen',
+      });
+    });
+
+    it('delete calls client.screens.delete', async () => {
+      jiraScreensMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('screens', 'delete', ['10001']), GLOBALS);
+
+      expect(jiraScreensMock.delete).toHaveBeenCalledWith(10001);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('update calls client.screens.update with name', async () => {
+      jiraScreensMock.update.mockResolvedValue({ id: 10001, name: 'Renamed' });
+
+      await executeJiraCommand(cmd('screens', 'update', ['10001'], { name: 'Renamed' }), GLOBALS);
+
+      expect(jiraScreensMock.update).toHaveBeenCalledWith(10001, { name: 'Renamed' });
+    });
+
+    it('update throws when no update flags provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('screens', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one');
+    });
+
+    it('update with only description', async () => {
+      jiraScreensMock.update.mockResolvedValue({ id: 10001 });
+
+      await executeJiraCommand(
+        cmd('screens', 'update', ['10001'], { description: 'New desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.update).toHaveBeenCalledWith(10001, { description: 'New desc' });
+    });
+
+    it('list-available-fields calls client.screens.listAvailableFields', async () => {
+      const fields = [{ id: 'summary', name: 'Summary' }];
+      jiraScreensMock.listAvailableFields.mockResolvedValue(fields);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'list-available-fields', ['10001']),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.listAvailableFields).toHaveBeenCalledWith(10001);
+      expect(result).toEqual(fields);
+    });
+
+    it('list-tabs calls client.screens.listTabs', async () => {
+      const tabs = [{ id: 1, name: 'Field Tab' }];
+      jiraScreensMock.listTabs.mockResolvedValue(tabs);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'list-tabs', ['10001'], { 'project-key': 'PROJ' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.listTabs).toHaveBeenCalledWith(10001, 'PROJ');
+      expect(result).toEqual(tabs);
+    });
+
+    it('create-tab calls client.screens.createTab', async () => {
+      const tab = { id: 1, name: 'Field Tab' };
+      jiraScreensMock.createTab.mockResolvedValue(tab);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'create-tab', ['10001'], { name: 'Field Tab' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.createTab).toHaveBeenCalledWith(10001, { name: 'Field Tab' });
+      expect(result).toEqual(tab);
+    });
+
+    it('delete-tab calls client.screens.deleteTab', async () => {
+      jiraScreensMock.deleteTab.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'delete-tab', ['10001', '1']),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.deleteTab).toHaveBeenCalledWith(10001, 1);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('update-tab calls client.screens.updateTab', async () => {
+      const tab = { id: 1, name: 'Renamed Tab' };
+      jiraScreensMock.updateTab.mockResolvedValue(tab);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'update-tab', ['10001', '1'], { name: 'Renamed Tab' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.updateTab).toHaveBeenCalledWith(10001, 1, { name: 'Renamed Tab' });
+      expect(result).toEqual(tab);
+    });
+
+    it('list-tab-fields calls client.screens.listTabFields', async () => {
+      const fields = [{ id: 'summary', name: 'Summary' }];
+      jiraScreensMock.listTabFields.mockResolvedValue(fields);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'list-tab-fields', ['10001', '1'], { 'project-key': 'PROJ' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.listTabFields).toHaveBeenCalledWith(10001, 1, { projectKey: 'PROJ' });
+      expect(result).toEqual(fields);
+    });
+
+    it('add-field-to-tab calls client.screens.addFieldToTab', async () => {
+      const field = { id: 'summary', name: 'Summary' };
+      jiraScreensMock.addFieldToTab.mockResolvedValue(field);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'add-field-to-tab', ['10001', '1'], { 'field-id': 'summary' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.addFieldToTab).toHaveBeenCalledWith(
+        10001,
+        1,
+        { fieldId: 'summary' },
+        undefined,
+      );
+      expect(result).toEqual(field);
+    });
+
+    it('add-field-to-tab with --skip-field-association', async () => {
+      jiraScreensMock.addFieldToTab.mockResolvedValue({ id: 'summary' });
+
+      await executeJiraCommand(
+        cmd('screens', 'add-field-to-tab', ['10001', '1'], {
+          'field-id': 'summary',
+          'skip-field-association': true,
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.addFieldToTab).toHaveBeenCalledWith(
+        10001,
+        1,
+        { fieldId: 'summary' },
+        true,
+      );
+    });
+
+    it('remove-field-from-tab calls client.screens.removeFieldFromTab', async () => {
+      jiraScreensMock.removeFieldFromTab.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'remove-field-from-tab', ['10001', '1', 'summary']),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.removeFieldFromTab).toHaveBeenCalledWith(10001, 1, 'summary');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('move-field calls client.screens.moveField with position', async () => {
+      jiraScreensMock.moveField.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'move-field', ['10001', '1', 'summary'], { position: 'First' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.moveField).toHaveBeenCalledWith(10001, 1, 'summary', {
+        position: 'First',
+      });
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('move-field calls client.screens.moveField with after', async () => {
+      jiraScreensMock.moveField.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('screens', 'move-field', ['10001', '1', 'summary'], { after: 'description' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.moveField).toHaveBeenCalledWith(10001, 1, 'summary', {
+        after: 'description',
+      });
+    });
+
+    it('move-tab calls client.screens.moveTab', async () => {
+      jiraScreensMock.moveTab.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'move-tab', ['10001', '1', '0']),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.moveTab).toHaveBeenCalledWith(10001, 1, 0);
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('add-to-default calls client.screens.addToDefault', async () => {
+      jiraScreensMock.addToDefault.mockResolvedValue({});
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'add-to-default', ['summary']),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.addToDefault).toHaveBeenCalledWith('summary');
+      expect(result).toBeDefined();
+    });
+
+    it('list-all-tabs calls client.screens.listAllTabs', async () => {
+      const tabs = [{ screenId: 10001, tabId: 1, tabName: 'Field Tab' }];
+      jiraScreensMock.listAllTabs.mockResolvedValue(tabs);
+
+      const result = await executeJiraCommand(
+        cmd('screens', 'list-all-tabs', [], { ids: '10001,10002' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.listAllTabs).toHaveBeenCalledWith(
+        expect.objectContaining({ screenId: [10001, 10002] }),
+      );
+      expect(result).toEqual(tabs);
+    });
+
+    it('list-all-tabs forwards tab-ids and pagination', async () => {
+      jiraScreensMock.listAllTabs.mockResolvedValue([]);
+
+      await executeJiraCommand(
+        cmd('screens', 'list-all-tabs', [], {
+          'tab-ids': '1,2',
+          'start-at': '0',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreensMock.listAllTabs).toHaveBeenCalledWith(
+        expect.objectContaining({ tabId: [1, 2], startAt: 0, maxResult: 25 }),
+      );
+    });
+
+    it('move-field throws on invalid position', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('screens', 'move-field', ['10001', '1', 'summary'], { position: 'Invalid' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--position must be one of');
+    });
+
+    it('move-tab throws on invalid pos', async () => {
+      await expect(
+        executeJiraCommand(cmd('screens', 'move-tab', ['10001', '1', 'bad']), GLOBALS),
+      ).rejects.toThrow('pos must be a non-negative integer');
+    });
+
+    it('screens unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('screens', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown screens action',
       );
     });
   });

@@ -1909,3 +1909,51 @@
 - [x] 🔴 🧩 API: B381 Jira: expose PUT /rest/api/3/config/fieldschemes/projects
   - **Impl:** `ConfigResource.associateProjects(body)` returns void (204). Body: `Record<schemeId, {projectIds: number[]}>`. CLI: `atlas jira config associate-projects --body <json>`.
   - **Rat:** Complex map body; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B746 Jira: expose GET /rest/api/3/screens
+  - **Impl:** New `ScreensResource` (`src/jira/resources/screens.ts`). `list(params?)` returns `OffsetPaginatedResponse<Screen>`; `listAll()` async generator via `paginateOffset`. CLI: `atlas jira screens list [--ids] [--query-string] [--scope] [--order-by] [--start-at] [--max-results]`. Part of B746-B761 `screens` resource PR.
+  - **Rat:** Paginated listing with multi-ID filter and search; needed to enumerate screens before managing tabs/fields.
+- [x] 🔴 🧩 API: B747 Jira: expose POST /rest/api/3/screens
+  - **Impl:** `ScreensResource.create(data)` POST with required `name` and optional `description`. CLI: `atlas jira screens create --name <n> [--description <d>]`.
+  - **Rat:** Required `name` in body (spec: ScreenDetails); description optional.
+- [x] 🔴 🧩 API: B748 Jira: expose DELETE /rest/api/3/screens/{screenId}
+  - **Impl:** `ScreensResource.delete(screenId)` returns void (204). CLI: `atlas jira screens delete <screenId>`.
+  - **Rat:** 204 No Content; positional screenId.
+- [x] 🔴 🧩 API: B749 Jira: expose PUT /rest/api/3/screens/{screenId}
+  - **Impl:** `ScreensResource.update(screenId, data)` requires at least one of name/description. CLI: `atlas jira screens update <screenId> [--name] [--description]`.
+  - **Rat:** Both fields optional in spec; CLI guards require at least one.
+- [x] 🔴 🧩 API: B750 Jira: expose GET /rest/api/3/screens/{screenId}/availableFields
+  - **Impl:** `ScreensResource.listAvailableFields(screenId)` returns `ScreenableField[]`. CLI: `atlas jira screens list-available-fields <screenId>`.
+  - **Rat:** Returns array (not page bean); no pagination needed.
+- [x] 🔴 🧩 API: B751 Jira: expose GET /rest/api/3/screens/{screenId}/tabs
+  - **Impl:** `ScreensResource.listTabs(screenId, projectKey?)` returns `ScreenableTab[]`. CLI: `atlas jira screens list-tabs <screenId> [--project-key]`.
+  - **Rat:** Array response (not paginated); optional projectKey query param.
+- [x] 🔴 🧩 API: B752 Jira: expose POST /rest/api/3/screens/{screenId}/tabs
+  - **Impl:** `ScreensResource.createTab(screenId, data)` POST with required `name`. CLI: `atlas jira screens create-tab <screenId> --name <n>`.
+  - **Rat:** Body schema ScreenableTab; only name required.
+- [x] 🔴 🧩 API: B753 Jira: expose DELETE /rest/api/3/screens/{screenId}/tabs/{tabId}
+  - **Impl:** `ScreensResource.deleteTab(screenId, tabId)` returns void (204). CLI: `atlas jira screens delete-tab <screenId> <tabId>`.
+  - **Rat:** Two positional path params; 204 void.
+- [x] 🔴 🧩 API: B754 Jira: expose PUT /rest/api/3/screens/{screenId}/tabs/{tabId}
+  - **Impl:** `ScreensResource.updateTab(screenId, tabId, data)` with required `name`. CLI: `atlas jira screens update-tab <screenId> <tabId> --name <n>`.
+  - **Rat:** Rename only; name is required by spec (ScreenableTab body).
+- [x] 🔴 🧩 API: B755 Jira: expose GET /rest/api/3/screens/{screenId}/tabs/{tabId}/fields
+  - **Impl:** `ScreensResource.listTabFields(screenId, tabId, params?)` returns `ScreenableField[]`. CLI: `atlas jira screens list-tab-fields <screenId> <tabId> [--project-key]`.
+  - **Rat:** Array response; optional projectKey query param.
+- [x] 🔴 🧩 API: B756 Jira: expose POST /rest/api/3/screens/{screenId}/tabs/{tabId}/fields
+  - **Impl:** `ScreensResource.addFieldToTab(screenId, tabId, data, skipFieldAssociation?)` POST with required `fieldId`. CLI: `atlas jira screens add-field-to-tab <screenId> <tabId> --field-id <fid> [--skip-field-association]`.
+  - **Rat:** Body: AddFieldBean (fieldId required); query: skipFieldAssociation boolean.
+- [x] 🔴 🧩 API: B757 Jira: expose DELETE /rest/api/3/screens/{screenId}/tabs/{tabId}/fields/{id}
+  - **Impl:** `ScreensResource.removeFieldFromTab(screenId, tabId, id)` returns void (204). CLI: `atlas jira screens remove-field-from-tab <screenId> <tabId> <id>`.
+  - **Rat:** Three positional path params; 204 void.
+- [x] 🔴 🧩 API: B758 Jira: expose POST /rest/api/3/screens/{screenId}/tabs/{tabId}/fields/{id}/move
+  - **Impl:** `ScreensResource.moveField(screenId, tabId, id, data)` returns void (204). Body: MoveFieldBean (after?, position?: Earlier|Later|First|Last). CLI: `atlas jira screens move-field <screenId> <tabId> <id> [--after] [--position]`.
+  - **Rat:** All body fields optional; position enum validated via guard function.
+- [x] 🔴 🧩 API: B759 Jira: expose POST /rest/api/3/screens/{screenId}/tabs/{tabId}/move/{pos}
+  - **Impl:** `ScreensResource.moveTab(screenId, tabId, pos)` returns void (204). CLI: `atlas jira screens move-tab <screenId> <tabId> <pos>`.
+  - **Rat:** pos is 0-indexed position (non-negative int); three positional params.
+- [x] 🔴 🧩 API: B760 Jira: expose POST /rest/api/3/screens/addToDefault/{fieldId}
+  - **Impl:** `ScreensResource.addToDefault(fieldId)` returns unknown (spec 200 with empty schema). CLI: `atlas jira screens add-to-default <fieldId>`.
+  - **Rat:** Returns 200 with empty schema body; typed as unknown.
+- [x] 🔴 🧩 API: B761 Jira: expose GET /rest/api/3/screens/tabs
+  - **Impl:** `ScreensResource.listAllTabs(params?)` returns `ScreenTabRef[]`. CLI: `atlas jira screens list-all-tabs [--ids] [--tab-ids] [--start-at] [--max-results]`.
+  - **Rat:** Response is an example-only schema (no typed $ref); inferred from example: {screenId, tabId, tabName}. Query param is `maxResult` (not `maxResults`) per spec.
