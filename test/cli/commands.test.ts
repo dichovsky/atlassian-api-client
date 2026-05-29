@@ -926,6 +926,28 @@ const jiraVersionMock = {
   deleteRelatedWork: vi.fn(),
 };
 
+const jiraConfigMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  clone: vi.fn(),
+  listFields: vi.fn(),
+  listFieldsAll: vi.fn(),
+  getFieldParameters: vi.fn(),
+  listProjects: vi.fn(),
+  listProjectsAll: vi.fn(),
+  removeFieldAssociations: vi.fn(),
+  updateFieldAssociations: vi.fn(),
+  removeFieldParameters: vi.fn(),
+  updateFieldParameters: vi.fn(),
+  getProjectsWithSchemes: vi.fn(),
+  getProjectsWithSchemesAll: vi.fn(),
+  associateProjects: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -991,6 +1013,7 @@ vi.mock('../../src/jira/client.js', () => {
       notificationSchemes: jiraNotificationSchemesMock,
       prioritySchemes: jiraPrioritySchemesMock,
       version: jiraVersionMock,
+      config: jiraConfigMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -18969,6 +18992,277 @@ describe('executeJiraCommand', () => {
     it('version unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('version', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown version action',
+      );
+    });
+  });
+
+  // ── config (B367-B381) ─────────────────────────────────────────────────────
+
+  describe('config resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('config list calls client.config.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraConfigMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('config', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('config list forwards project-ids and query', async () => {
+      jiraConfigMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('config', 'list', [], { 'project-ids': '10100,10101', query: 'My Scheme' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: [10100, 10101], query: 'My Scheme' }),
+      );
+    });
+
+    it('config create calls client.config.create with name', async () => {
+      const created = { id: 10001, name: 'My Scheme' };
+      jiraConfigMock.create.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('config', 'create', [], { name: 'My Scheme' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.create).toHaveBeenCalledWith({ name: 'My Scheme' });
+      expect(result).toEqual(created);
+    });
+
+    it('config create includes description when provided', async () => {
+      jiraConfigMock.create.mockResolvedValue({ id: 10001 });
+      await executeJiraCommand(
+        cmd('config', 'create', [], { name: 'My Scheme', description: 'A desc' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.create).toHaveBeenCalledWith({
+        name: 'My Scheme',
+        description: 'A desc',
+      });
+    });
+
+    it('config create throws when --name missing', async () => {
+      await expect(executeJiraCommand(cmd('config', 'create', [], {}), GLOBALS)).rejects.toThrow(
+        'Missing required option: --name',
+      );
+    });
+
+    it('config get calls client.config.get', async () => {
+      const scheme = { id: 10001, name: 'My Scheme' };
+      jiraConfigMock.get.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(cmd('config', 'get', ['10001'], {}), GLOBALS);
+      expect(jiraConfigMock.get).toHaveBeenCalledWith(10001);
+      expect(result).toEqual(scheme);
+    });
+
+    it('config delete calls client.config.delete', async () => {
+      const deleted = { deleted: true, id: '10001' };
+      jiraConfigMock.delete.mockResolvedValue(deleted);
+      const result = await executeJiraCommand(cmd('config', 'delete', ['10001'], {}), GLOBALS);
+      expect(jiraConfigMock.delete).toHaveBeenCalledWith(10001);
+      expect(result).toEqual(deleted);
+    });
+
+    it('config update calls client.config.update', async () => {
+      const updated = { id: 10001, name: 'Renamed' };
+      jiraConfigMock.update.mockResolvedValue(updated);
+      const result = await executeJiraCommand(
+        cmd('config', 'update', ['10001'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.update).toHaveBeenCalledWith(10001, { name: 'Renamed' });
+      expect(result).toEqual(updated);
+    });
+
+    it('config update includes description when provided', async () => {
+      jiraConfigMock.update.mockResolvedValue({ id: 10001 });
+      await executeJiraCommand(
+        cmd('config', 'update', ['10001'], { description: 'Updated desc' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.update).toHaveBeenCalledWith(10001, { description: 'Updated desc' });
+    });
+
+    it('config update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('config', 'update', ['10001'], {}), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('config clone calls client.config.clone', async () => {
+      const created = { id: 10002, name: 'Clone' };
+      jiraConfigMock.clone.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('config', 'clone', ['10001'], { name: 'Clone' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.clone).toHaveBeenCalledWith(10001, { name: 'Clone' });
+      expect(result).toEqual(created);
+    });
+
+    it('config clone includes description when provided', async () => {
+      jiraConfigMock.clone.mockResolvedValue({ id: 10002 });
+      await executeJiraCommand(
+        cmd('config', 'clone', ['10001'], { name: 'Clone', description: 'A clone' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.clone).toHaveBeenCalledWith(10001, {
+        name: 'Clone',
+        description: 'A clone',
+      });
+    });
+
+    it('config list-fields calls client.config.listFields', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraConfigMock.listFields.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('config', 'list-fields', ['10001'], { 'start-at': '0', 'max-results': '25' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.listFields).toHaveBeenCalledWith(
+        10001,
+        expect.objectContaining({ startAt: 0, maxResults: 25 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('config list-fields forwards field-id filter', async () => {
+      jiraConfigMock.listFields.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('config', 'list-fields', ['10001'], {
+          'field-id': 'customfield_10001,customfield_10002',
+        }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.listFields).toHaveBeenCalledWith(
+        10001,
+        expect.objectContaining({ fieldId: ['customfield_10001', 'customfield_10002'] }),
+      );
+    });
+
+    it('config get-field-parameters calls client.config.getFieldParameters', async () => {
+      const params = { fieldId: 'customfield_10001', parameters: { isRequired: true } };
+      jiraConfigMock.getFieldParameters.mockResolvedValue(params);
+      const result = await executeJiraCommand(
+        cmd('config', 'get-field-parameters', ['10001', 'customfield_10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.getFieldParameters).toHaveBeenCalledWith(10001, 'customfield_10001');
+      expect(result).toEqual(params);
+    });
+
+    it('config list-projects calls client.config.listProjects', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraConfigMock.listProjects.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('config', 'list-projects', ['10001'], { 'project-ids': '10100,10101' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.listProjects).toHaveBeenCalledWith(
+        10001,
+        expect.objectContaining({ projectId: [10100, 10101] }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('config remove-field-associations calls client.config.removeFieldAssociations', async () => {
+      jiraConfigMock.removeFieldAssociations.mockResolvedValue(undefined);
+      const body = JSON.stringify({ customfield_10001: { schemeIds: [10001] } });
+      const result = await executeJiraCommand(
+        cmd('config', 'remove-field-associations', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.removeFieldAssociations).toHaveBeenCalledWith({
+        customfield_10001: { schemeIds: [10001] },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('config update-field-associations calls client.config.updateFieldAssociations', async () => {
+      jiraConfigMock.updateFieldAssociations.mockResolvedValue(undefined);
+      const body = JSON.stringify({ customfield_10001: [{ schemeIds: [10001] }] });
+      const result = await executeJiraCommand(
+        cmd('config', 'update-field-associations', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.updateFieldAssociations).toHaveBeenCalledWith({
+        customfield_10001: [{ schemeIds: [10001] }],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('config remove-field-parameters calls client.config.removeFieldParameters', async () => {
+      jiraConfigMock.removeFieldParameters.mockResolvedValue(undefined);
+      const body = JSON.stringify({ customfield_10001: [{ schemeId: 10001 }] });
+      const result = await executeJiraCommand(
+        cmd('config', 'remove-field-parameters', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.removeFieldParameters).toHaveBeenCalledWith({
+        customfield_10001: [{ schemeId: 10001 }],
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('config update-field-parameters calls client.config.updateFieldParameters', async () => {
+      jiraConfigMock.updateFieldParameters.mockResolvedValue(undefined);
+      const body = JSON.stringify({
+        customfield_10001: [{ schemeIds: [10001], parameters: { isRequired: true } }],
+      });
+      const result = await executeJiraCommand(
+        cmd('config', 'update-field-parameters', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.updateFieldParameters).toHaveBeenCalledWith({
+        customfield_10001: [{ schemeIds: [10001], parameters: { isRequired: true } }],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('config get-projects-with-schemes calls client.config.getProjectsWithSchemes', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraConfigMock.getProjectsWithSchemes.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('config', 'get-projects-with-schemes', [], { 'project-ids': '10100,10101' }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.getProjectsWithSchemes).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: [10100, 10101] }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('config get-projects-with-schemes throws when --project-ids missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('config', 'get-projects-with-schemes', [], {}), GLOBALS),
+      ).rejects.toThrow('get-projects-with-schemes requires --project-ids');
+    });
+
+    it('config associate-projects calls client.config.associateProjects', async () => {
+      jiraConfigMock.associateProjects.mockResolvedValue(undefined);
+      const body = JSON.stringify({ '10001': { projectIds: [10100, 10101] } });
+      const result = await executeJiraCommand(
+        cmd('config', 'associate-projects', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraConfigMock.associateProjects).toHaveBeenCalledWith({
+        '10001': { projectIds: [10100, 10101] },
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('config unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('config', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown config action',
       );
     });
   });

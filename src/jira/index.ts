@@ -554,3 +554,33 @@ export type {
   DeleteVersionParams,
 } from './resources/version.js';
 export { VersionResource } from './resources/version.js';
+
+export type {
+  FieldAssociationSchemeLinks,
+  FieldAssociationSchemeMatchedFilters,
+  FieldAssociationSchemeResponse,
+  FieldAssociationSchemeById,
+  CreatedFieldAssociationScheme,
+  UpdatedFieldAssociationScheme,
+  DeletedFieldAssociationScheme,
+  FieldAssociationParameters,
+  WorkTypeParameters,
+  FieldAssociationSchemeItemParameters,
+  FieldAssociationSchemeFieldResult,
+  FieldAssociationSchemeProjectResult,
+  ProjectFieldSchemeMapping,
+  CreateFieldAssociationSchemeData,
+  UpdateFieldAssociationSchemeData,
+  RemoveFieldAssociationsBody,
+  UpdateFieldAssociationsBody,
+  ParameterRemovalDetails,
+  RemoveFieldParametersBody,
+  FieldSchemeParametersUpdate,
+  UpdateFieldParametersBody,
+  AssociateProjectsBody,
+  ListFieldAssociationSchemesParams,
+  ListSchemeFieldsParams,
+  ListSchemeProjectsParams,
+  GetProjectsWithFieldSchemesParams,
+} from './resources/config.js';
+export { ConfigResource } from './resources/config.js';

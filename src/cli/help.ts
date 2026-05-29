@@ -271,6 +271,7 @@ RESOURCES:
   fieldconfiguration     list, create, delete, update, list-fields, update-fields
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
+  config                 list, create, delete, get, update, clone, list-fields, get-field-parameters, list-projects, remove-field-associations, update-field-associations, remove-field-parameters, update-field-parameters, get-projects-with-schemes, associate-projects
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -446,6 +447,23 @@ EXAMPLES:
   atlas jira priority-schemes list-projects 10000 --project-ids 10100,10101 --query example
   atlas jira priority-schemes suggested-mappings --scheme-id 10000 --priorities '{"add":[10003],"remove":[10004]}' --projects '{"add":[10100]}'
   atlas jira priority-schemes available-priorities --scheme-id 10000 --query high --exclude 10005,10006
+  atlas jira config list --start-at 0 --max-results 50
+  atlas jira config list --project-ids 10100,10101 --query "My Scheme"
+  atlas jira config create --name "My Field Scheme" --description "Description"
+  atlas jira config get 10001
+  atlas jira config update 10001 --name "Renamed Scheme" --description "Updated"
+  atlas jira config delete 10001
+  atlas jira config clone 10001 --name "Clone of My Scheme"
+  atlas jira config list-fields 10001 --start-at 0 --max-results 50
+  atlas jira config list-fields 10001 --field-id customfield_10001,customfield_10002
+  atlas jira config get-field-parameters 10001 customfield_10001
+  atlas jira config list-projects 10001 --project-ids 10100,10101
+  atlas jira config remove-field-associations --body '{"customfield_10001":{"schemeIds":[10001,10002]}}'
+  atlas jira config update-field-associations --body '{"customfield_10001":[{"schemeIds":[10001],"restrictedToWorkTypes":[1,2]}]}'
+  atlas jira config remove-field-parameters --body '{"customfield_10001":[{"schemeId":10001,"parameters":["description"],"workTypeIds":[1]}]}'
+  atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001],"parameters":{"isRequired":true}}]}'
+  atlas jira config get-projects-with-schemes --project-ids 10100,10101
+  atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001

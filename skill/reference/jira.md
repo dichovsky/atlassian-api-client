@@ -65,6 +65,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -126,6 +127,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `fieldconfiguration`     | `list`, `create`, `delete`, `update`, `list-fields`, `update-fields`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `issue-type-schemes`
 
@@ -2647,7 +2649,7 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 - `--move-fix-issues-to` and `--move-affected-issues-to` take a version ID as a string on `delete`, or as an integer on `delete-and-replace`.
 - `--position` for `move` accepts `First`, `Last`, `Earlier`, or `Later`.
 
-```sh
+````sh
 # Create a version
 atlas jira version create --name "v1.0" --project PROJ --release-date 2026-06-01
 
@@ -2686,4 +2688,66 @@ atlas jira version unresolved-issue-count 10000
 
 # Delete a single related work entry
 atlas jira version delete-related-work 10000 rw-abc
-```
+## `config`
+
+Config field association scheme management (B367–B381). Covers the `/rest/api/3/config/fieldschemes` surface: paginated listing, CRUD, clone, per-scheme field associations, per-field parameter overrides, and project association management.
+
+**Note:** This resource is distinct from `fieldconfiguration` (`/rest/api/3/fieldconfiguration`) and `fieldconfigurationscheme` (`/rest/api/3/fieldconfigurationscheme`). It implements the newer field _association_ scheme API under `/rest/api/3/config/fieldschemes`.
+
+**Paginated endpoints** (support `--start-at`, `--max-results`):
+
+- `list` — GET /config/fieldschemes
+- `list-fields` — GET /config/fieldschemes/{id}/fields
+- `list-projects` — GET /config/fieldschemes/{id}/projects
+- `get-projects-with-schemes` — GET /config/fieldschemes/projects (requires `--project-ids`)
+
+**Body endpoints** (supply full JSON via `--body`):
+
+- `remove-field-associations` — DELETE /config/fieldschemes/fields: `Record<fieldId, {schemeIds: number[]}>`
+- `update-field-associations` — PUT /config/fieldschemes/fields: `Record<fieldId, [{schemeIds: number[], restrictedToWorkTypes?: number[]}]>`
+- `remove-field-parameters` — DELETE /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeId?, workTypeIds?, parameters?}]>`
+- `update-field-parameters` — PUT /config/fieldschemes/fields/parameters: `Record<fieldId, [{schemeIds?, parameters?, workTypeParameters?}]>`
+- `associate-projects` — PUT /config/fieldschemes/projects: `Record<schemeId, {projectIds: number[]}>`
+
+```sh
+# List all schemes (paginated)
+atlas jira config list --start-at 0 --max-results 50
+atlas jira config list --project-ids 10100,10101 --query "My Scheme"
+
+# CRUD
+atlas jira config create --name "My Field Scheme" --description "Description"
+atlas jira config get 10001
+atlas jira config update 10001 --name "Renamed Scheme" --description "Updated"
+atlas jira config delete 10001
+
+# Clone a scheme
+atlas jira config clone 10001 --name "Clone of My Scheme"
+
+# List fields in a scheme (paginated)
+atlas jira config list-fields 10001 --start-at 0 --max-results 50
+atlas jira config list-fields 10001 --field-id customfield_10001,customfield_10002
+
+# Get parameter overrides for a specific field in a scheme
+atlas jira config get-field-parameters 10001 customfield_10001
+
+# List projects associated with a scheme
+atlas jira config list-projects 10001 --project-ids 10100,10101
+
+# Remove fields from schemes (body: fieldId → schemeIds map)
+atlas jira config remove-field-associations --body '{"customfield_10001":{"schemeIds":[10001,10002]}}'
+
+# Update field→scheme associations (body: fieldId → [{schemeIds, restrictedToWorkTypes?}])
+atlas jira config update-field-associations --body '{"customfield_10001":[{"schemeIds":[10001],"restrictedToWorkTypes":[1,2]}]}'
+
+# Remove per-field parameters from schemes
+atlas jira config remove-field-parameters --body '{"customfield_10001":[{"schemeId":10001,"parameters":["description"],"workTypeIds":[1]}]}'
+
+# Update per-field parameter overrides
+atlas jira config update-field-parameters --body '{"customfield_10001":[{"schemeIds":[10001],"parameters":{"isRequired":true}}]}'
+
+# Get project→scheme mappings for given projects (projectId required)
+atlas jira config get-projects-with-schemes --project-ids 10100,10101
+
+# Associate projects to a scheme (body: schemeId → {projectIds} map)
+atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
+````

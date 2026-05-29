@@ -138,6 +138,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   fieldconfiguration: 'executeFieldConfiguration',
   'priority-schemes': 'executePrioritySchemeResource',
   version: 'executeVersionResource',
+  config: 'executeConfig',
 };
 
 /**

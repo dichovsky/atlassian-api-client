@@ -1864,3 +1864,48 @@
 - [x] 🔴 🧩 API: B933 Jira: expose DELETE /rest/api/3/version/{id}
   - **Impl:** `VersionResource.delete(id, params?)` issues `DELETE /rest/api/3/version/{id}`. Query params: `moveFixIssuesTo`, `moveAffectedIssuesTo` (version URLs). Returns void (204). CLI: `atlas jira version delete <id>`.
   - **Rat:** Delete a project version with optional issue migration to another version.
+- [x] 🔴 🧩 API: B367 Jira: expose GET /rest/api/3/config/fieldschemes
+  - **Impl:** New `ConfigResource` (`src/jira/resources/config.ts`). `list(params?)` returns `OffsetPaginatedResponse<FieldAssociationSchemeResponse>`; `listAll()` async generator via `paginateOffset`. CLI: `atlas jira config list [--start-at] [--max-results] [--project-ids] [--query]`. Part of B367-B381 `config` resource PR.
+  - **Rat:** Covers the `/rest/api/3/config/fieldschemes` namespace; distinct from `/fieldconfigurationscheme`.
+- [x] 🔴 🧩 API: B368 Jira: expose POST /rest/api/3/config/fieldschemes
+  - **Impl:** `ConfigResource.create(data)` returns `CreatedFieldAssociationScheme`. Body: `{ name* string, description? string }`. CLI: `atlas jira config create --name <name> [--description]`.
+  - **Rat:** Standard CRUD extension.
+- [x] 🔴 🧩 API: B369 Jira: expose DELETE /rest/api/3/config/fieldschemes/{id}
+  - **Impl:** `ConfigResource.delete(id: number)` returns `DeletedFieldAssociationScheme` (200 with body). CLI: `atlas jira config delete <id>`.
+  - **Rat:** DELETE returns `{ deleted, id }` body per spec (not 204 void).
+- [x] 🔴 🧩 API: B370 Jira: expose GET /rest/api/3/config/fieldschemes/{id}
+  - **Impl:** `ConfigResource.get(id: number)` returns `FieldAssociationSchemeById`. CLI: `atlas jira config get <id>`.
+  - **Rat:** Standard CRUD extension.
+- [x] 🔴 🧩 API: B371 Jira: expose PUT /rest/api/3/config/fieldschemes/{id}
+  - **Impl:** `ConfigResource.update(id, data)` returns `UpdatedFieldAssociationScheme`. Body: `{ name?, description? }`. Update requires at least one field. CLI: `atlas jira config update <id> [--name] [--description]`.
+  - **Rat:** Standard CRUD extension.
+- [x] 🔴 🧩 API: B372 Jira: expose POST /rest/api/3/config/fieldschemes/{id}/clone
+  - **Impl:** `ConfigResource.clone(id, data)` returns `CreatedFieldAssociationScheme`. Same body shape as create. CLI: `atlas jira config clone <id> --name <cloneName> [--description]`.
+  - **Rat:** Standard clone pattern using CreateFieldAssociationSchemeRequest body per spec.
+- [x] 🔴 🧩 API: B373 Jira: expose GET /rest/api/3/config/fieldschemes/{id}/fields
+  - **Impl:** `ConfigResource.listFields(id, params?)` + `listFieldsAll()` async generator. CLI: `atlas jira config list-fields <id> [--start-at] [--max-results] [--field-id]`.
+  - **Rat:** Paginated sub-resource with field-id filter.
+- [x] 🔴 🧩 API: B374 Jira: expose GET /rest/api/3/config/fieldschemes/{id}/fields/{fieldId}/parameters
+  - **Impl:** `ConfigResource.getFieldParameters(id, fieldId)` returns `FieldAssociationSchemeItemParameters`. CLI: `atlas jira config get-field-parameters <id> <fieldId>`.
+  - **Rat:** Both id and fieldId are path params (positional args per HARD rule).
+- [x] 🔴 🧩 API: B375 Jira: expose GET /rest/api/3/config/fieldschemes/{id}/projects
+  - **Impl:** `ConfigResource.listProjects(id, params?)` + `listProjectsAll()` async generator. CLI: `atlas jira config list-projects <id> [--start-at] [--max-results] [--project-ids]`.
+  - **Rat:** Paginated sub-resource with project-id filter.
+- [x] 🔴 🧩 API: B376 Jira: expose DELETE /rest/api/3/config/fieldschemes/fields
+  - **Impl:** `ConfigResource.removeFieldAssociations(body)` returns void (204). Body: `Record<fieldId, {schemeIds: number[]}>`. CLI: `atlas jira config remove-field-associations --body <json>`.
+  - **Rat:** Spec body is additionalProperties map (not a simple list); CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B377 Jira: expose PUT /rest/api/3/config/fieldschemes/fields
+  - **Impl:** `ConfigResource.updateFieldAssociations(body)` returns void (204). Body: `Record<fieldId, [{schemeIds, restrictedToWorkTypes?}]>`. CLI: `atlas jira config update-field-associations --body <json>`.
+  - **Rat:** Spec body is additionalProperties map with array values; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B378 Jira: expose DELETE /rest/api/3/config/fieldschemes/fields/parameters
+  - **Impl:** `ConfigResource.removeFieldParameters(body)` returns void (204). Body: `Record<fieldId, [ParameterRemovalDetails]>`. CLI: `atlas jira config remove-field-parameters --body <json>`.
+  - **Rat:** Complex map body; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B379 Jira: expose PUT /rest/api/3/config/fieldschemes/fields/parameters
+  - **Impl:** `ConfigResource.updateFieldParameters(body)` returns void (204). Body: `Record<fieldId, [FieldSchemeParametersUpdate]>`. CLI: `atlas jira config update-field-parameters --body <json>`.
+  - **Rat:** Complex map body; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B380 Jira: expose GET /rest/api/3/config/fieldschemes/projects
+  - **Impl:** `ConfigResource.getProjectsWithSchemes(params)` + `getProjectsWithSchemesAll()` async generator. `projectId` required per spec. CLI: `atlas jira config get-projects-with-schemes --project-ids <csv>`.
+  - **Rat:** projectId query param is required by spec; error thrown when omitted.
+- [x] 🔴 🧩 API: B381 Jira: expose PUT /rest/api/3/config/fieldschemes/projects
+  - **Impl:** `ConfigResource.associateProjects(body)` returns void (204). Body: `Record<schemeId, {projectIds: number[]}>`. CLI: `atlas jira config associate-projects --body <json>`.
+  - **Rat:** Complex map body; CLI accepts raw JSON via --body.

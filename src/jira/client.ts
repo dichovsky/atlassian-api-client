@@ -68,6 +68,7 @@ import { FieldConfigurationResource } from './resources/fieldconfiguration.js';
 import { NotificationSchemeResource } from './resources/notificationscheme.js';
 import { PrioritySchemeResource } from './resources/priorityscheme.js';
 import { VersionResource } from './resources/version.js';
+import { ConfigResource } from './resources/config.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -202,6 +203,8 @@ export class JiraClient {
   readonly prioritySchemes: PrioritySchemeResource;
   /** Jira project version resource (B820-B831, B933). */
   readonly version: VersionResource;
+  /** Jira config field association schemes resource (B367-B381). */
+  readonly config: ConfigResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -296,5 +299,6 @@ export class JiraClient {
     this.notificationSchemes = new NotificationSchemeResource(transport, baseUrl);
     this.prioritySchemes = new PrioritySchemeResource(transport, baseUrl);
     this.version = new VersionResource(transport, baseUrl);
+    this.config = new ConfigResource(transport, baseUrl);
   }
 }

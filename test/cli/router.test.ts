@@ -328,4 +328,66 @@ describe('parseCommand', () => {
     expect(result.options['category']).toBe('Design');
     expect(result.options['issue-id']).toBe('20001');
   });
+
+  it('parses jira config list with --project-ids and --query', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'config',
+      'list',
+      '--project-ids',
+      '10100,10101',
+      '--query',
+      'My Scheme',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('config');
+    expect(result.action).toBe('list');
+    expect(result.options['project-ids']).toBe('10100,10101');
+    expect(result.options['query']).toBe('My Scheme');
+  });
+
+  it('parses jira config list-fields with --field-id', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'config',
+      'list-fields',
+      '10001',
+      '--field-id',
+      'customfield_10001,customfield_10002',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('config');
+    expect(result.action).toBe('list-fields');
+    expect(result.positionalArgs).toEqual(['10001']);
+    expect(result.options['field-id']).toBe('customfield_10001,customfield_10002');
+  });
+
+  it('parses jira config get-field-parameters with positional args', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'config',
+      'get-field-parameters',
+      '10001',
+      'customfield_10001',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('config');
+    expect(result.action).toBe('get-field-parameters');
+    expect(result.positionalArgs).toEqual(['10001', 'customfield_10001']);
+  });
+
+  it('parses jira config associate-projects with --body', () => {
+    const bodyJson = JSON.stringify({ '10001': { projectIds: [10100] } });
+    const argv = ['node', 'atlas', 'jira', 'config', 'associate-projects', '--body', bodyJson];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('config');
+    expect(result.action).toBe('associate-projects');
+    expect(result.options['body']).toBe(bodyJson);
+  });
 });
