@@ -86,6 +86,17 @@ describe('Reference content sanity checks', () => {
     expect(PAYLOAD_RULES_REF).toContain('Use strict filters');
     expect(PAYLOAD_RULES_REF).toContain('YAML');
   });
+
+  it('documents the workflowscheme live API (B855-B886)', () => {
+    expect(JIRA_REF).toContain('## `workflowscheme`');
+    expect(JIRA_REF).toContain('B855');
+    expect(JIRA_REF).toContain('B886');
+    expect(JIRA_REF).toContain('### Schemes (CRUD)');
+    expect(JIRA_REF).toContain('### Default workflow');
+    expect(JIRA_REF).toContain('### Issue-type mappings');
+    expect(JIRA_REF).toContain('### Workflow mappings');
+    expect(JIRA_REF).toContain('### Project usages and associations');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {
@@ -201,6 +212,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'issuesecurityschemes',
           'screens',
           'plans',
+          'workflowscheme',
         ]).toContain(parsed.resource);
       }
     });
@@ -321,6 +333,7 @@ describe('Resource coverage drift check', () => {
     'issuesecurityschemes',
     'screens',
     'plans',
+    'workflowscheme',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

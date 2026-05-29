@@ -72,6 +72,7 @@ import { ConfigResource } from './resources/config.js';
 import { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
 import { ScreensResource } from './resources/screens.js';
 import { PlansResource } from './resources/plans.js';
+import { WorkflowSchemeResource } from './resources/workflowscheme.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -214,6 +215,8 @@ export class JiraClient {
   readonly screens: ScreensResource;
   /** Jira Advanced Roadmaps plans resource (B625-B640). */
   readonly plans: PlansResource;
+  /** Jira workflow scheme resource — live endpoints (B855-B886, draft+bulk in sibling PR). */
+  readonly workflowScheme: WorkflowSchemeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -312,5 +315,6 @@ export class JiraClient {
     this.issueSecuritySchemes = new IssueSecuritySchemesResource(transport, baseUrl);
     this.screens = new ScreensResource(transport, baseUrl);
     this.plans = new PlansResource(transport, baseUrl);
+    this.workflowScheme = new WorkflowSchemeResource(transport, baseUrl);
   }
 }

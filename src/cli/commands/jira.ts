@@ -170,6 +170,8 @@ export async function executeJiraCommand(
       return executeScreens(client, cmd);
     case 'plans':
       return executePlans(client, cmd);
+    case 'workflowscheme':
+      return executeWorkflowScheme(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -5578,5 +5580,192 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     default:
       throw new Error(`Unknown plans action: ${cmd.action}. Actions: ${PLANS_ACTIONS.join(', ')}`);
+  }
+}
+
+// ─── workflowscheme (B855-B886 live) ───────────────────────────────────────
+
+const WORKFLOWSCHEME_ACTIONS = [
+  'list',
+  'create',
+  'delete',
+  'get',
+  'update',
+  'delete-default',
+  'get-default',
+  'set-default',
+  'delete-issuetype',
+  'get-issuetype',
+  'set-issuetype',
+  'delete-workflow',
+  'get-workflow',
+  'set-workflow',
+  'project-usages',
+  'list-by-project',
+  'assign-project',
+  'switch-project',
+] as const;
+
+async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]> {
+  const out: unknown[] = [];
+  for await (const item of iter) out.push(item);
+  return out;
+}
+
+async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      if (opts['all'] === true) {
+        return drainWorkflowSchemes(
+          client.workflowScheme.listAll({
+            ...(maxResults !== undefined && { maxResults }),
+          }),
+        );
+      }
+      return client.workflowScheme.list({
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'create': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.create(
+        body as unknown as Parameters<typeof client.workflowScheme.create>[0],
+      );
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      await client.workflowScheme.delete(id);
+      return { deleted: true };
+    }
+    case 'get': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const returnDraftIfExists = asBoolFlag(opts['return-draft-if-exists']);
+      return client.workflowScheme.get(id, {
+        ...(returnDraftIfExists !== undefined && { returnDraftIfExists }),
+      });
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.update(
+        id,
+        body as Parameters<typeof client.workflowScheme.update>[1],
+      );
+    }
+    case 'delete-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const updateDraftIfNeeded = asBoolFlag(opts['update-draft-if-needed']);
+      return client.workflowScheme.deleteDefault(id, {
+        ...(updateDraftIfNeeded !== undefined && { updateDraftIfNeeded }),
+      });
+    }
+    case 'get-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const returnDraftIfExists = asBoolFlag(opts['return-draft-if-exists']);
+      return client.workflowScheme.getDefault(id, {
+        ...(returnDraftIfExists !== undefined && { returnDraftIfExists }),
+      });
+    }
+    case 'set-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setDefault(
+        id,
+        body as unknown as Parameters<typeof client.workflowScheme.setDefault>[1],
+      );
+    }
+    case 'delete-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      const updateDraftIfNeeded = asBoolFlag(opts['update-draft-if-needed']);
+      return client.workflowScheme.deleteIssueTypeMapping(id, issueType, {
+        ...(updateDraftIfNeeded !== undefined && { updateDraftIfNeeded }),
+      });
+    }
+    case 'get-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      const returnDraftIfExists = asBoolFlag(opts['return-draft-if-exists']);
+      return client.workflowScheme.getIssueTypeMapping(id, issueType, {
+        ...(returnDraftIfExists !== undefined && { returnDraftIfExists }),
+      });
+    }
+    case 'set-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setIssueTypeMapping(
+        id,
+        issueType,
+        body as Parameters<typeof client.workflowScheme.setIssueTypeMapping>[2],
+      );
+    }
+    case 'delete-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const updateDraftIfNeeded = asBoolFlag(opts['update-draft-if-needed']);
+      await client.workflowScheme.deleteWorkflowMapping(id, {
+        workflowName,
+        ...(updateDraftIfNeeded !== undefined && { updateDraftIfNeeded }),
+      });
+      return { deleted: true };
+    }
+    case 'get-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = asString(opts['workflow-name']);
+      const returnDraftIfExists = asBoolFlag(opts['return-draft-if-exists']);
+      return client.workflowScheme.getWorkflowMapping(id, {
+        ...(workflowName !== undefined && { workflowName }),
+        ...(returnDraftIfExists !== undefined && { returnDraftIfExists }),
+      });
+    }
+    case 'set-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setWorkflowMapping(
+        id,
+        workflowName,
+        body as Parameters<typeof client.workflowScheme.setWorkflowMapping>[2],
+      );
+    }
+    case 'project-usages': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'workflowSchemeId');
+      const nextPageToken = asString(opts['next-page-token']);
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      return client.workflowScheme.getProjectUsages(schemeId, {
+        ...(nextPageToken !== undefined && { nextPageToken }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'list-by-project': {
+      const projectIds = parseCsv(opts['project-id']);
+      if (projectIds === undefined || projectIds.length === 0) {
+        throw new Error('Missing required option: --project-id');
+      }
+      return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
+    }
+    case 'assign-project': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      await client.workflowScheme.assignToProject(
+        body as unknown as Parameters<typeof client.workflowScheme.assignToProject>[0],
+      );
+      return { updated: true };
+    }
+    case 'switch-project': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.switchProject(
+        body as Parameters<typeof client.workflowScheme.switchProject>[0],
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown workflowscheme action: ${cmd.action}. Actions: ${WORKFLOWSCHEME_ACTIONS.join(', ')}`,
+      );
   }
 }

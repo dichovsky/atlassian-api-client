@@ -275,6 +275,7 @@ RESOURCES:
   issuesecurityschemes   get-all, create, get, update, list-members, delete, add-levels, remove-level, update-level, add-level-members, remove-level-member, list-levels, set-default-levels, list-level-members, list-projects, associate-to-project, search
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
+  workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -499,6 +500,25 @@ EXAMPLES:
   atlas jira plans delete-atlassian-team 10001 team-abc-123
   atlas jira plans get-plan-only-team 10001 2001
   atlas jira plans delete-plan-only-team 10001 2001
+  atlas jira workflowscheme list --max-results 50
+  atlas jira workflowscheme list --all
+  atlas jira workflowscheme get 10001
+  atlas jira workflowscheme delete 10001
+  atlas jira workflowscheme get-default 10001
+  atlas jira workflowscheme delete-default 10001 --update-draft-if-needed
+  atlas jira workflowscheme get-issuetype 10001 10000
+  atlas jira workflowscheme delete-issuetype 10001 10000
+  atlas jira workflowscheme get-workflow 10001 --workflow-name jira
+  atlas jira workflowscheme delete-workflow 10001 --workflow-name jira
+  atlas jira workflowscheme project-usages 10001 --max-results 50
+  atlas jira workflowscheme list-by-project --project-id 10010,10020
+  atlas jira workflowscheme create --body '{"name":"My Scheme"}'
+  atlas jira workflowscheme update 10001 --body '{"name":"Renamed"}'
+  atlas jira workflowscheme set-default 10001 --body '{"workflow":"jira"}'
+  atlas jira workflowscheme set-issuetype 10001 10000 --body '{"workflow":"scrum"}'
+  atlas jira workflowscheme set-workflow 10001 --workflow-name jira --body '{"issueTypes":["10000"]}'
+  atlas jira workflowscheme assign-project --body '{"projectId":"10010","workflowSchemeId":"10001"}'
+  atlas jira workflowscheme switch-project --body '{"projectId":"10010","targetSchemeId":"10002"}'
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001
