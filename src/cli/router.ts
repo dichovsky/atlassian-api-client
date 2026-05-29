@@ -297,6 +297,10 @@ const GLOBAL_OPTIONS = {
   driver: { type: 'string' as const },
   // config field association schemes options (B367-B381)
   'field-id': { type: 'string' as const },
+  // screens options (B746-B761)
+  scope: { type: 'string' as const },
+  'skip-field-association': { type: 'boolean' as const },
+  'tab-ids': { type: 'string' as const },
   // plans options (B625-B640)
   'include-trashed': { type: 'boolean' as const },
   'include-archived': { type: 'boolean' as const },

@@ -66,6 +66,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -129,6 +130,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `issue-type-schemes`
@@ -2753,6 +2755,91 @@ atlas jira config get-projects-with-schemes --project-ids 10100,10101
 # Associate projects to a scheme (body: schemeId → {projectIds} map)
 atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
 ````
+
+## `screens`
+
+Screen management (B746–B761). Covers the `/rest/api/3/screens` surface: CRUD, tab and field management, field reordering.
+
+| Action                  | Positional                     | Required flags                            | Optional flags                                                                    |
+| ----------------------- | ------------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------- |
+| `list`                  | —                              | —                                         | `--ids`, `--query-string`, `--scope`, `--order-by`, `--start-at`, `--max-results` |
+| `create`                | —                              | `--name`                                  | `--description`                                                                   |
+| `delete`                | `<screenId>`                   | —                                         | —                                                                                 |
+| `update`                | `<screenId>`                   | at least one of `--name`, `--description` | —                                                                                 |
+| `list-available-fields` | `<screenId>`                   | —                                         | —                                                                                 |
+| `list-tabs`             | `<screenId>`                   | —                                         | `--project-key`                                                                   |
+| `create-tab`            | `<screenId>`                   | `--name`                                  | —                                                                                 |
+| `delete-tab`            | `<screenId>` `<tabId>`         | —                                         | —                                                                                 |
+| `update-tab`            | `<screenId>` `<tabId>`         | `--name`                                  | —                                                                                 |
+| `list-tab-fields`       | `<screenId>` `<tabId>`         | —                                         | `--project-key`                                                                   |
+| `add-field-to-tab`      | `<screenId>` `<tabId>`         | `--field-id`                              | `--skip-field-association`                                                        |
+| `remove-field-from-tab` | `<screenId>` `<tabId>` `<id>`  | —                                         | —                                                                                 |
+| `move-field`            | `<screenId>` `<tabId>` `<id>`  | —                                         | `--position` (Earlier\|Later\|First\|Last), `--after`                             |
+| `move-tab`              | `<screenId>` `<tabId>` `<pos>` | —                                         | —                                                                                 |
+| `add-to-default`        | `<fieldId>`                    | —                                         | —                                                                                 |
+| `list-all-tabs`         | —                              | —                                         | `--ids`, `--tab-ids`, `--start-at`, `--max-results`                               |
+
+```sh
+# Paginate screens
+atlas jira screens list --max-results 50
+
+# Filter by IDs and search string
+atlas jira screens list --ids 10001,10002 --query-string Default
+
+# Create a screen
+atlas jira screens create --name "Default Screen" --description "Main screen"
+
+# Update a screen
+atlas jira screens update 10001 --name "Renamed Screen"
+
+# Delete a screen
+atlas jira screens delete 10001
+
+# List fields available to add to a screen
+atlas jira screens list-available-fields 10001
+
+# List tabs on a screen
+atlas jira screens list-tabs 10001
+
+# List tabs visible to a specific project
+atlas jira screens list-tabs 10001 --project-key PROJ
+
+# Create a tab
+atlas jira screens create-tab 10001 --name "Field Tab"
+
+# Rename a tab
+atlas jira screens update-tab 10001 1 --name "Renamed Tab"
+
+# Delete a tab
+atlas jira screens delete-tab 10001 1
+
+# List fields on a tab
+atlas jira screens list-tab-fields 10001 1 --project-key PROJ
+
+# Add a field to a tab
+atlas jira screens add-field-to-tab 10001 1 --field-id summary
+
+# Add a field, skipping screen-to-field association
+atlas jira screens add-field-to-tab 10001 1 --field-id summary --skip-field-association
+
+# Remove a field from a tab
+atlas jira screens remove-field-from-tab 10001 1 summary
+
+# Move a field to the first position
+atlas jira screens move-field 10001 1 summary --position First
+
+# Move a field after another field
+atlas jira screens move-field 10001 1 summary --after description
+
+# Move a tab to position 0
+atlas jira screens move-tab 10001 1 0
+
+# Add a field to the default screen
+atlas jira screens add-to-default summary
+
+# List all screen-tab cross-references
+atlas jira screens list-all-tabs --ids 10001,10002
+```
 
 ## `plans`
 

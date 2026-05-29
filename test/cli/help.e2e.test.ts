@@ -139,6 +139,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'priority-schemes': 'executePrioritySchemeResource',
   version: 'executeVersionResource',
   config: 'executeConfig',
+  screens: 'executeScreens',
   plans: 'executePlans',
 };
 

@@ -556,6 +556,23 @@ export type {
 export { VersionResource } from './resources/version.js';
 
 export type {
+  Screen,
+  ScreenableTab,
+  ScreenableField,
+  ScreenTabRef,
+  CreateScreenData,
+  UpdateScreenData,
+  CreateScreenTabData,
+  UpdateScreenTabData,
+  AddFieldToTabData,
+  MoveFieldData,
+  ListScreensParams,
+  ListTabFieldsParams,
+  ListAllTabsParams,
+} from './resources/screens.js';
+export { ScreensResource } from './resources/screens.js';
+
+export type {
   FieldAssociationSchemeLinks,
   FieldAssociationSchemeMatchedFilters,
   FieldAssociationSchemeResponse,

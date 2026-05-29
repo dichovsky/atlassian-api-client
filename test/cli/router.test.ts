@@ -391,6 +391,112 @@ describe('parseCommand', () => {
     expect(result.options['body']).toBe(bodyJson);
   });
 
+  it('parses jira screens list with --ids and --query-string', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'list',
+      '--ids',
+      '10001,10002',
+      '--query-string',
+      'Default',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('list');
+    expect(result.options['ids']).toBe('10001,10002');
+    expect(result.options['query-string']).toBe('Default');
+  });
+
+  it('parses jira screens create with --name and --description', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'create',
+      '--name',
+      'Default Screen',
+      '--description',
+      'A screen',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('create');
+    expect(result.options['name']).toBe('Default Screen');
+    expect(result.options['description']).toBe('A screen');
+  });
+
+  it('parses jira screens delete with positional screenId', () => {
+    const argv = ['node', 'atlas', 'jira', 'screens', 'delete', '10001'];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('delete');
+    expect(result.positionalArgs).toEqual(['10001']);
+  });
+
+  it('parses jira screens add-field-to-tab with --field-id and --skip-field-association', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'add-field-to-tab',
+      '10001',
+      '1',
+      '--field-id',
+      'summary',
+      '--skip-field-association',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('add-field-to-tab');
+    expect(result.positionalArgs).toEqual(['10001', '1']);
+    expect(result.options['field-id']).toBe('summary');
+    expect(result.options['skip-field-association']).toBe(true);
+  });
+
+  it('parses jira screens list-all-tabs with --ids and --tab-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'list-all-tabs',
+      '--ids',
+      '10001,10002',
+      '--tab-ids',
+      '1,2',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('list-all-tabs');
+    expect(result.options['ids']).toBe('10001,10002');
+    expect(result.options['tab-ids']).toBe('1,2');
+  });
+
+  it('parses jira screens move-field with --position', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'screens',
+      'move-field',
+      '10001',
+      '1',
+      'summary',
+      '--position',
+      'First',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('screens');
+    expect(result.action).toBe('move-field');
+    expect(result.positionalArgs).toEqual(['10001', '1', 'summary']);
+    expect(result.options['position']).toBe('First');
+  });
+
   it('parses jira plans list with --include-trashed', () => {
     const argv = [
       'node',
