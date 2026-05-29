@@ -798,12 +798,6 @@ export interface UpdateSharedContentPropertyData {
   readonly version: { readonly number: number; readonly message?: string };
 }
 
-/** @deprecated Use `ListSharedContentPropertiesParams` instead. Same shape, now shared across comments/attachments/databases. */
-export type ListCommentPropertiesParams = ListSharedContentPropertiesParams;
-
-/** @deprecated Use `UpdateSharedContentPropertyData` instead. Same shape, now shared across comments/attachments/databases. */
-export type UpdateCommentPropertyData = UpdateSharedContentPropertyData;
-
 // --- App Properties ---
 
 /**

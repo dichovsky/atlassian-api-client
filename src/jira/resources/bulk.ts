@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import { ValidationError } from '../../core/errors.js';
 
 export interface BulkIssueUpdate {
   readonly fields: Record<string, unknown>;
@@ -497,7 +498,7 @@ export class BulkResource {
 
   private requireDevopsBaseUrls(): BulkResourceBaseUrls {
     if (!this.devopsBaseUrls) {
-      throw new Error(
+      throw new ValidationError(
         'BulkResource: DevOps base URLs not configured. Construct JiraClient instead of BulkResource directly.',
       );
     }

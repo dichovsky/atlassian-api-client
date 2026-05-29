@@ -265,7 +265,10 @@ export type {
   ListSpacePermissionAssignmentsParams,
   ListSpaceRoleAssignmentsParams,
   SetSpaceRoleAssignmentsData,
+  SetSpaceRoleAssignmentsResponse,
   UpdateSpaceDefaultClassificationLevelData,
+  AdminKey,
+  CreateAdminKeyData,
 } from './types.js';
 export type { CursorPaginatedResponse } from '../core/pagination.js';
 export { PagesResource } from './resources/pages.js';
@@ -293,3 +296,4 @@ export { SpaceRoleModeResource } from './resources/space-role-mode.js';
 export { SpaceRolesResource } from './resources/space-roles.js';
 export { UsersResource } from './resources/users.js';
 export { UsersBulkResource } from './resources/users-bulk.js';
+export { AdminKeyResource } from './resources/admin-key.js';

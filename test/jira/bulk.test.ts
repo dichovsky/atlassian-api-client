@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BulkResource } from '../../src/jira/resources/bulk.js';
+import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { BulkCreatedIssues, BulkResourceBaseUrls } from '../../src/jira/resources/bulk.js';
 
@@ -495,6 +496,7 @@ describe('BulkResource', () => {
     it('throws a clear error if DevOps base URLs were not supplied', async () => {
       const bare = new BulkResource(transport, BASE_URL);
 
+      await expect(bare.submitBuilds({})).rejects.toThrow(ValidationError);
       await expect(bare.submitBuilds({})).rejects.toThrow('DevOps base URLs not configured');
       expect(transport.calls).toHaveLength(0);
     });

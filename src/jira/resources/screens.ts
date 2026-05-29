@@ -364,7 +364,7 @@ export class ScreensResource {
     params?: Omit<ListAllTabsParams, 'startAt'>,
   ): AsyncGenerator<ScreenTabRef> {
     if (params?.maxResult !== undefined) validatePageSize(params.maxResult, 'maxResult');
-    const query = buildListAllTabsQuery({ ...params, startAt: undefined });
+    const query = buildListAllTabsQuery({ ...params, startAt: undefined, maxResult: undefined });
     yield* paginateOffset<ScreenTabRef>(
       this.transport,
       `${this.baseUrl}/screens/tabs`,
