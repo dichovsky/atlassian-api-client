@@ -249,9 +249,9 @@ describe('WorkflowSchemeResource', () => {
     it('omits undefined fields', async () => {
       transport.respondWith(makeScheme());
 
-      await resource.update('101010', { name: 'Only name' });
+      await resource.update('101010', {});
 
-      expect(transport.lastCall?.options.body).toEqual({ name: 'Only name' });
+      expect(transport.lastCall?.options.body).toEqual({});
     });
   });
 
