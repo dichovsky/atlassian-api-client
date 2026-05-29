@@ -57,6 +57,12 @@ describe('BlogPostsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('rejects non-positive --limit before the request', async () => {
+      await expect(blogPosts.list({ limit: 0 })).rejects.toThrow(
+        /limit must be a positive integer/,
+      );
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -269,6 +275,11 @@ describe('BlogPostsResource', () => {
 
       // Assert
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'token-abc' });
+    });
+
+    it('rejects non-positive --limit before iterating', async () => {
+      const iterator = blogPosts.listAll({ limit: 0 });
+      await expect(iterator.next()).rejects.toThrow(/limit must be a positive integer/);
     });
 
     it('handles a single page with no next link', async () => {

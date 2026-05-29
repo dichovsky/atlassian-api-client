@@ -63,6 +63,7 @@ export class BlogPostsResource {
 
   /** List blog posts with optional filtering. */
   async list(params?: ListBlogPostsParams): Promise<CursorPaginatedResponse<BlogPost>> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts`,
@@ -153,6 +154,7 @@ export class BlogPostsResource {
 
   /** Iterate over all blog posts across all result pages. */
   async *listAll(params?: Omit<ListBlogPostsParams, 'cursor'>): AsyncGenerator<BlogPost> {
+    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<BlogPost>(
       this.transport,
       `${this.baseUrl}/blogposts`,
