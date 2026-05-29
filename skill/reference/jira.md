@@ -66,6 +66,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `issuesecurityschemes`   | `get-all`, `create`, `get`, `update`, `list-members`, `delete`, `add-levels`, `remove-level`, `update-level`, `add-level-members`, `remove-level-member`, `list-levels`, `set-default-levels`, `list-level-members`, `list-projects`, `associate-to-project`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -128,6 +129,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `issuesecurityschemes`   | `get-all`, `create`, `get`, `update`, `list-members`, `delete`, `add-levels`, `remove-level`, `update-level`, `add-level-members`, `remove-level-member`, `list-levels`, `set-default-levels`, `list-level-members`, `list-projects`, `associate-to-project`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## `issue-type-schemes`
 
@@ -2751,3 +2753,84 @@ atlas jira config get-projects-with-schemes --project-ids 10100,10101
 # Associate projects to a scheme (body: schemeId → {projectIds} map)
 atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
 ````
+
+## `issuesecurityschemes`
+
+Issue security scheme management (B539–B555). Covers the full `/rest/api/3/issuesecurityschemes` surface: listing, CRUD, security level management, level member management, and project association.
+
+**Paginated endpoints** (support `--start-at`, `--max-results`):
+
+- `list-members` — GET /issuesecurityschemes/{issueSecuritySchemeId}/members
+- `list-levels` — GET /issuesecurityschemes/level
+- `list-level-members` — GET /issuesecurityschemes/level/member
+- `list-projects` — GET /issuesecurityschemes/project
+- `search` — GET /issuesecurityschemes/search
+
+| Action                 | Positional args                       | Key flags                                                                       | Returns                 |
+| ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------- | ----------------------- |
+| `get-all`              | —                                     | `--id`, `--project-ids`, `--only-default`, `--expand`                           | SecuritySchemesResponse |
+| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                        | IssueSecurityScheme     |
+| `get`                  | `<id>`                                | —                                                                               | IssueSecurityScheme     |
+| `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                         | `{updated:true}`        |
+| `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                             | PageBean                |
+| `delete`               | `<schemeId>`                          | —                                                                               | `{deleted:true}`        |
+| `add-levels`           | `<schemeId>`                          | `--levels` (JSON array)                                                         | `{updated:true}`        |
+| `remove-level`         | `<schemeId>` `<levelId>`              | `--replace-with`                                                                | `{deleted:true}`        |
+| `update-level`         | `<schemeId>` `<levelId>`              | `--name`, `--description` (≥1 required)                                         | `{updated:true}`        |
+| `add-level-members`    | `<schemeId>` `<levelId>`              | `--members` (JSON array)                                                        | `{updated:true}`        |
+| `remove-level-member`  | `<schemeId>` `<levelId>` `<memberId>` | —                                                                               | `{deleted:true}`        |
+| `list-levels`          | —                                     | `--id`, `--scheme-id`, `--only-default`, pagination                             | PageBean                |
+| `set-default-levels`   | —                                     | `--default-values` (JSON array of `{defaultLevelId, issueSecuritySchemeId}`)    | `{updated:true}`        |
+| `list-level-members`   | —                                     | `--id`, `--scheme-id`, `--level-id`, `--expand`, pagination                     | PageBean                |
+| `list-projects`        | —                                     | `--issue-security-scheme-id`, `--project-ids`, pagination                       | PageBean                |
+| `associate-to-project` | —                                     | `--project-id` (req), `--scheme-id` (req), `--old-to-new-mappings` (JSON array) | `{updated:true}`        |
+| `search`               | —                                     | `--id`, `--project-ids`, pagination                                             | PageBean                |
+
+```sh
+# List all schemes
+atlas jira issuesecurityschemes get-all
+atlas jira issuesecurityschemes get-all --id 10001,10002 --project-ids 10100
+
+# CRUD
+atlas jira issuesecurityschemes create --name "My Security Scheme" --description "Description"
+atlas jira issuesecurityschemes get 10001
+atlas jira issuesecurityschemes update 10001 --name "Renamed Scheme"
+atlas jira issuesecurityschemes delete 10001
+
+# Members of a scheme (paginated)
+atlas jira issuesecurityschemes list-members 10001
+atlas jira issuesecurityschemes list-members 10001 --issue-security-level-id 10100,10101
+
+# Manage levels
+atlas jira issuesecurityschemes add-levels 10001 --levels '[{"name":"Public","isDefault":true}]'
+atlas jira issuesecurityschemes remove-level 10001 10100
+atlas jira issuesecurityschemes remove-level 10001 10100 --replace-with 10101
+atlas jira issuesecurityschemes update-level 10001 10100 --name "Renamed Level"
+
+# Manage level members
+atlas jira issuesecurityschemes add-level-members 10001 10100 --members '[{"type":"reporter"}]'
+atlas jira issuesecurityschemes remove-level-member 10001 10100 10200
+
+# List security levels (paginated)
+atlas jira issuesecurityschemes list-levels
+atlas jira issuesecurityschemes list-levels --scheme-id 10001,10002 --only-default
+
+# Set default levels
+atlas jira issuesecurityschemes set-default-levels --default-values '[{"issueSecuritySchemeId":"10001","defaultLevelId":"10100"}]'
+
+# List level members (paginated)
+atlas jira issuesecurityschemes list-level-members
+atlas jira issuesecurityschemes list-level-members --scheme-id 10001 --level-id 10100
+
+# Project-to-scheme mappings (paginated)
+atlas jira issuesecurityschemes list-projects
+atlas jira issuesecurityschemes list-projects --issue-security-scheme-id 10001 --project-ids 10100
+
+# Associate scheme to project
+atlas jira issuesecurityschemes associate-to-project --project-id 10100 --scheme-id 10001
+atlas jira issuesecurityschemes associate-to-project --project-id 10100 --scheme-id 10001 --old-to-new-mappings '[{"oldLevelId":"10100","newLevelId":"10101"}]'
+
+# Search schemes (paginated)
+atlas jira issuesecurityschemes search
+atlas jira issuesecurityschemes search --id 10001,10002 --project-ids 10100
+```

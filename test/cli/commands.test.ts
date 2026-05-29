@@ -926,6 +926,31 @@ const jiraVersionMock = {
   deleteRelatedWork: vi.fn(),
 };
 
+const jiraIssueSecuritySchemesMock = {
+  getAll: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  update: vi.fn(),
+  listMembers: vi.fn(),
+  listMembersAll: vi.fn(),
+  delete: vi.fn(),
+  addLevels: vi.fn(),
+  removeLevel: vi.fn(),
+  updateLevel: vi.fn(),
+  addLevelMembers: vi.fn(),
+  removeLevelMember: vi.fn(),
+  listLevels: vi.fn(),
+  listLevelsAll: vi.fn(),
+  setDefaultLevels: vi.fn(),
+  listLevelMembers: vi.fn(),
+  listLevelMembersAll: vi.fn(),
+  listProjects: vi.fn(),
+  listProjectsAll: vi.fn(),
+  associateToProject: vi.fn(),
+  search: vi.fn(),
+  searchAll: vi.fn(),
+};
+
 const jiraConfigMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1014,6 +1039,7 @@ vi.mock('../../src/jira/client.js', () => {
       prioritySchemes: jiraPrioritySchemesMock,
       version: jiraVersionMock,
       config: jiraConfigMock,
+      issueSecuritySchemes: jiraIssueSecuritySchemesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -19264,6 +19290,498 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('config', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown config action',
       );
+    });
+  });
+
+  describe('issuesecurityschemes resource', () => {
+    it('get-all calls client.issueSecuritySchemes.getAll', async () => {
+      const resp = { issueSecuritySchemes: [] };
+      jiraIssueSecuritySchemesMock.getAll.mockResolvedValue(resp);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'get-all', [], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.getAll).toHaveBeenCalledOnce();
+      expect(result).toEqual(resp);
+    });
+
+    it('get-all forwards id, project-ids, only-default, expand', async () => {
+      jiraIssueSecuritySchemesMock.getAll.mockResolvedValue({ issueSecuritySchemes: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'get-all', [], {
+          id: '10001,10002',
+          'project-ids': '10100',
+          'only-default': true,
+          expand: 'levels',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: ['10001', '10002'],
+          projectId: ['10100'],
+          onlyDefault: true,
+          expand: 'levels',
+        }),
+      );
+    });
+
+    it('create calls client.issueSecuritySchemes.create with name', async () => {
+      const created = { id: 10001, name: 'My Scheme' };
+      jiraIssueSecuritySchemesMock.create.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'create', [], { name: 'My Scheme' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'My Scheme' }),
+      );
+      expect(result).toEqual(created);
+    });
+
+    it('create includes description when provided', async () => {
+      jiraIssueSecuritySchemesMock.create.mockResolvedValue({ id: 10001 });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'create', [], {
+          name: 'My Scheme',
+          description: 'A desc',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'My Scheme', description: 'A desc' }),
+      );
+    });
+
+    it('create includes levels when provided', async () => {
+      jiraIssueSecuritySchemesMock.create.mockResolvedValue({ id: 10001 });
+      const levels = JSON.stringify([{ name: 'Public', isDefault: true }]);
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'create', [], { name: 'My Scheme', levels }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ levels: [{ name: 'Public', isDefault: true }] }),
+      );
+    });
+
+    it('create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuesecurityschemes', 'create', [], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('get calls client.issueSecuritySchemes.get', async () => {
+      const scheme = { id: 10001, name: 'My Scheme' };
+      jiraIssueSecuritySchemesMock.get.mockResolvedValue(scheme);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'get', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toEqual(scheme);
+    });
+
+    it('update calls client.issueSecuritySchemes.update', async () => {
+      jiraIssueSecuritySchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'update', ['10001'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.update).toHaveBeenCalledWith('10001', {
+        name: 'Renamed',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update forwards description', async () => {
+      jiraIssueSecuritySchemesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'update', ['10001'], { description: 'A description' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.update).toHaveBeenCalledWith('10001', {
+        description: 'A description',
+      });
+    });
+
+    it('update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuesecurityschemes', 'update', ['10001'], {}), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('list-members calls client.issueSecuritySchemes.listMembers', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraIssueSecuritySchemesMock.listMembers.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-members', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listMembers).toHaveBeenCalledWith(
+        '10001',
+        expect.any(Object),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('list-members forwards issue-security-level-id', async () => {
+      jiraIssueSecuritySchemesMock.listMembers.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-members', ['10001'], {
+          'issue-security-level-id': '10100,10101',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listMembers).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ issueSecurityLevelId: ['10100', '10101'] }),
+      );
+    });
+
+    it('list-members forwards expand', async () => {
+      jiraIssueSecuritySchemesMock.listMembers.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-members', ['10001'], { expand: 'all' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listMembers).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ expand: 'all' }),
+      );
+    });
+
+    it('delete calls client.issueSecuritySchemes.delete', async () => {
+      jiraIssueSecuritySchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'delete', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('add-levels calls client.issueSecuritySchemes.addLevels', async () => {
+      jiraIssueSecuritySchemesMock.addLevels.mockResolvedValue(undefined);
+      const levels = JSON.stringify([{ name: 'Public' }]);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'add-levels', ['10001'], { levels }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.addLevels).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ levels: [{ name: 'Public' }] }),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('add-levels without --levels calls addLevels with empty object', async () => {
+      jiraIssueSecuritySchemesMock.addLevels.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'add-levels', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.addLevels).toHaveBeenCalledWith('10001', {});
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('remove-level calls client.issueSecuritySchemes.removeLevel', async () => {
+      jiraIssueSecuritySchemesMock.removeLevel.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'remove-level', ['10001', '10100'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.removeLevel).toHaveBeenCalledWith(
+        '10001',
+        '10100',
+        expect.any(Object),
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('remove-level forwards replace-with', async () => {
+      jiraIssueSecuritySchemesMock.removeLevel.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'remove-level', ['10001', '10100'], {
+          'replace-with': '10101',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.removeLevel).toHaveBeenCalledWith(
+        '10001',
+        '10100',
+        expect.objectContaining({ replaceWith: '10101' }),
+      );
+    });
+
+    it('update-level calls client.issueSecuritySchemes.updateLevel', async () => {
+      jiraIssueSecuritySchemesMock.updateLevel.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'update-level', ['10001', '10100'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.updateLevel).toHaveBeenCalledWith('10001', '10100', {
+        name: 'Renamed',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update-level forwards description', async () => {
+      jiraIssueSecuritySchemesMock.updateLevel.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'update-level', ['10001', '10100'], {
+          description: 'A description',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.updateLevel).toHaveBeenCalledWith('10001', '10100', {
+        description: 'A description',
+      });
+    });
+
+    it('update-level throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuesecurityschemes', 'update-level', ['10001', '10100'], {}),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('update-level requires at least one of');
+    });
+
+    it('add-level-members calls client.issueSecuritySchemes.addLevelMembers', async () => {
+      jiraIssueSecuritySchemesMock.addLevelMembers.mockResolvedValue(undefined);
+      const members = JSON.stringify([{ type: 'reporter' }]);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'add-level-members', ['10001', '10100'], { members }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.addLevelMembers).toHaveBeenCalledWith(
+        '10001',
+        '10100',
+        expect.objectContaining({ members: [{ type: 'reporter' }] }),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('add-level-members without --members sends empty object', async () => {
+      jiraIssueSecuritySchemesMock.addLevelMembers.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'add-level-members', ['10001', '10100'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.addLevelMembers).toHaveBeenCalledWith(
+        '10001',
+        '10100',
+        expect.objectContaining({}),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('remove-level-member calls client.issueSecuritySchemes.removeLevelMember', async () => {
+      jiraIssueSecuritySchemesMock.removeLevelMember.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'remove-level-member', ['10001', '10100', '10200'], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.removeLevelMember).toHaveBeenCalledWith(
+        '10001',
+        '10100',
+        '10200',
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('list-levels calls client.issueSecuritySchemes.listLevels', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraIssueSecuritySchemesMock.listLevels.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-levels', [], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listLevels).toHaveBeenCalledOnce();
+      expect(result).toEqual(page);
+    });
+
+    it('list-levels forwards id, scheme-id, only-default', async () => {
+      jiraIssueSecuritySchemesMock.listLevels.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-levels', [], {
+          id: '10100',
+          'scheme-id': '10001,10002',
+          'only-default': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listLevels).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: ['10100'],
+          schemeId: ['10001', '10002'],
+          onlyDefault: true,
+        }),
+      );
+    });
+
+    it('set-default-levels calls client.issueSecuritySchemes.setDefaultLevels', async () => {
+      jiraIssueSecuritySchemesMock.setDefaultLevels.mockResolvedValue(undefined);
+      const defaultValues = JSON.stringify([
+        { issueSecuritySchemeId: '10001', defaultLevelId: '10100' },
+      ]);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'set-default-levels', [], { 'default-values': defaultValues }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.setDefaultLevels).toHaveBeenCalledWith({
+        defaultValues: [{ issueSecuritySchemeId: '10001', defaultLevelId: '10100' }],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('set-default-levels throws when --default-values missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuesecurityschemes', 'set-default-levels', [], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --default-values');
+    });
+
+    it('list-level-members calls client.issueSecuritySchemes.listLevelMembers', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraIssueSecuritySchemesMock.listLevelMembers.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-level-members', [], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listLevelMembers).toHaveBeenCalledOnce();
+      expect(result).toEqual(page);
+    });
+
+    it('list-level-members forwards id, scheme-id, level-id', async () => {
+      jiraIssueSecuritySchemesMock.listLevelMembers.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-level-members', [], {
+          id: '10200',
+          'scheme-id': '10001',
+          'level-id': '10100',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listLevelMembers).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: ['10200'],
+          schemeId: ['10001'],
+          levelId: ['10100'],
+        }),
+      );
+    });
+
+    it('list-level-members forwards expand', async () => {
+      jiraIssueSecuritySchemesMock.listLevelMembers.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-level-members', [], { expand: 'all' }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listLevelMembers).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: 'all' }),
+      );
+    });
+
+    it('list-projects calls client.issueSecuritySchemes.listProjects', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraIssueSecuritySchemesMock.listProjects.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-projects', [], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listProjects).toHaveBeenCalledOnce();
+      expect(result).toEqual(page);
+    });
+
+    it('list-projects forwards issue-security-scheme-id and project-ids', async () => {
+      jiraIssueSecuritySchemesMock.listProjects.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'list-projects', [], {
+          'issue-security-scheme-id': '10001',
+          'project-ids': '10100,10101',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.listProjects).toHaveBeenCalledWith(
+        expect.objectContaining({
+          issueSecuritySchemeId: ['10001'],
+          projectId: ['10100', '10101'],
+        }),
+      );
+    });
+
+    it('associate-to-project calls client.issueSecuritySchemes.associateToProject', async () => {
+      jiraIssueSecuritySchemesMock.associateToProject.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'associate-to-project', [], {
+          'project-id': '10100',
+          'scheme-id': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.associateToProject).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: '10100', schemeId: '10001' }),
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('associate-to-project forwards old-to-new-mappings', async () => {
+      jiraIssueSecuritySchemesMock.associateToProject.mockResolvedValue(undefined);
+      const mappings = JSON.stringify([{ oldLevelId: '10100', newLevelId: '10101' }]);
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'associate-to-project', [], {
+          'project-id': '10100',
+          'scheme-id': '10001',
+          'old-to-new-mappings': mappings,
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.associateToProject).toHaveBeenCalledWith(
+        expect.objectContaining({
+          oldToNewSecurityLevelMappings: [{ oldLevelId: '10100', newLevelId: '10101' }],
+        }),
+      );
+    });
+
+    it('associate-to-project throws when --project-id missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuesecurityschemes', 'associate-to-project', [], { 'scheme-id': '10001' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --project-id');
+    });
+
+    it('search calls client.issueSecuritySchemes.search', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraIssueSecuritySchemesMock.search.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('issuesecurityschemes', 'search', [], {}),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.search).toHaveBeenCalledOnce();
+      expect(result).toEqual(page);
+    });
+
+    it('search forwards id and project-ids', async () => {
+      jiraIssueSecuritySchemesMock.search.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('issuesecurityschemes', 'search', [], {
+          id: '10001',
+          'project-ids': '10100',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueSecuritySchemesMock.search).toHaveBeenCalledWith(
+        expect.objectContaining({ id: ['10001'], projectId: ['10100'] }),
+      );
+    });
+
+    it('issuesecurityschemes unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuesecurityschemes', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown issuesecurityschemes action');
     });
   });
 });

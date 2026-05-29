@@ -390,4 +390,97 @@ describe('parseCommand', () => {
     expect(result.action).toBe('associate-projects');
     expect(result.options['body']).toBe(bodyJson);
   });
+
+  it('parses jira issuesecurityschemes get-all with --id and --project-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuesecurityschemes',
+      'get-all',
+      '--id',
+      '10001,10002',
+      '--project-ids',
+      '10100',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuesecurityschemes');
+    expect(result.action).toBe('get-all');
+    expect(result.options['id']).toBe('10001,10002');
+    expect(result.options['project-ids']).toBe('10100');
+  });
+
+  it('parses jira issuesecurityschemes remove-level with positional args and --replace-with', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuesecurityschemes',
+      'remove-level',
+      '10001',
+      '10100',
+      '--replace-with',
+      '10101',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuesecurityschemes');
+    expect(result.action).toBe('remove-level');
+    expect(result.positionalArgs).toEqual(['10001', '10100']);
+    expect(result.options['replace-with']).toBe('10101');
+  });
+
+  it('parses jira issuesecurityschemes remove-level-member with three positional args', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuesecurityschemes',
+      'remove-level-member',
+      '10001',
+      '10100',
+      '10200',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuesecurityschemes');
+    expect(result.action).toBe('remove-level-member');
+    expect(result.positionalArgs).toEqual(['10001', '10100', '10200']);
+  });
+
+  it('parses jira issuesecurityschemes associate-to-project with --project-id and --scheme-id', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuesecurityschemes',
+      'associate-to-project',
+      '--project-id',
+      '10100',
+      '--scheme-id',
+      '10001',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuesecurityschemes');
+    expect(result.action).toBe('associate-to-project');
+    expect(result.options['project-id']).toBe('10100');
+    expect(result.options['scheme-id']).toBe('10001');
+  });
+
+  it('parses jira issuesecurityschemes set-default-levels with --default-values', () => {
+    const defaultValues = JSON.stringify([
+      { issueSecuritySchemeId: '10001', defaultLevelId: '10100' },
+    ]);
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuesecurityschemes',
+      'set-default-levels',
+      '--default-values',
+      defaultValues,
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuesecurityschemes');
+    expect(result.action).toBe('set-default-levels');
+    expect(result.options['default-values']).toBe(defaultValues);
+  });
 });

@@ -272,6 +272,7 @@ RESOURCES:
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
   config                 list, create, delete, get, update, clone, list-fields, get-field-parameters, list-projects, remove-field-associations, update-field-associations, remove-field-parameters, update-field-parameters, get-projects-with-schemes, associate-projects
+  issuesecurityschemes   get-all, create, get, update, list-members, delete, add-levels, remove-level, update-level, add-level-members, remove-level-member, list-levels, set-default-levels, list-level-members, list-projects, associate-to-project, search
 
 EXAMPLES:
   atlas jira issues get PROJ-123
