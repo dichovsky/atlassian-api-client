@@ -198,6 +198,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'priority-schemes',
           'version',
           'config',
+          'issuesecurityschemes',
           'screens',
           'plans',
         ]).toContain(parsed.resource);
@@ -317,6 +318,7 @@ describe('Resource coverage drift check', () => {
     'priority-schemes',
     'version',
     'config',
+    'issuesecurityschemes',
     'screens',
     'plans',
   ]) {

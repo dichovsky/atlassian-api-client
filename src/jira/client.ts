@@ -69,6 +69,7 @@ import { NotificationSchemeResource } from './resources/notificationscheme.js';
 import { PrioritySchemeResource } from './resources/priorityscheme.js';
 import { VersionResource } from './resources/version.js';
 import { ConfigResource } from './resources/config.js';
+import { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
 import { ScreensResource } from './resources/screens.js';
 import { PlansResource } from './resources/plans.js';
 
@@ -207,6 +208,8 @@ export class JiraClient {
   readonly version: VersionResource;
   /** Jira config field association schemes resource (B367-B381). */
   readonly config: ConfigResource;
+  /** Jira issue security schemes resource (B539-B555). */
+  readonly issueSecuritySchemes: IssueSecuritySchemesResource;
   /** Jira screens resource (B746-B761). */
   readonly screens: ScreensResource;
   /** Jira Advanced Roadmaps plans resource (B625-B640). */
@@ -306,6 +309,7 @@ export class JiraClient {
     this.prioritySchemes = new PrioritySchemeResource(transport, baseUrl);
     this.version = new VersionResource(transport, baseUrl);
     this.config = new ConfigResource(transport, baseUrl);
+    this.issueSecuritySchemes = new IssueSecuritySchemesResource(transport, baseUrl);
     this.screens = new ScreensResource(transport, baseUrl);
     this.plans = new PlansResource(transport, baseUrl);
   }

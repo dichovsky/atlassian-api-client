@@ -370,6 +370,13 @@ const GLOBAL_OPTIONS = {
   'exclude-inactive-users': { type: 'boolean' as const },
   'current-member': { type: 'boolean' as const },
   'exclude-connect-addons': { type: 'boolean' as const },
+  // issuesecurityschemes options (B539-B555)
+  levels: { type: 'string' as const },
+  members: { type: 'string' as const },
+  'default-values': { type: 'string' as const },
+  'old-to-new-mappings': { type: 'string' as const },
+  'issue-security-level-id': { type: 'string' as const },
+  'issue-security-scheme-id': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

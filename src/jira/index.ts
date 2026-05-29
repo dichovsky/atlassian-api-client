@@ -556,6 +556,36 @@ export type {
 export { VersionResource } from './resources/version.js';
 
 export type {
+  SecuritySchemesResponse,
+  IssueSecurityScheme,
+  SecuritySchemeLevel,
+  IssueSecurityLevel,
+  SecurityLevelMember,
+  SecurityLevelMemberHolder,
+  IssueSecuritySchemeToProjectMapping,
+  SecuritySchemeWithProjects,
+  IssueSecurityLevelMember,
+  SecuritySchemeLevelMemberBean,
+  SecuritySchemeLevelBean,
+  CreateIssueSecuritySchemeData,
+  UpdateIssueSecuritySchemeData,
+  AddSecuritySchemeLevelsData,
+  UpdateIssueSecurityLevelData,
+  AddSecurityLevelMembersData,
+  DefaultLevelValue,
+  SetDefaultLevelsData,
+  OldToNewSecurityLevelMapping,
+  AssociateSchemesToProjectsData,
+  ListSecurityLevelMembersParams,
+  RemoveSecurityLevelParams,
+  GetSecurityLevelsParams,
+  GetSecurityLevelMembersParams,
+  SearchProjectsUsingSecuritySchemesParams,
+  SearchSecuritySchemesParams,
+} from './resources/issuesecurityschemes.js';
+export { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
+
+export type {
   Screen,
   ScreenableTab,
   ScreenableField,

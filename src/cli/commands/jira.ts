@@ -12,6 +12,11 @@ import type {
   RemoveFieldParametersBody,
   UpdateFieldParametersBody,
   AssociateProjectsBody,
+  AssociateSchemesToProjectsData,
+  SecuritySchemeLevelBean,
+  SecuritySchemeLevelMemberBean,
+  DefaultLevelValue,
+  OldToNewSecurityLevelMapping,
   CreatePlanData,
   AddAtlassianTeamData,
   CreatePlanOnlyTeamData,
@@ -159,6 +164,8 @@ export async function executeJiraCommand(
       return executeVersionResource(client, cmd);
     case 'config':
       return executeConfig(client, cmd);
+    case 'issuesecurityschemes':
+      return executeIssueSecuritySchemes(client, cmd);
     case 'screens':
       return executeScreens(client, cmd);
     case 'plans':
@@ -4921,6 +4928,217 @@ async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<un
     default:
       throw new Error(
         `Unknown config action: ${cmd.action}. Actions: ${CONFIG_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── issuesecurityschemes (B539-B555) ─────────────────────────────────────────
+
+const ISSUE_SECURITY_SCHEMES_ACTIONS = [
+  'get-all',
+  'create',
+  'get',
+  'update',
+  'list-members',
+  'delete',
+  'add-levels',
+  'remove-level',
+  'update-level',
+  'add-level-members',
+  'remove-level-member',
+  'list-levels',
+  'set-default-levels',
+  'list-level-members',
+  'list-projects',
+  'associate-to-project',
+  'search',
+] as const;
+
+async function executeIssueSecuritySchemes(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-all': {
+      return client.issueSecuritySchemes.getAll();
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const levelsRaw = asString(opts['levels']);
+      let levels: unknown[] | undefined;
+      if (levelsRaw !== undefined) {
+        levels = parseJsonArrayFlag(levelsRaw, '--levels');
+      }
+      return client.issueSecuritySchemes.create({
+        name,
+        ...(description !== undefined && { description }),
+        ...(levels !== undefined && { levels: levels as SecuritySchemeLevelBean[] }),
+      });
+    }
+    case 'get': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.issueSecuritySchemes.get(id);
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update requires at least one of: --name, --description');
+      }
+      await client.issueSecuritySchemes.update(id, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'list-members': {
+      const id = requireArg(cmd.positionalArgs[0], 'issueSecuritySchemeId');
+      const levelIds = parseCsv(opts['issue-security-level-id']);
+      return client.issueSecuritySchemes.listMembers(id, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(levelIds !== undefined && { issueSecurityLevelId: levelIds }),
+        ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
+      });
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'schemeId');
+      await client.issueSecuritySchemes.delete(id);
+      return { deleted: true };
+    }
+    case 'add-levels': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
+      const levelsRaw = asString(opts['levels']);
+      let levels: unknown[] | undefined;
+      if (levelsRaw !== undefined) {
+        levels = parseJsonArrayFlag(levelsRaw, '--levels');
+      }
+      await client.issueSecuritySchemes.addLevels(schemeId, {
+        ...(levels !== undefined && { levels: levels as SecuritySchemeLevelBean[] }),
+      });
+      return { updated: true };
+    }
+    case 'remove-level': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
+      const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
+      const replaceWith = asString(opts['replace-with']);
+      await client.issueSecuritySchemes.removeLevel(schemeId, levelId, {
+        ...(replaceWith !== undefined && { replaceWith }),
+      });
+      return { deleted: true };
+    }
+    case 'update-level': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
+      const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      if (name === undefined && description === undefined) {
+        throw new Error('update-level requires at least one of: --name, --description');
+      }
+      await client.issueSecuritySchemes.updateLevel(schemeId, levelId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    case 'add-level-members': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
+      const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
+      const membersRaw = asString(opts['members']);
+      let members: unknown[] | undefined;
+      if (membersRaw !== undefined) {
+        members = parseJsonArrayFlag(membersRaw, '--members');
+      }
+      await client.issueSecuritySchemes.addLevelMembers(schemeId, levelId, {
+        ...(members !== undefined && { members: members as SecuritySchemeLevelMemberBean[] }),
+      });
+      return { updated: true };
+    }
+    case 'remove-level-member': {
+      const schemeId = requireArg(cmd.positionalArgs[0], 'schemeId');
+      const levelId = requireArg(cmd.positionalArgs[1], 'levelId');
+      const memberId = requireArg(cmd.positionalArgs[2], 'memberId');
+      await client.issueSecuritySchemes.removeLevelMember(schemeId, levelId, memberId);
+      return { deleted: true };
+    }
+    case 'list-levels': {
+      const ids = parseCsv(opts['id']);
+      const schemeIds = parseCsv(opts['scheme-id']);
+      return client.issueSecuritySchemes.listLevels({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(schemeIds !== undefined && { schemeId: schemeIds }),
+        ...(opts['only-default'] !== undefined && {
+          onlyDefault: asBoolFlag(opts['only-default']),
+        }),
+      });
+    }
+    case 'set-default-levels': {
+      const raw = requireOpt(opts['default-values'], '--default-values');
+      const defaultValues = parseJsonArrayFlag(raw, '--default-values') as DefaultLevelValue[];
+      await client.issueSecuritySchemes.setDefaultLevels({ defaultValues });
+      return { updated: true };
+    }
+    case 'list-level-members': {
+      const ids = parseCsv(opts['id']);
+      const schemeIds = parseCsv(opts['scheme-id']);
+      const levelIds = parseCsv(opts['level-id']);
+      return client.issueSecuritySchemes.listLevelMembers({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(schemeIds !== undefined && { schemeId: schemeIds }),
+        ...(levelIds !== undefined && { levelId: levelIds }),
+        ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
+      });
+    }
+    case 'list-projects': {
+      const issueSecuritySchemeIds = parseCsv(opts['issue-security-scheme-id']);
+      const projectIds = parseCsv(opts['project-ids']);
+      return client.issueSecuritySchemes.listProjects({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(issueSecuritySchemeIds !== undefined && {
+          issueSecuritySchemeId: issueSecuritySchemeIds,
+        }),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+      });
+    }
+    case 'associate-to-project': {
+      const projectId = requireOpt(opts['project-id'], '--project-id');
+      const schemeId = requireOpt(opts['scheme-id'], '--scheme-id');
+      const mappingsRaw = asString(opts['old-to-new-mappings']);
+      const data: AssociateSchemesToProjectsData = {
+        projectId,
+        schemeId,
+        ...(mappingsRaw !== undefined && {
+          oldToNewSecurityLevelMappings: parseJsonArrayFlag(
+            mappingsRaw,
+            '--old-to-new-mappings',
+          ) as OldToNewSecurityLevelMapping[],
+        }),
+      };
+      await client.issueSecuritySchemes.associateToProject(data);
+      return { updated: true };
+    }
+    case 'search': {
+      const ids = parseCsv(opts['id']);
+      const projectIds = parseCsv(opts['project-ids']);
+      return client.issueSecuritySchemes.search({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(projectIds !== undefined && { projectId: projectIds }),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown issuesecurityschemes action: ${cmd.action}. Actions: ${ISSUE_SECURITY_SCHEMES_ACTIONS.join(', ')}`,
       );
   }
 }

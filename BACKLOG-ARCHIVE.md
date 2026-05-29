@@ -1909,6 +1909,57 @@
 - [x] 🔴 🧩 API: B381 Jira: expose PUT /rest/api/3/config/fieldschemes/projects
   - **Impl:** `ConfigResource.associateProjects(body)` returns void (204). Body: `Record<schemeId, {projectIds: number[]}>`. CLI: `atlas jira config associate-projects --body <json>`.
   - **Rat:** Complex map body; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B539 Jira: expose GET /rest/api/3/issuesecurityschemes
+  - **Impl:** `IssueSecuritySchemesResource.getAll(params?)` returns `SecuritySchemesResponse`. Query params: `id`, `projectId`, `onlyDefault`, `expand`. CLI: `atlas jira issuesecurityschemes get-all [--id] [--project-ids] [--only-default] [--expand]`.
+  - **Rat:** Returns non-paginated list in a wrapper object; not a PageBean. No startAt/maxResults in spec.
+- [x] 🔴 🧩 API: B540 Jira: expose POST /rest/api/3/issuesecurityschemes
+  - **Impl:** `IssueSecuritySchemesResource.create(data)` returns `IssueSecurityScheme`. Body: `{name (req), description?, levels?}`. CLI: `atlas jira issuesecurityschemes create --name <name> [--description] [--levels <json>]`.
+  - **Rat:** `levels` is an optional array of `SecuritySchemeLevelBean`; passed as JSON via `--levels`.
+- [x] 🔴 🧩 API: B541 Jira: expose GET /rest/api/3/issuesecurityschemes/{id}
+  - **Impl:** `IssueSecuritySchemesResource.get(id)` returns `IssueSecurityScheme`. CLI: `atlas jira issuesecurityschemes get <id>`.
+  - **Rat:** Path param `{id}` is positional per hard rules.
+- [x] 🔴 🧩 API: B542 Jira: expose PUT /rest/api/3/issuesecurityschemes/{id}
+  - **Impl:** `IssueSecuritySchemesResource.update(id, data)` returns void (204). Body: `{name?, description?}` (≥1 required). CLI: `atlas jira issuesecurityschemes update <id> [--name] [--description]`.
+  - **Rat:** Spec returns 204 on success; void return. Guard ensures at least one field is provided.
+- [x] 🔴 🧩 API: B543 Jira: expose GET /rest/api/3/issuesecurityschemes/{issueSecuritySchemeId}/members
+  - **Impl:** `IssueSecuritySchemesResource.listMembers(id, params?)` + `listMembersAll()` async generator. Returns `PageBeanIssueSecurityLevelMember`. CLI: `atlas jira issuesecurityschemes list-members <id> [--issue-security-level-id] [--expand] [pagination]`.
+  - **Rat:** PageBean endpoint with `issueSecurityLevelId` filter array (CSV via `--issue-security-level-id`).
+- [x] 🔴 🧩 API: B544 Jira: expose DELETE /rest/api/3/issuesecurityschemes/{schemeId}
+  - **Impl:** `IssueSecuritySchemesResource.delete(schemeId)` returns void (204). CLI: `atlas jira issuesecurityschemes delete <schemeId>`.
+  - **Rat:** Returns 204; void return pattern.
+- [x] 🔴 🧩 API: B545 Jira: expose PUT /rest/api/3/issuesecurityschemes/{schemeId}/level
+  - **Impl:** `IssueSecuritySchemesResource.addLevels(schemeId, data)` returns void (204). Body: `{levels?: SecuritySchemeLevelBean[]}`. CLI: `atlas jira issuesecurityschemes add-levels <schemeId> [--levels <json>]`.
+  - **Rat:** Body wraps an array of level beans; passed as JSON.
+- [x] 🔴 🧩 API: B546 Jira: expose DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+  - **Impl:** `IssueSecuritySchemesResource.removeLevel(schemeId, levelId, params?)` returns void (204). Query: `replaceWith`. CLI: `atlas jira issuesecurityschemes remove-level <schemeId> <levelId> [--replace-with]`.
+  - **Rat:** `replaceWith` is an optional query param (not body). Both `schemeId` and `levelId` are positional.
+- [x] 🔴 🧩 API: B547 Jira: expose PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}
+  - **Impl:** `IssueSecuritySchemesResource.updateLevel(schemeId, levelId, data)` returns void (204). Body: `{name?, description?}` (≥1 required). CLI: `atlas jira issuesecurityschemes update-level <schemeId> <levelId> [--name] [--description]`.
+  - **Rat:** Both path params positional; guard ensures at least one field.
+- [x] 🔴 🧩 API: B548 Jira: expose PUT /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}/member
+  - **Impl:** `IssueSecuritySchemesResource.addLevelMembers(schemeId, levelId, data)` returns void (204). Body: `{members?: SecuritySchemeLevelMemberBean[]}`. CLI: `atlas jira issuesecurityschemes add-level-members <schemeId> <levelId> [--members <json>]`.
+  - **Rat:** Member array passed as JSON via `--members`.
+- [x] 🔴 🧩 API: B549 Jira: expose DELETE /rest/api/3/issuesecurityschemes/{schemeId}/level/{levelId}/member/{memberId}
+  - **Impl:** `IssueSecuritySchemesResource.removeLevelMember(schemeId, levelId, memberId)` returns void (204). CLI: `atlas jira issuesecurityschemes remove-level-member <schemeId> <levelId> <memberId>`.
+  - **Rat:** Three positional path params per hard rules.
+- [x] 🔴 🧩 API: B550 Jira: expose GET /rest/api/3/issuesecurityschemes/level
+  - **Impl:** `IssueSecuritySchemesResource.listLevels(params?)` + `listLevelsAll()` async generator. Returns `PageBeanSecurityLevel`. CLI: `atlas jira issuesecurityschemes list-levels [--id] [--scheme-id] [--only-default] [pagination]`.
+  - **Rat:** Static path before `/{schemeId}` routes; `schemeId` filter is a CSV query param.
+- [x] 🔴 🧩 API: B551 Jira: expose PUT /rest/api/3/issuesecurityschemes/level/default
+  - **Impl:** `IssueSecuritySchemesResource.setDefaultLevels(data)` returns void (204). Body: `{defaultValues: [{defaultLevelId, issueSecuritySchemeId}]}` (both required per spec). CLI: `atlas jira issuesecurityschemes set-default-levels --default-values <json>`.
+  - **Rat:** Body is in request body (not query); array of `DefaultLevelValue` objects passed as JSON.
+- [x] 🔴 🧩 API: B552 Jira: expose GET /rest/api/3/issuesecurityschemes/level/member
+  - **Impl:** `IssueSecuritySchemesResource.listLevelMembers(params?)` + `listLevelMembersAll()` async generator. Returns `PageBeanSecurityLevelMember`. CLI: `atlas jira issuesecurityschemes list-level-members [--id] [--scheme-id] [--level-id] [--expand] [pagination]`.
+  - **Rat:** All selectors are query params, not body fields.
+- [x] 🔴 🧩 API: B553 Jira: expose GET /rest/api/3/issuesecurityschemes/project
+  - **Impl:** `IssueSecuritySchemesResource.listProjects(params?)` + `listProjectsAll()` async generator. Returns `PageBeanIssueSecuritySchemeToProjectMapping`. CLI: `atlas jira issuesecurityschemes list-projects [--issue-security-scheme-id] [--project-ids] [pagination]`.
+  - **Rat:** All selectors are query params; uses `--issue-security-scheme-id` to avoid collision with `--scheme-id`.
+- [x] 🔴 🧩 API: B554 Jira: expose PUT /rest/api/3/issuesecurityschemes/project
+  - **Impl:** `IssueSecuritySchemesResource.associateToProject(data)` returns void (204). Body: `{projectId (req), schemeId (req), oldToNewSecurityLevelMappings?}`. CLI: `atlas jira issuesecurityschemes associate-to-project --project-id <id> --scheme-id <id> [--old-to-new-mappings <json>]`.
+  - **Rat:** Spec body has required `projectId` + `schemeId` and optional mapping array. Goes in body (not query).
+- [x] 🔴 🧩 API: B555 Jira: expose GET /rest/api/3/issuesecurityschemes/search
+  - **Impl:** `IssueSecuritySchemesResource.search(params?)` + `searchAll()` async generator. Returns `PageBeanSecuritySchemeWithProjects`. CLI: `atlas jira issuesecurityschemes search [--id] [--project-ids] [pagination]`.
+  - **Rat:** Paginated search endpoint; all selectors are query params.
 - [x] 🔴 🧩 API: B746 Jira: expose GET /rest/api/3/screens
   - **Impl:** New `ScreensResource` (`src/jira/resources/screens.ts`). `list(params?)` returns `OffsetPaginatedResponse<Screen>`; `listAll()` async generator via `paginateOffset`. CLI: `atlas jira screens list [--ids] [--query-string] [--scope] [--order-by] [--start-at] [--max-results]`. Part of B746-B761 `screens` resource PR.
   - **Rat:** Paginated listing with multi-ID filter and search; needed to enumerate screens before managing tabs/fields.
