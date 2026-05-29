@@ -73,6 +73,9 @@ export interface MoveFieldData {
 
 // ─── Query param interfaces ───────────────────────────────────────────────
 
+/** Ordering for GET /rest/api/3/screens (closed enum per the v3 spec). */
+export type ScreensOrderBy = 'name' | '-name' | '+name' | 'id' | '-id' | '+id';
+
 /** Query parameters for GET /rest/api/3/screens. */
 export interface ListScreensParams {
   readonly startAt?: number;
@@ -81,7 +84,7 @@ export interface ListScreensParams {
   readonly id?: number[];
   readonly queryString?: string;
   readonly scope?: string[];
-  readonly orderBy?: string;
+  readonly orderBy?: ScreensOrderBy;
 }
 
 /** Query parameters for GET /rest/api/3/screens/{screenId}/tabs/{tabId}/fields. */
@@ -340,17 +343,34 @@ export class ScreensResource {
   }
 
   /**
-   * B761: List all screen tabs across screens.
+   * B761: List a page of screen tabs across screens (offset-paginated).
    * GET /rest/api/3/screens/tabs
    */
-  async listAllTabs(params?: ListAllTabsParams): Promise<ScreenTabRef[]> {
+  async listScreenTabs(params?: ListAllTabsParams): Promise<OffsetPaginatedResponse<ScreenTabRef>> {
+    if (params?.maxResult !== undefined) validatePageSize(params.maxResult, 'maxResult');
     const query = buildListAllTabsQuery(params);
-    const response = await this.transport.request<ScreenTabRef[]>({
+    const response = await this.transport.request<OffsetPaginatedResponse<ScreenTabRef>>({
       method: 'GET',
       path: `${this.baseUrl}/screens/tabs`,
       query,
     });
     return response.data;
+  }
+
+  /**
+   * B761: Iterate every screen tab across screens. Delegates to {@link paginateOffset}.
+   */
+  async *listAllScreenTabs(
+    params?: Omit<ListAllTabsParams, 'startAt'>,
+  ): AsyncGenerator<ScreenTabRef> {
+    if (params?.maxResult !== undefined) validatePageSize(params.maxResult, 'maxResult');
+    const query = buildListAllTabsQuery({ ...params, startAt: undefined });
+    yield* paginateOffset<ScreenTabRef>(
+      this.transport,
+      `${this.baseUrl}/screens/tabs`,
+      query,
+      params?.maxResult,
+    );
   }
 }
 

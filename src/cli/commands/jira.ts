@@ -4382,6 +4382,17 @@ function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-na
   throw new Error(`--order-by must be one of: name, +name, -name. Got: ${s}`);
 }
 
+function asScreensOrderBy(
+  value: string | boolean | undefined,
+): 'name' | '-name' | '+name' | 'id' | '-id' | '+id' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'name' || s === '-name' || s === '+name' || s === 'id' || s === '-id' || s === '+id') {
+    return s;
+  }
+  throw new Error(`--order-by must be one of: name, -name, +name, id, -id, +id. Got: ${s}`);
+}
+
 function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined {
   const arr = parseCsv(value);
   if (arr === undefined) return undefined;
@@ -4948,13 +4959,14 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
     case 'list': {
       const ids = parseCsv(opts['ids']);
       const scope = parseCsv(opts['scope']);
+      const orderBy = asScreensOrderBy(opts['order-by']);
       return client.screens.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(ids !== undefined && { id: ids.map(Number) }),
         ...(opts['query-string'] !== undefined && { queryString: asString(opts['query-string']) }),
         ...(scope !== undefined && { scope }),
-        ...(opts['order-by'] !== undefined && { orderBy: asString(opts['order-by']) }),
+        ...(orderBy !== undefined && { orderBy }),
       });
     }
     case 'create': {
@@ -5099,7 +5111,7 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
     case 'list-all-tabs': {
       const screenIds = parseCsv(opts['ids']);
       const tabIds = parseCsv(opts['tab-ids']);
-      return client.screens.listAllTabs({
+      return client.screens.listScreenTabs({
         ...(screenIds !== undefined && { screenId: screenIds.map(Number) }),
         ...(tabIds !== undefined && { tabId: tabIds.map(Number) }),
         ...(opts['start-at'] !== undefined && {

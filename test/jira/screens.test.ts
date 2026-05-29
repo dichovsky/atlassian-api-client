@@ -475,16 +475,16 @@ describe('ScreensResource', () => {
     });
   });
 
-  // ── B761: listAllTabs ──────────────────────────────────────────────────────
+  // ── B761: listScreenTabs / listAllScreenTabs ───────────────────────────────
 
-  describe('listAllTabs()', () => {
-    it('calls GET /screens/tabs with no params', async () => {
-      const tabs = [{ screenId: 10001, tabId: 1, tabName: 'Field Tab' }];
-      transport.respondWith(tabs);
+  describe('listScreenTabs()', () => {
+    it('returns the page bean from GET /screens/tabs with no params', async () => {
+      const page = makePageOf([{ screenId: 10001, tabId: 1, tabName: 'Field Tab' }]);
+      transport.respondWith(page);
 
-      const result = await resource.listAllTabs();
+      const result = await resource.listScreenTabs();
 
-      expect(result).toEqual(tabs);
+      expect(result).toEqual(page);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/screens/tabs`,
@@ -492,35 +492,73 @@ describe('ScreensResource', () => {
     });
 
     it('forwards screenId as comma-joined string', async () => {
-      transport.respondWith([]);
+      transport.respondWith(makePageOf([]));
 
-      await resource.listAllTabs({ screenId: [10001, 10002] });
+      await resource.listScreenTabs({ screenId: [10001, 10002] });
 
       expect(transport.lastCall?.options.query).toMatchObject({ screenId: '10001,10002' });
     });
 
     it('forwards tabId as comma-joined string', async () => {
-      transport.respondWith([]);
+      transport.respondWith(makePageOf([]));
 
-      await resource.listAllTabs({ tabId: [1, 2] });
+      await resource.listScreenTabs({ tabId: [1, 2] });
 
       expect(transport.lastCall?.options.query).toMatchObject({ tabId: '1,2' });
     });
 
     it('forwards startAt and maxResult', async () => {
-      transport.respondWith([]);
+      transport.respondWith(makePageOf([]));
 
-      await resource.listAllTabs({ startAt: 5, maxResult: 20 });
+      await resource.listScreenTabs({ startAt: 5, maxResult: 20 });
 
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResult: 20 });
     });
 
     it('omits empty screenId array', async () => {
-      transport.respondWith([]);
+      transport.respondWith(makePageOf([]));
 
-      await resource.listAllTabs({ screenId: [] });
+      await resource.listScreenTabs({ screenId: [] });
 
       expect(transport.lastCall?.options.query?.['screenId']).toBeUndefined();
+    });
+
+    it('rejects an invalid maxResult', async () => {
+      await expect(resource.listScreenTabs({ maxResult: 0 })).rejects.toThrow();
+    });
+  });
+
+  describe('listAllScreenTabs()', () => {
+    it('iterates every tab across pages', async () => {
+      transport
+        .respondWith({
+          values: [
+            { screenId: 1, tabId: 1, tabName: 'A' },
+            { screenId: 1, tabId: 2, tabName: 'B' },
+          ],
+          startAt: 0,
+          maxResults: 2,
+          total: 3,
+          isLast: false,
+        })
+        .respondWith({
+          values: [{ screenId: 2, tabId: 3, tabName: 'C' }],
+          startAt: 2,
+          maxResults: 2,
+          total: 3,
+          isLast: true,
+        });
+
+      const tabNames: (string | undefined)[] = [];
+      for await (const tab of resource.listAllScreenTabs({ screenId: [1, 2] })) {
+        tabNames.push(tab.tabName);
+      }
+
+      expect(tabNames).toEqual(['A', 'B', 'C']);
+    });
+
+    it('rejects an invalid maxResult before requesting', async () => {
+      await expect(resource.listAllScreenTabs({ maxResult: 0 }).next()).rejects.toThrow();
     });
   });
 });

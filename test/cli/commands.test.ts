@@ -943,7 +943,8 @@ const jiraScreensMock = {
   moveField: vi.fn(),
   moveTab: vi.fn(),
   addToDefault: vi.fn(),
-  listAllTabs: vi.fn(),
+  listScreenTabs: vi.fn(),
+  listAllScreenTabs: vi.fn(),
 };
 
 const jiraConfigMock = {
@@ -19332,6 +19333,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('list accepts the id order-by variant', async () => {
+      jiraScreensMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(cmd('screens', 'list', [], { 'order-by': '-id' }), GLOBALS);
+
+      expect(jiraScreensMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: '-id' }),
+      );
+    });
+
+    it('list rejects an invalid --order-by', async () => {
+      await expect(
+        executeJiraCommand(cmd('screens', 'list', [], { 'order-by': 'bogus' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of: name, -name, +name, id, -id, +id');
+    });
+
     it('create calls client.screens.create with name', async () => {
       const screen = { id: 10001, name: 'Default Screen' };
       jiraScreensMock.create.mockResolvedValue(screen);
@@ -19570,23 +19587,23 @@ describe('executeJiraCommand', () => {
       expect(result).toBeDefined();
     });
 
-    it('list-all-tabs calls client.screens.listAllTabs', async () => {
+    it('list-all-tabs calls client.screens.listScreenTabs', async () => {
       const tabs = [{ screenId: 10001, tabId: 1, tabName: 'Field Tab' }];
-      jiraScreensMock.listAllTabs.mockResolvedValue(tabs);
+      jiraScreensMock.listScreenTabs.mockResolvedValue(tabs);
 
       const result = await executeJiraCommand(
         cmd('screens', 'list-all-tabs', [], { ids: '10001,10002' }),
         GLOBALS,
       );
 
-      expect(jiraScreensMock.listAllTabs).toHaveBeenCalledWith(
+      expect(jiraScreensMock.listScreenTabs).toHaveBeenCalledWith(
         expect.objectContaining({ screenId: [10001, 10002] }),
       );
       expect(result).toEqual(tabs);
     });
 
     it('list-all-tabs forwards tab-ids and pagination', async () => {
-      jiraScreensMock.listAllTabs.mockResolvedValue([]);
+      jiraScreensMock.listScreenTabs.mockResolvedValue([]);
 
       await executeJiraCommand(
         cmd('screens', 'list-all-tabs', [], {
@@ -19597,7 +19614,7 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      expect(jiraScreensMock.listAllTabs).toHaveBeenCalledWith(
+      expect(jiraScreensMock.listScreenTabs).toHaveBeenCalledWith(
         expect.objectContaining({ tabId: [1, 2], startAt: 0, maxResult: 25 }),
       );
     });

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "a47e6231e6576c05608c5c4b4adc8f382688783dd234a26837ecd23e74f109ba",
+  "sourceHash": "6710c0483676a1cc0d10236e224d59414a6e7ae50e9cb81c1d727af3758ca74a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4697,69 +4697,75 @@
           "signature": "function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined"
         },
         {
-          "name": "parseIntCsv",
+          "name": "asScreensOrderBy",
           "kind": "function",
           "line": 4385,
+          "signature": "function asScreensOrderBy( value: string | boolean | undefined, ): 'name' | '-name' | '+name' | 'id' | '-id' | '+id' | u…"
+        },
+        {
+          "name": "parseIntCsv",
+          "kind": "function",
+          "line": 4396,
           "signature": "function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined"
         },
         {
           "name": "executePrioritySchemeResource",
           "kind": "function",
-          "line": 4397,
+          "line": 4408,
           "signature": "async function executePrioritySchemeResource( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "asExportType",
           "kind": "function",
-          "line": 4575,
+          "line": 4586,
           "signature": "function asExportType(raw: string | undefined): 'CSV' | 'XLSX' | undefined"
         },
         {
           "name": "VERSION_ACTIONS",
           "kind": "variable",
-          "line": 4583,
+          "line": 4594,
           "signature": "const VERSION_ACTIONS = [ 'create', 'get', 'update', 'delete', 'merge', 'move', 'related-issue-counts', 'list-related-wo…"
         },
         {
           "name": "executeVersionResource",
           "kind": "function",
-          "line": 4599,
+          "line": 4610,
           "signature": "async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "CONFIG_ACTIONS",
           "kind": "variable",
-          "line": 4770,
+          "line": 4781,
           "signature": "const CONFIG_ACTIONS = [ 'list', 'create', 'delete', 'get', 'update', 'clone', 'list-fields', 'get-field-parameters', 'l…"
         },
         {
           "name": "executeConfig",
           "kind": "function",
-          "line": 4788,
+          "line": 4799,
           "signature": "async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "MOVE_FIELD_POSITIONS",
           "kind": "variable",
-          "line": 4912,
+          "line": 4923,
           "signature": "const MOVE_FIELD_POSITIONS = ['Earlier', 'Later', 'First', 'Last'] as const;"
         },
         {
           "name": "asMoveFieldPosition",
           "kind": "function",
-          "line": 4914,
+          "line": 4925,
           "signature": "function asMoveFieldPosition( value: string | boolean | undefined, ): 'Earlier' | 'Later' | 'First' | 'Last' | undefined"
         },
         {
           "name": "SCREENS_ACTIONS",
           "kind": "variable",
-          "line": 4925,
+          "line": 4936,
           "signature": "const SCREENS_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-available-fields', 'list-tabs', 'create-tab', 'del…"
         },
         {
           "name": "executeScreens",
           "kind": "function",
-          "line": 4944,
+          "line": 4955,
           "signature": "async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -25802,9 +25808,17 @@
           "jsdoc": "Body for POST /rest/api/3/screens/{screenId}/tabs/{tabId}/fields/{id}/move."
         },
         {
+          "name": "ScreensOrderBy",
+          "kind": "type",
+          "line": 77,
+          "exported": true,
+          "signature": "export type ScreensOrderBy = 'name' | '-name' | '+name' | 'id' | '-id' | '+id';",
+          "jsdoc": "Ordering for GET /rest/api/3/screens (closed enum per the v3 spec)."
+        },
+        {
           "name": "ListScreensParams",
           "kind": "interface",
-          "line": 77,
+          "line": 80,
           "exported": true,
           "signature": "export interface ListScreensParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: number[]; re…",
           "jsdoc": "Query parameters for GET /rest/api/3/screens."
@@ -25812,7 +25826,7 @@
         {
           "name": "ListTabFieldsParams",
           "kind": "interface",
-          "line": 88,
+          "line": 91,
           "exported": true,
           "signature": "export interface ListTabFieldsParams { readonly projectKey?: string; }",
           "jsdoc": "Query parameters for GET /rest/api/3/screens/{screenId}/tabs/{tabId}/fields."
@@ -25820,7 +25834,7 @@
         {
           "name": "ListAllTabsParams",
           "kind": "interface",
-          "line": 93,
+          "line": 96,
           "exported": true,
           "signature": "export interface ListAllTabsParams { readonly screenId?: number[]; readonly tabId?: number[]; readonly startAt?: number;…",
           "jsdoc": "Query parameters for GET /rest/api/3/screens/tabs."
@@ -25828,7 +25842,7 @@
         {
           "name": "ScreensResource",
           "kind": "class",
-          "line": 108,
+          "line": 111,
           "exported": true,
           "signature": "export class ScreensResource",
           "jsdoc": "Jira Screens resource — B746-B761.",
@@ -25836,105 +25850,110 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 109
+              "line": 112
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 118
+              "line": 121
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 132
+              "line": 135
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 147
+              "line": 150
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 162
+              "line": 165
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 173
+              "line": 176
             },
             {
               "name": "listAvailableFields",
               "kind": "method",
-              "line": 189
+              "line": 192
             },
             {
               "name": "listTabs",
               "kind": "method",
-              "line": 201
+              "line": 204
             },
             {
               "name": "createTab",
               "kind": "method",
-              "line": 216
+              "line": 219
             },
             {
               "name": "deleteTab",
               "kind": "method",
-              "line": 229
+              "line": 232
             },
             {
               "name": "updateTab",
               "kind": "method",
-              "line": 240
+              "line": 243
             },
             {
               "name": "listTabFields",
               "kind": "method",
-              "line": 257
+              "line": 260
             },
             {
               "name": "addFieldToTab",
               "kind": "method",
-              "line": 276
+              "line": 279
             },
             {
               "name": "removeFieldFromTab",
               "kind": "method",
-              "line": 297
+              "line": 300
             },
             {
               "name": "moveField",
               "kind": "method",
-              "line": 308
+              "line": 311
             },
             {
               "name": "moveTab",
               "kind": "method",
-              "line": 323
+              "line": 326
             },
             {
               "name": "addToDefault",
               "kind": "method",
-              "line": 334
+              "line": 337
             },
             {
-              "name": "listAllTabs",
+              "name": "listScreenTabs",
               "kind": "method",
-              "line": 346
+              "line": 349
+            },
+            {
+              "name": "listAllScreenTabs",
+              "kind": "method",
+              "line": 363
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 359,
+          "line": 379,
           "signature": "function buildListQuery( params: ListScreensParams | undefined, ): Record<string, string | number | boolean | undefined>"
         },
         {
           "name": "buildListAllTabsQuery",
           "kind": "function",
-          "line": 376,
+          "line": 396,
           "signature": "function buildListAllTabsQuery( params: ListAllTabsParams | undefined, ): Record<string, string | number | boolean | und…"
         }
       ],
