@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "94a7a70e74dff100d987dfaaa30f58ba09e07f09cfa41e7a29388c89b88487e2",
+  "sourceHash": "8a3994796371e95db306c638e4b55af0ee579218c0e31cc2bf671737516cb00d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -11509,6 +11509,14 @@
           "exported": true,
           "signature": "export function serializeQueryKey(query: RequestOptions['query']): string",
           "jsdoc": "Canonical query-string serialization for cache/batch keys: `undefined` values dropped, keys sorted, both key and value URI-encoded. Returns the empty string when there is no query, otherwise a leading `?`."
+        },
+        {
+          "name": "appendQueryKey",
+          "kind": "function",
+          "line": 77,
+          "exported": true,
+          "signature": "export function appendQueryKey(path: string, query: RequestOptions['query']): string",
+          "jsdoc": "Append the canonical query-key serialization to a path that may itself already carry a query string (e.g. resources that embed repeated query params like `?accountId=a&accountId=b` directly into the path because the transport's `query` map collapses duplicate keys). Yields exactly one `?` separator regardless of which side holds query params."
         }
       ],
       "imports": [
