@@ -66,6 +66,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -128,6 +129,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `priority-schemes`       | `list`, `create`, `delete`, `update`, `list-priorities`, `list-projects`, `suggested-mappings`, `available-priorities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `version`                | `create`, `get`, `update`, `delete`, `merge`, `move`, `related-issue-counts`, `list-related-work`, `create-related-work`, `update-related-work`, `delete-and-replace`, `unresolved-issue-count`, `delete-related-work`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `config`                 | `list`, `create`, `delete`, `get`, `update`, `clone`, `list-fields`, `get-field-parameters`, `list-projects`, `remove-field-associations`, `update-field-associations`, `remove-field-parameters`, `update-field-parameters`, `get-projects-with-schemes`, `associate-projects`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `issue-type-schemes`
 
@@ -2751,3 +2753,83 @@ atlas jira config get-projects-with-schemes --project-ids 10100,10101
 # Associate projects to a scheme (body: schemeId → {projectIds} map)
 atlas jira config associate-projects --body '{"10001":{"projectIds":[10100,10101]}}'
 ````
+
+## `plans`
+
+Advanced Roadmaps plans management (B625–B640). Covers the `/rest/api/3/plans/plan` surface: cursor-paginated plan listing, CRUD, archive/trash/duplicate, and team management (Atlassian teams and plan-only teams).
+
+**Pagination:** `list` and `list-teams` use cursor pagination (`--cursor`, `--max-results`).
+
+**Update/patch endpoints (B628, B635, B639):** accept a JSON-patch object via `--body`.
+
+**Enum values:**
+
+- `--planning-style`: `Scrum`, `Kanban`
+- `--scheduling` estimation: `StoryPoints`, `Days`, `Hours`
+- `--scheduling` dependencies: `Sequential`, `Concurrent`
+- `--scheduling` inferredDates: `None`, `SprintDates`, `ReleaseDates`
+
+| Action                  | Positional                  | Required flags                                                         | Optional flags                                                                                                                  |
+| ----------------------- | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `list`                  | —                           | —                                                                      | `--cursor`, `--max-results`, `--include-trashed`, `--include-archived`                                                          |
+| `create`                | —                           | `--name`, `--issue-sources` (JSON array), `--scheduling` (JSON object) | `--use-group-id`, `--cross-project-releases`, `--custom-fields`, `--exclusion-rules`, `--lead-account-id`, `--plan-permissions` |
+| `get`                   | `planId`                    | —                                                                      | `--use-group-id`                                                                                                                |
+| `update`                | `planId`                    | `--body` (JSON-patch object)                                           | `--use-group-id`                                                                                                                |
+| `archive`               | `planId`                    | —                                                                      | —                                                                                                                               |
+| `duplicate`             | `planId`                    | `--name`                                                               | —                                                                                                                               |
+| `trash`                 | `planId`                    | —                                                                      | —                                                                                                                               |
+| `list-teams`            | `planId`                    | —                                                                      | `--cursor`, `--max-results`                                                                                                     |
+| `add-atlassian-team`    | `planId`                    | `--atlassian-team-id`, `--planning-style`                              | `--capacity`, `--issue-source-id`, `--sprint-length`                                                                            |
+| `delete-atlassian-team` | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
+| `get-atlassian-team`    | `planId`, `atlassianTeamId` | —                                                                      | —                                                                                                                               |
+| `update-atlassian-team` | `planId`, `atlassianTeamId` | `--body` (JSON-patch object)                                           | —                                                                                                                               |
+| `create-plan-only-team` | `planId`                    | `--name`, `--planning-style`                                           | `--capacity`, `--issue-source-id`, `--member-account-ids` (CSV), `--sprint-length`                                              |
+| `delete-plan-only-team` | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
+| `get-plan-only-team`    | `planId`, `planOnlyTeamId`  | —                                                                      | —                                                                                                                               |
+| `update-plan-only-team` | `planId`, `planOnlyTeamId`  | `--body` (JSON-patch object)                                           | —                                                                                                                               |
+
+```sh
+# List all plans (cursor pagination)
+atlas jira plans list --max-results 50
+atlas jira plans list --include-trashed --include-archived
+
+# Get a plan
+atlas jira plans get 10001
+atlas jira plans get 10001 --use-group-id
+
+# Create a plan (issueSources and scheduling are required)
+atlas jira plans create --name "Q3 Plan" --issue-sources '[{"type":"Board","value":1}]' --scheduling '{"estimation":"StoryPoints","dependencies":"Sequential","startDate":{"type":"TargetStartDate"},"endDate":{"type":"TargetEndDate"}}'
+
+# Duplicate a plan
+atlas jira plans duplicate 10001 --name "Copy of Q3 Plan"
+
+# Archive and trash
+atlas jira plans archive 10001
+atlas jira plans trash 10001
+
+# Update a plan (JSON-patch)
+atlas jira plans update 10001 --body '{"op":"replace","path":"/name","value":"Renamed Plan"}'
+
+# List teams for a plan
+atlas jira plans list-teams 10001 --max-results 20
+
+# Add an Atlassian team
+atlas jira plans add-atlassian-team 10001 --atlassian-team-id team-abc-123 --planning-style Scrum --sprint-length 14
+
+# Get and delete an Atlassian team
+atlas jira plans get-atlassian-team 10001 team-abc-123
+atlas jira plans delete-atlassian-team 10001 team-abc-123
+
+# Update an Atlassian team (JSON-patch)
+atlas jira plans update-atlassian-team 10001 team-abc-123 --body '{"op":"replace","path":"/sprintLength","value":21}'
+
+# Create a plan-only team
+atlas jira plans create-plan-only-team 10001 --name "My Team" --planning-style Kanban --member-account-ids acc-1,acc-2
+
+# Get and delete a plan-only team
+atlas jira plans get-plan-only-team 10001 2001
+atlas jira plans delete-plan-only-team 10001 2001
+
+# Update a plan-only team (JSON-patch)
+atlas jira plans update-plan-only-team 10001 2001 --body '{"op":"replace","path":"/name","value":"Renamed Team"}'
+```

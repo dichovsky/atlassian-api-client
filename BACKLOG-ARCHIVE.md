@@ -1909,3 +1909,51 @@
 - [x] 🔴 🧩 API: B381 Jira: expose PUT /rest/api/3/config/fieldschemes/projects
   - **Impl:** `ConfigResource.associateProjects(body)` returns void (204). Body: `Record<schemeId, {projectIds: number[]}>`. CLI: `atlas jira config associate-projects --body <json>`.
   - **Rat:** Complex map body; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B625 Jira: expose GET /rest/api/3/plans/plan
+  - **Impl:** New `PlansResource` (`src/jira/resources/plans.ts`). `list(params?)` returns `PlanPage` (cursor pagination); `listAll()` async cursor generator with infinite-loop guard. Query params: `cursor`, `includeTrashed`, `includeArchived`, `maxResults`. CLI: `atlas jira plans list [--cursor] [--max-results] [--include-trashed] [--include-archived]`. Part of B625-B640 `plans` resource PR.
+  - **Rat:** GET /plans/plan uses cursor pagination (`nextPageCursor`/`last` fields) not offset — distinct from Jira offset resources.
+- [x] 🔴 🧩 API: B626 Jira: expose POST /rest/api/3/plans/plan
+  - **Impl:** `PlansResource.create(data, useGroupId?)` returns `number` (new plan ID, 201). Required body: `{ name, issueSources[], scheduling }`. Optional: `crossProjectReleases`, `customFields`, `exclusionRules`, `leadAccountId`, `permissions`. CLI: `atlas jira plans create --name <name> --issue-sources <json> --scheduling <json>`.
+  - **Rat:** issueSources and scheduling are required per spec; optional complex fields passed as JSON.
+- [x] 🔴 🧩 API: B627 Jira: expose GET /rest/api/3/plans/plan/{planId}
+  - **Impl:** `PlansResource.get(planId, params?)` returns `PlanResponse`. Query: `useGroupId?`. CLI: `atlas jira plans get <planId> [--use-group-id]`.
+  - **Rat:** Standard CRUD get.
+- [x] 🔴 🧩 API: B628 Jira: expose PUT /rest/api/3/plans/plan/{planId}
+  - **Impl:** `PlansResource.update(planId, patch, useGroupId?)` returns `void` (204). Spec body is `application/json-patch+json` with schema `{type:object}` — accepts any object. CLI: `atlas jira plans update <planId> --body <json-patch>`.
+  - **Rat:** Spec uses JSON-patch content-type with unstructured schema; CLI accepts raw JSON via --body.
+- [x] 🔴 🧩 API: B629 Jira: expose PUT /rest/api/3/plans/plan/{planId}/archive
+  - **Impl:** `PlansResource.archive(planId)` returns `void` (204). No body. CLI: `atlas jira plans archive <planId>`.
+  - **Rat:** No body per spec; void 204 response.
+- [x] 🔴 🧩 API: B630 Jira: expose POST /rest/api/3/plans/plan/{planId}/duplicate
+  - **Impl:** `PlansResource.duplicate(planId, {name})` returns `number` (new plan ID, 201). Body: `{ name* string }`. CLI: `atlas jira plans duplicate <planId> --name <name>`.
+  - **Rat:** Only required field is name per spec.
+- [x] 🔴 🧩 API: B631 Jira: expose GET /rest/api/3/plans/plan/{planId}/team
+  - **Impl:** `PlansResource.listTeams(planId, params?)` + `listTeamsAll(planId, params?)` cursor generator. Query: `cursor?`, `maxResults?`. CLI: `atlas jira plans list-teams <planId> [--cursor] [--max-results]`.
+  - **Rat:** Cursor pagination matching the plans list pattern.
+- [x] 🔴 🧩 API: B632 Jira: expose POST /rest/api/3/plans/plan/{planId}/team/atlassian
+  - **Impl:** `PlansResource.addAtlassianTeam(planId, data)` returns `void` (204). Body: `{ id* string, planningStyle* ('Scrum'|'Kanban'), capacity? number, issueSourceId? integer, sprintLength? integer }`. CLI: `atlas jira plans add-atlassian-team <planId> --atlassian-team-id <id> --planning-style <style>`.
+  - **Rat:** planningStyle validated as enum; capacity is number (float).
+- [x] 🔴 🧩 API: B633 Jira: expose DELETE /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+  - **Impl:** `PlansResource.deleteAtlassianTeam(planId, atlassianTeamId)` returns `void` (204). CLI: `atlas jira plans delete-atlassian-team <planId> <atlassianTeamId>`.
+  - **Rat:** Two positional path params per HARD rules.
+- [x] 🔴 🧩 API: B634 Jira: expose GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+  - **Impl:** `PlansResource.getAtlassianTeam(planId, atlassianTeamId)` returns `AtlassianTeamResponse`. CLI: `atlas jira plans get-atlassian-team <planId> <atlassianTeamId>`.
+  - **Rat:** Standard sub-resource get.
+- [x] 🔴 🧩 API: B635 Jira: expose PUT /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+  - **Impl:** `PlansResource.updateAtlassianTeam(planId, atlassianTeamId, patch)` returns `void` (204). Spec: `application/json-patch+json`, schema `{type:object}`. CLI: `atlas jira plans update-atlassian-team <planId> <atlassianTeamId> --body <json-patch>`.
+  - **Rat:** JSON-patch unstructured body same as B628.
+- [x] 🔴 🧩 API: B636 Jira: expose POST /rest/api/3/plans/plan/{planId}/team/planonly
+  - **Impl:** `PlansResource.createPlanOnlyTeam(planId, data)` returns `number` (new team ID, 201). Body: `{ name* string, planningStyle* ('Scrum'|'Kanban'), capacity? number, issueSourceId? integer, memberAccountIds? string[], sprintLength? integer }`. CLI: `atlas jira plans create-plan-only-team <planId> --name <name> --planning-style <style>`.
+  - **Rat:** memberAccountIds passed as CSV via --member-account-ids.
+- [x] 🔴 🧩 API: B637 Jira: expose DELETE /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+  - **Impl:** `PlansResource.deletePlanOnlyTeam(planId, planOnlyTeamId)` returns `void` (204). CLI: `atlas jira plans delete-plan-only-team <planId> <planOnlyTeamId>`. Note: `planOnlyTeamId` is integer (path param).
+  - **Rat:** planOnlyTeamId is integer per spec (unlike atlassianTeamId which is string).
+- [x] 🔴 🧩 API: B638 Jira: expose GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+  - **Impl:** `PlansResource.getPlanOnlyTeam(planId, planOnlyTeamId)` returns `PlanOnlyTeamResponse`. CLI: `atlas jira plans get-plan-only-team <planId> <planOnlyTeamId>`.
+  - **Rat:** Standard sub-resource get.
+- [x] 🔴 🧩 API: B639 Jira: expose PUT /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+  - **Impl:** `PlansResource.updatePlanOnlyTeam(planId, planOnlyTeamId, patch)` returns `void` (204). Spec: `application/json-patch+json`, schema `{type:object}`. CLI: `atlas jira plans update-plan-only-team <planId> <planOnlyTeamId> --body <json-patch>`.
+  - **Rat:** JSON-patch unstructured body.
+- [x] 🔴 🧩 API: B640 Jira: expose PUT /rest/api/3/plans/plan/{planId}/trash
+  - **Impl:** `PlansResource.trash(planId)` returns `void` (204). No body. CLI: `atlas jira plans trash <planId>`.
+  - **Rat:** No body per spec; void 204 response.
