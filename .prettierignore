@@ -8,3 +8,7 @@ CODEMAP.md
 # etc.) so we don't get noise diffs whenever prettier defaults shift; the
 # generator parses it via JSON.parse, which is agnostic to whitespace.
 codemap.config.json
+
+# OpenAPI snapshots in spec/ are upstream-owned; we ship them byte-for-byte
+# as fetched so the SHA-256 pinned in spec/README.md matches the source.
+spec/*.json
