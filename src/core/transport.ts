@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
+import { hashAuthValue } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
 import { createAuthProvider } from './auth.js';
 import { createHttpError, TimeoutError, NetworkError, ValidationError } from './errors.js';
@@ -260,7 +260,7 @@ function computeAuthIdentity(authProvider: AuthProvider): string {
     return '';
   }
   /* c8 ignore stop */
-  return `auth:${createHash('sha256').update(providerAuth).digest('hex').slice(0, 16)}`;
+  return hashAuthValue(providerAuth);
 }
 
 /**

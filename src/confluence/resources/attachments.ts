@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { nonEmptyQuery } from './query.js';
 import type {
   Attachment,
   AttachmentDetailedVersion,
@@ -39,15 +40,6 @@ function statusParam(
   if (typeof value === 'string') return value;
   if (value.length === 0) return undefined;
   return value.join(',');
-}
-
-/**
- * Return `undefined` for an empty query bag so the transport does not append
- * a stray `?` to the URL. Used by methods whose params are entirely optional.
- */
-function nonEmptyQuery(query: Query): Query | undefined {
-  for (const _ in query) return query;
-  return undefined;
 }
 
 /**

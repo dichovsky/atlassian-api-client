@@ -124,14 +124,18 @@ export class UsersResource {
 
   /** Fetch multiple users by account ID (B801). */
   async bulkGet(params: BulkUsersParams): Promise<BulkUsersResponse> {
-    const query: Record<string, string | number | undefined> = {
-      accountId: params.accountId.join('&accountId='),
-    };
+    // accountId is a repeated query param (?accountId=a&accountId=b). The shared
+    // transport `query` field collapses duplicate keys, so build the repeated
+    // pairs into the path directly (see UsersResource note / app.ts pattern).
+    const accountIdQs = params.accountId
+      .map((id) => `accountId=${encodeURIComponent(id)}`)
+      .join('&');
+    const query: Record<string, string | number | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const response = await this.transport.request<BulkUsersResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/user/bulk`,
+      path: `${this.baseUrl}/user/bulk?${accountIdQs}`,
       query,
     });
     return response.data;
@@ -139,14 +143,25 @@ export class UsersResource {
 
   /** Get account IDs for legacy usernames or keys (B802). */
   async bulkMigration(params: BulkMigrationParams): Promise<UserMigrationRecord[]> {
+    // `username` and `key` are repeated query params; build them into the path
+    // so the transport does not collapse the duplicate keys.
+    const repeated: string[] = [];
+    if (params.username !== undefined) {
+      repeated.push(...params.username.map((u) => `username=${encodeURIComponent(u)}`));
+    }
+    if (params.key !== undefined) {
+      repeated.push(...params.key.map((k) => `key=${encodeURIComponent(k)}`));
+    }
     const query: Record<string, string | number | undefined> = {};
-    if (params.username !== undefined) query['username'] = params.username.join('&username=');
-    if (params.key !== undefined) query['key'] = params.key.join('&key=');
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const path =
+      repeated.length > 0
+        ? `${this.baseUrl}/user/bulk/migration?${repeated.join('&')}`
+        : `${this.baseUrl}/user/bulk/migration`;
     const response = await this.transport.request<UserMigrationRecord[]>({
       method: 'GET',
-      path: `${this.baseUrl}/user/bulk/migration`,
+      path,
       query,
     });
     return response.data;
@@ -199,10 +214,10 @@ export class UsersResource {
 
   /** Get email addresses for multiple users by account IDs (B807). */
   async bulkGetEmails(accountIds: string[]): Promise<BulkUserEmailsResponse> {
+    const accountIdQs = accountIds.map((id) => `accountId=${encodeURIComponent(id)}`).join('&');
     const response = await this.transport.request<BulkUserEmailsResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/user/email/bulk`,
-      query: { accountId: accountIds.join('&accountId=') },
+      path: `${this.baseUrl}/user/email/bulk?${accountIdQs}`,
     });
     return response.data;
   }

@@ -227,7 +227,7 @@ describe('UsersResource', () => {
   // ── bulkGet (B801) ────────────────────────────────────────────────────────
 
   describe('bulkGet()', () => {
-    it('calls GET /user/bulk with account IDs', async () => {
+    it('calls GET /user/bulk with repeated accountId params in the path', async () => {
       const bulkResp = {
         maxResults: 50,
         startAt: 0,
@@ -240,8 +240,17 @@ describe('UsersResource', () => {
       expect(result).toEqual(bulkResp);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/user/bulk`,
+        path: `${BASE_URL}/user/bulk?accountId=acc-1&accountId=acc-2`,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('accountId');
+    });
+
+    it('percent-encodes account IDs in the repeated query params', async () => {
+      transport.respondWith({ maxResults: 50, startAt: 0, total: 0, isLast: true, values: [] });
+      await users.bulkGet({ accountId: ['a b', 'x&y'] });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/user/bulk?accountId=a%20b&accountId=x%26y`,
+      );
     });
 
     it('includes pagination params when provided', async () => {
@@ -251,6 +260,7 @@ describe('UsersResource', () => {
         startAt: 5,
         maxResults: 10,
       });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/user/bulk?accountId=acc-1`);
     });
   });
 
@@ -267,13 +277,14 @@ describe('UsersResource', () => {
       });
     });
 
-    it('includes username and key params', async () => {
+    it('includes username and key as repeated params in the path', async () => {
       transport.respondWith([{ key: 'user1', accountId: 'acc-1' }]);
-      await users.bulkMigration({ username: ['alice'], key: ['legacy-key'] });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        username: 'alice',
-        key: 'legacy-key',
-      });
+      await users.bulkMigration({ username: ['alice', 'bob'], key: ['legacy-key'] });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/user/bulk/migration?username=alice&username=bob&key=legacy-key`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('username');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('key');
     });
 
     it('includes pagination params when provided', async () => {
@@ -369,7 +380,7 @@ describe('UsersResource', () => {
   // ── bulkGetEmails (B807) ──────────────────────────────────────────────────
 
   describe('bulkGetEmails()', () => {
-    it('calls GET /user/email/bulk with account IDs', async () => {
+    it('calls GET /user/email/bulk with repeated accountId params in the path', async () => {
       const bulkResp = {
         values: [
           { accountId: 'acc-1', email: 'alice@example.com' },
@@ -381,7 +392,7 @@ describe('UsersResource', () => {
       expect(result).toEqual(bulkResp);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/user/email/bulk`,
+        path: `${BASE_URL}/user/email/bulk?accountId=acc-1&accountId=acc-2`,
       });
     });
   });

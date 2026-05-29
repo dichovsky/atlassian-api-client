@@ -20,3 +20,14 @@ export function csvOrScalar(value: string | readonly string[] | undefined): stri
   if (value.length === 0) return undefined;
   return value.join(',');
 }
+
+/** Query bag accepted by the underlying transport. Scalars only. */
+type Query = Record<string, string | number | boolean | undefined>;
+
+/**
+ * Return `undefined` for an empty query bag so the transport does not append
+ * a stray `?` to the URL. Used by methods whose params are entirely optional.
+ */
+export function nonEmptyQuery(query: Query): Query | undefined {
+  return Object.keys(query).length === 0 ? undefined : query;
+}

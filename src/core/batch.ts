@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import type { Middleware, RequestOptions, ApiResponse } from './types.js';
+import { resolveAuthIdentity, appendQueryKey } from './auth-identity.js';
 
 /**
  * Creates a middleware that deduplicates concurrent identical in-flight requests.
@@ -48,14 +48,7 @@ export function createBatchMiddleware(): Middleware {
 }
 
 function buildRequestKey(opts: RequestOptions): string {
-  const queryStr = opts.query
-    ? '?' +
-      Object.entries(opts.query)
-        .filter(([, v]) => v !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-        .join('&')
-    : '';
+  const pathWithQuery = appendQueryKey(opts.path, opts.query);
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
   // B024: prefix with an auth-identity hash so two concurrent requests that
@@ -63,7 +56,7 @@ function buildRequestKey(opts: RequestOptions): string {
   // (e.g. OAuth-refresh middleware rotating tokens, or multi-tenant request
   // routing) are NOT coalesced — the loser would otherwise receive the
   // winner's authenticated response.
-  return `${authIdentity(opts)}|${opts.method}:${opts.path}${queryStr}:${bodyStr}:${headersStr}`;
+  return `${resolveAuthIdentity(opts)}|${opts.method}:${pathWithQuery}:${bodyStr}:${headersStr}`;
 }
 
 /**
@@ -82,41 +75,4 @@ function serializeHeaders(headers: RequestOptions['headers']): string {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
-}
-
-/**
- * Derive the stable identifier the dedupe key partitions on.
- *
- * Preferred source (PR review of round 4 → round 5): the precomputed
- * `RequestOptions.authIdentity` hash that `HttpTransport` injects before the
- * middleware chain runs. Using this means the dedupe key never observes the
- * raw `Authorization` value — even when a user-installed logging middleware
- * dumps the whole options object.
- *
- * Fallback: hash the in-flight `Authorization` header so manually
- * constructed `RequestOptions` (legacy callers, tests) still partition
- * correctly. When multiple Authorization-like keys are present, the LAST
- * occurrence in iteration order wins (matches `fetch` last-write-wins
- * semantics for duplicate-key plain-object headers maps).
- *
- * Returns the stable sentinel `'no-auth'` when neither source is present.
- */
-function authIdentity(opts: RequestOptions): string {
-  if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
-    return opts.authIdentity;
-  }
-  const auth = pickAuthorizationHeader(opts.headers);
-  if (auth === undefined || auth === '') return 'no-auth';
-  return `auth:${createHash('sha256').update(auth).digest('hex').slice(0, 16)}`;
-}
-
-function pickAuthorizationHeader(headers: RequestOptions['headers']): string | undefined {
-  if (headers === undefined) return undefined;
-  let last: string | undefined;
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === 'authorization') {
-      last = value;
-    }
-  }
-  return last;
 }

@@ -57,6 +57,13 @@ export interface BulkFetchIssueCommentsResponse {
   readonly nextPage?: string;
 }
 
+/** Validate that `value` is a non-empty string; throws `ValidationError` otherwise. */
+function requireNonEmpty(name: string, value: string): void {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new ValidationError(`${name} must be a non-empty string`);
+  }
+}
+
 /** Jira Issue Comments resource — list, get, create, update, and delete comments on issues. */
 export class IssueCommentsResource {
   constructor(
@@ -128,9 +135,7 @@ export class IssueCommentsResource {
 
   /** List property keys for a comment (B356). GET /comment/{commentId}/properties. */
   async listProperties(commentId: string): Promise<IssueCommentPropertyKeys> {
-    if (typeof commentId !== 'string' || commentId.length === 0) {
-      throw new ValidationError('commentId must be a non-empty string');
-    }
+    requireNonEmpty('commentId', commentId);
     const response = await this.transport.request<IssueCommentPropertyKeys>({
       method: 'GET',
       path: `${this.baseUrl}/comment/${encodePathSegment(commentId)}/properties`,
@@ -140,12 +145,8 @@ export class IssueCommentsResource {
 
   /** Get a single comment property (B358). GET /comment/{commentId}/properties/{propertyKey}. */
   async getProperty(commentId: string, propertyKey: string): Promise<IssueCommentProperty> {
-    if (typeof commentId !== 'string' || commentId.length === 0) {
-      throw new ValidationError('commentId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('commentId', commentId);
+    requireNonEmpty('propertyKey', propertyKey);
     const response = await this.transport.request<IssueCommentProperty>({
       method: 'GET',
       path: `${this.baseUrl}/comment/${encodePathSegment(commentId)}/properties/${encodePathSegment(propertyKey)}`,
@@ -155,12 +156,8 @@ export class IssueCommentsResource {
 
   /** Set/overwrite a comment property (B359). Value is arbitrary JSON. Status 200 or 201. */
   async setProperty(commentId: string, propertyKey: string, value: unknown): Promise<void> {
-    if (typeof commentId !== 'string' || commentId.length === 0) {
-      throw new ValidationError('commentId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('commentId', commentId);
+    requireNonEmpty('propertyKey', propertyKey);
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/comment/${encodePathSegment(commentId)}/properties/${encodePathSegment(propertyKey)}`,
@@ -170,12 +167,8 @@ export class IssueCommentsResource {
 
   /** Delete a comment property (B357). DELETE /comment/{commentId}/properties/{propertyKey}. */
   async deleteProperty(commentId: string, propertyKey: string): Promise<void> {
-    if (typeof commentId !== 'string' || commentId.length === 0) {
-      throw new ValidationError('commentId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('commentId', commentId);
+    requireNonEmpty('propertyKey', propertyKey);
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/comment/${encodePathSegment(commentId)}/properties/${encodePathSegment(propertyKey)}`,

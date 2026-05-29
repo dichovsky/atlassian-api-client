@@ -560,5 +560,21 @@ describe('ScreensResource', () => {
     it('rejects an invalid maxResult before requesting', async () => {
       await expect(resource.listAllScreenTabs({ maxResult: 0 }).next()).rejects.toThrow();
     });
+
+    it('strips the page-size key from the base query (paginateOffset owns it)', async () => {
+      transport.respondWith({
+        values: [{ screenId: 1, tabId: 1, tabName: 'A' }],
+        startAt: 0,
+        maxResults: 5,
+        total: 1,
+        isLast: true,
+      });
+
+      for await (const _tab of resource.listAllScreenTabs({ screenId: [1], maxResult: 5 })) {
+        /* consume */
+      }
+
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('maxResult');
+    });
   });
 });

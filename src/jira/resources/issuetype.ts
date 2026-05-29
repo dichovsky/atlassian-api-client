@@ -70,6 +70,13 @@ export interface IssueTypeProperty {
 /** Mapping of issue types to a single project, as returned by GET /issuetype/project. */
 export type IssueTypesForProject = readonly IssueType[];
 
+/** Validate that `value` is a non-empty string; throws `ValidationError` otherwise. */
+function requireNonEmpty(name: string, value: string): void {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new ValidationError(`${name} must be a non-empty string`);
+  }
+}
+
 /**
  * Jira Issue Type singular resource — covers `/rest/api/3/issuetype` mutations and
  * subordinate sub-resources (alternatives, avatar2, properties, project mapping)
@@ -83,9 +90,7 @@ export class IssueTypeResource {
 
   /** Create a new issue type (B556). POST /issuetype. */
   async create(data: CreateIssueTypeData): Promise<IssueType> {
-    if (typeof data.name !== 'string' || data.name.length === 0) {
-      throw new ValidationError('name must be a non-empty string');
-    }
+    requireNonEmpty('name', data.name);
     const response = await this.transport.request<IssueType>({
       method: 'POST',
       path: `${this.baseUrl}/issuetype`,
@@ -96,14 +101,10 @@ export class IssueTypeResource {
 
   /** Delete an issue type (B557). DELETE /issuetype/{id}. */
   async delete(id: string, alternativeIssueTypeId?: string): Promise<void> {
-    if (typeof id !== 'string' || id.length === 0) {
-      throw new ValidationError('id must be a non-empty string');
-    }
+    requireNonEmpty('id', id);
     const query: Record<string, string> = {};
     if (alternativeIssueTypeId !== undefined) {
-      if (typeof alternativeIssueTypeId !== 'string' || alternativeIssueTypeId.length === 0) {
-        throw new ValidationError('alternativeIssueTypeId must be a non-empty string');
-      }
+      requireNonEmpty('alternativeIssueTypeId', alternativeIssueTypeId);
       query['alternativeIssueTypeId'] = alternativeIssueTypeId;
     }
     await this.transport.request<undefined>({
@@ -115,9 +116,7 @@ export class IssueTypeResource {
 
   /** Update an issue type (B558). PUT /issuetype/{id}. */
   async update(id: string, data: UpdateIssueTypeData): Promise<IssueType> {
-    if (typeof id !== 'string' || id.length === 0) {
-      throw new ValidationError('id must be a non-empty string');
-    }
+    requireNonEmpty('id', id);
     const response = await this.transport.request<IssueType>({
       method: 'PUT',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(id)}`,
@@ -128,9 +127,7 @@ export class IssueTypeResource {
 
   /** List valid replacement issue types for the given issue type (B559). */
   async listAlternatives(id: string): Promise<IssueType[]> {
-    if (typeof id !== 'string' || id.length === 0) {
-      throw new ValidationError('id must be a non-empty string');
-    }
+    requireNonEmpty('id', id);
     const response = await this.transport.request<IssueType[]>({
       method: 'GET',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(id)}/alternatives`,
@@ -150,9 +147,7 @@ export class IssueTypeResource {
     content: Blob,
     params: LoadIssueTypeAvatarParams,
   ): Promise<IssueTypeAvatar> {
-    if (typeof id !== 'string' || id.length === 0) {
-      throw new ValidationError('id must be a non-empty string');
-    }
+    requireNonEmpty('id', id);
     if (!Number.isInteger(params.size) || params.size <= 0) {
       throw new ValidationError('size must be a positive integer');
     }
@@ -185,9 +180,7 @@ export class IssueTypeResource {
 
   /** List property keys for an issue type (B561). */
   async listProperties(issueTypeId: string): Promise<IssueTypePropertyKeys> {
-    if (typeof issueTypeId !== 'string' || issueTypeId.length === 0) {
-      throw new ValidationError('issueTypeId must be a non-empty string');
-    }
+    requireNonEmpty('issueTypeId', issueTypeId);
     const response = await this.transport.request<IssueTypePropertyKeys>({
       method: 'GET',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(issueTypeId)}/properties`,
@@ -197,12 +190,8 @@ export class IssueTypeResource {
 
   /** Delete an issue type property (B562). */
   async deleteProperty(issueTypeId: string, propertyKey: string): Promise<void> {
-    if (typeof issueTypeId !== 'string' || issueTypeId.length === 0) {
-      throw new ValidationError('issueTypeId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('issueTypeId', issueTypeId);
+    requireNonEmpty('propertyKey', propertyKey);
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(issueTypeId)}/properties/${encodePathSegment(propertyKey)}`,
@@ -211,12 +200,8 @@ export class IssueTypeResource {
 
   /** Get a single issue type property (B563). */
   async getProperty(issueTypeId: string, propertyKey: string): Promise<IssueTypeProperty> {
-    if (typeof issueTypeId !== 'string' || issueTypeId.length === 0) {
-      throw new ValidationError('issueTypeId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('issueTypeId', issueTypeId);
+    requireNonEmpty('propertyKey', propertyKey);
     const response = await this.transport.request<IssueTypeProperty>({
       method: 'GET',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(issueTypeId)}/properties/${encodePathSegment(propertyKey)}`,
@@ -226,12 +211,8 @@ export class IssueTypeResource {
 
   /** Set/overwrite an issue type property (B564). Value is arbitrary JSON. */
   async setProperty(issueTypeId: string, propertyKey: string, value: unknown): Promise<void> {
-    if (typeof issueTypeId !== 'string' || issueTypeId.length === 0) {
-      throw new ValidationError('issueTypeId must be a non-empty string');
-    }
-    if (typeof propertyKey !== 'string' || propertyKey.length === 0) {
-      throw new ValidationError('propertyKey must be a non-empty string');
-    }
+    requireNonEmpty('issueTypeId', issueTypeId);
+    requireNonEmpty('propertyKey', propertyKey);
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(issueTypeId)}/properties/${encodePathSegment(propertyKey)}`,

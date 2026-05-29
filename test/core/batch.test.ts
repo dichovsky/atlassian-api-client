@@ -276,4 +276,26 @@ describe('createBatchMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(r1).toBe(r2);
   });
+
+  it('partitions correctly when the path already carries a query (path-embedded repeated params)', async () => {
+    // Bulk-user endpoints embed repeated query params (?accountId=a&accountId=b)
+    // directly into the path because the transport's `query` map collapses
+    // duplicate keys. Verify (a) identical such requests still coalesce and
+    // (b) requests differing only in the path-embedded query partition.
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ path: '/user/bulk?accountId=a&accountId=b', query: { startAt: 0 } }), next),
+      mw(makeOpts({ path: '/user/bulk?accountId=a&accountId=b', query: { startAt: 0 } }), next),
+    ]);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+
+    await Promise.all([
+      mw(makeOpts({ path: '/user/bulk?accountId=a&accountId=b', query: { startAt: 0 } }), next),
+      mw(makeOpts({ path: '/user/bulk?accountId=c&accountId=d', query: { startAt: 0 } }), next),
+    ]);
+    expect(next).toHaveBeenCalledTimes(3);
+  });
 });

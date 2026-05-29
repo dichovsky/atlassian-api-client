@@ -9,11 +9,11 @@ import type {
   CreateInlineCommentData,
   FooterComment,
   InlineComment,
-  ListCommentPropertiesParams,
+  ListSharedContentPropertiesParams,
   ListFooterCommentsParams,
   ListInlineCommentsParams,
   UpdateCommentData,
-  UpdateCommentPropertyData,
+  UpdateSharedContentPropertyData,
   UpdateInlineCommentData,
 } from '../types.js';
 
@@ -145,7 +145,7 @@ export class CommentsResource {
   /** List content properties on a comment (single page). */
   async listProperties(
     commentId: string,
-    params?: ListCommentPropertiesParams,
+    params?: ListSharedContentPropertiesParams,
   ): Promise<CursorPaginatedResponse<ContentProperty>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | undefined> = {};
@@ -165,7 +165,7 @@ export class CommentsResource {
   /** Iterate every content property on a comment across all pages. */
   async *listPropertiesAll(
     commentId: string,
-    params?: Omit<ListCommentPropertiesParams, 'cursor'>,
+    params?: Omit<ListSharedContentPropertiesParams, 'cursor'>,
   ): AsyncGenerator<ContentProperty> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
@@ -211,7 +211,7 @@ export class CommentsResource {
   async updateProperty(
     commentId: string,
     propertyId: string,
-    data: UpdateCommentPropertyData,
+    data: UpdateSharedContentPropertyData,
   ): Promise<ContentProperty> {
     const response = await this.transport.request<ContentProperty>({
       method: 'PUT',

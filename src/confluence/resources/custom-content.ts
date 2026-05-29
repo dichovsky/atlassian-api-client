@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { csvOrScalar, nonEmptyQuery } from './query.js';
 import type {
   Attachment,
   ContentProperty,
@@ -28,15 +29,6 @@ import type {
 
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
-
-/**
- * Return `undefined` for an empty query bag so the transport does not append
- * a stray `?` to the URL. Used by methods whose params are entirely optional.
- */
-function nonEmptyQuery(query: Query): Query | undefined {
-  for (const _ in query) return query;
-  return undefined;
-}
 
 /**
  * Resource for Confluence v2 custom content.
@@ -564,16 +556,4 @@ export class CustomContentResource {
     if (params.limit !== undefined) query['limit'] = params.limit;
     return query;
   }
-}
-
-/**
- * Normalise an array-or-scalar filter into the comma-joined scalar the wire
- * format expects. Returns `undefined` for both omitted and explicit empty
- * arrays so the caller can drop the key from the query bag entirely.
- */
-function csvOrScalar(value: string | readonly string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.join(',');
 }
