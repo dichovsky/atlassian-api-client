@@ -391,6 +391,8 @@ const GLOBAL_OPTIONS = {
   'option-id': { type: 'string' as const },
   'option-ids': { type: 'string' as const },
   'only-options': { type: 'boolean' as const },
+  // fields context issuetype + default options (B419-B420, B429, B905-B906)
+  'default-values-json': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

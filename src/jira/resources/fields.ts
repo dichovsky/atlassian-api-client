@@ -181,6 +181,338 @@ export interface OrderFieldContextOptionsData {
   readonly position?: 'First' | 'Last';
 }
 
+// ── Issue-type mapping types (B419, B420, B429) ──────────────────────────────
+
+/** Request body for adding or removing issue types from a context (B419, B420). */
+export interface FieldContextIssueTypeIdsBody {
+  readonly issueTypeIds: readonly string[];
+}
+
+/** A single mapping of a context to an issue type (B429). */
+export interface FieldContextIssueTypeMapping {
+  /** The ID of the context. */
+  readonly contextId: string;
+  /** The ID of the issue type. Absent when isAnyIssueType is true. */
+  readonly issueTypeId?: string;
+  /** Whether the context applies to any issue type. */
+  readonly isAnyIssueType?: boolean;
+}
+
+/** Paginated page of FieldContextIssueTypeMapping items (B429). */
+export type FieldContextIssueTypeMappingPage =
+  OffsetPaginatedResponse<FieldContextIssueTypeMapping>;
+
+/** Query parameters for listing field context issue-type mappings (B429). */
+export interface ListFieldContextIssueTypeMappingParams {
+  readonly contextId?: number[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+// ── Default-value polymorphic types (B905, B906) ─────────────────────────────
+//
+// Spec: CustomFieldContextDefaultValue (oneOf, discriminated by `type`)
+// Snapshot date: 2026-05-30
+//
+// All 27 spec-defined variants are typed exactly below (no variant is silently
+// lumped into a fallback). A forward-compat fallback is appended at the end of
+// the union for unknown future variants.
+//
+// Variant inventory (27 typed exactly):
+//   datepicker         → FieldContextDefaultValueDate
+//   datetimepicker     → FieldContextDefaultValueDateTime
+//   float              → FieldContextDefaultValueFloat
+//   forge.datetime     → FieldContextDefaultValueForgeDateTimeField
+//   forge.group        → FieldContextDefaultValueForgeGroupField
+//   forge.group.list   → FieldContextDefaultValueForgeMultiGroupField
+//   forge.number       → FieldContextDefaultValueForgeNumberField
+//   forge.object       → FieldContextDefaultValueForgeObjectField
+//   forge.string       → FieldContextDefaultValueForgeStringField
+//   forge.string.list  → FieldContextDefaultValueForgeMultiStringField
+//   forge.user         → FieldContextDefaultValueForgeUserField
+//   forge.user.list    → FieldContextDefaultValueForgeMultiUserField
+//   grouppicker.multiple → FieldContextDefaultValueMultipleGroupPicker
+//   grouppicker.single → FieldContextDefaultValueSingleGroupPicker
+//   labels             → FieldContextDefaultValueLabels
+//   multi.user.select  → FieldContextDefaultValueMultiUserPicker
+//   option.cascading   → FieldContextDefaultValueCascadingOption
+//   option.multiple    → FieldContextDefaultValueMultipleOption
+//   option.single      → FieldContextDefaultValueSingleOption
+//   project            → FieldContextDefaultValueProject
+//   readonly           → FieldContextDefaultValueReadOnly
+//   single.user.select → FieldContextSingleUserPickerDefaults
+//   textarea           → FieldContextDefaultValueTextArea
+//   textfield          → FieldContextDefaultValueTextField
+//   url                → FieldContextDefaultValueURL
+//   version.multiple   → FieldContextDefaultValueMultipleVersionPicker
+//   version.single     → FieldContextDefaultValueSingleVersionPicker
+
+/** Filter applied to user-picker autocomplete suggestions. */
+export interface FieldContextUserFilter {
+  readonly enabled: boolean;
+  readonly groups?: readonly string[];
+  readonly roleIds?: readonly number[];
+}
+
+/** type: `option.cascading` — cascading select list default. */
+export interface FieldContextDefaultValueCascadingOption {
+  readonly type: 'option.cascading';
+  readonly contextId: string;
+  readonly optionId: string;
+  readonly cascadingOptionId?: string;
+}
+
+/** type: `option.multiple` — multi-select / checkbox default. */
+export interface FieldContextDefaultValueMultipleOption {
+  readonly type: 'option.multiple';
+  readonly contextId: string;
+  readonly optionIds: readonly string[];
+}
+
+/** type: `option.single` — single-select / radio-button default. */
+export interface FieldContextDefaultValueSingleOption {
+  readonly type: 'option.single';
+  readonly contextId: string;
+  readonly optionId: string;
+}
+
+/** type: `single.user.select` — single user picker default. */
+export interface FieldContextDefaultValueSingleUserPicker {
+  readonly type: 'single.user.select';
+  readonly contextId: string;
+  readonly accountId: string;
+  readonly userFilter: FieldContextUserFilter;
+}
+
+/** type: `multi.user.select` — multi user picker default. */
+export interface FieldContextDefaultValueMultiUserPicker {
+  readonly type: 'multi.user.select';
+  readonly contextId: string;
+  readonly accountIds: readonly string[];
+}
+
+/** type: `grouppicker.single` — single group picker default. */
+export interface FieldContextDefaultValueSingleGroupPicker {
+  readonly type: 'grouppicker.single';
+  readonly contextId: string;
+  readonly groupId: string;
+}
+
+/** type: `grouppicker.multiple` — multiple group picker default. */
+export interface FieldContextDefaultValueMultipleGroupPicker {
+  readonly type: 'grouppicker.multiple';
+  readonly contextId: string;
+  readonly groupIds: readonly string[];
+}
+
+/** type: `datepicker` — date field default (ISO date string). */
+export interface FieldContextDefaultValueDate {
+  readonly type: 'datepicker';
+  readonly contextId: string;
+  readonly date?: string;
+  readonly useCurrent?: boolean;
+}
+
+/** type: `datetimepicker` — date-time field default (ISO datetime string). */
+export interface FieldContextDefaultValueDateTime {
+  readonly type: 'datetimepicker';
+  readonly contextId: string;
+  readonly dateTime?: string;
+  readonly useCurrent?: boolean;
+}
+
+/** type: `url` — URL field default. */
+export interface FieldContextDefaultValueURL {
+  readonly type: 'url';
+  readonly contextId: string;
+  readonly url: string;
+}
+
+/** type: `project` — project picker default. */
+export interface FieldContextDefaultValueProject {
+  readonly type: 'project';
+  readonly contextId: string;
+  readonly projectId: string;
+}
+
+/** type: `float` — floating-point number default. */
+export interface FieldContextDefaultValueFloat {
+  readonly type: 'float';
+  readonly contextId: string;
+  readonly number: number;
+}
+
+/** type: `labels` — labels field default. */
+export interface FieldContextDefaultValueLabels {
+  readonly type: 'labels';
+  readonly contextId: string;
+  readonly labels: readonly string[];
+}
+
+/** type: `textfield` — text field default (max 254 chars). */
+export interface FieldContextDefaultValueTextField {
+  readonly type: 'textfield';
+  readonly contextId: string;
+  readonly text?: string;
+}
+
+/** type: `textarea` — text area field default (max 32767 chars). */
+export interface FieldContextDefaultValueTextArea {
+  readonly type: 'textarea';
+  readonly contextId: string;
+  readonly text?: string;
+}
+
+/** type: `readonly` — read-only text field default (max 255 chars). */
+export interface FieldContextDefaultValueReadOnly {
+  readonly type: 'readonly';
+  readonly contextId: string;
+  readonly text?: string;
+}
+
+/** type: `version.single` — single version picker default. */
+export interface FieldContextDefaultValueSingleVersionPicker {
+  readonly type: 'version.single';
+  readonly contextId: string;
+  readonly versionId: string;
+  readonly versionOrder?: string;
+}
+
+/** type: `version.multiple` — multiple version picker default. */
+export interface FieldContextDefaultValueMultipleVersionPicker {
+  readonly type: 'version.multiple';
+  readonly contextId: string;
+  readonly versionIds: readonly string[];
+  readonly versionOrder?: string;
+}
+
+/** type: `forge.string` — Forge string field default (max 254 chars). */
+export interface FieldContextDefaultValueForgeStringField {
+  readonly type: 'forge.string';
+  readonly contextId: string;
+  readonly text?: string;
+}
+
+/** type: `forge.string.list` — Forge collection-of-strings field default. */
+export interface FieldContextDefaultValueForgeMultiStringField {
+  readonly type: 'forge.string.list';
+  readonly contextId: string;
+  readonly values?: readonly string[];
+}
+
+/** type: `forge.object` — Forge object field default. */
+export interface FieldContextDefaultValueForgeObjectField {
+  readonly type: 'forge.object';
+  readonly contextId: string;
+  readonly object?: Record<string, unknown>;
+}
+
+/** type: `forge.datetime` — Forge date-time field default. */
+export interface FieldContextDefaultValueForgeDateTimeField {
+  readonly type: 'forge.datetime';
+  readonly contextId: string;
+  readonly dateTime?: string;
+  readonly useCurrent?: boolean;
+}
+
+/** type: `forge.group` — Forge group field default. */
+export interface FieldContextDefaultValueForgeGroupField {
+  readonly type: 'forge.group';
+  readonly contextId: string;
+  readonly groupId: string;
+}
+
+/** type: `forge.group.list` — Forge group-collection field default. */
+export interface FieldContextDefaultValueForgeMultiGroupField {
+  readonly type: 'forge.group.list';
+  readonly contextId: string;
+  readonly groupIds: readonly string[];
+}
+
+/** type: `forge.number` — Forge number field default. */
+export interface FieldContextDefaultValueForgeNumberField {
+  readonly type: 'forge.number';
+  readonly contextId: string;
+  readonly number: number;
+}
+
+/** type: `forge.user` — Forge user field default. */
+export interface FieldContextDefaultValueForgeUserField {
+  readonly type: 'forge.user';
+  readonly contextId: string;
+  readonly accountId: string;
+  readonly userFilter: FieldContextUserFilter;
+}
+
+/** type: `forge.user.list` — Forge user-collection field default. */
+export interface FieldContextDefaultValueForgeMultiUserField {
+  readonly type: 'forge.user.list';
+  readonly contextId: string;
+  readonly accountIds: readonly string[];
+}
+
+/**
+ * Forward-compat fallback for default-value variants not yet defined in the
+ * spec snapshot (2026-05-30). Placed last in the union so typed variants take
+ * precedence in narrowing.
+ */
+export interface FieldContextDefaultValueUnknown {
+  readonly type: string;
+  readonly contextId: string;
+  readonly [key: string]: unknown;
+}
+
+/**
+ * Polymorphic union for CustomFieldContextDefaultValue.
+ * Discriminated by the `type` string literal.
+ * 27 variants typed exactly per spec snapshot 2026-05-30.
+ * FieldContextDefaultValueUnknown at the end covers future variants.
+ */
+export type FieldContextDefaultValue =
+  | FieldContextDefaultValueCascadingOption
+  | FieldContextDefaultValueMultipleOption
+  | FieldContextDefaultValueSingleOption
+  | FieldContextDefaultValueSingleUserPicker
+  | FieldContextDefaultValueMultiUserPicker
+  | FieldContextDefaultValueSingleGroupPicker
+  | FieldContextDefaultValueMultipleGroupPicker
+  | FieldContextDefaultValueDate
+  | FieldContextDefaultValueDateTime
+  | FieldContextDefaultValueURL
+  | FieldContextDefaultValueProject
+  | FieldContextDefaultValueFloat
+  | FieldContextDefaultValueLabels
+  | FieldContextDefaultValueTextField
+  | FieldContextDefaultValueTextArea
+  | FieldContextDefaultValueReadOnly
+  | FieldContextDefaultValueSingleVersionPicker
+  | FieldContextDefaultValueMultipleVersionPicker
+  | FieldContextDefaultValueForgeStringField
+  | FieldContextDefaultValueForgeMultiStringField
+  | FieldContextDefaultValueForgeObjectField
+  | FieldContextDefaultValueForgeDateTimeField
+  | FieldContextDefaultValueForgeGroupField
+  | FieldContextDefaultValueForgeMultiGroupField
+  | FieldContextDefaultValueForgeNumberField
+  | FieldContextDefaultValueForgeUserField
+  | FieldContextDefaultValueForgeMultiUserField
+  | FieldContextDefaultValueUnknown;
+
+/** Paginated page of FieldContextDefaultValue items (B905). */
+export type FieldContextDefaultValuePage = OffsetPaginatedResponse<FieldContextDefaultValue>;
+
+/** Query parameters for listing field context default values (B905). */
+export interface ListFieldContextDefaultValueParams {
+  readonly contextId?: number[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Request body for bulk-updating field context default values (B906). */
+export interface FieldContextDefaultValueUpdateBody {
+  readonly defaultValues?: readonly FieldContextDefaultValue[];
+}
+
 export class FieldsResource {
   constructor(
     private readonly transport: Transport,
@@ -384,6 +716,86 @@ export class FieldsResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option/move`,
+      body: data,
+    });
+  }
+
+  /** Add issue types to a custom field context. B419 */
+  async setContextIssueTypes(
+    fieldId: string,
+    contextId: number,
+    data: FieldContextIssueTypeIdsBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/issuetype`,
+      body: data,
+    });
+  }
+
+  /** Remove issue types from a custom field context. B420 */
+  async removeContextIssueTypes(
+    fieldId: string,
+    contextId: number,
+    data: FieldContextIssueTypeIdsBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/issuetype/remove`,
+      body: data,
+    });
+  }
+
+  /** Get issue-type-to-context mappings for a custom field (paginated). B429 */
+  async listContextIssueTypeMappings(
+    fieldId: string,
+    params?: ListFieldContextIssueTypeMappingParams,
+  ): Promise<FieldContextIssueTypeMappingPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextIssueTypeMappingPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/issuetypemapping`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Get default values for custom field contexts (paginated). B905
+   * @deprecated This API is deprecated and will be removed in October 2026 (CHANGE-3082). */
+  async listContextDefaultValues(
+    fieldId: string,
+    params?: ListFieldContextDefaultValueParams,
+  ): Promise<FieldContextDefaultValuePage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextDefaultValuePage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Set default values for custom field contexts. B906
+   * @deprecated This API is deprecated and will be removed in October 2026 (CHANGE-3082). */
+  async setContextDefaultValues(
+    fieldId: string,
+    data: FieldContextDefaultValueUpdateBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
       body: data,
     });
   }

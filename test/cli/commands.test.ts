@@ -1031,6 +1031,11 @@ const jiraFieldsMock = {
   deleteContextOption: vi.fn(),
   replaceContextOptionOnIssues: vi.fn(),
   reorderContextOptions: vi.fn(),
+  setContextIssueTypes: vi.fn(),
+  removeContextIssueTypes: vi.fn(),
+  listContextIssueTypeMappings: vi.fn(),
+  listContextDefaultValues: vi.fn(),
+  setContextDefaultValues: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21579,6 +21584,205 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('fields', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown fields action',
       );
+    });
+
+    // ── context-issuetype-set (B419) ─────────────────────────────────────
+
+    it('context-issuetype-set calls setContextIssueTypes with issueTypeIds and returns updated', async () => {
+      jiraFieldsMock.setContextIssueTypes.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-issuetype-set', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'issue-type-ids': '10001,10005,10006',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.setContextIssueTypes).toHaveBeenCalledWith('customfield_10001', 10025, {
+        issueTypeIds: ['10001', '10005', '10006'],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('context-issuetype-set throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-issuetype-set', [], {
+            'context-id': '10025',
+            'issue-type-ids': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--field-id');
+    });
+
+    // ── context-issuetype-remove (B420) ──────────────────────────────────
+
+    it('context-issuetype-remove calls removeContextIssueTypes with issueTypeIds and returns removed', async () => {
+      jiraFieldsMock.removeContextIssueTypes.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-issuetype-remove', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'issue-type-ids': '10001,10005',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.removeContextIssueTypes).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        { issueTypeIds: ['10001', '10005'] },
+      );
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('context-issuetype-remove throws when --issue-type-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-issuetype-remove', [], {
+            'field-id': 'customfield_10001',
+            'context-id': '10025',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--issue-type-ids');
+    });
+
+    // ── context-issuetype-mapping (B429) ─────────────────────────────────
+
+    it('context-issuetype-mapping calls listContextIssueTypeMappings with contextId and pagination', async () => {
+      jiraFieldsMock.listContextIssueTypeMappings.mockResolvedValue({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 2,
+        values: [
+          { contextId: '10001', issueTypeId: '10010' },
+          { contextId: '10002', isAnyIssueType: true },
+        ],
+      });
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-issuetype-mapping', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10001,10002',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextIssueTypeMappings).toHaveBeenCalledWith(
+        'customfield_10001',
+        { contextId: [10001, 10002], startAt: 0, maxResults: 50 },
+      );
+      expect(result).toMatchObject({ total: 2 });
+    });
+
+    it('context-issuetype-mapping without context-id calls with empty params', async () => {
+      jiraFieldsMock.listContextIssueTypeMappings.mockResolvedValue({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 0,
+        values: [],
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-issuetype-mapping', [], {
+          'field-id': 'customfield_10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextIssueTypeMappings).toHaveBeenCalledWith(
+        'customfield_10001',
+        {},
+      );
+    });
+
+    // ── context-default-list (B905) ───────────────────────────────────────
+
+    it('context-default-list calls listContextDefaultValues with contextId and pagination', async () => {
+      jiraFieldsMock.listContextDefaultValues.mockResolvedValue({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [{ type: 'option.single', contextId: '10100', optionId: '10001' }],
+      });
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-default-list', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10100',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextDefaultValues).toHaveBeenCalledWith('customfield_10001', {
+        contextId: [10100],
+        startAt: 0,
+        maxResults: 50,
+      });
+      expect(result).toMatchObject({ total: 1 });
+    });
+
+    it('context-default-list without context-id calls with empty params', async () => {
+      jiraFieldsMock.listContextDefaultValues.mockResolvedValue({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 0,
+        values: [],
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-default-list', [], {
+          'field-id': 'customfield_10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextDefaultValues).toHaveBeenCalledWith('customfield_10001', {});
+    });
+
+    // ── context-default-set (B906) ────────────────────────────────────────
+
+    it('context-default-set calls setContextDefaultValues with parsed JSON array and returns updated', async () => {
+      jiraFieldsMock.setContextDefaultValues.mockResolvedValue(undefined);
+      const defaultValues = [
+        { type: 'option.single', contextId: '10100', optionId: '10001' },
+        { type: 'forge.string', contextId: '10102', text: 'hello' },
+      ];
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-default-set', [], {
+          'field-id': 'customfield_10001',
+          'default-values-json': JSON.stringify(defaultValues),
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.setContextDefaultValues).toHaveBeenCalledWith('customfield_10001', {
+        defaultValues,
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('context-default-set throws on invalid (non-array) JSON in --default-values-json', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-default-set', [], {
+            'field-id': 'customfield_10001',
+            'default-values-json': '{"type":"option.single"}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--default-values-json must be a JSON array');
+    });
+
+    it('context-default-set throws when --default-values-json is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-default-set', [], {
+            'field-id': 'customfield_10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--default-values-json');
     });
   });
 });

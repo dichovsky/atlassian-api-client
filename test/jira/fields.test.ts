@@ -9,6 +9,13 @@ import type {
   CreatedFieldContextOptionsList,
   UpdatedFieldContextOptionsList,
   TaskProgressBeanRemoveOptionFromIssuesResult,
+  FieldContextIssueTypeMapping,
+  FieldContextDefaultValueSingleOption,
+  FieldContextDefaultValueMultipleOption,
+  FieldContextDefaultValueCascadingOption,
+  FieldContextDefaultValueForgeStringField,
+  FieldContextDefaultValueForgeUserField,
+  FieldContextDefaultValueFloat,
 } from '../../src/jira/resources/fields.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -920,5 +927,462 @@ describe('FieldsResource', () => {
         expect(transport.calls).toHaveLength(0);
       },
     );
+  });
+
+  // ── setContextIssueTypes (B419) ───────────────────────────────────────────
+
+  describe('setContextIssueTypes()', () => {
+    it('calls PUT /field/{fieldId}/context/{contextId}/issuetype with issueTypeIds body', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const data = { issueTypeIds: ['10001', '10005', '10006'] };
+
+      // Act
+      await fields.setContextIssueTypes('customfield_10001', 10025, data);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/field/customfield_10001/context/10025/issuetype`,
+        body: { issueTypeIds: ['10001', '10005', '10006'] },
+      });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.setContextIssueTypes('../admin', 10025, { issueTypeIds: ['10001'] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/10025/issuetype`,
+      );
+    });
+
+    it('body contains issueTypeIds as string array exactly', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const data = { issueTypeIds: ['10001'] };
+
+      // Act
+      await fields.setContextIssueTypes('customfield_10001', 10025, data);
+
+      // Assert
+      const body = transport.lastCall?.options.body as { issueTypeIds: string[] };
+      expect(body).toEqual({ issueTypeIds: ['10001'] });
+    });
+  });
+
+  // ── removeContextIssueTypes (B420) ────────────────────────────────────────
+
+  describe('removeContextIssueTypes()', () => {
+    it('calls POST /field/{fieldId}/context/{contextId}/issuetype/remove with issueTypeIds body', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const data = { issueTypeIds: ['10001', '10005'] };
+
+      // Act
+      await fields.removeContextIssueTypes('customfield_10001', 10025, data);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/field/customfield_10001/context/10025/issuetype/remove`,
+        body: { issueTypeIds: ['10001', '10005'] },
+      });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.removeContextIssueTypes('../admin', 10025, { issueTypeIds: ['10001'] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/10025/issuetype/remove`,
+      );
+    });
+
+    it('body contains issueTypeIds as string array exactly', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const data = { issueTypeIds: ['10001', '10002'] };
+
+      // Act
+      await fields.removeContextIssueTypes('customfield_10001', 10025, data);
+
+      // Assert
+      const body = transport.lastCall?.options.body as { issueTypeIds: string[] };
+      expect(body).toEqual({ issueTypeIds: ['10001', '10002'] });
+    });
+  });
+
+  // ── listContextIssueTypeMappings (B429) ───────────────────────────────────
+
+  describe('listContextIssueTypeMappings()', () => {
+    it('calls GET /field/{fieldId}/context/issuetypemapping and returns paginated results', async () => {
+      // Arrange
+      const mapping1: FieldContextIssueTypeMapping = { contextId: '10001', issueTypeId: '10010' };
+      const mapping2: FieldContextIssueTypeMapping = { contextId: '10001', issueTypeId: '10011' };
+      const mapping3: FieldContextIssueTypeMapping = { contextId: '10002', isAnyIssueType: true };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 3,
+        values: [mapping1, mapping2, mapping3],
+      });
+
+      // Act
+      const result = await fields.listContextIssueTypeMappings('customfield_10001');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/customfield_10001/context/issuetypemapping`,
+      });
+      expect(result.values).toHaveLength(3);
+      expect(result.values[0]).toMatchObject({ contextId: '10001', issueTypeId: '10010' });
+      expect(result.values[2]).toMatchObject({ contextId: '10002', isAnyIssueType: true });
+    });
+
+    it('passes contextId, startAt, maxResults as query params', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextIssueTypeMappings('customfield_10001', {
+        contextId: [10001, 10002],
+        startAt: 10,
+        maxResults: 25,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({
+        contextId: '10001,10002',
+        startAt: 10,
+        maxResults: 25,
+      });
+    });
+
+    it('sends no query params when params is undefined', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextIssueTypeMappings('customfield_10001');
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends empty query when params is provided but all sub-properties are undefined', async () => {
+      // Arrange — covers the false branches of contextId/startAt/maxResults checks
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextIssueTypeMappings('customfield_10001', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextIssueTypeMappings('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/issuetypemapping`,
+      );
+    });
+  });
+
+  // ── listContextDefaultValues (B905) ───────────────────────────────────────
+
+  describe('listContextDefaultValues()', () => {
+    it('calls GET /field/{fieldId}/context/defaultValue and returns polymorphic values', async () => {
+      // Arrange
+      const singleOption: FieldContextDefaultValueSingleOption = {
+        type: 'option.single',
+        contextId: '10100',
+        optionId: '10001',
+      };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [singleOption],
+      });
+
+      // Act
+      const result = await fields.listContextDefaultValues('customfield_10001');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/customfield_10001/context/defaultValue`,
+      });
+      expect(result.values).toHaveLength(1);
+      expect(result.values[0]).toMatchObject({
+        type: 'option.single',
+        contextId: '10100',
+        optionId: '10001',
+      });
+    });
+
+    it('passes contextId, startAt, maxResults as query params', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextDefaultValues('customfield_10001', {
+        contextId: [10001, 10002],
+        startAt: 20,
+        maxResults: 10,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({
+        contextId: '10001,10002',
+        startAt: 20,
+        maxResults: 10,
+      });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextDefaultValues('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/defaultValue`,
+      );
+    });
+
+    it('sends empty query when params is provided but all sub-properties are undefined', async () => {
+      // Arrange — covers the false branches of contextId/startAt/maxResults checks
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextDefaultValues('customfield_10001', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('handles multiple polymorphic variants in values[]', async () => {
+      // Arrange — spec-shape fixtures for 3 distinct variants
+      const singleOption: FieldContextDefaultValueSingleOption = {
+        type: 'option.single',
+        contextId: '10100',
+        optionId: '10001',
+      };
+      const multipleOption: FieldContextDefaultValueMultipleOption = {
+        type: 'option.multiple',
+        contextId: '10101',
+        optionIds: ['10003', '10004'],
+      };
+      const forgeString: FieldContextDefaultValueForgeStringField = {
+        type: 'forge.string',
+        contextId: '10102',
+        text: 'default text',
+      };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 3,
+        values: [singleOption, multipleOption, forgeString],
+      });
+
+      // Act
+      const result = await fields.listContextDefaultValues('customfield_10001');
+
+      // Assert
+      expect(result.values).toHaveLength(3);
+      expect(result.values[0]).toMatchObject({ type: 'option.single', optionId: '10001' });
+      expect(result.values[1]).toMatchObject({
+        type: 'option.multiple',
+        optionIds: ['10003', '10004'],
+      });
+      expect(result.values[2]).toMatchObject({ type: 'forge.string', text: 'default text' });
+    });
+  });
+
+  // ── setContextDefaultValues (B906) ────────────────────────────────────────
+
+  describe('setContextDefaultValues()', () => {
+    it('calls PUT /field/{fieldId}/context/defaultValue with option.single variant', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const singleOption: FieldContextDefaultValueSingleOption = {
+        type: 'option.single',
+        contextId: '10100',
+        optionId: '10001',
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [singleOption],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/field/customfield_10001/context/defaultValue`,
+        body: {
+          defaultValues: [{ type: 'option.single', contextId: '10100', optionId: '10001' }],
+        },
+      });
+    });
+
+    it('sends option.cascading variant with cascadingOptionId', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const cascading: FieldContextDefaultValueCascadingOption = {
+        type: 'option.cascading',
+        contextId: '10101',
+        optionId: '10002',
+        cascadingOptionId: '10003',
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [cascading],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        defaultValues: [
+          {
+            type: 'option.cascading',
+            contextId: '10101',
+            optionId: '10002',
+            cascadingOptionId: '10003',
+          },
+        ],
+      });
+    });
+
+    it('sends forge.string variant', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const forgeString: FieldContextDefaultValueForgeStringField = {
+        type: 'forge.string',
+        contextId: '10102',
+        text: 'Hello Forge',
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [forgeString],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        defaultValues: [{ type: 'forge.string', contextId: '10102', text: 'Hello Forge' }],
+      });
+    });
+
+    it('sends forge.user variant with accountId and userFilter', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const forgeUser: FieldContextDefaultValueForgeUserField = {
+        type: 'forge.user',
+        contextId: '10103',
+        accountId: 'abc123',
+        userFilter: { enabled: true, groups: ['jira-users'] },
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [forgeUser],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        defaultValues: [
+          {
+            type: 'forge.user',
+            contextId: '10103',
+            accountId: 'abc123',
+            userFilter: { enabled: true, groups: ['jira-users'] },
+          },
+        ],
+      });
+    });
+
+    it('sends float variant with number field', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const floatDefault: FieldContextDefaultValueFloat = {
+        type: 'float',
+        contextId: '10104',
+        number: 3.14,
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [floatDefault],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        defaultValues: [{ type: 'float', contextId: '10104', number: 3.14 }],
+      });
+    });
+
+    it('sends multiple variants in a single request', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+      const singleOption: FieldContextDefaultValueSingleOption = {
+        type: 'option.single',
+        contextId: '10100',
+        optionId: '10001',
+      };
+      const forgeString: FieldContextDefaultValueForgeStringField = {
+        type: 'forge.string',
+        contextId: '10102',
+        text: 'hi',
+      };
+
+      // Act
+      await fields.setContextDefaultValues('customfield_10001', {
+        defaultValues: [singleOption, forgeString],
+      });
+
+      // Assert
+      const body = transport.lastCall?.options.body as {
+        defaultValues: { type: string }[];
+      };
+      expect(body.defaultValues).toHaveLength(2);
+      expect(body.defaultValues[0]).toMatchObject({ type: 'option.single' });
+      expect(body.defaultValues[1]).toMatchObject({ type: 'forge.string' });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.setContextDefaultValues('../admin', { defaultValues: [] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/defaultValue`,
+      );
+    });
   });
 });
