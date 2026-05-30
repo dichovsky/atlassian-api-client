@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "7566b4a359f1c142071e8a4f5c93d2bba400059200b6db4826fb056277e6718f",
+  "sourceHash": "b26d00a31a3dbb2c7835eb75690e59074b7864154981bf063f20f7dc6af726c9",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4833,13 +4833,13 @@
         {
           "name": "drainWorkflowSchemes",
           "kind": "function",
-          "line": 5609,
+          "line": 5626,
           "signature": "async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]>"
         },
         {
           "name": "executeWorkflowScheme",
           "kind": "function",
-          "line": 5615,
+          "line": 5632,
           "signature": "async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -4931,7 +4931,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 553,
+          "line": 562,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -5092,7 +5092,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 387,
+          "line": 388,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -18853,6 +18853,90 @@
             {
               "exported": "GetSchemeProjectAssociationsParams",
               "original": "GetSchemeProjectAssociationsParams"
+            },
+            {
+              "exported": "StatusMapping",
+              "original": "StatusMapping"
+            },
+            {
+              "exported": "PublishDraftWorkflowSchemeData",
+              "original": "PublishDraftWorkflowSchemeData"
+            },
+            {
+              "exported": "PublishDraftWorkflowSchemeParams",
+              "original": "PublishDraftWorkflowSchemeParams"
+            },
+            {
+              "exported": "DeleteDraftWorkflowMappingParams",
+              "original": "DeleteDraftWorkflowMappingParams"
+            },
+            {
+              "exported": "GetDraftWorkflowMappingParams",
+              "original": "GetDraftWorkflowMappingParams"
+            },
+            {
+              "exported": "DocumentVersion",
+              "original": "DocumentVersion"
+            },
+            {
+              "exported": "WorkflowMetadataRestModel",
+              "original": "WorkflowMetadataRestModel"
+            },
+            {
+              "exported": "WorkflowMetadataAndIssueTypeRestModel",
+              "original": "WorkflowMetadataAndIssueTypeRestModel"
+            },
+            {
+              "exported": "ProjectIdRef",
+              "original": "ProjectIdRef"
+            },
+            {
+              "exported": "WorkflowScope",
+              "original": "WorkflowScope"
+            },
+            {
+              "exported": "WorkflowSchemeAssociation",
+              "original": "WorkflowSchemeAssociation"
+            },
+            {
+              "exported": "MappingsByWorkflow",
+              "original": "MappingsByWorkflow"
+            },
+            {
+              "exported": "ReadWorkflowSchemesData",
+              "original": "ReadWorkflowSchemesData"
+            },
+            {
+              "exported": "WorkflowSchemeReadResponse",
+              "original": "WorkflowSchemeReadResponse"
+            },
+            {
+              "exported": "BulkUpdateWorkflowSchemeData",
+              "original": "BulkUpdateWorkflowSchemeData"
+            },
+            {
+              "exported": "BulkRequiredMappingsData",
+              "original": "BulkRequiredMappingsData"
+            },
+            {
+              "exported": "RequiredMappingByIssueType",
+              "original": "RequiredMappingByIssueType"
+            },
+            {
+              "exported": "RequiredMappingByWorkflows",
+              "original": "RequiredMappingByWorkflows"
+            },
+            {
+              "exported": "StatusMetadata",
+              "original": "StatusMetadata"
+            },
+            {
+              "exported": "StatusesPerWorkflow",
+              "original": "StatusesPerWorkflow"
+            },
+            {
+              "exported": "RequiredWorkflowSchemeMappingsResponse",
+              "original": "RequiredWorkflowSchemeMappingsResponse"
             }
           ]
         },
@@ -28660,9 +28744,153 @@
           "jsdoc": "Request body for POST /rest/api/3/workflowscheme/project/switch (B886)."
         },
         {
-          "name": "ListWorkflowSchemesParams",
+          "name": "StatusMapping",
           "kind": "interface",
           "line": 180,
+          "exported": true,
+          "signature": "export interface StatusMapping { readonly issueTypeId: string; readonly newStatusId: string; readonly statusId: string; …",
+          "jsdoc": "Status-mapping element used when publishing a draft (B873 sub-schema)."
+        },
+        {
+          "name": "PublishDraftWorkflowSchemeData",
+          "kind": "interface",
+          "line": 187,
+          "exported": true,
+          "signature": "export interface PublishDraftWorkflowSchemeData { readonly statusMappings?: StatusMapping[]; }",
+          "jsdoc": "Request body for POST /rest/api/3/workflowscheme/{id}/draft/publish (B873)."
+        },
+        {
+          "name": "DocumentVersion",
+          "kind": "interface",
+          "line": 192,
+          "exported": true,
+          "signature": "export interface DocumentVersion { readonly id?: string; readonly versionNumber?: number; }",
+          "jsdoc": "Document version envelope for bulk workflow scheme operations (B888/B889 sub-schema)."
+        },
+        {
+          "name": "WorkflowMetadataRestModel",
+          "kind": "interface",
+          "line": 198,
+          "exported": true,
+          "signature": "export interface WorkflowMetadataRestModel { readonly description: string; readonly id: string; readonly name: string; r…",
+          "jsdoc": "Workflow metadata + version (B887 sub-schema)."
+        },
+        {
+          "name": "WorkflowMetadataAndIssueTypeRestModel",
+          "kind": "interface",
+          "line": 206,
+          "exported": true,
+          "signature": "export interface WorkflowMetadataAndIssueTypeRestModel { readonly issueTypeIds: string[]; readonly workflow: WorkflowMet…",
+          "jsdoc": "Workflow metadata paired with the issue type IDs that use it (B887 sub-schema)."
+        },
+        {
+          "name": "ProjectIdRef",
+          "kind": "interface",
+          "line": 212,
+          "exported": true,
+          "signature": "export interface ProjectIdRef { readonly id?: string; }",
+          "jsdoc": "Project ID reference inside a {@link WorkflowScope}."
+        },
+        {
+          "name": "WorkflowScope",
+          "kind": "interface",
+          "line": 217,
+          "exported": true,
+          "signature": "export interface WorkflowScope { readonly project?: ProjectIdRef; readonly type?: 'PROJECT' | 'GLOBAL'; }",
+          "jsdoc": "Scope of a workflow scheme (B887 sub-schema)."
+        },
+        {
+          "name": "WorkflowSchemeAssociation",
+          "kind": "interface",
+          "line": 223,
+          "exported": true,
+          "signature": "export interface WorkflowSchemeAssociation { readonly issueTypeIds: string[]; readonly workflowId: string; }",
+          "jsdoc": "Explicit issue-type-to-workflow association used by bulk updates (B888/B889 sub-schema)."
+        },
+        {
+          "name": "MappingsByWorkflow",
+          "kind": "interface",
+          "line": 229,
+          "exported": true,
+          "signature": "export interface MappingsByWorkflow { readonly newWorkflowId: string; readonly oldWorkflowId: string; readonly statusMap…",
+          "jsdoc": "Status mappings between an old and new workflow (B888 sub-schema)."
+        },
+        {
+          "name": "ReadWorkflowSchemesData",
+          "kind": "interface",
+          "line": 236,
+          "exported": true,
+          "signature": "export interface ReadWorkflowSchemesData { readonly projectIds?: readonly string[]; readonly workflowSchemeIds?: readonl…",
+          "jsdoc": "Request body for POST /rest/api/3/workflowscheme/read (B887)."
+        },
+        {
+          "name": "WorkflowSchemeReadResponse",
+          "kind": "interface",
+          "line": 242,
+          "exported": true,
+          "signature": "export interface WorkflowSchemeReadResponse { readonly defaultWorkflow?: WorkflowMetadataRestModel; readonly description…",
+          "jsdoc": "Single entry returned from POST /rest/api/3/workflowscheme/read (B887 response item)."
+        },
+        {
+          "name": "BulkUpdateWorkflowSchemeData",
+          "kind": "interface",
+          "line": 254,
+          "exported": true,
+          "signature": "export interface BulkUpdateWorkflowSchemeData { readonly id: string; readonly name: string; readonly description: string…",
+          "jsdoc": "Request body for POST /rest/api/3/workflowscheme/update (B888)."
+        },
+        {
+          "name": "BulkRequiredMappingsData",
+          "kind": "interface",
+          "line": 266,
+          "exported": true,
+          "signature": "export interface BulkRequiredMappingsData { readonly id: string; readonly workflowsForIssueTypes: WorkflowSchemeAssociat…",
+          "jsdoc": "Request body for POST /rest/api/3/workflowscheme/update/mappings (B889)."
+        },
+        {
+          "name": "RequiredMappingByIssueType",
+          "kind": "interface",
+          "line": 273,
+          "exported": true,
+          "signature": "export interface RequiredMappingByIssueType { readonly issueTypeId?: string; readonly statusIds?: string[]; }",
+          "jsdoc": "Required status mapping grouped by issue type (B889 response sub-schema)."
+        },
+        {
+          "name": "RequiredMappingByWorkflows",
+          "kind": "interface",
+          "line": 279,
+          "exported": true,
+          "signature": "export interface RequiredMappingByWorkflows { readonly sourceWorkflowId?: string; readonly statusIds?: string[]; readonl…",
+          "jsdoc": "Required status mapping grouped by workflow (B889 response sub-schema)."
+        },
+        {
+          "name": "StatusMetadata",
+          "kind": "interface",
+          "line": 286,
+          "exported": true,
+          "signature": "export interface StatusMetadata { readonly category?: 'TODO' | 'IN_PROGRESS' | 'DONE'; readonly id?: string; readonly na…",
+          "jsdoc": "Status metadata returned by bulk-mappings (B889 response sub-schema)."
+        },
+        {
+          "name": "StatusesPerWorkflow",
+          "kind": "interface",
+          "line": 293,
+          "exported": true,
+          "signature": "export interface StatusesPerWorkflow { readonly initialStatusId?: string; readonly statuses?: string[]; readonly workflo…",
+          "jsdoc": "Statuses associated with each workflow (B889 response sub-schema)."
+        },
+        {
+          "name": "RequiredWorkflowSchemeMappingsResponse",
+          "kind": "interface",
+          "line": 300,
+          "exported": true,
+          "signature": "export interface RequiredWorkflowSchemeMappingsResponse { readonly statusMappingsByIssueTypes?: RequiredMappingByIssueTy…",
+          "jsdoc": "Response from POST /rest/api/3/workflowscheme/update/mappings (B889)."
+        },
+        {
+          "name": "ListWorkflowSchemesParams",
+          "kind": "interface",
+          "line": 310,
           "exported": true,
           "signature": "export interface ListWorkflowSchemesParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme (B855)."
@@ -28670,7 +28898,7 @@
         {
           "name": "GetWorkflowSchemeParams",
           "kind": "interface",
-          "line": 186,
+          "line": 316,
           "exported": true,
           "signature": "export interface GetWorkflowSchemeParams { readonly returnDraftIfExists?: boolean; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{id} (B858)."
@@ -28678,7 +28906,7 @@
         {
           "name": "DeleteDefaultWorkflowParams",
           "kind": "interface",
-          "line": 191,
+          "line": 321,
           "exported": true,
           "signature": "export interface DeleteDefaultWorkflowParams { readonly updateDraftIfNeeded?: boolean; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/workflowscheme/{id}/default (B861)."
@@ -28686,7 +28914,7 @@
         {
           "name": "GetDefaultWorkflowParams",
           "kind": "interface",
-          "line": 196,
+          "line": 326,
           "exported": true,
           "signature": "export interface GetDefaultWorkflowParams { readonly returnDraftIfExists?: boolean; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{id}/default (B862)."
@@ -28694,7 +28922,7 @@
         {
           "name": "DeleteIssueTypeMappingParams",
           "kind": "interface",
-          "line": 201,
+          "line": 331,
           "exported": true,
           "signature": "export interface DeleteIssueTypeMappingParams { readonly updateDraftIfNeeded?: boolean; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/workflowscheme/{id}/issuetype/{issueType} (B877)."
@@ -28702,7 +28930,7 @@
         {
           "name": "GetIssueTypeMappingParams",
           "kind": "interface",
-          "line": 206,
+          "line": 336,
           "exported": true,
           "signature": "export interface GetIssueTypeMappingParams { readonly returnDraftIfExists?: boolean; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{id}/issuetype/{issueType} (B878)."
@@ -28710,7 +28938,7 @@
         {
           "name": "DeleteWorkflowMappingParams",
           "kind": "interface",
-          "line": 211,
+          "line": 341,
           "exported": true,
           "signature": "export interface DeleteWorkflowMappingParams { readonly workflowName: string; readonly updateDraftIfNeeded?: boolean; }",
           "jsdoc": "Query parameters for DELETE /rest/api/3/workflowscheme/{id}/workflow (B880)."
@@ -28718,7 +28946,7 @@
         {
           "name": "GetWorkflowMappingParams",
           "kind": "interface",
-          "line": 218,
+          "line": 348,
           "exported": true,
           "signature": "export interface GetWorkflowMappingParams { readonly workflowName?: string; readonly returnDraftIfExists?: boolean; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{id}/workflow (B881)."
@@ -28726,7 +28954,7 @@
         {
           "name": "GetProjectUsagesParams",
           "kind": "interface",
-          "line": 224,
+          "line": 354,
           "exported": true,
           "signature": "export interface GetProjectUsagesParams { readonly nextPageToken?: string; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{workflowSchemeId}/projectUsages (B883)."
@@ -28734,125 +28962,234 @@
         {
           "name": "GetSchemeProjectAssociationsParams",
           "kind": "interface",
-          "line": 230,
+          "line": 360,
           "exported": true,
           "signature": "export interface GetSchemeProjectAssociationsParams { readonly projectId: readonly (string | number)[]; }",
           "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/project (B884)."
         },
         {
+          "name": "PublishDraftWorkflowSchemeParams",
+          "kind": "interface",
+          "line": 366,
+          "exported": true,
+          "signature": "export interface PublishDraftWorkflowSchemeParams { readonly validateOnly?: boolean; }",
+          "jsdoc": "Query parameters for POST /rest/api/3/workflowscheme/{id}/draft/publish (B873)."
+        },
+        {
+          "name": "DeleteDraftWorkflowMappingParams",
+          "kind": "interface",
+          "line": 371,
+          "exported": true,
+          "signature": "export interface DeleteDraftWorkflowMappingParams { readonly workflowName: string; }",
+          "jsdoc": "Query parameters for DELETE /rest/api/3/workflowscheme/{id}/draft/workflow (B874)."
+        },
+        {
+          "name": "GetDraftWorkflowMappingParams",
+          "kind": "interface",
+          "line": 377,
+          "exported": true,
+          "signature": "export interface GetDraftWorkflowMappingParams { readonly workflowName?: string; }",
+          "jsdoc": "Query parameters for GET /rest/api/3/workflowscheme/{id}/draft/workflow (B875)."
+        },
+        {
           "name": "WorkflowSchemeResource",
           "kind": "class",
-          "line": 246,
+          "line": 394,
           "exported": true,
           "signature": "export class WorkflowSchemeResource",
-          "jsdoc": "Jira Workflow Schemes resource — B855-B886 (live, non-draft).",
+          "jsdoc": "Jira Workflow Schemes resource — B855–B889.",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 247
+              "line": 395
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 256
+              "line": 404
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 270
+              "line": 418
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 286
+              "line": 434
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 303
+              "line": 451
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 314
+              "line": 462
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 331
+              "line": 479
             },
             {
               "name": "deleteDefault",
               "kind": "method",
-              "line": 352
+              "line": 500
             },
             {
               "name": "getDefault",
               "kind": "method",
-              "line": 372
+              "line": 520
             },
             {
               "name": "setDefault",
               "kind": "method",
-              "line": 392
+              "line": 540
             },
             {
               "name": "deleteIssueTypeMapping",
               "kind": "method",
-              "line": 409
+              "line": 557
             },
             {
               "name": "getIssueTypeMapping",
               "kind": "method",
-              "line": 430
+              "line": 578
             },
             {
               "name": "setIssueTypeMapping",
               "kind": "method",
-              "line": 451
+              "line": 599
             },
             {
               "name": "deleteWorkflowMapping",
               "kind": "method",
-              "line": 474
+              "line": 622
             },
             {
               "name": "getWorkflowMapping",
               "kind": "method",
-              "line": 495
+              "line": 643
             },
             {
               "name": "setWorkflowMapping",
               "kind": "method",
-              "line": 516
+              "line": 664
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 545
+              "line": 693
             },
             {
               "name": "getProjectAssociations",
               "kind": "method",
-              "line": 567
+              "line": 715
             },
             {
               "name": "assignToProject",
               "kind": "method",
-              "line": 588
+              "line": 736
             },
             {
               "name": "switchProject",
               "kind": "method",
-              "line": 605
+              "line": 753
+            },
+            {
+              "name": "createDraft",
+              "kind": "method",
+              "line": 774
+            },
+            {
+              "name": "deleteDraft",
+              "kind": "method",
+              "line": 786
+            },
+            {
+              "name": "getDraft",
+              "kind": "method",
+              "line": 797
+            },
+            {
+              "name": "updateDraft",
+              "kind": "method",
+              "line": 812
+            },
+            {
+              "name": "deleteDraftDefault",
+              "kind": "method",
+              "line": 833
+            },
+            {
+              "name": "getDraftDefault",
+              "kind": "method",
+              "line": 845
+            },
+            {
+              "name": "setDraftDefault",
+              "kind": "method",
+              "line": 857
+            },
+            {
+              "name": "deleteDraftIssueTypeMapping",
+              "kind": "method",
+              "line": 877
+            },
+            {
+              "name": "getDraftIssueTypeMapping",
+              "kind": "method",
+              "line": 892
+            },
+            {
+              "name": "setDraftIssueTypeMapping",
+              "kind": "method",
+              "line": 907
+            },
+            {
+              "name": "publishDraft",
+              "kind": "method",
+              "line": 933
+            },
+            {
+              "name": "deleteDraftWorkflowMapping",
+              "kind": "method",
+              "line": 955
+            },
+            {
+              "name": "getDraftWorkflowMapping",
+              "kind": "method",
+              "line": 973
+            },
+            {
+              "name": "setDraftWorkflowMapping",
+              "kind": "method",
+              "line": 993
+            },
+            {
+              "name": "bulkRead",
+              "kind": "method",
+              "line": 1020
+            },
+            {
+              "name": "bulkUpdate",
+              "kind": "method",
+              "line": 1038
+            },
+            {
+              "name": "bulkRequiredMappings",
+              "kind": "method",
+              "line": 1067
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 623,
+          "line": 1086,
           "signature": "function buildListQuery( params: ListWorkflowSchemesParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],

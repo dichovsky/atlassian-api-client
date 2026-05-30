@@ -275,7 +275,7 @@ RESOURCES:
   issuesecurityschemes   get-all, create, get, update, list-members, delete, add-levels, remove-level, update-level, add-level-members, remove-level-member, list-levels, set-default-levels, list-level-members, list-projects, associate-to-project, search
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
-  workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project
+  workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -519,6 +519,15 @@ EXAMPLES:
   atlas jira workflowscheme set-workflow 10001 --workflow-name jira --body '{"issueTypes":["10000"]}'
   atlas jira workflowscheme assign-project --body '{"projectId":"10010","workflowSchemeId":"10001"}'
   atlas jira workflowscheme switch-project --body '{"projectId":"10010","targetSchemeId":"10002"}'
+  atlas jira workflowscheme create-draft 10001
+  atlas jira workflowscheme get-draft 10001
+  atlas jira workflowscheme update-draft 10001 --body '{"name":"Renamed draft"}'
+  atlas jira workflowscheme publish-draft 10001 --body '{"statusMappings":[]}' --validate-only
+  atlas jira workflowscheme delete-draft-workflow 10001 --workflow-name jira
+  atlas jira workflowscheme set-draft-workflow 10001 --workflow-name jira --body '{"issueTypes":["10000"],"workflow":"jira"}'
+  atlas jira workflowscheme bulk-read --body '{"projectIds":["10010"]}'
+  atlas jira workflowscheme bulk-update --body '{"id":"10001","name":"x","description":"y","version":{"id":"v","versionNumber":1}}'
+  atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssueTypes":[]}'
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001

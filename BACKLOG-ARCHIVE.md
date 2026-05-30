@@ -2113,3 +2113,57 @@
 - [x] 🔴 🧩 API: B886 Jira: expose POST /rest/api/3/workflowscheme/project/switch
   - **Impl:** `WorkflowSchemeResource.switchProject(data)` POSTs `SwitchSchemeForProjectData` (all body fields optional per spec); returns `TaskProgressBeanObject` (303 in spec). CLI: `atlas jira workflowscheme switch-project --body <json>`.
   - **Rat:** Long-running task envelope returned; spec response code 303 with body.
+
+### Wave 7 — workflowscheme draft+bulk (PR #TBD, 2026-05-30)
+
+- [x] 🔴 🧩 API: B860 Jira: expose POST /rest/api/3/workflowscheme/{id}/createdraft
+  - **Impl:** `WorkflowSchemeResource.createDraft(id)` POSTs (no body) and returns the draft `WorkflowScheme`. CLI: `atlas jira workflowscheme create-draft <id>`.
+  - **Rat:** Single path param; no request body per spec.
+- [x] 🔴 🧩 API: B864 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft
+  - **Impl:** `WorkflowSchemeResource.deleteDraft(id)` returns `void` (204). CLI: `atlas jira workflowscheme delete-draft <id>`.
+  - **Rat:** Discards the draft.
+- [x] 🔴 🧩 API: B865 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft
+  - **Impl:** `WorkflowSchemeResource.getDraft(id)` returns the draft `WorkflowScheme`. CLI: `atlas jira workflowscheme get-draft <id>`.
+  - **Rat:** Reads the draft for a scheme.
+- [x] 🔴 🧩 API: B866 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft
+  - **Impl:** `WorkflowSchemeResource.updateDraft(id, data)` PUTs `UpdateWorkflowSchemeData`. CLI: `atlas jira workflowscheme update-draft <id> --body <json>`.
+  - **Rat:** Mirrors live `update` shape; all body fields optional per spec.
+- [x] 🔴 🧩 API: B867 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/default
+  - **Impl:** `WorkflowSchemeResource.deleteDraftDefault(id)` returns updated draft. CLI: `atlas jira workflowscheme delete-draft-default <id>`.
+  - **Rat:** Resets draft's default workflow.
+- [x] 🔴 🧩 API: B868 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/default
+  - **Impl:** `WorkflowSchemeResource.getDraftDefault(id)` returns `DefaultWorkflow`. CLI: `atlas jira workflowscheme get-draft-default <id>`.
+  - **Rat:** Read draft default workflow.
+- [x] 🔴 🧩 API: B869 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/default
+  - **Impl:** `WorkflowSchemeResource.setDraftDefault(id, data)` PUTs `UpdateDefaultWorkflowData` (required `workflow`). CLI: `atlas jira workflowscheme set-draft-default <id> --body <json>`.
+  - **Rat:** Body required; mirrors live `set-default`.
+- [x] 🔴 🧩 API: B870 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.deleteDraftIssueTypeMapping(id, issueType)` returns updated draft. CLI: `atlas jira workflowscheme delete-draft-issuetype <id> <issueType>`.
+  - **Rat:** Two-segment path on draft.
+- [x] 🔴 🧩 API: B871 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.getDraftIssueTypeMapping(id, issueType)` returns `IssueTypeWorkflowMapping`. CLI: `atlas jira workflowscheme get-draft-issuetype <id> <issueType>`.
+  - **Rat:** Get per-issue-type mapping on draft.
+- [x] 🔴 🧩 API: B872 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.setDraftIssueTypeMapping(id, issueType, data)` PUTs `SetIssueTypeMappingData`. CLI: `atlas jira workflowscheme set-draft-issuetype <id> <issueType> --body <json>`.
+  - **Rat:** Mirrors live `set-issuetype` on draft.
+- [x] 🔴 🧩 API: B873 Jira: expose POST /rest/api/3/workflowscheme/{id}/draft/publish
+  - **Impl:** `WorkflowSchemeResource.publishDraft(id, data?, params?)` POSTs `PublishDraftWorkflowSchemeData` with optional `validateOnly` query (`PublishDraftWorkflowSchemeParams`); returns `TaskProgressBeanObject | undefined` (303 LRO). CLI: `atlas jira workflowscheme publish-draft <id> [--body <json>] [--validate-only]`.
+  - **Rat:** Long-running task; body carries status mappings, query carries dry-run flag per spec.
+- [x] 🔴 🧩 API: B874 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/workflow
+  - **Impl:** `WorkflowSchemeResource.deleteDraftWorkflowMapping(id, {workflowName})` requires `workflowName` query param per spec. CLI: `atlas jira workflowscheme delete-draft-workflow <id> --workflow-name <name>`.
+  - **Rat:** Spec marks `workflowName` query required.
+- [x] 🔴 🧩 API: B875 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/workflow
+  - **Impl:** `WorkflowSchemeResource.getDraftWorkflowMapping(id, {workflowName?})` accepts optional `workflowName` query. CLI: `atlas jira workflowscheme get-draft-workflow <id> [--workflow-name <name>]`.
+  - **Rat:** Spec marks `workflowName` query optional on GET (lists all mappings if omitted).
+- [x] 🔴 🧩 API: B876 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/workflow
+  - **Impl:** `WorkflowSchemeResource.setDraftWorkflowMapping(id, workflowName, data)` — spec puts `workflowName` as required query, body holds mapping config. CLI: `atlas jira workflowscheme set-draft-workflow <id> --workflow-name <name> --body <json>`.
+  - **Rat:** Asymmetric signature mirrors PR-A's `setWorkflowMapping`; forced by spec, not preference.
+- [x] 🔴 🧩 API: B887 Jira: expose POST /rest/api/3/workflowscheme/read
+  - **Impl:** `WorkflowSchemeResource.bulkRead(data?)` POSTs `ReadWorkflowSchemesData`; returns `WorkflowSchemeReadResponse[]`. CLI: `atlas jira workflowscheme bulk-read --body <json>`.
+  - **Rat:** Bulk modern read; body specifies projectIds + workflowSchemeIds filters per spec.
+- [x] 🔴 🧩 API: B888 Jira: expose POST /rest/api/3/workflowscheme/update
+  - **Impl:** `WorkflowSchemeResource.bulkUpdate(data)` POSTs `BulkUpdateWorkflowSchemeData`; returns `TaskProgressBeanObject | undefined` (303 LRO). CLI: `atlas jira workflowscheme bulk-update --body <json>`.
+  - **Rat:** Bulk modern update; returns LRO envelope as `TaskProgressBeanObject` per spec.
+- [x] 🔴 🧩 API: B889 Jira: expose POST /rest/api/3/workflowscheme/update/mappings
+  - **Impl:** `WorkflowSchemeResource.bulkRequiredMappings(data)` POSTs `BulkRequiredMappingsData`; returns `RequiredWorkflowSchemeMappingsResponse`. CLI: `atlas jira workflowscheme bulk-mappings --body <json>`.
+  - **Rat:** Reports required status mappings for proposed bulk updates per spec.

@@ -97,6 +97,19 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('### Workflow mappings');
     expect(JIRA_REF).toContain('### Project usages and associations');
   });
+
+  it('documents the workflowscheme draft + bulk API (B860, B864-B876, B887-B889)', () => {
+    expect(JIRA_REF).toContain('B860');
+    expect(JIRA_REF).toContain('B873');
+    expect(JIRA_REF).toContain('B876');
+    expect(JIRA_REF).toContain('B887');
+    expect(JIRA_REF).toContain('B889');
+    expect(JIRA_REF).toContain('### Draft lifecycle');
+    expect(JIRA_REF).toContain('### Draft default workflow');
+    expect(JIRA_REF).toContain('### Draft issue-type mappings');
+    expect(JIRA_REF).toContain('### Draft workflow mappings');
+    expect(JIRA_REF).toContain('### Bulk operations');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {

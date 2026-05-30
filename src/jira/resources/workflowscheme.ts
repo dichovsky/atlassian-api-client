@@ -174,6 +174,136 @@ export interface SwitchSchemeForProjectData {
   readonly mappingsByIssueTypeOverride?: MappingsByIssueTypeOverride[];
 }
 
+// ─── Draft + bulk schema types (B860, B864–B876, B887–B889) ───────────────
+
+/** Status-mapping element used when publishing a draft (B873 sub-schema). */
+export interface StatusMapping {
+  readonly issueTypeId: string;
+  readonly newStatusId: string;
+  readonly statusId: string;
+}
+
+/** Request body for POST /rest/api/3/workflowscheme/{id}/draft/publish (B873). */
+export interface PublishDraftWorkflowSchemeData {
+  readonly statusMappings?: StatusMapping[];
+}
+
+/** Document version envelope for bulk workflow scheme operations (B888/B889 sub-schema). */
+export interface DocumentVersion {
+  readonly id?: string;
+  readonly versionNumber?: number;
+}
+
+/** Workflow metadata + version (B887 sub-schema). */
+export interface WorkflowMetadataRestModel {
+  readonly description: string;
+  readonly id: string;
+  readonly name: string;
+  readonly version: DocumentVersion;
+}
+
+/** Workflow metadata paired with the issue type IDs that use it (B887 sub-schema). */
+export interface WorkflowMetadataAndIssueTypeRestModel {
+  readonly issueTypeIds: string[];
+  readonly workflow: WorkflowMetadataRestModel;
+}
+
+/** Project ID reference inside a {@link WorkflowScope}. */
+export interface ProjectIdRef {
+  readonly id?: string;
+}
+
+/** Scope of a workflow scheme (B887 sub-schema). */
+export interface WorkflowScope {
+  readonly project?: ProjectIdRef;
+  readonly type?: 'PROJECT' | 'GLOBAL';
+}
+
+/** Explicit issue-type-to-workflow association used by bulk updates (B888/B889 sub-schema). */
+export interface WorkflowSchemeAssociation {
+  readonly issueTypeIds: string[];
+  readonly workflowId: string;
+}
+
+/** Status mappings between an old and new workflow (B888 sub-schema). */
+export interface MappingsByWorkflow {
+  readonly newWorkflowId: string;
+  readonly oldWorkflowId: string;
+  readonly statusMappings: WorkflowAssociationStatusMapping[];
+}
+
+/** Request body for POST /rest/api/3/workflowscheme/read (B887). */
+export interface ReadWorkflowSchemesData {
+  readonly projectIds?: readonly string[];
+  readonly workflowSchemeIds?: readonly string[];
+}
+
+/** Single entry returned from POST /rest/api/3/workflowscheme/read (B887 response item). */
+export interface WorkflowSchemeReadResponse {
+  readonly defaultWorkflow?: WorkflowMetadataRestModel;
+  readonly description?: string | null;
+  readonly id: string;
+  readonly name: string;
+  readonly scope: WorkflowScope;
+  readonly taskId?: string | null;
+  readonly version: DocumentVersion;
+  readonly workflowsForIssueTypes: WorkflowMetadataAndIssueTypeRestModel[];
+}
+
+/** Request body for POST /rest/api/3/workflowscheme/update (B888). */
+export interface BulkUpdateWorkflowSchemeData {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly version: DocumentVersion;
+  readonly defaultWorkflowId?: string;
+  readonly statusMappingsByIssueTypeOverride?: MappingsByIssueTypeOverride[];
+  readonly statusMappingsByWorkflows?: MappingsByWorkflow[];
+  readonly workflowsForIssueTypes?: WorkflowSchemeAssociation[];
+}
+
+/** Request body for POST /rest/api/3/workflowscheme/update/mappings (B889). */
+export interface BulkRequiredMappingsData {
+  readonly id: string;
+  readonly workflowsForIssueTypes: WorkflowSchemeAssociation[];
+  readonly defaultWorkflowId?: string | null;
+}
+
+/** Required status mapping grouped by issue type (B889 response sub-schema). */
+export interface RequiredMappingByIssueType {
+  readonly issueTypeId?: string;
+  readonly statusIds?: string[];
+}
+
+/** Required status mapping grouped by workflow (B889 response sub-schema). */
+export interface RequiredMappingByWorkflows {
+  readonly sourceWorkflowId?: string;
+  readonly statusIds?: string[];
+  readonly targetWorkflowId?: string;
+}
+
+/** Status metadata returned by bulk-mappings (B889 response sub-schema). */
+export interface StatusMetadata {
+  readonly category?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  readonly id?: string;
+  readonly name?: string;
+}
+
+/** Statuses associated with each workflow (B889 response sub-schema). */
+export interface StatusesPerWorkflow {
+  readonly initialStatusId?: string;
+  readonly statuses?: string[];
+  readonly workflowId?: string;
+}
+
+/** Response from POST /rest/api/3/workflowscheme/update/mappings (B889). */
+export interface RequiredWorkflowSchemeMappingsResponse {
+  readonly statusMappingsByIssueTypes?: RequiredMappingByIssueType[];
+  readonly statusMappingsByWorkflows?: RequiredMappingByWorkflows[];
+  readonly statuses?: StatusMetadata[];
+  readonly statusesPerWorkflow?: StatusesPerWorkflow[];
+}
+
 // ─── Query param interfaces ───────────────────────────────────────────────
 
 /** Query parameters for GET /rest/api/3/workflowscheme (B855). */
@@ -232,16 +362,34 @@ export interface GetSchemeProjectAssociationsParams {
   readonly projectId: readonly (string | number)[];
 }
 
+/** Query parameters for POST /rest/api/3/workflowscheme/{id}/draft/publish (B873). */
+export interface PublishDraftWorkflowSchemeParams {
+  readonly validateOnly?: boolean;
+}
+
+/** Query parameters for DELETE /rest/api/3/workflowscheme/{id}/draft/workflow (B874). */
+export interface DeleteDraftWorkflowMappingParams {
+  /** Required: the name of the workflow whose mapping is removed. */
+  readonly workflowName: string;
+}
+
+/** Query parameters for GET /rest/api/3/workflowscheme/{id}/draft/workflow (B875). */
+export interface GetDraftWorkflowMappingParams {
+  readonly workflowName?: string;
+}
+
 // ─── Resource class ───────────────────────────────────────────────────────
 
 /**
- * Jira Workflow Schemes resource — B855-B886 (live, non-draft).
+ * Jira Workflow Schemes resource — B855–B889.
  *
- * Covers the live half of the `/rest/api/3/workflowscheme` surface: listing,
- * CRUD on schemes, default-workflow management, issue-type/workflow mappings,
- * project usages, and project association/switch operations. The draft and
- * bulk subset (B860, B864–B876, B887–B889) is implemented in a sibling
- * resource PR.
+ * Covers the full `/rest/api/3/workflowscheme` surface:
+ *   - live: listing, CRUD on schemes, default-workflow management,
+ *     issue-type/workflow mappings, project usages, project association/switch
+ *     (B855–B859, B861–B863, B877–B886).
+ *   - draft: create/get/update/delete draft, draft default workflow, draft
+ *     issue-type mappings, draft workflow mappings, publish (B860, B864–B876).
+ *   - bulk: read, update, required-mappings (B887–B889).
  */
 export class WorkflowSchemeResource {
   constructor(
@@ -612,6 +760,323 @@ export class WorkflowSchemeResource {
     const response = await this.transport.request<TaskProgressBeanObject>({
       method: 'POST',
       path: `${this.baseUrl}/workflowscheme/project/switch`,
+      body,
+    });
+    return response.data;
+  }
+
+  // ─── Draft endpoints (B860, B864–B876) ──────────────────────────────────
+
+  /**
+   * B860: Create a draft workflow scheme from an active workflow scheme.
+   * POST /rest/api/3/workflowscheme/{id}/createdraft
+   */
+  async createDraft(id: string | number): Promise<WorkflowScheme> {
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/createdraft`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B864: Delete a draft workflow scheme.
+   * DELETE /rest/api/3/workflowscheme/{id}/draft
+   */
+  async deleteDraft(id: string | number): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft`,
+    });
+  }
+
+  /**
+   * B865: Get the draft workflow scheme for an active workflow scheme.
+   * GET /rest/api/3/workflowscheme/{id}/draft
+   */
+  async getDraft(id: string | number): Promise<WorkflowScheme> {
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B866: Update a draft workflow scheme.
+   * PUT /rest/api/3/workflowscheme/{id}/draft
+   *
+   * Spec accepts the full WorkflowScheme shape; we mirror the
+   * {@link UpdateWorkflowSchemeData} shape used by the live update.
+   */
+  async updateDraft(id: string | number, data: UpdateWorkflowSchemeData): Promise<WorkflowScheme> {
+    const body: Record<string, unknown> = {};
+    if (data.defaultWorkflow !== undefined) body['defaultWorkflow'] = data.defaultWorkflow;
+    if (data.description !== undefined) body['description'] = data.description;
+    if (data.issueTypeMappings !== undefined) body['issueTypeMappings'] = data.issueTypeMappings;
+    if (data.name !== undefined) body['name'] = data.name;
+    if (data.updateDraftIfNeeded !== undefined) {
+      body['updateDraftIfNeeded'] = data.updateDraftIfNeeded;
+    }
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'PUT',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft`,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B867: Reset the default workflow for a draft workflow scheme.
+   * DELETE /rest/api/3/workflowscheme/{id}/draft/default
+   */
+  async deleteDraftDefault(id: string | number): Promise<WorkflowScheme> {
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/default`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B868: Get the default workflow for a draft workflow scheme.
+   * GET /rest/api/3/workflowscheme/{id}/draft/default
+   */
+  async getDraftDefault(id: string | number): Promise<DefaultWorkflow> {
+    const response = await this.transport.request<DefaultWorkflow>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/default`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B869: Set the default workflow for a draft workflow scheme.
+   * PUT /rest/api/3/workflowscheme/{id}/draft/default
+   */
+  async setDraftDefault(
+    id: string | number,
+    data: UpdateDefaultWorkflowData,
+  ): Promise<WorkflowScheme> {
+    const body: Record<string, unknown> = { workflow: data.workflow };
+    if (data.updateDraftIfNeeded !== undefined) {
+      body['updateDraftIfNeeded'] = data.updateDraftIfNeeded;
+    }
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'PUT',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/default`,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B870: Delete the workflow for an issue type in a draft scheme.
+   * DELETE /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+   */
+  async deleteDraftIssueTypeMapping(
+    id: string | number,
+    issueType: string,
+  ): Promise<WorkflowScheme> {
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/issuetype/${encodePathSegment(issueType)}`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B871: Get the workflow for an issue type in a draft scheme.
+   * GET /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+   */
+  async getDraftIssueTypeMapping(
+    id: string | number,
+    issueType: string,
+  ): Promise<IssueTypeWorkflowMapping> {
+    const response = await this.transport.request<IssueTypeWorkflowMapping>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/issuetype/${encodePathSegment(issueType)}`,
+    });
+    return response.data;
+  }
+
+  /**
+   * B872: Set the workflow for an issue type in a draft scheme.
+   * PUT /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
+   */
+  async setDraftIssueTypeMapping(
+    id: string | number,
+    issueType: string,
+    data: SetIssueTypeMappingData,
+  ): Promise<WorkflowScheme> {
+    const body: Record<string, unknown> = {};
+    if (data.issueType !== undefined) body['issueType'] = data.issueType;
+    if (data.updateDraftIfNeeded !== undefined) {
+      body['updateDraftIfNeeded'] = data.updateDraftIfNeeded;
+    }
+    if (data.workflow !== undefined) body['workflow'] = data.workflow;
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'PUT',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/issuetype/${encodePathSegment(issueType)}`,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B873: Publish a draft workflow scheme.
+   * POST /rest/api/3/workflowscheme/{id}/draft/publish
+   *
+   * Spec returns 204 on publish or 303 with {@link TaskProgressBeanObject}.
+   * When `validateOnly=true` the request only performs validation.
+   */
+  async publishDraft(
+    id: string | number,
+    data?: PublishDraftWorkflowSchemeData,
+    params?: PublishDraftWorkflowSchemeParams,
+  ): Promise<TaskProgressBeanObject | undefined> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.validateOnly !== undefined) query['validateOnly'] = params.validateOnly;
+    const body: Record<string, unknown> = {};
+    if (data?.statusMappings !== undefined) body['statusMappings'] = data.statusMappings;
+    const response = await this.transport.request<TaskProgressBeanObject | undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/publish`,
+      query,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B874: Delete the workflow-issue-type mapping for a workflow in a draft scheme.
+   * DELETE /rest/api/3/workflowscheme/{id}/draft/workflow
+   */
+  async deleteDraftWorkflowMapping(
+    id: string | number,
+    params: DeleteDraftWorkflowMappingParams,
+  ): Promise<void> {
+    const query: Record<string, string | number | boolean | undefined> = {
+      workflowName: params.workflowName,
+    };
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/workflow`,
+      query,
+    });
+  }
+
+  /**
+   * B875: Get the workflow-to-issue-type mapping for a draft scheme.
+   * GET /rest/api/3/workflowscheme/{id}/draft/workflow
+   */
+  async getDraftWorkflowMapping(
+    id: string | number,
+    params?: GetDraftWorkflowMappingParams,
+  ): Promise<IssueTypesWorkflowMapping> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.workflowName !== undefined) query['workflowName'] = params.workflowName;
+    const response = await this.transport.request<IssueTypesWorkflowMapping>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/workflow`,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * B876: Set the workflow-to-issue-type mapping for a workflow in a draft scheme.
+   * PUT /rest/api/3/workflowscheme/{id}/draft/workflow
+   *
+   * `workflowName` is a required query parameter per spec.
+   */
+  async setDraftWorkflowMapping(
+    id: string | number,
+    workflowName: string,
+    data: UpdateWorkflowMappingData,
+  ): Promise<WorkflowScheme> {
+    const body: Record<string, unknown> = {};
+    if (data.defaultMapping !== undefined) body['defaultMapping'] = data.defaultMapping;
+    if (data.issueTypes !== undefined) body['issueTypes'] = data.issueTypes;
+    if (data.updateDraftIfNeeded !== undefined) {
+      body['updateDraftIfNeeded'] = data.updateDraftIfNeeded;
+    }
+    if (data.workflow !== undefined) body['workflow'] = data.workflow;
+    const response = await this.transport.request<WorkflowScheme>({
+      method: 'PUT',
+      path: `${this.baseUrl}/workflowscheme/${encodePathSegment(String(id))}/draft/workflow`,
+      query: { workflowName },
+      body,
+    });
+    return response.data;
+  }
+
+  // ─── Bulk endpoints (B887–B889) ─────────────────────────────────────────
+
+  /**
+   * B887: Bulk read workflow schemes by project IDs and/or workflow scheme IDs.
+   * POST /rest/api/3/workflowscheme/read
+   */
+  async bulkRead(data?: ReadWorkflowSchemesData): Promise<WorkflowSchemeReadResponse[]> {
+    const body: Record<string, unknown> = {};
+    if (data?.projectIds !== undefined) body['projectIds'] = data.projectIds;
+    if (data?.workflowSchemeIds !== undefined) body['workflowSchemeIds'] = data.workflowSchemeIds;
+    const response = await this.transport.request<WorkflowSchemeReadResponse[]>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflowscheme/read`,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B888: Bulk update a workflow scheme.
+   * POST /rest/api/3/workflowscheme/update
+   *
+   * Spec returns 200 with empty body or 303 with {@link TaskProgressBeanObject}.
+   */
+  async bulkUpdate(
+    data: BulkUpdateWorkflowSchemeData,
+  ): Promise<TaskProgressBeanObject | undefined> {
+    const body: Record<string, unknown> = {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      version: data.version,
+    };
+    if (data.defaultWorkflowId !== undefined) body['defaultWorkflowId'] = data.defaultWorkflowId;
+    if (data.statusMappingsByIssueTypeOverride !== undefined) {
+      body['statusMappingsByIssueTypeOverride'] = data.statusMappingsByIssueTypeOverride;
+    }
+    if (data.statusMappingsByWorkflows !== undefined) {
+      body['statusMappingsByWorkflows'] = data.statusMappingsByWorkflows;
+    }
+    if (data.workflowsForIssueTypes !== undefined) {
+      body['workflowsForIssueTypes'] = data.workflowsForIssueTypes;
+    }
+    const response = await this.transport.request<TaskProgressBeanObject | undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflowscheme/update`,
+      body,
+    });
+    return response.data;
+  }
+
+  /**
+   * B889: Get the required status mappings for a bulk workflow scheme update.
+   * POST /rest/api/3/workflowscheme/update/mappings
+   */
+  async bulkRequiredMappings(
+    data: BulkRequiredMappingsData,
+  ): Promise<RequiredWorkflowSchemeMappingsResponse> {
+    const body: Record<string, unknown> = {
+      id: data.id,
+      workflowsForIssueTypes: data.workflowsForIssueTypes,
+    };
+    if (data.defaultWorkflowId !== undefined) body['defaultWorkflowId'] = data.defaultWorkflowId;
+    const response = await this.transport.request<RequiredWorkflowSchemeMappingsResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflowscheme/update/mappings`,
       body,
     });
     return response.data;
