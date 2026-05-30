@@ -1015,6 +1015,18 @@ const jiraPlansMock = {
   trash: vi.fn(),
 };
 
+const jiraFieldsMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  listContexts: vi.fn(),
+  createContext: vi.fn(),
+  updateContext: vi.fn(),
+  deleteContext: vi.fn(),
+};
+
 const jiraWorkflowSchemeMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1124,6 +1136,7 @@ vi.mock('../../src/jira/client.js', () => {
       screens: jiraScreensMock,
       plans: jiraPlansMock,
       workflowScheme: jiraWorkflowSchemeMock,
+      fields: jiraFieldsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -21146,6 +21159,209 @@ describe('executeJiraCommand', () => {
     it('unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('workflowscheme', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown workflowscheme action',
+      );
+    });
+  });
+
+  // ── fields ────────────────────────────────────────────────────────────────
+
+  describe('fields', () => {
+    it('field-list-all calls client.fields.listAll', async () => {
+      const allFields = [{ id: 'f1', name: 'Summary', custom: false }];
+      jiraFieldsMock.listAll.mockResolvedValue(allFields);
+      const result = await executeJiraCommand(cmd('fields', 'field-list-all'), GLOBALS);
+      expect(jiraFieldsMock.listAll).toHaveBeenCalled();
+      expect(result).toEqual(allFields);
+    });
+
+    it('field-list calls client.fields.list with pagination params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraFieldsMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.list).toHaveBeenCalledWith({ startAt: 0, maxResults: 50 });
+      expect(result).toEqual(page);
+    });
+
+    it('field-create calls client.fields.create with body', async () => {
+      const field = { id: 'customfield_10001', name: 'My Field', custom: true };
+      jiraFieldsMock.create.mockResolvedValue(field);
+      const body = JSON.stringify({
+        name: 'My Field',
+        type: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+      });
+      const result = await executeJiraCommand(cmd('fields', 'field-create', [], { body }), GLOBALS);
+      expect(jiraFieldsMock.create).toHaveBeenCalledWith({
+        name: 'My Field',
+        type: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
+      });
+      expect(result).toEqual(field);
+    });
+
+    it('field-update calls client.fields.update with fieldId and body', async () => {
+      const field = { id: 'customfield_10001', name: 'Renamed', custom: true };
+      jiraFieldsMock.update.mockResolvedValue(field);
+      const body = JSON.stringify({ name: 'Renamed' });
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-update', ['customfield_10001'], { body }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.update).toHaveBeenCalledWith('customfield_10001', { name: 'Renamed' });
+      expect(result).toEqual(field);
+    });
+
+    it('field-delete calls client.fields.delete and returns deleted flag', async () => {
+      jiraFieldsMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-delete', ['customfield_10001']),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.delete).toHaveBeenCalledWith('customfield_10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('context-list calls client.fields.listContexts with field-id', async () => {
+      const page = {
+        values: [
+          {
+            id: '10025',
+            name: 'Bug fields context',
+            description: '',
+            isGlobalContext: true,
+            isAnyIssueType: false,
+          },
+        ],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+      };
+      jiraFieldsMock.listContexts.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-list', [], { 'field-id': 'customfield_10001' }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContexts).toHaveBeenCalledWith('customfield_10001', {});
+      expect(result).toEqual(page);
+    });
+
+    it('context-list passes filter flags to listContexts', async () => {
+      jiraFieldsMock.listContexts.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-list', [], {
+          'field-id': 'customfield_10001',
+          'is-any-issue-type': true,
+          'is-global-context': false,
+          'context-id': '10025,10026',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContexts).toHaveBeenCalledWith('customfield_10001', {
+        isAnyIssueType: true,
+        isGlobalContext: false,
+        contextId: [10025, 10026],
+        startAt: 0,
+        maxResults: 50,
+      });
+    });
+
+    it('context-create calls client.fields.createContext with required name', async () => {
+      const ctx = {
+        id: '10025',
+        name: 'Bug fields context',
+        description: '',
+        isGlobalContext: true,
+        isAnyIssueType: false,
+      };
+      jiraFieldsMock.createContext.mockResolvedValue(ctx);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-create', [], {
+          'field-id': 'customfield_10001',
+          name: 'Bug fields context',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.createContext).toHaveBeenCalledWith('customfield_10001', {
+        name: 'Bug fields context',
+      });
+      expect(result).toEqual(ctx);
+    });
+
+    it('context-create passes optional projectIds and issueTypeIds', async () => {
+      jiraFieldsMock.createContext.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('fields', 'context-create', [], {
+          'field-id': 'customfield_10001',
+          name: 'Scoped context',
+          description: 'A scoped context',
+          'project-ids': '10010,10011',
+          'issue-type-ids': '10000',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.createContext).toHaveBeenCalledWith('customfield_10001', {
+        name: 'Scoped context',
+        description: 'A scoped context',
+        projectIds: ['10010', '10011'],
+        issueTypeIds: ['10000'],
+      });
+    });
+
+    it('context-update calls client.fields.updateContext and returns updated flag', async () => {
+      jiraFieldsMock.updateContext.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-update', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          name: 'Renamed context',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.updateContext).toHaveBeenCalledWith('customfield_10001', 10025, {
+        name: 'Renamed context',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('context-update passes description when provided', async () => {
+      jiraFieldsMock.updateContext.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('fields', 'context-update', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          description: 'New description',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.updateContext).toHaveBeenCalledWith('customfield_10001', 10025, {
+        description: 'New description',
+      });
+    });
+
+    it('context-delete calls client.fields.deleteContext and returns deleted flag', async () => {
+      jiraFieldsMock.deleteContext.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-delete', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.deleteContext).toHaveBeenCalledWith('customfield_10001', 10025);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('fields', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown fields action',
       );
     });
   });

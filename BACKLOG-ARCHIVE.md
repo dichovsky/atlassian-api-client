@@ -2167,3 +2167,18 @@
 - [x] 🔴 🧩 API: B889 Jira: expose POST /rest/api/3/workflowscheme/update/mappings
   - **Impl:** `WorkflowSchemeResource.bulkRequiredMappings(data)` POSTs `BulkRequiredMappingsData`; returns `RequiredWorkflowSchemeMappingsResponse`. CLI: `atlas jira workflowscheme bulk-mappings --body <json>`.
   - **Rat:** Reports required status mappings for proposed bulk updates per spec.
+- [x] 🔴 🧩 API: B415 Jira: expose GET /rest/api/3/field/{fieldId}/context
+  - **Impl:** `FieldsResource.listContexts(fieldId, params?)` — paginated via `OffsetPaginatedResponse<FieldContext>`; query params: isAnyIssueType, isGlobalContext, contextId[], startAt, maxResults. CLI: `atlas jira fields context-list --field-id <id>`.
+  - **Rat:** Spec-verified; returns `PageBeanCustomFieldContext`. Foundational for field context sub-group.
+- [x] 🔴 🧩 API: B416 Jira: expose POST /rest/api/3/field/{fieldId}/context
+  - **Impl:** `FieldsResource.createContext(fieldId, data)` — body: name (required), description?, projectIds?, issueTypeIds?; returns `FieldContext`. CLI: `atlas jira fields context-create --field-id <id> --name <name>`.
+  - **Rat:** Spec-verified; body schema `CreateCustomFieldContext`; empty projectIds = global context.
+- [x] 🔴 🧩 API: B417 Jira: expose DELETE /rest/api/3/field/{fieldId}/context/{contextId}
+  - **Impl:** `FieldsResource.deleteContext(fieldId, contextId)` — no body; contextId is number (int64). CLI: `atlas jira fields context-delete --field-id <id> --context-id <n>`.
+  - **Rat:** Spec-verified; returns 204 no content.
+- [x] 🔴 🧩 API: B418 Jira: expose PUT /rest/api/3/field/{fieldId}/context/{contextId}
+  - **Impl:** `FieldsResource.updateContext(fieldId, contextId, data)` — body: name?, description? (write-only per spec); returns void (204). CLI: `atlas jira fields context-update --field-id <id> --context-id <n>`.
+  - **Rat:** Spec-verified; body schema `CustomFieldContextUpdateDetails`.
+- [x] 🔴 🧩 API: B907 Jira: expose GET /rest/api/3/field/{fieldId}/contexts
+  - **Impl:** NOT implemented separately — endpoint is DEPRECATED per spec (`deprecated: true`), redirecting to B415 (`/context` singular). Documented in PR body. BACKLOG entry closed as resolved-by-B415.
+  - **Rat:** Spec explicitly marks `/contexts` (plural) as `"deprecated": true` with description "Deprecated, use Get custom field contexts". Returns a different schema (`PageBeanContext` with numeric id field), not `PageBeanCustomFieldContext`. No value in implementing a deprecated alias.

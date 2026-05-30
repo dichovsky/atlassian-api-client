@@ -22,6 +22,8 @@ import type {
   CreatePlanOnlyTeamData,
   PlanningStyle,
   IssueSourceType,
+  CreateFieldContextData,
+  UpdateFieldContextData,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -172,6 +174,8 @@ export async function executeJiraCommand(
       return executePlans(client, cmd);
     case 'workflowscheme':
       return executeWorkflowScheme(client, cmd);
+    case 'fields':
+      return executeFields(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -5899,6 +5903,109 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
     default:
       throw new Error(
         `Unknown workflowscheme action: ${cmd.action}. Actions: ${WORKFLOWSCHEME_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+const FIELDS_ACTIONS = [
+  'field-list',
+  'field-list-all',
+  'field-create',
+  'field-update',
+  'field-delete',
+  'context-list',
+  'context-create',
+  'context-update',
+  'context-delete',
+] as const;
+
+async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'field-list': {
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      return client.fields.list({
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'field-list-all':
+      return client.fields.listAll();
+    case 'field-create': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.create(body as unknown as Parameters<typeof client.fields.create>[0]);
+    }
+    case 'field-update': {
+      const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.update(fieldId, body as Parameters<typeof client.fields.update>[1]);
+    }
+    case 'field-delete': {
+      const fieldId = requireArg(cmd.positionalArgs[0], 'fieldId');
+      await client.fields.delete(fieldId);
+      return { deleted: true };
+    }
+    case 'context-list': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
+      const isGlobalContext = asBoolFlag(opts['is-global-context']);
+      const contextIdRaw = asString(opts['context-id']);
+      const contextId = contextIdRaw
+        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
+        : undefined;
+      return client.fields.listContexts(fieldId, {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(isAnyIssueType !== undefined && { isAnyIssueType }),
+        ...(isGlobalContext !== undefined && { isGlobalContext }),
+        ...(contextId !== undefined && { contextId }),
+      });
+    }
+    case 'context-create': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      const projectIdsRaw = asString(opts['project-ids']);
+      const issueTypeIdsRaw = asString(opts['issue-type-ids']);
+      const data: CreateFieldContextData = {
+        name,
+        ...(description !== undefined && { description }),
+        ...(projectIdsRaw !== undefined && {
+          projectIds: projectIdsRaw.split(',').map((s) => s.trim()),
+        }),
+        ...(issueTypeIdsRaw !== undefined && {
+          issueTypeIds: issueTypeIdsRaw.split(',').map((s) => s.trim()),
+        }),
+      };
+      return client.fields.createContext(fieldId, data);
+    }
+    case 'context-update': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const data: UpdateFieldContextData = {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      };
+      await client.fields.updateContext(fieldId, contextId, data);
+      return { updated: true };
+    }
+    case 'context-delete': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      await client.fields.deleteContext(fieldId, contextId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown fields action: ${cmd.action}. Actions: ${FIELDS_ACTIONS.join(', ')}`,
       );
   }
 }

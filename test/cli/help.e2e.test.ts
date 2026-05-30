@@ -143,6 +143,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   screens: 'executeScreens',
   plans: 'executePlans',
   workflowscheme: 'executeWorkflowScheme',
+  fields: 'executeFields',
 };
 
 /**
