@@ -377,11 +377,12 @@ const GLOBAL_OPTIONS = {
   'old-to-new-mappings': { type: 'string' as const },
   'issue-security-level-id': { type: 'string' as const },
   'issue-security-scheme-id': { type: 'string' as const },
-  // workflowscheme options (B855-B886 live)
+  // workflowscheme options (B855-B886 live; B860, B864-B876, B887-B889 draft+bulk)
   all: { type: 'boolean' as const },
   'return-draft-if-exists': { type: 'boolean' as const },
   'update-draft-if-needed': { type: 'boolean' as const },
   'workflow-name': { type: 'string' as const },
+  'validate-only': { type: 'boolean' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

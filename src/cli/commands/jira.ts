@@ -5583,7 +5583,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
   }
 }
 
-// ─── workflowscheme (B855-B886 live) ───────────────────────────────────────
+// ─── workflowscheme (B855-B889) ────────────────────────────────────────────
 
 const WORKFLOWSCHEME_ACTIONS = [
   'list',
@@ -5604,6 +5604,23 @@ const WORKFLOWSCHEME_ACTIONS = [
   'list-by-project',
   'assign-project',
   'switch-project',
+  'create-draft',
+  'delete-draft',
+  'get-draft',
+  'update-draft',
+  'delete-draft-default',
+  'get-draft-default',
+  'set-draft-default',
+  'delete-draft-issuetype',
+  'get-draft-issuetype',
+  'set-draft-issuetype',
+  'publish-draft',
+  'delete-draft-workflow',
+  'get-draft-workflow',
+  'set-draft-workflow',
+  'bulk-read',
+  'bulk-update',
+  'bulk-mappings',
 ] as const;
 
 async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]> {
@@ -5761,6 +5778,122 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
       return client.workflowScheme.switchProject(
         body as Parameters<typeof client.workflowScheme.switchProject>[0],
+      );
+    }
+    case 'create-draft': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.workflowScheme.createDraft(id);
+    }
+    case 'delete-draft': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      await client.workflowScheme.deleteDraft(id);
+      return { deleted: true };
+    }
+    case 'get-draft': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.workflowScheme.getDraft(id);
+    }
+    case 'update-draft': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.updateDraft(
+        id,
+        body as Parameters<typeof client.workflowScheme.updateDraft>[1],
+      );
+    }
+    case 'delete-draft-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.workflowScheme.deleteDraftDefault(id);
+    }
+    case 'get-draft-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      return client.workflowScheme.getDraftDefault(id);
+    }
+    case 'set-draft-default': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setDraftDefault(
+        id,
+        body as unknown as Parameters<typeof client.workflowScheme.setDraftDefault>[1],
+      );
+    }
+    case 'delete-draft-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      return client.workflowScheme.deleteDraftIssueTypeMapping(id, issueType);
+    }
+    case 'get-draft-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      return client.workflowScheme.getDraftIssueTypeMapping(id, issueType);
+    }
+    case 'set-draft-issuetype': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const issueType = requireArg(cmd.positionalArgs[1], 'issueType');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setDraftIssueTypeMapping(
+        id,
+        issueType,
+        body as Parameters<typeof client.workflowScheme.setDraftIssueTypeMapping>[2],
+      );
+    }
+    case 'publish-draft': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const validateOnly = asBoolFlag(opts['validate-only']);
+      const bodyRaw = asString(opts['body']);
+      const data =
+        bodyRaw !== undefined
+          ? (parseJsonObjectFlag(bodyRaw, '--body') as Parameters<
+              typeof client.workflowScheme.publishDraft
+            >[1])
+          : undefined;
+      return client.workflowScheme.publishDraft(id, data, {
+        ...(validateOnly !== undefined && { validateOnly }),
+      });
+    }
+    case 'delete-draft-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      await client.workflowScheme.deleteDraftWorkflowMapping(id, { workflowName });
+      return { deleted: true };
+    }
+    case 'get-draft-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = asString(opts['workflow-name']);
+      return client.workflowScheme.getDraftWorkflowMapping(id, {
+        ...(workflowName !== undefined && { workflowName }),
+      });
+    }
+    case 'set-draft-workflow': {
+      const id = requireArg(cmd.positionalArgs[0], 'id');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.setDraftWorkflowMapping(
+        id,
+        workflowName,
+        body as Parameters<typeof client.workflowScheme.setDraftWorkflowMapping>[2],
+      );
+    }
+    case 'bulk-read': {
+      const bodyRaw = asString(opts['body']);
+      const data =
+        bodyRaw !== undefined
+          ? (parseJsonObjectFlag(bodyRaw, '--body') as Parameters<
+              typeof client.workflowScheme.bulkRead
+            >[0])
+          : undefined;
+      return client.workflowScheme.bulkRead(data);
+    }
+    case 'bulk-update': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.bulkUpdate(
+        body as unknown as Parameters<typeof client.workflowScheme.bulkUpdate>[0],
+      );
+    }
+    case 'bulk-mappings': {
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.workflowScheme.bulkRequiredMappings(
+        body as unknown as Parameters<typeof client.workflowScheme.bulkRequiredMappings>[0],
       );
     }
     default:

@@ -712,6 +712,485 @@ describe('WorkflowSchemeResource', () => {
     });
   });
 
+  // ── B860: createDraft ──────────────────────────────────────────────────────
+
+  describe('createDraft()', () => {
+    it('POSTs to /workflowscheme/{id}/createdraft', async () => {
+      const draft = { ...makeScheme(), draft: true };
+      transport.respondWith(draft);
+
+      const result = await resource.createDraft('10001');
+
+      expect(result).toEqual(draft);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflowscheme/10001/createdraft`,
+      });
+    });
+
+    it('accepts a numeric id', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.createDraft(10001);
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/workflowscheme/10001/createdraft`);
+    });
+  });
+
+  // ── B864: deleteDraft ──────────────────────────────────────────────────────
+
+  describe('deleteDraft()', () => {
+    it('calls DELETE /workflowscheme/{id}/draft', async () => {
+      transport.respondWith(undefined);
+
+      await resource.deleteDraft('10001');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/workflowscheme/10001/draft`,
+      });
+    });
+  });
+
+  // ── B865: getDraft ─────────────────────────────────────────────────────────
+
+  describe('getDraft()', () => {
+    it('calls GET /workflowscheme/{id}/draft', async () => {
+      const draft = makeScheme();
+      transport.respondWith(draft);
+
+      const result = await resource.getDraft('10001');
+
+      expect(result).toEqual(draft);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflowscheme/10001/draft`,
+      });
+    });
+  });
+
+  // ── B866: updateDraft ──────────────────────────────────────────────────────
+
+  describe('updateDraft()', () => {
+    it('PUTs to /workflowscheme/{id}/draft with provided fields', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.updateDraft('10001', {
+        name: 'Renamed',
+        defaultWorkflow: 'jira',
+        description: 'desc',
+        issueTypeMappings: { '10000': 'scrum' },
+        updateDraftIfNeeded: true,
+      });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflowscheme/10001/draft`,
+        body: {
+          name: 'Renamed',
+          defaultWorkflow: 'jira',
+          description: 'desc',
+          issueTypeMappings: { '10000': 'scrum' },
+          updateDraftIfNeeded: true,
+        },
+      });
+    });
+
+    it('omits undefined fields', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.updateDraft('10001', {});
+
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── B867: deleteDraftDefault ───────────────────────────────────────────────
+
+  describe('deleteDraftDefault()', () => {
+    it('calls DELETE /workflowscheme/{id}/draft/default', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.deleteDraftDefault('10001');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/workflowscheme/10001/draft/default`,
+      });
+    });
+  });
+
+  // ── B868: getDraftDefault ──────────────────────────────────────────────────
+
+  describe('getDraftDefault()', () => {
+    it('calls GET /workflowscheme/{id}/draft/default', async () => {
+      const def = { workflow: 'jira' };
+      transport.respondWith(def);
+
+      const result = await resource.getDraftDefault('10001');
+
+      expect(result).toEqual(def);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflowscheme/10001/draft/default`,
+      });
+    });
+  });
+
+  // ── B869: setDraftDefault ──────────────────────────────────────────────────
+
+  describe('setDraftDefault()', () => {
+    it('PUTs to /workflowscheme/{id}/draft/default with required workflow', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftDefault('10001', { workflow: 'jira' });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflowscheme/10001/draft/default`,
+        body: { workflow: 'jira' },
+      });
+    });
+
+    it('includes updateDraftIfNeeded when provided', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftDefault('10001', { workflow: 'jira', updateDraftIfNeeded: true });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        workflow: 'jira',
+        updateDraftIfNeeded: true,
+      });
+    });
+  });
+
+  // ── B870: deleteDraftIssueTypeMapping ──────────────────────────────────────
+
+  describe('deleteDraftIssueTypeMapping()', () => {
+    it('calls DELETE /workflowscheme/{id}/draft/issuetype/{issueType}', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.deleteDraftIssueTypeMapping('10001', '10000');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/workflowscheme/10001/draft/issuetype/10000`,
+      });
+    });
+  });
+
+  // ── B871: getDraftIssueTypeMapping ─────────────────────────────────────────
+
+  describe('getDraftIssueTypeMapping()', () => {
+    it('calls GET /workflowscheme/{id}/draft/issuetype/{issueType}', async () => {
+      const mapping = { issueType: '10000', workflow: 'jira' };
+      transport.respondWith(mapping);
+
+      const result = await resource.getDraftIssueTypeMapping('10001', '10000');
+
+      expect(result).toEqual(mapping);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflowscheme/10001/draft/issuetype/10000`,
+      });
+    });
+  });
+
+  // ── B872: setDraftIssueTypeMapping ─────────────────────────────────────────
+
+  describe('setDraftIssueTypeMapping()', () => {
+    it('PUTs to /workflowscheme/{id}/draft/issuetype/{issueType} with body fields', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftIssueTypeMapping('10001', '10000', {
+        issueType: '10000',
+        workflow: 'scrum',
+        updateDraftIfNeeded: false,
+      });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflowscheme/10001/draft/issuetype/10000`,
+        body: { issueType: '10000', workflow: 'scrum', updateDraftIfNeeded: false },
+      });
+    });
+
+    it('omits undefined fields', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftIssueTypeMapping('10001', '10000', {});
+
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── B873: publishDraft ─────────────────────────────────────────────────────
+
+  describe('publishDraft()', () => {
+    it('POSTs to /workflowscheme/{id}/draft/publish with empty body when no data', async () => {
+      transport.respondWith(undefined);
+
+      await resource.publishDraft('10001');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflowscheme/10001/draft/publish`,
+        body: {},
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards statusMappings and validateOnly', async () => {
+      const task = {
+        id: 't',
+        elapsedRuntime: 0,
+        lastUpdate: 0,
+        progress: 0,
+        self: 's',
+        status: 'ENQUEUED' as const,
+        submitted: 0,
+        submittedBy: 0,
+      };
+      transport.respondWith(task);
+      const mappings = [{ issueTypeId: '10001', newStatusId: '1', statusId: '3' }];
+
+      const result = await resource.publishDraft(
+        '10001',
+        { statusMappings: mappings },
+        { validateOnly: true },
+      );
+
+      expect(result).toEqual(task);
+      expect(transport.lastCall?.options.body).toEqual({ statusMappings: mappings });
+      expect(transport.lastCall?.options.query).toEqual({ validateOnly: true });
+    });
+  });
+
+  // ── B874: deleteDraftWorkflowMapping ───────────────────────────────────────
+
+  describe('deleteDraftWorkflowMapping()', () => {
+    it('calls DELETE /workflowscheme/{id}/draft/workflow with workflowName query', async () => {
+      transport.respondWith(undefined);
+
+      await resource.deleteDraftWorkflowMapping('10001', { workflowName: 'jira' });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/workflowscheme/10001/draft/workflow`,
+        query: { workflowName: 'jira' },
+      });
+    });
+  });
+
+  // ── B875: getDraftWorkflowMapping ──────────────────────────────────────────
+
+  describe('getDraftWorkflowMapping()', () => {
+    it('calls GET /workflowscheme/{id}/draft/workflow with empty query when no params', async () => {
+      const mapping = { workflow: 'jira', issueTypes: ['10000'] };
+      transport.respondWith(mapping);
+
+      const result = await resource.getDraftWorkflowMapping('10001');
+
+      expect(result).toEqual(mapping);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflowscheme/10001/draft/workflow`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('forwards workflowName when provided', async () => {
+      transport.respondWith({});
+
+      await resource.getDraftWorkflowMapping('10001', { workflowName: 'jira' });
+
+      expect(transport.lastCall?.options.query).toEqual({ workflowName: 'jira' });
+    });
+  });
+
+  // ── B876: setDraftWorkflowMapping ──────────────────────────────────────────
+
+  describe('setDraftWorkflowMapping()', () => {
+    it('PUTs to /workflowscheme/{id}/draft/workflow with required workflowName query', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftWorkflowMapping('10001', 'jira', {
+        issueTypes: ['10000'],
+        workflow: 'jira',
+        defaultMapping: true,
+        updateDraftIfNeeded: true,
+      });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflowscheme/10001/draft/workflow`,
+        query: { workflowName: 'jira' },
+        body: {
+          issueTypes: ['10000'],
+          workflow: 'jira',
+          defaultMapping: true,
+          updateDraftIfNeeded: true,
+        },
+      });
+    });
+
+    it('omits undefined body fields', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.setDraftWorkflowMapping('10001', 'jira', {});
+
+      expect(transport.lastCall?.options.body).toEqual({});
+    });
+  });
+
+  // ── B887: bulkRead ─────────────────────────────────────────────────────────
+
+  describe('bulkRead()', () => {
+    it('POSTs to /workflowscheme/read with empty body by default', async () => {
+      transport.respondWith([]);
+
+      const result = await resource.bulkRead();
+
+      expect(result).toEqual([]);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflowscheme/read`,
+        body: {},
+      });
+    });
+
+    it('forwards projectIds and workflowSchemeIds', async () => {
+      transport.respondWith([]);
+
+      await resource.bulkRead({
+        projectIds: ['10010'],
+        workflowSchemeIds: ['10001'],
+      });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        projectIds: ['10010'],
+        workflowSchemeIds: ['10001'],
+      });
+    });
+
+    it('omits undefined fields when data has only one field', async () => {
+      transport.respondWith([]);
+
+      await resource.bulkRead({ projectIds: ['10010'] });
+
+      expect(transport.lastCall?.options.body).toEqual({ projectIds: ['10010'] });
+      expect(transport.lastCall?.options.body).not.toHaveProperty('workflowSchemeIds');
+    });
+  });
+
+  // ── B888: bulkUpdate ───────────────────────────────────────────────────────
+
+  describe('bulkUpdate()', () => {
+    it('POSTs to /workflowscheme/update with required fields only', async () => {
+      transport.respondWith(undefined);
+
+      await resource.bulkUpdate({
+        id: '10001',
+        name: 'x',
+        description: 'y',
+        version: { id: 'v', versionNumber: 1 },
+      });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflowscheme/update`,
+        body: {
+          id: '10001',
+          name: 'x',
+          description: 'y',
+          version: { id: 'v', versionNumber: 1 },
+        },
+      });
+    });
+
+    it('includes all optional fields when provided', async () => {
+      const task = {
+        id: 't',
+        elapsedRuntime: 0,
+        lastUpdate: 0,
+        progress: 0,
+        self: 's',
+        status: 'ENQUEUED' as const,
+        submitted: 0,
+        submittedBy: 0,
+      };
+      transport.respondWith(task);
+
+      const result = await resource.bulkUpdate({
+        id: '10001',
+        name: 'x',
+        description: 'y',
+        version: { id: 'v', versionNumber: 1 },
+        defaultWorkflowId: 'wf-default',
+        statusMappingsByIssueTypeOverride: [
+          { issueTypeId: '10001', statusMappings: [{ oldStatusId: '1', newStatusId: '2' }] },
+        ],
+        statusMappingsByWorkflows: [
+          {
+            newWorkflowId: 'wf-new',
+            oldWorkflowId: 'wf-old',
+            statusMappings: [{ oldStatusId: '1', newStatusId: '2' }],
+          },
+        ],
+        workflowsForIssueTypes: [{ issueTypeIds: ['10000'], workflowId: 'wf-1' }],
+      });
+
+      expect(result).toEqual(task);
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['defaultWorkflowId']).toBe('wf-default');
+      expect(body['statusMappingsByIssueTypeOverride']).toBeDefined();
+      expect(body['statusMappingsByWorkflows']).toBeDefined();
+      expect(body['workflowsForIssueTypes']).toEqual([
+        { issueTypeIds: ['10000'], workflowId: 'wf-1' },
+      ]);
+    });
+  });
+
+  // ── B889: bulkRequiredMappings ─────────────────────────────────────────────
+
+  describe('bulkRequiredMappings()', () => {
+    it('POSTs to /workflowscheme/update/mappings with required fields only', async () => {
+      const resp = { statusMappingsByIssueTypes: [] };
+      transport.respondWith(resp);
+
+      const result = await resource.bulkRequiredMappings({
+        id: '10001',
+        workflowsForIssueTypes: [{ issueTypeIds: ['10000'], workflowId: 'wf-1' }],
+      });
+
+      expect(result).toEqual(resp);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflowscheme/update/mappings`,
+        body: {
+          id: '10001',
+          workflowsForIssueTypes: [{ issueTypeIds: ['10000'], workflowId: 'wf-1' }],
+        },
+      });
+    });
+
+    it('includes defaultWorkflowId when provided', async () => {
+      transport.respondWith({});
+
+      await resource.bulkRequiredMappings({
+        id: '10001',
+        workflowsForIssueTypes: [],
+        defaultWorkflowId: 'wf-default',
+      });
+
+      expect(transport.lastCall?.options.body).toEqual({
+        id: '10001',
+        workflowsForIssueTypes: [],
+        defaultWorkflowId: 'wf-default',
+      });
+    });
+  });
+
   // ── error path ─────────────────────────────────────────────────────────────
 
   describe('error propagation', () => {
@@ -725,6 +1204,25 @@ describe('WorkflowSchemeResource', () => {
       transport.respondWithError(new Error('400 Bad Request'));
 
       await expect(resource.create({ name: 'X' })).rejects.toThrow('400 Bad Request');
+    });
+
+    it('propagates transport errors from getDraft()', async () => {
+      transport.respondWithError(new Error('404 Not Found'));
+
+      await expect(resource.getDraft('999999')).rejects.toThrow('404 Not Found');
+    });
+
+    it('propagates transport errors from bulkUpdate()', async () => {
+      transport.respondWithError(new Error('409 Conflict'));
+
+      await expect(
+        resource.bulkUpdate({
+          id: '10001',
+          name: 'x',
+          description: 'y',
+          version: { id: 'v', versionNumber: 1 },
+        }),
+      ).rejects.toThrow('409 Conflict');
     });
   });
 });

@@ -138,7 +138,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 464 as of 2026-05-30. Updated by `chore/jira-backlog-reconcile` PR.
+> **Truly-missing Jira endpoints:** 447 as of 2026-05-30. Updated by `chore/jira-backlog-reconcile` PR.
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
@@ -510,57 +510,6 @@
   - deps: none
 - [ ] 🔴 🧩 API: B854 Jira: expose POST /rest/api/3/workflows/update/validation
   - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B860 Jira: expose POST /rest/api/3/workflowscheme/{id}/createdraft
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B864 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B865 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B866 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B867 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/default
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B868 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/default
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B869 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/default
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B870 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B871 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B872 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/issuetype/{issueType}
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B873 Jira: expose POST /rest/api/3/workflowscheme/{id}/draft/publish
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B874 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/draft/workflow
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B875 Jira: expose GET /rest/api/3/workflowscheme/{id}/draft/workflow
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B876 Jira: expose PUT /rest/api/3/workflowscheme/{id}/draft/workflow
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B887 Jira: expose POST /rest/api/3/workflowscheme/read
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B888 Jira: expose POST /rest/api/3/workflowscheme/update
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B889 Jira: expose POST /rest/api/3/workflowscheme/update/mappings
-  - files: `src/jira/resources/workflowscheme.ts`, `test/jira/workflowscheme.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
 - [ ] 🔴 🧩 API: B890 Jira: expose GET /rest/api/3/worklog/deleted
   - files: `src/jira/resources/worklog.ts`, `test/jira/worklog.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`

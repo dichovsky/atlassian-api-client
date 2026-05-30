@@ -1035,6 +1035,23 @@ const jiraWorkflowSchemeMock = {
   getProjectAssociations: vi.fn(),
   assignToProject: vi.fn(),
   switchProject: vi.fn(),
+  createDraft: vi.fn(),
+  deleteDraft: vi.fn(),
+  getDraft: vi.fn(),
+  updateDraft: vi.fn(),
+  deleteDraftDefault: vi.fn(),
+  getDraftDefault: vi.fn(),
+  setDraftDefault: vi.fn(),
+  deleteDraftIssueTypeMapping: vi.fn(),
+  getDraftIssueTypeMapping: vi.fn(),
+  setDraftIssueTypeMapping: vi.fn(),
+  publishDraft: vi.fn(),
+  deleteDraftWorkflowMapping: vi.fn(),
+  getDraftWorkflowMapping: vi.fn(),
+  setDraftWorkflowMapping: vi.fn(),
+  bulkRead: vi.fn(),
+  bulkUpdate: vi.fn(),
+  bulkRequiredMappings: vi.fn(),
 };
 
 vi.mock('../../src/jira/client.js', () => {
@@ -20869,6 +20886,261 @@ describe('executeJiraCommand', () => {
         targetSchemeId: '10002',
       });
       expect(result).toEqual(task);
+    });
+
+    // ── Draft + bulk actions (B860, B864-B876, B887-B889) ───────────────────
+
+    it('create-draft calls client.workflowScheme.createDraft', async () => {
+      jiraWorkflowSchemeMock.createDraft.mockResolvedValue({ id: 10001, draft: true });
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'create-draft', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.createDraft).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ id: 10001, draft: true });
+    });
+
+    it('delete-draft calls client.workflowScheme.deleteDraft', async () => {
+      jiraWorkflowSchemeMock.deleteDraft.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'delete-draft', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.deleteDraft).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('get-draft calls client.workflowScheme.getDraft', async () => {
+      const draft = { id: 10001, draft: true };
+      jiraWorkflowSchemeMock.getDraft.mockResolvedValue(draft);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'get-draft', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getDraft).toHaveBeenCalledWith('10001');
+      expect(result).toEqual(draft);
+    });
+
+    it('update-draft calls client.workflowScheme.updateDraft with body', async () => {
+      jiraWorkflowSchemeMock.updateDraft.mockResolvedValue({ id: 10001 });
+      const body = JSON.stringify({ name: 'Renamed draft' });
+      await executeJiraCommand(cmd('workflowscheme', 'update-draft', ['10001'], { body }), GLOBALS);
+      expect(jiraWorkflowSchemeMock.updateDraft).toHaveBeenCalledWith('10001', {
+        name: 'Renamed draft',
+      });
+    });
+
+    it('delete-draft-default calls client.workflowScheme.deleteDraftDefault', async () => {
+      jiraWorkflowSchemeMock.deleteDraftDefault.mockResolvedValue({ id: 10001 });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'delete-draft-default', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.deleteDraftDefault).toHaveBeenCalledWith('10001');
+    });
+
+    it('get-draft-default calls client.workflowScheme.getDraftDefault', async () => {
+      const def = { workflow: 'jira' };
+      jiraWorkflowSchemeMock.getDraftDefault.mockResolvedValue(def);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'get-draft-default', ['10001'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getDraftDefault).toHaveBeenCalledWith('10001');
+      expect(result).toEqual(def);
+    });
+
+    it('set-draft-default calls client.workflowScheme.setDraftDefault with body', async () => {
+      jiraWorkflowSchemeMock.setDraftDefault.mockResolvedValue({ id: 10001 });
+      const body = JSON.stringify({ workflow: 'jira' });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'set-draft-default', ['10001'], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.setDraftDefault).toHaveBeenCalledWith('10001', {
+        workflow: 'jira',
+      });
+    });
+
+    it('delete-draft-issuetype calls client.workflowScheme.deleteDraftIssueTypeMapping', async () => {
+      jiraWorkflowSchemeMock.deleteDraftIssueTypeMapping.mockResolvedValue({ id: 10001 });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'delete-draft-issuetype', ['10001', '10000'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.deleteDraftIssueTypeMapping).toHaveBeenCalledWith(
+        '10001',
+        '10000',
+      );
+    });
+
+    it('get-draft-issuetype calls client.workflowScheme.getDraftIssueTypeMapping', async () => {
+      const mapping = { issueType: '10000', workflow: 'jira' };
+      jiraWorkflowSchemeMock.getDraftIssueTypeMapping.mockResolvedValue(mapping);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'get-draft-issuetype', ['10001', '10000'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getDraftIssueTypeMapping).toHaveBeenCalledWith(
+        '10001',
+        '10000',
+      );
+      expect(result).toEqual(mapping);
+    });
+
+    it('set-draft-issuetype calls client.workflowScheme.setDraftIssueTypeMapping with body', async () => {
+      jiraWorkflowSchemeMock.setDraftIssueTypeMapping.mockResolvedValue({ id: 10001 });
+      const body = JSON.stringify({ workflow: 'scrum' });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'set-draft-issuetype', ['10001', '10000'], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.setDraftIssueTypeMapping).toHaveBeenCalledWith(
+        '10001',
+        '10000',
+        { workflow: 'scrum' },
+      );
+    });
+
+    it('publish-draft calls client.workflowScheme.publishDraft with body and validate-only', async () => {
+      const task = { id: 'task-1', status: 'ENQUEUED' };
+      jiraWorkflowSchemeMock.publishDraft.mockResolvedValue(task);
+      const body = JSON.stringify({ statusMappings: [] });
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'publish-draft', ['10001'], { body, 'validate-only': true }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.publishDraft).toHaveBeenCalledWith(
+        '10001',
+        { statusMappings: [] },
+        { validateOnly: true },
+      );
+      expect(result).toEqual(task);
+    });
+
+    it('publish-draft works without --body or --validate-only', async () => {
+      jiraWorkflowSchemeMock.publishDraft.mockResolvedValue(undefined);
+      await executeJiraCommand(cmd('workflowscheme', 'publish-draft', ['10001'], {}), GLOBALS);
+      expect(jiraWorkflowSchemeMock.publishDraft).toHaveBeenCalledWith('10001', undefined, {});
+    });
+
+    it('delete-draft-workflow calls client.workflowScheme.deleteDraftWorkflowMapping', async () => {
+      jiraWorkflowSchemeMock.deleteDraftWorkflowMapping.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'delete-draft-workflow', ['10001'], { 'workflow-name': 'jira' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.deleteDraftWorkflowMapping).toHaveBeenCalledWith('10001', {
+        workflowName: 'jira',
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-draft-workflow requires --workflow-name', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflowscheme', 'delete-draft-workflow', ['10001'], {}), GLOBALS),
+      ).rejects.toThrow('Missing required option: --workflow-name');
+    });
+
+    it('get-draft-workflow calls client.workflowScheme.getDraftWorkflowMapping with optional workflow-name', async () => {
+      const mapping = { workflow: 'jira', issueTypes: ['10000'] };
+      jiraWorkflowSchemeMock.getDraftWorkflowMapping.mockResolvedValue(mapping);
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'get-draft-workflow', ['10001'], { 'workflow-name': 'jira' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getDraftWorkflowMapping).toHaveBeenCalledWith('10001', {
+        workflowName: 'jira',
+      });
+      expect(result).toEqual(mapping);
+    });
+
+    it('get-draft-workflow works without --workflow-name', async () => {
+      jiraWorkflowSchemeMock.getDraftWorkflowMapping.mockResolvedValue({});
+      await executeJiraCommand(cmd('workflowscheme', 'get-draft-workflow', ['10001'], {}), GLOBALS);
+      expect(jiraWorkflowSchemeMock.getDraftWorkflowMapping).toHaveBeenCalledWith('10001', {});
+    });
+
+    it('set-draft-workflow calls client.workflowScheme.setDraftWorkflowMapping with workflow-name and body', async () => {
+      jiraWorkflowSchemeMock.setDraftWorkflowMapping.mockResolvedValue({ id: 10001 });
+      const body = JSON.stringify({ issueTypes: ['10000'], workflow: 'jira' });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'set-draft-workflow', ['10001'], {
+          'workflow-name': 'jira',
+          body,
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.setDraftWorkflowMapping).toHaveBeenCalledWith('10001', 'jira', {
+        issueTypes: ['10000'],
+        workflow: 'jira',
+      });
+    });
+
+    it('set-draft-workflow requires --workflow-name', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflowscheme', 'set-draft-workflow', ['10001'], { body: '{}' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --workflow-name');
+    });
+
+    it('bulk-read calls client.workflowScheme.bulkRead with optional body', async () => {
+      jiraWorkflowSchemeMock.bulkRead.mockResolvedValue([]);
+      const body = JSON.stringify({ projectIds: ['10010'] });
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'bulk-read', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.bulkRead).toHaveBeenCalledWith({ projectIds: ['10010'] });
+      expect(result).toEqual([]);
+    });
+
+    it('bulk-read works without --body', async () => {
+      jiraWorkflowSchemeMock.bulkRead.mockResolvedValue([]);
+      await executeJiraCommand(cmd('workflowscheme', 'bulk-read', [], {}), GLOBALS);
+      expect(jiraWorkflowSchemeMock.bulkRead).toHaveBeenCalledWith(undefined);
+    });
+
+    it('bulk-update calls client.workflowScheme.bulkUpdate with body', async () => {
+      const task = { id: 'task-1', status: 'ENQUEUED' };
+      jiraWorkflowSchemeMock.bulkUpdate.mockResolvedValue(task);
+      const body = JSON.stringify({
+        id: '10001',
+        name: 'x',
+        description: 'y',
+        version: { id: 'v', versionNumber: 1 },
+      });
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'bulk-update', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.bulkUpdate).toHaveBeenCalledWith({
+        id: '10001',
+        name: 'x',
+        description: 'y',
+        version: { id: 'v', versionNumber: 1 },
+      });
+      expect(result).toEqual(task);
+    });
+
+    it('bulk-mappings calls client.workflowScheme.bulkRequiredMappings with body', async () => {
+      const resp = { statusMappingsByIssueTypes: [] };
+      jiraWorkflowSchemeMock.bulkRequiredMappings.mockResolvedValue(resp);
+      const body = JSON.stringify({
+        id: '10001',
+        workflowsForIssueTypes: [{ issueTypeIds: ['10000'], workflowId: 'wf-1' }],
+      });
+      const result = await executeJiraCommand(
+        cmd('workflowscheme', 'bulk-mappings', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.bulkRequiredMappings).toHaveBeenCalledWith({
+        id: '10001',
+        workflowsForIssueTypes: [{ issueTypeIds: ['10000'], workflowId: 'wf-1' }],
+      });
+      expect(result).toEqual(resp);
     });
 
     it('unknown action throws', async () => {

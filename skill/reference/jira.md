@@ -69,7 +69,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issuesecurityschemes`   | `get-all`, `create`, `get`, `update`, `list-members`, `delete`, `add-levels`, `remove-level`, `update-level`, `add-level-members`, `remove-level-member`, `list-levels`, `set-default-levels`, `list-level-members`, `list-projects`, `associate-to-project`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`, `create-draft`, `delete-draft`, `get-draft`, `update-draft`, `delete-draft-default`, `get-draft-default`, `set-draft-default`, `delete-draft-issuetype`, `get-draft-issuetype`, `set-draft-issuetype`, `publish-draft`, `delete-draft-workflow`, `get-draft-workflow`, `set-draft-workflow`, `bulk-read`, `bulk-update`, `bulk-mappings`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -135,7 +135,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `issuesecurityschemes`   | `get-all`, `create`, `get`, `update`, `list-members`, `delete`, `add-levels`, `remove-level`, `update-level`, `add-level-members`, `remove-level-member`, `list-levels`, `set-default-levels`, `list-level-members`, `list-projects`, `associate-to-project`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`, `create-draft`, `delete-draft`, `get-draft`, `update-draft`, `delete-draft-default`, `get-draft-default`, `set-draft-default`, `delete-draft-issuetype`, `get-draft-issuetype`, `set-draft-issuetype`, `publish-draft`, `delete-draft-workflow`, `get-draft-workflow`, `set-draft-workflow`, `bulk-read`, `bulk-update`, `bulk-mappings`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## `issue-type-schemes`
 
@@ -3008,11 +3008,11 @@ atlas jira plans update-plan-only-team 10001 2001 --body '{"op":"replace","path"
 
 ## `workflowscheme`
 
-Workflow scheme management — live half of `/rest/api/3/workflowscheme` (B855–B886). Covers listing/CRUD, default-workflow mappings, issue-type mappings, workflow mappings, project usages, and project association/switch. Draft + bulk variants (B860, B864–B876, B887–B889) ship in a sibling resource.
+Workflow scheme management — full coverage of `/rest/api/3/workflowscheme` (B855–B889). Live half covers listing/CRUD, default-workflow mappings, issue-type mappings, workflow mappings, project usages, and project association/switch. Draft half covers the draft lifecycle (create/get/update/delete/publish), draft default workflow, draft issue-type and workflow mappings. Bulk half covers read, update, and required-mappings.
 
 **Pagination:** `list` is offset-paginated (`--start-at`, `--max-results`). Pass `--all` to drain every page via the `listAll` async generator. `project-usages` uses cursor pagination (`--next-page-token`, `--max-results`).
 
-**Required body endpoints (`--body` JSON):** `create`, `update`, `set-default`, `set-issuetype`, `set-workflow`, `assign-project`, `switch-project`. See [payload-rules.md](payload-rules.md) for JSON-flag tips.
+**Required body endpoints (`--body` JSON):** `create`, `update`, `set-default`, `set-issuetype`, `set-workflow`, `assign-project`, `switch-project`, `update-draft`, `set-draft-default`, `set-draft-issuetype`, `set-draft-workflow`, `bulk-update`, `bulk-mappings`. Optional body: `publish-draft`, `bulk-read`. See [payload-rules.md](payload-rules.md) for JSON-flag tips.
 
 ### Schemes (CRUD)
 
@@ -3093,4 +3093,75 @@ atlas jira workflowscheme project-usages 10001 --max-results 50
 atlas jira workflowscheme list-by-project --project-id 10010,10020
 atlas jira workflowscheme assign-project --body '{"projectId":"10010","workflowSchemeId":"10001"}'
 atlas jira workflowscheme switch-project --body '{"projectId":"10010","targetSchemeId":"10002"}'
+```
+
+### Draft lifecycle
+
+| Action          | Positional | Required flags | Optional flags              | BACKLOG |
+| --------------- | ---------- | -------------- | --------------------------- | ------- |
+| `create-draft`  | `<id>`     | —              | —                           | B860    |
+| `delete-draft`  | `<id>`     | —              | —                           | B864    |
+| `get-draft`     | `<id>`     | —              | —                           | B865    |
+| `update-draft`  | `<id>`     | `--body`       | —                           | B866    |
+| `publish-draft` | `<id>`     | —              | `--body`, `--validate-only` | B873    |
+
+### Draft default workflow
+
+| Action                 | Positional | Required flags | Optional flags | BACKLOG |
+| ---------------------- | ---------- | -------------- | -------------- | ------- |
+| `delete-draft-default` | `<id>`     | —              | —              | B867    |
+| `get-draft-default`    | `<id>`     | —              | —              | B868    |
+| `set-draft-default`    | `<id>`     | `--body`       | —              | B869    |
+
+### Draft issue-type mappings
+
+| Action                   | Positional         | Required flags | Optional flags | BACKLOG |
+| ------------------------ | ------------------ | -------------- | -------------- | ------- |
+| `delete-draft-issuetype` | `<id> <issueType>` | —              | —              | B870    |
+| `get-draft-issuetype`    | `<id> <issueType>` | —              | —              | B871    |
+| `set-draft-issuetype`    | `<id> <issueType>` | `--body`       | —              | B872    |
+
+### Draft workflow mappings
+
+| Action                  | Positional | Required flags              | Optional flags    | BACKLOG |
+| ----------------------- | ---------- | --------------------------- | ----------------- | ------- |
+| `delete-draft-workflow` | `<id>`     | `--workflow-name`           | —                 | B874    |
+| `get-draft-workflow`    | `<id>`     | —                           | `--workflow-name` | B875    |
+| `set-draft-workflow`    | `<id>`     | `--workflow-name`, `--body` | —                 | B876    |
+
+### Bulk operations
+
+| Action          | Positional | Required flags | Optional flags | BACKLOG |
+| --------------- | ---------- | -------------- | -------------- | ------- |
+| `bulk-read`     | —          | —              | `--body`       | B887    |
+| `bulk-update`   | —          | `--body`       | —              | B888    |
+| `bulk-mappings` | —          | `--body`       | —              | B889    |
+
+```sh
+# Draft lifecycle
+atlas jira workflowscheme create-draft 10001
+atlas jira workflowscheme get-draft 10001
+atlas jira workflowscheme update-draft 10001 --body '{"name":"Renamed draft","defaultWorkflow":"jira"}'
+atlas jira workflowscheme delete-draft 10001
+atlas jira workflowscheme publish-draft 10001 --body '{"statusMappings":[]}' --validate-only
+
+# Draft default workflow
+atlas jira workflowscheme get-draft-default 10001
+atlas jira workflowscheme set-draft-default 10001 --body '{"workflow":"jira"}'
+atlas jira workflowscheme delete-draft-default 10001
+
+# Draft issue-type mappings
+atlas jira workflowscheme get-draft-issuetype 10001 10000
+atlas jira workflowscheme set-draft-issuetype 10001 10000 --body '{"workflow":"scrum"}'
+atlas jira workflowscheme delete-draft-issuetype 10001 10000
+
+# Draft workflow mappings
+atlas jira workflowscheme get-draft-workflow 10001 --workflow-name jira
+atlas jira workflowscheme set-draft-workflow 10001 --workflow-name jira --body '{"issueTypes":["10000"],"workflow":"jira"}'
+atlas jira workflowscheme delete-draft-workflow 10001 --workflow-name jira
+
+# Bulk operations
+atlas jira workflowscheme bulk-read --body '{"projectIds":["10010"],"workflowSchemeIds":["10001"]}'
+atlas jira workflowscheme bulk-update --body '{"id":"10001","name":"x","description":"y","version":{"id":"v","versionNumber":1},"workflowsForIssueTypes":[]}'
+atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssueTypes":[{"issueTypeIds":["10000"],"workflowId":"wf-1"}]}'
 ```
