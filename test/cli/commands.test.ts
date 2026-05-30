@@ -20674,6 +20674,17 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(def);
     });
 
+    it('get-default forwards --return-draft-if-exists when set', async () => {
+      jiraWorkflowSchemeMock.getDefault.mockResolvedValue({ workflow: 'jira' });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'get-default', ['10001'], { 'return-draft-if-exists': 'true' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getDefault).toHaveBeenCalledWith('10001', {
+        returnDraftIfExists: true,
+      });
+    });
+
     it('set-default calls client.workflowScheme.setDefault with body', async () => {
       jiraWorkflowSchemeMock.setDefault.mockResolvedValue({ id: 10001 });
       const body = JSON.stringify({ workflow: 'jira' });
@@ -20752,6 +20763,21 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraWorkflowSchemeMock.getWorkflowMapping).toHaveBeenCalledWith('10001', {
         workflowName: 'jira',
+      });
+    });
+
+    it('get-workflow forwards --return-draft-if-exists when set', async () => {
+      jiraWorkflowSchemeMock.getWorkflowMapping.mockResolvedValue({ workflow: 'jira' });
+      await executeJiraCommand(
+        cmd('workflowscheme', 'get-workflow', ['10001'], {
+          'workflow-name': 'jira',
+          'return-draft-if-exists': 'true',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowSchemeMock.getWorkflowMapping).toHaveBeenCalledWith('10001', {
+        workflowName: 'jira',
+        returnDraftIfExists: true,
       });
     });
 
