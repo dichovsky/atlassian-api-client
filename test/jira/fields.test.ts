@@ -747,6 +747,8 @@ describe('FieldsResource', () => {
         status: 'COMPLETE',
         progress: 100,
         elapsedRuntime: 42,
+        submitted: 1718000000000,
+        submittedBy: 5001,
         lastUpdate: 1718000000000,
         result: {
           modifiedIssues: [10001, 10010],

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "2b6d691142aed1cff8683dfe35bd5219607b9a50feaff84c9f5c3e48e6f19bd0",
+  "sourceHash": "24e52f3da334fd662af17aa21a6522272833ee1ed3722afb04a49308d97d3dd1",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22131,7 +22131,7 @@
         {
           "name": "OrderFieldContextOptionsData",
           "kind": "interface",
-          "line": 176,
+          "line": 178,
           "exported": true,
           "signature": "export interface OrderFieldContextOptionsData { readonly customFieldOptionIds: readonly string[]; readonly after?: strin…",
           "jsdoc": "Request body for reordering custom field context options (B426)."
@@ -22139,89 +22139,89 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 182,
+          "line": 184,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 183
+              "line": 185
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 189
+              "line": 191
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 211
+              "line": 213
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 220
+              "line": 222
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 230
+              "line": 232
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 240
+              "line": 242
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 248
+              "line": 250
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 267
+              "line": 269
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 277
+              "line": 279
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 290
+              "line": 292
             },
             {
               "name": "listContextOptions",
               "kind": "method",
-              "line": 298
+              "line": 300
             },
             {
               "name": "createContextOptions",
               "kind": "method",
-              "line": 320
+              "line": 322
             },
             {
               "name": "updateContextOptions",
               "kind": "method",
-              "line": 334
+              "line": 336
             },
             {
               "name": "deleteContextOption",
               "kind": "method",
-              "line": 348
+              "line": 350
             },
             {
               "name": "replaceContextOptionOnIssues",
               "kind": "method",
-              "line": 357
+              "line": 359
             },
             {
               "name": "reorderContextOptions",
               "kind": "method",
-              "line": 377
+              "line": 379
             }
           ]
         }

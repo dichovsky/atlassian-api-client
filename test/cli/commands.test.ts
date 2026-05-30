@@ -21561,6 +21561,20 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('context-option-move throws on invalid --position value', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-option-move', [], {
+            'field-id': 'customfield_10001',
+            'context-id': '10025',
+            'option-ids': '10001',
+            position: 'Middle',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--position must be one of: First, Last');
+    });
+
     it('unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('fields', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown fields action',

@@ -6079,7 +6079,8 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const contextId = Number(contextIdStr);
       const idsRaw = requireOpt(opts['option-ids'], '--option-ids');
       const customFieldOptionIds = idsRaw.split(',').map((s) => s.trim());
-      const position = asString(opts['position']) as 'First' | 'Last' | undefined;
+      const positionRaw = asString(opts['position']);
+      const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
       const after = asString(opts['after']);
       const data: OrderFieldContextOptionsData = {
         customFieldOptionIds,

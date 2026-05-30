@@ -162,6 +162,8 @@ export interface TaskProgressBeanRemoveOptionFromIssuesResult {
   readonly message?: string;
   readonly progress: number;
   readonly elapsedRuntime: number;
+  readonly submitted: number;
+  readonly submittedBy: number;
   readonly started?: number;
   readonly finished?: number;
   readonly lastUpdate: number;
