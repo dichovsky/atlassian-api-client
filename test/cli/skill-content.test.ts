@@ -125,6 +125,18 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('context-default-list');
     expect(JIRA_REF).toContain('context-default-set');
   });
+
+  it('documents fields context project mapping API (B427-B428, B430-B431)', () => {
+    expect(JIRA_REF).toContain('B427');
+    expect(JIRA_REF).toContain('B428');
+    expect(JIRA_REF).toContain('B430');
+    expect(JIRA_REF).toContain('B431');
+    expect(JIRA_REF).toContain('### Field context project mappings');
+    expect(JIRA_REF).toContain('context-project-set');
+    expect(JIRA_REF).toContain('context-project-remove');
+    expect(JIRA_REF).toContain('context-mapping');
+    expect(JIRA_REF).toContain('context-project-mapping');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {

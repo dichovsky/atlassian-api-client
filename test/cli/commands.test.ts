@@ -1036,6 +1036,10 @@ const jiraFieldsMock = {
   listContextIssueTypeMappings: vi.fn(),
   listContextDefaultValues: vi.fn(),
   setContextDefaultValues: vi.fn(),
+  setContextProjects: vi.fn(),
+  removeContextProjects: vi.fn(),
+  getContextMappings: vi.fn(),
+  listContextProjectMappings: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21783,6 +21787,210 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('--default-values-json');
+    });
+
+    // ── context-project-set (B427) ────────────────────────────────────────
+
+    it('context-project-set calls setContextProjects with projectIds CSV and returns updated', async () => {
+      jiraFieldsMock.setContextProjects.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-project-set', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'project-ids': '10001,10005,10006',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.setContextProjects).toHaveBeenCalledWith('customfield_10001', 10025, {
+        projectIds: ['10001', '10005', '10006'],
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('context-project-set throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-project-set', [], {
+            'context-id': '10025',
+            'project-ids': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--field-id');
+    });
+
+    it('context-project-set throws when --project-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-project-set', [], {
+            'field-id': 'customfield_10001',
+            'context-id': '10025',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--project-ids');
+    });
+
+    // ── context-project-remove (B428) ─────────────────────────────────────
+
+    it('context-project-remove calls removeContextProjects with projectIds CSV and returns updated', async () => {
+      jiraFieldsMock.removeContextProjects.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-project-remove', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'project-ids': '10001,10005',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.removeContextProjects).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        { projectIds: ['10001', '10005'] },
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('context-project-remove throws when --context-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-project-remove', [], {
+            'field-id': 'customfield_10001',
+            'project-ids': '10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id');
+    });
+
+    // ── context-mapping (B430) ────────────────────────────────────────────
+
+    it('context-mapping calls getContextMappings with parsed mappings-json and returns results', async () => {
+      const mockPage = {
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [{ contextId: '10000', issueTypeId: '10000', projectId: '10000' }],
+      };
+      jiraFieldsMock.getContextMappings.mockResolvedValue(mockPage);
+      const mappings = [
+        { projectId: '10000', issueTypeId: '10000' },
+        { projectId: '10000', issueTypeId: '10001' },
+      ];
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-mapping', [], {
+          'field-id': 'customfield_10001',
+          'mappings-json': JSON.stringify(mappings),
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.getContextMappings).toHaveBeenCalledWith(
+        'customfield_10001',
+        { mappings },
+        {},
+      );
+      expect(result).toBe(mockPage);
+    });
+
+    it('context-mapping passes startAt and maxResults when provided', async () => {
+      const mockPage = { isLast: true, maxResults: 10, startAt: 5, total: 0, values: [] };
+      jiraFieldsMock.getContextMappings.mockResolvedValue(mockPage);
+      await executeJiraCommand(
+        cmd('fields', 'context-mapping', [], {
+          'field-id': 'customfield_10001',
+          'mappings-json': '[{"projectId":"10000","issueTypeId":"10000"}]',
+          'start-at': '5',
+          'max-results': '10',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.getContextMappings).toHaveBeenCalledWith(
+        'customfield_10001',
+        { mappings: [{ projectId: '10000', issueTypeId: '10000' }] },
+        { startAt: 5, maxResults: 10 },
+      );
+    });
+
+    it('context-mapping throws on invalid (non-array) JSON in --mappings-json', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-mapping', [], {
+            'field-id': 'customfield_10001',
+            'mappings-json': '{"projectId":"10000","issueTypeId":"10000"}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--mappings-json must be a JSON array');
+    });
+
+    it('context-mapping throws when --mappings-json is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-mapping', [], {
+            'field-id': 'customfield_10001',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--mappings-json');
+    });
+
+    // ── context-project-mapping (B431) ────────────────────────────────────
+
+    it('context-project-mapping calls listContextProjectMappings and returns results', async () => {
+      const mockPage = {
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 2,
+        values: [
+          { contextId: '10025', projectId: '10001' },
+          { contextId: '10026', isGlobalContext: true },
+        ],
+      };
+      jiraFieldsMock.listContextProjectMappings.mockResolvedValue(mockPage);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-project-mapping', [], {
+          'field-id': 'customfield_10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextProjectMappings).toHaveBeenCalledWith(
+        'customfield_10001',
+        {},
+      );
+      expect(result).toBe(mockPage);
+    });
+
+    it('context-project-mapping passes contextId and pagination params', async () => {
+      const mockPage = {
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 0,
+        values: [],
+      };
+      jiraFieldsMock.listContextProjectMappings.mockResolvedValue(mockPage);
+      await executeJiraCommand(
+        cmd('fields', 'context-project-mapping', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025,10026',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextProjectMappings).toHaveBeenCalledWith('customfield_10001', {
+        contextId: [10025, 10026],
+        startAt: 0,
+        maxResults: 50,
+      });
+    });
+
+    it('context-project-mapping throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'context-project-mapping', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-id');
     });
   });
 });
