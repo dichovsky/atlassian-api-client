@@ -377,6 +377,11 @@ const GLOBAL_OPTIONS = {
   'old-to-new-mappings': { type: 'string' as const },
   'issue-security-level-id': { type: 'string' as const },
   'issue-security-scheme-id': { type: 'string' as const },
+  // workflowscheme options (B855-B886 live)
+  all: { type: 'boolean' as const },
+  'return-draft-if-exists': { type: 'boolean' as const },
+  'update-draft-if-needed': { type: 'boolean' as const },
+  'workflow-name': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

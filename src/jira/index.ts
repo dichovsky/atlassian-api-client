@@ -673,3 +673,36 @@ export type {
   ListPlanTeamsParams,
 } from './resources/plans.js';
 export { PlansResource } from './resources/plans.js';
+
+export type {
+  WorkflowScheme,
+  DefaultWorkflow,
+  IssueTypeWorkflowMapping,
+  IssueTypesWorkflowMapping,
+  ProjectUsage,
+  ProjectUsagePage,
+  WorkflowSchemeProjectUsageDTO,
+  WorkflowSchemeAssociations,
+  ContainerOfWorkflowSchemeAssociations,
+  WorkflowAssociationStatusMapping,
+  MappingsByIssueTypeOverride,
+  TaskProgressBeanObject,
+  CreateWorkflowSchemeData,
+  UpdateWorkflowSchemeData,
+  UpdateDefaultWorkflowData,
+  SetIssueTypeMappingData,
+  UpdateWorkflowMappingData,
+  AssignSchemeToProjectData,
+  SwitchSchemeForProjectData,
+  ListWorkflowSchemesParams,
+  GetWorkflowSchemeParams,
+  DeleteDefaultWorkflowParams,
+  GetDefaultWorkflowParams,
+  DeleteIssueTypeMappingParams,
+  GetIssueTypeMappingParams,
+  DeleteWorkflowMappingParams,
+  GetWorkflowMappingParams,
+  GetProjectUsagesParams,
+  GetSchemeProjectAssociationsParams,
+} from './resources/workflowscheme.js';
+export { WorkflowSchemeResource } from './resources/workflowscheme.js';

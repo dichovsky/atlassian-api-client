@@ -2056,3 +2056,60 @@
 - [x] 🔴 🧩 API: B640 Jira: expose PUT /rest/api/3/plans/plan/{planId}/trash
   - **Impl:** `PlansResource.trash(planId)` returns `void` (204). No body. CLI: `atlas jira plans trash <planId>`.
   - **Rat:** No body per spec; void 204 response.
+
+### Wave 7 — workflowscheme live (PR #TBD, 2026-05-30)
+
+- [x] 🔴 🧩 API: B855 Jira: expose GET /rest/api/3/workflowscheme
+  - **Impl:** New `WorkflowSchemeResource` (`src/jira/resources/workflowscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<WorkflowScheme>`; `listAll()` async generator via `paginateOffset`. CLI: `atlas jira workflowscheme list [--start-at] [--max-results] [--all]`. Part of B855-B886 `workflowscheme` (live) resource PR.
+  - **Rat:** Offset pagination; `--all` drains the async generator.
+- [x] 🔴 🧩 API: B856 Jira: expose POST /rest/api/3/workflowscheme
+  - **Impl:** `WorkflowSchemeResource.create(data)` POSTs `CreateWorkflowSchemeData` (`name` required, optional `defaultWorkflow`/`description`/`issueTypeMappings`). CLI: `atlas jira workflowscheme create --body <json>`.
+  - **Rat:** Body required by spec; `--body` JSON object simplifies the flag surface vs many discrete flags.
+- [x] 🔴 🧩 API: B857 Jira: expose DELETE /rest/api/3/workflowscheme/{id}
+  - **Impl:** `WorkflowSchemeResource.delete(id)` returns `void` (204). CLI: `atlas jira workflowscheme delete <id>`.
+  - **Rat:** Standard DELETE with single path param.
+- [x] 🔴 🧩 API: B858 Jira: expose GET /rest/api/3/workflowscheme/{id}
+  - **Impl:** `WorkflowSchemeResource.get(id, params?)` accepts optional `returnDraftIfExists`. CLI: `atlas jira workflowscheme get <id> [--return-draft-if-exists]`.
+  - **Rat:** Single optional bool query param per spec.
+- [x] 🔴 🧩 API: B859 Jira: expose PUT /rest/api/3/workflowscheme/{id}
+  - **Impl:** `WorkflowSchemeResource.update(id, data)` PUTs `UpdateWorkflowSchemeData`. CLI: `atlas jira workflowscheme update <id> --body <json>`.
+  - **Rat:** All body fields optional; JSON body via `--body`.
+- [x] 🔴 🧩 API: B861 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/default
+  - **Impl:** `WorkflowSchemeResource.deleteDefault(id, params?)` returns the updated `WorkflowScheme`. CLI: `atlas jira workflowscheme delete-default <id> [--update-draft-if-needed]`.
+  - **Rat:** Resets default workflow; supports draft auto-update.
+- [x] 🔴 🧩 API: B862 Jira: expose GET /rest/api/3/workflowscheme/{id}/default
+  - **Impl:** `WorkflowSchemeResource.getDefault(id, params?)` returns `DefaultWorkflow`. CLI: `atlas jira workflowscheme get-default <id> [--return-draft-if-exists]`.
+  - **Rat:** Read default workflow.
+- [x] 🔴 🧩 API: B863 Jira: expose PUT /rest/api/3/workflowscheme/{id}/default
+  - **Impl:** `WorkflowSchemeResource.setDefault(id, data)` PUTs `UpdateDefaultWorkflowData` (required `workflow`, optional `updateDraftIfNeeded`). CLI: `atlas jira workflowscheme set-default <id> --body <json>`.
+  - **Rat:** Body required; CLI uses --body for shape symmetry.
+- [x] 🔴 🧩 API: B877 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.deleteIssueTypeMapping(id, issueType, params?)` returns updated `WorkflowScheme`. CLI: `atlas jira workflowscheme delete-issuetype <id> <issueType> [--update-draft-if-needed]`.
+  - **Rat:** Two-segment path; supports draft auto-update.
+- [x] 🔴 🧩 API: B878 Jira: expose GET /rest/api/3/workflowscheme/{id}/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.getIssueTypeMapping(id, issueType, params?)` returns `IssueTypeWorkflowMapping`. CLI: `atlas jira workflowscheme get-issuetype <id> <issueType> [--return-draft-if-exists]`.
+  - **Rat:** Get per-issue-type mapping.
+- [x] 🔴 🧩 API: B879 Jira: expose PUT /rest/api/3/workflowscheme/{id}/issuetype/{issueType}
+  - **Impl:** `WorkflowSchemeResource.setIssueTypeMapping(id, issueType, data)` PUTs `SetIssueTypeMappingData`. CLI: `atlas jira workflowscheme set-issuetype <id> <issueType> --body <json>`.
+  - **Rat:** Body shape from `IssueTypeWorkflowMapping`; all body fields optional per spec.
+- [x] 🔴 🧩 API: B880 Jira: expose DELETE /rest/api/3/workflowscheme/{id}/workflow
+  - **Impl:** `WorkflowSchemeResource.deleteWorkflowMapping(id, params)` requires `workflowName` query; returns `void` (204). CLI: `atlas jira workflowscheme delete-workflow <id> --workflow-name <name> [--update-draft-if-needed]`.
+  - **Rat:** `workflowName` is a required query param per spec.
+- [x] 🔴 🧩 API: B881 Jira: expose GET /rest/api/3/workflowscheme/{id}/workflow
+  - **Impl:** `WorkflowSchemeResource.getWorkflowMapping(id, params?)` returns `IssueTypesWorkflowMapping`. CLI: `atlas jira workflowscheme get-workflow <id> [--workflow-name] [--return-draft-if-exists]`.
+  - **Rat:** Both query params optional per spec.
+- [x] 🔴 🧩 API: B882 Jira: expose PUT /rest/api/3/workflowscheme/{id}/workflow
+  - **Impl:** `WorkflowSchemeResource.setWorkflowMapping(id, workflowName, data)` PUTs `UpdateWorkflowMappingData`; `workflowName` is a required query param per spec. CLI: `atlas jira workflowscheme set-workflow <id> --workflow-name <name> --body <json>`.
+  - **Rat:** Spec requires `workflowName` query; CLI keeps it explicit.
+- [x] 🔴 🧩 API: B883 Jira: expose GET /rest/api/3/workflowscheme/{workflowSchemeId}/projectUsages
+  - **Impl:** `WorkflowSchemeResource.getProjectUsages(workflowSchemeId, params?)` returns `WorkflowSchemeProjectUsageDTO`. Cursor pagination via `nextPageToken`. CLI: `atlas jira workflowscheme project-usages <workflowSchemeId> [--next-page-token] [--max-results]`.
+  - **Rat:** Cursor pagination (`nextPageToken`/`maxResults`).
+- [x] 🔴 🧩 API: B884 Jira: expose GET /rest/api/3/workflowscheme/project
+  - **Impl:** `WorkflowSchemeResource.getProjectAssociations(params)` requires non-empty `projectId` array. CLI: `atlas jira workflowscheme list-by-project --project-id <csv>` (CSV → array).
+  - **Rat:** Spec requires `projectId` (1-100); CLI accepts CSV and the resource throws RangeError on empty input.
+- [x] 🔴 🧩 API: B885 Jira: expose PUT /rest/api/3/workflowscheme/project
+  - **Impl:** `WorkflowSchemeResource.assignToProject(data)` PUTs `AssignSchemeToProjectData` (required `projectId`, optional `workflowSchemeId`). CLI: `atlas jira workflowscheme assign-project --body <json>`.
+  - **Rat:** Body required; CLI uses `--body` for shape symmetry with switch.
+- [x] 🔴 🧩 API: B886 Jira: expose POST /rest/api/3/workflowscheme/project/switch
+  - **Impl:** `WorkflowSchemeResource.switchProject(data)` POSTs `SwitchSchemeForProjectData` (all body fields optional per spec); returns `TaskProgressBeanObject` (303 in spec). CLI: `atlas jira workflowscheme switch-project --body <json>`.
+  - **Rat:** Long-running task envelope returned; spec response code 303 with body.
