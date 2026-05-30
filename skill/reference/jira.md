@@ -3170,7 +3170,7 @@ atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssue
 
 Custom field CRUD and field context management.
 
-Covers: B415–B418 (field contexts), B421–B426 (field context options), field list/create/update/delete.
+Covers: B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B905–B906 (context default values), field list/create/update/delete.
 
 ### Fields (CRUD)
 
@@ -3242,4 +3242,56 @@ atlas jira fields context-option-move --field-id customfield_10001 --context-id 
 
 # Reorder options after a specific option (B426)
 atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001 --after 10005
+```
+
+### Field context issue-type mappings
+
+Manage which issue types are associated with a custom field context (B419–B420, B429).
+
+```sh
+# Add issue types to a context (B419) — PUT 204
+atlas jira fields context-issuetype-set --field-id customfield_10001 --context-id 10025 --issue-type-ids 10001,10005,10006
+
+# Remove issue types from a context (B420) — POST 204
+atlas jira fields context-issuetype-remove --field-id customfield_10001 --context-id 10025 --issue-type-ids 10001,10005
+
+# List issue-type-to-context mappings for a field (B429) — paginated
+atlas jira fields context-issuetype-mapping --field-id customfield_10001
+
+# Filter mappings by specific contexts (B429)
+atlas jira fields context-issuetype-mapping --field-id customfield_10001 --context-id 10025,10026 --start-at 0 --max-results 50
+```
+
+### Field context default values
+
+Get and set default values for custom field contexts (B905–B906).
+
+**Note:** Both endpoints are deprecated (CHANGE-3082) and will be removed in October 2026.
+
+Default values are polymorphic — each entry is discriminated by a `type` field. Common types:
+
+- `option.single` — single-select/radio: requires `optionId`
+- `option.multiple` — multi-select/checkbox: requires `optionIds[]`
+- `option.cascading` — cascading select: requires `optionId` + optional `cascadingOptionId`
+- `forge.string` — Forge string field: optional `text`
+- `forge.user` — Forge user field: requires `accountId` + `userFilter`
+- `float` — number field: requires `number`
+- `datepicker` — date field: optional `date`, `useCurrent`
+- `url` — URL field: requires `url`
+
+```sh
+# List default values for a custom field (B905) — paginated, deprecated
+atlas jira fields context-default-list --field-id customfield_10001
+
+# Filter by specific contexts (B905)
+atlas jira fields context-default-list --field-id customfield_10001 --context-id 10025,10026 --start-at 0 --max-results 50
+
+# Set defaults — option.single for one context (B906) — deprecated
+atlas jira fields context-default-set --field-id customfield_10001 --default-values-json '[{"type":"option.single","contextId":"10100","optionId":"10001"}]'
+
+# Set defaults — multiple variants in one request (B906)
+atlas jira fields context-default-set --field-id customfield_10001 --default-values-json '[{"type":"option.single","contextId":"10100","optionId":"10001"},{"type":"forge.string","contextId":"10102","text":"Default text"}]'
+
+# Set a cascading default with child option (B906)
+atlas jira fields context-default-set --field-id customfield_10001 --default-values-json '[{"type":"option.cascading","contextId":"10101","optionId":"10002","cascadingOptionId":"10003"}]'
 ```

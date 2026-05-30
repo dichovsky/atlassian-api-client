@@ -110,6 +110,21 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('### Draft workflow mappings');
     expect(JIRA_REF).toContain('### Bulk operations');
   });
+
+  it('documents fields context issuetype + default API (B419-B420, B429, B905-B906)', () => {
+    expect(JIRA_REF).toContain('B419');
+    expect(JIRA_REF).toContain('B420');
+    expect(JIRA_REF).toContain('B429');
+    expect(JIRA_REF).toContain('B905');
+    expect(JIRA_REF).toContain('B906');
+    expect(JIRA_REF).toContain('### Field context issue-type mappings');
+    expect(JIRA_REF).toContain('### Field context default values');
+    expect(JIRA_REF).toContain('context-issuetype-set');
+    expect(JIRA_REF).toContain('context-issuetype-remove');
+    expect(JIRA_REF).toContain('context-issuetype-mapping');
+    expect(JIRA_REF).toContain('context-default-list');
+    expect(JIRA_REF).toContain('context-default-set');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {

@@ -2200,3 +2200,18 @@
 - [x] 🔴 🧩 API: B426 Jira: expose PUT /rest/api/3/field/{fieldId}/context/{contextId}/option/move
   - **Impl:** `FieldsResource.reorderContextOptions(fieldId, contextId, data)` — body: `OrderOfCustomFieldOptions` (customFieldOptionIds[] required, after?, position?: 'First'|'Last'); returns void (204). CLI: `atlas jira fields context-option-move --field-id <id> --context-id <n> --option-ids <csv> --position First|Last`.
   - **Rat:** Spec-verified; after and position are mutually exclusive per spec.
+- [x] 🔴 🧩 API: B419 Jira: expose PUT /rest/api/3/field/{fieldId}/context/{contextId}/issuetype
+  - **Impl:** `FieldsResource.setContextIssueTypes(fieldId, contextId, data)` — body: `IssueTypeIds` (issueTypeIds: string[]); returns void (204). CLI: `atlas jira fields context-issuetype-set --field-id <id> --context-id <n> --issue-type-ids <csv>`.
+  - **Rat:** Spec-verified; adds issue types to a context; a context without issue types applies to all.
+- [x] 🔴 🧩 API: B420 Jira: expose POST /rest/api/3/field/{fieldId}/context/{contextId}/issuetype/remove
+  - **Impl:** `FieldsResource.removeContextIssueTypes(fieldId, contextId, data)` — body: `IssueTypeIds` (issueTypeIds: string[]); returns void (204). CLI: `atlas jira fields context-issuetype-remove --field-id <id> --context-id <n> --issue-type-ids <csv>`.
+  - **Rat:** Spec-verified; removes issue types from a context.
+- [x] 🔴 🧩 API: B429 Jira: expose GET /rest/api/3/field/{fieldId}/context/issuetypemapping
+  - **Impl:** `FieldsResource.listContextIssueTypeMappings(fieldId, params?)` — paginated via `OffsetPaginatedResponse<FieldContextIssueTypeMapping>`; query: contextId[]?, startAt?, maxResults?. CLI: `atlas jira fields context-issuetype-mapping --field-id <id>`.
+  - **Rat:** Spec-verified; returns `PageBeanIssueTypeToContextMapping`; items may have isAnyIssueType=true when context covers all types.
+- [x] 🔴 🧩 API: B905 Jira: expose GET /rest/api/3/field/{fieldId}/context/defaultValue
+  - **Impl:** `FieldsResource.listContextDefaultValues(fieldId, params?)` — paginated via `OffsetPaginatedResponse<FieldContextDefaultValue>`; query: contextId[]?, startAt?, maxResults?. CLI: `atlas jira fields context-default-list --field-id <id>`. DEPRECATED (CHANGE-3082, removal Oct 2026).
+  - **Rat:** Spec-verified; returns `PageBeanCustomFieldContextDefaultValue` with polymorphic items discriminated by `type` string.
+- [x] 🔴 🧩 API: B906 Jira: expose PUT /rest/api/3/field/{fieldId}/context/defaultValue
+  - **Impl:** `FieldsResource.setContextDefaultValues(fieldId, data)` — body: `CustomFieldContextDefaultValueUpdate` (defaultValues: FieldContextDefaultValue[]); returns void (204). CLI: `atlas jira fields context-default-set --field-id <id> --default-values-json <json-array>`. DEPRECATED (CHANGE-3082, removal Oct 2026).
+  - **Rat:** Spec-verified; polymorphic body — 27 typed variants (all discriminated by `type` literal) plus FieldContextDefaultValueUnknown fallback for forward-compat. Variant inventory: option.single, option.multiple, option.cascading, single.user.select, multi.user.select, grouppicker.single, grouppicker.multiple, datepicker, datetimepicker, url, project, float, labels, textfield, textarea, readonly, version.single, version.multiple, forge.string, forge.string.list, forge.object, forge.datetime, forge.group, forge.group.list, forge.number, forge.user, forge.user.list.

@@ -27,6 +27,8 @@ import type {
   BulkCreateFieldContextOptionData,
   BulkUpdateFieldContextOptionData,
   OrderFieldContextOptionsData,
+  FieldContextIssueTypeIdsBody,
+  FieldContextDefaultValue,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -5926,6 +5928,11 @@ const FIELDS_ACTIONS = [
   'context-option-delete',
   'context-option-replace-issues',
   'context-option-move',
+  'context-issuetype-set',
+  'context-issuetype-remove',
+  'context-issuetype-mapping',
+  'context-default-list',
+  'context-default-set',
 ] as const;
 
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -6089,6 +6096,64 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       };
       await client.fields.reorderContextOptions(fieldId, contextId, data);
       return { moved: true };
+    }
+    case 'context-issuetype-set': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
+      const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
+      const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
+      await client.fields.setContextIssueTypes(fieldId, contextId, data);
+      return { updated: true };
+    }
+    case 'context-issuetype-remove': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
+      const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
+      const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
+      await client.fields.removeContextIssueTypes(fieldId, contextId, data);
+      return { removed: true };
+    }
+    case 'context-issuetype-mapping': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const contextIdRaw = asString(opts['context-id']);
+      const contextId = contextIdRaw
+        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
+        : undefined;
+      return client.fields.listContextIssueTypeMappings(fieldId, {
+        ...(contextId !== undefined && { contextId }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'context-default-list': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const contextIdRaw = asString(opts['context-id']);
+      const contextId = contextIdRaw
+        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
+        : undefined;
+      return client.fields.listContextDefaultValues(fieldId, {
+        ...(contextId !== undefined && { contextId }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'context-default-set': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const defaultValuesJson = requireOpt(opts['default-values-json'], '--default-values-json');
+      const defaultValues = parseJsonArrayFlag(
+        defaultValuesJson,
+        '--default-values-json',
+      ) as FieldContextDefaultValue[];
+      await client.fields.setContextDefaultValues(fieldId, { defaultValues });
+      return { updated: true };
     }
     default:
       throw new Error(
