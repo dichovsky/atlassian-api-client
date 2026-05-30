@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "b26d00a31a3dbb2c7835eb75690e59074b7864154981bf063f20f7dc6af726c9",
+  "sourceHash": "3f55cbdb033f60d30e30f2eff348ef5309582d1abec3cba66727a8c7f2c68cbd",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -29182,14 +29182,14 @@
             {
               "name": "bulkRequiredMappings",
               "kind": "method",
-              "line": 1067
+              "line": 1069
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 1086,
+          "line": 1088,
           "signature": "function buildListQuery( params: ListWorkflowSchemesParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],
