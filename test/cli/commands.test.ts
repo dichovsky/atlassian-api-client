@@ -1025,6 +1025,12 @@ const jiraFieldsMock = {
   createContext: vi.fn(),
   updateContext: vi.fn(),
   deleteContext: vi.fn(),
+  listContextOptions: vi.fn(),
+  createContextOptions: vi.fn(),
+  updateContextOptions: vi.fn(),
+  deleteContextOption: vi.fn(),
+  replaceContextOptionOnIssues: vi.fn(),
+  reorderContextOptions: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21357,6 +21363,202 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraFieldsMock.deleteContext).toHaveBeenCalledWith('customfield_10001', 10025);
       expect(result).toEqual({ deleted: true });
+    });
+
+    it('context-option-list calls client.fields.listContextOptions with field-id and context-id', async () => {
+      const page = {
+        values: [{ id: '10001', value: 'New York', disabled: false }],
+        startAt: 0,
+        maxResults: 100,
+        total: 1,
+        isLast: true,
+      };
+      jiraFieldsMock.listContextOptions.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-list', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextOptions).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        {},
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('context-option-list passes optional pagination and filter params', async () => {
+      jiraFieldsMock.listContextOptions.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+        isLast: true,
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-option-list', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-id': '10001',
+          'only-options': true,
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContextOptions).toHaveBeenCalledWith('customfield_10001', 10025, {
+        optionId: 10001,
+        onlyOptions: true,
+        startAt: 0,
+        maxResults: 50,
+      });
+    });
+
+    it('context-option-create calls client.fields.createContextOptions with body', async () => {
+      const created = { options: [{ id: '10001', value: 'New York', disabled: false }] };
+      jiraFieldsMock.createContextOptions.mockResolvedValue(created);
+      const body = '{"options":[{"value":"New York"}]}';
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-create', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          body,
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.createContextOptions).toHaveBeenCalledWith('customfield_10001', 10025, {
+        options: [{ value: 'New York' }],
+      });
+      expect(result).toEqual(created);
+    });
+
+    it('context-option-update calls client.fields.updateContextOptions with body', async () => {
+      const updated = { options: [{ id: '10001', value: 'Renamed', disabled: false }] };
+      jiraFieldsMock.updateContextOptions.mockResolvedValue(updated);
+      const body = '{"options":[{"id":"10001","value":"Renamed"}]}';
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-update', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          body,
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.updateContextOptions).toHaveBeenCalledWith('customfield_10001', 10025, {
+        options: [{ id: '10001', value: 'Renamed' }],
+      });
+      expect(result).toEqual(updated);
+    });
+
+    it('context-option-delete calls client.fields.deleteContextOption and returns deleted flag', async () => {
+      jiraFieldsMock.deleteContextOption.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-delete', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-id': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.deleteContextOption).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        10001,
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('context-option-replace-issues calls client.fields.replaceContextOptionOnIssues', async () => {
+      const taskResult = {
+        id: '1',
+        self: 'https://test.atlassian.net/rest/api/3/task/1',
+        status: 'COMPLETE',
+        progress: 100,
+        elapsedRuntime: 42,
+        lastUpdate: 1718000000000,
+      };
+      jiraFieldsMock.replaceContextOptionOnIssues.mockResolvedValue(taskResult);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-replace-issues', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-id': '10001',
+          'replace-with': '10003',
+          jql: 'project=PROJ',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.replaceContextOptionOnIssues).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        10001,
+        { replaceWith: 10003, jql: 'project=PROJ' },
+      );
+      expect(result).toEqual(taskResult);
+    });
+
+    it('context-option-replace-issues without replace-with passes undefined (covers false branch)', async () => {
+      jiraFieldsMock.replaceContextOptionOnIssues.mockResolvedValue({
+        id: '2',
+        self: 'url',
+        status: 'RUNNING',
+        progress: 50,
+        elapsedRuntime: 5,
+        lastUpdate: 1718000000000,
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-option-replace-issues', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-id': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.replaceContextOptionOnIssues).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        10001,
+        {},
+      );
+    });
+
+    it('context-option-move calls client.fields.reorderContextOptions with position and returns moved flag', async () => {
+      jiraFieldsMock.reorderContextOptions.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'context-option-move', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-ids': '10001,10002',
+          position: 'First',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.reorderContextOptions).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        { customFieldOptionIds: ['10001', '10002'], position: 'First' },
+      );
+      expect(result).toEqual({ moved: true });
+    });
+
+    it('context-option-move uses after when provided instead of position', async () => {
+      jiraFieldsMock.reorderContextOptions.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('fields', 'context-option-move', [], {
+          'field-id': 'customfield_10001',
+          'context-id': '10025',
+          'option-ids': '10001',
+          after: '10005',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.reorderContextOptions).toHaveBeenCalledWith(
+        'customfield_10001',
+        10025,
+        { customFieldOptionIds: ['10001'], after: '10005' },
+      );
     });
 
     it('unknown action throws', async () => {

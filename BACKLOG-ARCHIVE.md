@@ -2182,3 +2182,21 @@
 - [x] 🔴 🧩 API: B907 Jira: expose GET /rest/api/3/field/{fieldId}/contexts
   - **Impl:** NOT implemented separately — endpoint is DEPRECATED per spec (`deprecated: true`), redirecting to B415 (`/context` singular). Documented in PR body. BACKLOG entry closed as resolved-by-B415.
   - **Rat:** Spec explicitly marks `/contexts` (plural) as `"deprecated": true` with description "Deprecated, use Get custom field contexts". Returns a different schema (`PageBeanContext` with numeric id field), not `PageBeanCustomFieldContext`. No value in implementing a deprecated alias.
+- [x] 🔴 🧩 API: B421 Jira: expose GET /rest/api/3/field/{fieldId}/context/{contextId}/option
+  - **Impl:** `FieldsResource.listContextOptions(fieldId, contextId, params?)` — paginated via `OffsetPaginatedResponse<FieldContextOption>`; query params: optionId?, onlyOptions?, startAt?, maxResults?. CLI: `atlas jira fields context-option-list --field-id <id> --context-id <n>`.
+  - **Rat:** Spec-verified; returns `PageBeanCustomFieldContextOption`. Foundational for context option sub-group.
+- [x] 🔴 🧩 API: B422 Jira: expose POST /rest/api/3/field/{fieldId}/context/{contextId}/option
+  - **Impl:** `FieldsResource.createContextOptions(fieldId, contextId, data)` — body: `BulkCustomFieldOptionCreateRequest` (options[]: value required, disabled?, optionId?); returns `CreatedFieldContextOptionsList` wrapping `CustomFieldContextOption` items (id+value+disabled+optionId?). CLI: `atlas jira fields context-option-create --field-id <id> --context-id <n> --body <json>`.
+  - **Rat:** Spec-verified; response is `CustomFieldCreatedContextOptionsList` (distinct from update response).
+- [x] 🔴 🧩 API: B423 Jira: expose PUT /rest/api/3/field/{fieldId}/context/{contextId}/option
+  - **Impl:** `FieldsResource.updateContextOptions(fieldId, contextId, data)` — body: `BulkCustomFieldOptionUpdateRequest` (options[]: id required, value?, disabled?); returns `UpdatedFieldContextOptionsList` wrapping `CustomFieldOptionUpdate` items (NOT `CustomFieldContextOption`). CLI: `atlas jira fields context-option-update --field-id <id> --context-id <n> --body <json>`.
+  - **Rat:** Spec-verified; response items differ from create response — update response wraps `CustomFieldOptionUpdate` shape (no optionId).
+- [x] 🔴 🧩 API: B424 Jira: expose DELETE /rest/api/3/field/{fieldId}/context/{contextId}/option/{optionId}
+  - **Impl:** `FieldsResource.deleteContextOption(fieldId, contextId, optionId)` — no body; returns void (204). CLI: `atlas jira fields context-option-delete --field-id <id> --context-id <n> --option-id <n>`.
+  - **Rat:** Spec-verified; single option delete; 204 no content.
+- [x] 🔴 🧩 API: B425 Jira: expose DELETE /rest/api/3/field/{fieldId}/context/{contextId}/option/{optionId}/issue
+  - **Impl:** `FieldsResource.replaceContextOptionOnIssues(fieldId, contextId, optionId, params?)` — params are QUERY params (replaceWith?, jql?), NOT body; returns `TaskProgressBeanRemoveOptionFromIssuesResult` (303 LRO). CLI: `atlas jira fields context-option-replace-issues --field-id <id> --context-id <n> --option-id <n>`.
+  - **Rat:** Spec-verified; key finding: B425 uses HTTP DELETE but params are query params, not body. Returns 303 async task progress.
+- [x] 🔴 🧩 API: B426 Jira: expose PUT /rest/api/3/field/{fieldId}/context/{contextId}/option/move
+  - **Impl:** `FieldsResource.reorderContextOptions(fieldId, contextId, data)` — body: `OrderOfCustomFieldOptions` (customFieldOptionIds[] required, after?, position?: 'First'|'Last'); returns void (204). CLI: `atlas jira fields context-option-move --field-id <id> --context-id <n> --option-ids <csv> --position First|Last`.
+  - **Rat:** Spec-verified; after and position are mutually exclusive per spec.

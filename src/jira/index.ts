@@ -199,6 +199,18 @@ export type {
   CreateFieldContextData,
   CreatedFieldContext,
   UpdateFieldContextData,
+  FieldContextOption,
+  FieldContextOptionPage,
+  ListFieldContextOptionsParams,
+  FieldContextOptionCreateItem,
+  BulkCreateFieldContextOptionData,
+  CreatedFieldContextOptionsList,
+  FieldContextOptionUpdateItem,
+  BulkUpdateFieldContextOptionData,
+  UpdatedFieldContextOptionsList,
+  ReplaceContextOptionOnIssuesParams,
+  TaskProgressBeanRemoveOptionFromIssuesResult,
+  OrderFieldContextOptionsData,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {

@@ -387,6 +387,10 @@ const GLOBAL_OPTIONS = {
   'context-id': { type: 'string' as const },
   'is-any-issue-type': { type: 'boolean' as const },
   'is-global-context': { type: 'boolean' as const },
+  // fields context option options (B421-B426)
+  'option-id': { type: 'string' as const },
+  'option-ids': { type: 'string' as const },
+  'only-options': { type: 'boolean' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

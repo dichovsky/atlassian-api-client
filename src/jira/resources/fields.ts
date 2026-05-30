@@ -92,6 +92,93 @@ export interface UpdateFieldContextData {
   readonly description?: string;
 }
 
+/** A single custom field context option (B421). */
+export interface FieldContextOption {
+  readonly id: string;
+  readonly value: string;
+  readonly disabled: boolean;
+  readonly optionId?: string;
+}
+
+/** Paginated page of FieldContextOption items (B421). */
+export type FieldContextOptionPage = OffsetPaginatedResponse<FieldContextOption>;
+
+/** Query parameters for listing field context options (B421). */
+export interface ListFieldContextOptionsParams {
+  readonly optionId?: number;
+  readonly onlyOptions?: boolean;
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** A single option to create within a field context (B422). */
+export interface FieldContextOptionCreateItem {
+  readonly value: string;
+  readonly disabled?: boolean;
+  readonly optionId?: string;
+}
+
+/** Request body for bulk-creating custom field context options (B422). */
+export interface BulkCreateFieldContextOptionData {
+  readonly options?: readonly FieldContextOptionCreateItem[];
+}
+
+/** Response envelope returned by POST /field/{fieldId}/context/{contextId}/option (B422). */
+export interface CreatedFieldContextOptionsList {
+  readonly options?: readonly FieldContextOption[];
+}
+
+/** A single option to update within a field context (B423). */
+export interface FieldContextOptionUpdateItem {
+  readonly id: string;
+  readonly value?: string;
+  readonly disabled?: boolean;
+}
+
+/** Request body for bulk-updating custom field context options (B423). */
+export interface BulkUpdateFieldContextOptionData {
+  readonly options?: readonly FieldContextOptionUpdateItem[];
+}
+
+/** Response envelope returned by PUT /field/{fieldId}/context/{contextId}/option (B423).
+ * Note: the spec's `CustomFieldUpdatedContextOptionsList` wraps `CustomFieldOptionUpdate` items
+ * (id + value? + disabled?), not the full `CustomFieldContextOption` shape. */
+export interface UpdatedFieldContextOptionsList {
+  readonly options?: readonly FieldContextOptionUpdateItem[];
+}
+
+/** Query parameters for replacing a custom field option on issues (B425). */
+export interface ReplaceContextOptionOnIssuesParams {
+  readonly replaceWith?: number;
+  readonly jql?: string;
+}
+
+/** Task progress result returned by DELETE /field/{fieldId}/context/{contextId}/option/{optionId}/issue (B425, 303). */
+export interface TaskProgressBeanRemoveOptionFromIssuesResult {
+  readonly id: string;
+  readonly self: string;
+  readonly description?: string;
+  readonly status: string;
+  readonly message?: string;
+  readonly progress: number;
+  readonly elapsedRuntime: number;
+  readonly started?: number;
+  readonly finished?: number;
+  readonly lastUpdate: number;
+  readonly result?: {
+    readonly modifiedIssues?: readonly number[];
+    readonly unmodifiedIssues?: readonly number[];
+    readonly errors?: unknown;
+  };
+}
+
+/** Request body for reordering custom field context options (B426). */
+export interface OrderFieldContextOptionsData {
+  readonly customFieldOptionIds: readonly string[];
+  readonly after?: string;
+  readonly position?: 'First' | 'Last';
+}
+
 export class FieldsResource {
   constructor(
     private readonly transport: Transport,
@@ -204,6 +291,98 @@ export class FieldsResource {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}`,
+    });
+  }
+
+  /** List options for a custom field context (paginated). B421 */
+  async listContextOptions(
+    fieldId: string,
+    contextId: number,
+    params?: ListFieldContextOptionsParams,
+  ): Promise<FieldContextOptionPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.optionId !== undefined) query['optionId'] = params.optionId;
+      if (params.onlyOptions !== undefined) query['onlyOptions'] = params.onlyOptions;
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextOptionPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Bulk-create options for a custom field context. B422 */
+  async createContextOptions(
+    fieldId: string,
+    contextId: number,
+    data: BulkCreateFieldContextOptionData,
+  ): Promise<CreatedFieldContextOptionsList> {
+    const response = await this.transport.request<CreatedFieldContextOptionsList>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Bulk-update options for a custom field context. B423 */
+  async updateContextOptions(
+    fieldId: string,
+    contextId: number,
+    data: BulkUpdateFieldContextOptionData,
+  ): Promise<UpdatedFieldContextOptionsList> {
+    const response = await this.transport.request<UpdatedFieldContextOptionsList>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Delete a single custom field context option. B424 */
+  async deleteContextOption(fieldId: string, contextId: number, optionId: number): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option/${encodePathSegment(String(optionId))}`,
+    });
+  }
+
+  /** Replace a custom field option on issues (starts async task). B425
+   * Returns 303 with a TaskProgressBeanRemoveOptionFromIssuesResult. */
+  async replaceContextOptionOnIssues(
+    fieldId: string,
+    contextId: number,
+    optionId: number,
+    params?: ReplaceContextOptionOnIssuesParams,
+  ): Promise<TaskProgressBeanRemoveOptionFromIssuesResult> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.replaceWith !== undefined) query['replaceWith'] = params.replaceWith;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+    }
+    const response = await this.transport.request<TaskProgressBeanRemoveOptionFromIssuesResult>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option/${encodePathSegment(String(optionId))}/issue`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Reorder custom field context options. B426 */
+  async reorderContextOptions(
+    fieldId: string,
+    contextId: number,
+    data: OrderFieldContextOptionsData,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/option/move`,
+      body: data,
     });
   }
 }
