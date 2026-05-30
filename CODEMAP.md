@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "96a8ec246e0f06cb9b27cce7cfe21efcc2c6a7f87491c81d2e28d797aec1d275",
+  "sourceHash": "58c6063565d6209a86a8e4c3d46ac2a66babef723b52d97c4b02a309a1190bf1",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22667,15 +22667,15 @@
         {
           "name": "FieldContextForProjectAndIssueType",
           "kind": "interface",
-          "line": 562,
+          "line": 563,
           "exported": true,
-          "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string; readonly issueTypeId: string; readonly…",
-          "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType"
+          "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string | null; readonly issueTypeId: string; r…",
+          "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType. `contextId` is `null` when no context matches the {projectId, issueTypeId} pair."
         },
         {
           "name": "FieldContextMappingPage",
           "kind": "type",
-          "line": 570,
+          "line": 571,
           "exported": true,
           "signature": "export type FieldContextMappingPage = OffsetPaginatedResponse<FieldContextForProjectAndIssueType>;",
           "jsdoc": "Paginated response for the bulk context lookup (B430). Spec: PageBeanContextForProjectAndIssueType"
@@ -22683,7 +22683,7 @@
         {
           "name": "GetFieldContextMappingsParams",
           "kind": "interface",
-          "line": 573,
+          "line": 574,
           "exported": true,
           "signature": "export interface GetFieldContextMappingsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the bulk context lookup (B430)."
@@ -22691,134 +22691,134 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 578,
+          "line": 579,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 579
+              "line": 580
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 585
+              "line": 586
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 607
+              "line": 608
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 616
+              "line": 617
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 626
+              "line": 627
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 636
+              "line": 637
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 644
+              "line": 645
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 663
+              "line": 664
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 673
+              "line": 674
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 686
+              "line": 687
             },
             {
               "name": "listContextOptions",
               "kind": "method",
-              "line": 694
+              "line": 695
             },
             {
               "name": "createContextOptions",
               "kind": "method",
-              "line": 716
+              "line": 717
             },
             {
               "name": "updateContextOptions",
               "kind": "method",
-              "line": 730
+              "line": 731
             },
             {
               "name": "deleteContextOption",
               "kind": "method",
-              "line": 744
+              "line": 745
             },
             {
               "name": "replaceContextOptionOnIssues",
               "kind": "method",
-              "line": 753
+              "line": 754
             },
             {
               "name": "reorderContextOptions",
               "kind": "method",
-              "line": 773
+              "line": 774
             },
             {
               "name": "setContextIssueTypes",
               "kind": "method",
-              "line": 786
+              "line": 787
             },
             {
               "name": "removeContextIssueTypes",
               "kind": "method",
-              "line": 799
+              "line": 800
             },
             {
               "name": "listContextIssueTypeMappings",
               "kind": "method",
-              "line": 812
+              "line": 813
             },
             {
               "name": "listContextDefaultValues",
               "kind": "method",
-              "line": 833
+              "line": 834
             },
             {
               "name": "setContextDefaultValues",
               "kind": "method",
-              "line": 854
+              "line": 855
             },
             {
               "name": "setContextProjects",
               "kind": "method",
-              "line": 867
+              "line": 868
             },
             {
               "name": "removeContextProjects",
               "kind": "method",
-              "line": 881
+              "line": 882
             },
             {
               "name": "getContextMappings",
               "kind": "method",
-              "line": 895
+              "line": 896
             },
             {
               "name": "listContextProjectMappings",
               "kind": "method",
-              "line": 917
+              "line": 918
             }
           ]
         }

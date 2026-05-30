@@ -558,9 +558,10 @@ export interface FieldContextMappingBulkBody {
 }
 
 /** A single result item from the bulk context lookup (B430).
- * Spec: ContextForProjectAndIssueType */
+ * Spec: ContextForProjectAndIssueType.
+ * `contextId` is `null` when no context matches the {projectId, issueTypeId} pair. */
 export interface FieldContextForProjectAndIssueType {
-  readonly contextId: string;
+  readonly contextId: string | null;
   readonly issueTypeId: string;
   readonly projectId: string;
 }
