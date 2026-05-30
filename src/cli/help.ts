@@ -276,6 +276,7 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
+  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -528,6 +529,16 @@ EXAMPLES:
   atlas jira workflowscheme bulk-read --body '{"projectIds":["10010"]}'
   atlas jira workflowscheme bulk-update --body '{"id":"10001","name":"x","description":"y","version":{"id":"v","versionNumber":1}}'
   atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssueTypes":[]}'
+  atlas jira fields field-list-all
+  atlas jira fields field-list --max-results 50
+  atlas jira fields field-create --body '{"name":"Sprint Points","type":"com.atlassian.jira.plugin.system.customfieldtypes:float"}'
+  atlas jira fields field-update customfield_10001 --body '{"name":"Renamed"}'
+  atlas jira fields field-delete customfield_10001
+  atlas jira fields context-list --field-id customfield_10001
+  atlas jira fields context-list --field-id customfield_10001 --is-global-context true
+  atlas jira fields context-create --field-id customfield_10001 --name 'Bug context' --project-ids 10010,10011
+  atlas jira fields context-update --field-id customfield_10001 --context-id 10025 --name 'Renamed'
+  atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001

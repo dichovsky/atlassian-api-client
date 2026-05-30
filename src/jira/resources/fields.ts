@@ -48,6 +48,41 @@ export interface ListFieldsParams {
   readonly expand?: string;
 }
 
+/** A custom field context. */
+export interface FieldContext {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly isGlobalContext: boolean;
+  readonly isAnyIssueType: boolean;
+}
+
+/** Paginated page of FieldContext items. */
+export type FieldContextPage = OffsetPaginatedResponse<FieldContext>;
+
+/** Query parameters for listing field contexts (B415). */
+export interface ListFieldContextsParams {
+  readonly isAnyIssueType?: boolean;
+  readonly isGlobalContext?: boolean;
+  readonly contextId?: number[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** Request body for creating a custom field context (B416). */
+export interface CreateFieldContextData {
+  readonly name: string;
+  readonly description?: string;
+  readonly projectIds?: string[];
+  readonly issueTypeIds?: string[];
+}
+
+/** Request body for updating a custom field context (B418). */
+export interface UpdateFieldContextData {
+  readonly name?: string;
+  readonly description?: string;
+}
+
 export class FieldsResource {
   constructor(
     private readonly transport: Transport,
@@ -110,6 +145,56 @@ export class FieldsResource {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}`,
+    });
+  }
+
+  /** List contexts for a custom field (paginated). B415 */
+  async listContexts(fieldId: string, params?: ListFieldContextsParams): Promise<FieldContextPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.isAnyIssueType !== undefined) query['isAnyIssueType'] = params.isAnyIssueType;
+      if (params.isGlobalContext !== undefined) query['isGlobalContext'] = params.isGlobalContext;
+      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Create a custom field context. B416 */
+  async createContext(fieldId: string, data: CreateFieldContextData): Promise<FieldContext> {
+    const response = await this.transport.request<FieldContext>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Update a custom field context. B418 */
+  async updateContext(
+    fieldId: string,
+    contextId: number,
+    data: UpdateFieldContextData,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}`,
+      body: data,
+    });
+  }
+
+  /** Delete a custom field context. B417 */
+  async deleteContext(fieldId: string, contextId: number): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}`,
     });
   }
 }

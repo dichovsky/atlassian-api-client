@@ -3165,3 +3165,53 @@ atlas jira workflowscheme bulk-read --body '{"projectIds":["10010"],"workflowSch
 atlas jira workflowscheme bulk-update --body '{"id":"10001","name":"x","description":"y","version":{"id":"v","versionNumber":1},"workflowsForIssueTypes":[]}'
 atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssueTypes":[{"issueTypeIds":["10000"],"workflowId":"wf-1"}]}'
 ```
+
+## `fields`
+
+Custom field CRUD and field context management.
+
+Covers: B415–B418 (field contexts), field list/create/update/delete.
+
+### Fields (CRUD)
+
+```sh
+# List all fields (flat array)
+atlas jira fields field-list-all
+
+# List custom fields (paginated)
+atlas jira fields field-list --start-at 0 --max-results 50
+
+# Create a custom field
+atlas jira fields field-create --body '{"name":"Sprint Story Points","type":"com.atlassian.jira.plugin.system.customfieldtypes:float"}'
+
+# Update a custom field
+atlas jira fields field-update customfield_10001 --body '{"name":"Renamed Field","description":"Updated description"}'
+
+# Delete a custom field
+atlas jira fields field-delete customfield_10001
+```
+
+### Field Contexts (B415–B418)
+
+```sh
+# List contexts for a custom field (B415)
+atlas jira fields context-list --field-id customfield_10001
+
+# Filter contexts by type flags
+atlas jira fields context-list --field-id customfield_10001 --is-global-context true --is-any-issue-type false
+
+# Filter by specific context IDs (comma-separated)
+atlas jira fields context-list --field-id customfield_10001 --context-id 10025,10026
+
+# Create a context (global, all issue types) (B416)
+atlas jira fields context-create --field-id customfield_10001 --name 'Bug fields context' --description 'Context for bugs'
+
+# Create a context scoped to projects and issue types (B416)
+atlas jira fields context-create --field-id customfield_10001 --name 'Scoped context' --project-ids '10010,10011' --issue-type-ids '10000'
+
+# Update a context name/description (B418)
+atlas jira fields context-update --field-id customfield_10001 --context-id 10025 --name 'Renamed context' --description 'New description'
+
+# Delete a context (B417)
+atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
+```
