@@ -24,6 +24,9 @@ import type {
   IssueSourceType,
   CreateFieldContextData,
   UpdateFieldContextData,
+  BulkCreateFieldContextOptionData,
+  BulkUpdateFieldContextOptionData,
+  OrderFieldContextOptionsData,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -5917,6 +5920,12 @@ const FIELDS_ACTIONS = [
   'context-create',
   'context-update',
   'context-delete',
+  'context-option-list',
+  'context-option-create',
+  'context-option-update',
+  'context-option-delete',
+  'context-option-replace-issues',
+  'context-option-move',
 ] as const;
 
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -6002,6 +6011,84 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const contextId = Number(contextIdStr);
       await client.fields.deleteContext(fieldId, contextId);
       return { deleted: true };
+    }
+    case 'context-option-list': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const optionIdStr = asString(opts['option-id']);
+      const optionId = optionIdStr !== undefined ? Number(optionIdStr) : undefined;
+      const onlyOptions = asBoolFlag(opts['only-options']);
+      return client.fields.listContextOptions(fieldId, contextId, {
+        ...(optionId !== undefined && { optionId }),
+        ...(onlyOptions !== undefined && { onlyOptions }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'context-option-create': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.createContextOptions(
+        fieldId,
+        contextId,
+        body as unknown as BulkCreateFieldContextOptionData,
+      );
+    }
+    case 'context-option-update': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.updateContextOptions(
+        fieldId,
+        contextId,
+        body as unknown as BulkUpdateFieldContextOptionData,
+      );
+    }
+    case 'context-option-delete': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const optionIdStr = requireOpt(opts['option-id'], '--option-id');
+      const optionId = Number(optionIdStr);
+      await client.fields.deleteContextOption(fieldId, contextId, optionId);
+      return { deleted: true };
+    }
+    case 'context-option-replace-issues': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const optionIdStr = requireOpt(opts['option-id'], '--option-id');
+      const optionId = Number(optionIdStr);
+      const replaceWithStr = asString(opts['replace-with']);
+      const replaceWith = replaceWithStr !== undefined ? Number(replaceWithStr) : undefined;
+      const jql = asString(opts['jql']);
+      return client.fields.replaceContextOptionOnIssues(fieldId, contextId, optionId, {
+        ...(replaceWith !== undefined && { replaceWith }),
+        ...(jql !== undefined && { jql }),
+      });
+    }
+    case 'context-option-move': {
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const idsRaw = requireOpt(opts['option-ids'], '--option-ids');
+      const customFieldOptionIds = idsRaw.split(',').map((s) => s.trim());
+      const positionRaw = asString(opts['position']);
+      const position = positionRaw !== undefined ? asMovePosition(positionRaw) : undefined;
+      const after = asString(opts['after']);
+      const data: OrderFieldContextOptionsData = {
+        customFieldOptionIds,
+        ...(position !== undefined && { position }),
+        ...(after !== undefined && { after }),
+      };
+      await client.fields.reorderContextOptions(fieldId, contextId, data);
+      return { moved: true };
     }
     default:
       throw new Error(

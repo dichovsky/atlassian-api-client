@@ -3170,7 +3170,7 @@ atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssue
 
 Custom field CRUD and field context management.
 
-Covers: B415–B418 (field contexts), field list/create/update/delete.
+Covers: B415–B418 (field contexts), B421–B426 (field context options), field list/create/update/delete.
 
 ### Fields (CRUD)
 
@@ -3214,4 +3214,32 @@ atlas jira fields context-update --field-id customfield_10001 --context-id 10025
 
 # Delete a context (B417)
 atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
+```
+
+### Field Context Options (B421–B426)
+
+```sh
+# List options for a field context (B421)
+atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
+
+# List options with pagination and filters (B421)
+atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options true
+
+# Bulk-create options in a context (B422)
+atlas jira fields context-option-create --field-id customfield_10001 --context-id 10025 --body '{"options":[{"value":"New York"},{"value":"Boston","disabled":false}]}'
+
+# Bulk-update options in a context (B423)
+atlas jira fields context-option-update --field-id customfield_10001 --context-id 10025 --body '{"options":[{"id":"10001","value":"New York Renamed","disabled":false}]}'
+
+# Delete a single option from a context (B424)
+atlas jira fields context-option-delete --field-id customfield_10001 --context-id 10025 --option-id 10001
+
+# Replace an option on issues — starts async task (B425)
+atlas jira fields context-option-replace-issues --field-id customfield_10001 --context-id 10025 --option-id 10001 --replace-with 10003 --jql project=PROJ
+
+# Reorder options to first position (B426)
+atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001,10002 --position First
+
+# Reorder options after a specific option (B426)
+atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001 --after 10005
 ```
