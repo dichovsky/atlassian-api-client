@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FieldsResource } from '../../src/jira/resources/fields.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import type { Field, FieldContext } from '../../src/jira/resources/fields.js';
+import type { Field, FieldContext, CreatedFieldContext } from '../../src/jira/resources/fields.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -17,6 +17,15 @@ const makeContext = (id: string, name: string): FieldContext => ({
   description: 'A test context',
   isGlobalContext: true,
   isAnyIssueType: false,
+});
+
+/** Spec-shape fixture for POST /field/{fieldId}/context (CreateCustomFieldContext). */
+const makeCreatedContext = (id: string, name: string): CreatedFieldContext => ({
+  id,
+  name,
+  description: 'A created context',
+  projectIds: [],
+  issueTypeIds: ['10010'],
 });
 
 describe('FieldsResource', () => {
@@ -360,7 +369,7 @@ describe('FieldsResource', () => {
   describe('createContext()', () => {
     it('calls POST /field/{fieldId}/context with required name', async () => {
       // Arrange
-      const created = makeContext('10025', 'Bug fields context');
+      const created = makeCreatedContext('10025', 'Bug fields context');
       transport.respondWith(created);
       const data = { name: 'Bug fields context' };
 
@@ -369,6 +378,11 @@ describe('FieldsResource', () => {
 
       // Assert
       expect(result).toEqual(created);
+      // Spec shape: projectIds and issueTypeIds present; no isGlobalContext/isAnyIssueType
+      expect(result).toHaveProperty('projectIds');
+      expect(result).toHaveProperty('issueTypeIds');
+      expect(result).not.toHaveProperty('isGlobalContext');
+      expect(result).not.toHaveProperty('isAnyIssueType');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/field/customfield_10001/context`,
@@ -378,7 +392,7 @@ describe('FieldsResource', () => {
 
     it('includes optional description, projectIds, issueTypeIds in body', async () => {
       // Arrange
-      transport.respondWith(makeContext('10025', 'Bug fields context'));
+      transport.respondWith(makeCreatedContext('10025', 'Bug fields context'));
       const data = {
         name: 'Bug fields context',
         description: 'A context for bugs',
@@ -399,7 +413,7 @@ describe('FieldsResource', () => {
 
     it('encodes fieldId in the path', async () => {
       // Arrange
-      transport.respondWith(makeContext('10025', 'ctx'));
+      transport.respondWith(makeCreatedContext('10025', 'ctx'));
 
       // Act
       await fields.createContext('../admin', { name: 'ctx' });

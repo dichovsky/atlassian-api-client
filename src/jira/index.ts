@@ -197,6 +197,7 @@ export type {
   FieldContextPage,
   ListFieldContextsParams,
   CreateFieldContextData,
+  CreatedFieldContext,
   UpdateFieldContextData,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';

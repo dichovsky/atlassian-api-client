@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "0239915a7c6ad0b1083a0c16329be99b519b89fb7130a42f7d7baeb5a863ed1a",
+  "sourceHash": "4e1525eb48198e5333a0f6e15224afd6ee56d6cf98d467fa26befaecc5ec2b6c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -16702,6 +16702,10 @@
               "original": "CreateFieldContextData"
             },
             {
+              "exported": "CreatedFieldContext",
+              "original": "CreatedFieldContext"
+            },
+            {
               "exported": "UpdateFieldContextData",
               "original": "UpdateFieldContextData"
             }
@@ -21973,9 +21977,17 @@
           "jsdoc": "Request body for creating a custom field context (B416)."
         },
         {
-          "name": "UpdateFieldContextData",
+          "name": "CreatedFieldContext",
           "kind": "interface",
           "line": 81,
+          "exported": true,
+          "signature": "export interface CreatedFieldContext { readonly id?: string; readonly name: string; readonly description?: string; reado…",
+          "jsdoc": "Response shape returned by POST /field/{fieldId}/context (CreateCustomFieldContext). B416"
+        },
+        {
+          "name": "UpdateFieldContextData",
+          "kind": "interface",
+          "line": 90,
           "exported": true,
           "signature": "export interface UpdateFieldContextData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for updating a custom field context (B418)."
@@ -21983,59 +21995,59 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 86,
+          "line": 95,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 87
+              "line": 96
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 93
+              "line": 102
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 115
+              "line": 124
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 124
+              "line": 133
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 134
+              "line": 143
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 144
+              "line": 153
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 152
+              "line": 161
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 171
+              "line": 180
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 181
+              "line": 190
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 194
+              "line": 203
             }
           ]
         }

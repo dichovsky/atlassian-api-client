@@ -77,6 +77,15 @@ export interface CreateFieldContextData {
   readonly issueTypeIds?: string[];
 }
 
+/** Response shape returned by POST /field/{fieldId}/context (CreateCustomFieldContext). B416 */
+export interface CreatedFieldContext {
+  readonly id?: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly projectIds?: string[];
+  readonly issueTypeIds?: string[];
+}
+
 /** Request body for updating a custom field context (B418). */
 export interface UpdateFieldContextData {
   readonly name?: string;
@@ -168,8 +177,8 @@ export class FieldsResource {
   }
 
   /** Create a custom field context. B416 */
-  async createContext(fieldId: string, data: CreateFieldContextData): Promise<FieldContext> {
-    const response = await this.transport.request<FieldContext>({
+  async createContext(fieldId: string, data: CreateFieldContextData): Promise<CreatedFieldContext> {
+    const response = await this.transport.request<CreatedFieldContext>({
       method: 'POST',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context`,
       body: data,
