@@ -248,6 +248,15 @@ export type {
   FieldContextDefaultValuePage,
   ListFieldContextDefaultValueParams,
   FieldContextDefaultValueUpdateBody,
+  FieldContextProjectIdsBody,
+  FieldContextProjectMapping,
+  FieldContextProjectMappingPage,
+  ListFieldContextProjectMappingParams,
+  FieldContextProjectIssueTypeMapping,
+  FieldContextMappingBulkBody,
+  FieldContextForProjectAndIssueType,
+  FieldContextMappingPage,
+  GetFieldContextMappingsParams,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {

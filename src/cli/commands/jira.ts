@@ -29,6 +29,8 @@ import type {
   OrderFieldContextOptionsData,
   FieldContextIssueTypeIdsBody,
   FieldContextDefaultValue,
+  FieldContextProjectIdsBody,
+  FieldContextMappingBulkBody,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -5933,6 +5935,10 @@ const FIELDS_ACTIONS = [
   'context-issuetype-mapping',
   'context-default-list',
   'context-default-set',
+  'context-project-set',
+  'context-project-remove',
+  'context-mapping',
+  'context-project-mapping',
 ] as const;
 
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -6154,6 +6160,59 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       ) as FieldContextDefaultValue[];
       await client.fields.setContextDefaultValues(fieldId, { defaultValues });
       return { updated: true };
+    }
+    case 'context-project-set': {
+      // B427: PUT /field/{fieldId}/context/{contextId}/project
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
+      const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
+      const data: FieldContextProjectIdsBody = { projectIds };
+      await client.fields.setContextProjects(fieldId, contextId, data);
+      return { updated: true };
+    }
+    case 'context-project-remove': {
+      // B428: POST /field/{fieldId}/context/{contextId}/project/remove
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
+      const contextId = Number(contextIdStr);
+      const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
+      const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
+      const data: FieldContextProjectIdsBody = { projectIds };
+      await client.fields.removeContextProjects(fieldId, contextId, data);
+      return { updated: true };
+    }
+    case 'context-mapping': {
+      // B430: POST /field/{fieldId}/context/mapping
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const mappingsJson = requireOpt(opts['mappings-json'], '--mappings-json');
+      const mappings = parseJsonArrayFlag(
+        mappingsJson,
+        '--mappings-json',
+      ) as FieldContextMappingBulkBody['mappings'];
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const data: FieldContextMappingBulkBody = { mappings };
+      return client.fields.getContextMappings(fieldId, data, {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'context-project-mapping': {
+      // B431: GET /field/{fieldId}/context/projectmapping
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const contextIdRaw = asString(opts['context-id']);
+      const contextId = contextIdRaw
+        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
+        : undefined;
+      return client.fields.listContextProjectMappings(fieldId, {
+        ...(contextId !== undefined && { contextId }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
     }
     default:
       throw new Error(

@@ -513,6 +513,68 @@ export interface FieldContextDefaultValueUpdateBody {
   readonly defaultValues?: readonly FieldContextDefaultValue[];
 }
 
+// ── Project mapping types (B427, B428, B430, B431) ──────────────────────────
+
+/** Request body for assigning or removing projects from a context (B427, B428).
+ * Spec: ProjectIds */
+export interface FieldContextProjectIdsBody {
+  readonly projectIds: readonly string[];
+}
+
+/** A single context-to-project association entry (B431).
+ * Spec: CustomFieldContextProjectMapping */
+export interface FieldContextProjectMapping {
+  /** The ID of the context. */
+  readonly contextId: string;
+  /** The ID of the project. Absent for global contexts. */
+  readonly projectId?: string;
+  /** Whether the context is global (applies to all projects). */
+  readonly isGlobalContext?: boolean;
+}
+
+/** Paginated page of FieldContextProjectMapping items (B431).
+ * Spec: PageBeanCustomFieldContextProjectMapping */
+export type FieldContextProjectMappingPage = OffsetPaginatedResponse<FieldContextProjectMapping>;
+
+/** Query parameters for listing context-to-project mappings (B431). */
+export interface ListFieldContextProjectMappingParams {
+  /** Filter by specific context IDs. */
+  readonly contextId?: number[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** A single project+issueType entry in a bulk mapping lookup (B430).
+ * Spec: ProjectIssueTypeMapping */
+export interface FieldContextProjectIssueTypeMapping {
+  readonly projectId: string;
+  readonly issueTypeId: string;
+}
+
+/** Request body for bulk-looking up contexts by project+issueType pairs (B430).
+ * Spec: ProjectIssueTypeMappings */
+export interface FieldContextMappingBulkBody {
+  readonly mappings: readonly FieldContextProjectIssueTypeMapping[];
+}
+
+/** A single result item from the bulk context lookup (B430).
+ * Spec: ContextForProjectAndIssueType */
+export interface FieldContextForProjectAndIssueType {
+  readonly contextId: string;
+  readonly issueTypeId: string;
+  readonly projectId: string;
+}
+
+/** Paginated response for the bulk context lookup (B430).
+ * Spec: PageBeanContextForProjectAndIssueType */
+export type FieldContextMappingPage = OffsetPaginatedResponse<FieldContextForProjectAndIssueType>;
+
+/** Query parameters for the bulk context lookup (B430). */
+export interface GetFieldContextMappingsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
 export class FieldsResource {
   constructor(
     private readonly transport: Transport,
@@ -798,5 +860,76 @@ export class FieldsResource {
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
       body: data,
     });
+  }
+
+  /** Assign a custom field context to projects. B427
+   * PUT /rest/api/3/field/{fieldId}/context/{contextId}/project — 204 */
+  async setContextProjects(
+    fieldId: string,
+    contextId: number,
+    data: FieldContextProjectIdsBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/project`,
+      body: data,
+    });
+  }
+
+  /** Remove a custom field context from projects. B428
+   * POST /rest/api/3/field/{fieldId}/context/{contextId}/project/remove — 204 */
+  async removeContextProjects(
+    fieldId: string,
+    contextId: number,
+    data: FieldContextProjectIdsBody,
+  ): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/${encodePathSegment(String(contextId))}/project/remove`,
+      body: data,
+    });
+  }
+
+  /** Get custom field contexts for a set of project+issueType pairs (bulk lookup). B430
+   * POST /rest/api/3/field/{fieldId}/context/mapping — paginated 200 */
+  async getContextMappings(
+    fieldId: string,
+    data: FieldContextMappingBulkBody,
+    params?: GetFieldContextMappingsParams,
+  ): Promise<FieldContextMappingPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextMappingPage>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/mapping`,
+      body: data,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Get context-to-project mappings for a custom field (paginated). B431
+   * GET /rest/api/3/field/{fieldId}/context/projectmapping */
+  async listContextProjectMappings(
+    fieldId: string,
+    params?: ListFieldContextProjectMappingParams,
+  ): Promise<FieldContextProjectMappingPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldContextProjectMappingPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/projectmapping`,
+      query,
+    });
+    return response.data;
   }
 }

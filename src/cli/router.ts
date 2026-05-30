@@ -393,6 +393,8 @@ const GLOBAL_OPTIONS = {
   'only-options': { type: 'boolean' as const },
   // fields context issuetype + default options (B419-B420, B429, B905-B906)
   'default-values-json': { type: 'string' as const },
+  // fields context project mapping options (B427-B428, B430-B431)
+  'mappings-json': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

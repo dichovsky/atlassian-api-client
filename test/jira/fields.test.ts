@@ -16,6 +16,8 @@ import type {
   FieldContextDefaultValueForgeStringField,
   FieldContextDefaultValueForgeUserField,
   FieldContextDefaultValueFloat,
+  FieldContextProjectMapping,
+  FieldContextForProjectAndIssueType,
 } from '../../src/jira/resources/fields.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -1382,6 +1384,269 @@ describe('FieldsResource', () => {
       // Assert
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/field/..%2Fadmin/context/defaultValue`,
+      );
+    });
+  });
+
+  // ── setContextProjects (B427) ─────────────────────────────────────────────
+
+  describe('setContextProjects()', () => {
+    it('sends PUT with ProjectIds body and returns void', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.setContextProjects('customfield_10001', 10025, {
+        projectIds: ['10001', '10005', '10006'],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.method).toBe('PUT');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/10025/project`,
+      );
+      expect(transport.lastCall?.options.body).toEqual({
+        projectIds: ['10001', '10005', '10006'],
+      });
+    });
+
+    it('encodes fieldId and contextId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.setContextProjects('../admin', 10025, { projectIds: ['10001'] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/10025/project`,
+      );
+    });
+  });
+
+  // ── removeContextProjects (B428) ──────────────────────────────────────────
+
+  describe('removeContextProjects()', () => {
+    it('sends POST with ProjectIds body and returns void', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.removeContextProjects('customfield_10001', 10025, {
+        projectIds: ['10001', '10005'],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.method).toBe('POST');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/10025/project/remove`,
+      );
+      expect(transport.lastCall?.options.body).toEqual({
+        projectIds: ['10001', '10005'],
+      });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.removeContextProjects('../admin', 10025, { projectIds: ['10001'] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/10025/project/remove`,
+      );
+    });
+  });
+
+  // ── getContextMappings (B430) ─────────────────────────────────────────────
+
+  describe('getContextMappings()', () => {
+    it('sends POST with ProjectIssueTypeMappings body and returns paginated results', async () => {
+      // Arrange
+      const item: FieldContextForProjectAndIssueType = {
+        contextId: '10000',
+        issueTypeId: '10000',
+        projectId: '10000',
+      };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [item],
+      });
+
+      // Act
+      const result = await fields.getContextMappings('customfield_10001', {
+        mappings: [
+          { projectId: '10000', issueTypeId: '10000' },
+          { projectId: '10000', issueTypeId: '10001' },
+        ],
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.method).toBe('POST');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/mapping`,
+      );
+      expect(transport.lastCall?.options.body).toEqual({
+        mappings: [
+          { projectId: '10000', issueTypeId: '10000' },
+          { projectId: '10000', issueTypeId: '10001' },
+        ],
+      });
+      expect(result.values).toHaveLength(1);
+      expect(result.values[0]).toEqual({
+        contextId: '10000',
+        issueTypeId: '10000',
+        projectId: '10000',
+      });
+    });
+
+    it('passes pagination query params when provided', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 10, startAt: 5, total: 5, values: [] });
+
+      // Act
+      await fields.getContextMappings(
+        'customfield_10001',
+        { mappings: [{ projectId: '10001', issueTypeId: '10002' }] },
+        { startAt: 5, maxResults: 10 },
+      );
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('calls with empty params when params object has no set properties', async () => {
+      // Arrange — covers params branch where startAt/maxResults are undefined
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.getContextMappings('customfield_10001', { mappings: [] }, {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('returns result item where contextId is null for unmatched mapping', async () => {
+      // Arrange — spec example: contextId null when no context matched
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [{ projectId: '10000', issueTypeId: '10001', contextId: null }],
+      });
+
+      // Act
+      const result = await fields.getContextMappings('customfield_10001', {
+        mappings: [{ projectId: '10000', issueTypeId: '10001' }],
+      });
+
+      // Assert
+      expect(result.values[0]).toMatchObject({ contextId: null });
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.getContextMappings('../admin', { mappings: [] });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/context/mapping`);
+    });
+  });
+
+  // ── listContextProjectMappings (B431) ─────────────────────────────────────
+
+  describe('listContextProjectMappings()', () => {
+    it('sends GET and returns paginated context-to-project mappings', async () => {
+      // Arrange
+      const item: FieldContextProjectMapping = {
+        contextId: '10025',
+        projectId: '10001',
+      };
+      const globalItem: FieldContextProjectMapping = {
+        contextId: '10026',
+        isGlobalContext: true,
+      };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 2,
+        values: [item, globalItem],
+      });
+
+      // Act
+      const result = await fields.listContextProjectMappings('customfield_10001');
+
+      // Assert
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/projectmapping`,
+      );
+      expect(result.values).toHaveLength(2);
+      expect(result.values[0]).toEqual({ contextId: '10025', projectId: '10001' });
+      expect(result.values[1]).toEqual({ contextId: '10026', isGlobalContext: true });
+    });
+
+    it('passes contextId array as comma-separated query param', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextProjectMappings('customfield_10001', {
+        contextId: [10025, 10026],
+        startAt: 0,
+        maxResults: 50,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        contextId: '10025,10026',
+        startAt: 0,
+        maxResults: 50,
+      });
+    });
+
+    it('calls without params when none given', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextProjectMappings('customfield_10001');
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('calls with empty params object when params has no set properties', async () => {
+      // Arrange — covers params branch where contextId/startAt/maxResults are undefined
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextProjectMappings('customfield_10001', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldId with special characters in the path', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listContextProjectMappings('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/context/projectmapping`,
       );
     });
   });

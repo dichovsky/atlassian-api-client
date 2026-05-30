@@ -3295,3 +3295,25 @@ atlas jira fields context-default-set --field-id customfield_10001 --default-val
 # Set a cascading default with child option (B906)
 atlas jira fields context-default-set --field-id customfield_10001 --default-values-json '[{"type":"option.cascading","contextId":"10101","optionId":"10002","cascadingOptionId":"10003"}]'
 ```
+
+### Field context project mappings
+
+Assign/remove projects from a context and query context-to-project mappings (B427–B428, B431). Also includes bulk context lookup by project+issueType pairs (B430).
+
+```sh
+# Assign a context to projects (B427) — PUT 204
+atlas jira fields context-project-set --field-id customfield_10001 --context-id 10025 --project-ids 10001,10005,10006
+
+# Remove projects from a context (B428) — POST 204
+atlas jira fields context-project-remove --field-id customfield_10001 --context-id 10025 --project-ids 10001,10005
+
+# List context-to-project mappings for a field (B431) — paginated
+atlas jira fields context-project-mapping --field-id customfield_10001
+
+# Filter mappings by specific contexts (B431)
+atlas jira fields context-project-mapping --field-id customfield_10001 --context-id 10025,10026 --start-at 0 --max-results 50
+
+# Bulk lookup: find which context applies to each project+issueType pair (B430)
+# Body is a JSON array of {projectId, issueTypeId} objects
+atlas jira fields context-mapping --field-id customfield_10001 --mappings-json '[{"projectId":"10000","issueTypeId":"10000"},{"projectId":"10000","issueTypeId":"10001"}]'
+```
