@@ -2278,6 +2278,18 @@
 - [x] 🔴 🧩 API: B922 Jira: PUT /rest/api/3/fieldconfigurationscheme/project (deprecated — superseded by config.ts field-schemes)
   - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
   - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🟡 🖥️ API: B479 Jira: add CLI + skill for POST /rest/api/3/issue/{issueIdOrKey}/attachments
+  - **Impl:** `atlas jira issue-attachments upload <issueIdOrKey> --file <path>` wired to `IssueAttachmentsResource.upload(issueIdOrKey, filename, blob, mimeType?)`. CLI reads file from disk via `readFile`, wraps in `Blob`, derives filename from `path.basename`. Flags: `--file` (required), `--filename` (override), `--media-type` (MIME override).
+  - **Rat:** Spec-verified (operationId: addAttachment). Multipart POST with `X-Atlassian-Token: no-check` (Jira XSRF bypass). Already fully implemented and tested; BACKLOG entry was stale.
+- [x] 🟡 🖥️ API: B518 Jira: add CLI + skill for POST /rest/api/3/issue/bulk
+  - **Impl:** `atlas jira bulk create-issues --issues <JSON>` wired to `BulkResource.createBulk({ issueUpdates })`. `--issues` accepts a JSON array of issue-update objects (`[{ fields: {...}, update?: {...} }]`). Returns `{ issues, errors? }`.
+  - **Rat:** Spec-verified (operationId: createIssues). Body field is `issueUpdates` (array); reused existing `--issues` flag with JSON-array parsing.
+- [x] 🟡 🖥️ API: B525 Jira: add CLI + skill for DELETE /rest/api/3/issue/properties/{propertyKey}
+  - **Impl:** `atlas jira bulk delete-property <propertyKey> [--filter <JSON>]` wired to `BulkResource.deletePropertyBulk(propertyKey, data?)`. `--filter` is an optional JSON object (`{ entityIds?, currentValue? }`). No `--filter` = all eligible issues affected.
+  - **Rat:** Spec-verified (operationId: bulkDeleteIssueProperty). Global bulk endpoint (not per-issue); wired to bulk.ts, not issues.ts. Reused existing `--filter` flag.
+- [x] 🟡 🖥️ API: B526 Jira: add CLI + skill for PUT /rest/api/3/issue/properties/{propertyKey}
+  - **Impl:** `atlas jira bulk set-property <propertyKey> --value <JSON> [--filter <JSON>]` wired to `BulkResource.setPropertyBulk(propertyKey, { value, filter? })`. `--value` is any JSON value; `--filter` is an optional JSON object (`{ entityIds?, currentValue?, hasProperty? }`).
+  - **Rat:** Spec-verified (operationId: bulkSetIssueProperty). Global bulk endpoint; reused existing `--value` and `--filter` flags.
 - [x] 🟡 🖥️ API: B833 Jira: CLI for GET /rest/api/3/webhook
   - **Impl:** `atlas jira webhooks list [--start-at N] [--max-results N]` — dispatches to existing `client.webhooks.list()`. Reused global `--start-at` and `--max-results` flags. Added new `webhooks` and `webhook-ids` flags to `GLOBAL_OPTIONS` in router.ts.
   - **Rat:** Exposes paginated registered-webhook listing via CLI surface; resource method was already tested.

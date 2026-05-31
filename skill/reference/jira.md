@@ -420,7 +420,7 @@ atlas jira dashboards bulk-edit --entity-ids 10001 --action changeOwner --new-ow
 atlas jira dashboards list-available-gadgets --module-keys com.x:a,com.x:b
 ```
 
-| `bulk` | `delete-issues`, `get-fields`, `edit-fields`, `move-issues`, `get-transitions`, `transition-issues`, `unwatch-issues`, `watch-issues`, `get-status`, `submit-builds`, `submit-deployments`, `submit-devinfo`, `submit-devops-components`, `submit-feature-flags`, `submit-operations`, `submit-remote-links`, `submit-security` |
+| `bulk` | `create-issues`, `delete-issues`, `get-fields`, `edit-fields`, `move-issues`, `get-transitions`, `transition-issues`, `unwatch-issues`, `watch-issues`, `get-status`, `set-property`, `delete-property`, `submit-builds`, `submit-deployments`, `submit-devinfo`, `submit-devops-components`, `submit-feature-flags`, `submit-operations`, `submit-remote-links`, `submit-security` |
 
 ## `incidents`
 
@@ -2012,34 +2012,36 @@ the CLI does NOT auto-poll, callers drive the cadence.
 - Core endpoints: `/rest/api/3/bulk/*`
 - DevOps ingest endpoints use their own bases — `builds 0.1`, `deployments 0.1`, `devinfo 0.10`, `devopscomponents 1.0`, `featureflags 0.1`, `operations 1.0`, `remotelinks 1.0`, `security 1.0`.
 
-| Action                     | Positional | Required flags                     | Optional flags                                         |
-| -------------------------- | ---------- | ---------------------------------- | ------------------------------------------------------ |
-| `delete-issues`            | —          | `--issues`                         | `--send-notification`                                  |
-| `get-fields`               | —          | `--issues`                         | `--search-text`, `--ending-before`, `--starting-after` |
-| `edit-fields`              | —          | `--issues`, `--actions`, `--value` | `--send-notification`                                  |
-| `move-issues`              | —          | `--value`                          | `--send-notification`                                  |
-| `get-transitions`          | —          | `--issues`                         | —                                                      |
-| `transition-issues`        | —          | `--value`                          | `--send-notification`                                  |
-| `unwatch-issues`           | —          | `--issues`                         | —                                                      |
-| `watch-issues`             | —          | `--issues`                         | —                                                      |
-| `get-status`               | `<taskId>` | —                                  | —                                                      |
-| `submit-builds`            | —          | `--value`                          | —                                                      |
-| `submit-deployments`       | —          | `--value`                          | —                                                      |
-| `submit-devinfo`           | —          | `--value`                          | —                                                      |
-| `submit-devops-components` | —          | `--value`                          | —                                                      |
-| `submit-feature-flags`     | —          | `--value`                          | —                                                      |
-| `submit-operations`        | —          | `--value`                          | —                                                      |
-| `submit-remote-links`      | —          | `--value`                          | —                                                      |
-| `submit-security`          | —          | `--value`                          | —                                                      |
+| Action                     | Positional      | Required flags                     | Optional flags                                         |
+| -------------------------- | --------------- | ---------------------------------- | ------------------------------------------------------ |
+| `create-issues`            | —               | `--issues`                         | —                                                      |
+| `delete-issues`            | —               | `--issues`                         | `--send-notification`                                  |
+| `get-fields`               | —               | `--issues`                         | `--search-text`, `--ending-before`, `--starting-after` |
+| `edit-fields`              | —               | `--issues`, `--actions`, `--value` | `--send-notification`                                  |
+| `move-issues`              | —               | `--value`                          | `--send-notification`                                  |
+| `get-transitions`          | —               | `--issues`                         | —                                                      |
+| `transition-issues`        | —               | `--value`                          | `--send-notification`                                  |
+| `unwatch-issues`           | —               | `--issues`                         | —                                                      |
+| `watch-issues`             | —               | `--issues`                         | —                                                      |
+| `get-status`               | `<taskId>`      | —                                  | —                                                      |
+| `set-property`             | `<propertyKey>` | `--value`                          | `--filter`                                             |
+| `delete-property`          | `<propertyKey>` | —                                  | `--filter`                                             |
+| `submit-builds`            | —               | `--value`                          | —                                                      |
+| `submit-deployments`       | —               | `--value`                          | —                                                      |
+| `submit-devinfo`           | —               | `--value`                          | —                                                      |
+| `submit-devops-components` | —               | `--value`                          | —                                                      |
+| `submit-feature-flags`     | —               | `--value`                          | —                                                      |
+| `submit-operations`        | —               | `--value`                          | —                                                      |
+| `submit-remote-links`      | —               | `--value`                          | —                                                      |
+| `submit-security`          | —               | `--value`                          | —                                                      |
 
-`--issues` is a comma-separated list of issue IDs or keys; `--actions`
-is a comma-separated list of bulk-edit actions. `--value` is a JSON
-string: an object for `edit-fields` (`editedFieldsInput`) and
-`move-issues` (`targetToSourcesMapping`), an array for
-`transition-issues` (`bulkTransitionInputs`), and the raw provider
-payload for every DevOps `submit-*` variant.
+`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`).
 
 ```sh
+# Bulk create two issues (B518)
+atlas jira bulk create-issues \
+  --issues '[{"fields":{"project":{"key":"PROJ"},"summary":"Issue 1","issuetype":{"name":"Bug"}}},{"fields":{"project":{"key":"PROJ"},"summary":"Issue 2","issuetype":{"name":"Task"}}}]'
+
 # Bulk delete two issues, suppress notifications
 atlas jira bulk delete-issues --issues 10001,10002 --send-notification false
 
@@ -2068,6 +2070,18 @@ atlas jira bulk unwatch-issues --issues 10001,10002
 
 # Poll a previously submitted task
 atlas jira bulk get-status 10641
+
+# Bulk set a property on issues matching a filter (B526)
+atlas jira bulk set-property my-flag \
+  --value '{"owner":"admin","weight":100}' \
+  --filter '{"entityIds":[10100,10002]}'
+
+# Bulk delete a property from issues matching a filter (B525)
+atlas jira bulk delete-property my-flag \
+  --filter '{"currentValue":"deprecated value"}'
+
+# Bulk delete a property from ALL eligible issues (no filter)
+atlas jira bulk delete-property my-flag
 
 # DevOps ingest examples (payload shape is provider-specific)
 atlas jira bulk submit-builds --value '{"providerMetadata":{"product":"my-ci"},"builds":[]}'

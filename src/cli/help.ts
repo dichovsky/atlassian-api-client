@@ -257,7 +257,7 @@ RESOURCES:
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
   application-properties list, set, list-advanced-settings
   configuration          get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options
-  bulk                   delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
+  bulk                   create-issues, delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, set-property, delete-property, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
   issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
   component              list, create, get, update, delete, related-issue-counts
   filters                search, get, create, update, delete, list-favourites, list-my, add-favourite, remove-favourite, change-owner, get-columns, set-columns, reset-columns, list-permissions, add-permission, get-permission, delete-permission, get-default-share-scope, set-default-share-scope

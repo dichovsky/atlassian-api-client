@@ -36,6 +36,8 @@ import type {
   ReplaceIssueFieldOptionOnIssuesParams,
   ListIssueFieldOptionSuggestionsParams,
   FieldAssociationsRequest,
+  BulkSetIssuePropertyData,
+  BulkDeleteIssuePropertyData,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -2737,6 +2739,7 @@ function parseNonNegativeIntArg(value: string, name: string): number {
 }
 
 const BULK_ACTIONS = [
+  'create-issues',
   'delete-issues',
   'get-fields',
   'edit-fields',
@@ -2746,6 +2749,8 @@ const BULK_ACTIONS = [
   'unwatch-issues',
   'watch-issues',
   'get-status',
+  'set-property',
+  'delete-property',
   'submit-builds',
   'submit-deployments',
   'submit-devinfo',
@@ -2791,6 +2796,18 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
   const opts = cmd.options;
 
   switch (cmd.action) {
+    case 'create-issues': {
+      // B518 POST /rest/api/3/issue/bulk
+      const issueUpdatesRaw = parseJsonArrayFlag(
+        requireOpt(opts['issues'], '--issues'),
+        '--issues (array of issueUpdates)',
+      );
+      return client.bulk.createBulk({
+        issueUpdates: issueUpdatesRaw as Parameters<
+          typeof client.bulk.createBulk
+        >[0]['issueUpdates'],
+      });
+    }
     case 'delete-issues': {
       const selectedIssueIdsOrKeys = splitCsvIds(requireOpt(opts['issues'], '--issues'));
       const sendBulkNotification = asBoolFlag(opts['send-notification']);
@@ -2859,6 +2876,40 @@ async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     }
     case 'get-status': {
       return client.bulk.getBulkOperationStatus(requireArg(cmd.positionalArgs[0], 'taskId'));
+    }
+    case 'set-property': {
+      // B526 PUT /rest/api/3/issue/properties/{propertyKey}
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
+      const value = parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value');
+      const filterRaw = opts['filter'];
+      const filter =
+        filterRaw !== undefined
+          ? (parseJsonObjectFlag(
+              String(filterRaw),
+              '--filter',
+            ) as BulkSetIssuePropertyData['filter'])
+          : undefined;
+      await client.bulk.setPropertyBulk(propertyKey, {
+        value,
+        ...(filter !== undefined && { filter }),
+      });
+      return undefined;
+    }
+    case 'delete-property': {
+      // B525 DELETE /rest/api/3/issue/properties/{propertyKey}
+      const propertyKey = requireArg(cmd.positionalArgs[0], 'propertyKey');
+      const filterRaw = opts['filter'];
+      const filter =
+        filterRaw !== undefined
+          ? (parseJsonObjectFlag(
+              String(filterRaw),
+              '--filter',
+            ) as BulkDeleteIssuePropertyData['filter'])
+          : undefined;
+      await client.bulk.deletePropertyBulk(propertyKey, {
+        ...(filter !== undefined && { filter }),
+      });
+      return undefined;
     }
     case 'submit-builds':
       return client.bulk.submitBuilds(

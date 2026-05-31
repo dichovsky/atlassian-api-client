@@ -733,6 +733,7 @@ const jiraIssueAttachmentsMock = {
 };
 
 const jiraBulkMock = {
+  createBulk: vi.fn(),
   deleteIssuesBulk: vi.fn(),
   getIssueFieldsBulk: vi.fn(),
   editIssueFieldsBulk: vi.fn(),
@@ -742,6 +743,8 @@ const jiraBulkMock = {
   unwatchIssuesBulk: vi.fn(),
   watchIssuesBulk: vi.fn(),
   getBulkOperationStatus: vi.fn(),
+  setPropertyBulk: vi.fn(),
+  deletePropertyBulk: vi.fn(),
   submitBuilds: vi.fn(),
   submitDeployments: vi.fn(),
   submitDevInfo: vi.fn(),
@@ -15109,6 +15112,109 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('bulk', 'submit-builds', [], { value: 'not-json' }), GLOBALS),
       ).rejects.toThrow('valid JSON');
+    });
+
+    // B518
+    it('bulk create-issues calls createBulk() with parsed issueUpdates array', async () => {
+      jiraBulkMock.createBulk.mockResolvedValue({ issues: [], errors: [] });
+      const issueUpdates = [
+        { fields: { project: { key: 'PROJ' }, summary: 'Bug', issuetype: { name: 'Bug' } } },
+      ];
+
+      const result = await executeJiraCommand(
+        cmd('bulk', 'create-issues', [], { issues: JSON.stringify(issueUpdates) }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ issues: [], errors: [] });
+      expect(jiraBulkMock.createBulk).toHaveBeenCalledWith({ issueUpdates });
+    });
+
+    it('bulk create-issues throws when --issues missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'create-issues'), GLOBALS)).rejects.toThrow(
+        '--issues',
+      );
+    });
+
+    it('bulk create-issues throws when --issues is not a JSON array', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk', 'create-issues', [], { issues: '{"a":1}' }), GLOBALS),
+      ).rejects.toThrow('must be a JSON array');
+    });
+
+    // B526
+    it('bulk set-property calls setPropertyBulk() with propertyKey + value', async () => {
+      jiraBulkMock.setPropertyBulk.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('bulk', 'set-property', ['my-flag'], { value: '{"owner":"admin"}' }),
+        GLOBALS,
+      );
+
+      expect(result).toBeUndefined();
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
+        value: { owner: 'admin' },
+      });
+    });
+
+    it('bulk set-property forwards --filter when supplied', async () => {
+      jiraBulkMock.setPropertyBulk.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('bulk', 'set-property', ['my-flag'], {
+          value: '"active"',
+          filter: '{"entityIds":[10001,10002]}',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.setPropertyBulk).toHaveBeenCalledWith('my-flag', {
+        value: 'active',
+        filter: { entityIds: [10001, 10002] },
+      });
+    });
+
+    it('bulk set-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk', 'set-property', ['my-flag']), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('bulk set-property throws when propertyKey positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk', 'set-property', [], { value: '"x"' }), GLOBALS),
+      ).rejects.toThrow('propertyKey');
+    });
+
+    // B525
+    it('bulk delete-property calls deletePropertyBulk() with propertyKey and no filter', async () => {
+      jiraBulkMock.deletePropertyBulk.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('bulk', 'delete-property', ['my-flag']), GLOBALS);
+
+      expect(result).toBeUndefined();
+      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith('my-flag', {});
+    });
+
+    it('bulk delete-property forwards --filter when supplied', async () => {
+      jiraBulkMock.deletePropertyBulk.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('bulk', 'delete-property', ['my-flag'], {
+          filter: '{"currentValue":"deprecated"}',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraBulkMock.deletePropertyBulk).toHaveBeenCalledWith('my-flag', {
+        filter: { currentValue: 'deprecated' },
+      });
+    });
+
+    it('bulk delete-property throws when propertyKey positional is missing', async () => {
+      await expect(executeJiraCommand(cmd('bulk', 'delete-property', []), GLOBALS)).rejects.toThrow(
+        'propertyKey',
+      );
     });
 
     it('bulk unknown action throws', async () => {
