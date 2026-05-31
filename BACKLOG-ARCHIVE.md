@@ -58,6 +58,15 @@
 - [x] 🟡 ♻️ Core: B035 Expand log-path credential redaction
   - **Impl:** Branch `feat/b035-log-path-credential-redaction` (2026-05-18); `sanitizePathForLogging` expanded marker list (password, pwd, apikey, api_key, access_token, refresh_token, bearer, jwt, assertion, client_secret, signature, sig, jsessionid, sid, session); added JWT compact-serialization shape redaction (`eyJ…` → `***.jwt.***`); userinfo `user:pass@host` stripped in fallback branch; matrix-param coverage (`;jsessionid=…`) inherited from expanded `name=` regex.
   - **Rat:** Shrink the credential-in-debug-log attack surface without changing public API; close userinfo gap in the URL-parse-failure fallback; catch raw JWTs that bypass marker-based redaction.
+- [x] 🟡 ♻️ Core: B028 OAuth error-body redaction hardening
+  - **Impl:** `formatBodySnippet` redacts `access_token`, `refresh_token`, `id_token`, and `client_secret` values before truncating OAuth token-endpoint response snippets to 200 characters. Covered in `test/core/oauth.test.ts`.
+  - **Rat:** Preserve useful OAuth diagnostics without echoing credential material into errors or logs.
+
+## 📝 Docs
+
+- [x] 🟢 📝 Docs: B032 Update CONTRIBUTING.md with npm security practices
+  - **Impl:** Documented the explicit publish whitelist, `npm pack --dry-run --json`, `npm audit`, `prepublishOnly`, and the complete `npm run validate` gate.
+  - **Rat:** Keep contributor release steps aligned with the package's npm security posture.
 
 ## 🧩 Confluence
 

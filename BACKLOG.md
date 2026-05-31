@@ -7,9 +7,6 @@
 - [ ] 🔴 📝 Docs: B001 JSDoc public exports
   - files: `src/index.ts`, `src/core/index.ts`, referenced public type files
   - deps: none
-- [ ] 🟢 📝 Docs: B032 Update CONTRIBUTING.md with npm security practices
-  - files: `CONTRIBUTING.md`
-  - deps: none
 
 ## ⚙️ Core
 
@@ -24,9 +21,6 @@
   - deps: B006 archived
 - [ ] 🟡 📦 Core: B015 RS256 Connect JWT
   - files: `src/core/connect-jwt.ts`, `src/core/index.ts`
-  - deps: none
-- [ ] 🟡 ♻️ Core: B028 OAuth error-body redaction hardening
-  - files: `src/core/oauth.ts`, `test/core/oauth.test.ts`
   - deps: none
 - [ ] 🟢 📦 Core: B017 Proactive rate-limit (token bucket)
   - files: `src/core/rate-limiter.ts`, `src/core/config.ts`, `src/core/transport.ts`, `test/core/rate-limiter.test.ts`
@@ -55,9 +49,6 @@
 - [ ] 🔴 🧪 QA: B012 Mock-server transport tests
   - files: `test/mock-server/*`
   - deps: B006 archived
-- [ ] 🔴 🧪 QA: B013 CLI E2E tests
-  - files: `test/e2e/cli.test.ts`, `test/e2e/helpers/*`
-  - deps: none
 - [ ] 🟡 🧪 QA: B014 Property-based tests
   - files: `test/property/*`
   - deps: B006 archived

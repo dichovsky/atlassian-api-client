@@ -1,5 +1,7 @@
 # BACKLOG Path Audit — 2026-05-23
 
+> Historical snapshot. The API-coverage work completed after this audit added many of the resources listed below. Use the current `BACKLOG.md`, `BACKLOG-ARCHIVE.md`, and `src/**` tree for present-day status.
+
 ## Summary
 
 - **Total unique paths referenced in BACKLOG:** 178

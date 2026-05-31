@@ -26,6 +26,7 @@
   },
   "license": "MIT",
   "author": "Igor Magdich <magdich.igor@gmail.com>",
+  "funding": "https://buymeacoffee.com/dichovsky",
   "sideEffects": false,
   "type": "module",
   "exports": {
@@ -47,7 +48,8 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "docs/ARCHITECTURE.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

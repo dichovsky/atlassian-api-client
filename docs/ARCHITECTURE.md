@@ -12,7 +12,7 @@
 │                        Public API                            │
 │        ConfluenceClient              JiraClient              │
 ├──────────────────────────────────────────────────────────────┤
-│                     Resource Modules                         │
+│               Resource Modules (selected)                    │
 │  pages, spaces, blogPosts,    issues, projects, search,      │
 │  comments, attachments,       users, issueTypes, priorities, │
 │  labels, contentProperties,   statuses, issueComments,       │
@@ -41,12 +41,14 @@
 3. **Zero runtime dependencies** — uses only Node.js built-ins (`fetch`, `AbortController`, `Buffer`, `URL`)
 4. **Immutability** — config and options are never mutated; new objects are created
 5. **Fail fast** — invalid config is rejected at construction time
-6. **Explicit over magic** — no hidden defaults, no automatic retries on non-retryable errors
+6. **Explicit over magic** — documented defaults, no automatic retries on non-retryable errors
 7. **Small, focused modules** — each file has a single responsibility
 
 ---
 
 ## Package Structure
+
+Selected files are shown below. The resource directories contain additional endpoint modules; inspect `src/**` or `CODEMAP.md` for the generated inventory.
 
 ```
 src/
@@ -55,6 +57,8 @@ src/
 │   ├── errors.ts                # Error class hierarchy
 │   ├── config.ts                # Config validation & defaults
 │   ├── auth.ts                  # Auth strategy factory
+│   ├── auth-identity.ts         # One-way auth identity for cache/batch partitioning
+│   ├── atlassian-hosts.ts       # Shared host allowlist policy
 │   ├── transport.ts             # HTTP transport orchestrator (thin)
 │   ├── request.ts               # URL building, header merging, body serialisation, path sanitisation
 │   ├── response.ts              # Body parsing, ApiResponse assembly, toJSON helper
@@ -118,9 +122,12 @@ test/
 ├── core/                        # Core module tests
 ├── confluence/                  # Confluence client tests
 ├── jira/                        # Jira client tests
+├── cli/                         # CLI unit/help tests
+├── docs/                        # Package-documentation regression tests
+├── e2e/                         # CLI → config → client → transport tests
 ├── helpers/                     # Test utilities
 │   └── mock-transport.ts        # Mock transport for testing
-└── index.test.ts                # Public API export tests
+└── smoke/                       # Public API smoke tests
 ```
 
 ---
@@ -207,15 +214,23 @@ interface ClientConfig {
   timeout?: number; // Default: 30000ms
   retries?: number; // Default: 3
   retryDelay?: number; // Default: 1000ms (base delay)
+  maxRetryDelay?: number; // Default: 30000ms
+  maxResponseBytes?: number; // Optional cap for buffered bodies
+  allowedHosts?: readonly string[]; // Explicit self-hosted/proxy opt-in
   transport?: Transport; // Optional: injectable transport
+  fetch?: typeof fetch; // Optional transport fetch implementation
+  logger?: Logger;
+  middleware?: Middleware[];
 }
 ```
 
 **Validation rules:**
 
-- `baseUrl` must be a valid URL, no trailing slash
+- `baseUrl` must be a valid HTTPS URL on a default port; trailing slashes are normalised away
+- Atlassian Cloud host suffixes are allowed by default; self-hosted and proxy deployments must opt in through `allowedHosts`
+- `allowedHosts` entries are bare hostnames with no scheme, path, or port, and must include the `baseUrl` hostname
 - `auth` must match a supported strategy
-- Numeric values must be positive
+- Numeric values are validated according to their contracts (`retries` may be zero; delays must be positive; `maxResponseBytes` must be a positive integer)
 - Invalid config throws `ValidationError` immediately
 
 ### Errors (`src/core/errors.ts`)
@@ -232,7 +247,9 @@ AtlassianError (base)
 │   └── OAuthError (token-endpoint failures; status = refreshStatus ?? 0)
 ├── TimeoutError (AbortController timeout)
 ├── NetworkError (fetch failures, DNS, connection)
-└── ValidationError (invalid config/params)
+├── ValidationError (invalid config/params)
+├── PaginationError (non-advancing or inconsistent pagination)
+└── ResponseTooLargeError (buffered body exceeds maxResponseBytes)
 ```
 
 Each error includes:
@@ -339,12 +356,12 @@ All user-controlled path segments (IDs, keys) are percent-encoded before URL con
 
 Built-in middleware factories:
 
-| Export                         | File             | Description                                                                                                                                                                           |
-| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                        |
-| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                                                                                                                                                   |
-| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (FIFO, TTL); `maxSize` and `ttl` validated at construction; cache keys `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
-| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                 |
+| Export                         | File             | Description                                                                                                                                                                                                         |
+| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                                                      |
+| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                                                                                                                                                                                 |
+| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (LRU, TTL); `maxSize` and `ttl` validated at construction; cache keys partition by auth identity and `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
+| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                                               |
 
 Helper utilities:
 
@@ -415,6 +432,9 @@ class ConfluenceClient {
   readonly whiteboards: WhiteboardsResource;
   readonly tasks: TasksResource;
   readonly versions: VersionsResource;
+  // Additional resources: adminKey, app, classificationLevels, content,
+  // dataPolicies, databases, embeds, folders, footerComments, inlineComments,
+  // spacePermissions, spaceRoleMode, spaceRoles, users, usersBulk
 }
 ```
 
@@ -478,6 +498,8 @@ class JiraClient {
   readonly webhooks: WebhooksResource;
   readonly jql: JqlResource;
   readonly bulk: BulkResource;
+  // Additional Jira v3, Agile, Operations, Security, DevOps, Forge, and
+  // Connect resources are exposed on the client. See src/jira/client.ts.
 }
 ```
 
@@ -494,7 +516,7 @@ class IssuesResource {
   async create(data: CreateIssueData): Promise<CreatedIssue> { ... }
   async update(issueIdOrKey: string, data: UpdateIssueData): Promise<void> { ... }
   async delete(issueIdOrKey: string): Promise<void> { ... }
-  async getTransitions(issueIdOrKey: string): Promise<Transitions> { ... }
+  async getTransitions(issueIdOrKey: string): Promise<Transition[]> { ... }
   async transition(issueIdOrKey: string, data: TransitionData): Promise<void> { ... }
 }
 ```
@@ -502,7 +524,7 @@ class IssuesResource {
 ### Jira-Specific Patterns
 
 - **ADF format:** Issue descriptions and comments use Atlassian Document Format (JSON). Types reflect this.
-- **Search endpoint:** `POST /rest/api/3/search` returns `{ issues: [...] }` (not `values`). The search helper handles this difference.
+- **Search endpoints:** the resource supports legacy offset-based `GET`/`POST /rest/api/3/search` plus cursor-based `GET`/`POST /rest/api/3/search/jql`. Search responses use `{ issues: [...] }` rather than `{ values: [...] }`.
 - **Expand parameter:** Optional `expand` query parameter for additional data. Typed as string array.
 - **Issue keys:** Accept both numeric IDs and string keys (e.g., `PROJ-123`). Typed as `string`.
 
@@ -511,6 +533,8 @@ class IssuesResource {
 ## Public API Design
 
 ### Entry Point (`src/index.ts`)
+
+Selected package-root exports:
 
 ```typescript
 // Clients
@@ -521,14 +545,23 @@ export { JiraClient } from './jira/index.js';
 export {
   AtlassianError, HttpError, AuthenticationError, ForbiddenError,
   NotFoundError, RateLimitError, TimeoutError, NetworkError,
-  ValidationError, OAuthError,
+  ValidationError, PaginationError, ResponseTooLargeError, OAuthError,
 } from './core/index.js';
 
 // Core infrastructure types
 export type {
   ClientConfig, AuthConfig, BasicAuthConfig, BearerAuthConfig,
-  RequestOptions, ApiResponse, Transport, Logger, Middleware,
+  RequestOptions, ApiResponse, RateLimitInfo, Transport, Logger, Middleware,
 } from './core/index.js';
+
+export { resolveConfig, HttpTransport, executeWithRetry, createMiddlewareChain } from './core/index.js';
+export type { RetryConfig } from './core/index.js';
+
+export { extractCursor, paginateCursor, paginateOffset, paginateSearch } from './core/index.js';
+export type { PaginateOptions, SearchPaginatedResponse } from './core/index.js';
+
+export { toJSON } from './core/index.js';
+export type { SerializableApiResponse } from './core/index.js';
 
 // Middleware factories
 export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index.js';
@@ -646,10 +679,12 @@ src/cli/
 ├── config.ts         # Auth/config resolution (flags → env vars)
 ├── output.ts         # Formatters: json, table, minimal
 ├── help.ts           # Help text for global, api, resource levels
+├── version.ts        # Package-version resolution for atlas --version
 ├── types.ts          # CLI-specific types
 └── commands/
     ├── confluence.ts # All Confluence resource handlers
-    └── jira.ts       # All Jira resource handlers
+    ├── jira.ts       # All Jira resource handlers
+    └── install-skill.ts # Bundled coding-agent skill installer
 ```
 
 ### Auth Resolution
@@ -699,14 +734,17 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 **Published files:**
 
 - `dist/` — compiled output
+- `skill/` — bundled coding-agent skill and reference files
 - `README.md`
 - `LICENSE`
 - `CHANGELOG.md`
+- `SECURITY.md`
+- `docs/ARCHITECTURE.md`
 
 **Excluded from package:**
 
 - `src/` (source TypeScript)
 - `test/` (tests)
 - `examples/` (dev examples)
-- `docs/` (dev documentation)
+- Other `docs/` files not explicitly whitelisted
 - Config files (tsconfig, vitest, eslint, prettier)
