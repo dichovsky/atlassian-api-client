@@ -231,6 +231,7 @@ RESOURCES:
   server-info            get
   instance               get-license
   mypermissions          get
+  mypreferences          get, set, delete, get-locale, set-locale
   auditing               list
   events                 list
   changelog              bulk-fetch

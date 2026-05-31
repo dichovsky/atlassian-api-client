@@ -366,6 +366,8 @@ export type {
   GetMyPermissionsParams,
 } from './resources/mypermissions.js';
 export { MyPermissionsResource } from './resources/mypermissions.js';
+export type { Locale } from './resources/mypreferences.js';
+export { MyPreferencesResource } from './resources/mypreferences.js';
 export type {
   AuditRecord,
   AuditRecordsResponse,
