@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "2bd1e0e98074b3bf4ce1b6306fd3cf1b48a8061ef70904497eb54fa4dad99b43",
+  "sourceHash": "4e782de0482e2a95a1c6a7976d4eba97ff30bba8df9984aec19b644130abc3bd",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17012,10 +17012,6 @@
             {
               "exported": "ListTrashedFieldsParams",
               "original": "ListTrashedFieldsParams"
-            },
-            {
-              "exported": "SearchFieldsParams",
-              "original": "SearchFieldsParams"
             }
           ]
         },
@@ -22837,17 +22833,9 @@
           "jsdoc": "Query parameters for GET /rest/api/3/field/search/trashed (B447)."
         },
         {
-          "name": "SearchFieldsParams",
-          "kind": "interface",
-          "line": 686,
-          "exported": true,
-          "signature": "export interface SearchFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom'…",
-          "jsdoc": "Query parameters for GET /rest/api/3/field/search (B446). Note: reuses ListFieldsParams but `projectIds` is number[] per spec."
-        },
-        {
           "name": "FieldContextProjectIdsBody",
           "kind": "interface",
-          "line": 701,
+          "line": 688,
           "exported": true,
           "signature": "export interface FieldContextProjectIdsBody { readonly projectIds: readonly string[]; }",
           "jsdoc": "Request body for assigning or removing projects from a context (B427, B428). Spec: ProjectIds"
@@ -22855,7 +22843,7 @@
         {
           "name": "FieldContextProjectMapping",
           "kind": "interface",
-          "line": 707,
+          "line": 694,
           "exported": true,
           "signature": "export interface FieldContextProjectMapping { readonly contextId: string; readonly projectId?: string; readonly isGlobal…",
           "jsdoc": "A single context-to-project association entry (B431). Spec: CustomFieldContextProjectMapping"
@@ -22863,7 +22851,7 @@
         {
           "name": "FieldContextProjectMappingPage",
           "kind": "type",
-          "line": 718,
+          "line": 705,
           "exported": true,
           "signature": "export type FieldContextProjectMappingPage = OffsetPaginatedResponse<FieldContextProjectMapping>;",
           "jsdoc": "Paginated page of FieldContextProjectMapping items (B431). Spec: PageBeanCustomFieldContextProjectMapping"
@@ -22871,7 +22859,7 @@
         {
           "name": "ListFieldContextProjectMappingParams",
           "kind": "interface",
-          "line": 721,
+          "line": 708,
           "exported": true,
           "signature": "export interface ListFieldContextProjectMappingParams { readonly contextId?: number[]; readonly startAt?: number; readon…",
           "jsdoc": "Query parameters for listing context-to-project mappings (B431)."
@@ -22879,7 +22867,7 @@
         {
           "name": "FieldContextProjectIssueTypeMapping",
           "kind": "interface",
-          "line": 730,
+          "line": 717,
           "exported": true,
           "signature": "export interface FieldContextProjectIssueTypeMapping { readonly projectId: string; readonly issueTypeId: string; }",
           "jsdoc": "A single project+issueType entry in a bulk mapping lookup (B430). Spec: ProjectIssueTypeMapping"
@@ -22887,7 +22875,7 @@
         {
           "name": "FieldContextMappingBulkBody",
           "kind": "interface",
-          "line": 737,
+          "line": 724,
           "exported": true,
           "signature": "export interface FieldContextMappingBulkBody { readonly mappings: readonly FieldContextProjectIssueTypeMapping[]; }",
           "jsdoc": "Request body for bulk-looking up contexts by project+issueType pairs (B430). Spec: ProjectIssueTypeMappings"
@@ -22895,7 +22883,7 @@
         {
           "name": "FieldContextForProjectAndIssueType",
           "kind": "interface",
-          "line": 744,
+          "line": 731,
           "exported": true,
           "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string | null; readonly issueTypeId: string; r…",
           "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType. `contextId` is `null` when no context matches the {projectId, issueTypeId} pair."
@@ -22903,7 +22891,7 @@
         {
           "name": "FieldContextMappingPage",
           "kind": "type",
-          "line": 752,
+          "line": 739,
           "exported": true,
           "signature": "export type FieldContextMappingPage = OffsetPaginatedResponse<FieldContextForProjectAndIssueType>;",
           "jsdoc": "Paginated response for the bulk context lookup (B430). Spec: PageBeanContextForProjectAndIssueType"
@@ -22911,7 +22899,7 @@
         {
           "name": "GetFieldContextMappingsParams",
           "kind": "interface",
-          "line": 755,
+          "line": 742,
           "exported": true,
           "signature": "export interface GetFieldContextMappingsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the bulk context lookup (B430)."
@@ -22919,209 +22907,209 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 760,
+          "line": 747,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 761
+              "line": 748
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 767
+              "line": 754
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 790
+              "line": 777
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 799
+              "line": 786
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 809
+              "line": 796
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 819
+              "line": 806
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 827
+              "line": 814
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 846
+              "line": 833
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 856
+              "line": 843
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 869
+              "line": 856
             },
             {
               "name": "listContextOptions",
               "kind": "method",
-              "line": 877
+              "line": 864
             },
             {
               "name": "createContextOptions",
               "kind": "method",
-              "line": 899
+              "line": 886
             },
             {
               "name": "updateContextOptions",
               "kind": "method",
-              "line": 913
+              "line": 900
             },
             {
               "name": "deleteContextOption",
               "kind": "method",
-              "line": 927
+              "line": 914
             },
             {
               "name": "replaceContextOptionOnIssues",
               "kind": "method",
-              "line": 936
+              "line": 923
             },
             {
               "name": "reorderContextOptions",
               "kind": "method",
-              "line": 956
+              "line": 943
             },
             {
               "name": "setContextIssueTypes",
               "kind": "method",
-              "line": 969
+              "line": 956
             },
             {
               "name": "removeContextIssueTypes",
               "kind": "method",
-              "line": 982
+              "line": 969
             },
             {
               "name": "listContextIssueTypeMappings",
               "kind": "method",
-              "line": 995
+              "line": 982
             },
             {
               "name": "listContextDefaultValues",
               "kind": "method",
-              "line": 1016
+              "line": 1003
             },
             {
               "name": "setContextDefaultValues",
               "kind": "method",
-              "line": 1037
+              "line": 1024
             },
             {
               "name": "setContextProjects",
               "kind": "method",
-              "line": 1050
+              "line": 1037
             },
             {
               "name": "removeContextProjects",
               "kind": "method",
-              "line": 1064
+              "line": 1051
             },
             {
               "name": "getContextMappings",
               "kind": "method",
-              "line": 1078
+              "line": 1065
             },
             {
               "name": "listContextProjectMappings",
               "kind": "method",
-              "line": 1100
+              "line": 1087
             },
             {
               "name": "listFieldProjectAssociations",
               "kind": "method",
-              "line": 1123
+              "line": 1110
             },
             {
               "name": "listFieldScreens",
               "kind": "method",
-              "line": 1143
+              "line": 1130
             },
             {
               "name": "restoreField",
               "kind": "method",
-              "line": 1164
+              "line": 1151
             },
             {
               "name": "trashField",
               "kind": "method",
-              "line": 1173
+              "line": 1160
             },
             {
               "name": "removeAssociations",
               "kind": "method",
-              "line": 1182
+              "line": 1169
             },
             {
               "name": "createAssociations",
               "kind": "method",
-              "line": 1192
+              "line": 1179
             },
             {
               "name": "listTrashedFields",
               "kind": "method",
-              "line": 1202
+              "line": 1189
             },
             {
               "name": "listFieldOptions",
               "kind": "method",
-              "line": 1227
+              "line": 1214
             },
             {
               "name": "createFieldOption",
               "kind": "method",
-              "line": 1247
+              "line": 1234
             },
             {
               "name": "deleteFieldOption",
               "kind": "method",
-              "line": 1261
+              "line": 1248
             },
             {
               "name": "getFieldOption",
               "kind": "method",
-              "line": 1270
+              "line": 1257
             },
             {
               "name": "updateFieldOption",
               "kind": "method",
-              "line": 1281
+              "line": 1268
             },
             {
               "name": "replaceFieldOptionOnIssues",
               "kind": "method",
-              "line": 1297
+              "line": 1284
             },
             {
               "name": "listFieldOptionSuggestionsEdit",
               "kind": "method",
-              "line": 1321
+              "line": 1308
             },
             {
               "name": "listFieldOptionSuggestionsSearch",
               "kind": "method",
-              "line": 1342
+              "line": 1329
             }
           ]
         }

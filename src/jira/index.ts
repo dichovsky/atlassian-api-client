@@ -275,7 +275,6 @@ export type {
   FieldIdentifierObject,
   FieldAssociationsRequest,
   ListTrashedFieldsParams,
-  SearchFieldsParams,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {

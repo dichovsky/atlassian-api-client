@@ -5966,11 +5966,35 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'field-list': {
+      // B446: GET /rest/api/3/field/search
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const typeRaw = asString(opts['type']);
+      const type =
+        typeRaw !== undefined
+          ? typeRaw.split(',').map((s) => {
+              const t = s.trim();
+              if (t !== 'custom' && t !== 'system') {
+                throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
+              }
+              return t;
+            })
+          : undefined;
+      const idRaw = asString(opts['id']);
+      const id = idRaw !== undefined ? idRaw.split(',').map((s) => s.trim()) : undefined;
+      const query = asString(opts['query']);
+      const orderBy = asString(opts['order-by']);
+      const expand = asString(opts['expand']);
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
       return client.fields.list({
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
+        ...(type !== undefined && { type }),
+        ...(id !== undefined && { id }),
+        ...(query !== undefined && { query }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(expand !== undefined && { expand }),
+        ...(projectIds !== undefined && { projectIds }),
       });
     }
     case 'field-list-all':

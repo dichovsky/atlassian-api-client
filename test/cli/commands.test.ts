@@ -21215,6 +21215,41 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(page);
     });
 
+    it('field-list passes all search filters to client.fields.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraFieldsMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-list', [], {
+          'start-at': '0',
+          'max-results': '50',
+          type: 'custom,system',
+          id: 'customfield_10001, customfield_10002',
+          query: 'approvers',
+          'order-by': 'name',
+          expand: 'screensCount,contextsCount',
+          'project-ids': '10000,10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.list).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 50,
+        type: ['custom', 'system'],
+        id: ['customfield_10001', 'customfield_10002'],
+        query: 'approvers',
+        orderBy: 'name',
+        expand: 'screensCount,contextsCount',
+        projectIds: [10000, 10001],
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('field-list rejects an invalid --type value', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-list', [], { type: 'bogus' }), GLOBALS),
+      ).rejects.toThrow("--type must contain only 'custom' or 'system'");
+    });
+
     it('field-create calls client.fields.create with body', async () => {
       const field = { id: 'customfield_10001', name: 'My Field', custom: true };
       jiraFieldsMock.create.mockResolvedValue(field);

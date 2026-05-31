@@ -681,19 +681,6 @@ export interface ListTrashedFieldsParams {
   readonly orderBy?: string;
 }
 
-/** Query parameters for GET /rest/api/3/field/search (B446).
- * Note: reuses ListFieldsParams but `projectIds` is number[] per spec. */
-export interface SearchFieldsParams {
-  readonly startAt?: number;
-  readonly maxResults?: number;
-  readonly type?: ('custom' | 'system')[];
-  readonly id?: string[];
-  readonly query?: string;
-  readonly orderBy?: string;
-  readonly expand?: string;
-  readonly projectIds?: number[];
-}
-
 // ── Project mapping types (B427, B428, B430, B431) ──────────────────────────
 
 /** Request body for assigning or removing projects from a context (B427, B428).
