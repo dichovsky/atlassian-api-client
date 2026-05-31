@@ -2365,3 +2365,18 @@
 - [x] 🔴 🧩 Jira: B537 expose PUT /rest/api/3/issueLinkType/{issueLinkTypeId}
   - **Impl:** `IssueLinkTypeResource.update(issueLinkTypeId, data)` — body: partial `{name?, inward?, outward?}`; at least one field required. Returns `IssueLinkType`. CLI: `atlas jira issuelinktype update <id> [--name] [--inward] [--outward]`.
   - **Rat:** Spec-verified: 200 with updated `IssueLinkType`; validated at least-one-of constraint mirrors existing patterns (e.g. workflowscheme update).
+- [x] 🔴 🧩 Jira: B601 expose DELETE /rest/api/3/mypreferences
+  - **Impl:** `MyPreferencesResource.removePreference(key)` — required `key` query param. CLI: `atlas jira mypreferences delete --key <k>`. Returns void (204).
+  - **Rat:** `--key` reused from `GLOBAL_OPTIONS`; query param, not positional.
+- [x] 🔴 🧩 Jira: B602 expose GET /rest/api/3/mypreferences
+  - **Impl:** `MyPreferencesResource.getPreference(key)` — required `key` query param; returns the raw string value. CLI: `atlas jira mypreferences get --key <k>`.
+  - **Rat:** Spec response schema is `string`; transport JSON-parses the quoted value back to a string.
+- [x] 🔴 🧩 Jira: B603 expose PUT /rest/api/3/mypreferences
+  - **Impl:** `MyPreferencesResource.setPreference(key, value)` — required `key` query param; body is the raw string value. CLI: `atlas jira mypreferences set --key <k> --value <v>`. Returns void (204).
+  - **Rat:** Passes the string as `body`; `buildFetchBody` calls `JSON.stringify(body)` → a valid `application/json` string on the wire (spec body schema is `type: string`). `--value` reused.
+- [x] 🔴 🧩 Jira: B604 expose GET /rest/api/3/mypreferences/locale
+  - **Impl:** `MyPreferencesResource.getLocale()` — returns `Locale {locale}`. CLI: `atlas jira mypreferences get-locale`.
+  - **Rat:** No params; standard JSON GET.
+- [x] 🔴 🧩 Jira: B925 expose PUT /rest/api/3/mypreferences/locale
+  - **Impl:** `MyPreferencesResource.setLocale(locale)` — body `Locale {locale}`. CLI: `atlas jira mypreferences set-locale --locale <l>`. Returns void (204). Annotated `@deprecated`.
+  - **Rat:** Endpoint is `deprecated:true` in spec (removal effective 2026-02-16); implemented + annotated per the individually-deprecated-in-active-family precedent. `--locale` reused.

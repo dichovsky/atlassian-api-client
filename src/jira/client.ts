@@ -31,6 +31,7 @@ import { StatusCategoryResource } from './resources/status-category.js';
 import { ServerInfoResource } from './resources/server-info.js';
 import { InstanceResource } from './resources/instance.js';
 import { MyPermissionsResource } from './resources/mypermissions.js';
+import { MyPreferencesResource } from './resources/mypreferences.js';
 import { AuditingResource } from './resources/auditing.js';
 import { EventsResource } from './resources/events.js';
 import { ChangelogResource } from './resources/changelog.js';
@@ -131,6 +132,8 @@ export class JiraClient {
   readonly instance: InstanceResource;
   /** My permissions resource. */
   readonly myPermissions: MyPermissionsResource;
+  /** My preferences resource (B601-B604, B925). */
+  readonly myPreferences: MyPreferencesResource;
   /** Audit log records resource. */
   readonly auditing: AuditingResource;
   /** Jira events (issue events) resource. */
@@ -280,6 +283,7 @@ export class JiraClient {
     this.serverInfo = new ServerInfoResource(transport, baseUrl);
     this.instance = new InstanceResource(transport, baseUrl);
     this.myPermissions = new MyPermissionsResource(transport, baseUrl);
+    this.myPreferences = new MyPreferencesResource(transport, baseUrl);
     this.auditing = new AuditingResource(transport, baseUrl);
     this.events = new EventsResource(transport, baseUrl);
     this.changelog = new ChangelogResource(transport, baseUrl);

@@ -610,6 +610,13 @@ const jiraInstanceMock = {
 const jiraMyPermissionsMock = {
   get: vi.fn(),
 };
+const jiraMyPreferencesMock = {
+  getPreference: vi.fn(),
+  setPreference: vi.fn(),
+  removePreference: vi.fn(),
+  getLocale: vi.fn(),
+  setLocale: vi.fn(),
+};
 const jiraAuditingMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1151,6 +1158,7 @@ vi.mock('../../src/jira/client.js', () => {
       serverInfo: jiraServerInfoMock,
       instance: jiraInstanceMock,
       myPermissions: jiraMyPermissionsMock,
+      myPreferences: jiraMyPreferencesMock,
       auditing: jiraAuditingMock,
       events: jiraEventsMock,
       changelog: jiraChangelogMock,
@@ -13167,6 +13175,116 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('mypermissions', 'unknown-action'), GLOBALS),
       ).rejects.toThrow('Unknown mypermissions action');
+    });
+  });
+
+  // ── mypreferences ─────────────────────────────────────────────────────────
+
+  describe('mypreferences resource', () => {
+    it('mypreferences get calls client.myPreferences.getPreference() with --key', async () => {
+      // Arrange
+      jiraMyPreferencesMock.getPreference.mockResolvedValue('en_US');
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('mypreferences', 'get', [], { key: 'jira.user.locale' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMyPreferencesMock.getPreference).toHaveBeenCalledWith('jira.user.locale');
+      expect(result).toBe('en_US');
+    });
+
+    it('mypreferences get throws when --key is missing', async () => {
+      await expect(executeJiraCommand(cmd('mypreferences', 'get'), GLOBALS)).rejects.toThrow(
+        '--key',
+      );
+    });
+
+    it('mypreferences set calls client.myPreferences.setPreference() with --key and --value', async () => {
+      // Arrange
+      jiraMyPreferencesMock.setPreference.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('mypreferences', 'set', [], { key: 'jira.user.locale', value: 'en_US' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMyPreferencesMock.setPreference).toHaveBeenCalledWith('jira.user.locale', 'en_US');
+    });
+
+    it('mypreferences set throws when --key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('mypreferences', 'set', [], { value: 'en_US' }), GLOBALS),
+      ).rejects.toThrow('--key');
+    });
+
+    it('mypreferences set throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('mypreferences', 'set', [], { key: 'foo' }), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('mypreferences delete calls client.myPreferences.removePreference() with --key', async () => {
+      // Arrange
+      jiraMyPreferencesMock.removePreference.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('mypreferences', 'delete', [], { key: 'jira.user.locale' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMyPreferencesMock.removePreference).toHaveBeenCalledWith('jira.user.locale');
+    });
+
+    it('mypreferences delete throws when --key is missing', async () => {
+      await expect(executeJiraCommand(cmd('mypreferences', 'delete'), GLOBALS)).rejects.toThrow(
+        '--key',
+      );
+    });
+
+    it('mypreferences get-locale calls client.myPreferences.getLocale()', async () => {
+      // Arrange
+      const locale = { locale: 'en_US' };
+      jiraMyPreferencesMock.getLocale.mockResolvedValue(locale);
+
+      // Act
+      const result = await executeJiraCommand(cmd('mypreferences', 'get-locale'), GLOBALS);
+
+      // Assert
+      expect(jiraMyPreferencesMock.getLocale).toHaveBeenCalled();
+      expect(result).toEqual(locale);
+    });
+
+    it('mypreferences set-locale calls client.myPreferences.setLocale() with --locale', async () => {
+      // Arrange
+      jiraMyPreferencesMock.setLocale.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('mypreferences', 'set-locale', [], { locale: 'fr_FR' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMyPreferencesMock.setLocale).toHaveBeenCalledWith('fr_FR');
+    });
+
+    it('mypreferences set-locale throws when --locale is missing', async () => {
+      await expect(executeJiraCommand(cmd('mypreferences', 'set-locale'), GLOBALS)).rejects.toThrow(
+        '--locale',
+      );
+    });
+
+    it('throws on unknown mypreferences action', async () => {
+      await expect(
+        executeJiraCommand(cmd('mypreferences', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown mypreferences action');
     });
   });
 

@@ -98,6 +98,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'server-info': 'executeServerInfo',
   instance: 'executeInstance',
   mypermissions: 'executeMyPermissions',
+  mypreferences: 'executeMyPreferences',
   auditing: 'executeAuditing',
   events: 'executeEvents',
   changelog: 'executeChangelog',

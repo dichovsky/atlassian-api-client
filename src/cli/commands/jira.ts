@@ -97,6 +97,8 @@ export async function executeJiraCommand(
       return executeInstance(client, cmd);
     case 'mypermissions':
       return executeMyPermissions(client, cmd);
+    case 'mypreferences':
+      return executeMyPreferences(client, cmd);
     case 'auditing':
       return executeAuditing(client, cmd);
     case 'events':
@@ -2036,6 +2038,35 @@ async function executeMyPermissions(client: JiraClient, cmd: ParsedCommand): Pro
       });
     default:
       throw new Error(`Unknown mypermissions action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeMyPreferences(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.myPreferences.getPreference(requireOpt(opts['key'], '--key'));
+    case 'set': {
+      const key = requireOpt(opts['key'], '--key');
+      const value = requireOpt(opts['value'], '--value');
+      await client.myPreferences.setPreference(key, value);
+      return;
+    }
+    case 'delete':
+      await client.myPreferences.removePreference(requireOpt(opts['key'], '--key'));
+      return;
+    case 'get-locale':
+      return client.myPreferences.getLocale();
+    case 'set-locale': {
+      const locale = requireOpt(opts['locale'], '--locale');
+      await client.myPreferences.setLocale(locale);
+      return;
+    }
+    default:
+      throw new Error(
+        `Unknown mypreferences action: ${cmd.action}. Actions: get, set, delete, get-locale, set-locale`,
+      );
   }
 }
 
