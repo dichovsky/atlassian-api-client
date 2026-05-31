@@ -398,6 +398,9 @@ const GLOBAL_OPTIONS = {
   // fields key option options (B433-B440)
   'field-key': { type: 'string' as const },
   'override-screen-security': { type: 'boolean' as const },
+  // webhooks options (B833, B834, B836)
+  webhooks: { type: 'string' as const },
+  'webhook-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

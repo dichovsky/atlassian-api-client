@@ -1394,18 +1394,38 @@ atlas jira backlog move --issues PROJ-3,PROJ-4
 
 ## `webhooks`
 
-| Action        | Positionals | Required flags | Optional flags             |
-| ------------- | ----------- | -------------- | -------------------------- |
-| `list-failed` | —           | —              | `--max-results`, `--after` |
+| Action        | Positionals | Required flags        | Optional flags                |
+| ------------- | ----------- | --------------------- | ----------------------------- |
+| `list`        | —           | —                     | `--start-at`, `--max-results` |
+| `register`    | —           | `--url`, `--webhooks` | —                             |
+| `refresh`     | —           | `--webhook-ids`       | —                             |
+| `list-failed` | —           | —                     | `--max-results`, `--after`    |
 
 **Notes:**
 
+- `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
+- `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
+- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry by 30 days.
 - `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
 - `--max-results` caps the number of results in a single page.
 - The SDK exposes `listFailed()` (single page) and `listAllFailed()` (async generator) on `client.webhooks`.
 
 ```sh
+# List registered webhooks (paginated)
+atlas jira webhooks list
+
+# List with pagination
+atlas jira webhooks list --start-at 0 --max-results 50
+
+# Register a new webhook
+atlas jira webhooks register \
+  --url 'https://example.com/hook' \
+  --webhooks '[{"jqlFilter":"project=MYPROJ","events":["jira:issue_created","jira:issue_updated"]}]'
+
+# Refresh (extend) webhook expiry
+atlas jira webhooks refresh --webhook-ids '[10000,10001]'
+
 # List failed webhook deliveries (default page size)
 atlas jira webhooks list-failed
 

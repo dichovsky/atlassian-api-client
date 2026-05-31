@@ -12778,6 +12778,113 @@ describe('executeJiraCommand', () => {
   // ── webhooks ──────────────────────────────────────────────────────────────
 
   describe('webhooks resource', () => {
+    it('list calls client.webhooks.list() with no params', async () => {
+      // Arrange
+      const page = {
+        values: [{ id: 1, jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] }],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+        isLast: true,
+      };
+      jiraWebhooksMock.list.mockResolvedValue(page);
+
+      // Act
+      const result = await executeJiraCommand(cmd('webhooks', 'list'), GLOBALS);
+
+      // Assert
+      expect(jiraWebhooksMock.list).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('list passes --start-at and --max-results', async () => {
+      // Arrange
+      jiraWebhooksMock.list.mockResolvedValue({
+        values: [],
+        startAt: 10,
+        maxResults: 10,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'list', [], { 'start-at': '10', 'max-results': '10' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.list).toHaveBeenCalledWith({ startAt: 10, maxResults: 10 });
+    });
+
+    it('register calls client.webhooks.register() with url and webhooks', async () => {
+      // Arrange
+      const result = { webhookRegistrationResult: [{ createdWebhookId: 10000 }] };
+      jiraWebhooksMock.register.mockResolvedValue(result);
+      const webhooksJson = JSON.stringify([
+        { jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] },
+      ]);
+
+      // Act
+      const output = await executeJiraCommand(
+        cmd('webhooks', 'register', [], {
+          url: 'https://example.com/hook',
+          webhooks: webhooksJson,
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.register).toHaveBeenCalledWith({
+        url: 'https://example.com/hook',
+        webhooks: [{ jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] }],
+      });
+      expect(output).toEqual(result);
+    });
+
+    it('register throws when --url is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('webhooks', 'register', [], {
+            webhooks: '[{"jqlFilter":"project=X","events":["jira:issue_created"]}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--url is required');
+    });
+
+    it('register throws when --webhooks is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('webhooks', 'register', [], { url: 'https://example.com/hook' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--webhooks is required');
+    });
+
+    it('refresh calls client.webhooks.refresh() with webhook IDs', async () => {
+      // Arrange
+      jiraWebhooksMock.refresh.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'refresh', [], { 'webhook-ids': '[10000, 10001]' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.refresh).toHaveBeenCalledWith([10000, 10001]);
+    });
+
+    it('refresh throws when --webhook-ids is missing', async () => {
+      await expect(executeJiraCommand(cmd('webhooks', 'refresh', []), GLOBALS)).rejects.toThrow(
+        '--webhook-ids is required',
+      );
+    });
+
     it('list-failed calls client.webhooks.listFailed() and returns result', async () => {
       // Arrange
       const page = {

@@ -2278,3 +2278,12 @@
 - [x] 🔴 🧩 API: B922 Jira: PUT /rest/api/3/fieldconfigurationscheme/project (deprecated — superseded by config.ts field-schemes)
   - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
   - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🟡 🖥️ API: B833 Jira: CLI for GET /rest/api/3/webhook
+  - **Impl:** `atlas jira webhooks list [--start-at N] [--max-results N]` — dispatches to existing `client.webhooks.list()`. Reused global `--start-at` and `--max-results` flags. Added new `webhooks` and `webhook-ids` flags to `GLOBAL_OPTIONS` in router.ts.
+  - **Rat:** Exposes paginated registered-webhook listing via CLI surface; resource method was already tested.
+- [x] 🟡 🖥️ API: B834 Jira: CLI for POST /rest/api/3/webhook
+  - **Impl:** `atlas jira webhooks register --url <url> --webhooks <JSON array>` — dispatches to existing `client.webhooks.register()`. `--webhooks` is a JSON array of `WebhookRegistration` objects parsed via `parseJsonArrayFlag`. Reused global `--url` flag.
+  - **Rat:** Exposes dynamic webhook registration via CLI; resource method was already tested.
+- [x] 🟡 🖥️ API: B836 Jira: CLI for PUT /rest/api/3/webhook/refresh
+  - **Impl:** `atlas jira webhooks refresh --webhook-ids <JSON array>` — dispatches to existing `client.webhooks.refresh()`. `--webhook-ids` is a JSON array of numeric IDs parsed via `parseJsonArrayFlag`. Added new `webhook-ids` flag to `GLOBAL_OPTIONS`.
+  - **Rat:** Exposes webhook refresh (extend expiry) via CLI; resource method was already tested.
