@@ -2380,3 +2380,18 @@
 - [x] 🔴 🧩 Jira: B925 expose PUT /rest/api/3/mypreferences/locale
   - **Impl:** `MyPreferencesResource.setLocale(locale)` — body `Locale {locale}`. CLI: `atlas jira mypreferences set-locale --locale <l>`. Returns void (204). Annotated `@deprecated`.
   - **Rat:** Endpoint is `deprecated:true` in spec (removal effective 2026-02-16); implemented + annotated per the individually-deprecated-in-active-family precedent. `--locale` reused.
+- [x] 🔴 🧩 Jira: B653 expose POST /rest/api/3/project-template (createProjectWithCustomTemplate)
+  - **Impl:** `ProjectTemplateResource.createWithCustomTemplate(data)` — body: `{details?, template?}`. `details` scalar fields exposed as typed flags; `template` (deep 11-capability object) exposed via `--template` JSON flag. Returns `Promise<void>` (303 async, no JSON body per spec). CLI: `atlas jira project-template create --template '{}' [scalar flags]`.
+  - **Rat:** Spec-verified: 303 response has `schema: {}` (empty schema), indicating no typed body — typed as `void`. Template capability object has 11 nested payload refs; typed as `Record<string,unknown>` passthrough to avoid ~100 rarely-used intermediate types.
+- [x] 🔴 🧩 Jira: B654 expose PUT /rest/api/3/project-template/edit-template
+  - **Impl:** `ProjectTemplateResource.editTemplate(data)` — body `{templateKey?, templateName?, templateDescription?, templateGenerationOptions?}`. Returns `Promise<void>` (200 empty schema). CLI: scalar flags; requires at least one.
+  - **Rat:** Spec-verified: 200 response has `schema: {}` — typed as `void`.
+- [x] 🔴 🧩 Jira: B655 expose GET /rest/api/3/project-template/live-template
+  - **Impl:** `ProjectTemplateResource.getLiveTemplate(params?)` — query: `projectId?`, `templateKey?`. Returns `Promise<ProjectTemplateModel>`.
+  - **Rat:** Spec-verified: 200 returns `$ref: ProjectTemplateModel`.
+- [x] 🔴 🧩 Jira: B656 expose DELETE /rest/api/3/project-template/remove-template
+  - **Impl:** `ProjectTemplateResource.removeTemplate(templateKey)` — `templateKey` required query param. Returns `Promise<void>` (200 empty schema).
+  - **Rat:** Spec-verified: `required: true` on `templateKey` query param; 200 response `schema: {}` — typed as `void`.
+- [x] 🔴 🧩 Jira: B657 expose POST /rest/api/3/project-template/save-template
+  - **Impl:** `ProjectTemplateResource.saveTemplate(data)` — body `{templateName?, templateDescription?, templateFromProjectRequest?}`. Returns `Promise<SaveTemplateResponse>`. CLI: scalar flags; requires at least one.
+  - **Rat:** Spec-verified: 200 returns `$ref: SaveTemplateResponse` with `{projectTemplateKey?: ProjectTemplateKey}`.
