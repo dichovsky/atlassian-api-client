@@ -412,6 +412,9 @@ const GLOBAL_OPTIONS = {
   queries: { type: 'string' as const },
   'query-strings': { type: 'string' as const },
   validation: { type: 'string' as const },
+  // webhooks options (B833, B834, B836)
+  webhooks: { type: 'string' as const },
+  'webhook-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

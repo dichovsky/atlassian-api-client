@@ -42,6 +42,7 @@ import type {
   UpdateWorklogData,
   MultiIssueProperties,
 } from '../../jira/resources/issues.js';
+import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -1816,6 +1817,26 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
   const opts = cmd.options;
 
   switch (cmd.action) {
+    case 'list': {
+      return client.webhooks.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    case 'register': {
+      const url = asString(opts['url']);
+      if (url === undefined) throw new Error('--url is required');
+      const rawWebhooks = asString(opts['webhooks']);
+      if (rawWebhooks === undefined) throw new Error('--webhooks is required');
+      const webhooks = parseJsonArrayFlag(rawWebhooks, '--webhooks') as WebhookRegistration[];
+      return client.webhooks.register({ url, webhooks });
+    }
+    case 'refresh': {
+      const rawIds = asString(opts['webhook-ids']);
+      if (rawIds === undefined) throw new Error('--webhook-ids is required');
+      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
+      return client.webhooks.refresh(webhookIds);
+    }
     case 'list-failed': {
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const afterStr = asString(opts['after']);
@@ -1826,7 +1847,9 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
       });
     }
     default:
-      throw new Error(`Unknown webhooks action: ${cmd.action}. Actions: list-failed`);
+      throw new Error(
+        `Unknown webhooks action: ${cmd.action}. Actions: list, register, refresh, list-failed`,
+      );
   }
 }
 

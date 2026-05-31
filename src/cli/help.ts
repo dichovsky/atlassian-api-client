@@ -227,7 +227,7 @@ RESOURCES:
   announcement-banner    get, update
   application-role       list, get
   data-policy            get-workspace, list-projects
-  webhooks               list-failed
+  webhooks               list, register, refresh, list-failed
   server-info            get
   instance               get-license
   mypermissions          get
