@@ -32,7 +32,7 @@ npm install atlassian-api-client
 
 ## Use with coding agents
 
-A Claude Code skill named **`atlassian-api-client-cli`** ships inside this package and teaches coding agents how to drive the `atlas` CLI safely (env-only auth, first-try gotchas, JQL quoting, pagination, output formats).
+A Claude Code-compatible skill named **`atlassian-api-client-cli`** ships inside this package and teaches coding agents how to drive the `atlas` CLI safely (env-only auth, first-try gotchas, JQL quoting, pagination, output formats).
 
 ```bash
 # User-wide install, into ~/.claude/skills/atlassian-api-client-cli

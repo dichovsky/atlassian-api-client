@@ -84,7 +84,7 @@ describe('Reference content sanity checks', () => {
   it('includes payload minimization guidance', () => {
     expect(PAYLOAD_RULES_REF).toContain('--format minimal');
     expect(PAYLOAD_RULES_REF).toContain('Use strict filters');
-    expect(PAYLOAD_RULES_REF).toContain('YAML');
+    expect(PAYLOAD_RULES_REF).toContain('spec/jira-platform-v3.json');
   });
 
   it('documents the workflowscheme live API (B855-B886)', () => {

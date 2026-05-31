@@ -20,7 +20,7 @@
 
 - Truncate long text in summaries; keep source ID for retrieval.
 - Avoid repeating unchanged context between steps.
-- YAML is the source-of-truth format for OpenAPI specs (NOT a CLI output flag). All CLI flags use JSON values where structured input is needed (e.g. `--fields '{"description":...}'`).
+- OpenAPI specs are implementation references, not CLI output formats. The pinned Jira snapshot in this package is JSON (`spec/jira-platform-v3.json`). CLI flags use JSON values where structured input is needed (e.g. `--fields '{"description":...}'`).
 
 ## First-try gotchas (read before constructing a command)
 
