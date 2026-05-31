@@ -2338,3 +2338,15 @@
 - [x] 🟡 🖥️ Jira: B596 add CLI + skill for POST /rest/api/3/jql/sanitize
   - **Impl:** Action `sanitize` calls `client.jql.sanitize({queries})`. `--queries` is JSON array of `{query, accountId?}` objects.
   - **Rat:** Existing method had no CLI; part of jql group batch.
+- [x] 🔴 🧩 Jira: B762 expose GET /rest/api/3/screenscheme
+  - **Impl:** `ScreenSchemeResource.list(params?)` + `listAll(params?)` — offset-paginated list. Query: `id[]` (joined CSV), `startAt`, `maxResults`, `expand`, `queryString`, `orderBy` (enum: name/-name/+name/id/-id/+id). Returns `OffsetPaginatedResponse<ScreenScheme>`. CLI: `atlas jira screenscheme list / list-all`.
+  - **Rat:** Spec-verified: `PageBeanScreenScheme` response shape; `ScreenScheme` has `id`(number), `name`, `description`, `screens`(ScreenTypes), `issueTypeScreenSchemes`(optional).
+- [x] 🔴 🧩 Jira: B763 expose POST /rest/api/3/screenscheme
+  - **Impl:** `ScreenSchemeResource.create(data)` — body: `{name(required), description?, screens(ScreenTypes, required)}`. `ScreenTypes.default` is required; `view/edit/create` optional. Returns `ScreenSchemeId { id: number }`. CLI: `atlas jira screenscheme create --name X --default-screen N`.
+  - **Rat:** Spec-verified: `ScreenSchemeDetails` body; 201 returns `ScreenSchemeId`. CLI validates missing `--name` and `--default-screen`.
+- [x] 🔴 🧩 Jira: B764 expose DELETE /rest/api/3/screenscheme/{screenSchemeId}
+  - **Impl:** `ScreenSchemeResource.delete(screenSchemeId)` — path param (string, positional). 204 → void. CLI: `atlas jira screenscheme delete <screenSchemeId>`.
+  - **Rat:** Spec-verified: DELETE 204 No Content; `screenSchemeId` is string path param.
+- [x] 🔴 🧩 Jira: B765 expose PUT /rest/api/3/screenscheme/{screenSchemeId}
+  - **Impl:** `ScreenSchemeResource.update(screenSchemeId, data)` — path param positional; body `UpdateScreenSchemeDetails` (all optional: `name?`, `description?`, `screens?`(UpdateScreenTypes)). 204 → void. CLI: `atlas jira screenscheme update <screenSchemeId> --name X`. Validates ≥1 field flag; `--default-screen` is optional on update (spec: `UpdateScreenTypes` all fields optional strings).
+  - **Rat:** Spec-verified: `UpdateScreenSchemeDetails` uses `UpdateScreenTypes` (string IDs, all optional) not `ScreenTypes`; 204 No Content.

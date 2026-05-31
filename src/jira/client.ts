@@ -71,6 +71,7 @@ import { VersionResource } from './resources/version.js';
 import { ConfigResource } from './resources/config.js';
 import { IssueSecuritySchemesResource } from './resources/issuesecurityschemes.js';
 import { ScreensResource } from './resources/screens.js';
+import { ScreenSchemeResource } from './resources/screenscheme.js';
 import { PlansResource } from './resources/plans.js';
 import { WorkflowSchemeResource } from './resources/workflowscheme.js';
 
@@ -213,6 +214,8 @@ export class JiraClient {
   readonly issueSecuritySchemes: IssueSecuritySchemesResource;
   /** Jira screens resource (B746-B761). */
   readonly screens: ScreensResource;
+  /** Jira screen schemes resource (B762-B765). */
+  readonly screenScheme: ScreenSchemeResource;
   /** Jira Advanced Roadmaps plans resource (B625-B640). */
   readonly plans: PlansResource;
   /** Jira workflow scheme resource — live endpoints (B855-B886, draft+bulk in sibling PR). */
@@ -314,6 +317,7 @@ export class JiraClient {
     this.config = new ConfigResource(transport, baseUrl);
     this.issueSecuritySchemes = new IssueSecuritySchemesResource(transport, baseUrl);
     this.screens = new ScreensResource(transport, baseUrl);
+    this.screenScheme = new ScreenSchemeResource(transport, baseUrl);
     this.plans = new PlansResource(transport, baseUrl);
     this.workflowScheme = new WorkflowSchemeResource(transport, baseUrl);
   }

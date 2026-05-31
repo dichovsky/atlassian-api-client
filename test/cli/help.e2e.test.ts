@@ -141,6 +141,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   config: 'executeConfig',
   issuesecurityschemes: 'executeIssueSecuritySchemes',
   screens: 'executeScreens',
+  screenscheme: 'executeScreenScheme',
   plans: 'executePlans',
   workflowscheme: 'executeWorkflowScheme',
   fields: 'executeFields',

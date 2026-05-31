@@ -185,6 +185,8 @@ export async function executeJiraCommand(
       return executeIssueSecuritySchemes(client, cmd);
     case 'screens':
       return executeScreens(client, cmd);
+    case 'screenscheme':
+      return executeScreenScheme(client, cmd);
     case 'plans':
       return executePlans(client, cmd);
     case 'workflowscheme':
@@ -5446,6 +5448,133 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
         `Unknown screens action: ${cmd.action}. Actions: ${SCREENS_ACTIONS.join(', ')}`,
       );
   }
+}
+
+// ─── Screen Schemes (B762-B765) ────────────────────────────────────────────
+
+const SCREENSCHEME_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];
+
+async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const ids = parseIntCsv(opts['ids'], '--ids');
+      const orderBy = asScreenSchemeOrderBy(opts['order-by']);
+      return client.screenScheme.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+        ...(opts['query-string'] !== undefined && {
+          queryString: asString(opts['query-string']),
+        }),
+        ...(orderBy !== undefined && { orderBy }),
+      });
+    }
+    case 'list-all': {
+      const ids = parseIntCsv(opts['ids'], '--ids');
+      const orderBy = asScreenSchemeOrderBy(opts['order-by']);
+      const results: unknown[] = [];
+      for await (const item of client.screenScheme.listAll({
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+        ...(opts['query-string'] !== undefined && {
+          queryString: asString(opts['query-string']),
+        }),
+        ...(orderBy !== undefined && { orderBy }),
+      })) {
+        results.push(item);
+      }
+      return results;
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const defaultScreen = requireIntOpt(opts['default-screen'], '--default-screen');
+      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
+      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
+      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const description = asString(opts['description']);
+      return client.screenScheme.create({
+        name,
+        ...(description !== undefined && { description }),
+        screens: {
+          default: defaultScreen,
+          ...(viewScreen !== undefined && { view: viewScreen }),
+          ...(editScreen !== undefined && { edit: editScreen }),
+          ...(createScreen !== undefined && { create: createScreen }),
+        },
+      });
+    }
+    case 'update': {
+      const screenSchemeId = requireArg(cmd.positionalArgs[0], 'screenSchemeId');
+      const name = asString(opts['name']);
+      const description = asString(opts['description']);
+      const defaultScreen = asNonNegativeInt(opts['default-screen'], '--default-screen');
+      const viewScreen = asNonNegativeInt(opts['view-screen'], '--view-screen');
+      const editScreen = asNonNegativeInt(opts['edit-screen'], '--edit-screen');
+      const createScreen = asNonNegativeInt(opts['create-screen'], '--create-screen');
+      const hasScreens =
+        defaultScreen !== undefined ||
+        viewScreen !== undefined ||
+        editScreen !== undefined ||
+        createScreen !== undefined;
+      if (name === undefined && description === undefined && !hasScreens) {
+        throw new Error(
+          'update requires at least one of: --name, --description, --default-screen, --view-screen, --edit-screen, --create-screen',
+        );
+      }
+      // Spec: UpdateScreenTypes uses string IDs (not integers like create).
+      // --default-screen is optional on update; a partial screens object is valid.
+      // Note: null removal (to disassociate a screen) is not yet supported here.
+      let screens: { default?: string; view?: string; edit?: string; create?: string } | undefined;
+      if (hasScreens) {
+        screens = {
+          ...(defaultScreen !== undefined && { default: String(defaultScreen) }),
+          ...(viewScreen !== undefined && { view: String(viewScreen) }),
+          ...(editScreen !== undefined && { edit: String(editScreen) }),
+          ...(createScreen !== undefined && { create: String(createScreen) }),
+        };
+      }
+      await client.screenScheme.update(screenSchemeId, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(screens !== undefined && { screens }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const screenSchemeId = requireArg(cmd.positionalArgs[0], 'screenSchemeId');
+      await client.screenScheme.delete(screenSchemeId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown screenscheme action: ${cmd.action}. Actions: ${SCREENSCHEME_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+function asScreenSchemeOrderBy(
+  value: string | boolean | undefined,
+): 'name' | '-name' | '+name' | 'id' | '-id' | '+id' | undefined {
+  const s = asString(value);
+  if (s === undefined) return undefined;
+  if (s === 'name' || s === '-name' || s === '+name' || s === 'id' || s === '-id' || s === '+id') {
+    return s;
+  }
+  throw new Error(`--order-by must be one of: name, -name, +name, id, -id, +id. Got: ${s}`);
+}
+
+function requireIntOpt(value: string | boolean | undefined, name: string): number {
+  const s = asString(value);
+  if (s === undefined) throw new Error(`${name} is required`);
+  const n = Number(s);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`${name} must be a non-negative integer, got: ${s}`);
+  }
+  return n;
 }
 
 // ─── Plans (B625-B640) ─────────────────────────────────────────────────────
