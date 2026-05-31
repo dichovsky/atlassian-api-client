@@ -395,6 +395,9 @@ const GLOBAL_OPTIONS = {
   'default-values-json': { type: 'string' as const },
   // fields context project mapping options (B427-B428, B430-B431)
   'mappings-json': { type: 'string' as const },
+  // fields key option options (B433-B440)
+  'field-key': { type: 'string' as const },
+  'override-screen-security': { type: 'boolean' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

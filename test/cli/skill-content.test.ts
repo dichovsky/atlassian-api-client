@@ -137,6 +137,26 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('context-mapping');
     expect(JIRA_REF).toContain('context-project-mapping');
   });
+
+  it('documents field key option management API (B433-B440)', () => {
+    expect(JIRA_REF).toContain('B433');
+    expect(JIRA_REF).toContain('B434');
+    expect(JIRA_REF).toContain('B435');
+    expect(JIRA_REF).toContain('B436');
+    expect(JIRA_REF).toContain('B437');
+    expect(JIRA_REF).toContain('B438');
+    expect(JIRA_REF).toContain('B439');
+    expect(JIRA_REF).toContain('B440');
+    expect(JIRA_REF).toContain('### Field key option management (Connect-app-managed)');
+    expect(JIRA_REF).toContain('field-option-list');
+    expect(JIRA_REF).toContain('field-option-create');
+    expect(JIRA_REF).toContain('field-option-delete');
+    expect(JIRA_REF).toContain('field-option-get');
+    expect(JIRA_REF).toContain('field-option-update');
+    expect(JIRA_REF).toContain('field-option-replace-issues');
+    expect(JIRA_REF).toContain('field-option-suggestions-edit');
+    expect(JIRA_REF).toContain('field-option-suggestions-search');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {

@@ -1040,6 +1040,14 @@ const jiraFieldsMock = {
   removeContextProjects: vi.fn(),
   getContextMappings: vi.fn(),
   listContextProjectMappings: vi.fn(),
+  listFieldOptions: vi.fn(),
+  createFieldOption: vi.fn(),
+  deleteFieldOption: vi.fn(),
+  getFieldOption: vi.fn(),
+  updateFieldOption: vi.fn(),
+  replaceFieldOptionOnIssues: vi.fn(),
+  listFieldOptionSuggestionsEdit: vi.fn(),
+  listFieldOptionSuggestionsSearch: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21991,6 +21999,263 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('fields', 'context-project-mapping', [], {}), GLOBALS),
       ).rejects.toThrow('--field-id');
+    });
+
+    // ── field-option-list (B433) ──────────────────────────────────────────────
+
+    it('field-option-list calls listFieldOptions and returns page', async () => {
+      const mockPage = { isLast: true, maxResults: 50, startAt: 0, total: 1, values: [{ id: 1, value: 'Team 1' }] };
+      jiraFieldsMock.listFieldOptions.mockResolvedValue(mockPage);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-list', [], {
+          'field-key': 'example-add-on__team-field',
+          'start-at': '0',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listFieldOptions).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        { startAt: 0, maxResults: 50 },
+      );
+      expect(result).toBe(mockPage);
+    });
+
+    it('field-option-list throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-list', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-key');
+    });
+
+    // ── field-option-create (B434) ────────────────────────────────────────────
+
+    it('field-option-create calls createFieldOption and returns created option', async () => {
+      const created = { id: 1, value: 'Team 1' };
+      jiraFieldsMock.createFieldOption.mockResolvedValue(created);
+      const body = JSON.stringify({ value: 'Team 1' });
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-create', [], {
+          'field-key': 'example-add-on__team-field',
+          body,
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.createFieldOption).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        { value: 'Team 1' },
+      );
+      expect(result).toBe(created);
+    });
+
+    it('field-option-create throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-create', [], { body: '{"value":"x"}' }), GLOBALS),
+      ).rejects.toThrow('--field-key');
+    });
+
+    it('field-option-create throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-create', [], { 'field-key': 'k' }), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── field-option-delete (B435) ────────────────────────────────────────────
+
+    it('field-option-delete calls deleteFieldOption and returns deleted:true', async () => {
+      jiraFieldsMock.deleteFieldOption.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-delete', [], {
+          'field-key': 'example-add-on__team-field',
+          'option-id': '1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.deleteFieldOption).toHaveBeenCalledWith('example-add-on__team-field', 1);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('field-option-delete throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-delete', [], { 'option-id': '1' }), GLOBALS),
+      ).rejects.toThrow('--field-key');
+    });
+
+    // ── field-option-get (B436) ───────────────────────────────────────────────
+
+    it('field-option-get calls getFieldOption and returns option', async () => {
+      const option = { id: 1, value: 'Team 1' };
+      jiraFieldsMock.getFieldOption.mockResolvedValue(option);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-get', [], {
+          'field-key': 'example-add-on__team-field',
+          'option-id': '1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.getFieldOption).toHaveBeenCalledWith('example-add-on__team-field', 1);
+      expect(result).toBe(option);
+    });
+
+    it('field-option-get throws when --option-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-get', [], { 'field-key': 'k' }), GLOBALS),
+      ).rejects.toThrow('--option-id');
+    });
+
+    // ── field-option-update (B437) ────────────────────────────────────────────
+
+    it('field-option-update calls updateFieldOption and returns updated option', async () => {
+      const updated = { id: 1, value: 'Team 1 Updated' };
+      jiraFieldsMock.updateFieldOption.mockResolvedValue(updated);
+      const body = JSON.stringify({ id: 1, value: 'Team 1 Updated' });
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-update', [], {
+          'field-key': 'example-add-on__team-field',
+          'option-id': '1',
+          body,
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.updateFieldOption).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        1,
+        { id: 1, value: 'Team 1 Updated' },
+      );
+      expect(result).toBe(updated);
+    });
+
+    it('field-option-update throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'field-option-update', [], { 'field-key': 'k', 'option-id': '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── field-option-replace-issues (B438) ────────────────────────────────────
+
+    it('field-option-replace-issues calls replaceFieldOptionOnIssues with all params', async () => {
+      const taskResult = { id: '1', self: 'url', status: 'COMPLETE', progress: 100, elapsedRuntime: 5, lastUpdate: 1, submitted: 1, submittedBy: 1 };
+      jiraFieldsMock.replaceFieldOptionOnIssues.mockResolvedValue(taskResult);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-replace-issues', [], {
+          'field-key': 'example-add-on__team-field',
+          'option-id': '1',
+          'replace-with': '3',
+          jql: 'project=PROJ',
+          'override-screen-security': 'true',
+          'override-editable-flag': 'false',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.replaceFieldOptionOnIssues).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        1,
+        { replaceWith: 3, jql: 'project=PROJ', overrideScreenSecurity: true, overrideEditableFlag: false },
+      );
+      expect(result).toBe(taskResult);
+    });
+
+    it('field-option-replace-issues calls with empty params when none provided', async () => {
+      const taskResult = { id: '2', self: 'url', status: 'RUNNING', progress: 0, elapsedRuntime: 0, lastUpdate: 1, submitted: 1, submittedBy: 1 };
+      jiraFieldsMock.replaceFieldOptionOnIssues.mockResolvedValue(taskResult);
+      await executeJiraCommand(
+        cmd('fields', 'field-option-replace-issues', [], {
+          'field-key': 'my-field',
+          'option-id': '5',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.replaceFieldOptionOnIssues).toHaveBeenCalledWith(
+        'my-field',
+        5,
+        {},
+      );
+    });
+
+    it('field-option-replace-issues throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-replace-issues', [], { 'option-id': '1' }), GLOBALS),
+      ).rejects.toThrow('--field-key');
+    });
+
+    // ── field-option-suggestions-edit (B439) ──────────────────────────────────
+
+    it('field-option-suggestions-edit calls listFieldOptionSuggestionsEdit with all params', async () => {
+      const mockPage = { isLast: true, maxResults: 25, startAt: 10, total: 0, values: [] };
+      jiraFieldsMock.listFieldOptionSuggestionsEdit.mockResolvedValue(mockPage);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-suggestions-edit', [], {
+          'field-key': 'example-add-on__team-field',
+          'start-at': '10',
+          'max-results': '25',
+          'project-id': '10001',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listFieldOptionSuggestionsEdit).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        { startAt: 10, maxResults: 25, projectId: 10001 },
+      );
+      expect(result).toBe(mockPage);
+    });
+
+    it('field-option-suggestions-edit calls with empty params when none provided', async () => {
+      const mockPage = { isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listFieldOptionSuggestionsEdit.mockResolvedValue(mockPage);
+      await executeJiraCommand(
+        cmd('fields', 'field-option-suggestions-edit', [], {
+          'field-key': 'my-field',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listFieldOptionSuggestionsEdit).toHaveBeenCalledWith('my-field', {});
+    });
+
+    it('field-option-suggestions-edit throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-suggestions-edit', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-key');
+    });
+
+    // ── field-option-suggestions-search (B440) ────────────────────────────────
+
+    it('field-option-suggestions-search calls listFieldOptionSuggestionsSearch with all params', async () => {
+      const mockPage = { isLast: false, maxResults: 10, startAt: 0, total: 5, values: [] };
+      jiraFieldsMock.listFieldOptionSuggestionsSearch.mockResolvedValue(mockPage);
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-option-suggestions-search', [], {
+          'field-key': 'example-add-on__team-field',
+          'start-at': '0',
+          'max-results': '10',
+          'project-id': '10005',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listFieldOptionSuggestionsSearch).toHaveBeenCalledWith(
+        'example-add-on__team-field',
+        { startAt: 0, maxResults: 10, projectId: 10005 },
+      );
+      expect(result).toBe(mockPage);
+    });
+
+    it('field-option-suggestions-search calls with empty params when none provided', async () => {
+      const mockPage = { isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listFieldOptionSuggestionsSearch.mockResolvedValue(mockPage);
+      await executeJiraCommand(
+        cmd('fields', 'field-option-suggestions-search', [], {
+          'field-key': 'my-field',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listFieldOptionSuggestionsSearch).toHaveBeenCalledWith('my-field', {});
+    });
+
+    it('field-option-suggestions-search throws when --field-key is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-option-suggestions-search', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-key');
     });
   });
 });

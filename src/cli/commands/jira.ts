@@ -31,6 +31,10 @@ import type {
   FieldContextDefaultValue,
   FieldContextProjectIdsBody,
   FieldContextMappingBulkBody,
+  CreateIssueFieldOptionData,
+  IssueFieldOption,
+  ReplaceIssueFieldOptionOnIssuesParams,
+  ListIssueFieldOptionSuggestionsParams,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -5939,6 +5943,14 @@ const FIELDS_ACTIONS = [
   'context-project-remove',
   'context-mapping',
   'context-project-mapping',
+  'field-option-list',
+  'field-option-create',
+  'field-option-delete',
+  'field-option-get',
+  'field-option-update',
+  'field-option-replace-issues',
+  'field-option-suggestions-edit',
+  'field-option-suggestions-search',
 ] as const;
 
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -6213,6 +6225,87 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
       });
+    }
+    case 'field-option-list': {
+      // B433: GET /rest/api/3/field/{fieldKey}/option
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      return client.fields.listFieldOptions(fieldKey, {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'field-option-create': {
+      // B434: POST /rest/api/3/field/{fieldKey}/option
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.createFieldOption(fieldKey, body as unknown as CreateIssueFieldOptionData);
+    }
+    case 'field-option-delete': {
+      // B435: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      await client.fields.deleteFieldOption(fieldKey, optionId);
+      return { deleted: true };
+    }
+    case 'field-option-get': {
+      // B436: GET /rest/api/3/field/{fieldKey}/option/{optionId}
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      return client.fields.getFieldOption(fieldKey, optionId);
+    }
+    case 'field-option-update': {
+      // B437: PUT /rest/api/3/field/{fieldKey}/option/{optionId}
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.fields.updateFieldOption(fieldKey, optionId, body as unknown as IssueFieldOption);
+    }
+    case 'field-option-replace-issues': {
+      // B438: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}/issue
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      const replaceWithStr = asString(opts['replace-with']);
+      const replaceWith = replaceWithStr !== undefined ? Number(replaceWithStr) : undefined;
+      const jql = asString(opts['jql']);
+      const overrideScreenSecurity = asBoolFlag(opts['override-screen-security']);
+      const overrideEditableFlag = asBoolFlag(opts['override-editable-flag']);
+      const params: ReplaceIssueFieldOptionOnIssuesParams = {
+        ...(replaceWith !== undefined && { replaceWith }),
+        ...(jql !== undefined && { jql }),
+        ...(overrideScreenSecurity !== undefined && { overrideScreenSecurity }),
+        ...(overrideEditableFlag !== undefined && { overrideEditableFlag }),
+      };
+      return client.fields.replaceFieldOptionOnIssues(fieldKey, optionId, params);
+    }
+    case 'field-option-suggestions-edit': {
+      // B439: GET /rest/api/3/field/{fieldKey}/option/suggestions/edit
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const projectIdStr = asString(opts['project-id']);
+      const projectId = projectIdStr !== undefined ? Number(projectIdStr) : undefined;
+      const params: ListIssueFieldOptionSuggestionsParams = {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(projectId !== undefined && { projectId }),
+      };
+      return client.fields.listFieldOptionSuggestionsEdit(fieldKey, params);
+    }
+    case 'field-option-suggestions-search': {
+      // B440: GET /rest/api/3/field/{fieldKey}/option/suggestions/search
+      const fieldKey = requireOpt(opts['field-key'], '--field-key');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const projectIdStr = asString(opts['project-id']);
+      const projectId = projectIdStr !== undefined ? Number(projectIdStr) : undefined;
+      const params: ListIssueFieldOptionSuggestionsParams = {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(projectId !== undefined && { projectId }),
+      };
+      return client.fields.listFieldOptionSuggestionsSearch(fieldKey, params);
     }
     default:
       throw new Error(

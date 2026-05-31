@@ -3317,3 +3317,36 @@ atlas jira fields context-project-mapping --field-id customfield_10001 --context
 # Body is a JSON array of {projectId, issueTypeId} objects
 atlas jira fields context-mapping --field-id customfield_10001 --mappings-json '[{"projectId":"10000","issueTypeId":"10000"},{"projectId":"10000","issueTypeId":"10001"}]'
 ```
+
+### Field key option management (Connect-app-managed)
+
+Manage options on Connect-app select list fields via `fieldKey` (B433–B440). These endpoints only work for options added by Connect apps, not options created in Jira directly.
+
+```sh
+# List all options for a field (B433) — GET paginated
+atlas jira fields field-option-list --field-key example-add-on__team-field
+atlas jira fields field-option-list --field-key example-add-on__team-field --start-at 0 --max-results 50
+
+# Create an option for a field (B434) — POST
+atlas jira fields field-option-create --field-key example-add-on__team-field --body '{"value":"Team 1","properties":{"members":42}}'
+
+# Delete an option from a field (B435) — DELETE 204
+atlas jira fields field-option-delete --field-key example-add-on__team-field --option-id 1
+
+# Get a single option (B436) — GET
+atlas jira fields field-option-get --field-key example-add-on__team-field --option-id 1
+
+# Update (or create) an option — id in body must match --option-id (B437) — PUT
+atlas jira fields field-option-update --field-key example-add-on__team-field --option-id 1 --body '{"id":1,"value":"Team 1 Updated"}'
+
+# Deselect an option from all matching issues (async task) — returns task progress (B438) — DELETE 303
+atlas jira fields field-option-replace-issues --field-key example-add-on__team-field --option-id 1 --replace-with 3 --jql 'project=PROJ'
+
+# Get selectable options for a field (edit suggestions) (B439) — GET paginated
+atlas jira fields field-option-suggestions-edit --field-key example-add-on__team-field
+atlas jira fields field-option-suggestions-edit --field-key example-add-on__team-field --project-id 10001 --start-at 0 --max-results 50
+
+# Get visible options for a field (search/view suggestions) (B440) — GET paginated
+atlas jira fields field-option-suggestions-search --field-key example-add-on__team-field
+atlas jira fields field-option-suggestions-search --field-key example-add-on__team-field --project-id 10001 --start-at 0 --max-results 50
+```
