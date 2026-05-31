@@ -6248,20 +6248,29 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'field-option-delete': {
       // B435: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
-      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
       await client.fields.deleteFieldOption(fieldKey, optionId);
       return { deleted: true };
     }
     case 'field-option-get': {
       // B436: GET /rest/api/3/field/{fieldKey}/option/{optionId}
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
-      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
       return client.fields.getFieldOption(fieldKey, optionId);
     }
     case 'field-option-update': {
       // B437: PUT /rest/api/3/field/{fieldKey}/option/{optionId}
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
-      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
       return client.fields.updateFieldOption(
         fieldKey,
@@ -6272,9 +6281,11 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'field-option-replace-issues': {
       // B438: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}/issue
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
-      const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
-      const replaceWithStr = asString(opts['replace-with']);
-      const replaceWith = replaceWithStr !== undefined ? Number(replaceWithStr) : undefined;
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
+      const replaceWith = asPositiveInt(opts['replace-with'], '--replace-with');
       const jql = asString(opts['jql']);
       const overrideScreenSecurity = asBoolFlag(opts['override-screen-security']);
       const overrideEditableFlag = asBoolFlag(opts['override-editable-flag']);
@@ -6292,7 +6303,8 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const projectIdStr = asString(opts['project-id']);
-      const projectId = projectIdStr !== undefined ? Number(projectIdStr) : undefined;
+      const projectId =
+        projectIdStr !== undefined ? parsePositiveIntArg(projectIdStr, '--project-id') : undefined;
       const params: ListIssueFieldOptionSuggestionsParams = {
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -6306,7 +6318,8 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const projectIdStr = asString(opts['project-id']);
-      const projectId = projectIdStr !== undefined ? Number(projectIdStr) : undefined;
+      const projectId =
+        projectIdStr !== undefined ? parsePositiveIntArg(projectIdStr, '--project-id') : undefined;
       const params: ListIssueFieldOptionSuggestionsParams = {
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),

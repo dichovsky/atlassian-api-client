@@ -524,14 +524,19 @@ export interface IssueFieldOptionScope {
   readonly projects?: readonly number[];
   /** Projects the option is available in (overrides global context). */
   readonly projects2?: readonly {
-    readonly id: number;
-    readonly attributes?: readonly string[];
+    /** The ID of the project the option's behavior applies to. */
+    readonly id?: number;
+    /** Behavior of the option in the project. */
+    readonly attributes?: readonly ('notSelectable' | 'defaultValue')[];
   }[];
   /**
    * If present (even as empty object), the option is available in all projects.
-   * Spec: GlobalScopeBean — no required properties.
+   * Spec: GlobalScopeBean.
    */
-  readonly global?: Record<string, unknown>;
+  readonly global?: {
+    /** Behavior of the option in the global context. */
+    readonly attributes?: readonly ('notSelectable' | 'defaultValue')[];
+  };
 }
 
 /** Configuration for a field-key option. Spec: IssueFieldOptionConfiguration. */
