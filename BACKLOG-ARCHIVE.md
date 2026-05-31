@@ -2278,3 +2278,33 @@
 - [x] 🔴 🧩 API: B922 Jira: PUT /rest/api/3/fieldconfigurationscheme/project (deprecated — superseded by config.ts field-schemes)
   - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
   - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🟡 🖥️ Jira: B587 add CLI + skill for GET /rest/api/3/jql/autocompletedata
+  - **Impl:** New `jql` CLI group, action `autocomplete-data` calls `client.jql.getAutocompleteData()`. Help row, skill reference, and tests added.
+  - **Rat:** Existing method had no CLI; part of jql group batch (B587-B596).
+- [x] 🔴 🧩 Jira: B588 expose POST /rest/api/3/jql/autocompletedata
+  - **Impl:** `JqlResource.getAutocompleteDataPost(filter?)` — body: `{projectIds?, includeCollapsedFields?}` per `SearchAutoCompleteFilter` schema. CLI: `atlas jira jql autocomplete-data-post --project-ids 10001 --include-collapsed-fields`.
+  - **Rat:** Spec-verified: POST shares the same path as GET but takes a `SearchAutoCompleteFilter` body to filter by project and include collapsed fields.
+- [x] 🟡 🖥️ Jira: B589 add CLI + skill for GET /rest/api/3/jql/autocompletedata/suggestions
+  - **Impl:** Action `autocomplete-suggestions` calls `client.jql.getFieldReferenceSuggestions(params)`. Required flag `--field-name`; optional `--field-value`, `--predicate-name`, `--predicate-value`.
+  - **Rat:** Existing method had no CLI; part of jql group batch.
+- [x] 🔴 🧩 Jira: B590 expose GET /rest/api/3/jql/function/computation
+  - **Impl:** `JqlResource.getPrecomputations(params?)` — query: `functionKey[]` (joined CSV), `startAt`, `maxResults`, `orderBy`. Returns `JqlPrecomputationsPage` (paginated `PageBean2JqlFunctionPrecomputationBean`). CLI: `atlas jira jql get-precomputations`.
+  - **Rat:** Spec-verified: `functionKey` is array param sent joined; response is PageBean2 shape with `values[]` of `JqlFunctionPrecomputationBean`.
+- [x] 🔴 🧩 Jira: B591 expose POST /rest/api/3/jql/function/computation
+  - **Impl:** `JqlResource.updatePrecomputations(data, params?)` — body: `{values: [{id, value?, error?}]}` per `JqlFunctionPrecomputationUpdateRequestBean`; query: `skipNotFoundPrecomputations?`. Returns `UpdatePrecomputationsResponse`. CLI: `atlas jira jql update-precomputations --values '[...]'`.
+  - **Rat:** Spec-verified: POST returns 200 with `JqlFunctionPrecomputationUpdateResponse` (not 204). `id` is required on each value item.
+- [x] 🔴 🧩 Jira: B592 expose POST /rest/api/3/jql/function/computation/search
+  - **Impl:** `JqlResource.getPrecomputationsById(data, params?)` — body: `{precomputationIDs?}` per `JqlFunctionPrecomputationGetByIdRequest`; query: `orderBy?`. Returns `GetPrecomputationsByIdResponse`. CLI: `atlas jira jql get-precomputations-by-id --precomputation-ids 'uuid1,uuid2'`.
+  - **Rat:** Spec-verified: distinct POST endpoint `/function/computation/search` for fetching by ID set; response is `JqlFunctionPrecomputationGetByIdResponse` with `precomputations[]` and `notFoundPrecomputationIDs[]`.
+- [x] 🔴 🧩 Jira: B593 expose POST /rest/api/3/jql/match
+  - **Impl:** `JqlResource.matchIssues(data)` — body: `{issueIds: number[], jqls: string[]}` per `IssuesAndJQLQueries`. Returns `IssueMatches`. CLI: `atlas jira jql match-issues --issue-ids 10001,10002 --jqls '["project = FOO"]'`.
+  - **Rat:** Spec-verified: `issueIds` is int64 array (parsed as numbers), `jqls` is JSON array of strings.
+- [x] 🟡 🖥️ Jira: B594 add CLI + skill for POST /rest/api/3/jql/parse
+  - **Impl:** Action `parse` calls `client.jql.parse({queries, validation?})`. `--queries` is JSON array; optional `--validation` (strict/warn/none).
+  - **Rat:** Existing method had no CLI; part of jql group batch.
+- [x] 🔴 🧩 Jira: B595 expose POST /rest/api/3/jql/pdcleaner
+  - **Impl:** `JqlResource.migrateQueries(data)` — body: `{queryStrings?}` per `JQLPersonalDataMigrationRequest`. Returns `ConvertedJqlQueries`. CLI: `atlas jira jql migrate-queries --query-strings '["assignee = mia"]'`.
+  - **Rat:** Spec-verified: endpoint is `/jql/pdcleaner` (personal data cleaner); converts username-style identifiers to account IDs. Named `migrateQueries` to match spec operationId `migrateQueries`.
+- [x] 🟡 🖥️ Jira: B596 add CLI + skill for POST /rest/api/3/jql/sanitize
+  - **Impl:** Action `sanitize` calls `client.jql.sanitize({queries})`. `--queries` is JSON array of `{query, accountId?}` objects.
+  - **Rat:** Existing method had no CLI; part of jql group batch.
