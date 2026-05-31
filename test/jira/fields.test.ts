@@ -1704,6 +1704,17 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
+    it('sends empty query when params has no set properties', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptions('my-field', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
     it('encodes fieldKey with special characters', async () => {
       // Arrange
       transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
@@ -1715,15 +1726,12 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option`);
     });
 
-    it.each(['.', '..', '%2e', '%2E%2E'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.listFieldOptions(fieldKey)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..', '%2e', '%2E%2E'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptions(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── createFieldOption (B434) ─────────────────────────────────────────────────
@@ -1813,15 +1821,12 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/99`);
     });
 
-    it.each(['.', '..', '%2e'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.deleteFieldOption(fieldKey, 1)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..', '%2e'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.deleteFieldOption(fieldKey, 1)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── getFieldOption (B436) ────────────────────────────────────────────────────
@@ -1859,15 +1864,12 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/5`);
     });
 
-    it.each(['.', '..'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.getFieldOption(fieldKey, 1)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.getFieldOption(fieldKey, 1)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── updateFieldOption (B437) ─────────────────────────────────────────────────
@@ -1902,15 +1904,12 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/3`);
     });
 
-    it.each(['.', '..'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.updateFieldOption(fieldKey, 1, { id: 1, value: 'x' })).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.updateFieldOption(fieldKey, 1, { id: 1, value: 'x' })).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── replaceFieldOptionOnIssues (B438) ────────────────────────────────────────
@@ -1933,11 +1932,10 @@ describe('FieldsResource', () => {
       transport.respondWith(taskResult);
 
       // Act
-      const result = await fields.replaceFieldOptionOnIssues(
-        'example-add-on__team-field',
-        1,
-        { replaceWith: 3, jql: 'project=PROJ' },
-      );
+      const result = await fields.replaceFieldOptionOnIssues('example-add-on__team-field', 1, {
+        replaceWith: 3,
+        jql: 'project=PROJ',
+      });
 
       // Assert
       expect(result).toEqual(taskResult);
@@ -2031,9 +2029,7 @@ describe('FieldsResource', () => {
       await fields.replaceFieldOptionOnIssues('../admin', 1);
 
       // Assert
-      expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/field/..%2Fadmin/option/1/issue`,
-      );
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/1/issue`);
     });
   });
 
@@ -2092,6 +2088,17 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
+    it('sends empty query when params has no set properties', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsEdit('my-field', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
     it('encodes fieldKey with special characters', async () => {
       // Arrange
       transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
@@ -2105,15 +2112,12 @@ describe('FieldsResource', () => {
       );
     });
 
-    it.each(['.', '..'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.listFieldOptionSuggestionsEdit(fieldKey)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptionSuggestionsEdit(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 
   // ── listFieldOptionSuggestionsSearch (B440) ───────────────────────────────────
@@ -2195,14 +2199,11 @@ describe('FieldsResource', () => {
       );
     });
 
-    it.each(['.', '..'])(
-      'rejects dot-segment fieldKey: %s',
-      async (fieldKey) => {
-        await expect(fields.listFieldOptionSuggestionsSearch(fieldKey)).rejects.toThrow(
-          'path parameter must not be "." or ".."',
-        );
-        expect(transport.calls).toHaveLength(0);
-      },
-    );
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptionSuggestionsSearch(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
   });
 });

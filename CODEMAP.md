@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "2db94e5b17d595545b5960e188219650e258b952e030bbda7053c780d01f59c6",
+  "sourceHash": "ea4b1d98f45afe3eb683d78fed52c49e77ba4ea05519ea0715ee5ef46d5feb55",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22929,32 +22929,32 @@
             {
               "name": "deleteFieldOption",
               "kind": "method",
-              "line": 1059
+              "line": 1062
             },
             {
               "name": "getFieldOption",
               "kind": "method",
-              "line": 1068
+              "line": 1071
             },
             {
               "name": "updateFieldOption",
               "kind": "method",
-              "line": 1079
+              "line": 1082
             },
             {
               "name": "replaceFieldOptionOnIssues",
               "kind": "method",
-              "line": 1091
+              "line": 1098
             },
             {
               "name": "listFieldOptionSuggestionsEdit",
               "kind": "method",
-              "line": 1113
+              "line": 1122
             },
             {
               "name": "listFieldOptionSuggestionsSearch",
               "kind": "method",
-              "line": 1134
+              "line": 1143
             }
           ]
         }

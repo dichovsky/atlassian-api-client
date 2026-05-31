@@ -6240,7 +6240,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       // B434: POST /rest/api/3/field/{fieldKey}/option
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
-      return client.fields.createFieldOption(fieldKey, body as unknown as CreateIssueFieldOptionData);
+      return client.fields.createFieldOption(
+        fieldKey,
+        body as unknown as CreateIssueFieldOptionData,
+      );
     }
     case 'field-option-delete': {
       // B435: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}
@@ -6260,7 +6263,11 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldKey = requireOpt(opts['field-key'], '--field-key');
       const optionId = Number(requireOpt(opts['option-id'], '--option-id'));
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
-      return client.fields.updateFieldOption(fieldKey, optionId, body as unknown as IssueFieldOption);
+      return client.fields.updateFieldOption(
+        fieldKey,
+        optionId,
+        body as unknown as IssueFieldOption,
+      );
     }
     case 'field-option-replace-issues': {
       // B438: DELETE /rest/api/3/field/{fieldKey}/option/{optionId}/issue

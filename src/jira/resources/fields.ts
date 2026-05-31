@@ -1045,7 +1045,10 @@ export class FieldsResource {
 
   /** Create an option for a Connect-app select list field. B434
    * POST /rest/api/3/field/{fieldKey}/option */
-  async createFieldOption(fieldKey: string, data: CreateIssueFieldOptionData): Promise<IssueFieldOption> {
+  async createFieldOption(
+    fieldKey: string,
+    data: CreateIssueFieldOptionData,
+  ): Promise<IssueFieldOption> {
     const response = await this.transport.request<IssueFieldOption>({
       method: 'POST',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option`,
@@ -1076,7 +1079,11 @@ export class FieldsResource {
   /** Update (or create) an option on a Connect-app select list field. B437
    * PUT /rest/api/3/field/{fieldKey}/option/{optionId}
    * The id in the body must match the optionId path parameter. */
-  async updateFieldOption(fieldKey: string, optionId: number, data: IssueFieldOption): Promise<IssueFieldOption> {
+  async updateFieldOption(
+    fieldKey: string,
+    optionId: number,
+    data: IssueFieldOption,
+  ): Promise<IssueFieldOption> {
     const response = await this.transport.request<IssueFieldOption>({
       method: 'PUT',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/${encodePathSegment(String(optionId))}`,
@@ -1097,8 +1104,10 @@ export class FieldsResource {
     if (params) {
       if (params.replaceWith !== undefined) query['replaceWith'] = params.replaceWith;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.overrideScreenSecurity !== undefined) query['overrideScreenSecurity'] = params.overrideScreenSecurity;
-      if (params.overrideEditableFlag !== undefined) query['overrideEditableFlag'] = params.overrideEditableFlag;
+      if (params.overrideScreenSecurity !== undefined)
+        query['overrideScreenSecurity'] = params.overrideScreenSecurity;
+      if (params.overrideEditableFlag !== undefined)
+        query['overrideEditableFlag'] = params.overrideEditableFlag;
     }
     const response = await this.transport.request<TaskProgressBeanRemoveOptionFromIssuesResult>({
       method: 'DELETE',
