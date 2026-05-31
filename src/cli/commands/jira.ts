@@ -213,6 +213,8 @@ export async function executeJiraCommand(
       return executeProjectTemplate(client, cmd);
     case 'universal-avatar':
       return executeUniversalAvatar(client, cmd);
+    case 'ui-modifications':
+      return executeUiModifications(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7163,6 +7165,87 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown project-template action: ${cmd.action}. Actions: ${PROJECT_TEMPLATE_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ─── UI Modifications (B787-B790) ─────────────────────────────────────────
+
+const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];
+
+async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      return client.uiModifications.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+      });
+    }
+    case 'list-all': {
+      const results: unknown[] = [];
+      for await (const item of client.uiModifications.listAll({
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+      })) {
+        results.push(item);
+      }
+      return results;
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const data = asString(opts['data']);
+      const description = asString(opts['description']);
+      const contextsRaw = asString(opts['contexts']);
+      const contexts =
+        contextsRaw !== undefined
+          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          : undefined;
+      return client.uiModifications.create({
+        name,
+        ...(data !== undefined && { data }),
+        ...(description !== undefined && { description }),
+        ...(contexts !== undefined && { contexts }),
+      });
+    }
+    case 'update': {
+      const uiModificationId = requireArg(cmd.positionalArgs[0], 'uiModificationId');
+      const name = asString(opts['name']);
+      const data = asString(opts['data']);
+      const description = asString(opts['description']);
+      const contextsRaw = asString(opts['contexts']);
+      const contexts =
+        contextsRaw !== undefined
+          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          : undefined;
+      if (
+        name === undefined &&
+        data === undefined &&
+        description === undefined &&
+        contexts === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --data, --description, --contexts',
+        );
+      }
+      await client.uiModifications.update(uiModificationId, {
+        ...(name !== undefined && { name }),
+        ...(data !== undefined && { data }),
+        ...(description !== undefined && { description }),
+        ...(contexts !== undefined && { contexts }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const uiModificationId = requireArg(cmd.positionalArgs[0], 'uiModificationId');
+      await client.uiModifications.delete(uiModificationId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown ui-modifications action: ${cmd.action}. Actions: ${UI_MODIFICATIONS_ACTIONS.join(', ')}`,
       );
   }
 }

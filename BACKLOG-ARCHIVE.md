@@ -2413,3 +2413,15 @@
 - [x] 🔴 🧩 Jira: B796 expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
   - **Impl:** `UniversalAvatarResource.getAvatarImageByOwner(type, entityId, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-owner <type> <entityId> [--size] [--format]`.
   - **Rat:** Same binary pattern as B794/B795. All three view methods use `responseType: 'arrayBuffer'`.
+- [x] 🔴 🧩 Jira: B787 expose GET /rest/api/3/uiModifications
+  - **Impl:** `UiModificationsResource.list(params?)` → `OffsetPaginatedResponse<UiModificationDetails>`. `UiModificationsResource.listAll(params?)` async-generator. CLI: `atlas jira ui-modifications list [--start-at] [--max-results] [--expand]`. Pagination via `paginateOffset`.
+  - **Rat:** Spec-verified: offset PageBean, query params `startAt`/`maxResults`/`expand`. expand accepts `data` and/or `contexts`.
+- [x] 🔴 🧩 Jira: B788 expose POST /rest/api/3/uiModifications
+  - **Impl:** `UiModificationsResource.create(data: CreateUiModificationDetails)` → `UiModificationIdentifiers` ({id, self}). DISTINCT schema from Update — `name` required. CLI: `atlas jira ui-modifications create --name <name> [--data] [--description] [--contexts]`.
+  - **Rat:** Spec-verified: POST 201 returns `UiModificationIdentifiers` ({id,self}) NOT full details. Two DISTINCT typed schemas for create vs update.
+- [x] 🔴 🧩 Jira: B789 expose DELETE /rest/api/3/uiModifications/{uiModificationId}
+  - **Impl:** `UiModificationsResource.delete(uiModificationId)` → void (204). CLI: `atlas jira ui-modifications delete <uiModificationId>`.
+  - **Rat:** Spec-verified: 204 No Content. `encodePathSegment` applied to id.
+- [x] 🔴 🧩 Jira: B790 expose PUT /rest/api/3/uiModifications/{uiModificationId}
+  - **Impl:** `UiModificationsResource.update(uiModificationId, data: UpdateUiModificationDetails)` → void (204). DISTINCT schema from Create — all fields optional. CLI: `atlas jira ui-modifications update <uiModificationId> [--name] [--data] [--description] [--contexts]`.
+  - **Rat:** Spec-verified: 204 No Content. Update requires NOTHING; distinct from create which requires `name`.
