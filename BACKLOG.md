@@ -148,18 +148,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🟡 🖥️ API: B479 Jira: add CLI + skill for POST /rest/api/3/issue/{issueIdOrKey}/attachments
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🖥️ API: B518 Jira: add CLI + skill for POST /rest/api/3/issue/bulk
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🖥️ API: B525 Jira: add CLI + skill for DELETE /rest/api/3/issue/properties/{propertyKey}
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🖥️ API: B526 Jira: add CLI + skill for PUT /rest/api/3/issue/properties/{propertyKey}
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B530 Jira: expose POST /rest/api/3/issueLink
   - files: `src/jira/resources/issuelink.ts`, `test/jira/issuelink.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
