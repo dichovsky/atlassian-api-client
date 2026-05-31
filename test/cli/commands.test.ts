@@ -1133,6 +1133,13 @@ const jiraJqlMock = {
   migrateQueries: vi.fn(),
   sanitize: vi.fn(),
 };
+const jiraProjectTemplateMock = {
+  createWithCustomTemplate: vi.fn(),
+  editTemplate: vi.fn(),
+  getLiveTemplate: vi.fn(),
+  removeTemplate: vi.fn(),
+  saveTemplate: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -1209,6 +1216,7 @@ vi.mock('../../src/jira/client.js', () => {
       fields: jiraFieldsMock,
       jql: jiraJqlMock,
       issueLinkType: jiraIssueLinkTypeMock,
+      projectTemplate: jiraProjectTemplateMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -23551,6 +23559,315 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('issuelinktype', 'unknown-action'), GLOBALS),
       ).rejects.toThrow('Unknown issuelinktype action');
+    });
+  });
+
+  // ─── project-template (B653-B657) ─────────────────────────────────────────
+
+  describe('project-template', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    // B653 create
+    describe('create', () => {
+      it('calls createWithCustomTemplate with template JSON and scalar flags', async () => {
+        jiraProjectTemplateMock.createWithCustomTemplate.mockResolvedValue(undefined);
+        const template = JSON.stringify({ project: { projectType: 'software' } });
+        await executeJiraCommand(
+          cmd('project-template', 'create', [], {
+            template,
+            name: 'My Project',
+            key: 'MP',
+            description: 'desc',
+            url: 'https://example.com',
+            language: 'en',
+            'lead-account-id': '123abc',
+            'access-level': 'private',
+            'assignee-type': 'PROJECT_LEAD',
+            'avatar-id': '10200',
+            'category-id': '10100',
+            'enable-components': true,
+            'additional-properties': '{"foo":"bar"}',
+          }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.createWithCustomTemplate).toHaveBeenCalledWith({
+          details: {
+            name: 'My Project',
+            key: 'MP',
+            description: 'desc',
+            url: 'https://example.com',
+            language: 'en',
+            leadAccountId: '123abc',
+            accessLevel: 'private',
+            assigneeType: 'PROJECT_LEAD',
+            avatarId: 10200,
+            categoryId: 10100,
+            enableComponents: true,
+            additionalProperties: { foo: 'bar' },
+          },
+          template: { project: { projectType: 'software' } },
+        });
+      });
+
+      it('calls createWithCustomTemplate with template only (minimal)', async () => {
+        jiraProjectTemplateMock.createWithCustomTemplate.mockResolvedValue(undefined);
+        await executeJiraCommand(
+          cmd('project-template', 'create', [], { template: '{}' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.createWithCustomTemplate).toHaveBeenCalledWith({
+          details: {},
+          template: {},
+        });
+      });
+
+      it('returns { queued: true }', async () => {
+        jiraProjectTemplateMock.createWithCustomTemplate.mockResolvedValue(undefined);
+        const result = await executeJiraCommand(
+          cmd('project-template', 'create', [], { template: '{}' }),
+          GLOBALS,
+        );
+        expect(result).toEqual({ queued: true });
+      });
+
+      it('throws if --template is missing', async () => {
+        await expect(
+          executeJiraCommand(cmd('project-template', 'create', [], {}), GLOBALS),
+        ).rejects.toThrow('--template');
+      });
+
+      it('throws if --access-level is invalid', async () => {
+        await expect(
+          executeJiraCommand(
+            cmd('project-template', 'create', [], {
+              template: '{}',
+              'access-level': 'invalid',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--access-level');
+      });
+
+      it('throws if --assignee-type is invalid', async () => {
+        await expect(
+          executeJiraCommand(
+            cmd('project-template', 'create', [], {
+              template: '{}',
+              'assignee-type': 'INVALID',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--assignee-type');
+      });
+    });
+
+    // B654 edit-template
+    describe('edit-template', () => {
+      it('calls editTemplate with all flags', async () => {
+        jiraProjectTemplateMock.editTemplate.mockResolvedValue(undefined);
+        await executeJiraCommand(
+          cmd('project-template', 'edit-template', [], {
+            'template-key': 'my-key',
+            'template-name': 'New Name',
+            'template-description': 'New desc',
+            'enable-screen-delegated-admin': true,
+            'enable-workflow-delegated-admin': false,
+          }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.editTemplate).toHaveBeenCalledWith({
+          templateKey: 'my-key',
+          templateName: 'New Name',
+          templateDescription: 'New desc',
+          templateGenerationOptions: {
+            enableScreenDelegatedAdminSupport: true,
+            enableWorkflowDelegatedAdminSupport: false,
+          },
+        });
+      });
+
+      it('calls editTemplate with only template-key', async () => {
+        jiraProjectTemplateMock.editTemplate.mockResolvedValue(undefined);
+        await executeJiraCommand(
+          cmd('project-template', 'edit-template', [], { 'template-key': 'k' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.editTemplate).toHaveBeenCalledWith({ templateKey: 'k' });
+      });
+
+      it('returns { updated: true }', async () => {
+        jiraProjectTemplateMock.editTemplate.mockResolvedValue(undefined);
+        const result = await executeJiraCommand(
+          cmd('project-template', 'edit-template', [], { 'template-key': 'k' }),
+          GLOBALS,
+        );
+        expect(result).toEqual({ updated: true });
+      });
+
+      it('throws if no flags provided', async () => {
+        await expect(
+          executeJiraCommand(cmd('project-template', 'edit-template', [], {}), GLOBALS),
+        ).rejects.toThrow('edit-template requires at least one');
+      });
+
+      it('omits templateGenerationOptions when no delegated-admin flags', async () => {
+        jiraProjectTemplateMock.editTemplate.mockResolvedValue(undefined);
+        await executeJiraCommand(
+          cmd('project-template', 'edit-template', [], { 'template-name': 'x' }),
+          GLOBALS,
+        );
+        const callArg = jiraProjectTemplateMock.editTemplate.mock.calls[0]![0] as Record<
+          string,
+          unknown
+        >;
+        expect(callArg['templateGenerationOptions']).toBeUndefined();
+      });
+    });
+
+    // B655 live-template
+    describe('live-template', () => {
+      it('calls getLiveTemplate with projectId', async () => {
+        const model = { name: 'tmpl', type: 'LIVE' };
+        jiraProjectTemplateMock.getLiveTemplate.mockResolvedValue(model);
+        const result = await executeJiraCommand(
+          cmd('project-template', 'live-template', [], { 'project-id': '10001' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.getLiveTemplate).toHaveBeenCalledWith({
+          projectId: '10001',
+        });
+        expect(result).toEqual(model);
+      });
+
+      it('calls getLiveTemplate with templateKey', async () => {
+        jiraProjectTemplateMock.getLiveTemplate.mockResolvedValue({});
+        await executeJiraCommand(
+          cmd('project-template', 'live-template', [], { 'template-key': 'tk' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.getLiveTemplate).toHaveBeenCalledWith({
+          templateKey: 'tk',
+        });
+      });
+
+      it('calls getLiveTemplate with no params when no flags', async () => {
+        jiraProjectTemplateMock.getLiveTemplate.mockResolvedValue({});
+        await executeJiraCommand(cmd('project-template', 'live-template', [], {}), GLOBALS);
+        expect(jiraProjectTemplateMock.getLiveTemplate).toHaveBeenCalledWith({});
+      });
+    });
+
+    // B656 remove-template
+    describe('remove-template', () => {
+      it('calls removeTemplate with templateKey', async () => {
+        jiraProjectTemplateMock.removeTemplate.mockResolvedValue(undefined);
+        const result = await executeJiraCommand(
+          cmd('project-template', 'remove-template', [], { 'template-key': 'my-key' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.removeTemplate).toHaveBeenCalledWith('my-key');
+        expect(result).toEqual({ deleted: true });
+      });
+
+      it('throws if --template-key is missing', async () => {
+        await expect(
+          executeJiraCommand(cmd('project-template', 'remove-template', [], {}), GLOBALS),
+        ).rejects.toThrow('--template-key');
+      });
+    });
+
+    // B657 save-template
+    describe('save-template', () => {
+      it('calls saveTemplate with all flags', async () => {
+        const resp = { projectTemplateKey: { key: 'new-key' } };
+        jiraProjectTemplateMock.saveTemplate.mockResolvedValue(resp);
+        const result = await executeJiraCommand(
+          cmd('project-template', 'save-template', [], {
+            'template-name': 'My Snapshot',
+            'template-description': 'desc',
+            'project-id': '10001',
+            'template-type': 'SNAPSHOT',
+            'enable-screen-delegated-admin': false,
+            'enable-workflow-delegated-admin': true,
+          }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.saveTemplate).toHaveBeenCalledWith({
+          templateName: 'My Snapshot',
+          templateDescription: 'desc',
+          templateFromProjectRequest: {
+            projectId: 10001,
+            templateType: 'SNAPSHOT',
+            templateGenerationOptions: {
+              enableScreenDelegatedAdminSupport: false,
+              enableWorkflowDelegatedAdminSupport: true,
+            },
+          },
+        });
+        expect(result).toEqual(resp);
+      });
+
+      it('calls saveTemplate with template-name only', async () => {
+        jiraProjectTemplateMock.saveTemplate.mockResolvedValue({});
+        await executeJiraCommand(
+          cmd('project-template', 'save-template', [], { 'template-name': 'x' }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.saveTemplate).toHaveBeenCalledWith({ templateName: 'x' });
+      });
+
+      it('calls saveTemplate with LIVE type', async () => {
+        jiraProjectTemplateMock.saveTemplate.mockResolvedValue({});
+        await executeJiraCommand(
+          cmd('project-template', 'save-template', [], {
+            'project-id': '20',
+            'template-type': 'LIVE',
+          }),
+          GLOBALS,
+        );
+        expect(jiraProjectTemplateMock.saveTemplate).toHaveBeenCalledWith({
+          templateFromProjectRequest: { projectId: 20, templateType: 'LIVE' },
+        });
+      });
+
+      it('throws if no flags provided', async () => {
+        await expect(
+          executeJiraCommand(cmd('project-template', 'save-template', [], {}), GLOBALS),
+        ).rejects.toThrow('save-template requires at least one');
+      });
+
+      it('throws if --template-type is invalid', async () => {
+        await expect(
+          executeJiraCommand(
+            cmd('project-template', 'save-template', [], {
+              'template-name': 'x',
+              'template-type': 'INVALID',
+            }),
+            GLOBALS,
+          ),
+        ).rejects.toThrow('--template-type');
+      });
+
+      it('omits templateFromProjectRequest when no project-related flags', async () => {
+        jiraProjectTemplateMock.saveTemplate.mockResolvedValue({});
+        await executeJiraCommand(
+          cmd('project-template', 'save-template', [], { 'template-name': 'x' }),
+          GLOBALS,
+        );
+        const callArg = jiraProjectTemplateMock.saveTemplate.mock.calls[0]![0] as Record<
+          string,
+          unknown
+        >;
+        expect(callArg['templateFromProjectRequest']).toBeUndefined();
+      });
+    });
+
+    it('throws on unknown project-template action', async () => {
+      await expect(executeJiraCommand(cmd('project-template', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown project-template action',
+      );
     });
   });
 });

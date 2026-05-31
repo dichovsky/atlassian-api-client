@@ -847,3 +847,21 @@ export type {
   UpdateIssueLinkTypeData,
 } from './resources/issuelinktype.js';
 export { IssueLinkTypeResource } from './resources/issuelinktype.js';
+export type {
+  ProjectTemplateKey,
+  ProjectArchetype,
+  CustomTemplateOptions,
+  ProjectAccessLevel,
+  ProjectAssigneeType,
+  CustomTemplatesProjectDetails,
+  CustomTemplateRequestDTO,
+  ProjectCustomTemplateCreateRequestDTO,
+  EditTemplateRequest,
+  GetLiveTemplateParams,
+  ProjectTemplateModel,
+  SaveTemplateType,
+  SaveProjectTemplateRequest,
+  SaveTemplateRequest,
+  SaveTemplateResponse,
+} from './resources/project-template.js';
+export { ProjectTemplateResource } from './resources/project-template.js';

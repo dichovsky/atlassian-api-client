@@ -281,6 +281,7 @@ RESOURCES:
   fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
   issuelinktype          list, get, create, update, delete
+  project-template       create, edit-template, live-template, remove-template, save-template
 
 EXAMPLES:
   atlas jira issues get PROJ-123

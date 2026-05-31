@@ -75,6 +75,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `fields`                 | `field-list`, `field-list-all`, `field-create`, `field-update`, `field-delete`, `context-list`, `context-create`, `context-update`, `context-delete`, `context-option-list`, `context-option-create`, `context-option-update`, `context-option-delete`, `context-option-replace-issues`, `context-option-move`, `context-issuetype-set`, `context-issuetype-remove`, `context-issuetype-mapping`, `context-default-list`, `context-default-set`, `context-project-set`, `context-project-remove`, `context-mapping`, `context-project-mapping`, `field-option-list`, `field-option-create`, `field-option-delete`, `field-option-get`, `field-option-update`, `field-option-replace-issues`, `field-option-suggestions-edit`, `field-option-suggestions-search`, `field-project-associations`, `field-screens`, `field-restore`, `field-trash`, `field-remove-associations`, `field-create-associations`, `field-trash-list`                                                                                                                                         |
 | `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `issuelinktype`          | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `project-template`       | `create`, `edit-template`, `live-template`, `remove-template`, `save-template`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -146,6 +147,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `fields`                 | `field-list`, `field-list-all`, `field-create`, `field-update`, `field-delete`, `context-list`, `context-create`, `context-update`, `context-delete`, `context-option-list`, `context-option-create`, `context-option-update`, `context-option-delete`, `context-option-replace-issues`, `context-option-move`, `context-issuetype-set`, `context-issuetype-remove`, `context-issuetype-mapping`, `context-default-list`, `context-default-set`, `context-project-set`, `context-project-remove`, `context-mapping`, `context-project-mapping`, `field-option-list`, `field-option-create`, `field-option-delete`, `field-option-get`, `field-option-update`, `field-option-replace-issues`, `field-option-suggestions-edit`, `field-option-suggestions-search`, `field-project-associations`, `field-screens`, `field-restore`, `field-trash`, `field-remove-associations`, `field-create-associations`, `field-trash-list`                                                                                                                                         |
 | `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `issuelinktype`          | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `project-template`       | `create`, `edit-template`, `live-template`, `remove-template`, `save-template`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## `issue-type-schemes`
 
@@ -3615,4 +3617,72 @@ atlas jira issuelinktype update 10001 --name "Clones" --inward "is cloned by" --
 
 # Delete an issue link type — B535
 atlas jira issuelinktype delete 10001
+```
+
+## `project-template`
+
+Custom project template management (B653–B657). Covers the full `/rest/api/3/project-template` surface: create a project with a custom template, edit/save/remove templates, and retrieve live template details.
+
+`create` is asynchronous (303 redirect); follow the `Location` header with `atlas jira task get <taskId>` to track progress. `edit-template`, `remove-template` return `void` (no JSON body). `live-template` returns `ProjectTemplateModel`. `save-template` returns `{ projectTemplateKey }`.
+
+**Note: These endpoints are only available on Jira Enterprise edition.**
+
+| Action            | Positional | Required flags                     | Optional flags                                                                                                                                                                                                                                   |
+| ----------------- | ---------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `create`          | —          | `--template` (JSON)                | `--name`, `--key`, `--description`, `--url`, `--language`, `--lead-account-id`, `--access-level`, `--assignee-type`, `--avatar-id` (int), `--category-id` (int), `--enable-components`, `--additional-properties` (JSON `Record<string,string>`) |
+| `edit-template`   | —          | at least one of the optional flags | `--template-key`, `--template-name`, `--template-description`, `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                                                            |
+| `live-template`   | —          | —                                  | `--project-id`, `--template-key`                                                                                                                                                                                                                 |
+| `remove-template` | —          | `--template-key`                   | —                                                                                                                                                                                                                                                |
+| `save-template`   | —          | at least one of the optional flags | `--template-name`, `--template-description`, `--project-id` (int), `--template-type` (`LIVE`\|`SNAPSHOT`), `--enable-screen-delegated-admin`, `--enable-workflow-delegated-admin`                                                                |
+
+- `--template` for `create` is a JSON object with capability keys: `boardFeatures`, `boards`, `field`, `issueType`, `notification`, `permissionScheme`, `project`, `role`, `scope`, `security`, `workflow`.
+- `--access-level` must be one of: `open`, `limited`, `private`, `free`.
+- `--assignee-type` must be one of: `PROJECT_DEFAULT`, `COMPONENT_LEAD`, `PROJECT_LEAD`, `UNASSIGNED`.
+- `--template-type` must be one of: `LIVE`, `SNAPSHOT`.
+- `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags (bare, no value).
+- `--enable-components` is a boolean flag (bare, no value).
+
+```sh
+# Create a project with a custom template (async) — B653
+atlas jira project-template create \
+  --name "My Project" \
+  --key "MP" \
+  --description "Created from custom template" \
+  --language "en" \
+  --template '{"project":{"projectType":"software"}}'
+
+# Edit an existing custom template — B654
+atlas jira project-template edit-template \
+  --template-key "my-template-key" \
+  --template-name "Renamed Template" \
+  --template-description "Updated description"
+
+# Enable delegated admin support on a template — B654
+atlas jira project-template edit-template \
+  --template-key "my-template-key" \
+  --enable-screen-delegated-admin \
+  --enable-workflow-delegated-admin
+
+# Get live template by project ID — B655
+atlas jira project-template live-template --project-id "10001"
+
+# Get live template by template key — B655
+atlas jira project-template live-template --template-key "my-template-key"
+
+# Remove a custom template — B656
+atlas jira project-template remove-template --template-key "my-template-key"
+
+# Save a template from a project (snapshot) — B657
+atlas jira project-template save-template \
+  --template-name "My Snapshot Template" \
+  --template-description "Snapshot of project 10001" \
+  --project-id 10001 \
+  --template-type SNAPSHOT
+
+# Save a live template from a project — B657
+atlas jira project-template save-template \
+  --template-name "My Live Template" \
+  --project-id 10001 \
+  --template-type LIVE \
+  --enable-workflow-delegated-admin
 ```

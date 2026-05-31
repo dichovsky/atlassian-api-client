@@ -423,6 +423,17 @@ const GLOBAL_OPTIONS = {
   // issuelinktype options (B533-B537)
   inward: { type: 'string' as const },
   outward: { type: 'string' as const },
+  // project-template options (B653-B657)
+  template: { type: 'string' as const },
+  'template-name': { type: 'string' as const },
+  'template-description': { type: 'string' as const },
+  'template-type': { type: 'string' as const },
+  'access-level': { type: 'string' as const },
+  'enable-components': { type: 'boolean' as const },
+  'additional-properties': { type: 'string' as const },
+  'enable-screen-delegated-admin': { type: 'boolean' as const },
+  'enable-workflow-delegated-admin': { type: 'boolean' as const },
+  language: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

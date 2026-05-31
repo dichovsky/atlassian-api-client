@@ -45,6 +45,11 @@ import type {
   MultiIssueProperties,
 } from '../../jira/resources/issues.js';
 import type { WebhookRegistration } from '../../jira/resources/webhooks.js';
+import type {
+  ProjectAccessLevel,
+  ProjectAssigneeType,
+  SaveTemplateType,
+} from '../../jira/resources/project-template.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -199,6 +204,8 @@ export async function executeJiraCommand(
       return executeJql(client, cmd);
     case 'issuelinktype':
       return executeIssueLinkType(client, cmd);
+    case 'project-template':
+      return executeProjectTemplate(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -6852,6 +6859,223 @@ async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Pro
     default:
       throw new Error(
         `Unknown issuelinktype action: ${cmd.action}. Actions: list, get, create, update, delete`,
+      );
+  }
+}
+
+// ─── Project template (B653-B657) ────────────────────────────────────────────
+
+const ACCESS_LEVELS = ['open', 'limited', 'private', 'free'] as const;
+const ASSIGNEE_TYPES = ['PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED'] as const;
+const SAVE_TEMPLATE_TYPES = ['LIVE', 'SNAPSHOT'] as const;
+
+const PROJECT_TEMPLATE_ACTIONS = [
+  'create',
+  'edit-template',
+  'live-template',
+  'remove-template',
+  'save-template',
+] as const;
+
+async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // B653 POST /rest/api/3/project-template
+    case 'create': {
+      const templateRaw = requireOpt(opts['template'], '--template');
+      const template = parseJsonObjectFlag(templateRaw, '--template');
+
+      // Build details from scalar flags (all optional)
+      const name = asString(opts['name']);
+      const key = asString(opts['key']);
+      const description = asString(opts['description']);
+      const url = asString(opts['url']);
+      const language = asString(opts['language']);
+      const leadAccountId = asString(opts['lead-account-id']);
+      const accessLevelRaw = asString(opts['access-level']);
+      const assigneeTypeRaw = asString(opts['assignee-type']);
+      const avatarIdRaw = asString(opts['avatar-id']);
+      const categoryIdRaw = asString(opts['category-id']);
+      const enableComponents = asBoolFlag(opts['enable-components']);
+      const additionalPropertiesRaw = asString(opts['additional-properties']);
+
+      if (
+        accessLevelRaw !== undefined &&
+        !(ACCESS_LEVELS as readonly string[]).includes(accessLevelRaw)
+      ) {
+        throw new Error(`--access-level must be one of: ${ACCESS_LEVELS.join(', ')}`);
+      }
+      if (
+        assigneeTypeRaw !== undefined &&
+        !(ASSIGNEE_TYPES as readonly string[]).includes(assigneeTypeRaw)
+      ) {
+        throw new Error(`--assignee-type must be one of: ${ASSIGNEE_TYPES.join(', ')}`);
+      }
+
+      const avatarId =
+        avatarIdRaw !== undefined ? parsePositiveIntArg(avatarIdRaw, '--avatar-id') : undefined;
+      const categoryId =
+        categoryIdRaw !== undefined
+          ? parsePositiveIntArg(categoryIdRaw, '--category-id')
+          : undefined;
+      const additionalProperties =
+        additionalPropertiesRaw !== undefined
+          ? (parseJsonObjectFlag(additionalPropertiesRaw, '--additional-properties') as Record<
+              string,
+              string
+            >)
+          : undefined;
+
+      const details = {
+        ...(name !== undefined && { name }),
+        ...(key !== undefined && { key }),
+        ...(description !== undefined && { description }),
+        ...(url !== undefined && { url }),
+        ...(language !== undefined && { language }),
+        ...(leadAccountId !== undefined && { leadAccountId }),
+        ...(accessLevelRaw !== undefined && { accessLevel: accessLevelRaw as ProjectAccessLevel }),
+        ...(assigneeTypeRaw !== undefined && {
+          assigneeType: assigneeTypeRaw as ProjectAssigneeType,
+        }),
+        ...(avatarId !== undefined && { avatarId }),
+        ...(categoryId !== undefined && { categoryId }),
+        ...(enableComponents !== undefined && { enableComponents }),
+        ...(additionalProperties !== undefined && { additionalProperties }),
+      };
+
+      await client.projectTemplate.createWithCustomTemplate({
+        details,
+        template,
+      });
+      return { queued: true };
+    }
+
+    // B654 PUT /rest/api/3/project-template/edit-template
+    case 'edit-template': {
+      const templateKey = asString(opts['template-key']);
+      const templateName = asString(opts['template-name']);
+      const templateDescription = asString(opts['template-description']);
+      const enableScreenDelegatedAdmin = asBoolFlag(opts['enable-screen-delegated-admin']);
+      const enableWorkflowDelegatedAdmin = asBoolFlag(opts['enable-workflow-delegated-admin']);
+
+      if (
+        templateKey === undefined &&
+        templateName === undefined &&
+        templateDescription === undefined &&
+        enableScreenDelegatedAdmin === undefined &&
+        enableWorkflowDelegatedAdmin === undefined
+      ) {
+        throw new Error(
+          'edit-template requires at least one of: --template-key, --template-name, --template-description, --enable-screen-delegated-admin, --enable-workflow-delegated-admin',
+        );
+      }
+
+      const templateGenerationOptions =
+        enableScreenDelegatedAdmin !== undefined || enableWorkflowDelegatedAdmin !== undefined
+          ? {
+              ...(enableScreenDelegatedAdmin !== undefined && {
+                enableScreenDelegatedAdminSupport: enableScreenDelegatedAdmin,
+              }),
+              ...(enableWorkflowDelegatedAdmin !== undefined && {
+                enableWorkflowDelegatedAdminSupport: enableWorkflowDelegatedAdmin,
+              }),
+            }
+          : undefined;
+
+      await client.projectTemplate.editTemplate({
+        ...(templateKey !== undefined && { templateKey }),
+        ...(templateName !== undefined && { templateName }),
+        ...(templateDescription !== undefined && { templateDescription }),
+        ...(templateGenerationOptions !== undefined && { templateGenerationOptions }),
+      });
+      return { updated: true };
+    }
+
+    // B655 GET /rest/api/3/project-template/live-template
+    case 'live-template': {
+      const projectId = asString(opts['project-id']);
+      const templateKey = asString(opts['template-key']);
+      return client.projectTemplate.getLiveTemplate({
+        ...(projectId !== undefined && { projectId }),
+        ...(templateKey !== undefined && { templateKey }),
+      });
+    }
+
+    // B656 DELETE /rest/api/3/project-template/remove-template
+    case 'remove-template': {
+      const templateKey = requireOpt(opts['template-key'], '--template-key');
+      await client.projectTemplate.removeTemplate(templateKey);
+      return { deleted: true };
+    }
+
+    // B657 POST /rest/api/3/project-template/save-template
+    case 'save-template': {
+      const templateName = asString(opts['template-name']);
+      const templateDescription = asString(opts['template-description']);
+      const projectIdRaw = asString(opts['project-id']);
+      const templateTypeRaw = asString(opts['template-type']);
+      const enableScreenDelegatedAdmin = asBoolFlag(opts['enable-screen-delegated-admin']);
+      const enableWorkflowDelegatedAdmin = asBoolFlag(opts['enable-workflow-delegated-admin']);
+
+      if (
+        templateName === undefined &&
+        templateDescription === undefined &&
+        projectIdRaw === undefined &&
+        templateTypeRaw === undefined &&
+        enableScreenDelegatedAdmin === undefined &&
+        enableWorkflowDelegatedAdmin === undefined
+      ) {
+        throw new Error(
+          'save-template requires at least one of: --template-name, --template-description, --project-id, --template-type, --enable-screen-delegated-admin, --enable-workflow-delegated-admin',
+        );
+      }
+
+      if (
+        templateTypeRaw !== undefined &&
+        !(SAVE_TEMPLATE_TYPES as readonly string[]).includes(templateTypeRaw)
+      ) {
+        throw new Error(`--template-type must be one of: ${SAVE_TEMPLATE_TYPES.join(', ')}`);
+      }
+
+      const projectId =
+        projectIdRaw !== undefined ? parsePositiveIntArg(projectIdRaw, '--project-id') : undefined;
+
+      const templateGenerationOptions =
+        enableScreenDelegatedAdmin !== undefined || enableWorkflowDelegatedAdmin !== undefined
+          ? {
+              ...(enableScreenDelegatedAdmin !== undefined && {
+                enableScreenDelegatedAdminSupport: enableScreenDelegatedAdmin,
+              }),
+              ...(enableWorkflowDelegatedAdmin !== undefined && {
+                enableWorkflowDelegatedAdminSupport: enableWorkflowDelegatedAdmin,
+              }),
+            }
+          : undefined;
+
+      const templateFromProjectRequest =
+        projectId !== undefined ||
+        templateTypeRaw !== undefined ||
+        templateGenerationOptions !== undefined
+          ? {
+              ...(projectId !== undefined && { projectId }),
+              ...(templateTypeRaw !== undefined && {
+                templateType: templateTypeRaw as SaveTemplateType,
+              }),
+              ...(templateGenerationOptions !== undefined && { templateGenerationOptions }),
+            }
+          : undefined;
+
+      return client.projectTemplate.saveTemplate({
+        ...(templateName !== undefined && { templateName }),
+        ...(templateDescription !== undefined && { templateDescription }),
+        ...(templateFromProjectRequest !== undefined && { templateFromProjectRequest }),
+      });
+    }
+
+    default:
+      throw new Error(
+        `Unknown project-template action: ${cmd.action}. Actions: ${PROJECT_TEMPLATE_ACTIONS.join(', ')}`,
       );
   }
 }
