@@ -7,6 +7,19 @@ Typed Node.js/TypeScript clients and CLI for Atlassian Cloud APIs.
 
 Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 
+## Contents
+
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Authentication](#authentication)
+- [Pagination](#pagination)
+- [Error Handling](#error-handling)
+- [Middleware](#middleware)
+- [CLI](#cli)
+- [Selected Resource Map](#selected-resource-map)
+- [Recipes](#recipes)
+- [Project Links](#project-links)
+
 ## Install
 
 ```bash
@@ -222,7 +235,7 @@ const client = new ConfluenceClient({
 });
 
 try {
-  await client.pages.getPage('123');
+  await client.pages.get('123');
 } catch (error) {
   if (error instanceof ResponseTooLargeError) {
     console.error(`Response exceeded ${error.limitBytes} bytes (status: ${error.status ?? 'n/a'})`);
@@ -321,7 +334,7 @@ import { createCacheMiddleware } from 'atlassian-api-client';
 
 const cacheMiddleware = createCacheMiddleware({
   ttl: 30_000, // 30s TTL (default: 60s)
-  maxSize: 200, // max entries (default: 100, FIFO eviction)
+  maxSize: 200, // max entries (default: 100, LRU eviction)
 });
 
 const client = new ConfluenceClient({
@@ -331,7 +344,7 @@ const client = new ConfluenceClient({
 });
 ```
 
-Caches GET responses in memory. Keyed by method + path + query string. Lazily evicts expired entries.
+Caches GET responses in memory. Keys include auth identity, method, path, and query string so responses remain partitioned by caller. Expired entries are lazily evicted; capacity pressure evicts the least recently used entry.
 
 ### Request Batching / Deduplication
 
@@ -415,9 +428,21 @@ export ATLASSIAN_BASE_URL=https://yourcompany.atlassian.net
 export ATLASSIAN_EMAIL=user@example.com
 export ATLASSIAN_API_TOKEN=your-token
 
-# Or pass inline
-atlas --base-url https://... --email user@... --token ...
+# Or pass basic-auth credentials inline
+atlas jira issues get PROJ-123 \
+  --base-url https://yourcompany.atlassian.net \
+  --email user@example.com \
+  --token your-token
+
+# Bearer auth: OAuth 2.0 access token or PAT
+export ATLASSIAN_AUTH_TYPE=bearer
+export ATLASSIAN_API_TOKEN=your-bearer-token
+
+# Equivalent inline bearer-auth form
+atlas jira issues get PROJ-123 --auth-type bearer --token your-bearer-token
 ```
+
+`ATLASSIAN_AUTH_TYPE` defaults to `basic`. Bearer mode does not require `ATLASSIAN_EMAIL`.
 
 ### Self-hosted / non-Atlassian baseUrl
 
@@ -448,7 +473,9 @@ atlas jira issues get PROJ-123 --format table
 atlas jira projects list --format minimal
 ```
 
-## API Reference
+## Selected Resource Map
+
+The clients expose a broad Atlassian API surface. The tables below highlight common entry points rather than every available resource and method. Use TypeScript autocomplete for the complete client API, or run `atlas confluence --help` and `atlas jira --help` for the complete CLI resource lists.
 
 ### ConfluenceClient
 
@@ -519,19 +546,23 @@ const client = new ConfluenceClient({
 
 ### Proxy / custom `fetch` dispatcher
 
-Inject an `undici`-powered `fetch` to route every request through a proxy or tune keep-alive. The custom `fetch` is used by the transport _and_ by OAuth token-refresh calls.
+Install [`undici`](https://www.npmjs.com/package/undici), then inject an `undici`-powered `fetch` to route transport requests through a proxy or tune keep-alive. OAuth token refresh has a separate `fetch` option; pass the same function to `createOAuthRefreshMiddleware` when refresh calls should use the proxy too.
 
 ```typescript
 import { ConfluenceClient } from 'atlassian-api-client';
 import { fetch as undiciFetch, ProxyAgent } from 'undici';
 
 const dispatcher = new ProxyAgent('http://proxy.internal:8080');
+const proxyFetch = ((url, init) => undiciFetch(url, { ...init, dispatcher })) as typeof fetch;
+
 const client = new ConfluenceClient({
   baseUrl: 'https://yourcompany.atlassian.net',
   auth: { type: 'basic', email, apiToken },
-  fetch: ((url, init) => undiciFetch(url, { ...init, dispatcher })) as typeof fetch,
+  fetch: proxyFetch,
 });
 ```
+
+For OAuth refresh, also pass `fetch: proxyFetch` inside `createOAuthRefreshMiddleware({ ... })`.
 
 ### OAuth 2.0 with token persistence
 
@@ -581,7 +612,7 @@ const client = new JiraClient({
 
 ### Caching + batching
 
-For a read-heavy dashboard, layer the cache outermost _under_ auth so every request still carries a fresh token, and batch innermost so concurrent identical requests collapse into one fetch. See [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md) for the full ordering rationale.
+For a read-heavy dashboard, layer the cache outermost _under_ auth so every request still carries a fresh token, and batch innermost so concurrent identical requests collapse into one fetch. See [docs/ARCHITECTURE.md#middleware-ordering](docs/ARCHITECTURE.md#middleware-ordering) for the full ordering rationale.
 
 ```typescript
 import {
@@ -607,6 +638,14 @@ const client = new JiraClient({
 ## Architecture
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for a detailed description of the layered design, core infrastructure, and key design decisions.
+
+## Project Links
+
+- [Changelog](CHANGELOG.md)
+- [Security policy](SECURITY.md)
+- [Issue tracker](https://github.com/dichovsky/atlassian-api-client/issues)
+- [Source repository](https://github.com/dichovsky/atlassian-api-client)
+- [Support development](https://buymeacoffee.com/dichovsky)
 
 ## Development
 
