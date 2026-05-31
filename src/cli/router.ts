@@ -301,6 +301,11 @@ const GLOBAL_OPTIONS = {
   scope: { type: 'string' as const },
   'skip-field-association': { type: 'boolean' as const },
   'tab-ids': { type: 'string' as const },
+  // screenscheme options (B762-B765)
+  'default-screen': { type: 'string' as const },
+  'view-screen': { type: 'string' as const },
+  'edit-screen': { type: 'string' as const },
+  'create-screen': { type: 'string' as const },
   // plans options (B625-B640)
   'include-trashed': { type: 'boolean' as const },
   'include-archived': { type: 'boolean' as const },

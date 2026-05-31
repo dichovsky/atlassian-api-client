@@ -954,6 +954,14 @@ const jiraIssueSecuritySchemesMock = {
   searchAll: vi.fn(),
 };
 
+const jiraScreenSchemeMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+
 const jiraScreensMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1179,6 +1187,7 @@ vi.mock('../../src/jira/client.js', () => {
       config: jiraConfigMock,
       issueSecuritySchemes: jiraIssueSecuritySchemesMock,
       screens: jiraScreensMock,
+      screenScheme: jiraScreenSchemeMock,
       plans: jiraPlansMock,
       workflowScheme: jiraWorkflowSchemeMock,
       fields: jiraFieldsMock,
@@ -20465,6 +20474,275 @@ describe('executeJiraCommand', () => {
     it('screens unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('screens', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown screens action',
+      );
+    });
+  });
+
+  // ── screenscheme resource (B762-B765) ─────────────────────────────────────
+
+  describe('screenscheme resource', () => {
+    it('list calls client.screenScheme.list with no params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraScreenSchemeMock.list.mockResolvedValue(page);
+
+      const result = await executeJiraCommand(cmd('screenscheme', 'list'), GLOBALS);
+
+      expect(result).toEqual(page);
+      expect(jiraScreenSchemeMock.list).toHaveBeenCalledWith({});
+    });
+
+    it('list forwards pagination params', async () => {
+      jiraScreenSchemeMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+    });
+
+    it('list forwards ids as integers', async () => {
+      jiraScreenSchemeMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(cmd('screenscheme', 'list', [], { ids: '1,2' }), GLOBALS);
+
+      expect(jiraScreenSchemeMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ id: [1, 2] }),
+      );
+    });
+
+    it('list forwards orderBy', async () => {
+      jiraScreenSchemeMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(cmd('screenscheme', 'list', [], { 'order-by': 'name' }), GLOBALS);
+
+      expect(jiraScreenSchemeMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: 'name' }),
+      );
+    });
+
+    it('list forwards expand and query-string', async () => {
+      jiraScreenSchemeMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'list', [], {
+          expand: 'issueTypeScreenSchemes',
+          'query-string': 'Default',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          expand: 'issueTypeScreenSchemes',
+          queryString: 'Default',
+        }),
+      );
+    });
+
+    it('list rejects invalid order-by', async () => {
+      await expect(
+        executeJiraCommand(cmd('screenscheme', 'list', [], { 'order-by': 'bogus' }), GLOBALS),
+      ).rejects.toThrow('--order-by must be one of');
+    });
+
+    it('list-all iterates all schemes with no params', async () => {
+      jiraScreenSchemeMock.listAll.mockReturnValue(
+        (async function* () {
+          yield { id: 1, name: 'Scheme A' };
+          yield { id: 2, name: 'Scheme B' };
+        })(),
+      );
+
+      const result = await executeJiraCommand(cmd('screenscheme', 'list-all'), GLOBALS);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect((result as unknown[]).length).toBe(2);
+    });
+
+    it('list-all forwards ids, expand, query-string, and order-by', async () => {
+      jiraScreenSchemeMock.listAll.mockReturnValue(
+        (async function* () {
+          yield { id: 1, name: 'Scheme A' };
+        })(),
+      );
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'list-all', [], {
+          ids: '1,2',
+          expand: 'issueTypeScreenSchemes',
+          'query-string': 'Default',
+          'order-by': 'name',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: [1, 2],
+          expand: 'issueTypeScreenSchemes',
+          queryString: 'Default',
+          orderBy: 'name',
+        }),
+      );
+    });
+
+    it('create calls client.screenScheme.create with required fields', async () => {
+      const created = { id: 1 };
+      jiraScreenSchemeMock.create.mockResolvedValue(created);
+
+      const result = await executeJiraCommand(
+        cmd('screenscheme', 'create', [], { name: 'My Scheme', 'default-screen': '10001' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(created);
+      expect(jiraScreenSchemeMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'My Scheme',
+          screens: expect.objectContaining({ default: 10001 }),
+        }),
+      );
+    });
+
+    it('create includes optional description and screen types', async () => {
+      jiraScreenSchemeMock.create.mockResolvedValue({ id: 1 });
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'create', [], {
+          name: 'Full',
+          description: 'My description',
+          'default-screen': '10001',
+          'view-screen': '10002',
+          'edit-screen': '10003',
+          'create-screen': '10004',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'My description',
+          screens: expect.objectContaining({
+            default: 10001,
+            view: 10002,
+            edit: 10003,
+            create: 10004,
+          }),
+        }),
+      );
+    });
+
+    it('create throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('screenscheme', 'create', [], { 'default-screen': '10001' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--name');
+    });
+
+    it('create throws when --default-screen is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('screenscheme', 'create', [], { name: 'My Scheme' }), GLOBALS),
+      ).rejects.toThrow('--default-screen');
+    });
+
+    it('update calls client.screenScheme.update with name', async () => {
+      jiraScreenSchemeMock.update.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screenscheme', 'update', ['1'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraScreenSchemeMock.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({ name: 'Renamed' }),
+      );
+    });
+
+    it('update calls client.screenScheme.update with description', async () => {
+      jiraScreenSchemeMock.update.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'update', ['1'], { description: 'Updated desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({ description: 'Updated desc' }),
+      );
+    });
+
+    it('update calls client.screenScheme.update with screens as strings', async () => {
+      jiraScreenSchemeMock.update.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('screenscheme', 'update', ['1'], {
+          'default-screen': '10001',
+          'view-screen': '10002',
+          'edit-screen': '10003',
+          'create-screen': '10004',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraScreenSchemeMock.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          screens: { default: '10001', view: '10002', edit: '10003', create: '10004' },
+        }),
+      );
+    });
+
+    it('update with only --create-screen succeeds (default is optional on update)', async () => {
+      jiraScreenSchemeMock.update.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('screenscheme', 'update', ['1'], { 'create-screen': '10019' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraScreenSchemeMock.update).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({ screens: { create: '10019' } }),
+      );
+    });
+
+    it('update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('screenscheme', 'update', ['1']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('create throws when --default-screen is not a valid integer', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('screenscheme', 'create', [], { name: 'My Scheme', 'default-screen': 'notanint' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be a non-negative integer');
+    });
+
+    it('delete calls client.screenScheme.delete', async () => {
+      jiraScreenSchemeMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('screenscheme', 'delete', ['1']), GLOBALS);
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraScreenSchemeMock.delete).toHaveBeenCalledWith('1');
+    });
+
+    it('screenscheme unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('screenscheme', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown screenscheme action',
       );
     });
   });

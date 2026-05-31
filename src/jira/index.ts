@@ -702,6 +702,17 @@ export type {
 export { ScreensResource } from './resources/screens.js';
 
 export type {
+  ScreenTypes,
+  ScreenScheme,
+  ScreenSchemeId,
+  ScreenSchemeDetails,
+  UpdateScreenSchemeDetails,
+  ScreenSchemeOrderBy,
+  ListScreenSchemesParams,
+} from './resources/screenscheme.js';
+export { ScreenSchemeResource } from './resources/screenscheme.js';
+
+export type {
   FieldAssociationSchemeLinks,
   FieldAssociationSchemeMatchedFilters,
   FieldAssociationSchemeResponse,
