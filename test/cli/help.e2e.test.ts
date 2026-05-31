@@ -136,6 +136,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   expression: 'executeExpression',
   'issue-comments': 'executeIssueComments',
   fieldconfiguration: 'executeFieldConfiguration',
+  fieldconfigurationscheme: 'executeFieldConfigurationScheme',
   'priority-schemes': 'executePrioritySchemeResource',
   version: 'executeVersionResource',
   config: 'executeConfig',

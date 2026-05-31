@@ -570,6 +570,13 @@ export type {
 } from './resources/fieldconfiguration.js';
 export { FieldConfigurationResource } from './resources/fieldconfiguration.js';
 export type {
+  FieldConfigurationScheme,
+  ListFieldConfigurationSchemesParams,
+  CreateFieldConfigurationSchemeData,
+  UpdateFieldConfigurationSchemeData,
+} from './resources/fieldconfigurationscheme.js';
+export { FieldConfigurationSchemeResource } from './resources/fieldconfigurationscheme.js';
+export type {
   NotificationScheme,
   NotificationSchemeEvent,
   NotificationSchemeNotification,

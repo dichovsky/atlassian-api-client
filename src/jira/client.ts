@@ -65,6 +65,7 @@ import { RoleResource } from './resources/role.js';
 import { ResolutionResource } from './resources/resolution.js';
 import { ExpressionResource } from './resources/expression.js';
 import { FieldConfigurationResource } from './resources/fieldconfiguration.js';
+import { FieldConfigurationSchemeResource } from './resources/fieldconfigurationscheme.js';
 import { NotificationSchemeResource } from './resources/notificationscheme.js';
 import { PrioritySchemeResource } from './resources/priorityscheme.js';
 import { VersionResource } from './resources/version.js';
@@ -201,6 +202,8 @@ export class JiraClient {
   readonly expression: ExpressionResource;
   /** Jira issue field configurations resource (B908-B913). */
   readonly fieldConfigurations: FieldConfigurationResource;
+  /** Jira issue field configuration schemes resource (B914-B917). */
+  readonly fieldConfigurationSchemes: FieldConfigurationSchemeResource;
   /** Jira notification schemes resource (B605-B612). */
   readonly notificationSchemes: NotificationSchemeResource;
   /** Jira priority schemes resource (B644-B651). */
@@ -308,6 +311,7 @@ export class JiraClient {
     this.resolutions = new ResolutionResource(transport, baseUrl);
     this.expression = new ExpressionResource(transport, baseUrl);
     this.fieldConfigurations = new FieldConfigurationResource(transport, baseUrl);
+    this.fieldConfigurationSchemes = new FieldConfigurationSchemeResource(transport, baseUrl);
     this.notificationSchemes = new NotificationSchemeResource(transport, baseUrl);
     this.prioritySchemes = new PrioritySchemeResource(transport, baseUrl);
     this.version = new VersionResource(transport, baseUrl);

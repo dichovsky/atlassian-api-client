@@ -2227,3 +2227,15 @@
 - [x] 🔴 🧩 API: B431 Jira: expose GET /rest/api/3/field/{fieldId}/context/projectmapping
   - **Impl:** `FieldsResource.listContextProjectMappings(fieldId, params?)` — paginated via `OffsetPaginatedResponse<FieldContextProjectMapping>`; query: contextId[]?, startAt?, maxResults?. CLI: `atlas jira fields context-project-mapping --field-id <id>`.
   - **Rat:** Spec-verified (operationId: getProjectContextMapping). Returns `PageBeanCustomFieldContextProjectMapping`; items have contextId (required) + projectId? + isGlobalContext? (global contexts have no projectId).
+- [x] 🔴 🧩 API: B914 Jira: expose GET /rest/api/3/fieldconfigurationscheme
+  - **Impl:** New `FieldConfigurationSchemeResource` (`src/jira/resources/fieldconfigurationscheme.ts`). `list(params?)` returns `OffsetPaginatedResponse<FieldConfigurationScheme>`; `listAll()` async generator via `paginateOffset`. Query: startAt?, maxResults?, id[]? (CSV). CLI: `atlas jira fieldconfigurationscheme list [--start-at] [--max-results] [--ids]`.
+  - **Rat:** Spec-verified; deprecated by Atlassian but operational. Returns `PageBeanFieldConfigurationScheme`; items have id (string), name (string), description? (string).
+- [x] 🔴 🧩 API: B915 Jira: expose POST /rest/api/3/fieldconfigurationscheme
+  - **Impl:** `FieldConfigurationSchemeResource.create(data)` — body: `UpdateFieldConfigurationSchemeDetails` (name\* string, description? string); returns `FieldConfigurationScheme` (201). CLI: `atlas jira fieldconfigurationscheme create --name <name> [--description]`.
+  - **Rat:** Spec-verified. Create response type is `FieldConfigurationScheme` (distinct from list's `PageBeanFieldConfigurationScheme`); id field is a string in the spec schema, not a number.
+- [x] 🔴 🧩 API: B916 Jira: expose DELETE /rest/api/3/fieldconfigurationscheme/{id}
+  - **Impl:** `FieldConfigurationSchemeResource.delete(id: number)` returns void (204). CLI: `atlas jira fieldconfigurationscheme delete <id>`.
+  - **Rat:** Spec-verified; path param id is int64. Returns 204 No Content on success.
+- [x] 🔴 🧩 API: B917 Jira: expose PUT /rest/api/3/fieldconfigurationscheme/{id}
+  - **Impl:** `FieldConfigurationSchemeResource.update(id: number, data)` returns void (204). Body: `UpdateFieldConfigurationSchemeDetails` (name\* string, description? string). CLI: `atlas jira fieldconfigurationscheme update <id> --name <name> [--description]`.
+  - **Rat:** Spec-verified; returns 204 No Content. Same request body shape as create (UpdateFieldConfigurationSchemeDetails).

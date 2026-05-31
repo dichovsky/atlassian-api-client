@@ -882,6 +882,14 @@ const jiraFieldConfigurationsMock = {
   updateFields: vi.fn(),
 };
 
+const jiraFieldConfigurationSchemesMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  delete: vi.fn(),
+  update: vi.fn(),
+};
+
 const jiraNotificationSchemesMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1143,6 +1151,7 @@ vi.mock('../../src/jira/client.js', () => {
       expression: jiraExpressionMock,
       issueComments: jiraIssueCommentsMock,
       fieldConfigurations: jiraFieldConfigurationsMock,
+      fieldConfigurationSchemes: jiraFieldConfigurationSchemesMock,
       notificationSchemes: jiraNotificationSchemesMock,
       prioritySchemes: jiraPrioritySchemesMock,
       version: jiraVersionMock,
@@ -18141,6 +18150,144 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('fieldconfiguration', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown fieldconfiguration action',
       );
+    });
+  });
+
+  // ── fieldconfigurationscheme (B914-B917) ──────────────────────────────────
+
+  describe('fieldconfigurationscheme resource', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('fieldconfigurationscheme list calls client.fieldConfigurationSchemes.list', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraFieldConfigurationSchemesMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('fieldconfigurationscheme list passes ids filter', async () => {
+      jiraFieldConfigurationSchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'list', [], { ids: '10000,10001' }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ id: [10000, 10001] }),
+      );
+    });
+
+    it('fieldconfigurationscheme list with no options omits id', async () => {
+      jiraFieldConfigurationSchemesMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('fieldconfigurationscheme', 'list'), GLOBALS);
+      const callArg = jiraFieldConfigurationSchemesMock.list.mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(callArg).not.toHaveProperty('id');
+    });
+
+    it('fieldconfigurationscheme create calls client.fieldConfigurationSchemes.create', async () => {
+      const created = { id: '10002', name: 'My Scheme' };
+      jiraFieldConfigurationSchemesMock.create.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'create', [], {
+          name: 'My Scheme',
+          description: 'desc',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.create).toHaveBeenCalledWith({
+        name: 'My Scheme',
+        description: 'desc',
+      });
+      expect(result).toEqual(created);
+    });
+
+    it('fieldconfigurationscheme create without description works', async () => {
+      jiraFieldConfigurationSchemesMock.create.mockResolvedValue({ id: '10002', name: 'Minimal' });
+      await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'create', [], { name: 'Minimal' }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.create).toHaveBeenCalledWith({ name: 'Minimal' });
+    });
+
+    it('fieldconfigurationscheme create throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fieldconfigurationscheme', 'create'), GLOBALS),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('fieldconfigurationscheme delete calls client.fieldConfigurationSchemes.delete', async () => {
+      jiraFieldConfigurationSchemesMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'delete', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.delete).toHaveBeenCalledWith(10001);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('fieldconfigurationscheme delete throws when id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fieldconfigurationscheme', 'delete'), GLOBALS),
+      ).rejects.toThrow('Missing required argument: id');
+    });
+
+    it('fieldconfigurationscheme update calls client.fieldConfigurationSchemes.update', async () => {
+      jiraFieldConfigurationSchemesMock.update.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'update', ['10001'], {
+          name: 'Renamed',
+          description: 'new desc',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.update).toHaveBeenCalledWith(10001, {
+        name: 'Renamed',
+        description: 'new desc',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('fieldconfigurationscheme update without description works', async () => {
+      jiraFieldConfigurationSchemesMock.update.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('fieldconfigurationscheme', 'update', ['10001'], { name: 'Just Name' }),
+        GLOBALS,
+      );
+      expect(jiraFieldConfigurationSchemesMock.update).toHaveBeenCalledWith(10001, {
+        name: 'Just Name',
+      });
+    });
+
+    it('fieldconfigurationscheme update throws when --name missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fieldconfigurationscheme', 'update', ['10001'], { description: 'only' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required option: --name');
+    });
+
+    it('fieldconfigurationscheme update throws when id missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fieldconfigurationscheme', 'update', [], { name: 'x' }), GLOBALS),
+      ).rejects.toThrow('Missing required argument: id');
+    });
+
+    it('fieldconfigurationscheme unknown action throws', async () => {
+      await expect(
+        executeJiraCommand(cmd('fieldconfigurationscheme', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown fieldconfigurationscheme action');
     });
   });
 

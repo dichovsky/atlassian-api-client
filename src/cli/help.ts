@@ -269,6 +269,7 @@ RESOURCES:
   expression             analyse, eval, evaluate
   issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
   fieldconfiguration     list, create, delete, update, list-fields, update-fields
+  fieldconfigurationscheme list, create, delete, update
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
   config                 list, create, delete, get, update, clone, list-fields, get-field-parameters, list-projects, remove-field-associations, update-field-associations, remove-field-parameters, update-field-parameters, get-projects-with-schemes, associate-projects
@@ -442,6 +443,11 @@ EXAMPLES:
   atlas jira fieldconfiguration delete 10001
   atlas jira fieldconfiguration list-fields 10001 --start-at 0 --max-results 50
   atlas jira fieldconfiguration update-fields 10001 --field-configuration-items '[{"id":"customfield_10010","isHidden":false,"isRequired":true}]'
+  atlas jira fieldconfigurationscheme list --start-at 0 --max-results 50
+  atlas jira fieldconfigurationscheme list --ids 10000,10001
+  atlas jira fieldconfigurationscheme create --name "My Scheme" --description "A new field configuration scheme"
+  atlas jira fieldconfigurationscheme update 10001 --name "Renamed" --description "Updated description"
+  atlas jira fieldconfigurationscheme delete 10001
   atlas jira priority-schemes list --start-at 0 --max-results 50
   atlas jira priority-schemes list --scheme-ids 10000,10001 --expand priorities,projects
   atlas jira priority-schemes create --name "Critical Bugs" --default-priority-id 10001 --priority-ids 10001,10002 --description "Scheme for critical projects" --project-ids 10100,10101

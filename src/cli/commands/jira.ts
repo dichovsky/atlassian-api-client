@@ -165,6 +165,8 @@ export async function executeJiraCommand(
       return executeIssueComments(client, cmd);
     case 'fieldconfiguration':
       return executeFieldConfiguration(client, cmd);
+    case 'fieldconfigurationscheme':
+      return executeFieldConfigurationScheme(client, cmd);
     case 'notification-schemes':
       return executeNotificationSchemes(client, cmd);
     case 'priority-schemes':
@@ -4276,6 +4278,56 @@ async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand)
     default:
       throw new Error(
         `Unknown fieldconfiguration action: ${cmd.action}. Actions: ${FIELD_CONFIGURATION_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── fieldconfigurationscheme (B914-B917) ─────────────────────────────────────
+
+const FIELD_CONFIGURATION_SCHEME_ACTIONS = ['list', 'create', 'delete', 'update'] as const;
+
+async function executeFieldConfigurationScheme(
+  client: JiraClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const idsRaw = parseCsv(opts['ids']);
+      const ids = idsRaw?.map((s) => parsePositiveIntArg(s, '--ids'));
+      return client.fieldConfigurationSchemes.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(ids !== undefined && { id: ids }),
+      });
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      return client.fieldConfigurationSchemes.create({
+        name,
+        ...(description !== undefined && { description }),
+      });
+    }
+    case 'delete': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      await client.fieldConfigurationSchemes.delete(id);
+      return { deleted: true };
+    }
+    case 'update': {
+      const id = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'id'), 'id');
+      const name = requireOpt(opts['name'], '--name');
+      const description = asString(opts['description']);
+      await client.fieldConfigurationSchemes.update(id, {
+        name,
+        ...(description !== undefined && { description }),
+      });
+      return { updated: true };
+    }
+    default:
+      throw new Error(
+        `Unknown fieldconfigurationscheme action: ${cmd.action}. Actions: ${FIELD_CONFIGURATION_SCHEME_ACTIONS.join(', ')}`,
       );
   }
 }
