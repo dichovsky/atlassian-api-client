@@ -195,6 +195,8 @@ export async function executeJiraCommand(
       return executeFields(client, cmd);
     case 'jql':
       return executeJql(client, cmd);
+    case 'issuelinktype':
+      return executeIssueLinkType(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -6778,5 +6780,47 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
 
     default:
       throw new Error(`Unknown jql action: ${cmd.action}. Actions: ${JQL_ACTIONS.join(', ')}`);
+  }
+}
+
+// ── issuelinktype (B533-B537) ────────────────────────────────────────────────
+
+async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list':
+      return client.issueLinkType.list();
+    case 'get':
+      return client.issueLinkType.get(requireArg(cmd.positionalArgs[0], 'issueLinkTypeId'));
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const inward = requireOpt(opts['inward'], '--inward');
+      const outward = requireOpt(opts['outward'], '--outward');
+      return client.issueLinkType.create({ name, inward, outward });
+    }
+    case 'update': {
+      const id = requireArg(cmd.positionalArgs[0], 'issueLinkTypeId');
+      const name = asString(opts['name']);
+      const inward = asString(opts['inward']);
+      const outward = asString(opts['outward']);
+      if (name === undefined && inward === undefined && outward === undefined) {
+        throw new Error('update requires at least one of: --name, --inward, --outward');
+      }
+      return client.issueLinkType.update(id, {
+        ...(name !== undefined && { name }),
+        ...(inward !== undefined && { inward }),
+        ...(outward !== undefined && { outward }),
+      });
+    }
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'issueLinkTypeId');
+      await client.issueLinkType.delete(id);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown issuelinktype action: ${cmd.action}. Actions: list, get, create, update, delete`,
+      );
   }
 }

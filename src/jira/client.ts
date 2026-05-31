@@ -74,6 +74,7 @@ import { ScreensResource } from './resources/screens.js';
 import { ScreenSchemeResource } from './resources/screenscheme.js';
 import { PlansResource } from './resources/plans.js';
 import { WorkflowSchemeResource } from './resources/workflowscheme.js';
+import { IssueLinkTypeResource } from './resources/issuelinktype.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -220,6 +221,8 @@ export class JiraClient {
   readonly plans: PlansResource;
   /** Jira workflow scheme resource — live endpoints (B855-B886, draft+bulk in sibling PR). */
   readonly workflowScheme: WorkflowSchemeResource;
+  /** Jira issue link type resource — list/get/create/update/delete (B533-B537). */
+  readonly issueLinkType: IssueLinkTypeResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -320,5 +323,6 @@ export class JiraClient {
     this.screenScheme = new ScreenSchemeResource(transport, baseUrl);
     this.plans = new PlansResource(transport, baseUrl);
     this.workflowScheme = new WorkflowSchemeResource(transport, baseUrl);
+    this.issueLinkType = new IssueLinkTypeResource(transport, baseUrl);
   }
 }

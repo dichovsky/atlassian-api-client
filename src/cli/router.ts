@@ -420,6 +420,9 @@ const GLOBAL_OPTIONS = {
   // webhooks options (B833, B834, B836)
   webhooks: { type: 'string' as const },
   'webhook-ids': { type: 'string' as const },
+  // issuelinktype options (B533-B537)
+  inward: { type: 'string' as const },
+  outward: { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

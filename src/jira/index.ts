@@ -837,3 +837,11 @@ export type {
   RequiredWorkflowSchemeMappingsResponse,
 } from './resources/workflowscheme.js';
 export { WorkflowSchemeResource } from './resources/workflowscheme.js';
+
+export type {
+  IssueLinkType,
+  IssueLinkTypes,
+  CreateIssueLinkTypeData,
+  UpdateIssueLinkTypeData,
+} from './resources/issuelinktype.js';
+export { IssueLinkTypeResource } from './resources/issuelinktype.js';

@@ -2350,3 +2350,18 @@
 - [x] 🔴 🧩 Jira: B765 expose PUT /rest/api/3/screenscheme/{screenSchemeId}
   - **Impl:** `ScreenSchemeResource.update(screenSchemeId, data)` — path param positional; body `UpdateScreenSchemeDetails` (all optional: `name?`, `description?`, `screens?`(UpdateScreenTypes)). 204 → void. CLI: `atlas jira screenscheme update <screenSchemeId> --name X`. Validates ≥1 field flag; `--default-screen` is optional on update (spec: `UpdateScreenTypes` all fields optional strings).
   - **Rat:** Spec-verified: `UpdateScreenSchemeDetails` uses `UpdateScreenTypes` (string IDs, all optional) not `ScreenTypes`; 204 No Content.
+- [x] 🔴 🧩 Jira: B533 expose GET /rest/api/3/issueLinkType
+  - **Impl:** `IssueLinkTypeResource.list()` — GET `/issueLinkType`, unwraps `issueLinkTypes` array from `IssueLinkTypes` envelope. CLI: `atlas jira issuelinktype list`.
+  - **Rat:** Spec-verified: response is `IssueLinkTypes` wrapper with `issueLinkTypes[]`; unwrap matches pattern of other non-paginated list endpoints.
+- [x] 🔴 🧩 Jira: B534 expose POST /rest/api/3/issueLinkType
+  - **Impl:** `IssueLinkTypeResource.create(data)` — body: `{name, inward, outward}` (no `id`/`self`). Returns `IssueLinkType`. CLI: `atlas jira issuelinktype create --name <name> --inward <inward> --outward <outward>`.
+  - **Rat:** Spec-verified: `id` and `self` are server-assigned and must not be sent in the request body.
+- [x] 🔴 🧩 Jira: B535 expose DELETE /rest/api/3/issueLinkType/{issueLinkTypeId}
+  - **Impl:** `IssueLinkTypeResource.delete(issueLinkTypeId)` — DELETE `/issueLinkType/{id}`, returns void (204). CLI: `atlas jira issuelinktype delete <id>`.
+  - **Rat:** Spec-verified: 204 No Content on success; no query params required.
+- [x] 🔴 🧩 Jira: B536 expose GET /rest/api/3/issueLinkType/{issueLinkTypeId}
+  - **Impl:** `IssueLinkTypeResource.get(issueLinkTypeId)` — GET `/issueLinkType/{id}`. Returns `IssueLinkType`. CLI: `atlas jira issuelinktype get <id>`.
+  - **Rat:** Spec-verified: 200 with `IssueLinkType` object; path param positional per convention.
+- [x] 🔴 🧩 Jira: B537 expose PUT /rest/api/3/issueLinkType/{issueLinkTypeId}
+  - **Impl:** `IssueLinkTypeResource.update(issueLinkTypeId, data)` — body: partial `{name?, inward?, outward?}`; at least one field required. Returns `IssueLinkType`. CLI: `atlas jira issuelinktype update <id> [--name] [--inward] [--outward]`.
+  - **Rat:** Spec-verified: 200 with updated `IssueLinkType`; validated at least-one-of constraint mirrors existing patterns (e.g. workflowscheme update).
