@@ -77,6 +77,7 @@ import { PlansResource } from './resources/plans.js';
 import { WorkflowSchemeResource } from './resources/workflowscheme.js';
 import { IssueLinkTypeResource } from './resources/issuelinktype.js';
 import { ProjectTemplateResource } from './resources/project-template.js';
+import { UniversalAvatarResource } from './resources/universal-avatar.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -229,6 +230,8 @@ export class JiraClient {
   readonly issueLinkType: IssueLinkTypeResource;
   /** Jira project template resource (B653-B657). */
   readonly projectTemplate: ProjectTemplateResource;
+  /** Jira universal avatar resource — list/store/delete/view avatars (B791-B796). */
+  readonly universalAvatar: UniversalAvatarResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -332,5 +335,6 @@ export class JiraClient {
     this.workflowScheme = new WorkflowSchemeResource(transport, baseUrl);
     this.issueLinkType = new IssueLinkTypeResource(transport, baseUrl);
     this.projectTemplate = new ProjectTemplateResource(transport, baseUrl);
+    this.universalAvatar = new UniversalAvatarResource(transport, baseUrl);
   }
 }

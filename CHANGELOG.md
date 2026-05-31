@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **transport (B792)** — `RequestOptions.binaryBody?: Blob` enables sending a raw binary request body with the `Blob`'s MIME type as `Content-Type`, for endpoints that accept `*/*` (rather than multipart form-data). Mutually exclusive with `body` and `formData`. Added to support `JiraClient.universalAvatar.storeAvatar` (`POST /rest/api/3/universal_avatar/type/{type}/owner/{entityId}`). Strictly additive — existing `body`/`formData` callers are unaffected.
+
 ## 1.0.1 (2026-05-21)
 
 ### Fixed

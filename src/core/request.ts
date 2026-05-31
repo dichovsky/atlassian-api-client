@@ -274,17 +274,21 @@ const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([
  * `Accept: application/json` is set as a default and may be overridden by a
  * caller-supplied `Accept` header. `Content-Type: application/json` (when
  * `withJsonBody` is `true`) is applied after the merge and cannot be
- * overridden by callers.
+ * overridden by callers. When `binaryContentType` is set (raw `Blob` upload),
+ * it is applied as `Content-Type` instead.
  *
  * @param callerHeaders - Headers from the {@link RequestOptions.headers} field.
  * @param authHeaders - Headers returned by the configured `AuthProvider`.
  * @param withJsonBody - When `true`, sets `Content-Type: application/json`.
  *   Skip when sending FormData so the runtime sets the multipart boundary.
+ * @param binaryContentType - When set, applied as the `Content-Type` for a
+ *   raw binary (`Blob`) upload body.
  */
 export function buildHeaders(
   callerHeaders: Readonly<Record<string, string>> | undefined,
   authHeaders: Readonly<Record<string, string>>,
   withJsonBody: boolean,
+  binaryContentType?: string,
 ): Record<string, string> {
   const safeHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(callerHeaders ?? {})) {
@@ -299,6 +303,8 @@ export function buildHeaders(
   };
   if (withJsonBody) {
     headers['Content-Type'] = 'application/json';
+  } else if (binaryContentType !== undefined) {
+    headers['Content-Type'] = binaryContentType;
   }
   return headers;
 }
@@ -308,28 +314,42 @@ export function buildHeaders(
  *
  * `body` is the value passed to `fetch`. `withJsonBody` signals whether the
  * caller should set `Content-Type: application/json` via {@link buildHeaders}.
+ * `binaryContentType` is set when the body is a raw `Blob` so that
+ * {@link buildHeaders} can forward the correct `Content-Type`.
  */
 export interface FetchBody {
-  readonly body: FormData | string | undefined;
+  readonly body: FormData | Blob | string | undefined;
   readonly withJsonBody: boolean;
+  readonly binaryContentType?: string;
 }
 
 /**
- * Resolve `RequestOptions.body` / `formData` into a `fetch`-ready body.
+ * Resolve `RequestOptions.body` / `formData` / `binaryBody` into a
+ * `fetch`-ready body.
  *
- * `body` and `formData` are mutually exclusive — passing both throws
- * {@link ValidationError}. FormData passes through unchanged so the runtime
- * sets the multipart boundary; objects are `JSON.stringify`'d.
+ * `body`, `formData`, and `binaryBody` are mutually exclusive — passing more
+ * than one throws {@link ValidationError}. FormData passes through unchanged
+ * so the runtime sets the multipart boundary; objects are `JSON.stringify`'d;
+ * `binaryBody` (`Blob`) is forwarded directly so the runtime sends the raw
+ * bytes with the Blob's declared `Content-Type`.
  */
 export function buildFetchBody(options: RequestOptions): FetchBody {
-  if (options.formData !== undefined && options.body !== undefined) {
+  const setCount =
+    (options.formData !== undefined ? 1 : 0) +
+    (options.body !== undefined ? 1 : 0) +
+    (options.binaryBody !== undefined ? 1 : 0);
+  if (setCount > 1) {
     throw new ValidationError(
-      'RequestOptions.formData and RequestOptions.body are mutually exclusive',
+      'RequestOptions.formData, body, and binaryBody are mutually exclusive',
     );
   }
 
   if (options.formData !== undefined) {
     return { body: options.formData, withJsonBody: false };
+  }
+  if (options.binaryBody !== undefined) {
+    const ct = options.binaryBody.type !== '' ? options.binaryBody.type : undefined;
+    return { body: options.binaryBody, withJsonBody: false, binaryContentType: ct };
   }
   if (options.body !== undefined) {
     return { body: JSON.stringify(options.body), withJsonBody: true };

@@ -50,6 +50,11 @@ import type {
   ProjectAssigneeType,
   SaveTemplateType,
 } from '../../jira/resources/project-template.js';
+import type {
+  AvatarEntityType,
+  AvatarViewSize,
+  AvatarViewFormat,
+} from '../../jira/resources/universal-avatar.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -206,6 +211,8 @@ export async function executeJiraCommand(
       return executeIssueLinkType(client, cmd);
     case 'project-template':
       return executeProjectTemplate(client, cmd);
+    case 'universal-avatar':
+      return executeUniversalAvatar(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -3053,6 +3060,86 @@ async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): 
     default:
       throw new Error(
         `Unknown issue-attachments action: ${cmd.action}. Actions: list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload`,
+      );
+  }
+}
+
+async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
+      return client.universalAvatar.getAvatars(type as AvatarEntityType, entityId);
+    }
+    case 'store': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
+      const filePath = requireOpt(opts['file'], '--file');
+      const sizeRaw = requireOpt(opts['size'], '--size');
+      const size = parsePositiveIntArg(sizeRaw, '--size');
+      const xRaw = asString(opts['x']);
+      const yRaw = asString(opts['y']);
+      const x = xRaw !== undefined ? parseNonNegativeIntArg(xRaw, '--x') : undefined;
+      const y = yRaw !== undefined ? parseNonNegativeIntArg(yRaw, '--y') : undefined;
+      const { readFile } = await import('node:fs/promises');
+      const buffer = await readFile(filePath);
+      const blob = new Blob([new Uint8Array(buffer)]);
+      return client.universalAvatar.storeAvatar(type as AvatarEntityType, entityId, blob, {
+        size,
+        ...(x !== undefined && { x }),
+        ...(y !== undefined && { y }),
+      });
+    }
+    case 'delete': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const owningObjectId = requireArg(cmd.positionalArgs[1], 'owningObjectId');
+      const idRaw = requireArg(cmd.positionalArgs[2], 'id');
+      const id = parsePositiveIntArg(idRaw, 'id');
+      await client.universalAvatar.deleteAvatar(type as AvatarEntityType, owningObjectId, id);
+      return { deleted: true };
+    }
+    case 'view-by-type': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const size = asString(opts['size']);
+      const format = asString(opts['image-format']);
+      const buffer = await client.universalAvatar.getAvatarImageByType(type as AvatarEntityType, {
+        ...(size !== undefined && { size: size as AvatarViewSize }),
+        ...(format !== undefined && { format: format as AvatarViewFormat }),
+      });
+      return { bytes: buffer.byteLength };
+    }
+    case 'view-by-id': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const idRaw = requireArg(cmd.positionalArgs[1], 'id');
+      const id = parsePositiveIntArg(idRaw, 'id');
+      const size = asString(opts['size']);
+      const format = asString(opts['image-format']);
+      const buffer = await client.universalAvatar.getAvatarImageByID(type as AvatarEntityType, id, {
+        ...(size !== undefined && { size: size as AvatarViewSize }),
+        ...(format !== undefined && { format: format as AvatarViewFormat }),
+      });
+      return { bytes: buffer.byteLength };
+    }
+    case 'view-by-owner': {
+      const type = requireArg(cmd.positionalArgs[0], 'type');
+      const entityId = requireArg(cmd.positionalArgs[1], 'entityId');
+      const size = asString(opts['size']);
+      const format = asString(opts['image-format']);
+      const buffer = await client.universalAvatar.getAvatarImageByOwner(
+        type as AvatarEntityType,
+        entityId,
+        {
+          ...(size !== undefined && { size: size as AvatarViewSize }),
+          ...(format !== undefined && { format: format as AvatarViewFormat }),
+        },
+      );
+      return { bytes: buffer.byteLength };
+    }
+    default:
+      throw new Error(
+        `Unknown universal-avatar action: ${cmd.action}. Actions: list, store, delete, view-by-type, view-by-id, view-by-owner`,
       );
   }
 }

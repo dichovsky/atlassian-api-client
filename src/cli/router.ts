@@ -200,6 +200,7 @@ const GLOBAL_OPTIONS = {
   schema: { type: 'string' as const },
   'alternative-id': { type: 'string' as const },
   size: { type: 'string' as const },
+  'image-format': { type: 'string' as const },
   x: { type: 'string' as const },
   y: { type: 'string' as const },
   // bulk options (B345-B353 + DevOps bulk POST variants)

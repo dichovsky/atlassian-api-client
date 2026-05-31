@@ -282,6 +282,7 @@ RESOURCES:
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
   issuelinktype          list, get, create, update, delete
   project-template       create, edit-template, live-template, remove-template, save-template
+  universal-avatar       list, store, delete, view-by-type, view-by-id, view-by-owner
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -591,6 +592,13 @@ EXAMPLES:
   atlas jira issuelinktype create --name "Blocks" --inward "is blocked by" --outward "blocks"
   atlas jira issuelinktype update 10001 --name "Clones" --inward "is cloned by" --outward "clones"
   atlas jira issuelinktype delete 10001
+  atlas jira universal-avatar list project 10001
+  atlas jira universal-avatar store project 10001 --file ./icon.png --size 48
+  atlas jira universal-avatar store issuetype 10001 --file ./icon.png --size 48 --x 0 --y 0
+  atlas jira universal-avatar delete project 10001 1010
+  atlas jira universal-avatar view-by-type issuetype --size medium --image-format png
+  atlas jira universal-avatar view-by-id project 1010 --size small
+  atlas jira universal-avatar view-by-owner project 10001 --image-format svg
 `;
 
 /** Get help text for the given level. */

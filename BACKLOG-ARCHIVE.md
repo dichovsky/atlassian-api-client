@@ -2395,3 +2395,21 @@
 - [x] 🔴 🧩 Jira: B657 expose POST /rest/api/3/project-template/save-template
   - **Impl:** `ProjectTemplateResource.saveTemplate(data)` — body `{templateName?, templateDescription?, templateFromProjectRequest?}`. Returns `Promise<SaveTemplateResponse>`. CLI: scalar flags; requires at least one.
   - **Rat:** Spec-verified: 200 returns `$ref: SaveTemplateResponse` with `{projectTemplateKey?: ProjectTemplateKey}`.
+- [x] 🔴 🧩 Jira: B791 expose GET /rest/api/3/universal_avatar/type/{type}/owner/{entityId}
+  - **Impl:** `UniversalAvatarResource.getAvatars(type, entityId)` → `Avatars` (`{system, custom}`). CLI: `atlas jira universal-avatar list <type> <entityId>`. Reuses existing exported `Avatar` type from `avatar.ts` (identical to spec `Avatar` schema).
+  - **Rat:** Spec-verified: response is `Avatars` schema with `system[]` and `custom[]`. `type` enum: project/issuetype/priority. Path params positional.
+- [x] 🔴 🧩 Jira: B792 expose POST /rest/api/3/universal_avatar/type/{type}/owner/{entityId}
+  - **Impl:** `UniversalAvatarResource.storeAvatar(type, entityId, content: Blob, params)` → `Avatar` (201). Raw `*/*` binary body via new `RequestOptions.binaryBody` field; `buildFetchBody` extended to handle `Blob` directly with content-type from `blob.type`. CLI: `atlas jira universal-avatar store <type> <entityId> --file ./icon.png --size 48 [--x N] [--y N]`. Required `X-Atlassian-Token: no-check` header.
+  - **Rat:** Spec requires `*/*` raw body — NOT multipart. Extended `RequestOptions`/`buildFetchBody`/`buildHeaders` in core to support `binaryBody?: Blob`. `size`, `x`, `y` sent as query params.
+- [x] 🔴 🧩 Jira: B793 expose DELETE /rest/api/3/universal_avatar/type/{type}/owner/{owningObjectId}/avatar/{id}
+  - **Impl:** `UniversalAvatarResource.deleteAvatar(type, owningObjectId, id: number)` → void (204). CLI: `atlas jira universal-avatar delete <type> <owningObjectId> <id>`. `id` is int64/number.
+  - **Rat:** Spec-verified: `id` is integer path param. 204 → void.
+- [x] 🔴 🧩 Jira: B794 expose GET /rest/api/3/universal_avatar/view/type/{type}
+  - **Impl:** `UniversalAvatarResource.getAvatarImageByType(type, params?)` → `ArrayBuffer` with `responseType: 'arrayBuffer'`. CLI: `atlas jira universal-avatar view-by-type <type> [--size] [--format]`. Returns `{bytes: N}`.
+  - **Rat:** Binary image response mirroring `downloadContent`/`downloadThumbnail` in issue-attachments. Enum guards for `size` and `format`.
+- [x] 🔴 🧩 Jira: B795 expose GET /rest/api/3/universal_avatar/view/type/{type}/avatar/{id}
+  - **Impl:** `UniversalAvatarResource.getAvatarImageByID(type, id: number, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-id <type> <id> [--size] [--format]`.
+  - **Rat:** `id` is integer path param. Same binary pattern as B794.
+- [x] 🔴 🧩 Jira: B796 expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
+  - **Impl:** `UniversalAvatarResource.getAvatarImageByOwner(type, entityId, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-owner <type> <entityId> [--size] [--format]`.
+  - **Rat:** Same binary pattern as B794/B795. All three view methods use `responseType: 'arrayBuffer'`.
