@@ -35,6 +35,7 @@ import type {
   IssueFieldOption,
   ReplaceIssueFieldOptionOnIssuesParams,
   ListIssueFieldOptionSuggestionsParams,
+  FieldAssociationsRequest,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -5951,6 +5952,13 @@ const FIELDS_ACTIONS = [
   'field-option-replace-issues',
   'field-option-suggestions-edit',
   'field-option-suggestions-search',
+  'field-project-associations',
+  'field-screens',
+  'field-restore',
+  'field-trash',
+  'field-remove-associations',
+  'field-create-associations',
+  'field-trash-list',
 ] as const;
 
 async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -5958,11 +5966,35 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'field-list': {
+      // B446: GET /rest/api/3/field/search
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const typeRaw = asString(opts['type']);
+      const type =
+        typeRaw !== undefined
+          ? typeRaw.split(',').map((s) => {
+              const t = s.trim();
+              if (t !== 'custom' && t !== 'system') {
+                throw new Error(`--type must contain only 'custom' or 'system', got: ${t}`);
+              }
+              return t;
+            })
+          : undefined;
+      const idRaw = asString(opts['id']);
+      const id = idRaw !== undefined ? idRaw.split(',').map((s) => s.trim()) : undefined;
+      const query = asString(opts['query']);
+      const orderBy = asString(opts['order-by']);
+      const expand = asString(opts['expand']);
+      const projectIds = parseIntCsv(opts['project-ids'], '--project-ids');
       return client.fields.list({
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
+        ...(type !== undefined && { type }),
+        ...(id !== undefined && { id }),
+        ...(query !== undefined && { query }),
+        ...(orderBy !== undefined && { orderBy }),
+        ...(expand !== undefined && { expand }),
+        ...(projectIds !== undefined && { projectIds }),
       });
     }
     case 'field-list-all':
@@ -6326,6 +6358,70 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
         ...(projectId !== undefined && { projectId }),
       };
       return client.fields.listFieldOptionSuggestionsSearch(fieldKey, params);
+    }
+    case 'field-project-associations': {
+      // B414: GET /rest/api/3/field/{fieldId}/association/project
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      return client.fields.listFieldProjectAssociations(fieldId, {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+      });
+    }
+    case 'field-screens': {
+      // B432: GET /rest/api/3/field/{fieldId}/screens
+      const fieldId = requireOpt(opts['field-id'], '--field-id');
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const expand = asString(opts['expand']);
+      return client.fields.listFieldScreens(fieldId, {
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(expand !== undefined && { expand }),
+      });
+    }
+    case 'field-restore': {
+      // B442: POST /rest/api/3/field/{id}/restore
+      const id = requireOpt(opts['field-id'], '--field-id');
+      await client.fields.restoreField(id);
+      return { restored: true };
+    }
+    case 'field-trash': {
+      // B443: POST /rest/api/3/field/{id}/trash
+      const id = requireOpt(opts['field-id'], '--field-id');
+      await client.fields.trashField(id);
+      return { trashed: true };
+    }
+    case 'field-remove-associations': {
+      // B444: DELETE /rest/api/3/field/association
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      await client.fields.removeAssociations(body as unknown as FieldAssociationsRequest);
+      return { removed: true };
+    }
+    case 'field-create-associations': {
+      // B445: PUT /rest/api/3/field/association
+      const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      await client.fields.createAssociations(body as unknown as FieldAssociationsRequest);
+      return { created: true };
+    }
+    case 'field-trash-list': {
+      // B447: GET /rest/api/3/field/search/trashed
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const idRaw = asString(opts['id']);
+      const id = idRaw !== undefined ? idRaw.split(',').map((s) => s.trim()) : undefined;
+      const query = asString(opts['query']);
+      const expand = asString(opts['expand']);
+      const orderBy = asString(opts['order-by']);
+      return client.fields.listTrashedFields({
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(id !== undefined && { id }),
+        ...(query !== undefined && { query }),
+        ...(expand !== undefined && { expand }),
+        ...(orderBy !== undefined && { orderBy }),
+      });
     }
     default:
       throw new Error(

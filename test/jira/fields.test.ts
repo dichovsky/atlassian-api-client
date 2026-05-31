@@ -20,6 +20,9 @@ import type {
   FieldContextForProjectAndIssueType,
   IssueFieldOption,
   CreateIssueFieldOptionData,
+  FieldProjectAssociation,
+  ScreenWithTab,
+  FieldAssociationsRequest,
 } from '../../src/jira/resources/fields.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -2204,6 +2207,290 @@ describe('FieldsResource', () => {
         'path parameter must not be "." or ".."',
       );
       expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── B414: listFieldProjectAssociations ────────────────────────────────────
+  describe('listFieldProjectAssociations (B414)', () => {
+    it('sends GET to correct path and returns paginated project associations', async () => {
+      const item: FieldProjectAssociation = { projectId: '10010' };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [item],
+      });
+
+      const result = await fields.listFieldProjectAssociations('customfield_10001');
+
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/association/project`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(result.values).toEqual([item]);
+    });
+
+    it('sends pagination params when provided', async () => {
+      transport.respondWith({ isLast: true, maxResults: 10, startAt: 5, total: 10, values: [] });
+
+      await fields.listFieldProjectAssociations('customfield_10001', {
+        startAt: 5,
+        maxResults: 10,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('sends no query params when params is empty object', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.listFieldProjectAssociations('customfield_10001', {});
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldId with special characters', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.listFieldProjectAssociations('../admin');
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/association/project`,
+      );
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldId: %s', async (fieldId) => {
+      await expect(fields.listFieldProjectAssociations(fieldId)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── B432: listFieldScreens ────────────────────────────────────────────────
+  describe('listFieldScreens (B432)', () => {
+    it('sends GET to correct path and returns paginated screens', async () => {
+      const screen: ScreenWithTab = {
+        id: 10001,
+        name: 'Default Screen',
+        tab: { id: 10000, name: 'Fields Tab' },
+      };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 1,
+        values: [screen],
+      });
+
+      const result = await fields.listFieldScreens('customfield_10001');
+
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/customfield_10001/screens`);
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(result.values).toEqual([screen]);
+    });
+
+    it('sends all optional params when provided', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.listFieldScreens('customfield_10001', {
+        startAt: 0,
+        maxResults: 50,
+        expand: 'tab',
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 0,
+        maxResults: 50,
+        expand: 'tab',
+      });
+    });
+
+    it('sends no query params when params is empty object', async () => {
+      transport.respondWith({ isLast: true, maxResults: 100, startAt: 0, total: 0, values: [] });
+
+      await fields.listFieldScreens('customfield_10001', {});
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldId with special characters', async () => {
+      transport.respondWith({ isLast: true, maxResults: 100, startAt: 0, total: 0, values: [] });
+
+      await fields.listFieldScreens('../admin');
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/screens`);
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldId: %s', async (fieldId) => {
+      await expect(fields.listFieldScreens(fieldId)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── B442: restoreField ────────────────────────────────────────────────────
+  describe('restoreField (B442)', () => {
+    it('sends POST to correct path and returns undefined', async () => {
+      transport.respondWith({});
+
+      await fields.restoreField('customfield_10001');
+
+      expect(transport.lastCall?.options.method).toBe('POST');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/customfield_10001/restore`);
+      expect(transport.lastCall?.options.body).toBeUndefined();
+    });
+
+    it('encodes id with special characters', async () => {
+      transport.respondWith({});
+
+      await fields.restoreField('../admin');
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/restore`);
+    });
+
+    it.each(['.', '..'])('rejects dot-segment id: %s', async (id) => {
+      await expect(fields.restoreField(id)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── B443: trashField ──────────────────────────────────────────────────────
+  describe('trashField (B443)', () => {
+    it('sends POST to correct path and returns undefined', async () => {
+      transport.respondWith({});
+
+      await fields.trashField('customfield_10001');
+
+      expect(transport.lastCall?.options.method).toBe('POST');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/customfield_10001/trash`);
+      expect(transport.lastCall?.options.body).toBeUndefined();
+    });
+
+    it('encodes id with special characters', async () => {
+      transport.respondWith({});
+
+      await fields.trashField('../admin');
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/trash`);
+    });
+
+    it.each(['.', '..'])('rejects dot-segment id: %s', async (id) => {
+      await expect(fields.trashField(id)).rejects.toThrow('path parameter must not be "." or ".."');
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── B444: removeAssociations ──────────────────────────────────────────────
+  describe('removeAssociations (B444)', () => {
+    it('sends DELETE to /field/association with correct body', async () => {
+      transport.respondWith({});
+
+      const body: FieldAssociationsRequest = {
+        associationContexts: [{ type: 'PROJECT_ID', identifier: 10000 }],
+        fields: [{ type: 'FIELD_ID', identifier: 'customfield_10000' }],
+      };
+      await fields.removeAssociations(body);
+
+      expect(transport.lastCall?.options.method).toBe('DELETE');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/association`);
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+  });
+
+  // ── B445: createAssociations ──────────────────────────────────────────────
+  describe('createAssociations (B445)', () => {
+    it('sends PUT to /field/association with correct body', async () => {
+      transport.respondWith({});
+
+      const body: FieldAssociationsRequest = {
+        associationContexts: [{ type: 'PROJECT_ID', identifier: 10000 }],
+        fields: [{ type: 'FIELD_ID', identifier: 'customfield_10000' }],
+      };
+      await fields.createAssociations(body);
+
+      expect(transport.lastCall?.options.method).toBe('PUT');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/association`);
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+  });
+
+  // ── B447: listTrashedFields ───────────────────────────────────────────────
+  describe('listTrashedFields (B447)', () => {
+    it('sends GET to /field/search/trashed and returns paginated fields', async () => {
+      const field = makeField('customfield_10000', 'Approvers');
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [field],
+      });
+
+      const result = await fields.listTrashedFields();
+
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/search/trashed`);
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(result.values).toEqual([field]);
+    });
+
+    it('sends all optional params when provided', async () => {
+      transport.respondWith({ isLast: true, maxResults: 10, startAt: 0, total: 0, values: [] });
+
+      await fields.listTrashedFields({
+        startAt: 0,
+        maxResults: 10,
+        id: ['customfield_10000', 'customfield_10001'],
+        query: 'approvers',
+        expand: 'trashDate',
+        orderBy: 'name',
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 0,
+        maxResults: 10,
+        id: 'customfield_10000,customfield_10001',
+        query: 'approvers',
+        expand: 'trashDate',
+        orderBy: 'name',
+      });
+    });
+
+    it('sends no query params when params is empty object', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.listTrashedFields({});
+
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+  });
+
+  // ── B446 / list() with projectIds ────────────────────────────────────────
+  describe('list() with projectIds (B446)', () => {
+    it('sends projectIds as comma-separated query param when provided', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.list({ projectIds: [10001, 10002] });
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/search`);
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectIds: '10001,10002',
+      });
+    });
+
+    it('omits projectIds when not provided', async () => {
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      await fields.list({});
+
+      expect(transport.lastCall?.options.query).toEqual({});
     });
   });
 });

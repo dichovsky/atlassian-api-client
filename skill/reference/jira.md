@@ -3168,9 +3168,9 @@ atlas jira workflowscheme bulk-mappings --body '{"id":"10001","workflowsForIssue
 
 ## `fields`
 
-Custom field CRUD and field context management.
+Custom field CRUD, field context management, and field admin/association operations.
 
-Covers: B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B905–B906 (context default values), field list/create/update/delete.
+Covers: B411 (field list-all), B414 (field project associations), B415–B418 (field contexts), B421–B426 (field context options), B419–B420 (context issue-type membership), B429 (context issue-type mappings), B432 (screens for field), B442–B445 (trash/restore/associate), B446 (field search paginated), B447 (trashed fields), B905–B906 (context default values), field list/create/update/delete.
 
 ### Fields (CRUD)
 
@@ -3349,4 +3349,49 @@ atlas jira fields field-option-suggestions-edit --field-key example-add-on__team
 # Get visible options for a field (search/view suggestions) (B440) — GET paginated
 atlas jira fields field-option-suggestions-search --field-key example-add-on__team-field
 atlas jira fields field-option-suggestions-search --field-key example-add-on__team-field --project-id 10001 --start-at 0 --max-results 50
+```
+
+### Field admin and association (B414, B432, B442–B445, B447)
+
+Trash/restore custom fields, manage field-to-project associations, list screens a field appears on, and list trashed fields.
+
+```sh
+# List project associations for a custom field (B414) — GET paginated
+atlas jira fields field-project-associations --field-id customfield_10001
+atlas jira fields field-project-associations --field-id customfield_10001 --start-at 0 --max-results 50
+
+# List screens a field is used in (B432) — GET paginated
+atlas jira fields field-screens --field-id customfield_10001
+atlas jira fields field-screens --field-id customfield_10001 --expand tab --start-at 0 --max-results 50
+
+# Restore a custom field from trash (B442) — POST
+atlas jira fields field-restore --field-id customfield_10001
+
+# Move a custom field to trash (B443) — POST
+atlas jira fields field-trash --field-id customfield_10001
+
+# Remove associations between fields and projects (B444) — DELETE with body
+atlas jira fields field-remove-associations --body '{"associationContexts":[{"type":"PROJECT_ID","identifier":10000}],"fields":[{"type":"FIELD_ID","identifier":"customfield_10000"}]}'
+
+# Create associations between fields and projects (B445) — PUT with body
+atlas jira fields field-create-associations --body '{"associationContexts":[{"type":"PROJECT_ID","identifier":10000},{"type":"PROJECT_ID","identifier":10001}],"fields":[{"type":"FIELD_ID","identifier":"customfield_10000"}]}'
+
+# List trashed custom fields (B447) — GET paginated
+atlas jira fields field-trash-list
+atlas jira fields field-trash-list --query approvers --max-results 50
+atlas jira fields field-trash-list --id customfield_10000,customfield_10001 --order-by trashDate
+```
+
+### Field search paginated (B411 + B446)
+
+`field-list-all` returns the flat array from `GET /field` (B411). `field-list` returns the paginated search from `GET /field/search` (B446), supporting filtering by type, id, query, orderBy, expand, and projectIds.
+
+```sh
+# List all fields (flat, not paginated) — B411
+atlas jira fields field-list-all
+
+# Search fields (paginated) — B446
+atlas jira fields field-list --max-results 50
+atlas jira fields field-list --type custom --query approvers
+atlas jira fields field-list --order-by screensCount --expand screensCount,contextsCount
 ```

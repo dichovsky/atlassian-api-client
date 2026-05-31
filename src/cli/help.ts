@@ -276,7 +276,7 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
-  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search
+  fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -545,6 +545,14 @@ EXAMPLES:
   atlas jira fields context-option-delete --field-id customfield_10001 --context-id 10025 --option-id 10001
   atlas jira fields context-option-replace-issues --field-id customfield_10001 --context-id 10025 --option-id 10001 --replace-with 10003
   atlas jira fields context-option-move --field-id customfield_10001 --context-id 10025 --option-ids 10001,10002 --position First
+  atlas jira fields field-project-associations --field-id customfield_10001
+  atlas jira fields field-screens --field-id customfield_10001
+  atlas jira fields field-restore --field-id customfield_10001
+  atlas jira fields field-trash --field-id customfield_10001
+  atlas jira fields field-remove-associations --body '{"associationContexts":[{"type":"PROJECT_ID","identifier":10000}],"fields":[{"type":"FIELD_ID","identifier":"customfield_10000"}]}'
+  atlas jira fields field-create-associations --body '{"associationContexts":[{"type":"PROJECT_ID","identifier":10000}],"fields":[{"type":"FIELD_ID","identifier":"customfield_10000"}]}'
+  atlas jira fields field-trash-list
+  atlas jira fields field-trash-list --query approvers --max-results 50
   atlas jira projects restore PROJ
   atlas jira projects list-roles PROJ
   atlas jira projects get-role PROJ 10001
