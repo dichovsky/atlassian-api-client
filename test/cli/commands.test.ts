@@ -1048,6 +1048,13 @@ const jiraFieldsMock = {
   replaceFieldOptionOnIssues: vi.fn(),
   listFieldOptionSuggestionsEdit: vi.fn(),
   listFieldOptionSuggestionsSearch: vi.fn(),
+  listFieldProjectAssociations: vi.fn(),
+  listFieldScreens: vi.fn(),
+  restoreField: vi.fn(),
+  trashField: vi.fn(),
+  removeAssociations: vi.fn(),
+  createAssociations: vi.fn(),
+  listTrashedFields: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -22289,6 +22296,222 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('fields', 'field-option-suggestions-search', [], {}), GLOBALS),
       ).rejects.toThrow('--field-key');
+    });
+
+    // ── field-project-associations (B414) ─────────────────────────────────
+    it('field-project-associations calls listFieldProjectAssociations with all params', async () => {
+      const mockPage = {
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [{ projectId: '10010' }],
+      };
+      jiraFieldsMock.listFieldProjectAssociations.mockResolvedValue(mockPage);
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-project-associations', [], {
+          'field-id': 'customfield_10001',
+          'start-at': '5',
+          'max-results': '25',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.listFieldProjectAssociations).toHaveBeenCalledWith(
+        'customfield_10001',
+        { startAt: 5, maxResults: 25 },
+      );
+      expect(result).toEqual(mockPage);
+    });
+
+    it('field-project-associations calls with empty params when none provided', async () => {
+      const mockPage = { isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listFieldProjectAssociations.mockResolvedValue(mockPage);
+
+      await executeJiraCommand(
+        cmd('fields', 'field-project-associations', [], { 'field-id': 'customfield_10001' }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.listFieldProjectAssociations).toHaveBeenCalledWith(
+        'customfield_10001',
+        {},
+      );
+    });
+
+    it('field-project-associations throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-project-associations', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-id');
+    });
+
+    // ── field-screens (B432) ──────────────────────────────────────────────
+    it('field-screens calls listFieldScreens with all params', async () => {
+      const mockPage = {
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 1,
+        values: [{ id: 10001, name: 'Default Screen' }],
+      };
+      jiraFieldsMock.listFieldScreens.mockResolvedValue(mockPage);
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-screens', [], {
+          'field-id': 'customfield_10001',
+          'start-at': '0',
+          'max-results': '50',
+          expand: 'tab',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.listFieldScreens).toHaveBeenCalledWith('customfield_10001', {
+        startAt: 0,
+        maxResults: 50,
+        expand: 'tab',
+      });
+      expect(result).toEqual(mockPage);
+    });
+
+    it('field-screens calls with empty params when none provided', async () => {
+      const mockPage = { isLast: true, maxResults: 100, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listFieldScreens.mockResolvedValue(mockPage);
+
+      await executeJiraCommand(
+        cmd('fields', 'field-screens', [], { 'field-id': 'customfield_10001' }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.listFieldScreens).toHaveBeenCalledWith('customfield_10001', {});
+    });
+
+    it('field-screens throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-screens', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-id');
+    });
+
+    // ── field-restore (B442) ──────────────────────────────────────────────
+    it('field-restore calls restoreField and returns { restored: true }', async () => {
+      jiraFieldsMock.restoreField.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-restore', [], { 'field-id': 'customfield_10001' }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.restoreField).toHaveBeenCalledWith('customfield_10001');
+      expect(result).toEqual({ restored: true });
+    });
+
+    it('field-restore throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-restore', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-id');
+    });
+
+    // ── field-trash (B443) ────────────────────────────────────────────────
+    it('field-trash calls trashField and returns { trashed: true }', async () => {
+      jiraFieldsMock.trashField.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-trash', [], { 'field-id': 'customfield_10001' }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.trashField).toHaveBeenCalledWith('customfield_10001');
+      expect(result).toEqual({ trashed: true });
+    });
+
+    it('field-trash throws when --field-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-trash', [], {}), GLOBALS),
+      ).rejects.toThrow('--field-id');
+    });
+
+    // ── field-remove-associations (B444) ──────────────────────────────────
+    it('field-remove-associations calls removeAssociations with body and returns { removed: true }', async () => {
+      jiraFieldsMock.removeAssociations.mockResolvedValue(undefined);
+      const body = {
+        associationContexts: [{ type: 'PROJECT_ID', identifier: 10000 }],
+        fields: [{ type: 'FIELD_ID', identifier: 'customfield_10000' }],
+      };
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-remove-associations', [], { body: JSON.stringify(body) }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.removeAssociations).toHaveBeenCalledWith(body);
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('field-remove-associations throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-remove-associations', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── field-create-associations (B445) ──────────────────────────────────
+    it('field-create-associations calls createAssociations with body and returns { created: true }', async () => {
+      jiraFieldsMock.createAssociations.mockResolvedValue(undefined);
+      const body = {
+        associationContexts: [{ type: 'PROJECT_ID', identifier: 10000 }],
+        fields: [{ type: 'FIELD_ID', identifier: 'customfield_10000' }],
+      };
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-create-associations', [], { body: JSON.stringify(body) }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.createAssociations).toHaveBeenCalledWith(body);
+      expect(result).toEqual({ created: true });
+    });
+
+    it('field-create-associations throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('fields', 'field-create-associations', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // ── field-trash-list (B447) ───────────────────────────────────────────
+    it('field-trash-list calls listTrashedFields with all params', async () => {
+      const mockPage = { isLast: true, maxResults: 10, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listTrashedFields.mockResolvedValue(mockPage);
+
+      const result = await executeJiraCommand(
+        cmd('fields', 'field-trash-list', [], {
+          'start-at': '0',
+          'max-results': '10',
+          id: 'customfield_10000,customfield_10001',
+          query: 'approvers',
+          expand: 'trashDate',
+          'order-by': 'name',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraFieldsMock.listTrashedFields).toHaveBeenCalledWith({
+        startAt: 0,
+        maxResults: 10,
+        id: ['customfield_10000', 'customfield_10001'],
+        query: 'approvers',
+        expand: 'trashDate',
+        orderBy: 'name',
+      });
+      expect(result).toEqual(mockPage);
+    });
+
+    it('field-trash-list calls with empty params when none provided', async () => {
+      const mockPage = { isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] };
+      jiraFieldsMock.listTrashedFields.mockResolvedValue(mockPage);
+
+      await executeJiraCommand(cmd('fields', 'field-trash-list', [], {}), GLOBALS);
+
+      expect(jiraFieldsMock.listTrashedFields).toHaveBeenCalledWith({});
     });
   });
 });

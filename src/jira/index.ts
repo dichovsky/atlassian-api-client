@@ -265,6 +265,17 @@ export type {
   CreateIssueFieldOptionData,
   ReplaceIssueFieldOptionOnIssuesParams,
   ListIssueFieldOptionSuggestionsParams,
+  FieldProjectAssociation,
+  FieldProjectAssociationPage,
+  ListFieldProjectAssociationsParams,
+  ScreenWithTab,
+  ScreenWithTabPage,
+  ListScreensForFieldParams,
+  AssociationContextObject,
+  FieldIdentifierObject,
+  FieldAssociationsRequest,
+  ListTrashedFieldsParams,
+  SearchFieldsParams,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {

@@ -2251,3 +2251,30 @@
 - [x] 🔴 🧩 API: B440 Jira: expose GET /rest/api/3/field/{fieldKey}/option/suggestions/search
   - **Impl:** `FieldsResource.listFieldOptionSuggestionsSearch(fieldKey, params?)` — paginated via `OffsetPaginatedResponse<IssueFieldOption>`; query: startAt?, maxResults?, projectId?. CLI: `atlas jira fields field-option-suggestions-search --field-key <key>`.
   - **Rat:** Spec-verified (operationId: getVisibleIssueFieldOptions). Returns options the user can view (broader than selectable; includes view-only options).
+- [x] 🔴 🧩 API: B914 Jira: GET /rest/api/3/fieldconfigurationscheme (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B915 Jira: POST /rest/api/3/fieldconfigurationscheme (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B916 Jira: DELETE /rest/api/3/fieldconfigurationscheme/{id} (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B917 Jira: PUT /rest/api/3/fieldconfigurationscheme/{id} (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B918 Jira: PUT /rest/api/3/fieldconfigurationscheme/{id}/mapping (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B919 Jira: POST /rest/api/3/fieldconfigurationscheme/{id}/mapping/delete (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B920 Jira: GET /rest/api/3/fieldconfigurationscheme/mapping (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B921 Jira: GET /rest/api/3/fieldconfigurationscheme/project (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.
+- [x] 🔴 🧩 API: B922 Jira: PUT /rest/api/3/fieldconfigurationscheme/project (deprecated — superseded by config.ts field-schemes)
+  - **Impl:** Skipped — deprecated in spec; successor /rest/api/3/config/fieldschemes already covered by FieldAssociationScheme resource (config.ts).
+  - **Rat:** Shipping deprecated CRUD that duplicates existing non-deprecated coverage is negative value; net coverage unchanged.

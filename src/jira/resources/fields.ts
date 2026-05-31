@@ -46,6 +46,8 @@ export interface ListFieldsParams {
   readonly query?: string;
   readonly orderBy?: string;
   readonly expand?: string;
+  /** Filter by project IDs. Spec: projectIds (int64[]). B446 */
+  readonly projectIds?: number[];
 }
 
 /** A custom field context. */
@@ -605,6 +607,93 @@ export interface ListIssueFieldOptionSuggestionsParams {
   readonly projectId?: number;
 }
 
+// ── Field admin types (B414, B432, B442, B443, B444, B445, B446, B447) ──────
+
+/** A single project association entry returned by B414.
+ * Spec: FieldProjectAssociation */
+export interface FieldProjectAssociation {
+  readonly projectId?: string;
+}
+
+/** Paginated page of FieldProjectAssociation items (B414).
+ * Spec: PageBeanFieldProjectAssociation */
+export type FieldProjectAssociationPage = OffsetPaginatedResponse<FieldProjectAssociation>;
+
+/** Query parameters for listing field project associations (B414). */
+export interface ListFieldProjectAssociationsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/** A single screen with tab info returned by B432.
+ * Spec: ScreenWithTab */
+export interface ScreenWithTab {
+  readonly id?: number;
+  readonly name?: string;
+  readonly description?: string;
+  readonly scope?: unknown;
+  readonly tab?: {
+    readonly id?: number;
+    readonly name?: string;
+  };
+}
+
+/** Paginated page of ScreenWithTab items (B432).
+ * Spec: PageBeanScreenWithTab */
+export type ScreenWithTabPage = OffsetPaginatedResponse<ScreenWithTab>;
+
+/** Query parameters for listing screens for a field (B432). */
+export interface ListScreensForFieldParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly expand?: string;
+}
+
+/** Context association item in an association request (B444, B445).
+ * Spec: AssociationContextObject — discriminated by `type` (e.g. PROJECT_ID). */
+export interface AssociationContextObject {
+  readonly type: string;
+  readonly identifier?: unknown;
+}
+
+/** Field identifier item in an association request (B444, B445).
+ * Spec: FieldIdentifierObject — discriminated by `type` (e.g. FIELD_ID). */
+export interface FieldIdentifierObject {
+  readonly type: string;
+  readonly identifier?: unknown;
+}
+
+/** Request body for PUT /rest/api/3/field/association (B445) and
+ * DELETE /rest/api/3/field/association (B444).
+ * Spec: FieldAssociationsRequest */
+export interface FieldAssociationsRequest {
+  readonly associationContexts: readonly AssociationContextObject[];
+  readonly fields: readonly FieldIdentifierObject[];
+}
+
+/** Query parameters for GET /rest/api/3/field/search/trashed (B447). */
+export interface ListTrashedFieldsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly id?: string[];
+  readonly query?: string;
+  readonly expand?: string;
+  readonly orderBy?: string;
+}
+
+/** Query parameters for GET /rest/api/3/field/search (B446).
+ * Note: reuses ListFieldsParams but `projectIds` is number[] per spec. */
+export interface SearchFieldsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly type?: ('custom' | 'system')[];
+  readonly id?: string[];
+  readonly query?: string;
+  readonly orderBy?: string;
+  readonly expand?: string;
+  readonly projectIds?: number[];
+}
+
 // ── Project mapping types (B427, B428, B430, B431) ──────────────────────────
 
 /** Request body for assigning or removing projects from a context (B427, B428).
@@ -686,6 +775,7 @@ export class FieldsResource {
       if (params.query !== undefined) query['query'] = params.query;
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
       if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.projectIds !== undefined) query['projectIds'] = params.projectIds.join(',');
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<Field>>({
@@ -1021,6 +1111,110 @@ export class FieldsResource {
     const response = await this.transport.request<FieldContextProjectMappingPage>({
       method: 'GET',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/projectmapping`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Field admin methods (B414, B432, B442, B443, B444, B445, B447) ──────────
+
+  /** Get project associations for a custom field (paginated). B414
+   * GET /rest/api/3/field/{fieldId}/association/project */
+  async listFieldProjectAssociations(
+    fieldId: string,
+    params?: ListFieldProjectAssociationsParams,
+  ): Promise<FieldProjectAssociationPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<FieldProjectAssociationPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/association/project`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Get screens for a field (paginated). B432
+   * GET /rest/api/3/field/{fieldId}/screens */
+  async listFieldScreens(
+    fieldId: string,
+    params?: ListScreensForFieldParams,
+  ): Promise<ScreenWithTabPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.expand !== undefined) query['expand'] = params.expand;
+    }
+    const response = await this.transport.request<ScreenWithTabPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/screens`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Restore a custom field from trash. B442
+   * POST /rest/api/3/field/{id}/restore — 200 empty object */
+  async restoreField(id: string): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(id)}/restore`,
+    });
+  }
+
+  /** Move a custom field to trash. B443
+   * POST /rest/api/3/field/{id}/trash — 200 empty object */
+  async trashField(id: string): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(id)}/trash`,
+    });
+  }
+
+  /** Remove associations between fields and projects/issue type contexts. B444
+   * DELETE /rest/api/3/field/association — 204 */
+  async removeAssociations(data: FieldAssociationsRequest): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/association`,
+      body: data,
+    });
+  }
+
+  /** Create associations between fields and projects. B445
+   * PUT /rest/api/3/field/association — 204 */
+  async createAssociations(data: FieldAssociationsRequest): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/association`,
+      body: data,
+    });
+  }
+
+  /** List trashed custom fields (paginated). B447
+   * GET /rest/api/3/field/search/trashed */
+  async listTrashedFields(
+    params?: ListTrashedFieldsParams,
+  ): Promise<OffsetPaginatedResponse<Field>> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.id !== undefined) query['id'] = params.id.join(',');
+      if (params.query !== undefined) query['query'] = params.query;
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+    }
+    const response = await this.transport.request<OffsetPaginatedResponse<Field>>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/search/trashed`,
       query,
     });
     return response.data;

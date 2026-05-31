@@ -157,6 +157,31 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('field-option-suggestions-edit');
     expect(JIRA_REF).toContain('field-option-suggestions-search');
   });
+
+  it('documents field admin and association API (B414, B432, B442-B445, B447)', () => {
+    expect(JIRA_REF).toContain('B414');
+    expect(JIRA_REF).toContain('B432');
+    expect(JIRA_REF).toContain('B442');
+    expect(JIRA_REF).toContain('B443');
+    expect(JIRA_REF).toContain('B444');
+    expect(JIRA_REF).toContain('B445');
+    expect(JIRA_REF).toContain('B447');
+    expect(JIRA_REF).toContain('### Field admin and association');
+    expect(JIRA_REF).toContain('field-project-associations');
+    expect(JIRA_REF).toContain('field-screens');
+    expect(JIRA_REF).toContain('field-restore');
+    expect(JIRA_REF).toContain('field-trash');
+    expect(JIRA_REF).toContain('field-remove-associations');
+    expect(JIRA_REF).toContain('field-create-associations');
+    expect(JIRA_REF).toContain('field-trash-list');
+  });
+
+  it('documents field search paginated (B411 + B446)', () => {
+    expect(JIRA_REF).toContain('B411');
+    expect(JIRA_REF).toContain('B446');
+    expect(JIRA_REF).toContain('field-list-all');
+    expect(JIRA_REF).toContain('field-list');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {
