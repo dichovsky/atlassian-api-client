@@ -150,6 +150,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   issuelinktype: 'executeIssueLinkType',
   'project-template': 'executeProjectTemplate',
   'universal-avatar': 'executeUniversalAvatar',
+  permissions: 'executePermissions',
 };
 
 /**

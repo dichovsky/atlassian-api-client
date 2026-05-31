@@ -2413,3 +2413,12 @@
 - [x] 🔴 🧩 Jira: B796 expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
   - **Impl:** `UniversalAvatarResource.getAvatarImageByOwner(type, entityId, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-owner <type> <entityId> [--size] [--format]`.
   - **Rat:** Same binary pattern as B794/B795. All three view methods use `responseType: 'arrayBuffer'`.
+- [x] 🔴 🧩 Jira: B613 expose GET /rest/api/3/permissions
+  - **Impl:** `PermissionsResource.getAll()` → `Permissions` (`{ permissions?: Record<string, Permission> }`). CLI: `atlas jira permissions get-all`. No params per spec.
+  - **Rat:** Spec-verified: GET /rest/api/3/permissions with no params, 200 → `$ref: Permissions`. Distinct from `mypermissions` (user-scoped) and `permissionscheme` (scheme management).
+- [x] 🔴 🧩 Jira: B614 expose POST /rest/api/3/permissions/check
+  - **Impl:** `PermissionsResource.check(body: BulkPermissionsRequestBean)` → `BulkPermissionGrants`. CLI: `atlas jira permissions check [--account-id] [--global-permissions JSON] [--project-permissions JSON]`. All fields optional — omitted fields not sent to API.
+  - **Rat:** Spec-verified: body is `BulkPermissionsRequestBean` with `accountId?`, `globalPermissions?: string[]`, `projectPermissions?: BulkProjectPermissions[]`. Conditional body-building for 100% branch coverage. New router flags: `--global-permissions`, `--project-permissions`.
+- [x] 🔴 🧩 Jira: B615 expose POST /rest/api/3/permissions/project
+  - **Impl:** `PermissionsResource.getPermittedProjects(body: PermissionsKeysBean)` → `PermittedProjects`. CLI: `atlas jira permissions permitted-projects --permissions JSON`. `permissions` is required string[].
+  - **Rat:** Spec-verified: body is `PermissionsKeysBean` with required `permissions: string[]`. 200 → `PermittedProjects` (`{ projects?: ProjectIdentifierBean[] }`).

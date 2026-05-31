@@ -213,6 +213,8 @@ export async function executeJiraCommand(
       return executeProjectTemplate(client, cmd);
     case 'universal-avatar':
       return executeUniversalAvatar(client, cmd);
+    case 'permissions':
+      return executePermissions(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7163,6 +7165,49 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown project-template action: ${cmd.action}. Actions: ${PROJECT_TEMPLATE_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── permissions (B613-B615) ───────────────────────────────────────────────────
+
+async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-all':
+      return client.permissions.getAll();
+
+    case 'check': {
+      const accountId = asString(opts['account-id']);
+      const globalPermissionsRaw = asString(opts['global-permissions']);
+      const projectPermissionsRaw = asString(opts['project-permissions']);
+
+      const body: Record<string, unknown> = {};
+      if (accountId !== undefined) body['accountId'] = accountId;
+      if (globalPermissionsRaw !== undefined)
+        body['globalPermissions'] = parseJsonArrayFlag(
+          globalPermissionsRaw,
+          '--global-permissions',
+        ) as string[];
+      if (projectPermissionsRaw !== undefined)
+        body['projectPermissions'] = parseJsonArrayFlag(
+          projectPermissionsRaw,
+          '--project-permissions',
+        );
+
+      return client.permissions.check(body as Parameters<typeof client.permissions.check>[0]);
+    }
+
+    case 'permitted-projects': {
+      const permissionsRaw = requireOpt(opts['permissions'], '--permissions');
+      const permissions = parseJsonArrayFlag(permissionsRaw, '--permissions') as string[];
+      return client.permissions.getPermittedProjects({ permissions });
+    }
+
+    default:
+      throw new Error(
+        `Unknown permissions action: ${cmd.action}. Actions: get-all, check, permitted-projects`,
       );
   }
 }

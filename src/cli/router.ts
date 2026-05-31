@@ -435,6 +435,9 @@ const GLOBAL_OPTIONS = {
   'enable-screen-delegated-admin': { type: 'boolean' as const },
   'enable-workflow-delegated-admin': { type: 'boolean' as const },
   language: { type: 'string' as const },
+  // permissions options (B613-B615)
+  'global-permissions': { type: 'string' as const },
+  'project-permissions': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
