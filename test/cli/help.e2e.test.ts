@@ -144,6 +144,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   plans: 'executePlans',
   workflowscheme: 'executeWorkflowScheme',
   fields: 'executeFields',
+  jql: 'executeJql',
 };
 
 /**

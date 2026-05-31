@@ -70,6 +70,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`, `create-draft`, `delete-draft`, `get-draft`, `update-draft`, `delete-draft-default`, `get-draft-default`, `set-draft-default`, `delete-draft-issuetype`, `get-draft-issuetype`, `set-draft-issuetype`, `publish-draft`, `delete-draft-workflow`, `get-draft-workflow`, `set-draft-workflow`, `bulk-read`, `bulk-update`, `bulk-mappings`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `fields`                 | `field-list`, `field-list-all`, `field-create`, `field-update`, `field-delete`, `context-list`, `context-create`, `context-update`, `context-delete`, `context-option-list`, `context-option-create`, `context-option-update`, `context-option-delete`, `context-option-replace-issues`, `context-option-move`, `context-issuetype-set`, `context-issuetype-remove`, `context-issuetype-mapping`, `context-default-list`, `context-default-set`, `context-project-set`, `context-project-remove`, `context-mapping`, `context-project-mapping`, `field-option-list`, `field-option-create`, `field-option-delete`, `field-option-get`, `field-option-update`, `field-option-replace-issues`, `field-option-suggestions-edit`, `field-option-suggestions-search`, `field-project-associations`, `field-screens`, `field-restore`, `field-trash`, `field-remove-associations`, `field-create-associations`, `field-trash-list`                                                                                                                                         |
+| `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -136,6 +138,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `screens`                | `list`, `create`, `delete`, `update`, `list-available-fields`, `list-tabs`, `create-tab`, `delete-tab`, `update-tab`, `list-tab-fields`, `add-field-to-tab`, `remove-field-from-tab`, `move-field`, `move-tab`, `add-to-default`, `list-all-tabs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`, `create-draft`, `delete-draft`, `get-draft`, `update-draft`, `delete-draft-default`, `get-draft-default`, `set-draft-default`, `delete-draft-issuetype`, `get-draft-issuetype`, `set-draft-issuetype`, `publish-draft`, `delete-draft-workflow`, `get-draft-workflow`, `set-draft-workflow`, `bulk-read`, `bulk-update`, `bulk-mappings`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `fields`                 | `field-list`, `field-list-all`, `field-create`, `field-update`, `field-delete`, `context-list`, `context-create`, `context-update`, `context-delete`, `context-option-list`, `context-option-create`, `context-option-update`, `context-option-delete`, `context-option-replace-issues`, `context-option-move`, `context-issuetype-set`, `context-issuetype-remove`, `context-issuetype-mapping`, `context-default-list`, `context-default-set`, `context-project-set`, `context-project-remove`, `context-mapping`, `context-project-mapping`, `field-option-list`, `field-option-create`, `field-option-delete`, `field-option-get`, `field-option-update`, `field-option-replace-issues`, `field-option-suggestions-edit`, `field-option-suggestions-search`, `field-project-associations`, `field-screens`, `field-restore`, `field-trash`, `field-remove-associations`, `field-create-associations`, `field-trash-list`                                                                                                                                         |
+| `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## `issue-type-schemes`
 
@@ -1394,18 +1398,38 @@ atlas jira backlog move --issues PROJ-3,PROJ-4
 
 ## `webhooks`
 
-| Action        | Positionals | Required flags | Optional flags             |
-| ------------- | ----------- | -------------- | -------------------------- |
-| `list-failed` | —           | —              | `--max-results`, `--after` |
+| Action        | Positionals | Required flags        | Optional flags                |
+| ------------- | ----------- | --------------------- | ----------------------------- |
+| `list`        | —           | —                     | `--start-at`, `--max-results` |
+| `register`    | —           | `--url`, `--webhooks` | —                             |
+| `refresh`     | —           | `--webhook-ids`       | —                             |
+| `list-failed` | —           | —                     | `--max-results`, `--after`    |
 
 **Notes:**
 
+- `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
+- `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
+- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry by 30 days.
 - `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
 - `--max-results` caps the number of results in a single page.
 - The SDK exposes `listFailed()` (single page) and `listAllFailed()` (async generator) on `client.webhooks`.
 
 ```sh
+# List registered webhooks (paginated)
+atlas jira webhooks list
+
+# List with pagination
+atlas jira webhooks list --start-at 0 --max-results 50
+
+# Register a new webhook
+atlas jira webhooks register \
+  --url 'https://example.com/hook' \
+  --webhooks '[{"jqlFilter":"project=MYPROJ","events":["jira:issue_created","jira:issue_updated"]}]'
+
+# Refresh (extend) webhook expiry
+atlas jira webhooks refresh --webhook-ids '[10000,10001]'
+
 # List failed webhook deliveries (default page size)
 atlas jira webhooks list-failed
 
@@ -3408,4 +3432,72 @@ atlas jira fields field-list-all
 atlas jira fields field-list --max-results 50
 atlas jira fields field-list --type custom --query approvers
 atlas jira fields field-list --order-by screensCount --expand screensCount,contextsCount
+```
+
+## `jql`
+
+JQL query and precomputation API (B587–B596). Covers autocomplete, parse, sanitize, match, precomputation management, and personal data migration.
+
+| Action                      | Positionals | Required flags          | Optional flags                                                |
+| --------------------------- | ----------- | ----------------------- | ------------------------------------------------------------- |
+| `autocomplete-data`         | —           | —                       | —                                                             |
+| `autocomplete-data-post`    | —           | —                       | `--project-ids`, `--include-collapsed-fields`                 |
+| `autocomplete-suggestions`  | —           | `--field-name`          | `--field-value`, `--predicate-name`, `--predicate-value`      |
+| `get-precomputations`       | —           | —                       | `--function-key`, `--start-at`, `--max-results`, `--order-by` |
+| `update-precomputations`    | —           | `--values`              | `--skip-not-found`                                            |
+| `get-precomputations-by-id` | —           | —                       | `--precomputation-ids`, `--order-by`                          |
+| `match-issues`              | —           | `--issue-ids`, `--jqls` | —                                                             |
+| `parse`                     | —           | `--queries`             | `--validation`                                                |
+| `migrate-queries`           | —           | —                       | `--query-strings`                                             |
+| `sanitize`                  | —           | `--queries`             | —                                                             |
+
+**Notes:**
+
+- `autocomplete-data` (B587): `GET /rest/api/3/jql/autocompletedata` — returns field names, function names, and reserved words for JQL autocompletion.
+- `autocomplete-data-post` (B588): `POST /rest/api/3/jql/autocompletedata` — same as GET but lets you filter by `--project-ids` (CSV of int IDs) and include collapsed fields via `--include-collapsed-fields`.
+- `autocomplete-suggestions` (B589): `GET /rest/api/3/jql/autocompletedata/suggestions` — field value suggestions for a given `--field-name`.
+- `get-precomputations` (B590): `GET /rest/api/3/jql/function/computation` — paginated list of app function precomputations. `--function-key` accepts a CSV of function key strings.
+- `update-precomputations` (B591): `POST /rest/api/3/jql/function/computation` — update precomputation values. `--values` is a JSON array of `{id, value?, error?}` objects. `--skip-not-found` skips missing IDs instead of failing.
+- `get-precomputations-by-id` (B592): `POST /rest/api/3/jql/function/computation/search` — fetch precomputations by `--precomputation-ids` (CSV of UUIDs).
+- `match-issues` (B593): `POST /rest/api/3/jql/match` — check which issues match JQL queries. `--issue-ids` is a CSV of integer IDs; `--jqls` is a JSON array of query strings.
+- `parse` (B594): `POST /rest/api/3/jql/parse` — parse JQL queries. `--queries` is a JSON array of query strings; `--validation` is `strict`, `warn`, or `none`.
+- `migrate-queries` (B595): `POST /rest/api/3/jql/pdcleaner` — convert user identifiers to account IDs in JQL. `--query-strings` is a JSON array of query strings.
+- `sanitize` (B596): `POST /rest/api/3/jql/sanitize` — sanitize JQL queries. `--queries` is a JSON array of `{query, accountId?}` objects.
+
+```sh
+# Get JQL autocomplete data (GET) — B587
+atlas jira jql autocomplete-data
+
+# Get autocomplete data filtered by project — B588
+atlas jira jql autocomplete-data-post --project-ids 10001,10002
+
+# Include collapsed custom fields — B588
+atlas jira jql autocomplete-data-post --include-collapsed-fields
+
+# Get field value suggestions — B589
+atlas jira jql autocomplete-suggestions --field-name status
+
+# Get app function precomputations — B590
+atlas jira jql get-precomputations --max-results 50
+
+# Get precomputations for specific function key — B590
+atlas jira jql get-precomputations --function-key 'ari:cloud:ecosystem::extension/app/env/static/myFn'
+
+# Update precomputation values — B591
+atlas jira jql update-precomputations --values '[{"id":"f2ef228b-367f-4c6b-bd9d-0d0e96b5bd7b","value":"issue in (TEST-1, TEST-2)"}]'
+
+# Fetch precomputations by ID — B592
+atlas jira jql get-precomputations-by-id --precomputation-ids 'f2ef228b-367f-4c6b-bd9d-0d0e96b5bd7b,2a854f11-d0e1-4260-aea8-64a562a7062a'
+
+# Check which issues match JQL queries — B593
+atlas jira jql match-issues --issue-ids 10001,10002,10003 --jqls '["project = FOO","issuetype = Bug"]'
+
+# Parse JQL queries — B594
+atlas jira jql parse --queries '["project = TEST AND status = Open"]' --validation strict
+
+# Migrate user identifiers to account IDs — B595
+atlas jira jql migrate-queries --query-strings '["assignee = mia","reporter = alana"]'
+
+# Sanitize JQL queries — B596
+atlas jira jql sanitize --queries '[{"query":"project = TEST AND assignee = currentUser()","accountId":"612345:abc"}]'
 ```

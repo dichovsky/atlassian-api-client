@@ -398,6 +398,23 @@ const GLOBAL_OPTIONS = {
   // fields key option options (B433-B440)
   'field-key': { type: 'string' as const },
   'override-screen-security': { type: 'boolean' as const },
+  // jql options (B587-B596)
+  'include-collapsed-fields': { type: 'boolean' as const },
+  'field-name': { type: 'string' as const },
+  'field-value': { type: 'string' as const },
+  'predicate-name': { type: 'string' as const },
+  'predicate-value': { type: 'string' as const },
+  'function-key': { type: 'string' as const },
+  values: { type: 'string' as const },
+  'skip-not-found': { type: 'boolean' as const },
+  'precomputation-ids': { type: 'string' as const },
+  jqls: { type: 'string' as const },
+  queries: { type: 'string' as const },
+  'query-strings': { type: 'string' as const },
+  validation: { type: 'string' as const },
+  // webhooks options (B833, B834, B836)
+  webhooks: { type: 'string' as const },
+  'webhook-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

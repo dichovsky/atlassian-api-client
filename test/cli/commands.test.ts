@@ -1098,6 +1098,18 @@ const jiraWorkflowSchemeMock = {
   bulkUpdate: vi.fn(),
   bulkRequiredMappings: vi.fn(),
 };
+const jiraJqlMock = {
+  getAutocompleteData: vi.fn(),
+  getAutocompleteDataPost: vi.fn(),
+  getFieldReferenceSuggestions: vi.fn(),
+  getPrecomputations: vi.fn(),
+  updatePrecomputations: vi.fn(),
+  getPrecomputationsById: vi.fn(),
+  matchIssues: vi.fn(),
+  parse: vi.fn(),
+  migrateQueries: vi.fn(),
+  sanitize: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -1170,6 +1182,7 @@ vi.mock('../../src/jira/client.js', () => {
       plans: jiraPlansMock,
       workflowScheme: jiraWorkflowSchemeMock,
       fields: jiraFieldsMock,
+      jql: jiraJqlMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -12781,6 +12794,113 @@ describe('executeJiraCommand', () => {
   // ── webhooks ──────────────────────────────────────────────────────────────
 
   describe('webhooks resource', () => {
+    it('list calls client.webhooks.list() with no params', async () => {
+      // Arrange
+      const page = {
+        values: [{ id: 1, jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] }],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+        isLast: true,
+      };
+      jiraWebhooksMock.list.mockResolvedValue(page);
+
+      // Act
+      const result = await executeJiraCommand(cmd('webhooks', 'list'), GLOBALS);
+
+      // Assert
+      expect(jiraWebhooksMock.list).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('list passes --start-at and --max-results', async () => {
+      // Arrange
+      jiraWebhooksMock.list.mockResolvedValue({
+        values: [],
+        startAt: 10,
+        maxResults: 10,
+        total: 0,
+        isLast: true,
+      });
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'list', [], { 'start-at': '10', 'max-results': '10' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.list).toHaveBeenCalledWith({ startAt: 10, maxResults: 10 });
+    });
+
+    it('register calls client.webhooks.register() with url and webhooks', async () => {
+      // Arrange
+      const result = { webhookRegistrationResult: [{ createdWebhookId: 10000 }] };
+      jiraWebhooksMock.register.mockResolvedValue(result);
+      const webhooksJson = JSON.stringify([
+        { jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] },
+      ]);
+
+      // Act
+      const output = await executeJiraCommand(
+        cmd('webhooks', 'register', [], {
+          url: 'https://example.com/hook',
+          webhooks: webhooksJson,
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.register).toHaveBeenCalledWith({
+        url: 'https://example.com/hook',
+        webhooks: [{ jqlFilter: 'project=MYPROJ', events: ['jira:issue_created'] }],
+      });
+      expect(output).toEqual(result);
+    });
+
+    it('register throws when --url is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('webhooks', 'register', [], {
+            webhooks: '[{"jqlFilter":"project=X","events":["jira:issue_created"]}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--url is required');
+    });
+
+    it('register throws when --webhooks is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('webhooks', 'register', [], { url: 'https://example.com/hook' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--webhooks is required');
+    });
+
+    it('refresh calls client.webhooks.refresh() with webhook IDs', async () => {
+      // Arrange
+      jiraWebhooksMock.refresh.mockResolvedValue(undefined);
+
+      // Act
+      await executeJiraCommand(
+        cmd('webhooks', 'refresh', [], { 'webhook-ids': '[10000, 10001]' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.refresh).toHaveBeenCalledWith([10000, 10001]);
+    });
+
+    it('refresh throws when --webhook-ids is missing', async () => {
+      await expect(executeJiraCommand(cmd('webhooks', 'refresh', []), GLOBALS)).rejects.toThrow(
+        '--webhook-ids is required',
+      );
+    });
+
     it('list-failed calls client.webhooks.listFailed() and returns result', async () => {
       // Arrange
       const page = {
@@ -22653,6 +22773,257 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(cmd('fields', 'field-trash-list', [], {}), GLOBALS);
 
       expect(jiraFieldsMock.listTrashedFields).toHaveBeenCalledWith({});
+    });
+  });
+
+  // ── jql ───────────────────────────────────────────────────────────────────
+
+  describe('jql resource', () => {
+    // B587: GET /jql/autocompletedata
+    it('autocomplete-data calls client.jql.getAutocompleteData()', async () => {
+      const resp = { visibleFieldNames: [], jqlReservedWords: [] };
+      jiraJqlMock.getAutocompleteData.mockResolvedValue(resp);
+      const result = await executeJiraCommand(cmd('jql', 'autocomplete-data'), GLOBALS);
+      expect(jiraJqlMock.getAutocompleteData).toHaveBeenCalled();
+      expect(result).toEqual(resp);
+    });
+
+    // B588: POST /jql/autocompletedata
+    it('autocomplete-data-post calls getAutocompleteDataPost with no filter when no flags', async () => {
+      jiraJqlMock.getAutocompleteDataPost.mockResolvedValue({});
+      await executeJiraCommand(cmd('jql', 'autocomplete-data-post'), GLOBALS);
+      expect(jiraJqlMock.getAutocompleteDataPost).toHaveBeenCalledWith({});
+    });
+
+    it('autocomplete-data-post passes projectIds as number array', async () => {
+      jiraJqlMock.getAutocompleteDataPost.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('jql', 'autocomplete-data-post', [], { 'project-ids': '10001,10002' }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getAutocompleteDataPost).toHaveBeenCalledWith({
+        projectIds: [10001, 10002],
+      });
+    });
+
+    it('autocomplete-data-post passes includeCollapsedFields flag', async () => {
+      jiraJqlMock.getAutocompleteDataPost.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('jql', 'autocomplete-data-post', [], { 'include-collapsed-fields': true }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getAutocompleteDataPost).toHaveBeenCalledWith({
+        includeCollapsedFields: true,
+      });
+    });
+
+    // B589: GET /jql/autocompletedata/suggestions
+    it('autocomplete-suggestions requires --field-name', async () => {
+      await expect(
+        executeJiraCommand(cmd('jql', 'autocomplete-suggestions'), GLOBALS),
+      ).rejects.toThrow('--field-name');
+    });
+
+    it('autocomplete-suggestions calls getFieldReferenceSuggestions with fieldName', async () => {
+      jiraJqlMock.getFieldReferenceSuggestions.mockResolvedValue({ results: [] });
+      await executeJiraCommand(
+        cmd('jql', 'autocomplete-suggestions', [], { 'field-name': 'status' }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getFieldReferenceSuggestions).toHaveBeenCalledWith({
+        fieldName: 'status',
+      });
+    });
+
+    it('autocomplete-suggestions passes optional flags', async () => {
+      jiraJqlMock.getFieldReferenceSuggestions.mockResolvedValue({ results: [] });
+      await executeJiraCommand(
+        cmd('jql', 'autocomplete-suggestions', [], {
+          'field-name': 'assignee',
+          'field-value': 'john',
+          'predicate-name': 'was',
+          'predicate-value': 'before',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getFieldReferenceSuggestions).toHaveBeenCalledWith({
+        fieldName: 'assignee',
+        fieldValue: 'john',
+        predicateName: 'was',
+        predicateValue: 'before',
+      });
+    });
+
+    // B590: GET /jql/function/computation
+    it('get-precomputations calls getPrecomputations with no params', async () => {
+      jiraJqlMock.getPrecomputations.mockResolvedValue({ values: [] });
+      const result = await executeJiraCommand(cmd('jql', 'get-precomputations'), GLOBALS);
+      expect(jiraJqlMock.getPrecomputations).toHaveBeenCalledWith({});
+      expect(result).toEqual({ values: [] });
+    });
+
+    it('get-precomputations passes all optional flags', async () => {
+      jiraJqlMock.getPrecomputations.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('jql', 'get-precomputations', [], {
+          'function-key': 'fnA,fnB',
+          'start-at': '0',
+          'max-results': '50',
+          'order-by': 'updated',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getPrecomputations).toHaveBeenCalledWith({
+        functionKey: ['fnA', 'fnB'],
+        startAt: 0,
+        maxResults: 50,
+        orderBy: 'updated',
+      });
+    });
+
+    // B591: POST /jql/function/computation
+    it('update-precomputations requires --values', async () => {
+      await expect(
+        executeJiraCommand(cmd('jql', 'update-precomputations'), GLOBALS),
+      ).rejects.toThrow('--values');
+    });
+
+    it('update-precomputations calls updatePrecomputations with values', async () => {
+      jiraJqlMock.updatePrecomputations.mockResolvedValue({ notFoundPrecomputationIDs: [] });
+      const values = '[{"id":"abc","value":"issue in (X-1)"}]';
+      await executeJiraCommand(cmd('jql', 'update-precomputations', [], { values }), GLOBALS);
+      expect(jiraJqlMock.updatePrecomputations).toHaveBeenCalledWith(
+        { values: [{ id: 'abc', value: 'issue in (X-1)' }] },
+        {},
+      );
+    });
+
+    it('update-precomputations passes skip-not-found', async () => {
+      jiraJqlMock.updatePrecomputations.mockResolvedValue({});
+      const values = '[{"id":"abc","value":"issue in (X-1)"}]';
+      await executeJiraCommand(
+        cmd('jql', 'update-precomputations', [], { values, 'skip-not-found': true }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.updatePrecomputations).toHaveBeenCalledWith(
+        { values: [{ id: 'abc', value: 'issue in (X-1)' }] },
+        { skipNotFoundPrecomputations: true },
+      );
+    });
+
+    // B592: POST /jql/function/computation/search
+    it('get-precomputations-by-id calls getPrecomputationsById with no args', async () => {
+      jiraJqlMock.getPrecomputationsById.mockResolvedValue({ precomputations: [] });
+      await executeJiraCommand(cmd('jql', 'get-precomputations-by-id'), GLOBALS);
+      expect(jiraJqlMock.getPrecomputationsById).toHaveBeenCalledWith({}, {});
+    });
+
+    it('get-precomputations-by-id passes precomputation-ids and order-by', async () => {
+      jiraJqlMock.getPrecomputationsById.mockResolvedValue({ precomputations: [] });
+      await executeJiraCommand(
+        cmd('jql', 'get-precomputations-by-id', [], {
+          'precomputation-ids': 'abc,def',
+          'order-by': 'created',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getPrecomputationsById).toHaveBeenCalledWith(
+        { precomputationIDs: ['abc', 'def'] },
+        { orderBy: 'created' },
+      );
+    });
+
+    // B593: POST /jql/match
+    it('match-issues requires --issue-ids', async () => {
+      await expect(
+        executeJiraCommand(cmd('jql', 'match-issues', [], { jqls: '["project = FOO"]' }), GLOBALS),
+      ).rejects.toThrow('--issue-ids');
+    });
+
+    it('match-issues requires --jqls', async () => {
+      await expect(
+        executeJiraCommand(cmd('jql', 'match-issues', [], { 'issue-ids': '10001' }), GLOBALS),
+      ).rejects.toThrow('--jqls');
+    });
+
+    it('match-issues calls matchIssues with issueIds and jqls', async () => {
+      jiraJqlMock.matchIssues.mockResolvedValue({ matches: [] });
+      await executeJiraCommand(
+        cmd('jql', 'match-issues', [], {
+          'issue-ids': '10001,10002',
+          jqls: '["project = FOO","issuetype = Bug"]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.matchIssues).toHaveBeenCalledWith({
+        issueIds: [10001, 10002],
+        jqls: ['project = FOO', 'issuetype = Bug'],
+      });
+    });
+
+    // B594: POST /jql/parse
+    it('parse requires --queries', async () => {
+      await expect(executeJiraCommand(cmd('jql', 'parse'), GLOBALS)).rejects.toThrow('--queries');
+    });
+
+    it('parse calls jql.parse with queries', async () => {
+      jiraJqlMock.parse.mockResolvedValue({ queries: [] });
+      await executeJiraCommand(cmd('jql', 'parse', [], { queries: '["project = TEST"]' }), GLOBALS);
+      expect(jiraJqlMock.parse).toHaveBeenCalledWith({ queries: ['project = TEST'] });
+    });
+
+    it('parse passes optional --validation', async () => {
+      jiraJqlMock.parse.mockResolvedValue({ queries: [] });
+      await executeJiraCommand(
+        cmd('jql', 'parse', [], { queries: '["project = TEST"]', validation: 'strict' }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.parse).toHaveBeenCalledWith({
+        queries: ['project = TEST'],
+        validation: 'strict',
+      });
+    });
+
+    // B595: POST /jql/pdcleaner
+    it('migrate-queries calls migrateQueries with empty body when no flags', async () => {
+      jiraJqlMock.migrateQueries.mockResolvedValue({});
+      await executeJiraCommand(cmd('jql', 'migrate-queries'), GLOBALS);
+      expect(jiraJqlMock.migrateQueries).toHaveBeenCalledWith({});
+    });
+
+    it('migrate-queries passes --query-strings as array', async () => {
+      jiraJqlMock.migrateQueries.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('jql', 'migrate-queries', [], { 'query-strings': '["assignee = mia"]' }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.migrateQueries).toHaveBeenCalledWith({ queryStrings: ['assignee = mia'] });
+    });
+
+    // B596: POST /jql/sanitize
+    it('sanitize requires --queries', async () => {
+      await expect(executeJiraCommand(cmd('jql', 'sanitize'), GLOBALS)).rejects.toThrow(
+        '--queries',
+      );
+    });
+
+    it('sanitize calls jql.sanitize with queries array', async () => {
+      jiraJqlMock.sanitize.mockResolvedValue({ queries: [] });
+      await executeJiraCommand(
+        cmd('jql', 'sanitize', [], {
+          queries: '[{"query":"project = TEST","accountId":"612345:abc"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.sanitize).toHaveBeenCalledWith({
+        queries: [{ query: 'project = TEST', accountId: '612345:abc' }],
+      });
+    });
+
+    it('throws on unknown jql action', async () => {
+      await expect(executeJiraCommand(cmd('jql', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown jql action',
+      );
     });
   });
 });
