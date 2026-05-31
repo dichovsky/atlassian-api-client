@@ -1,5 +1,112 @@
 import type { Transport } from '../../core/types.js';
 
+// ── B588: POST /jql/autocompletedata ─────────────────────────────────────────
+
+export interface SearchAutoCompleteFilter {
+  readonly projectIds?: number[];
+  readonly includeCollapsedFields?: boolean;
+}
+
+// ── B590/B591/B592: JQL function precomputation types ────────────────────────
+
+export interface JqlFunctionPrecomputation {
+  readonly id?: string;
+  readonly functionKey?: string;
+  readonly functionName?: string;
+  readonly field?: string;
+  readonly operator?: string;
+  readonly arguments?: string[];
+  readonly value?: string;
+  readonly error?: string;
+  readonly created?: string;
+  readonly updated?: string;
+  readonly used?: string;
+}
+
+export interface JqlPrecomputationsPage {
+  readonly isLast?: boolean;
+  readonly maxResults?: number;
+  readonly nextPage?: string;
+  readonly self?: string;
+  readonly startAt?: number;
+  readonly total?: number;
+  readonly values?: JqlFunctionPrecomputation[];
+}
+
+export interface GetPrecomputationsParams {
+  readonly functionKey?: string[];
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly orderBy?: string;
+}
+
+export interface JqlFunctionPrecomputationUpdateItem {
+  readonly id: string;
+  readonly value?: string;
+  readonly error?: string;
+}
+
+export interface UpdatePrecomputationsData {
+  readonly values: JqlFunctionPrecomputationUpdateItem[];
+}
+
+export interface UpdatePrecomputationsParams {
+  readonly skipNotFoundPrecomputations?: boolean;
+}
+
+export interface UpdatePrecomputationsResponse {
+  readonly notFoundPrecomputationIDs?: string[];
+}
+
+// ── B592: POST /jql/function/computation/search ───────────────────────────────
+
+export interface GetPrecomputationsByIdData {
+  readonly precomputationIDs?: string[];
+}
+
+export interface GetPrecomputationsByIdParams {
+  readonly orderBy?: string;
+}
+
+export interface GetPrecomputationsByIdResponse {
+  readonly precomputations?: JqlFunctionPrecomputation[];
+  readonly notFoundPrecomputationIDs?: string[];
+}
+
+// ── B593: POST /jql/match ─────────────────────────────────────────────────────
+
+export interface IssuesAndJqlQueries {
+  readonly issueIds: number[];
+  readonly jqls: string[];
+}
+
+export interface IssueMatchesForJql {
+  readonly matchedIssues: number[];
+  readonly errors: string[];
+}
+
+export interface IssueMatches {
+  readonly matches: IssueMatchesForJql[];
+}
+
+// ── B595: POST /jql/pdcleaner ─────────────────────────────────────────────────
+
+export interface JqlPersonalDataMigrationRequest {
+  readonly queryStrings?: string[];
+}
+
+export interface JqlQueryWithUnknownUsers {
+  readonly originalQuery?: string;
+  readonly convertedQuery?: string;
+}
+
+export interface ConvertedJqlQueries {
+  readonly queryStrings?: string[];
+  readonly queriesWithUnknownUsers?: JqlQueryWithUnknownUsers[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface JqlAutocompleteData {
   readonly visibleFieldNames?: JqlAutocompleteField[];
   readonly visibleFunctionNames?: JqlAutocompleteSuggestion[];
@@ -128,6 +235,87 @@ export class JqlResource {
     const response = await this.transport.request<SanitizedJqlQueries>({
       method: 'POST',
       path: `${this.baseUrl}/jql/sanitize`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Get field reference data (POST) — filter by project IDs or include collapsed fields. B588 */
+  async getAutocompleteDataPost(filter?: SearchAutoCompleteFilter): Promise<JqlAutocompleteData> {
+    const response = await this.transport.request<JqlAutocompleteData>({
+      method: 'POST',
+      path: `${this.baseUrl}/jql/autocompletedata`,
+      body: filter ?? {},
+    });
+    return response.data;
+  }
+
+  /** Get precomputations (apps). B590 */
+  async getPrecomputations(params?: GetPrecomputationsParams): Promise<JqlPrecomputationsPage> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.functionKey !== undefined) query['functionKey'] = params.functionKey.join(',');
+    if (params?.startAt !== undefined) query['startAt'] = String(params.startAt);
+    if (params?.maxResults !== undefined) query['maxResults'] = String(params.maxResults);
+    if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
+
+    const response = await this.transport.request<JqlPrecomputationsPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/jql/function/computation`,
+      ...(Object.keys(query).length > 0 && { query }),
+    });
+    return response.data;
+  }
+
+  /** Update precomputations (apps). B591 */
+  async updatePrecomputations(
+    data: UpdatePrecomputationsData,
+    params?: UpdatePrecomputationsParams,
+  ): Promise<UpdatePrecomputationsResponse> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.skipNotFoundPrecomputations !== undefined)
+      query['skipNotFoundPrecomputations'] = String(params.skipNotFoundPrecomputations);
+
+    const response = await this.transport.request<UpdatePrecomputationsResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/jql/function/computation`,
+      body: data,
+      ...(Object.keys(query).length > 0 && { query }),
+    });
+    return response.data;
+  }
+
+  /** Get precomputations by ID (apps). B592 */
+  async getPrecomputationsById(
+    data: GetPrecomputationsByIdData,
+    params?: GetPrecomputationsByIdParams,
+  ): Promise<GetPrecomputationsByIdResponse> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
+
+    const response = await this.transport.request<GetPrecomputationsByIdResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/jql/function/computation/search`,
+      body: data,
+      ...(Object.keys(query).length > 0 && { query }),
+    });
+    return response.data;
+  }
+
+  /** Check which issues match one or more JQL queries. B593 */
+  async matchIssues(data: IssuesAndJqlQueries): Promise<IssueMatches> {
+    const response = await this.transport.request<IssueMatches>({
+      method: 'POST',
+      path: `${this.baseUrl}/jql/match`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Convert user identifiers to account IDs in JQL queries. B595 */
+  async migrateQueries(data: JqlPersonalDataMigrationRequest): Promise<ConvertedJqlQueries> {
+    const response = await this.transport.request<ConvertedJqlQueries>({
+      method: 'POST',
+      path: `${this.baseUrl}/jql/pdcleaner`,
       body: data,
     });
     return response.data;

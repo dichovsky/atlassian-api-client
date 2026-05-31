@@ -297,6 +297,23 @@ export type {
   SanitizedJqlQueries,
   JqlSuggestionsParams,
   JqlSuggestions,
+  SearchAutoCompleteFilter,
+  JqlFunctionPrecomputation,
+  JqlPrecomputationsPage,
+  GetPrecomputationsParams,
+  JqlFunctionPrecomputationUpdateItem,
+  UpdatePrecomputationsData,
+  UpdatePrecomputationsParams,
+  UpdatePrecomputationsResponse,
+  GetPrecomputationsByIdData,
+  GetPrecomputationsByIdParams,
+  GetPrecomputationsByIdResponse,
+  IssuesAndJqlQueries,
+  IssueMatchesForJql,
+  IssueMatches,
+  JqlPersonalDataMigrationRequest,
+  JqlQueryWithUnknownUsers,
+  ConvertedJqlQueries,
 } from './resources/jql.js';
 export { BulkResource } from './resources/bulk.js';
 export type {

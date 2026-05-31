@@ -182,6 +182,29 @@ describe('Reference content sanity checks', () => {
     expect(JIRA_REF).toContain('field-list-all');
     expect(JIRA_REF).toContain('field-list');
   });
+
+  it('documents jql precomputation + autocomplete API (B587-B596)', () => {
+    expect(JIRA_REF).toContain('B587');
+    expect(JIRA_REF).toContain('B588');
+    expect(JIRA_REF).toContain('B589');
+    expect(JIRA_REF).toContain('B590');
+    expect(JIRA_REF).toContain('B591');
+    expect(JIRA_REF).toContain('B592');
+    expect(JIRA_REF).toContain('B593');
+    expect(JIRA_REF).toContain('B594');
+    expect(JIRA_REF).toContain('B595');
+    expect(JIRA_REF).toContain('B596');
+    expect(JIRA_REF).toContain('## `jql`');
+    expect(JIRA_REF).toContain('autocomplete-data');
+    expect(JIRA_REF).toContain('autocomplete-data-post');
+    expect(JIRA_REF).toContain('autocomplete-suggestions');
+    expect(JIRA_REF).toContain('get-precomputations');
+    expect(JIRA_REF).toContain('update-precomputations');
+    expect(JIRA_REF).toContain('get-precomputations-by-id');
+    expect(JIRA_REF).toContain('match-issues');
+    expect(JIRA_REF).toContain('migrate-queries');
+    expect(JIRA_REF).toContain('sanitize');
+  });
 });
 
 describe('Example commands in skill docs parse correctly', () => {
@@ -299,6 +322,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'plans',
           'workflowscheme',
           'fields',
+          'jql',
         ]).toContain(parsed.resource);
       }
     });
@@ -421,6 +445,7 @@ describe('Resource coverage drift check', () => {
     'plans',
     'workflowscheme',
     'fields',
+    'jql',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {
