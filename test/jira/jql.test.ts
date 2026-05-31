@@ -6,6 +6,11 @@ import type {
   JqlSuggestions,
   ParsedJqlQueries,
   SanitizedJqlQueries,
+  JqlPrecomputationsPage,
+  UpdatePrecomputationsResponse,
+  GetPrecomputationsByIdResponse,
+  IssueMatches,
+  ConvertedJqlQueries,
 } from '../../src/jira/resources/jql.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -215,6 +220,265 @@ describe('JqlResource', () => {
 
       // Assert
       expect(result.queries[0]!.errors?.errorMessages).toEqual(['Cannot parse query']);
+    });
+  });
+
+  // ── getAutocompleteDataPost ───────────────────────────────────────────────
+
+  describe('getAutocompleteDataPost()', () => {
+    it('calls POST /jql/autocompletedata with filter body', async () => {
+      // Arrange
+      const autocompleteData: JqlAutocompleteData = { visibleFieldNames: [], jqlReservedWords: [] };
+      transport.respondWith(autocompleteData);
+
+      // Act
+      const result = await jql.getAutocompleteDataPost({
+        projectIds: [10001, 10002],
+        includeCollapsedFields: true,
+      });
+
+      // Assert
+      expect(result).toEqual(autocompleteData);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/autocompletedata`,
+        body: { projectIds: [10001, 10002], includeCollapsedFields: true },
+      });
+    });
+
+    it('calls POST /jql/autocompletedata with empty body when no filter provided', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.getAutocompleteDataPost();
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/autocompletedata`,
+        body: {},
+      });
+    });
+  });
+
+  // ── getPrecomputations ────────────────────────────────────────────────────
+
+  describe('getPrecomputations()', () => {
+    it('calls GET /jql/function/computation and returns page', async () => {
+      // Arrange
+      const page: JqlPrecomputationsPage = {
+        isLast: true,
+        maxResults: 100,
+        startAt: 0,
+        total: 1,
+        values: [{ id: 'cf75a1b0', functionKey: 'myFn', value: 'issue in (TEST-1)' }],
+      };
+      transport.respondWith(page);
+
+      // Act
+      const result = await jql.getPrecomputations();
+
+      // Assert
+      expect(result).toEqual(page);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/jql/function/computation`,
+      });
+    });
+
+    it('passes query params when provided', async () => {
+      // Arrange
+      transport.respondWith({ values: [] });
+
+      // Act
+      await jql.getPrecomputations({
+        functionKey: ['myFn', 'otherFn'],
+        startAt: 0,
+        maxResults: 50,
+        orderBy: 'updated',
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        functionKey: 'myFn,otherFn',
+        startAt: '0',
+        maxResults: '50',
+        orderBy: 'updated',
+      });
+    });
+
+    it('sends no query when called with empty params', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.getPrecomputations({});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+  });
+
+  // ── updatePrecomputations ─────────────────────────────────────────────────
+
+  describe('updatePrecomputations()', () => {
+    it('calls POST /jql/function/computation with values body', async () => {
+      // Arrange
+      const response: UpdatePrecomputationsResponse = { notFoundPrecomputationIDs: [] };
+      transport.respondWith(response);
+      const data = {
+        values: [{ id: 'f2ef228b', value: 'issue in (TEST-1, TEST-2, TEST-3)' }],
+      };
+
+      // Act
+      const result = await jql.updatePrecomputations(data);
+
+      // Assert
+      expect(result).toEqual(response);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/function/computation`,
+        body: data,
+      });
+    });
+
+    it('passes skipNotFoundPrecomputations query param when provided', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.updatePrecomputations(
+        { values: [{ id: 'abc123', value: 'issue in (X-1)' }] },
+        { skipNotFoundPrecomputations: true },
+      );
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        skipNotFoundPrecomputations: 'true',
+      });
+    });
+
+    it('does not include query when skipNotFoundPrecomputations is not provided', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.updatePrecomputations({ values: [{ id: 'abc123', value: 'issue in (X-1)' }] });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+  });
+
+  // ── getPrecomputationsById ────────────────────────────────────────────────
+
+  describe('getPrecomputationsById()', () => {
+    it('calls POST /jql/function/computation/search with IDs', async () => {
+      // Arrange
+      const response: GetPrecomputationsByIdResponse = {
+        precomputations: [{ id: 'cf75a1b0', value: 'issue in (TEST-1)' }],
+        notFoundPrecomputationIDs: ['missing-id'],
+      };
+      transport.respondWith(response);
+
+      // Act
+      const result = await jql.getPrecomputationsById({
+        precomputationIDs: ['cf75a1b0', 'missing-id'],
+      });
+
+      // Assert
+      expect(result).toEqual(response);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/function/computation/search`,
+        body: { precomputationIDs: ['cf75a1b0', 'missing-id'] },
+      });
+    });
+
+    it('passes orderBy query param when provided', async () => {
+      // Arrange
+      transport.respondWith({ precomputations: [] });
+
+      // Act
+      await jql.getPrecomputationsById({ precomputationIDs: ['abc'] }, { orderBy: 'created' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ orderBy: 'created' });
+    });
+
+    it('sends no query when params is empty', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.getPrecomputationsById({});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+  });
+
+  // ── matchIssues ───────────────────────────────────────────────────────────
+
+  describe('matchIssues()', () => {
+    it('calls POST /jql/match with issueIds and jqls', async () => {
+      // Arrange
+      const response: IssueMatches = {
+        matches: [{ matchedIssues: [10000, 10004], errors: [] }],
+      };
+      transport.respondWith(response);
+
+      // Act
+      const result = await jql.matchIssues({
+        issueIds: [10001, 1000, 10042],
+        jqls: ['project = FOO', 'issuetype = Bug'],
+      });
+
+      // Assert
+      expect(result).toEqual(response);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/match`,
+        body: { issueIds: [10001, 1000, 10042], jqls: ['project = FOO', 'issuetype = Bug'] },
+      });
+    });
+  });
+
+  // ── migrateQueries ────────────────────────────────────────────────────────
+
+  describe('migrateQueries()', () => {
+    it('calls POST /jql/pdcleaner with queryStrings', async () => {
+      // Arrange
+      const response: ConvertedJqlQueries = {
+        queryStrings: ['issuetype = Bug AND assignee in (abcde-12345)'],
+        queriesWithUnknownUsers: [],
+      };
+      transport.respondWith(response);
+
+      // Act
+      const result = await jql.migrateQueries({
+        queryStrings: ['assignee = mia', 'issuetype = Bug AND assignee in (mia)'],
+      });
+
+      // Assert
+      expect(result).toEqual(response);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/jql/pdcleaner`,
+        body: { queryStrings: ['assignee = mia', 'issuetype = Bug AND assignee in (mia)'] },
+      });
+    });
+
+    it('sends empty body when called with no queryStrings', async () => {
+      // Arrange
+      transport.respondWith({});
+
+      // Act
+      await jql.migrateQueries({});
+
+      // Assert
+      expect(transport.lastCall?.options.body).toEqual({});
     });
   });
 });

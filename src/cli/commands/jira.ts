@@ -189,6 +189,8 @@ export async function executeJiraCommand(
       return executeWorkflowScheme(client, cmd);
     case 'fields':
       return executeFields(client, cmd);
+    case 'jql':
+      return executeJql(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -6450,5 +6452,151 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       throw new Error(
         `Unknown fields action: ${cmd.action}. Actions: ${FIELDS_ACTIONS.join(', ')}`,
       );
+  }
+}
+
+const JQL_ACTIONS = [
+  'autocomplete-data',
+  'autocomplete-data-post',
+  'autocomplete-suggestions',
+  'get-precomputations',
+  'update-precomputations',
+  'get-precomputations-by-id',
+  'match-issues',
+  'parse',
+  'migrate-queries',
+  'sanitize',
+] as const;
+
+async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // B587: GET /jql/autocompletedata
+    case 'autocomplete-data': {
+      return client.jql.getAutocompleteData();
+    }
+
+    // B588: POST /jql/autocompletedata
+    case 'autocomplete-data-post': {
+      const projectIdsRaw = asString(opts['project-ids']);
+      const projectIds = projectIdsRaw
+        ? projectIdsRaw.split(',').map((s) => Number(s.trim()))
+        : undefined;
+      const includeCollapsedFieldsRaw = opts['include-collapsed-fields'];
+      const includeCollapsedFields =
+        typeof includeCollapsedFieldsRaw === 'boolean' ? includeCollapsedFieldsRaw : undefined;
+      return client.jql.getAutocompleteDataPost({
+        ...(projectIds !== undefined && { projectIds }),
+        ...(includeCollapsedFields !== undefined && { includeCollapsedFields }),
+      });
+    }
+
+    // B589: GET /jql/autocompletedata/suggestions
+    case 'autocomplete-suggestions': {
+      const fieldName = requireOpt(opts['field-name'], '--field-name');
+      const fieldValue = asString(opts['field-value']);
+      const predicateName = asString(opts['predicate-name']);
+      const predicateValue = asString(opts['predicate-value']);
+      return client.jql.getFieldReferenceSuggestions({
+        fieldName,
+        ...(fieldValue !== undefined && { fieldValue }),
+        ...(predicateName !== undefined && { predicateName }),
+        ...(predicateValue !== undefined && { predicateValue }),
+      });
+    }
+
+    // B590: GET /jql/function/computation
+    case 'get-precomputations': {
+      const functionKeyRaw = asString(opts['function-key']);
+      const functionKey = functionKeyRaw
+        ? functionKeyRaw.split(',').map((s) => s.trim())
+        : undefined;
+      const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const orderBy = asString(opts['order-by']);
+      return client.jql.getPrecomputations({
+        ...(functionKey !== undefined && { functionKey }),
+        ...(startAt !== undefined && { startAt }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(orderBy !== undefined && { orderBy }),
+      });
+    }
+
+    // B591: POST /jql/function/computation
+    case 'update-precomputations': {
+      const valuesRaw = requireOpt(opts['values'], '--values');
+      const values = parseJsonArrayFlag(valuesRaw, '--values') as {
+        id: string;
+        value?: string;
+        error?: string;
+      }[];
+      const skipNotFoundRaw = opts['skip-not-found'];
+      const skipNotFoundPrecomputations =
+        typeof skipNotFoundRaw === 'boolean' ? skipNotFoundRaw : undefined;
+      return client.jql.updatePrecomputations(
+        { values },
+        {
+          ...(skipNotFoundPrecomputations !== undefined && { skipNotFoundPrecomputations }),
+        },
+      );
+    }
+
+    // B592: POST /jql/function/computation/search
+    case 'get-precomputations-by-id': {
+      const precomputationIDsRaw = asString(opts['precomputation-ids']);
+      const precomputationIDs = precomputationIDsRaw
+        ? precomputationIDsRaw.split(',').map((s) => s.trim())
+        : undefined;
+      const orderBy = asString(opts['order-by']);
+      return client.jql.getPrecomputationsById(
+        { ...(precomputationIDs !== undefined && { precomputationIDs }) },
+        { ...(orderBy !== undefined && { orderBy }) },
+      );
+    }
+
+    // B593: POST /jql/match
+    case 'match-issues': {
+      const issueIdsRaw = requireOpt(opts['issue-ids'], '--issue-ids');
+      const issueIds = issueIdsRaw.split(',').map((s) => Number(s.trim()));
+      const jqlsRaw = requireOpt(opts['jqls'], '--jqls');
+      const jqls = parseJsonArrayFlag(jqlsRaw, '--jqls') as string[];
+      return client.jql.matchIssues({ issueIds, jqls });
+    }
+
+    // B594: POST /jql/parse
+    case 'parse': {
+      const queriesRaw = requireOpt(opts['queries'], '--queries');
+      const queries = parseJsonArrayFlag(queriesRaw, '--queries') as string[];
+      const validation = asString(opts['validation']) as 'strict' | 'warn' | 'none' | undefined;
+      return client.jql.parse({
+        queries,
+        ...(validation !== undefined && { validation }),
+      });
+    }
+
+    // B595: POST /jql/pdcleaner
+    case 'migrate-queries': {
+      const queryStringsRaw = asString(opts['query-strings']);
+      const queryStrings = queryStringsRaw
+        ? (parseJsonArrayFlag(queryStringsRaw, '--query-strings') as string[])
+        : undefined;
+      return client.jql.migrateQueries({
+        ...(queryStrings !== undefined && { queryStrings }),
+      });
+    }
+
+    // B596: POST /jql/sanitize
+    case 'sanitize': {
+      const queriesRaw = requireOpt(opts['queries'], '--queries');
+      const queries = parseJsonArrayFlag(queriesRaw, '--queries') as {
+        query: string;
+        accountId?: string;
+      }[];
+      return client.jql.sanitize({ queries });
+    }
+
+    default:
+      throw new Error(`Unknown jql action: ${cmd.action}. Actions: ${JQL_ACTIONS.join(', ')}`);
   }
 }
