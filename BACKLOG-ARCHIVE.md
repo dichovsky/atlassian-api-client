@@ -2413,3 +2413,12 @@
 - [x] 🔴 🧩 Jira: B796 expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
   - **Impl:** `UniversalAvatarResource.getAvatarImageByOwner(type, entityId, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-owner <type> <entityId> [--size] [--format]`.
   - **Rat:** Same binary pattern as B794/B795. All three view methods use `responseType: 'arrayBuffer'`.
+- [x] 🔴 🧩 Jira: B890 expose GET /rest/api/3/worklog/deleted
+  - **Impl:** `WorklogResource.getDeleted(since?)` → `ChangedWorklogs`. Query param `since` (int64 epoch ms) omitted when undefined. CLI: `atlas jira worklog deleted [--since <ms>]`.
+  - **Rat:** Spec-verified: 200 → `ChangedWorklogs` with custom `since`/`until`/`lastPage`/`nextPage` cursor. Does NOT use `paginateOffset`/`paginateCursor`.
+- [x] 🔴 🧩 Jira: B891 expose POST /rest/api/3/worklog/list
+  - **Impl:** `WorklogResource.getList(ids: number[], expand?)` → `Worklog[]` (bare array, NOT wrapped). Body: `{ ids }`. Validates 1 ≤ ids.length ≤ 1000 with `ValidationError`. CLI: `atlas jira worklog list --ids <csv> [--expand <fields>]`.
+  - **Rat:** Spec: 200 response is an inline `array` of `Worklog` — NOT wrapped. `WorklogIdsRequestBean` has minItems 1, maxItems 1000. `--ids` parsed as CSV of positive integers.
+- [x] 🔴 🧩 Jira: B892 expose GET /rest/api/3/worklog/updated
+  - **Impl:** `WorklogResource.getUpdated(params?)` → `ChangedWorklogs`. Params: `since` (int64 epoch ms), `expand`. CLI: `atlas jira worklog updated [--since <ms>] [--expand <fields>]`.
+  - **Rat:** Same custom cursor as B890. `expand` is an additional query param absent from the deleted endpoint. New router flag `--since` registered.

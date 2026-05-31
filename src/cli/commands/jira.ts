@@ -213,6 +213,8 @@ export async function executeJiraCommand(
       return executeProjectTemplate(client, cmd);
     case 'universal-avatar':
       return executeUniversalAvatar(client, cmd);
+    case 'worklog':
+      return executeWorklog(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7163,6 +7165,53 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown project-template action: ${cmd.action}. Actions: ${PROJECT_TEMPLATE_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── worklog (B890-B892) ───────────────────────────────────────────────────────
+
+const WORKLOG_ACTIONS = ['deleted', 'list', 'updated'] as const;
+
+async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // B890: GET /rest/api/3/worklog/deleted
+    case 'deleted': {
+      const sinceRaw = asString(opts['since']);
+      const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+      return client.worklog.getDeleted(since);
+    }
+
+    // B891: POST /rest/api/3/worklog/list
+    case 'list': {
+      const idsRaw = requireOpt(opts['ids'], '--ids');
+      const ids = splitCsvIds(idsRaw).map((s) => parsePositiveIntArg(s, '--ids'));
+      if (ids.length === 0) {
+        throw new Error('--ids must contain at least one ID');
+      }
+      if (ids.length > 1000) {
+        throw new Error('--ids cannot exceed 1000 (Atlassian API limit)');
+      }
+      const expand = asString(opts['expand']);
+      return client.worklog.getList(ids, expand);
+    }
+
+    // B892: GET /rest/api/3/worklog/updated
+    case 'updated': {
+      const sinceRaw = asString(opts['since']);
+      const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+      const expand = asString(opts['expand']);
+      return client.worklog.getUpdated({
+        ...(since !== undefined && { since }),
+        ...(expand !== undefined && { expand }),
+      });
+    }
+
+    default:
+      throw new Error(
+        `Unknown worklog action: ${cmd.action}. Actions: ${WORKLOG_ACTIONS.join(', ')}`,
       );
   }
 }

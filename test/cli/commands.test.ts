@@ -748,6 +748,12 @@ const jiraUniversalAvatarMock = {
   getAvatarImageByOwner: vi.fn(),
 };
 
+const jiraWorklogMock = {
+  getDeleted: vi.fn(),
+  getList: vi.fn(),
+  getUpdated: vi.fn(),
+};
+
 const jiraBulkMock = {
   createBulk: vi.fn(),
   deleteIssuesBulk: vi.fn(),
@@ -1227,6 +1233,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueLinkType: jiraIssueLinkTypeMock,
       projectTemplate: jiraProjectTemplateMock,
       universalAvatar: jiraUniversalAvatarMock,
+      worklog: jiraWorklogMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -24129,6 +24136,98 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('universal-avatar', 'bad-action'), GLOBALS),
       ).rejects.toThrow('Unknown universal-avatar action');
+    });
+  });
+
+  // ── worklog (B890-B892) ─────────────────────────────────────────────────────
+
+  describe('worklog', () => {
+    it('worklog deleted calls getDeleted with no since', async () => {
+      const data = { values: [{ worklogId: 1 }], lastPage: true };
+      jiraWorklogMock.getDeleted.mockResolvedValue(data);
+
+      const result = await executeJiraCommand(cmd('worklog', 'deleted'), GLOBALS);
+
+      expect(jiraWorklogMock.getDeleted).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual(data);
+    });
+
+    it('worklog deleted calls getDeleted with since', async () => {
+      jiraWorklogMock.getDeleted.mockResolvedValue({ values: [], lastPage: true });
+
+      await executeJiraCommand(cmd('worklog', 'deleted', [], { since: '1700000000000' }), GLOBALS);
+
+      expect(jiraWorklogMock.getDeleted).toHaveBeenCalledWith(1700000000000);
+    });
+
+    it('worklog list calls getList with ids', async () => {
+      const worklogs = [{ id: '1' }, { id: '2' }];
+      jiraWorklogMock.getList.mockResolvedValue(worklogs);
+
+      const result = await executeJiraCommand(cmd('worklog', 'list', [], { ids: '1,2' }), GLOBALS);
+
+      expect(jiraWorklogMock.getList).toHaveBeenCalledWith([1, 2], undefined);
+      expect(result).toEqual(worklogs);
+    });
+
+    it('worklog list passes expand flag', async () => {
+      jiraWorklogMock.getList.mockResolvedValue([]);
+
+      await executeJiraCommand(
+        cmd('worklog', 'list', [], { ids: '1', expand: 'properties' }),
+        GLOBALS,
+      );
+
+      expect(jiraWorklogMock.getList).toHaveBeenCalledWith([1], 'properties');
+    });
+
+    it('worklog list throws when --ids is missing', async () => {
+      await expect(executeJiraCommand(cmd('worklog', 'list'), GLOBALS)).rejects.toThrow('--ids');
+    });
+
+    it('worklog list throws when --ids is empty after CSV split', async () => {
+      await expect(
+        executeJiraCommand(cmd('worklog', 'list', [], { ids: ',' }), GLOBALS),
+      ).rejects.toThrow('--ids must contain at least one ID');
+    });
+
+    it('worklog list throws when --ids exceeds 1000', async () => {
+      const ids = Array.from({ length: 1001 }, (_, i) => i + 1).join(',');
+      await expect(
+        executeJiraCommand(cmd('worklog', 'list', [], { ids }), GLOBALS),
+      ).rejects.toThrow('--ids cannot exceed 1000');
+    });
+
+    it('worklog updated calls getUpdated with no params', async () => {
+      const data = { values: [], lastPage: true };
+      jiraWorklogMock.getUpdated.mockResolvedValue(data);
+
+      const result = await executeJiraCommand(cmd('worklog', 'updated'), GLOBALS);
+
+      expect(jiraWorklogMock.getUpdated).toHaveBeenCalledWith({});
+      expect(result).toEqual(data);
+    });
+
+    it('worklog updated calls getUpdated with since', async () => {
+      jiraWorklogMock.getUpdated.mockResolvedValue({ values: [], lastPage: true });
+
+      await executeJiraCommand(cmd('worklog', 'updated', [], { since: '1700000000000' }), GLOBALS);
+
+      expect(jiraWorklogMock.getUpdated).toHaveBeenCalledWith({ since: 1700000000000 });
+    });
+
+    it('worklog updated calls getUpdated with expand', async () => {
+      jiraWorklogMock.getUpdated.mockResolvedValue({ values: [], lastPage: true });
+
+      await executeJiraCommand(cmd('worklog', 'updated', [], { expand: 'properties' }), GLOBALS);
+
+      expect(jiraWorklogMock.getUpdated).toHaveBeenCalledWith({ expand: 'properties' });
+    });
+
+    it('throws on unknown worklog action', async () => {
+      await expect(executeJiraCommand(cmd('worklog', 'bad-action'), GLOBALS)).rejects.toThrow(
+        'Unknown worklog action',
+      );
     });
   });
 });
