@@ -18,6 +18,8 @@ import type {
   FieldContextDefaultValueFloat,
   FieldContextProjectMapping,
   FieldContextForProjectAndIssueType,
+  IssueFieldOption,
+  CreateIssueFieldOptionData,
 } from '../../src/jira/resources/fields.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -1648,6 +1650,560 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/field/..%2Fadmin/context/projectmapping`,
       );
+    });
+  });
+
+  // ── listFieldOptions (B433) ──────────────────────────────────────────────────
+
+  describe('listFieldOptions()', () => {
+    const makeOption = (id: number, value: string): IssueFieldOption => ({ id, value });
+
+    it('calls GET /field/{fieldKey}/option and returns paginated results', async () => {
+      // Arrange
+      const opt1 = makeOption(1, 'Team 1');
+      const opt2 = makeOption(2, 'Team 2');
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 2,
+        values: [opt1, opt2],
+      });
+
+      // Act
+      const result = await fields.listFieldOptions('example-add-on__team-field');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/example-add-on__team-field/option`,
+      });
+      expect(result.values).toHaveLength(2);
+      expect(result.values[0]).toMatchObject({ id: 1, value: 'Team 1' });
+    });
+
+    it('passes startAt and maxResults as query params', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 10, startAt: 5, total: 20, values: [] });
+
+      // Act
+      await fields.listFieldOptions('my-field', { startAt: 5, maxResults: 10 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+    });
+
+    it('sends no query params when params is undefined', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptions('my-field');
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends empty query when params has no set properties', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptions('my-field', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptions('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option`);
+    });
+
+    it.each(['.', '..', '%2e', '%2E%2E'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptions(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── createFieldOption (B434) ─────────────────────────────────────────────────
+
+  describe('createFieldOption()', () => {
+    it('calls POST /field/{fieldKey}/option and returns the created option', async () => {
+      // Arrange — spec: IssueFieldOption response (id, value required)
+      const created: IssueFieldOption = { id: 1, value: 'Team 1' };
+      transport.respondWith(created);
+      const data: CreateIssueFieldOptionData = { value: 'Team 1' };
+
+      // Act
+      const result = await fields.createFieldOption('example-add-on__team-field', data);
+
+      // Assert
+      expect(result).toEqual(created);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/field/example-add-on__team-field/option`,
+        body: { value: 'Team 1' },
+      });
+    });
+
+    it('sends full body including properties and config', async () => {
+      // Arrange
+      const created: IssueFieldOption = {
+        id: 2,
+        value: 'Team 2',
+        properties: { members: 42 },
+        config: { attributes: [] },
+      };
+      transport.respondWith(created);
+      const data: CreateIssueFieldOptionData = {
+        value: 'Team 2',
+        properties: { members: 42 },
+        config: { attributes: [] },
+      };
+
+      // Act
+      await fields.createFieldOption('example-add-on__team-field', data);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toMatchObject({
+        value: 'Team 2',
+        properties: { members: 42 },
+        config: { attributes: [] },
+      });
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({ id: 1, value: 'x' });
+
+      // Act
+      await fields.createFieldOption('../admin', { value: 'x' });
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option`);
+    });
+  });
+
+  // ── deleteFieldOption (B435) ─────────────────────────────────────────────────
+
+  describe('deleteFieldOption()', () => {
+    it('calls DELETE /field/{fieldKey}/option/{optionId} — 204 (void)', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.deleteFieldOption('example-add-on__team-field', 1);
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/1`,
+      });
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith(undefined);
+
+      // Act
+      await fields.deleteFieldOption('../admin', 99);
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/99`);
+    });
+
+    it.each(['.', '..', '%2e'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.deleteFieldOption(fieldKey, 1)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── getFieldOption (B436) ────────────────────────────────────────────────────
+
+  describe('getFieldOption()', () => {
+    it('calls GET /field/{fieldKey}/option/{optionId} and returns the option', async () => {
+      // Arrange — spec: IssueFieldOption (id required, value required)
+      const option: IssueFieldOption = {
+        id: 1,
+        value: 'Team 1',
+        properties: { leader: { name: 'Leader Name' } },
+        config: { scope: { projects: [], global: {} }, attributes: [] },
+      };
+      transport.respondWith(option);
+
+      // Act
+      const result = await fields.getFieldOption('example-add-on__team-field', 1);
+
+      // Assert
+      expect(result).toEqual(option);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/1`,
+      });
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({ id: 1, value: 'x' });
+
+      // Act
+      await fields.getFieldOption('../admin', 5);
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/5`);
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.getFieldOption(fieldKey, 1)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── updateFieldOption (B437) ─────────────────────────────────────────────────
+
+  describe('updateFieldOption()', () => {
+    it('calls PUT /field/{fieldKey}/option/{optionId} and returns the updated option', async () => {
+      // Arrange — spec: body and response are both IssueFieldOption (id required, value required)
+      const option: IssueFieldOption = { id: 1, value: 'Team 1 Updated' };
+      transport.respondWith(option);
+
+      // Act
+      const result = await fields.updateFieldOption('example-add-on__team-field', 1, option);
+
+      // Assert
+      expect(result).toEqual(option);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/1`,
+        body: { id: 1, value: 'Team 1 Updated' },
+      });
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      const option: IssueFieldOption = { id: 3, value: 'x' };
+      transport.respondWith(option);
+
+      // Act
+      await fields.updateFieldOption('../admin', 3, option);
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/3`);
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.updateFieldOption(fieldKey, 1, { id: 1, value: 'x' })).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── replaceFieldOptionOnIssues (B438) ────────────────────────────────────────
+
+  describe('replaceFieldOptionOnIssues()', () => {
+    it('calls DELETE /field/{fieldKey}/option/{optionId}/issue and returns task progress', async () => {
+      // Arrange — spec: 303 → TaskProgressBeanRemoveOptionFromIssuesResult
+      const taskResult: TaskProgressBeanRemoveOptionFromIssuesResult = {
+        id: '1',
+        self: 'https://example.atlassian.net/rest/api/3/task/1',
+        description: 'Remove option 1 from issues',
+        status: 'COMPLETE',
+        progress: 100,
+        elapsedRuntime: 42,
+        submitted: 1718000000000,
+        submittedBy: 5001,
+        lastUpdate: 1718000000000,
+        result: { modifiedIssues: [10001, 10010], unmodifiedIssues: [10005] },
+      };
+      transport.respondWith(taskResult);
+
+      // Act
+      const result = await fields.replaceFieldOptionOnIssues('example-add-on__team-field', 1, {
+        replaceWith: 3,
+        jql: 'project=PROJ',
+      });
+
+      // Assert
+      expect(result).toEqual(taskResult);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/1/issue`,
+        query: { replaceWith: 3, jql: 'project=PROJ' },
+      });
+    });
+
+    it('sends empty query when no params provided', async () => {
+      // Arrange
+      transport.respondWith({
+        id: '2',
+        self: 'url',
+        status: 'RUNNING',
+        progress: 50,
+        elapsedRuntime: 10,
+        lastUpdate: 1718000000000,
+        submitted: 1718000000000,
+        submittedBy: 1,
+      });
+
+      // Act
+      await fields.replaceFieldOptionOnIssues('my-field', 2);
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('passes overrideScreenSecurity and overrideEditableFlag query params', async () => {
+      // Arrange — spec params: overrideScreenSecurity (default false), overrideEditableFlag (default false)
+      transport.respondWith({
+        id: '3',
+        self: 'url',
+        status: 'COMPLETE',
+        progress: 100,
+        elapsedRuntime: 5,
+        lastUpdate: 1718000000000,
+        submitted: 1718000000000,
+        submittedBy: 1,
+      });
+
+      // Act
+      await fields.replaceFieldOptionOnIssues('my-field', 2, {
+        overrideScreenSecurity: true,
+        overrideEditableFlag: false,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        overrideScreenSecurity: true,
+        overrideEditableFlag: false,
+      });
+    });
+
+    it('passes only replaceWith when jql is absent', async () => {
+      // Arrange
+      transport.respondWith({
+        id: '4',
+        self: 'url',
+        status: 'COMPLETE',
+        progress: 100,
+        elapsedRuntime: 5,
+        lastUpdate: 1718000000000,
+        submitted: 1718000000000,
+        submittedBy: 1,
+      });
+
+      // Act
+      await fields.replaceFieldOptionOnIssues('my-field', 2, { replaceWith: 5 });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({ replaceWith: 5 });
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({
+        id: '5',
+        self: 'url',
+        status: 'COMPLETE',
+        progress: 100,
+        elapsedRuntime: 5,
+        lastUpdate: 1718000000000,
+        submitted: 1718000000000,
+        submittedBy: 1,
+      });
+
+      // Act
+      await fields.replaceFieldOptionOnIssues('../admin', 1);
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/..%2Fadmin/option/1/issue`);
+    });
+  });
+
+  // ── listFieldOptionSuggestionsEdit (B439) ─────────────────────────────────────
+
+  describe('listFieldOptionSuggestionsEdit()', () => {
+    it('calls GET /field/{fieldKey}/option/suggestions/edit and returns paginated results', async () => {
+      // Arrange — spec: PageBeanIssueFieldOption
+      const opt: IssueFieldOption = { id: 1, value: 'Team 1' };
+      transport.respondWith({
+        isLast: true,
+        maxResults: 50,
+        startAt: 0,
+        total: 1,
+        values: [opt],
+      });
+
+      // Act
+      const result = await fields.listFieldOptionSuggestionsEdit('example-add-on__team-field');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/suggestions/edit`,
+      });
+      expect(result.values[0]).toMatchObject({ id: 1, value: 'Team 1' });
+    });
+
+    it('passes startAt, maxResults, and projectId as query params', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 25, startAt: 10, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsEdit('my-field', {
+        startAt: 10,
+        maxResults: 25,
+        projectId: 10001,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 10,
+        maxResults: 25,
+        projectId: 10001,
+      });
+    });
+
+    it('sends no query params when params is undefined', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsEdit('my-field');
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends empty query when params has no set properties', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsEdit('my-field', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsEdit('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/option/suggestions/edit`,
+      );
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptionSuggestionsEdit(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── listFieldOptionSuggestionsSearch (B440) ───────────────────────────────────
+
+  describe('listFieldOptionSuggestionsSearch()', () => {
+    it('calls GET /field/{fieldKey}/option/suggestions/search and returns paginated results', async () => {
+      // Arrange — spec: PageBeanIssueFieldOption (read only: visible options)
+      const opt: IssueFieldOption = { id: 2, value: 'Team 2' };
+      transport.respondWith({
+        isLast: false,
+        maxResults: 1,
+        startAt: 0,
+        total: 10,
+        values: [opt],
+      });
+
+      // Act
+      const result = await fields.listFieldOptionSuggestionsSearch('example-add-on__team-field');
+
+      // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/field/example-add-on__team-field/option/suggestions/search`,
+      });
+      expect(result.values[0]).toMatchObject({ id: 2, value: 'Team 2' });
+    });
+
+    it('passes startAt, maxResults, and projectId as query params', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 10, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsSearch('my-field', {
+        startAt: 0,
+        maxResults: 10,
+        projectId: 10005,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 0,
+        maxResults: 10,
+        projectId: 10005,
+      });
+    });
+
+    it('sends no query params when params is undefined', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsSearch('my-field');
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('sends empty query when params has no set properties', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsSearch('my-field', {});
+
+      // Assert
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('encodes fieldKey with special characters', async () => {
+      // Arrange
+      transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
+
+      // Act
+      await fields.listFieldOptionSuggestionsSearch('../admin');
+
+      // Assert
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/..%2Fadmin/option/suggestions/search`,
+      );
+    });
+
+    it.each(['.', '..'])('rejects dot-segment fieldKey: %s', async (fieldKey) => {
+      await expect(fields.listFieldOptionSuggestionsSearch(fieldKey)).rejects.toThrow(
+        'path parameter must not be "." or ".."',
+      );
+      expect(transport.calls).toHaveLength(0);
     });
   });
 });

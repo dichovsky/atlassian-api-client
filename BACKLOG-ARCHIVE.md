@@ -2227,3 +2227,27 @@
 - [x] 🔴 🧩 API: B431 Jira: expose GET /rest/api/3/field/{fieldId}/context/projectmapping
   - **Impl:** `FieldsResource.listContextProjectMappings(fieldId, params?)` — paginated via `OffsetPaginatedResponse<FieldContextProjectMapping>`; query: contextId[]?, startAt?, maxResults?. CLI: `atlas jira fields context-project-mapping --field-id <id>`.
   - **Rat:** Spec-verified (operationId: getProjectContextMapping). Returns `PageBeanCustomFieldContextProjectMapping`; items have contextId (required) + projectId? + isGlobalContext? (global contexts have no projectId).
+- [x] 🔴 🧩 API: B433 Jira: expose GET /rest/api/3/field/{fieldKey}/option
+  - **Impl:** `FieldsResource.listFieldOptions(fieldKey, params?)` — paginated via `OffsetPaginatedResponse<IssueFieldOption>`; query: startAt?, maxResults?. CLI: `atlas jira fields field-option-list --field-key <key>`.
+  - **Rat:** Spec-verified (operationId: getAllIssueFieldOptions). Returns `PageBeanIssueFieldOption`; only works for Connect-app-managed options.
+- [x] 🔴 🧩 API: B434 Jira: expose POST /rest/api/3/field/{fieldKey}/option
+  - **Impl:** `FieldsResource.createFieldOption(fieldKey, data)` — body: `IssueFieldOptionCreateBean` (value required, properties?, config?); response: `IssueFieldOption` (id+value required). CLI: `atlas jira fields field-option-create --field-key <key> --body <json>`.
+  - **Rat:** Spec-verified (operationId: createIssueFieldOption). Distinct request type (no `id`) vs response type (id required). Only for Connect-app-managed options.
+- [x] 🔴 🧩 API: B435 Jira: expose DELETE /rest/api/3/field/{fieldKey}/option/{optionId}
+  - **Impl:** `FieldsResource.deleteFieldOption(fieldKey, optionId)` — returns void (204). CLI: `atlas jira fields field-option-delete --field-key <key> --option-id <n>`.
+  - **Rat:** Spec-verified (operationId: deleteIssueFieldOption). Returns 409 if option is selected on any issue; 204 on success.
+- [x] 🔴 🧩 API: B436 Jira: expose GET /rest/api/3/field/{fieldKey}/option/{optionId}
+  - **Impl:** `FieldsResource.getFieldOption(fieldKey, optionId)` — returns `IssueFieldOption` (id+value required). CLI: `atlas jira fields field-option-get --field-key <key> --option-id <n>`.
+  - **Rat:** Spec-verified (operationId: getIssueFieldOption). Only for Connect-app-managed options.
+- [x] 🔴 🧩 API: B437 Jira: expose PUT /rest/api/3/field/{fieldKey}/option/{optionId}
+  - **Impl:** `FieldsResource.updateFieldOption(fieldKey, optionId, data)` — body+response: `IssueFieldOption` (id+value required); id in body must match optionId path param. CLI: `atlas jira fields field-option-update --field-key <key> --option-id <n> --body <json>`.
+  - **Rat:** Spec-verified (operationId: updateIssueFieldOption). Same schema for request and response (IssueFieldOption). Update or create in one call.
+- [x] 🔴 🧩 API: B438 Jira: expose DELETE /rest/api/3/field/{fieldKey}/option/{optionId}/issue
+  - **Impl:** `FieldsResource.replaceFieldOptionOnIssues(fieldKey, optionId, params?)` — query: replaceWith?, jql?, overrideScreenSecurity?, overrideEditableFlag?; response: `TaskProgressBeanRemoveOptionFromIssuesResult` (303 async task). CLI: `atlas jira fields field-option-replace-issues --field-key <key> --option-id <n> [--replace-with <n>] [--jql <jql>]`.
+  - **Rat:** Spec-verified (operationId: replaceIssueFieldOption). Async operation (303 → task); response is `TaskProgressBeanRemoveOptionFromIssuesResult` matching the same type already used for B425.
+- [x] 🔴 🧩 API: B439 Jira: expose GET /rest/api/3/field/{fieldKey}/option/suggestions/edit
+  - **Impl:** `FieldsResource.listFieldOptionSuggestionsEdit(fieldKey, params?)` — paginated via `OffsetPaginatedResponse<IssueFieldOption>`; query: startAt?, maxResults?, projectId?. CLI: `atlas jira fields field-option-suggestions-edit --field-key <key>`.
+  - **Rat:** Spec-verified (operationId: getSelectableIssueFieldOptions). Returns options the user can select when editing an issue. projectId filters to options available in a specific project.
+- [x] 🔴 🧩 API: B440 Jira: expose GET /rest/api/3/field/{fieldKey}/option/suggestions/search
+  - **Impl:** `FieldsResource.listFieldOptionSuggestionsSearch(fieldKey, params?)` — paginated via `OffsetPaginatedResponse<IssueFieldOption>`; query: startAt?, maxResults?, projectId?. CLI: `atlas jira fields field-option-suggestions-search --field-key <key>`.
+  - **Rat:** Spec-verified (operationId: getVisibleIssueFieldOptions). Returns options the user can view (broader than selectable; includes view-only options).

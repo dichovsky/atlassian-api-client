@@ -513,6 +513,98 @@ export interface FieldContextDefaultValueUpdateBody {
   readonly defaultValues?: readonly FieldContextDefaultValue[];
 }
 
+// ── Field-key option types (B433–B440) ─────────────────────────────────────
+
+/**
+ * Scope configuration for a field-key option.
+ * Spec: IssueFieldOptionConfiguration.scope (IssueFieldOptionScopeBean)
+ */
+export interface IssueFieldOptionScope {
+  /** DEPRECATED. Legacy project IDs. */
+  readonly projects?: readonly number[];
+  /** Projects the option is available in (overrides global context). */
+  readonly projects2?: readonly {
+    /** The ID of the project the option's behavior applies to. */
+    readonly id?: number;
+    /** Behavior of the option in the project. */
+    readonly attributes?: readonly ('notSelectable' | 'defaultValue')[];
+  }[];
+  /**
+   * If present (even as empty object), the option is available in all projects.
+   * Spec: GlobalScopeBean.
+   */
+  readonly global?: {
+    /** Behavior of the option in the global context. */
+    readonly attributes?: readonly ('notSelectable' | 'defaultValue')[];
+  };
+}
+
+/** Configuration for a field-key option. Spec: IssueFieldOptionConfiguration. */
+export interface IssueFieldOptionConfiguration {
+  /** DEPRECATED. Attributes applied to the option. */
+  readonly attributes?: readonly ('notSelectable' | 'defaultValue')[];
+  /** Project scope for the option. */
+  readonly scope?: IssueFieldOptionScope;
+}
+
+/**
+ * A single issue field option (Connect-app-managed).
+ * Spec: IssueFieldOption — required: id, value.
+ * B433, B434, B436, B437
+ */
+export interface IssueFieldOption {
+  /** The unique identifier for the option. */
+  readonly id: number;
+  /** The option's name, which is displayed in Jira. */
+  readonly value: string;
+  /** Arbitrary key-value properties searchable via JQL. */
+  readonly properties?: Record<string, unknown>;
+  /** Scope and attribute configuration. */
+  readonly config?: IssueFieldOptionConfiguration;
+}
+
+/** Paginated page of IssueFieldOption items. B433, B439, B440 */
+export type IssueFieldOptionPage = OffsetPaginatedResponse<IssueFieldOption>;
+
+/** Query params for listing all field options (B433). */
+export interface ListIssueFieldOptionsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+}
+
+/**
+ * Request body for creating a field option (B434).
+ * Spec: IssueFieldOptionCreateBean — required: value.
+ */
+export interface CreateIssueFieldOptionData {
+  /** The option's name, which is displayed in Jira. */
+  readonly value: string;
+  /** Arbitrary key-value properties searchable via JQL. */
+  readonly properties?: Record<string, unknown>;
+  /** Scope and attribute configuration. */
+  readonly config?: IssueFieldOptionConfiguration;
+}
+
+/** Query params for replacing a field option on issues (B438). */
+export interface ReplaceIssueFieldOptionOnIssuesParams {
+  /** The ID of the option that will replace the currently selected option. */
+  readonly replaceWith?: number;
+  /** A JQL query that specifies the issues to be updated. */
+  readonly jql?: string;
+  /** Whether screen security is overridden to enable hidden fields to be edited. */
+  readonly overrideScreenSecurity?: boolean;
+  /** Whether screen security is overridden to enable uneditable fields to be edited. */
+  readonly overrideEditableFlag?: boolean;
+}
+
+/** Query params for listing field option suggestions (B439, B440). */
+export interface ListIssueFieldOptionSuggestionsParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  /** Filter results to options available in the specified project. */
+  readonly projectId?: number;
+}
+
 // ── Project mapping types (B427, B428, B430, B431) ──────────────────────────
 
 /** Request body for assigning or removing projects from a context (B427, B428).
@@ -929,6 +1021,144 @@ export class FieldsResource {
     const response = await this.transport.request<FieldContextProjectMappingPage>({
       method: 'GET',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/projectmapping`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Field-key option methods (B433–B440) — Connect-app-managed options ─────
+
+  /** List all options for a Connect-app select list field (paginated). B433
+   * GET /rest/api/3/field/{fieldKey}/option */
+  async listFieldOptions(
+    fieldKey: string,
+    params?: ListIssueFieldOptionsParams,
+  ): Promise<IssueFieldOptionPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    }
+    const response = await this.transport.request<IssueFieldOptionPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** Create an option for a Connect-app select list field. B434
+   * POST /rest/api/3/field/{fieldKey}/option */
+  async createFieldOption(
+    fieldKey: string,
+    data: CreateIssueFieldOptionData,
+  ): Promise<IssueFieldOption> {
+    const response = await this.transport.request<IssueFieldOption>({
+      method: 'POST',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Delete an option from a Connect-app select list field. B435
+   * DELETE /rest/api/3/field/{fieldKey}/option/{optionId} — 204 */
+  async deleteFieldOption(fieldKey: string, optionId: number): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/${encodePathSegment(String(optionId))}`,
+    });
+  }
+
+  /** Get a single option from a Connect-app select list field. B436
+   * GET /rest/api/3/field/{fieldKey}/option/{optionId} */
+  async getFieldOption(fieldKey: string, optionId: number): Promise<IssueFieldOption> {
+    const response = await this.transport.request<IssueFieldOption>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/${encodePathSegment(String(optionId))}`,
+    });
+    return response.data;
+  }
+
+  /** Update (or create) an option on a Connect-app select list field. B437
+   * PUT /rest/api/3/field/{fieldKey}/option/{optionId}
+   * The id in the body must match the optionId path parameter. */
+  async updateFieldOption(
+    fieldKey: string,
+    optionId: number,
+    data: IssueFieldOption,
+  ): Promise<IssueFieldOption> {
+    const response = await this.transport.request<IssueFieldOption>({
+      method: 'PUT',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/${encodePathSegment(String(optionId))}`,
+      body: data,
+    });
+    return response.data;
+  }
+
+  /** Deselect a Connect-app field option from all matching issues (async task). B438
+   * DELETE /rest/api/3/field/{fieldKey}/option/{optionId}/issue — 303
+   * Returns a TaskProgressBeanRemoveOptionFromIssuesResult. */
+  async replaceFieldOptionOnIssues(
+    fieldKey: string,
+    optionId: number,
+    params?: ReplaceIssueFieldOptionOnIssuesParams,
+  ): Promise<TaskProgressBeanRemoveOptionFromIssuesResult> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.replaceWith !== undefined) query['replaceWith'] = params.replaceWith;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.overrideScreenSecurity !== undefined)
+        query['overrideScreenSecurity'] = params.overrideScreenSecurity;
+      if (params.overrideEditableFlag !== undefined)
+        query['overrideEditableFlag'] = params.overrideEditableFlag;
+    }
+    const response = await this.transport.request<TaskProgressBeanRemoveOptionFromIssuesResult>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/${encodePathSegment(String(optionId))}/issue`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** List selectable options for a Connect-app field (edit suggestions). B439
+   * GET /rest/api/3/field/{fieldKey}/option/suggestions/edit */
+  async listFieldOptionSuggestionsEdit(
+    fieldKey: string,
+    params?: ListIssueFieldOptionSuggestionsParams,
+  ): Promise<IssueFieldOptionPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.projectId !== undefined) query['projectId'] = params.projectId;
+    }
+    const response = await this.transport.request<IssueFieldOptionPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/suggestions/edit`,
+      query,
+    });
+    return response.data;
+  }
+
+  /** List visible options for a Connect-app field (search/view suggestions). B440
+   * GET /rest/api/3/field/{fieldKey}/option/suggestions/search */
+  async listFieldOptionSuggestionsSearch(
+    fieldKey: string,
+    params?: ListIssueFieldOptionSuggestionsParams,
+  ): Promise<IssueFieldOptionPage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.projectId !== undefined) query['projectId'] = params.projectId;
+    }
+    const response = await this.transport.request<IssueFieldOptionPage>({
+      method: 'GET',
+      path: `${this.baseUrl}/field/${encodePathSegment(fieldKey)}/option/suggestions/search`,
       query,
     });
     return response.data;

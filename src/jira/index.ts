@@ -257,6 +257,14 @@ export type {
   FieldContextForProjectAndIssueType,
   FieldContextMappingPage,
   GetFieldContextMappingsParams,
+  IssueFieldOptionScope,
+  IssueFieldOptionConfiguration,
+  IssueFieldOption,
+  IssueFieldOptionPage,
+  ListIssueFieldOptionsParams,
+  CreateIssueFieldOptionData,
+  ReplaceIssueFieldOptionOnIssuesParams,
+  ListIssueFieldOptionSuggestionsParams,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {
