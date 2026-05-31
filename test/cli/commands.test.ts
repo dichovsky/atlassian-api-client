@@ -787,6 +787,14 @@ const jiraExpressionMock = {
   evaluate: vi.fn(),
 };
 
+const jiraIssueLinkTypeMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+
 const jiraFiltersMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -1192,6 +1200,7 @@ vi.mock('../../src/jira/client.js', () => {
       workflowScheme: jiraWorkflowSchemeMock,
       fields: jiraFieldsMock,
       jql: jiraJqlMock,
+      issueLinkType: jiraIssueLinkTypeMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -23302,6 +23311,128 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('jql', 'unknown-action'), GLOBALS)).rejects.toThrow(
         'Unknown jql action',
       );
+    });
+  });
+
+  // ── issuelinktype (B533-B537) ──────────────────────────────────────────────
+
+  describe('issuelinktype resource', () => {
+    it('issuelinktype list calls client.issueLinkType.list', async () => {
+      const linkTypes = [{ id: '1', name: 'Blocks' }];
+      jiraIssueLinkTypeMock.list.mockResolvedValue(linkTypes);
+      const result = await executeJiraCommand(cmd('issuelinktype', 'list'), GLOBALS);
+      expect(jiraIssueLinkTypeMock.list).toHaveBeenCalled();
+      expect(result).toEqual(linkTypes);
+    });
+
+    it('issuelinktype get calls client.issueLinkType.get with id', async () => {
+      const lt = { id: '10001', name: 'Blocks' };
+      jiraIssueLinkTypeMock.get.mockResolvedValue(lt);
+      const result = await executeJiraCommand(cmd('issuelinktype', 'get', ['10001']), GLOBALS);
+      expect(jiraIssueLinkTypeMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toEqual(lt);
+    });
+
+    it('issuelinktype get throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('issuelinktype', 'get'), GLOBALS)).rejects.toThrow(
+        'issueLinkTypeId',
+      );
+    });
+
+    it('issuelinktype create calls client.issueLinkType.create with all fields', async () => {
+      const created = { id: '99', name: 'Blocks', inward: 'is blocked by', outward: 'blocks' };
+      jiraIssueLinkTypeMock.create.mockResolvedValue(created);
+      const result = await executeJiraCommand(
+        cmd('issuelinktype', 'create', [], {
+          name: 'Blocks',
+          inward: 'is blocked by',
+          outward: 'blocks',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueLinkTypeMock.create).toHaveBeenCalledWith({
+        name: 'Blocks',
+        inward: 'is blocked by',
+        outward: 'blocks',
+      });
+      expect(result).toEqual(created);
+    });
+
+    it('issuelinktype create throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuelinktype', 'create', [], { inward: 'is blocked by', outward: 'blocks' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--name');
+    });
+
+    it('issuelinktype create throws when --inward is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuelinktype', 'create', [], { name: 'Blocks', outward: 'blocks' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--inward');
+    });
+
+    it('issuelinktype create throws when --outward is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issuelinktype', 'create', [], { name: 'Blocks', inward: 'is blocked by' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--outward');
+    });
+
+    it('issuelinktype update calls client.issueLinkType.update with all fields', async () => {
+      const updated = { id: '10001', name: 'Clones' };
+      jiraIssueLinkTypeMock.update.mockResolvedValue(updated);
+      const result = await executeJiraCommand(
+        cmd('issuelinktype', 'update', ['10001'], {
+          name: 'Clones',
+          inward: 'is cloned by',
+          outward: 'clones',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueLinkTypeMock.update).toHaveBeenCalledWith('10001', {
+        name: 'Clones',
+        inward: 'is cloned by',
+        outward: 'clones',
+      });
+      expect(result).toEqual(updated);
+    });
+
+    it('issuelinktype update with only --name passes just name', async () => {
+      jiraIssueLinkTypeMock.update.mockResolvedValue({ id: '1', name: 'Renamed' });
+      await executeJiraCommand(cmd('issuelinktype', 'update', ['1'], { name: 'Renamed' }), GLOBALS);
+      expect(jiraIssueLinkTypeMock.update).toHaveBeenCalledWith('1', { name: 'Renamed' });
+    });
+
+    it('issuelinktype update throws when no flags provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuelinktype', 'update', ['10001']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of: --name, --inward, --outward');
+    });
+
+    it('issuelinktype delete calls client.issueLinkType.delete and returns deleted:true', async () => {
+      jiraIssueLinkTypeMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issuelinktype', 'delete', ['10001']), GLOBALS);
+      expect(jiraIssueLinkTypeMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issuelinktype delete throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('issuelinktype', 'delete'), GLOBALS)).rejects.toThrow(
+        'issueLinkTypeId',
+      );
+    });
+
+    it('throws on unknown issuelinktype action', async () => {
+      await expect(
+        executeJiraCommand(cmd('issuelinktype', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown issuelinktype action');
     });
   });
 });
