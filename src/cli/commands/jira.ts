@@ -209,6 +209,8 @@ export async function executeJiraCommand(
       return executeJql(client, cmd);
     case 'issuelinktype':
       return executeIssueLinkType(client, cmd);
+    case 'issue-link':
+      return executeIssueLink(client, cmd);
     case 'project-template':
       return executeProjectTemplate(client, cmd);
     case 'universal-avatar':
@@ -7163,6 +7165,39 @@ async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): P
     default:
       throw new Error(
         `Unknown project-template action: ${cmd.action}. Actions: ${PROJECT_TEMPLATE_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── issue-link (B530-B532) ───────────────────────────────────────────────────
+
+const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;
+
+async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const linkType = requireOpt(opts['link-type'], '--link-type');
+      const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
+      const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
+      await client.issueLink.create({
+        type: { name: linkType },
+        inwardIssue: { key: inwardIssue },
+        outwardIssue: { key: outwardIssue },
+      });
+      return { created: true };
+    }
+    case 'get':
+      return client.issueLink.get(requireArg(cmd.positionalArgs[0], 'linkId'));
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'linkId');
+      await client.issueLink.delete(id);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown issue-link action: ${cmd.action}. Actions: ${ISSUE_LINK_ACTIONS.join(', ')}`,
       );
   }
 }

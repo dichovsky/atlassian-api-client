@@ -424,6 +424,10 @@ const GLOBAL_OPTIONS = {
   // issuelinktype options (B533-B537)
   inward: { type: 'string' as const },
   outward: { type: 'string' as const },
+  // issue-link options (B530-B532)
+  'inward-issue': { type: 'string' as const },
+  'outward-issue': { type: 'string' as const },
+  'link-type': { type: 'string' as const },
   // project-template options (B653-B657)
   template: { type: 'string' as const },
   'template-name': { type: 'string' as const },
