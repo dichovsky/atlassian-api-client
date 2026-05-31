@@ -739,6 +739,15 @@ const jiraIssueAttachmentsMock = {
   upload: vi.fn(),
 };
 
+const jiraUniversalAvatarMock = {
+  getAvatars: vi.fn(),
+  storeAvatar: vi.fn(),
+  deleteAvatar: vi.fn(),
+  getAvatarImageByType: vi.fn(),
+  getAvatarImageByID: vi.fn(),
+  getAvatarImageByOwner: vi.fn(),
+};
+
 const jiraBulkMock = {
   createBulk: vi.fn(),
   deleteIssuesBulk: vi.fn(),
@@ -1217,6 +1226,7 @@ vi.mock('../../src/jira/client.js', () => {
       jql: jiraJqlMock,
       issueLinkType: jiraIssueLinkTypeMock,
       projectTemplate: jiraProjectTemplateMock,
+      universalAvatar: jiraUniversalAvatarMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -23868,6 +23878,257 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('project-template', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown project-template action',
       );
+    });
+  });
+
+  // ── universal-avatar (B791–B796) ───────────────────────────────────────────
+
+  describe('universal-avatar resource', () => {
+    it('universal-avatar list dispatches with type and entityId positionals', async () => {
+      jiraUniversalAvatarMock.getAvatars.mockResolvedValue({ system: [], custom: [] });
+      await executeJiraCommand(cmd('universal-avatar', 'list', ['project', '10001']), GLOBALS);
+      expect(jiraUniversalAvatarMock.getAvatars).toHaveBeenCalledWith('project', '10001');
+    });
+
+    it('universal-avatar list throws when type is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'list', []), GLOBALS),
+      ).rejects.toThrow('type');
+    });
+
+    it('universal-avatar list throws when entityId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'list', ['project']), GLOBALS),
+      ).rejects.toThrow('entityId');
+    });
+
+    it('universal-avatar store reads --file and dispatches with size param', async () => {
+      jiraUniversalAvatarMock.storeAvatar.mockResolvedValue({ id: '2020' });
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'ua-store-'));
+      const filePath = join(dir, 'icon.png');
+      await writeFile(filePath, new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
+      try {
+        await executeJiraCommand(
+          cmd('universal-avatar', 'store', ['project', '10001'], {
+            file: filePath,
+            size: '48',
+          }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      expect(jiraUniversalAvatarMock.storeAvatar).toHaveBeenCalledTimes(1);
+      const callArgs = jiraUniversalAvatarMock.storeAvatar.mock.calls[0]!;
+      expect(callArgs[0]).toBe('project');
+      expect(callArgs[1]).toBe('10001');
+      expect(callArgs[2]).toBeInstanceOf(Blob);
+      expect(callArgs[3]).toMatchObject({ size: 48 });
+    });
+
+    it('universal-avatar store passes x and y when provided', async () => {
+      jiraUniversalAvatarMock.storeAvatar.mockResolvedValue({ id: '2021' });
+      const { writeFile, mkdtemp, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const dir = await mkdtemp(join(tmpdir(), 'ua-store-xy-'));
+      const filePath = join(dir, 'icon.png');
+      await writeFile(filePath, new Uint8Array([1, 2, 3]));
+      try {
+        await executeJiraCommand(
+          cmd('universal-avatar', 'store', ['issuetype', '10002'], {
+            file: filePath,
+            size: '32',
+            x: '8',
+            y: '4',
+          }),
+          GLOBALS,
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      const callArgs = jiraUniversalAvatarMock.storeAvatar.mock.calls[0]!;
+      expect(callArgs[3]).toMatchObject({ size: 32, x: 8, y: 4 });
+    });
+
+    it('universal-avatar store throws when --file is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('universal-avatar', 'store', ['project', '10001'], { size: '48' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--file');
+    });
+
+    it('universal-avatar store throws when --size is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('universal-avatar', 'store', ['project', '10001'], { file: '/tmp/x.png' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--size');
+    });
+
+    it('universal-avatar delete dispatches with type, owningObjectId and numeric id', async () => {
+      jiraUniversalAvatarMock.deleteAvatar.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('universal-avatar', 'delete', ['project', '10001', '1010']),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.deleteAvatar).toHaveBeenCalledWith('project', '10001', 1010);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('universal-avatar delete throws when type is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'delete', []), GLOBALS),
+      ).rejects.toThrow('type');
+    });
+
+    it('universal-avatar delete throws when owningObjectId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'delete', ['project']), GLOBALS),
+      ).rejects.toThrow('owningObjectId');
+    });
+
+    it('universal-avatar delete throws when id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'delete', ['project', '10001']), GLOBALS),
+      ).rejects.toThrow('id');
+    });
+
+    it('universal-avatar view-by-type returns byte count summary', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByType.mockResolvedValue(new ArrayBuffer(64));
+      const result = await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-type', ['issuetype']),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByType).toHaveBeenCalledWith('issuetype', {});
+      expect(result).toEqual({ bytes: 64 });
+    });
+
+    it('universal-avatar view-by-type forwards --size and --image-format', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByType.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-type', ['project'], {
+          size: 'medium',
+          'image-format': 'png',
+        }),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByType).toHaveBeenCalledWith('project', {
+        size: 'medium',
+        format: 'png',
+      });
+    });
+
+    it('universal-avatar view-by-type throws when type is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'view-by-type', []), GLOBALS),
+      ).rejects.toThrow('type');
+    });
+
+    it('universal-avatar view-by-id returns byte count summary', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByID.mockResolvedValue(new ArrayBuffer(128));
+      const result = await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-id', ['project', '1010']),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByID).toHaveBeenCalledWith('project', 1010, {});
+      expect(result).toEqual({ bytes: 128 });
+    });
+
+    it('universal-avatar view-by-id forwards --size flag', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByID.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-id', ['issuetype', '999'], { size: 'small' }),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByID).toHaveBeenCalledWith('issuetype', 999, {
+        size: 'small',
+      });
+    });
+
+    it('universal-avatar view-by-id forwards --image-format flag', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByID.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-id', ['project', '1010'], { 'image-format': 'svg' }),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByID).toHaveBeenCalledWith('project', 1010, {
+        format: 'svg',
+      });
+    });
+
+    it('universal-avatar view-by-id throws when type is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'view-by-id', []), GLOBALS),
+      ).rejects.toThrow('type');
+    });
+
+    it('universal-avatar view-by-id throws when id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'view-by-id', ['project']), GLOBALS),
+      ).rejects.toThrow('id');
+    });
+
+    it('universal-avatar view-by-owner returns byte count summary', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByOwner.mockResolvedValue(new ArrayBuffer(256));
+      const result = await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-owner', ['project', '10001']),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByOwner).toHaveBeenCalledWith(
+        'project',
+        '10001',
+        {},
+      );
+      expect(result).toEqual({ bytes: 256 });
+    });
+
+    it('universal-avatar view-by-owner forwards --image-format flag', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByOwner.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-owner', ['priority', 'p1'], { 'image-format': 'svg' }),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByOwner).toHaveBeenCalledWith('priority', 'p1', {
+        format: 'svg',
+      });
+    });
+
+    it('universal-avatar view-by-owner forwards --size flag', async () => {
+      jiraUniversalAvatarMock.getAvatarImageByOwner.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('universal-avatar', 'view-by-owner', ['issuetype', 'eid'], { size: 'large' }),
+        GLOBALS,
+      );
+      expect(jiraUniversalAvatarMock.getAvatarImageByOwner).toHaveBeenCalledWith(
+        'issuetype',
+        'eid',
+        { size: 'large' },
+      );
+    });
+
+    it('universal-avatar view-by-owner throws when type is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'view-by-owner', []), GLOBALS),
+      ).rejects.toThrow('type');
+    });
+
+    it('universal-avatar view-by-owner throws when entityId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'view-by-owner', ['project']), GLOBALS),
+      ).rejects.toThrow('entityId');
+    });
+
+    it('throws on unknown universal-avatar action', async () => {
+      await expect(
+        executeJiraCommand(cmd('universal-avatar', 'bad-action'), GLOBALS),
+      ).rejects.toThrow('Unknown universal-avatar action');
     });
   });
 });

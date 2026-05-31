@@ -149,6 +149,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   jql: 'executeJql',
   issuelinktype: 'executeIssueLinkType',
   'project-template': 'executeProjectTemplate',
+  'universal-avatar': 'executeUniversalAvatar',
 };
 
 /**

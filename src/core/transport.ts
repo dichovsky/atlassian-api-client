@@ -170,8 +170,13 @@ export class HttpTransport implements Transport {
     // filter values) landing in persistent log aggregators.
     this.config.logger?.debug('HTTP request', { method: options.method, path: sanitizedPath });
 
-    const { body, withJsonBody } = buildFetchBody(options);
-    const headers = buildHeaders(options.headers, this.authProvider.getHeaders(), withJsonBody);
+    const { body, withJsonBody, binaryContentType } = buildFetchBody(options);
+    const headers = buildHeaders(
+      options.headers,
+      this.authProvider.getHeaders(),
+      withJsonBody,
+      binaryContentType,
+    );
 
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeout);

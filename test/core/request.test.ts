@@ -323,6 +323,21 @@ describe('buildHeaders', () => {
     expect('Content-Type' in headers).toBe(false);
   });
 
+  it('sets Content-Type from binaryContentType when withJsonBody is false and binaryContentType is set', () => {
+    const headers = buildHeaders(undefined, { Authorization: 'x' }, false, 'image/png');
+    expect(headers['Content-Type']).toBe('image/png');
+  });
+
+  it('does not set Content-Type from binaryContentType when withJsonBody is true (json wins)', () => {
+    const headers = buildHeaders(undefined, { Authorization: 'x' }, true, 'image/png');
+    expect(headers['Content-Type']).toBe('application/json');
+  });
+
+  it('omits Content-Type when both withJsonBody is false and binaryContentType is undefined', () => {
+    const headers = buildHeaders(undefined, { Authorization: 'x' }, false, undefined);
+    expect('Content-Type' in headers).toBe(false);
+  });
+
   it('B029: strips caller-supplied Cookie (case-insensitive)', () => {
     const headers = buildHeaders(
       { Cookie: 'cloud.session.token=injected', cookie: 'evil2' },
@@ -369,6 +384,45 @@ describe('buildFetchBody', () => {
     expect(() =>
       buildFetchBody({ method: 'POST', path: '/x', body: { a: 1 }, formData: form }),
     ).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when both binaryBody and body are provided', () => {
+    const blob = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' });
+    expect(() =>
+      buildFetchBody({ method: 'POST', path: '/x', body: { a: 1 }, binaryBody: blob }),
+    ).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when both binaryBody and formData are provided', () => {
+    const form = new FormData();
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/png' });
+    expect(() =>
+      buildFetchBody({ method: 'POST', path: '/x', formData: form, binaryBody: blob }),
+    ).toThrow(ValidationError);
+  });
+
+  it('returns the Blob as body with binaryContentType when binaryBody is set with a MIME type', () => {
+    const blob = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' });
+    const { body, withJsonBody, binaryContentType } = buildFetchBody({
+      method: 'POST',
+      path: '/x',
+      binaryBody: blob,
+    });
+    expect(body).toBe(blob);
+    expect(withJsonBody).toBe(false);
+    expect(binaryContentType).toBe('image/png');
+  });
+
+  it('returns binaryContentType=undefined when Blob.type is empty', () => {
+    const blob = new Blob([new Uint8Array([0])]);
+    const { body, withJsonBody, binaryContentType } = buildFetchBody({
+      method: 'POST',
+      path: '/x',
+      binaryBody: blob,
+    });
+    expect(body).toBe(blob);
+    expect(withJsonBody).toBe(false);
+    expect(binaryContentType).toBeUndefined();
   });
 
   it('returns FormData unchanged when only formData is set', () => {

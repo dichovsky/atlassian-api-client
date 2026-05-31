@@ -865,3 +865,12 @@ export type {
   SaveTemplateResponse,
 } from './resources/project-template.js';
 export { ProjectTemplateResource } from './resources/project-template.js';
+export type {
+  Avatars,
+  StoreAvatarParams,
+  AvatarEntityType,
+  AvatarViewSize,
+  AvatarViewFormat,
+  GetAvatarImageParams,
+} from './resources/universal-avatar.js';
+export { UniversalAvatarResource } from './resources/universal-avatar.js';

@@ -9,6 +9,13 @@ export interface RequestOptions {
   readonly body?: unknown;
   /** FormData body for multipart/form-data uploads. Mutually exclusive with body. */
   readonly formData?: FormData;
+  /**
+   * Raw binary body for endpoints that accept `*\/*` or `image\/*` content.
+   * The `Blob.type` is used as `Content-Type` when present. Mutually exclusive
+   * with `body` and `formData`. Used by B792 (`storeAvatar`) which requires raw
+   * image bytes rather than a multipart upload.
+   */
+  readonly binaryBody?: Blob;
   readonly headers?: Readonly<Record<string, string>>;
   /**
    * External AbortSignal for caller-driven cancellation. Composed with the

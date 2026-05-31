@@ -76,6 +76,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `issuelinktype`          | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `project-template`       | `create`, `edit-template`, `live-template`, `remove-template`, `save-template`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `universal-avatar`       | `list`, `store`, `delete`, `view-by-type`, `view-by-id`, `view-by-owner`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Resource                 | Actions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `issues`                 | `get`, `create`, `update`, `delete`, `transition`, `transitions`, `get-agile`, `get-estimation`, `set-estimation`, `rank`, `assign`, `get-changelog`, `filter-changelog`, `get-editmeta`, `notify`, `list-properties`, `delete-property`, `get-property`, `set-property`, `delete-all-remotelinks`, `list-remotelinks`, `create-remotelink`, `delete-remotelink`, `get-remotelink`, `update-remotelink`, `remove-vote`, `get-votes`, `add-vote`, `remove-watcher`, `get-watchers`, `add-watcher`, `delete-all-worklogs`, `list-worklogs`, `add-worklog`, `delete-worklog`, `get-worklog`, `update-worklog`, `list-worklog-properties`, `delete-worklog-property`, `get-worklog-property`, `set-worklog-property`, `move-worklog`, `archive-issues`, `archive-issues-jql`, `bulk-fetch`, `get-create-meta`, `get-create-meta-issuetypes`, `get-create-meta-issuetype`, `get-limit-report`, `picker`, `set-properties-by-entity-ids`, `set-properties-multi`, `unarchive-issues`, `watch-issues-bulk`, `export-archived`                                               |
@@ -148,6 +149,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `issuelinktype`          | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `project-template`       | `create`, `edit-template`, `live-template`, `remove-template`, `save-template`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `universal-avatar`       | `list`, `store`, `delete`, `view-by-type`, `view-by-id`, `view-by-owner`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## `issue-type-schemes`
 
@@ -3642,7 +3644,7 @@ Custom project template management (B653–B657). Covers the full `/rest/api/3/p
 - `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags (bare, no value).
 - `--enable-components` is a boolean flag (bare, no value).
 
-```sh
+````sh
 # Create a project with a custom template (async) — B653
 atlas jira project-template create \
   --name "My Project" \
@@ -3685,4 +3687,50 @@ atlas jira project-template save-template \
   --project-id 10001 \
   --template-type LIVE \
   --enable-workflow-delegated-admin
-```
+
+## `universal-avatar`
+
+Manage and view avatars for projects, issue types, and priorities via
+`/rest/api/3/universal_avatar` (B791–B796).
+
+`type` ∈ `project`, `issuetype`, `priority`.
+`size` (view) ∈ `xsmall`, `small`, `medium`, `large`, `xlarge`.
+`image-format` ∈ `png`, `svg`.
+
+| Action          | Positional                     | Required flags     | Optional flags             |
+| --------------- | ------------------------------ | ------------------ | -------------------------- |
+| `list`          | `<type> <entityId>`            | —                  | —                          |
+| `store`         | `<type> <entityId>`            | `--file`, `--size` | `--x`, `--y`               |
+| `delete`        | `<type> <owningObjectId> <id>` | —                  | —                          |
+| `view-by-type`  | `<type>`                       | —                  | `--size`, `--image-format` |
+| `view-by-id`    | `<type> <id>`                  | —                  | `--size`, `--image-format` |
+| `view-by-owner` | `<type> <entityId>`            | —                  | `--size`, `--image-format` |
+
+- `list` returns `{ system: Avatar[], custom: Avatar[] }`.
+- `store` reads `--file` from disk, sends raw binary bytes (`*/*`) — NOT multipart. `--size` sets the crop side length in px; `--x`/`--y` offset the crop origin (default 0). Returns the created `Avatar`.
+- `delete` removes a custom avatar; `id` is the numeric avatar ID.
+- `view-by-type` / `view-by-id` / `view-by-owner` return binary image bytes. The CLI prints `{ "bytes": N }` — use the SDK (`client.universalAvatar.getAvatarImageByType(...)`) when you need the actual `ArrayBuffer`.
+- `--size` and `--image-format` on view commands are advisory; the server uses its default when omitted.
+
+```sh
+# List system + custom avatars for a project
+atlas jira universal-avatar list project 10001
+
+# Upload a custom avatar (crop to a 48×48 square from top-left)
+atlas jira universal-avatar store project 10001 --file ./icon.png --size 48
+
+# Upload with explicit crop coordinates
+atlas jira universal-avatar store issuetype 10001 --file ./icon.png --size 32 --x 8 --y 8
+
+# Delete a custom avatar
+atlas jira universal-avatar delete project 10001 1010
+
+# Get the default issue-type avatar image (CLI prints byte count)
+atlas jira universal-avatar view-by-type issuetype --size medium --image-format png
+
+# Get a specific avatar image by ID
+atlas jira universal-avatar view-by-id project 1010 --size small
+
+# Get the avatar for a specific project owner
+atlas jira universal-avatar view-by-owner project 10001 --image-format svg
+````
