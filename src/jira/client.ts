@@ -76,9 +76,11 @@ import { ScreenSchemeResource } from './resources/screenscheme.js';
 import { PlansResource } from './resources/plans.js';
 import { WorkflowSchemeResource } from './resources/workflowscheme.js';
 import { IssueLinkTypeResource } from './resources/issuelinktype.js';
+import { IssueLinkResource } from './resources/issuelink.js';
 import { ProjectTemplateResource } from './resources/project-template.js';
 import { UniversalAvatarResource } from './resources/universal-avatar.js';
 import { UiModificationsResource } from './resources/uimodifications.js';
+import { PermissionsResource } from './resources/permissions.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -229,12 +231,16 @@ export class JiraClient {
   readonly workflowScheme: WorkflowSchemeResource;
   /** Jira issue link type resource — list/get/create/update/delete (B533-B537). */
   readonly issueLinkType: IssueLinkTypeResource;
+  /** Jira issue link resource — create/get/delete link instances (B530-B532). */
+  readonly issueLink: IssueLinkResource;
   /** Jira project template resource (B653-B657). */
   readonly projectTemplate: ProjectTemplateResource;
   /** Jira universal avatar resource — list/store/delete/view avatars (B791-B796). */
   readonly universalAvatar: UniversalAvatarResource;
   /** Jira UI modifications resource — list/create/update/delete (B787-B790). */
   readonly uiModifications: UiModificationsResource;
+  /** Jira global permissions resource — get-all/check/permitted-projects (B613-B615). */
+  readonly permissions: PermissionsResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -337,8 +343,10 @@ export class JiraClient {
     this.plans = new PlansResource(transport, baseUrl);
     this.workflowScheme = new WorkflowSchemeResource(transport, baseUrl);
     this.issueLinkType = new IssueLinkTypeResource(transport, baseUrl);
+    this.issueLink = new IssueLinkResource(transport, baseUrl);
     this.projectTemplate = new ProjectTemplateResource(transport, baseUrl);
     this.universalAvatar = new UniversalAvatarResource(transport, baseUrl);
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
+    this.permissions = new PermissionsResource(transport, baseUrl);
   }
 }

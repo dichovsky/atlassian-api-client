@@ -2413,6 +2413,24 @@
 - [x] 🔴 🧩 Jira: B796 expose GET /rest/api/3/universal_avatar/view/type/{type}/owner/{entityId}
   - **Impl:** `UniversalAvatarResource.getAvatarImageByOwner(type, entityId, params?)` → `ArrayBuffer`. CLI: `atlas jira universal-avatar view-by-owner <type> <entityId> [--size] [--format]`.
   - **Rat:** Same binary pattern as B794/B795. All three view methods use `responseType: 'arrayBuffer'`.
+- [x] 🔴 🧩 Jira: B530 expose POST /rest/api/3/issueLink
+  - **Impl:** `IssueLinkResource.create(data)` — body: `{type, inwardIssue, outwardIssue, comment?}`; 201 empty body → void. CLI: `atlas jira issue-link create --link-type <name> --inward-issue <key> --outward-issue <key>`.
+  - **Rat:** Spec-verified: `LinkIssueRequestJsonBean` requires type/inwardIssue/outwardIssue; comment is optional complex ADF (omitted from CLI flags). Distinct resource from `issuelinktype` (link instances vs type definitions).
+- [x] 🔴 🧩 Jira: B531 expose DELETE /rest/api/3/issueLink/{linkId}
+  - **Impl:** `IssueLinkResource.delete(linkId)` — DELETE `/issueLink/{linkId}`; 204 → void. CLI: `atlas jira issue-link delete <linkId>`.
+  - **Rat:** Spec-verified: 204 No Content on success; path param positional per convention.
+- [x] 🔴 🧩 Jira: B532 expose GET /rest/api/3/issueLink/{linkId}
+  - **Impl:** `IssueLinkResource.get(linkId)` — GET `/issueLink/{linkId}`; 200 → `IssueLink` (`{id, self, type, inwardIssue, outwardIssue}`). CLI: `atlas jira issue-link get <linkId>`.
+  - **Rat:** Spec-verified: response is `IssueLink` schema; path param positional per convention.
+- [x] 🔴 🧩 Jira: B613 expose GET /rest/api/3/permissions
+  - **Impl:** `PermissionsResource.getAll()` → `Permissions` (`{ permissions?: Record<string, Permission> }`). CLI: `atlas jira permissions get-all`. No params per spec.
+  - **Rat:** Spec-verified: GET /rest/api/3/permissions with no params, 200 → `$ref: Permissions`. Distinct from `mypermissions` (user-scoped) and `permissionscheme` (scheme management).
+- [x] 🔴 🧩 Jira: B614 expose POST /rest/api/3/permissions/check
+  - **Impl:** `PermissionsResource.check(body: BulkPermissionsRequestBean)` → `BulkPermissionGrants`. CLI: `atlas jira permissions check [--account-id] [--global-permissions JSON] [--project-permissions JSON]`. All fields optional — omitted fields not sent to API.
+  - **Rat:** Spec-verified: body is `BulkPermissionsRequestBean` with `accountId?`, `globalPermissions?: string[]`, `projectPermissions?: BulkProjectPermissions[]`. Conditional body-building for 100% branch coverage. New router flags: `--global-permissions`, `--project-permissions`.
+- [x] 🔴 🧩 Jira: B615 expose POST /rest/api/3/permissions/project
+  - **Impl:** `PermissionsResource.getPermittedProjects(body: PermissionsKeysBean)` → `PermittedProjects`. CLI: `atlas jira permissions permitted-projects --permissions JSON`. `permissions` is required string[].
+  - **Rat:** Spec-verified: body is `PermissionsKeysBean` with required `permissions: string[]`. 200 → `PermittedProjects` (`{ projects?: ProjectIdentifierBean[] }`).
 - [x] 🔴 🧩 Jira: B787 expose GET /rest/api/3/uiModifications
   - **Impl:** `UiModificationsResource.list(params?)` → `OffsetPaginatedResponse<UiModificationDetails>`. `UiModificationsResource.listAll(params?)` async-generator. CLI: `atlas jira ui-modifications list [--start-at] [--max-results] [--expand]`. Pagination via `paginateOffset`.
   - **Rat:** Spec-verified: offset PageBean, query params `startAt`/`maxResults`/`expand`. expand accepts `data` and/or `contexts`.

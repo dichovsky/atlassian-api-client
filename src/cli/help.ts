@@ -281,9 +281,11 @@ RESOURCES:
   fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
   issuelinktype          list, get, create, update, delete
+  issue-link             create, get, delete
   project-template       create, edit-template, live-template, remove-template, save-template
   universal-avatar       list, store, delete, view-by-type, view-by-id, view-by-owner
   ui-modifications       list, list-all, create, update, delete
+  permissions            get-all, check, permitted-projects
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -593,6 +595,9 @@ EXAMPLES:
   atlas jira issuelinktype create --name "Blocks" --inward "is blocked by" --outward "blocks"
   atlas jira issuelinktype update 10001 --name "Clones" --inward "is cloned by" --outward "clones"
   atlas jira issuelinktype delete 10001
+  atlas jira issue-link create --link-type "Blocks" --inward-issue "HSP-1" --outward-issue "MKY-1"
+  atlas jira issue-link get 10001
+  atlas jira issue-link delete 10001
   atlas jira universal-avatar list project 10001
   atlas jira universal-avatar store project 10001 --file ./icon.png --size 48
   atlas jira universal-avatar store issuetype 10001 --file ./icon.png --size 48 --x 0 --y 0
@@ -604,6 +609,9 @@ EXAMPLES:
   atlas jira ui-modifications create --name "Reveal Story Points"
   atlas jira ui-modifications update d7dbda8a --name "Updated Name"
   atlas jira ui-modifications delete d7dbda8a
+  atlas jira permissions get-all
+  atlas jira permissions check --global-permissions '["ADMINISTER"]'
+  atlas jira permissions permitted-projects --permissions '["BROWSE_PROJECTS"]'
 `;
 
 /** Get help text for the given level. */
