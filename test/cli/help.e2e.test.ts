@@ -157,6 +157,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   permissions: 'executePermissions',
   pipelines: 'executePipelines',
   'linked-workspaces': 'executeLinkedWorkspaces',
+  'bulk-by-properties': 'executeBulkByProperties',
 };
 
 /**
