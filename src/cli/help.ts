@@ -284,6 +284,7 @@ RESOURCES:
   issue-link             create, get, delete
   project-template       create, edit-template, live-template, remove-template, save-template
   universal-avatar       list, store, delete, view-by-type, view-by-id, view-by-owner
+  permissions            get-all, check, permitted-projects
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -603,6 +604,9 @@ EXAMPLES:
   atlas jira universal-avatar view-by-type issuetype --size medium --image-format png
   atlas jira universal-avatar view-by-id project 1010 --size small
   atlas jira universal-avatar view-by-owner project 10001 --image-format svg
+  atlas jira permissions get-all
+  atlas jira permissions check --global-permissions '["ADMINISTER"]'
+  atlas jira permissions permitted-projects --permissions '["BROWSE_PROJECTS"]'
 `;
 
 /** Get help text for the given level. */

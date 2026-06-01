@@ -139,15 +139,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B613 Jira: expose GET /rest/api/3/permissions
-  - files: `src/jira/resources/permissions.ts`, `test/jira/permissions.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B614 Jira: expose POST /rest/api/3/permissions/check
-  - files: `src/jira/resources/permissions.ts`, `test/jira/permissions.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B615 Jira: expose POST /rest/api/3/permissions/project
-  - files: `src/jira/resources/permissions.ts`, `test/jira/permissions.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B787 Jira: expose GET /rest/api/3/uiModifications
   - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

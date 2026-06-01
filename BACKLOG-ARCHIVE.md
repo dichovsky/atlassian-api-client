@@ -2422,3 +2422,12 @@
 - [x] 🔴 🧩 Jira: B532 expose GET /rest/api/3/issueLink/{linkId}
   - **Impl:** `IssueLinkResource.get(linkId)` — GET `/issueLink/{linkId}`; 200 → `IssueLink` (`{id, self, type, inwardIssue, outwardIssue}`). CLI: `atlas jira issue-link get <linkId>`.
   - **Rat:** Spec-verified: response is `IssueLink` schema; path param positional per convention.
+- [x] 🔴 🧩 Jira: B613 expose GET /rest/api/3/permissions
+  - **Impl:** `PermissionsResource.getAll()` → `Permissions` (`{ permissions?: Record<string, Permission> }`). CLI: `atlas jira permissions get-all`. No params per spec.
+  - **Rat:** Spec-verified: GET /rest/api/3/permissions with no params, 200 → `$ref: Permissions`. Distinct from `mypermissions` (user-scoped) and `permissionscheme` (scheme management).
+- [x] 🔴 🧩 Jira: B614 expose POST /rest/api/3/permissions/check
+  - **Impl:** `PermissionsResource.check(body: BulkPermissionsRequestBean)` → `BulkPermissionGrants`. CLI: `atlas jira permissions check [--account-id] [--global-permissions JSON] [--project-permissions JSON]`. All fields optional — omitted fields not sent to API.
+  - **Rat:** Spec-verified: body is `BulkPermissionsRequestBean` with `accountId?`, `globalPermissions?: string[]`, `projectPermissions?: BulkProjectPermissions[]`. Conditional body-building for 100% branch coverage. New router flags: `--global-permissions`, `--project-permissions`.
+- [x] 🔴 🧩 Jira: B615 expose POST /rest/api/3/permissions/project
+  - **Impl:** `PermissionsResource.getPermittedProjects(body: PermissionsKeysBean)` → `PermittedProjects`. CLI: `atlas jira permissions permitted-projects --permissions JSON`. `permissions` is required string[].
+  - **Rat:** Spec-verified: body is `PermissionsKeysBean` with required `permissions: string[]`. 200 → `PermittedProjects` (`{ projects?: ProjectIdentifierBean[] }`).

@@ -79,6 +79,7 @@ import { IssueLinkTypeResource } from './resources/issuelinktype.js';
 import { IssueLinkResource } from './resources/issuelink.js';
 import { ProjectTemplateResource } from './resources/project-template.js';
 import { UniversalAvatarResource } from './resources/universal-avatar.js';
+import { PermissionsResource } from './resources/permissions.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -235,6 +236,8 @@ export class JiraClient {
   readonly projectTemplate: ProjectTemplateResource;
   /** Jira universal avatar resource — list/store/delete/view avatars (B791-B796). */
   readonly universalAvatar: UniversalAvatarResource;
+  /** Jira global permissions resource — get-all/check/permitted-projects (B613-B615). */
+  readonly permissions: PermissionsResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -340,5 +343,6 @@ export class JiraClient {
     this.issueLink = new IssueLinkResource(transport, baseUrl);
     this.projectTemplate = new ProjectTemplateResource(transport, baseUrl);
     this.universalAvatar = new UniversalAvatarResource(transport, baseUrl);
+    this.permissions = new PermissionsResource(transport, baseUrl);
   }
 }

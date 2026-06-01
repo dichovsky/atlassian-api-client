@@ -1155,6 +1155,11 @@ const jiraProjectTemplateMock = {
   removeTemplate: vi.fn(),
   saveTemplate: vi.fn(),
 };
+const jiraPermissionsMock = {
+  getAll: vi.fn(),
+  check: vi.fn(),
+  getPermittedProjects: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -1234,6 +1239,7 @@ vi.mock('../../src/jira/client.js', () => {
       issueLink: jiraIssueLinkMock,
       projectTemplate: jiraProjectTemplateMock,
       universalAvatar: jiraUniversalAvatarMock,
+      permissions: jiraPermissionsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -24216,6 +24222,124 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('universal-avatar', 'bad-action'), GLOBALS),
       ).rejects.toThrow('Unknown universal-avatar action');
+    });
+  });
+
+  // ── permissions (B613-B615) ────────────────────────────────────────────────
+
+  describe('permissions resource', () => {
+    it('permissions get-all calls client.permissions.getAll', async () => {
+      const data = {
+        permissions: { ADMINISTER: { key: 'ADMINISTER', name: 'Administer Jira', type: 'GLOBAL' } },
+      };
+      jiraPermissionsMock.getAll.mockResolvedValue(data);
+      const result = await executeJiraCommand(cmd('permissions', 'get-all'), GLOBALS);
+      expect(jiraPermissionsMock.getAll).toHaveBeenCalled();
+      expect(result).toEqual(data);
+    });
+
+    it('permissions check calls client.permissions.check with all fields', async () => {
+      const grants = { globalPermissions: ['ADMINISTER'], projectPermissions: [] };
+      jiraPermissionsMock.check.mockResolvedValue(grants);
+      const result = await executeJiraCommand(
+        cmd('permissions', 'check', [], {
+          'account-id': 'abc123',
+          'global-permissions': '["ADMINISTER"]',
+          'project-permissions': '[{"permissions":["EDIT_ISSUES"],"projects":[10001]}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({
+        accountId: 'abc123',
+        globalPermissions: ['ADMINISTER'],
+        projectPermissions: [{ permissions: ['EDIT_ISSUES'], projects: [10001] }],
+      });
+      expect(result).toEqual(grants);
+    });
+
+    it('permissions check with no flags passes empty body', async () => {
+      const grants = { globalPermissions: [], projectPermissions: [] };
+      jiraPermissionsMock.check.mockResolvedValue(grants);
+      await executeJiraCommand(cmd('permissions', 'check'), GLOBALS);
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({});
+    });
+
+    it('permissions check with only account-id passes just accountId', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: [],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(cmd('permissions', 'check', [], { 'account-id': 'user1' }), GLOBALS);
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({ accountId: 'user1' });
+    });
+
+    it('permissions check with only global-permissions passes just globalPermissions', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: ['USE'],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(
+        cmd('permissions', 'check', [], { 'global-permissions': '["USE"]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({ globalPermissions: ['USE'] });
+    });
+
+    it('permissions check with only project-permissions passes just projectPermissions', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: [],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(
+        cmd('permissions', 'check', [], { 'project-permissions': '[{"permissions":["BROWSE"]}]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({
+        projectPermissions: [{ permissions: ['BROWSE'] }],
+      });
+    });
+
+    it('permissions check throws when --global-permissions is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('permissions', 'check', [], { 'global-permissions': 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--global-permissions must be valid JSON');
+    });
+
+    it('permissions permitted-projects calls client.permissions.getPermittedProjects', async () => {
+      const projects = { projects: [{ id: 10001, key: 'PROJ' }] };
+      jiraPermissionsMock.getPermittedProjects.mockResolvedValue(projects);
+      const result = await executeJiraCommand(
+        cmd('permissions', 'permitted-projects', [], { permissions: '["BROWSE_PROJECTS"]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.getPermittedProjects).toHaveBeenCalledWith({
+        permissions: ['BROWSE_PROJECTS'],
+      });
+      expect(result).toEqual(projects);
+    });
+
+    it('permissions permitted-projects throws when --permissions is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('permissions', 'permitted-projects'), GLOBALS),
+      ).rejects.toThrow('--permissions');
+    });
+
+    it('permissions permitted-projects throws when --permissions is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('permissions', 'permitted-projects', [], { permissions: 'bad' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--permissions must be valid JSON');
+    });
+
+    it('throws on unknown permissions action', async () => {
+      await expect(
+        executeJiraCommand(cmd('permissions', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown permissions action');
     });
   });
 });

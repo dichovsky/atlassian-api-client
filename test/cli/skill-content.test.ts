@@ -329,6 +329,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'issue-link',
           'project-template',
           'universal-avatar',
+          'permissions',
         ]).toContain(parsed.resource);
       }
     });
@@ -458,6 +459,7 @@ describe('Resource coverage drift check', () => {
     'issue-link',
     'project-template',
     'universal-avatar',
+    'permissions',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {
