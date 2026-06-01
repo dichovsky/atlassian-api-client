@@ -3,6 +3,71 @@ import { NotFoundError } from '../../core/errors.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
+// ── B838 types ─────────────────────────────────────────────────────────────
+
+/** A single issue-type entry in the issueTypeUsages response. */
+export interface WorkflowIssueTypeUsage {
+  readonly id: string;
+}
+
+/** Cursor-paginated page of issue types using the workflow in a project. */
+export interface WorkflowIssueTypeUsagePage {
+  readonly values: WorkflowIssueTypeUsage[];
+  readonly nextPageToken?: string;
+}
+
+/** Response for GET /workflow/{workflowId}/project/{projectId}/issueTypeUsages (B838). */
+export interface WorkflowProjectIssueTypeUsage {
+  readonly workflowId: string;
+  readonly projectId: string;
+  readonly issueTypes: WorkflowIssueTypeUsagePage;
+}
+
+// ── B839 types ─────────────────────────────────────────────────────────────
+
+/** A single project entry in the projectUsages response. */
+export interface WorkflowProjectUsageItem {
+  readonly id: string;
+}
+
+/** Cursor-paginated page of projects using the workflow. */
+export interface WorkflowProjectUsagePage {
+  readonly values: WorkflowProjectUsageItem[];
+  readonly nextPageToken?: string;
+}
+
+/** Response for GET /workflow/{workflowId}/projectUsages (B839). */
+export interface WorkflowProjectUsage {
+  readonly workflowId: string;
+  readonly projects: WorkflowProjectUsagePage;
+}
+
+// ── B840 types ─────────────────────────────────────────────────────────────
+
+/** A single workflow-scheme entry in the workflowSchemes response. */
+export interface WorkflowSchemeUsageItem {
+  readonly id: string;
+}
+
+/** Cursor-paginated page of workflow schemes using the workflow. */
+export interface WorkflowSchemeUsagePage {
+  readonly values: WorkflowSchemeUsageItem[];
+  readonly nextPageToken?: string;
+}
+
+/** Response for GET /workflow/{workflowId}/workflowSchemes (B840). */
+export interface WorkflowSchemeUsage {
+  readonly workflowId: string;
+  readonly workflowSchemes: WorkflowSchemeUsagePage;
+}
+
+// ── Shared cursor-pagination params ────────────────────────────────────────
+
+export interface WorkflowUsagesParams {
+  readonly nextPageToken?: string;
+  readonly maxResults?: number;
+}
+
 export interface WorkflowTransition {
   readonly id: string;
   readonly name: string;
@@ -82,5 +147,75 @@ export class WorkflowsResource {
       throw new NotFoundError(`Workflow not found: ${workflowName}`);
     }
     return resp.data.values[0];
+  }
+
+  /**
+   * Delete an inactive workflow (B837).
+   * DELETE /rest/api/3/workflow/{entityId}
+   * Returns 204 No Content on success.
+   */
+  async deleteWorkflow(entityId: string): Promise<void> {
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflow/${encodeURIComponent(entityId)}`,
+    });
+  }
+
+  /**
+   * Get issue types using a workflow in a project (B838).
+   * GET /rest/api/3/workflow/{workflowId}/project/{projectId}/issueTypeUsages
+   */
+  async getIssueTypeUsages(
+    workflowId: string,
+    projectId: string,
+    params?: WorkflowUsagesParams,
+  ): Promise<WorkflowProjectIssueTypeUsage> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const resp = await this.transport.request<WorkflowProjectIssueTypeUsage>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/project/${encodeURIComponent(projectId)}/issueTypeUsages`,
+      query,
+    });
+    return resp.data;
+  }
+
+  /**
+   * Get projects using a workflow (B839).
+   * GET /rest/api/3/workflow/{workflowId}/projectUsages
+   */
+  async getProjectUsages(
+    workflowId: string,
+    params?: WorkflowUsagesParams,
+  ): Promise<WorkflowProjectUsage> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const resp = await this.transport.request<WorkflowProjectUsage>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/projectUsages`,
+      query,
+    });
+    return resp.data;
+  }
+
+  /**
+   * Get workflow schemes using a workflow (B840).
+   * GET /rest/api/3/workflow/{workflowId}/workflowSchemes
+   */
+  async getWorkflowSchemeUsages(
+    workflowId: string,
+    params?: WorkflowUsagesParams,
+  ): Promise<WorkflowSchemeUsage> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    const resp = await this.transport.request<WorkflowSchemeUsage>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/workflowSchemes`,
+      query,
+    });
+    return resp.data;
   }
 }
