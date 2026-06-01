@@ -426,6 +426,10 @@ const GLOBAL_OPTIONS = {
   outward: { type: 'string' as const },
   // worklog options (B890-B892)
   since: { type: 'string' as const },
+  // issue-link options (B530-B532)
+  'inward-issue': { type: 'string' as const },
+  'outward-issue': { type: 'string' as const },
+  'link-type': { type: 'string' as const },
   // project-template options (B653-B657)
   template: { type: 'string' as const },
   'template-name': { type: 'string' as const },
@@ -437,6 +441,12 @@ const GLOBAL_OPTIONS = {
   'enable-screen-delegated-admin': { type: 'boolean' as const },
   'enable-workflow-delegated-admin': { type: 'boolean' as const },
   language: { type: 'string' as const },
+  // ui-modifications options (B787-B790)
+  data: { type: 'string' as const },
+  contexts: { type: 'string' as const },
+  // permissions options (B613-B615)
+  'global-permissions': { type: 'string' as const },
+  'project-permissions': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

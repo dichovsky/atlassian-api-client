@@ -209,12 +209,18 @@ export async function executeJiraCommand(
       return executeJql(client, cmd);
     case 'issuelinktype':
       return executeIssueLinkType(client, cmd);
+    case 'issue-link':
+      return executeIssueLink(client, cmd);
     case 'project-template':
       return executeProjectTemplate(client, cmd);
     case 'universal-avatar':
       return executeUniversalAvatar(client, cmd);
     case 'worklog':
       return executeWorklog(client, cmd);
+    case 'ui-modifications':
+      return executeUiModifications(client, cmd);
+    case 'permissions':
+      return executePermissions(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7208,10 +7214,166 @@ async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<u
         ...(expand !== undefined && { expand }),
       });
     }
-
     default:
       throw new Error(
         `Unknown worklog action: ${cmd.action}. Actions: ${WORKLOG_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ─── UI Modifications (B787-B790) ─────────────────────────────────────────
+
+const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];
+
+async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      return client.uiModifications.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+      });
+    }
+    case 'list-all': {
+      const results: unknown[] = [];
+      for await (const item of client.uiModifications.listAll({
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(opts['expand'] !== undefined && { expand: asString(opts['expand']) }),
+      })) {
+        results.push(item);
+      }
+      return results;
+    }
+    case 'create': {
+      const name = requireOpt(opts['name'], '--name');
+      const data = asString(opts['data']);
+      const description = asString(opts['description']);
+      const contextsRaw = asString(opts['contexts']);
+      const contexts =
+        contextsRaw !== undefined
+          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          : undefined;
+      return client.uiModifications.create({
+        name,
+        ...(data !== undefined && { data }),
+        ...(description !== undefined && { description }),
+        ...(contexts !== undefined && { contexts }),
+      });
+    }
+    case 'update': {
+      const uiModificationId = requireArg(cmd.positionalArgs[0], 'uiModificationId');
+      const name = asString(opts['name']);
+      const data = asString(opts['data']);
+      const description = asString(opts['description']);
+      const contextsRaw = asString(opts['contexts']);
+      const contexts =
+        contextsRaw !== undefined
+          ? (JSON.parse(contextsRaw) as Record<string, unknown>[])
+          : undefined;
+      if (
+        name === undefined &&
+        data === undefined &&
+        description === undefined &&
+        contexts === undefined
+      ) {
+        throw new Error(
+          'update requires at least one of: --name, --data, --description, --contexts',
+        );
+      }
+      await client.uiModifications.update(uiModificationId, {
+        ...(name !== undefined && { name }),
+        ...(data !== undefined && { data }),
+        ...(description !== undefined && { description }),
+        ...(contexts !== undefined && { contexts }),
+      });
+      return { updated: true };
+    }
+    case 'delete': {
+      const uiModificationId = requireArg(cmd.positionalArgs[0], 'uiModificationId');
+      await client.uiModifications.delete(uiModificationId);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown ui-modifications action: ${cmd.action}. Actions: ${UI_MODIFICATIONS_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── permissions (B613-B615) ───────────────────────────────────────────────────
+
+async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-all':
+      return client.permissions.getAll();
+
+    case 'check': {
+      const accountId = asString(opts['account-id']);
+      const globalPermissionsRaw = asString(opts['global-permissions']);
+      const projectPermissionsRaw = asString(opts['project-permissions']);
+
+      const body: Record<string, unknown> = {};
+      if (accountId !== undefined) body['accountId'] = accountId;
+      if (globalPermissionsRaw !== undefined)
+        body['globalPermissions'] = parseJsonArrayFlag(
+          globalPermissionsRaw,
+          '--global-permissions',
+        ) as string[];
+      if (projectPermissionsRaw !== undefined)
+        body['projectPermissions'] = parseJsonArrayFlag(
+          projectPermissionsRaw,
+          '--project-permissions',
+        );
+
+      return client.permissions.check(body as Parameters<typeof client.permissions.check>[0]);
+    }
+
+    case 'permitted-projects': {
+      const permissionsRaw = requireOpt(opts['permissions'], '--permissions');
+      const permissions = parseJsonArrayFlag(permissionsRaw, '--permissions') as string[];
+      return client.permissions.getPermittedProjects({ permissions });
+    }
+
+    default:
+      throw new Error(
+        `Unknown permissions action: ${cmd.action}. Actions: get-all, check, permitted-projects`,
+      );
+  }
+}
+
+// ── issue-link (B530-B532) ───────────────────────────────────────────────────
+
+const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;
+
+async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'create': {
+      const linkType = requireOpt(opts['link-type'], '--link-type');
+      const inwardIssue = requireOpt(opts['inward-issue'], '--inward-issue');
+      const outwardIssue = requireOpt(opts['outward-issue'], '--outward-issue');
+      await client.issueLink.create({
+        type: { name: linkType },
+        inwardIssue: { key: inwardIssue },
+        outwardIssue: { key: outwardIssue },
+      });
+      return { created: true };
+    }
+    case 'get':
+      return client.issueLink.get(requireArg(cmd.positionalArgs[0], 'linkId'));
+    case 'delete': {
+      const id = requireArg(cmd.positionalArgs[0], 'linkId');
+      await client.issueLink.delete(id);
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown issue-link action: ${cmd.action}. Actions: ${ISSUE_LINK_ACTIONS.join(', ')}`,
       );
   }
 }

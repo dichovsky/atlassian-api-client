@@ -817,6 +817,12 @@ const jiraIssueLinkTypeMock = {
   delete: vi.fn(),
 };
 
+const jiraIssueLinkMock = {
+  create: vi.fn(),
+  get: vi.fn(),
+  delete: vi.fn(),
+};
+
 const jiraFiltersMock = {
   list: vi.fn(),
   get: vi.fn(),
@@ -1155,6 +1161,19 @@ const jiraProjectTemplateMock = {
   removeTemplate: vi.fn(),
   saveTemplate: vi.fn(),
 };
+const jiraPermissionsMock = {
+  getAll: vi.fn(),
+  check: vi.fn(),
+  getPermittedProjects: vi.fn(),
+};
+
+const jiraUiModificationsMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
 
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
@@ -1231,9 +1250,12 @@ vi.mock('../../src/jira/client.js', () => {
       fields: jiraFieldsMock,
       jql: jiraJqlMock,
       issueLinkType: jiraIssueLinkTypeMock,
+      issueLink: jiraIssueLinkMock,
       projectTemplate: jiraProjectTemplateMock,
       universalAvatar: jiraUniversalAvatarMock,
       worklog: jiraWorklogMock,
+      uiModifications: jiraUiModificationsMock,
+      permissions: jiraPermissionsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -23579,6 +23601,86 @@ describe('executeJiraCommand', () => {
     });
   });
 
+  // ── issue-link (B530-B532) ────────────────────────────────────────────────
+
+  describe('issue-link resource', () => {
+    it('issue-link create calls client.issueLink.create and returns created:true', async () => {
+      jiraIssueLinkMock.create.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-link', 'create', [], {
+          'link-type': 'Blocks',
+          'inward-issue': 'HSP-1',
+          'outward-issue': 'MKY-1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueLinkMock.create).toHaveBeenCalledWith({
+        type: { name: 'Blocks' },
+        inwardIssue: { key: 'HSP-1' },
+        outwardIssue: { key: 'MKY-1' },
+      });
+      expect(result).toEqual({ created: true });
+    });
+
+    it('issue-link create throws when --link-type is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-link', 'create', [], { 'inward-issue': 'HSP-1', 'outward-issue': 'MKY-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--link-type');
+    });
+
+    it('issue-link create throws when --inward-issue is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-link', 'create', [], { 'link-type': 'Blocks', 'outward-issue': 'MKY-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--inward-issue');
+    });
+
+    it('issue-link create throws when --outward-issue is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('issue-link', 'create', [], { 'link-type': 'Blocks', 'inward-issue': 'HSP-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--outward-issue');
+    });
+
+    it('issue-link get calls client.issueLink.get and returns the link', async () => {
+      const link = { id: '10001', type: { name: 'Blocks' } };
+      jiraIssueLinkMock.get.mockResolvedValue(link);
+      const result = await executeJiraCommand(cmd('issue-link', 'get', ['10001']), GLOBALS);
+      expect(jiraIssueLinkMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toEqual(link);
+    });
+
+    it('issue-link get throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('issue-link', 'get'), GLOBALS)).rejects.toThrow('linkId');
+    });
+
+    it('issue-link delete calls client.issueLink.delete and returns deleted:true', async () => {
+      jiraIssueLinkMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('issue-link', 'delete', ['10001']), GLOBALS);
+      expect(jiraIssueLinkMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-link delete throws when id is missing', async () => {
+      await expect(executeJiraCommand(cmd('issue-link', 'delete'), GLOBALS)).rejects.toThrow(
+        'linkId',
+      );
+    });
+
+    it('throws on unknown issue-link action', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-link', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown issue-link action');
+    });
+  });
+
   // ─── project-template (B653-B657) ─────────────────────────────────────────
 
   describe('project-template', () => {
@@ -24228,6 +24330,350 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('worklog', 'bad-action'), GLOBALS)).rejects.toThrow(
         'Unknown worklog action',
       );
+    });
+  });
+
+  // ── ui-modifications resource (B787-B790) ──────────────────────────────────
+
+  describe('ui-modifications resource', () => {
+    it('list calls client.uiModifications.list with no params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraUiModificationsMock.list.mockResolvedValue(page);
+
+      const result = await executeJiraCommand(cmd('ui-modifications', 'list'), GLOBALS);
+
+      expect(result).toEqual(page);
+      expect(jiraUiModificationsMock.list).toHaveBeenCalledWith({});
+    });
+
+    it('list forwards pagination params', async () => {
+      jiraUiModificationsMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+    });
+
+    it('list forwards expand', async () => {
+      jiraUiModificationsMock.list.mockResolvedValue({ values: [] });
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'list', [], { expand: 'data,contexts' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: 'data,contexts' }),
+      );
+    });
+
+    it('list-all collects all items', async () => {
+      jiraUiModificationsMock.listAll.mockReturnValue(
+        (async function* () {
+          yield { id: 'mod-1', name: 'Mod 1', self: 'https://example.com/mod-1' };
+        })(),
+      );
+
+      const result = await executeJiraCommand(cmd('ui-modifications', 'list-all'), GLOBALS);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect((result as unknown[]).length).toBe(1);
+    });
+
+    it('list-all forwards expand', async () => {
+      jiraUiModificationsMock.listAll.mockReturnValue(
+        (async function* () {
+          yield { id: 'mod-1', name: 'Mod 1', self: 'https://example.com/mod-1' };
+        })(),
+      );
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'list-all', [], { expand: 'data,contexts' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.listAll).toHaveBeenCalledWith(
+        expect.objectContaining({ expand: 'data,contexts' }),
+      );
+    });
+
+    it('create calls client.uiModifications.create with required name', async () => {
+      const created = { id: 'mod-new', self: 'https://example.com/mod-new' };
+      jiraUiModificationsMock.create.mockResolvedValue(created);
+
+      const result = await executeJiraCommand(
+        cmd('ui-modifications', 'create', [], { name: 'My Modification' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(created);
+      expect(jiraUiModificationsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'My Modification' }),
+      );
+    });
+
+    it('create includes optional data, description, contexts', async () => {
+      jiraUiModificationsMock.create.mockResolvedValue({ id: 'mod-new', self: 'https://test' });
+
+      const contexts = [{ projectId: '10000', issueTypeId: '10000', viewType: 'GIC' }];
+      await executeJiraCommand(
+        cmd('ui-modifications', 'create', [], {
+          name: 'Full Mod',
+          data: '{"field":"Story Points"}',
+          description: 'A description',
+          contexts: JSON.stringify(contexts),
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Full Mod',
+          data: '{"field":"Story Points"}',
+          description: 'A description',
+          contexts,
+        }),
+      );
+    });
+
+    it('create throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('ui-modifications', 'create', []), GLOBALS),
+      ).rejects.toThrow('--name');
+    });
+
+    it('update calls client.uiModifications.update with id and name', async () => {
+      jiraUiModificationsMock.update.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('ui-modifications', 'update', ['mod-1'], { name: 'Renamed' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ updated: true });
+      expect(jiraUiModificationsMock.update).toHaveBeenCalledWith(
+        'mod-1',
+        expect.objectContaining({ name: 'Renamed' }),
+      );
+    });
+
+    it('update throws when uiModificationId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('ui-modifications', 'update', []), GLOBALS),
+      ).rejects.toThrow('uiModificationId');
+    });
+
+    it('update throws when no fields provided', async () => {
+      await expect(
+        executeJiraCommand(cmd('ui-modifications', 'update', ['mod-1']), GLOBALS),
+      ).rejects.toThrow('update requires at least one of');
+    });
+
+    it('delete calls client.uiModifications.delete with id', async () => {
+      jiraUiModificationsMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('ui-modifications', 'delete', ['mod-1']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraUiModificationsMock.delete).toHaveBeenCalledWith('mod-1');
+    });
+
+    it('delete throws when uiModificationId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('ui-modifications', 'delete', []), GLOBALS),
+      ).rejects.toThrow('uiModificationId');
+    });
+
+    it('update with only --name omits data, description, contexts from call', async () => {
+      jiraUiModificationsMock.update.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'update', ['mod-1'], { name: 'OnlyName' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.update).toHaveBeenCalledWith('mod-1', { name: 'OnlyName' });
+    });
+
+    it('update with only --data omits name, description, contexts from call', async () => {
+      jiraUiModificationsMock.update.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'update', ['mod-1'], { data: '{"field":"x"}' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.update).toHaveBeenCalledWith('mod-1', {
+        data: '{"field":"x"}',
+      });
+    });
+
+    it('update with only --description omits name, data, contexts from call', async () => {
+      jiraUiModificationsMock.update.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'update', ['mod-1'], { description: 'Only desc' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.update).toHaveBeenCalledWith('mod-1', {
+        description: 'Only desc',
+      });
+    });
+
+    it('update with only --contexts omits name, data, description from call', async () => {
+      jiraUiModificationsMock.update.mockResolvedValue(undefined);
+
+      const contexts = [{ projectId: '10000', issueTypeId: '10001', viewType: 'IssueView' }];
+      await executeJiraCommand(
+        cmd('ui-modifications', 'update', ['mod-1'], { contexts: JSON.stringify(contexts) }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.update).toHaveBeenCalledWith('mod-1', { contexts });
+    });
+
+    it('create with only --name omits data, description, contexts from call', async () => {
+      jiraUiModificationsMock.create.mockResolvedValue({ id: 'mod-new', self: 'https://test' });
+
+      await executeJiraCommand(
+        cmd('ui-modifications', 'create', [], { name: 'OnlyName' }),
+        GLOBALS,
+      );
+
+      expect(jiraUiModificationsMock.create).toHaveBeenCalledWith({ name: 'OnlyName' });
+    });
+
+    it('throws on unknown ui-modifications action', async () => {
+      await expect(
+        executeJiraCommand(cmd('ui-modifications', 'bad-action'), GLOBALS),
+      ).rejects.toThrow('Unknown ui-modifications action');
+    });
+  });
+
+  // ── permissions (B613-B615) ────────────────────────────────────────────────
+
+  describe('permissions resource', () => {
+    it('permissions get-all calls client.permissions.getAll', async () => {
+      const data = {
+        permissions: { ADMINISTER: { key: 'ADMINISTER', name: 'Administer Jira', type: 'GLOBAL' } },
+      };
+      jiraPermissionsMock.getAll.mockResolvedValue(data);
+      const result = await executeJiraCommand(cmd('permissions', 'get-all'), GLOBALS);
+      expect(jiraPermissionsMock.getAll).toHaveBeenCalled();
+      expect(result).toEqual(data);
+    });
+
+    it('permissions check calls client.permissions.check with all fields', async () => {
+      const grants = { globalPermissions: ['ADMINISTER'], projectPermissions: [] };
+      jiraPermissionsMock.check.mockResolvedValue(grants);
+      const result = await executeJiraCommand(
+        cmd('permissions', 'check', [], {
+          'account-id': 'abc123',
+          'global-permissions': '["ADMINISTER"]',
+          'project-permissions': '[{"permissions":["EDIT_ISSUES"],"projects":[10001]}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({
+        accountId: 'abc123',
+        globalPermissions: ['ADMINISTER'],
+        projectPermissions: [{ permissions: ['EDIT_ISSUES'], projects: [10001] }],
+      });
+      expect(result).toEqual(grants);
+    });
+
+    it('permissions check with no flags passes empty body', async () => {
+      const grants = { globalPermissions: [], projectPermissions: [] };
+      jiraPermissionsMock.check.mockResolvedValue(grants);
+      await executeJiraCommand(cmd('permissions', 'check'), GLOBALS);
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({});
+    });
+
+    it('permissions check with only account-id passes just accountId', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: [],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(cmd('permissions', 'check', [], { 'account-id': 'user1' }), GLOBALS);
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({ accountId: 'user1' });
+    });
+
+    it('permissions check with only global-permissions passes just globalPermissions', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: ['USE'],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(
+        cmd('permissions', 'check', [], { 'global-permissions': '["USE"]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({ globalPermissions: ['USE'] });
+    });
+
+    it('permissions check with only project-permissions passes just projectPermissions', async () => {
+      jiraPermissionsMock.check.mockResolvedValue({
+        globalPermissions: [],
+        projectPermissions: [],
+      });
+      await executeJiraCommand(
+        cmd('permissions', 'check', [], { 'project-permissions': '[{"permissions":["BROWSE"]}]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.check).toHaveBeenCalledWith({
+        projectPermissions: [{ permissions: ['BROWSE'] }],
+      });
+    });
+
+    it('permissions check throws when --global-permissions is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('permissions', 'check', [], { 'global-permissions': 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--global-permissions must be valid JSON');
+    });
+
+    it('permissions permitted-projects calls client.permissions.getPermittedProjects', async () => {
+      const projects = { projects: [{ id: 10001, key: 'PROJ' }] };
+      jiraPermissionsMock.getPermittedProjects.mockResolvedValue(projects);
+      const result = await executeJiraCommand(
+        cmd('permissions', 'permitted-projects', [], { permissions: '["BROWSE_PROJECTS"]' }),
+        GLOBALS,
+      );
+      expect(jiraPermissionsMock.getPermittedProjects).toHaveBeenCalledWith({
+        permissions: ['BROWSE_PROJECTS'],
+      });
+      expect(result).toEqual(projects);
+    });
+
+    it('permissions permitted-projects throws when --permissions is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('permissions', 'permitted-projects'), GLOBALS),
+      ).rejects.toThrow('--permissions');
+    });
+
+    it('permissions permitted-projects throws when --permissions is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('permissions', 'permitted-projects', [], { permissions: 'bad' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--permissions must be valid JSON');
+    });
+
+    it('throws on unknown permissions action', async () => {
+      await expect(
+        executeJiraCommand(cmd('permissions', 'unknown-action'), GLOBALS),
+      ).rejects.toThrow('Unknown permissions action');
     });
   });
 });

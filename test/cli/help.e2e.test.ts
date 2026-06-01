@@ -148,9 +148,12 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   fields: 'executeFields',
   jql: 'executeJql',
   issuelinktype: 'executeIssueLinkType',
+  'issue-link': 'executeIssueLink',
   'project-template': 'executeProjectTemplate',
   'universal-avatar': 'executeUniversalAvatar',
   worklog: 'executeWorklog',
+  'ui-modifications': 'executeUiModifications',
+  permissions: 'executePermissions',
 };
 
 /**
