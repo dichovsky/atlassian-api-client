@@ -139,18 +139,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B787 Jira: expose GET /rest/api/3/uiModifications
-  - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B788 Jira: expose POST /rest/api/3/uiModifications
-  - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B789 Jira: expose DELETE /rest/api/3/uiModifications/{uiModificationId}
-  - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B790 Jira: expose PUT /rest/api/3/uiModifications/{uiModificationId}
-  - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B837 Jira: expose DELETE /rest/api/3/workflow/{entityId}
   - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

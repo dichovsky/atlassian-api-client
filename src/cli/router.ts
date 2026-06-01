@@ -439,6 +439,9 @@ const GLOBAL_OPTIONS = {
   'enable-screen-delegated-admin': { type: 'boolean' as const },
   'enable-workflow-delegated-admin': { type: 'boolean' as const },
   language: { type: 'string' as const },
+  // ui-modifications options (B787-B790)
+  data: { type: 'string' as const },
+  contexts: { type: 'string' as const },
   // permissions options (B613-B615)
   'global-permissions': { type: 'string' as const },
   'project-permissions': { type: 'string' as const },

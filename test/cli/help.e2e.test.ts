@@ -151,6 +151,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'issue-link': 'executeIssueLink',
   'project-template': 'executeProjectTemplate',
   'universal-avatar': 'executeUniversalAvatar',
+  'ui-modifications': 'executeUiModifications',
   permissions: 'executePermissions',
 };
 
