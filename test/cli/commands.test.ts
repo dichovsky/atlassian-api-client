@@ -24234,7 +24234,6 @@ describe('executeJiraCommand', () => {
     });
   });
 
-<<<<<<< HEAD
   // ── ui-modifications resource (B787-B790) ──────────────────────────────────
 
   describe('ui-modifications resource', () => {
