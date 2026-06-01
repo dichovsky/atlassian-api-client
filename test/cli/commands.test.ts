@@ -1192,6 +1192,14 @@ const jiraBulkByPropertiesMock = {
   deleteSecurityByProperties: vi.fn(),
 };
 
+const jiraMigrationMock = {
+  getMigrationTask: vi.fn(),
+  submitMigrationTask: vi.fn(),
+  updateIssueFields: vi.fn(),
+  updateEntityProperties: vi.fn(),
+  searchWorkflowRules: vi.fn(),
+};
+
 const jiraUiModificationsMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1295,6 +1303,7 @@ vi.mock('../../src/jira/client.js', () => {
       pipelines: jiraPipelinesMock,
       linkedWorkspaces: jiraLinkedWorkspacesMock,
       bulkByProperties: jiraBulkByPropertiesMock,
+      migration: jiraMigrationMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -25185,6 +25194,267 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('Unknown bulk-by-properties action');
+    });
+  });
+
+  // ── migration (B946-B950) ─────────────────────────────────────────────────
+
+  describe('migration resource', () => {
+    const TRANSFER_ID = 'a498d711-685d-428d-8c3e-bc03bb450ea7';
+
+    it('get-task calls getMigrationTask with positional args', async () => {
+      // Arrange
+      const task = {
+        id: 'task-1',
+        self: 'https://example.atlassian.net/rest/api/3/task/task-1',
+        status: 'COMPLETE',
+        elapsedRuntime: 1234,
+        lastUpdate: '2024-01-01T00:00:00.000Z',
+        progress: 100,
+        submittedBy: 12345,
+      };
+      jiraMigrationMock.getMigrationTask.mockResolvedValue(task);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('migration', 'get-task', ['com.example.app', 'my-custom-field']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.getMigrationTask).toHaveBeenCalledWith(
+        'com.example.app',
+        'my-custom-field',
+      );
+      expect(result).toEqual(task);
+    });
+
+    it('get-task throws when connectKey positional is missing', async () => {
+      await expect(executeJiraCommand(cmd('migration', 'get-task', []), GLOBALS)).rejects.toThrow(
+        'connectKey',
+      );
+    });
+
+    it('get-task throws when jiraIssueFieldsKey positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('migration', 'get-task', ['com.example.app']), GLOBALS),
+      ).rejects.toThrow('jiraIssueFieldsKey');
+    });
+
+    it('submit-task calls submitMigrationTask with positional args', async () => {
+      // Arrange
+      jiraMigrationMock.submitMigrationTask.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('migration', 'submit-task', ['com.example.app', 'my-custom-field']),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.submitMigrationTask).toHaveBeenCalledWith(
+        'com.example.app',
+        'my-custom-field',
+      );
+      expect(result).toEqual({ submitted: true });
+    });
+
+    it('submit-task throws when positional args are missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('migration', 'submit-task', []), GLOBALS),
+      ).rejects.toThrow('connectKey');
+    });
+
+    it('update-fields calls updateIssueFields with transfer-id and update-value-list', async () => {
+      // Arrange
+      jiraMigrationMock.updateIssueFields.mockResolvedValue({});
+      const updateValueList = JSON.stringify([
+        { _type: 'StringIssueField', issueID: 10001, fieldID: 10076, string: 'new value' },
+      ]);
+
+      // Act
+      await executeJiraCommand(
+        cmd('migration', 'update-fields', [], {
+          'transfer-id': TRANSFER_ID,
+          'update-value-list': updateValueList,
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.updateIssueFields).toHaveBeenCalledWith(TRANSFER_ID, {
+        updateValueList: [
+          { _type: 'StringIssueField', issueID: 10001, fieldID: 10076, string: 'new value' },
+        ],
+      });
+    });
+
+    it('update-fields throws when --transfer-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-fields', [], {
+            'update-value-list': '[{"_type":"StringIssueField","issueID":1,"fieldID":1}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--transfer-id');
+    });
+
+    it('update-fields throws when --update-value-list is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-fields', [], { 'transfer-id': TRANSFER_ID }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--update-value-list');
+    });
+
+    it('update-properties calls updateEntityProperties with positional entityType', async () => {
+      // Arrange
+      jiraMigrationMock.updateEntityProperties.mockResolvedValue(undefined);
+      const propertiesJson = JSON.stringify([{ entityId: 123, key: 'mykey', value: 'newValue' }]);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('migration', 'update-properties', ['IssueProperty'], {
+          'transfer-id': TRANSFER_ID,
+          value: propertiesJson,
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.updateEntityProperties).toHaveBeenCalledWith(
+        TRANSFER_ID,
+        'IssueProperty',
+        [{ entityId: 123, key: 'mykey', value: 'newValue' }],
+      );
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update-properties throws when --transfer-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-properties', ['IssueProperty'], {
+            value: '[{"entityId":1,"key":"k","value":"v"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--transfer-id');
+    });
+
+    it('update-properties throws when entityType positional is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-properties', [], {
+            'transfer-id': TRANSFER_ID,
+            value: '[{"entityId":1,"key":"k","value":"v"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('entityType');
+    });
+
+    it('update-properties throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-properties', ['IssueProperty'], {
+            'transfer-id': TRANSFER_ID,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('search-workflow-rules calls searchWorkflowRules with required flags', async () => {
+      // Arrange
+      const searchResult = {
+        workflowEntityId: TRANSFER_ID,
+        invalidRules: [],
+        validRules: [],
+      };
+      jiraMigrationMock.searchWorkflowRules.mockResolvedValue(searchResult);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('migration', 'search-workflow-rules', [], {
+          'transfer-id': TRANSFER_ID,
+          'workflow-entity-id': TRANSFER_ID,
+          'rule-ids': '55d44f1d-c859-42e5-9c27-2c5ec3f340b1,66e55f2e-d960-539f-9d38-3d6dd7541fc2',
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.searchWorkflowRules).toHaveBeenCalledWith(TRANSFER_ID, {
+        workflowEntityId: TRANSFER_ID,
+        ruleIds: ['55d44f1d-c859-42e5-9c27-2c5ec3f340b1', '66e55f2e-d960-539f-9d38-3d6dd7541fc2'],
+      });
+      expect(result).toEqual(searchResult);
+    });
+
+    it('search-workflow-rules passes expand when provided', async () => {
+      // Arrange
+      jiraMigrationMock.searchWorkflowRules.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('migration', 'search-workflow-rules', [], {
+          'transfer-id': TRANSFER_ID,
+          'workflow-entity-id': TRANSFER_ID,
+          'rule-ids': 'rule-1',
+          expand: 'transition',
+        }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraMigrationMock.searchWorkflowRules).toHaveBeenCalledWith(
+        TRANSFER_ID,
+        expect.objectContaining({ expand: 'transition' }),
+      );
+    });
+
+    it('search-workflow-rules throws when --transfer-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'search-workflow-rules', [], {
+            'workflow-entity-id': TRANSFER_ID,
+            'rule-ids': 'rule-1',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--transfer-id');
+    });
+
+    it('search-workflow-rules throws when --workflow-entity-id is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'search-workflow-rules', [], {
+            'transfer-id': TRANSFER_ID,
+            'rule-ids': 'rule-1',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--workflow-entity-id');
+    });
+
+    it('search-workflow-rules throws when --rule-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'search-workflow-rules', [], {
+            'transfer-id': TRANSFER_ID,
+            'workflow-entity-id': TRANSFER_ID,
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--rule-ids');
+    });
+
+    it('throws on unknown migration action', async () => {
+      await expect(
+        executeJiraCommand(cmd('migration', 'unknown-action', []), GLOBALS),
+      ).rejects.toThrow('Unknown migration action');
     });
   });
 });

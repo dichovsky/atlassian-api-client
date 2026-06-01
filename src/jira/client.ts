@@ -86,6 +86,7 @@ import { RepositoryResource } from './resources/repository.js';
 import { PipelinesResource } from './resources/pipelines.js';
 import { LinkedWorkspacesResource } from './resources/linked-workspaces.js';
 import { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
+import { MigrationResource } from './resources/migration.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -256,6 +257,8 @@ export class JiraClient {
   readonly linkedWorkspaces: LinkedWorkspacesResource;
   /** Jira bulk-by-properties resource — DELETE by properties across 8 DevOps APIs (B953,B957,B962,B968,B972,B981,B990,B994). */
   readonly bulkByProperties: BulkByPropertiesResource;
+  /** Jira Connect migration resource — field/property/workflow migration + Connect-to-Forge task (B946-B950, base: /rest/atlassian-connect/1). */
+  readonly migration: MigrationResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -381,5 +384,6 @@ export class JiraClient {
       remotelinks: remoteLinkBaseUrl,
       security: securityBaseUrl,
     });
+    this.migration = new MigrationResource(transport, serviceRegistryBaseUrl);
   }
 }
