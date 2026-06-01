@@ -139,15 +139,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B530 Jira: expose POST /rest/api/3/issueLink
-  - files: `src/jira/resources/issuelink.ts`, `test/jira/issuelink.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B531 Jira: expose DELETE /rest/api/3/issueLink/{linkId}
-  - files: `src/jira/resources/issuelink.ts`, `test/jira/issuelink.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B532 Jira: expose GET /rest/api/3/issueLink/{linkId}
-  - files: `src/jira/resources/issuelink.ts`, `test/jira/issuelink.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B787 Jira: expose GET /rest/api/3/uiModifications
   - files: `src/jira/resources/uimodifications.ts`, `test/jira/uimodifications.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

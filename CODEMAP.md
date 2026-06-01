@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "93dfd5d7cc57f8736609aae4c0154d29e5c553eaeca4f3d1eee09d7cf38389df",
+  "sourceHash": "100ee8aee4769b2941230d958183b3b010957d222b066a73c9f74eae50ec946e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4939,10 +4939,16 @@
           "signature": "async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
-          "name": "executePermissions",
-          "kind": "function",
+          "name": "ISSUE_LINK_ACTIONS",
+          "kind": "variable",
           "line": 7174,
-          "signature": "async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
+          "signature": "const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;"
+        },
+        {
+          "name": "executeIssueLink",
+          "kind": "function",
+          "line": 7176,
+          "signature": "async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
       "imports": [
@@ -5197,7 +5203,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 443,
+          "line": 444,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -15657,17 +15663,17 @@
               "line": 231
             },
             {
-              "name": "projectTemplate",
+              "name": "issueLink",
               "kind": "property",
               "line": 233
             },
             {
-              "name": "universalAvatar",
+              "name": "projectTemplate",
               "kind": "property",
               "line": 235
             },
             {
-              "name": "permissions",
+              "name": "universalAvatar",
               "kind": "property",
               "line": 237
             },
@@ -15717,6 +15723,7 @@
         "./resources/issue-attachments.js",
         "./resources/issue-comments.js",
         "./resources/issue-types.js",
+        "./resources/issuelink.js",
         "./resources/issuelinktype.js",
         "./resources/issues.js",
         "./resources/issuesecurityschemes.js",
@@ -15730,7 +15737,6 @@
         "./resources/mypermissions.js",
         "./resources/mypreferences.js",
         "./resources/notificationscheme.js",
-        "./resources/permissions.js",
         "./resources/permissionscheme.js",
         "./resources/plans.js",
         "./resources/post-incident-reviews.js",
@@ -24744,6 +24750,77 @@
       ]
     },
     {
+      "path": "src/jira/resources/issuelink.ts",
+      "symbols": [
+        {
+          "name": "IssueLinkTypeRef",
+          "kind": "interface",
+          "line": 8,
+          "exported": true,
+          "signature": "export interface IssueLinkTypeRef { readonly id?: string; readonly inward?: string; readonly name?: string; readonly out…",
+          "jsdoc": "A Jira issue link type reference used in link requests. Spec: `IssueLinkType` schema (id, inward, name, outward, self)."
+        },
+        {
+          "name": "LinkedIssue",
+          "kind": "interface",
+          "line": 20,
+          "exported": true,
+          "signature": "export interface LinkedIssue { readonly id?: string; readonly key?: string; readonly self?: string; readonly fields?: Re…",
+          "jsdoc": "A linked issue reference (inward or outward side of a link). Spec: `LinkedIssue` schema (fields, id, key, self)."
+        },
+        {
+          "name": "IssueLink",
+          "kind": "interface",
+          "line": 31,
+          "exported": true,
+          "signature": "export interface IssueLink { readonly id?: string; readonly self?: string; readonly type: IssueLinkTypeRef; readonly inw…",
+          "jsdoc": "An issue link instance returned by GET /rest/api/3/issueLink/{linkId}. Spec: `IssueLink` schema."
+        },
+        {
+          "name": "CreateIssueLinkData",
+          "kind": "interface",
+          "line": 43,
+          "exported": true,
+          "signature": "export interface CreateIssueLinkData { readonly type: IssueLinkTypeRef; readonly inwardIssue: LinkedIssue; readonly outw…",
+          "jsdoc": "Request body for POST /rest/api/3/issueLink (B530). Spec: `LinkIssueRequestJsonBean` schema."
+        },
+        {
+          "name": "IssueLinkResource",
+          "kind": "class",
+          "line": 62,
+          "exported": true,
+          "signature": "export class IssueLinkResource",
+          "jsdoc": "Jira Issue Link resource — create/get/delete endpoints under `/rest/api/3/issueLink` (B530-B532).",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 63
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "line": 75
+            },
+            {
+              "name": "get",
+              "kind": "method",
+              "line": 95
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "line": 109
+            }
+          ]
+        }
+      ],
+      "imports": [
+        "../../core/path.js",
+        "../../core/types.js"
+      ]
+    },
+    {
       "path": "src/jira/resources/issuelinktype.ts",
       "symbols": [
         {
@@ -27143,116 +27220,6 @@
       "imports": [
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/types.js"
-      ]
-    },
-    {
-      "path": "src/jira/resources/permissions.ts",
-      "symbols": [
-        {
-          "name": "Permission",
-          "kind": "interface",
-          "line": 7,
-          "exported": true,
-          "signature": "export interface Permission { readonly description?: string; readonly key?: string; readonly name?: string; readonly typ…",
-          "jsdoc": "A single Jira permission entry returned in the GET /permissions response. Fields: description, key, name, type."
-        },
-        {
-          "name": "Permissions",
-          "kind": "interface",
-          "line": 15,
-          "exported": true,
-          "signature": "export interface Permissions { readonly permissions?: Record<string, Permission>; }",
-          "jsdoc": "Response envelope for GET /rest/api/3/permissions (B613)."
-        },
-        {
-          "name": "BulkProjectPermissions",
-          "kind": "interface",
-          "line": 20,
-          "exported": true,
-          "signature": "export interface BulkProjectPermissions { readonly issues?: number[]; readonly permissions: string[]; readonly projects?…",
-          "jsdoc": "Sub-item for BulkPermissionsRequestBean.projectPermissions."
-        },
-        {
-          "name": "BulkPermissionsRequestBean",
-          "kind": "interface",
-          "line": 30,
-          "exported": true,
-          "signature": "export interface BulkPermissionsRequestBean { readonly accountId?: string; readonly globalPermissions?: string[]; readon…",
-          "jsdoc": "Request body for POST /rest/api/3/permissions/check (B614)."
-        },
-        {
-          "name": "BulkProjectPermissionGrants",
-          "kind": "interface",
-          "line": 37,
-          "exported": true,
-          "signature": "export interface BulkProjectPermissionGrants { readonly issues: number[]; readonly permission: string; readonly projects…",
-          "jsdoc": "Sub-item for BulkPermissionGrants.projectPermissions."
-        },
-        {
-          "name": "BulkPermissionGrants",
-          "kind": "interface",
-          "line": 44,
-          "exported": true,
-          "signature": "export interface BulkPermissionGrants { readonly globalPermissions: string[]; readonly projectPermissions: BulkProjectPe…",
-          "jsdoc": "Response for POST /rest/api/3/permissions/check (B614)."
-        },
-        {
-          "name": "PermissionsKeysBean",
-          "kind": "interface",
-          "line": 50,
-          "exported": true,
-          "signature": "export interface PermissionsKeysBean { readonly permissions: string[]; }",
-          "jsdoc": "Request body for POST /rest/api/3/permissions/project (B615)."
-        },
-        {
-          "name": "ProjectIdentifierBean",
-          "kind": "interface",
-          "line": 55,
-          "exported": true,
-          "signature": "export interface ProjectIdentifierBean { readonly id?: number; readonly key?: string; }",
-          "jsdoc": "A project identifier returned in PermittedProjects."
-        },
-        {
-          "name": "PermittedProjects",
-          "kind": "interface",
-          "line": 61,
-          "exported": true,
-          "signature": "export interface PermittedProjects { readonly projects?: ProjectIdentifierBean[]; }",
-          "jsdoc": "Response for POST /rest/api/3/permissions/project (B615)."
-        },
-        {
-          "name": "PermissionsResource",
-          "kind": "class",
-          "line": 72,
-          "exported": true,
-          "signature": "export class PermissionsResource",
-          "jsdoc": "Jira Permissions resource — global `/rest/api/3/permissions` surface (B613-B615).",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 73
-            },
-            {
-              "name": "getAll",
-              "kind": "method",
-              "line": 84
-            },
-            {
-              "name": "check",
-              "kind": "method",
-              "line": 99
-            },
-            {
-              "name": "getPermittedProjects",
-              "kind": "method",
-              "line": 121
-            }
-          ]
-        }
-      ],
-      "imports": [
         "../../core/types.js"
       ]
     },
