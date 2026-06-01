@@ -2443,3 +2443,12 @@
 - [x] 🔴 🧩 Jira: B790 expose PUT /rest/api/3/uiModifications/{uiModificationId}
   - **Impl:** `UiModificationsResource.update(uiModificationId, data: UpdateUiModificationDetails)` → void (204). DISTINCT schema from Create — all fields optional. CLI: `atlas jira ui-modifications update <uiModificationId> [--name] [--data] [--description] [--contexts]`.
   - **Rat:** Spec-verified: 204 No Content. Update requires NOTHING; distinct from create which requires `name`.
+- [x] 🔴 🧩 Jira: B890 expose GET /rest/api/3/worklog/deleted
+  - **Impl:** `WorklogResource.getDeleted(since?)` → `ChangedWorklogs`. Query param `since` (int64 epoch ms) omitted when undefined. CLI: `atlas jira worklog deleted [--since <ms>]`.
+  - **Rat:** Spec-verified: 200 → `ChangedWorklogs` with custom `since`/`until`/`lastPage`/`nextPage` cursor. Does NOT use `paginateOffset`/`paginateCursor`.
+- [x] 🔴 🧩 Jira: B891 expose POST /rest/api/3/worklog/list
+  - **Impl:** `WorklogResource.getList(ids: number[], expand?)` → `Worklog[]` (bare array, NOT wrapped). Body: `{ ids }`. Validates 1 ≤ ids.length ≤ 1000 with `ValidationError`. CLI: `atlas jira worklog list --ids <csv> [--expand <fields>]`.
+  - **Rat:** Spec: 200 response is an inline `array` of `Worklog` — NOT wrapped. `WorklogIdsRequestBean` has minItems 1, maxItems 1000. `--ids` parsed as CSV of positive integers.
+- [x] 🔴 🧩 Jira: B892 expose GET /rest/api/3/worklog/updated
+  - **Impl:** `WorklogResource.getUpdated(params?)` → `ChangedWorklogs`. Params: `since` (int64 epoch ms), `expand`. CLI: `atlas jira worklog updated [--since <ms>] [--expand <fields>]`.
+  - **Rat:** Same custom cursor as B890. `expand` is an additional query param absent from the deleted endpoint. New router flag `--since` registered.

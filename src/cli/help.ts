@@ -284,6 +284,7 @@ RESOURCES:
   issue-link             create, get, delete
   project-template       create, edit-template, live-template, remove-template, save-template
   universal-avatar       list, store, delete, view-by-type, view-by-id, view-by-owner
+  worklog                deleted, list, updated
   ui-modifications       list, list-all, create, update, delete
   permissions            get-all, check, permitted-projects
 
@@ -605,6 +606,9 @@ EXAMPLES:
   atlas jira universal-avatar view-by-type issuetype --size medium --image-format png
   atlas jira universal-avatar view-by-id project 1010 --size small
   atlas jira universal-avatar view-by-owner project 10001 --image-format svg
+  atlas jira worklog deleted --since 1700000000000
+  atlas jira worklog list --ids 1,2,5,10
+  atlas jira worklog updated --since 1700000000000
   atlas jira ui-modifications list
   atlas jira ui-modifications create --name "Reveal Story Points"
   atlas jira ui-modifications update d7dbda8a --name "Updated Name"

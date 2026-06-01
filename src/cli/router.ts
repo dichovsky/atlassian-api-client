@@ -424,6 +424,8 @@ const GLOBAL_OPTIONS = {
   // issuelinktype options (B533-B537)
   inward: { type: 'string' as const },
   outward: { type: 'string' as const },
+  // worklog options (B890-B892)
+  since: { type: 'string' as const },
   // issue-link options (B530-B532)
   'inward-issue': { type: 'string' as const },
   'outward-issue': { type: 'string' as const },

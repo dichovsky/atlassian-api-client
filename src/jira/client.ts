@@ -79,6 +79,7 @@ import { IssueLinkTypeResource } from './resources/issuelinktype.js';
 import { IssueLinkResource } from './resources/issuelink.js';
 import { ProjectTemplateResource } from './resources/project-template.js';
 import { UniversalAvatarResource } from './resources/universal-avatar.js';
+import { WorklogResource } from './resources/worklog.js';
 import { UiModificationsResource } from './resources/uimodifications.js';
 import { PermissionsResource } from './resources/permissions.js';
 
@@ -237,6 +238,8 @@ export class JiraClient {
   readonly projectTemplate: ProjectTemplateResource;
   /** Jira universal avatar resource — list/store/delete/view avatars (B791-B796). */
   readonly universalAvatar: UniversalAvatarResource;
+  /** Jira global worklog resource — deleted/list/updated (B890-B892). */
+  readonly worklog: WorklogResource;
   /** Jira UI modifications resource — list/create/update/delete (B787-B790). */
   readonly uiModifications: UiModificationsResource;
   /** Jira global permissions resource — get-all/check/permitted-projects (B613-B615). */
@@ -346,6 +349,7 @@ export class JiraClient {
     this.issueLink = new IssueLinkResource(transport, baseUrl);
     this.projectTemplate = new ProjectTemplateResource(transport, baseUrl);
     this.universalAvatar = new UniversalAvatarResource(transport, baseUrl);
+    this.worklog = new WorklogResource(transport, baseUrl);
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
     this.permissions = new PermissionsResource(transport, baseUrl);
   }

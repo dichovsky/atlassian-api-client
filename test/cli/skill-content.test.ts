@@ -329,6 +329,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'issue-link',
           'project-template',
           'universal-avatar',
+          'worklog',
           'ui-modifications',
           'permissions',
         ]).toContain(parsed.resource);
@@ -460,6 +461,7 @@ describe('Resource coverage drift check', () => {
     'issue-link',
     'project-template',
     'universal-avatar',
+    'worklog',
     'ui-modifications',
     'permissions',
   ]) {
