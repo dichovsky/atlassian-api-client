@@ -221,6 +221,8 @@ export async function executeJiraCommand(
       return executeUiModifications(client, cmd);
     case 'permissions':
       return executePermissions(client, cmd);
+    case 'repository':
+      return executeRepository(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7341,6 +7343,47 @@ async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promi
     default:
       throw new Error(
         `Unknown permissions action: ${cmd.action}. Actions: get-all, check, permitted-projects`,
+      );
+  }
+}
+
+// ── repository (B964-B966) ───────────────────────────────────────────────────
+
+async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get':
+      return client.repository.get(requireArg(cmd.positionalArgs[0], 'repositoryId'));
+    case 'delete': {
+      const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
+      const updateSequenceIdRaw = asString(opts['update-sequence-id']);
+      await client.repository.delete(
+        repositoryId,
+        updateSequenceIdRaw !== undefined
+          ? { updateSequenceId: Number(updateSequenceIdRaw) }
+          : undefined,
+      );
+      return { deleted: true };
+    }
+    case 'delete-entity': {
+      const repositoryId = requireArg(cmd.positionalArgs[0], 'repositoryId');
+      const entityType = requireArg(cmd.positionalArgs[1], 'entityType');
+      const entityId = requireArg(cmd.positionalArgs[2], 'entityId');
+      const updateSequenceIdRaw = asString(opts['update-sequence-id']);
+      await client.repository.deleteEntity(
+        repositoryId,
+        entityType,
+        entityId,
+        updateSequenceIdRaw !== undefined
+          ? { updateSequenceId: Number(updateSequenceIdRaw) }
+          : undefined,
+      );
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown repository action: ${cmd.action}. Actions: get, delete, delete-entity`,
       );
   }
 }

@@ -2476,3 +2476,12 @@
 - [x] 🔴 🧩 Jira: B1010 expose GET /rest/software/1.0/sprint/{sprintId}/issue
   - **Impl:** `sprints.ts:SprintsResource.getIssues(sprintId, params?)` → path `${this.baseUrl}/sprint/${sprintId}/issue`.
   - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B964 expose DELETE /rest/devinfo/0.10/repository/{repositoryId}
+  - **Impl:** `RepositoryResource.delete(repositoryId, params?)` → void (204). Optional `_updateSequenceId` query param. CLI: `atlas jira repository delete <repositoryId> [--update-sequence-id]`.
+  - **Rat:** Spec-verified: 204 No Content. `_updateSequenceId` integer query param for sequential update ordering.
+- [x] 🔴 🧩 Jira: B965 expose GET /rest/devinfo/0.10/repository/{repositoryId}
+  - **Impl:** `RepositoryResource.get(repositoryId)` → `Repository` (commits/branches/pullRequests arrays). CLI: `atlas jira repository get <repositoryId>`.
+  - **Rat:** Spec-verified: 200 returns Repository object with nested commits, branches, pullRequests collections.
+- [x] 🔴 🧩 Jira: B966 expose DELETE /rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId}
+  - **Impl:** `RepositoryResource.deleteEntity(repositoryId, entityType, entityId, params?)` → void (204). All path segments encoded. Optional `_updateSequenceId` query param. CLI: `atlas jira repository delete-entity <repositoryId> <entityType> <entityId> [--update-sequence-id]`.
+  - **Rat:** Spec-verified: 204 No Content. entityType is free-form string (e.g. commit, branch, pullRequest). All three path params required; empty-string guards throw `ValidationError`-style errors.

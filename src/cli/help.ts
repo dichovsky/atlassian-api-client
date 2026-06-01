@@ -255,6 +255,7 @@ RESOURCES:
   remote-link            get, delete
   service-registry       get
   exists-by-properties   get
+  repository             get, delete, delete-entity
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
   application-properties list, set, list-advanced-settings
   configuration          get, get-timetracking, select-timetracking, list-timetracking-providers, get-timetracking-options, update-timetracking-options
@@ -332,6 +333,11 @@ EXAMPLES:
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
   atlas jira exists-by-properties get --entity-type repository
+  atlas jira repository get my-repo-123
+  atlas jira repository delete my-repo-123
+  atlas jira repository delete my-repo-123 --update-sequence-id 42
+  atlas jira repository delete-entity my-repo-123 commit abc123
+  atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequence-id 42
   atlas jira app get-field-context-configuration customfield_10042
   atlas jira app update-field-context-configuration customfield_10042 --configuration '{"foo":true}'
   atlas jira app update-field-value customfield_10042 --value '[{"issueIds":[10001],"value":"hi"}]'

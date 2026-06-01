@@ -121,6 +121,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'remote-link': 'executeRemoteLink',
   'service-registry': 'executeServiceRegistry',
   'exists-by-properties': 'executeExistsByProperties',
+  repository: 'executeRepository',
   dashboards: 'executeDashboards',
   'application-properties': 'executeApplicationProperties',
   configuration: 'executeConfiguration',

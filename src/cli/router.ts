@@ -195,6 +195,8 @@ const GLOBAL_OPTIONS = {
   // exists-by-properties options (B963)
   'entity-id': { type: 'string' as const },
   'entity-type': { type: 'string' as const },
+  // repository options (B964-B966)
+  'update-sequence-id': { type: 'string' as const },
   // app options (B326-B330, B943-B945, B975-B978)
   configuration: { type: 'string' as const },
   schema: { type: 'string' as const },
