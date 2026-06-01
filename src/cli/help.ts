@@ -289,6 +289,7 @@ RESOURCES:
   ui-modifications       list, list-all, create, update, delete
   permissions            get-all, check, permitted-projects
   pipelines              get-build, delete-build, get-deployment, delete-deployment, get-deployment-gating-status
+  linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -628,6 +629,10 @@ EXAMPLES:
   atlas jira pipelines get-deployment pipeline-abc env-prod 7
   atlas jira pipelines delete-deployment pipeline-abc env-prod 7
   atlas jira pipelines get-deployment-gating-status pipeline-abc env-prod 7
+  atlas jira linked-workspaces list-operations
+  atlas jira linked-workspaces bulk-create-operations --workspace-ids ws-1,ws-2
+  atlas jira linked-workspaces list-security
+  atlas jira linked-workspaces get-security ws-1
 `;
 
 /** Get help text for the given level. */

@@ -84,6 +84,7 @@ import { UiModificationsResource } from './resources/uimodifications.js';
 import { PermissionsResource } from './resources/permissions.js';
 import { RepositoryResource } from './resources/repository.js';
 import { PipelinesResource } from './resources/pipelines.js';
+import { LinkedWorkspacesResource } from './resources/linked-workspaces.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -250,6 +251,8 @@ export class JiraClient {
   readonly repository: RepositoryResource;
   /** Jira pipelines resource — builds/deployments at pipeline level (B954,B955,B958,B959,B960). */
   readonly pipelines: PipelinesResource;
+  /** Jira linked workspaces resource — operations + security API (B984-B986, B995-B998). */
+  readonly linkedWorkspaces: LinkedWorkspacesResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -360,5 +363,10 @@ export class JiraClient {
     this.permissions = new PermissionsResource(transport, baseUrl);
     this.repository = new RepositoryResource(transport, devInfoBaseUrl);
     this.pipelines = new PipelinesResource(transport, buildsBaseUrl, deploymentsBaseUrl);
+    this.linkedWorkspaces = new LinkedWorkspacesResource(
+      transport,
+      operationsBaseUrl,
+      securityBaseUrl,
+    );
   }
 }

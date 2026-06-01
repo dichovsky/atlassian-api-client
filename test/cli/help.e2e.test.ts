@@ -156,6 +156,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   'ui-modifications': 'executeUiModifications',
   permissions: 'executePermissions',
   pipelines: 'executePipelines',
+  'linked-workspaces': 'executeLinkedWorkspaces',
 };
 
 /**
