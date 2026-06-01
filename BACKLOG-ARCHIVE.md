@@ -2452,3 +2452,27 @@
 - [x] 🔴 🧩 Jira: B892 expose GET /rest/api/3/worklog/updated
   - **Impl:** `WorklogResource.getUpdated(params?)` → `ChangedWorklogs`. Params: `since` (int64 epoch ms), `expand`. CLI: `atlas jira worklog updated [--since <ms>] [--expand <fields>]`.
   - **Rat:** Same custom cursor as B890. `expand` is an additional query param absent from the deleted endpoint. New router flag `--since` registered.
+- [x] 🔴 🧩 Jira: B1001 expose GET /rest/software/1.0/board/{boardId}/backlog
+  - **Impl:** `boards.ts:BoardsResource.getBacklog(boardId, params?)` → path `${this.baseUrl}/board/${boardId}/backlog`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1003 expose GET /rest/software/1.0/board/{boardId}/epic/{epicId}/issue
+  - **Impl:** `boards.ts:BoardsResource.getEpicIssues(boardId, epicId, params?)` → path `${this.baseUrl}/board/${boardId}/epic/${epicId}/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1004 expose GET /rest/software/1.0/board/{boardId}/epic/none/issue
+  - **Impl:** `boards.ts:BoardsResource.getIssuesWithoutEpic(boardId, params?)` → path `${this.baseUrl}/board/${boardId}/epic/none/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1005 expose GET /rest/software/1.0/board/{boardId}/issue
+  - **Impl:** `boards.ts:BoardsResource.getIssues(boardId, params?)` → path `${this.baseUrl}/board/${boardId}/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1007 expose GET /rest/software/1.0/board/{boardId}/sprint/{sprintId}/issue
+  - **Impl:** `boards.ts:BoardsResource.getSprintIssues(boardId, sprintId, params?)` → path `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1008 expose GET /rest/software/1.0/epic/{epicIdOrKey}/issue
+  - **Impl:** `epic.ts:EpicResource.getIssues(epicIdOrKey, params?)` → path `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1009 expose GET /rest/software/1.0/epic/none/issue
+  - **Impl:** `epic.ts:EpicResource.getIssuesWithoutEpic(params?)` → path `${this.baseUrl}/epic/none/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.
+- [x] 🔴 🧩 Jira: B1010 expose GET /rest/software/1.0/sprint/{sprintId}/issue
+  - **Impl:** `sprints.ts:SprintsResource.getIssues(sprintId, params?)` → path `${this.baseUrl}/sprint/${sprintId}/issue`.
+  - **Rat:** Already covered under /rest/agile/1.0/; backlog listed /rest/software/1.0/ which is a spec-snapshot alias of the documented agile base.

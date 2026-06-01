@@ -304,35 +304,13 @@
 - [ ] 🔴 🧩 API: B998 Jira: expose POST /rest/security/1.0/linkedWorkspaces/bulk
   - files: `src/jira/resources/linked-workspaces.ts`, `test/jira/linked-workspaces.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B1001 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B1002 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog/approximate-count
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B1003 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/{epicId}/issue
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1004 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/none/issue
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1005 Jira: expose GET /rest/software/1.0/board/{boardId}/issue
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
+  - **BLOCKED:** endpoint exists only under /rest/software/1.0/, no /rest/agile/1.0/ equivalent. Needs orchestrator decision before implementing.
 - [ ] 🔴 🧩 API: B1006 Jira: expose GET /rest/software/1.0/board/{boardId}/issue/approximate-count
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
-- [ ] 🔴 🧩 API: B1007 Jira: expose GET /rest/software/1.0/board/{boardId}/sprint/{sprintId}/issue
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1008 Jira: expose GET /rest/software/1.0/epic/{epicIdOrKey}/issue
-  - files: `src/jira/resources/epic.ts`, `test/jira/epic.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1009 Jira: expose GET /rest/software/1.0/epic/none/issue
-  - files: `src/jira/resources/epic.ts`, `test/jira/epic.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1010 Jira: expose GET /rest/software/1.0/sprint/{sprintId}/issue
-  - files: `src/jira/resources/sprints.ts`, `test/jira/sprints.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
+  - **BLOCKED:** endpoint exists only under /rest/software/1.0/, no /rest/agile/1.0/ equivalent. Needs orchestrator decision before implementing.
 
 <!-- api-mapping:generated:end -->
