@@ -83,6 +83,7 @@ import { WorklogResource } from './resources/worklog.js';
 import { UiModificationsResource } from './resources/uimodifications.js';
 import { PermissionsResource } from './resources/permissions.js';
 import { RepositoryResource } from './resources/repository.js';
+import { PipelinesResource } from './resources/pipelines.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -247,6 +248,8 @@ export class JiraClient {
   readonly permissions: PermissionsResource;
   /** Jira DevInfo repository resource — get/delete/delete-entity (B964-B966, base: /rest/devinfo/0.10). */
   readonly repository: RepositoryResource;
+  /** Jira pipelines resource — builds/deployments at pipeline level (B954,B955,B958,B959,B960). */
+  readonly pipelines: PipelinesResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -356,5 +359,6 @@ export class JiraClient {
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
     this.permissions = new PermissionsResource(transport, baseUrl);
     this.repository = new RepositoryResource(transport, devInfoBaseUrl);
+    this.pipelines = new PipelinesResource(transport, buildsBaseUrl, deploymentsBaseUrl);
   }
 }
