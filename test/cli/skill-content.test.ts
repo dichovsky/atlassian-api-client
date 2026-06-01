@@ -326,6 +326,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'fields',
           'jql',
           'issuelinktype',
+          'issue-link',
           'project-template',
           'universal-avatar',
         ]).toContain(parsed.resource);
@@ -454,6 +455,7 @@ describe('Resource coverage drift check', () => {
     'fields',
     'jql',
     'issuelinktype',
+    'issue-link',
     'project-template',
     'universal-avatar',
   ]) {
