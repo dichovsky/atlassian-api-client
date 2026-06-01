@@ -896,3 +896,12 @@ export type {
   DeploymentGatingStatus,
 } from './resources/pipelines.js';
 export { PipelinesResource } from './resources/pipelines.js';
+export type {
+  OperationsLinkedWorkspacesResponse,
+  BulkCreateOperationsLinkedWorkspacesBody,
+  BulkCreateOperationsLinkedWorkspacesResponse,
+  SecurityLinkedWorkspacesResponse,
+  SecurityLinkedWorkspace,
+  BulkCreateSecurityLinkedWorkspacesBody,
+} from './resources/linked-workspaces.js';
+export { LinkedWorkspacesResource } from './resources/linked-workspaces.js';

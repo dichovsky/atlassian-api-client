@@ -2500,3 +2500,24 @@
 - [x] 🔴 🧩 Jira: B960 expose GET /rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}/gating-status
   - **Impl:** `PipelinesResource.getDeploymentGatingStatus(pipelineId, environmentId, deploymentSequenceNumber)` → `DeploymentGatingStatus`. CLI: `atlas jira pipelines get-deployment-gating-status <pipelineId> <environmentId> <sequenceNumber>`.
   - **Rat:** Spec-verified gating-status response shape: `deploymentSequenceNumber`, `pipelineId`, `environmentId`, `gatingStatus` (`awaiting`/`allowed`/`prevented`/`invalid`), `updatedTimestamp`, and `details` as an array of `DeploymentGatingStatusDetail` (`type`/`issueKey`/`issueLink`). Verified: endpoint exists, 200/401/403/404. No query params.
+- [x] 🔴 🧩 Jira: B984 expose GET /rest/operations/1.0/linkedWorkspaces
+  - **Impl:** `LinkedWorkspacesResource.listOperations()` → `OperationsLinkedWorkspacesResponse` (`{ workspaceIds?: string[] }`). CLI: `atlas jira linked-workspaces list-operations`. Constructor takes `(transport, operationsBaseUrl, securityBaseUrl)`.
+  - **Rat:** Spec-verified: GET /rest/operations/1.0/linkedWorkspaces, 200 → `{ workspaceIds }`. No query params.
+- [x] 🔴 🧩 Jira: B985 expose DELETE /rest/operations/1.0/linkedWorkspaces/bulk
+  - **Impl:** `LinkedWorkspacesResource.bulkDeleteOperations(workspaceIds: string)` → void (202). CLI: `atlas jira linked-workspaces bulk-delete-operations --workspace-ids ws-1,ws-2`. Validates non-empty.
+  - **Rat:** Spec-verified: DELETE with `?workspaceIds=` comma-separated query param, 202 Accepted. New router flag `--workspace-ids`.
+- [x] 🔴 🧩 Jira: B986 expose POST /rest/operations/1.0/linkedWorkspaces/bulk
+  - **Impl:** `LinkedWorkspacesResource.bulkCreateOperations(body)` → `BulkCreateOperationsLinkedWorkspacesResponse` (`{ acceptedWorkspaceIds? }`). CLI: `atlas jira linked-workspaces bulk-create-operations --workspace-ids ws-1,ws-2`. Splits CSV to `string[]`.
+  - **Rat:** Spec-verified: POST body `{ workspaceIds: string[] }`, 200 → `{ acceptedWorkspaceIds }`.
+- [x] 🔴 🧩 Jira: B995 expose GET /rest/security/1.0/linkedWorkspaces
+  - **Impl:** `LinkedWorkspacesResource.listSecurity()` → `SecurityLinkedWorkspacesResponse` (`{ workspaceIds?: string[] }`). CLI: `atlas jira linked-workspaces list-security`. Same resource class, security base URL.
+  - **Rat:** Spec-verified: GET /rest/security/1.0/linkedWorkspaces, 200 → `{ workspaceIds }`. Distinct base URL from operations.
+- [x] 🔴 🧩 Jira: B996 expose GET /rest/security/1.0/linkedWorkspaces/{workspaceId}
+  - **Impl:** `LinkedWorkspacesResource.getSecurity(workspaceId: string)` → `SecurityLinkedWorkspace` (`{ workspaceId?, updatedAt? }`). CLI: `atlas jira linked-workspaces get-security <workspaceId>` (positional). `encodeURIComponent` applied.
+  - **Rat:** Spec-verified: 200 → `{ workspaceId, updatedAt }`. Path param is string; URL-encoded.
+- [x] 🔴 🧩 Jira: B997 expose DELETE /rest/security/1.0/linkedWorkspaces/bulk
+  - **Impl:** `LinkedWorkspacesResource.bulkDeleteSecurity(workspaceIds: string)` → void (202). CLI: `atlas jira linked-workspaces bulk-delete-security --workspace-ids ws-1,ws-2`. Same pattern as B985 but security base.
+  - **Rat:** Spec-verified: DELETE /rest/security/1.0/linkedWorkspaces/bulk, 202 Accepted. Reuses `--workspace-ids` router flag.
+- [x] 🔴 🧩 Jira: B998 expose POST /rest/security/1.0/linkedWorkspaces/bulk
+  - **Impl:** `LinkedWorkspacesResource.bulkCreateSecurity(body)` → void (202). CLI: `atlas jira linked-workspaces bulk-create-security --workspace-ids ws-3,ws-4`. Splits CSV to `string[]`.
+  - **Rat:** Spec-verified: POST body `{ workspaceIds: string[] }`, 202 Accepted (no response body, unlike operations' B986).

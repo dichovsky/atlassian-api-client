@@ -449,6 +449,8 @@ const GLOBAL_OPTIONS = {
   // permissions options (B613-B615)
   'global-permissions': { type: 'string' as const },
   'project-permissions': { type: 'string' as const },
+  // linked-workspaces options (B984-B986, B995-B998)
+  'workspace-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {

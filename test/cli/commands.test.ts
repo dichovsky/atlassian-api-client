@@ -1189,6 +1189,16 @@ const jiraUiModificationsMock = {
   delete: vi.fn(),
 };
 
+const jiraLinkedWorkspacesMock = {
+  listOperations: vi.fn(),
+  bulkDeleteOperations: vi.fn(),
+  bulkCreateOperations: vi.fn(),
+  listSecurity: vi.fn(),
+  getSecurity: vi.fn(),
+  bulkDeleteSecurity: vi.fn(),
+  bulkCreateSecurity: vi.fn(),
+};
+
 vi.mock('../../src/jira/client.js', () => {
   const MockJiraClient = vi.fn(function () {
     return {
@@ -1272,6 +1282,7 @@ vi.mock('../../src/jira/client.js', () => {
       uiModifications: jiraUiModificationsMock,
       permissions: jiraPermissionsMock,
       pipelines: jiraPipelinesMock,
+      linkedWorkspaces: jiraLinkedWorkspacesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -24901,6 +24912,118 @@ describe('executeJiraCommand', () => {
     it('throws on unknown pipelines action', async () => {
       await expect(executeJiraCommand(cmd('pipelines', 'unknown-action'), GLOBALS)).rejects.toThrow(
         'Unknown pipelines action',
+      );
+    });
+  });
+
+  // ── linked-workspaces ──────────────────────────────────────────────────────
+
+  describe('linked-workspaces resource', () => {
+    it('linked-workspaces list-operations calls client.linkedWorkspaces.listOperations()', async () => {
+      const data = { workspaceIds: ['ws-1', 'ws-2'] };
+      jiraLinkedWorkspacesMock.listOperations.mockResolvedValue(data);
+      const result = await executeJiraCommand(cmd('linked-workspaces', 'list-operations'), GLOBALS);
+      expect(jiraLinkedWorkspacesMock.listOperations).toHaveBeenCalled();
+      expect(result).toEqual(data);
+    });
+
+    it('linked-workspaces bulk-delete-operations calls bulkDeleteOperations and returns { deleted: true }', async () => {
+      jiraLinkedWorkspacesMock.bulkDeleteOperations.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('linked-workspaces', 'bulk-delete-operations', [], { 'workspace-ids': 'ws-1,ws-2' }),
+        GLOBALS,
+      );
+      expect(jiraLinkedWorkspacesMock.bulkDeleteOperations).toHaveBeenCalledWith('ws-1,ws-2');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('linked-workspaces bulk-delete-operations throws when --workspace-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('linked-workspaces', 'bulk-delete-operations'), GLOBALS),
+      ).rejects.toThrow('--workspace-ids');
+    });
+
+    it('linked-workspaces bulk-create-operations calls bulkCreateOperations and returns response', async () => {
+      const data = { acceptedWorkspaceIds: ['ws-1', 'ws-2'] };
+      jiraLinkedWorkspacesMock.bulkCreateOperations.mockResolvedValue(data);
+      const result = await executeJiraCommand(
+        cmd('linked-workspaces', 'bulk-create-operations', [], { 'workspace-ids': 'ws-1,ws-2' }),
+        GLOBALS,
+      );
+      expect(jiraLinkedWorkspacesMock.bulkCreateOperations).toHaveBeenCalledWith({
+        workspaceIds: ['ws-1', 'ws-2'],
+      });
+      expect(result).toEqual(data);
+    });
+
+    it('linked-workspaces bulk-create-operations throws when --workspace-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('linked-workspaces', 'bulk-create-operations'), GLOBALS),
+      ).rejects.toThrow('--workspace-ids');
+    });
+
+    it('linked-workspaces list-security calls client.linkedWorkspaces.listSecurity()', async () => {
+      const data = { workspaceIds: ['ws-3'] };
+      jiraLinkedWorkspacesMock.listSecurity.mockResolvedValue(data);
+      const result = await executeJiraCommand(cmd('linked-workspaces', 'list-security'), GLOBALS);
+      expect(jiraLinkedWorkspacesMock.listSecurity).toHaveBeenCalled();
+      expect(result).toEqual(data);
+    });
+
+    it('linked-workspaces get-security calls getSecurity with positional workspaceId', async () => {
+      const data = { workspaceId: 'ws-1', updatedAt: '2024-01-01T00:00:00Z' };
+      jiraLinkedWorkspacesMock.getSecurity.mockResolvedValue(data);
+      const result = await executeJiraCommand(
+        cmd('linked-workspaces', 'get-security', ['ws-1']),
+        GLOBALS,
+      );
+      expect(jiraLinkedWorkspacesMock.getSecurity).toHaveBeenCalledWith('ws-1');
+      expect(result).toEqual(data);
+    });
+
+    it('linked-workspaces get-security throws when workspaceId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('linked-workspaces', 'get-security', []), GLOBALS),
+      ).rejects.toThrow('workspaceId');
+    });
+
+    it('linked-workspaces bulk-delete-security calls bulkDeleteSecurity and returns { deleted: true }', async () => {
+      jiraLinkedWorkspacesMock.bulkDeleteSecurity.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('linked-workspaces', 'bulk-delete-security', [], { 'workspace-ids': 'ws-1' }),
+        GLOBALS,
+      );
+      expect(jiraLinkedWorkspacesMock.bulkDeleteSecurity).toHaveBeenCalledWith('ws-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('linked-workspaces bulk-delete-security throws when --workspace-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('linked-workspaces', 'bulk-delete-security'), GLOBALS),
+      ).rejects.toThrow('--workspace-ids');
+    });
+
+    it('linked-workspaces bulk-create-security calls bulkCreateSecurity and returns { created: true }', async () => {
+      jiraLinkedWorkspacesMock.bulkCreateSecurity.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('linked-workspaces', 'bulk-create-security', [], { 'workspace-ids': 'ws-3,ws-4' }),
+        GLOBALS,
+      );
+      expect(jiraLinkedWorkspacesMock.bulkCreateSecurity).toHaveBeenCalledWith({
+        workspaceIds: ['ws-3', 'ws-4'],
+      });
+      expect(result).toEqual({ created: true });
+    });
+
+    it('linked-workspaces bulk-create-security throws when --workspace-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('linked-workspaces', 'bulk-create-security'), GLOBALS),
+      ).rejects.toThrow('--workspace-ids');
+    });
+
+    it('linked-workspaces unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('linked-workspaces', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown linked-workspaces action',
       );
     });
   });

@@ -225,6 +225,8 @@ export async function executeJiraCommand(
       return executeRepository(client, cmd);
     case 'pipelines':
       return executePipelines(client, cmd);
+    case 'linked-workspaces':
+      return executeLinkedWorkspaces(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7477,6 +7479,52 @@ async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise
     default:
       throw new Error(
         `Unknown pipelines action: ${cmd.action}. Actions: ${PIPELINES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+const LINKED_WORKSPACES_ACTIONS = [
+  'list-operations',
+  'bulk-delete-operations',
+  'bulk-create-operations',
+  'list-security',
+  'get-security',
+  'bulk-delete-security',
+  'bulk-create-security',
+] as const;
+
+async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-operations':
+      return client.linkedWorkspaces.listOperations();
+    case 'bulk-delete-operations': {
+      const workspaceIds = requireOpt(opts['workspace-ids'], '--workspace-ids');
+      await client.linkedWorkspaces.bulkDeleteOperations(workspaceIds);
+      return { deleted: true };
+    }
+    case 'bulk-create-operations': {
+      const workspaceIds = splitCsvIds(requireOpt(opts['workspace-ids'], '--workspace-ids'));
+      return client.linkedWorkspaces.bulkCreateOperations({ workspaceIds });
+    }
+    case 'list-security':
+      return client.linkedWorkspaces.listSecurity();
+    case 'get-security':
+      return client.linkedWorkspaces.getSecurity(requireArg(cmd.positionalArgs[0], 'workspaceId'));
+    case 'bulk-delete-security': {
+      const workspaceIds = requireOpt(opts['workspace-ids'], '--workspace-ids');
+      await client.linkedWorkspaces.bulkDeleteSecurity(workspaceIds);
+      return { deleted: true };
+    }
+    case 'bulk-create-security': {
+      const workspaceIds = splitCsvIds(requireOpt(opts['workspace-ids'], '--workspace-ids'));
+      await client.linkedWorkspaces.bulkCreateSecurity({ workspaceIds });
+      return { created: true };
+    }
+    default:
+      throw new Error(
+        `Unknown linked-workspaces action: ${cmd.action}. Actions: ${LINKED_WORKSPACES_ACTIONS.join(', ')}`,
       );
   }
 }
