@@ -882,3 +882,17 @@ export type {
   DeleteRepositoryParams,
 } from './resources/repository.js';
 export { RepositoryResource } from './resources/repository.js';
+export type {
+  Build,
+  BuildAssociation,
+  BuildTestInfo,
+  BuildReference,
+  Deployment,
+  DeploymentAssociation,
+  DeploymentPipeline,
+  DeploymentEnvironment,
+  DeploymentCommand,
+  DeploymentGatingStatusDetail,
+  DeploymentGatingStatus,
+} from './resources/pipelines.js';
+export { PipelinesResource } from './resources/pipelines.js';

@@ -1173,6 +1173,14 @@ const jiraPermissionsMock = {
   getPermittedProjects: vi.fn(),
 };
 
+const jiraPipelinesMock = {
+  getBuild: vi.fn(),
+  deleteBuild: vi.fn(),
+  getDeployment: vi.fn(),
+  deleteDeployment: vi.fn(),
+  getDeploymentGatingStatus: vi.fn(),
+};
+
 const jiraUiModificationsMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1263,6 +1271,7 @@ vi.mock('../../src/jira/client.js', () => {
       worklog: jiraWorklogMock,
       uiModifications: jiraUiModificationsMock,
       permissions: jiraPermissionsMock,
+      pipelines: jiraPipelinesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -24774,6 +24783,125 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('permissions', 'unknown-action'), GLOBALS),
       ).rejects.toThrow('Unknown permissions action');
+    });
+  });
+
+  // ── pipelines (B954, B955, B958, B959, B960) ──────────────────────────────
+
+  describe('pipelines resource', () => {
+    it('get-build calls getBuild with pipelineId and buildNumber', async () => {
+      const build = { pipelineId: 'pipeline-abc', buildNumber: 42, state: 'successful' };
+      jiraPipelinesMock.getBuild.mockResolvedValue(build);
+      const result = await executeJiraCommand(
+        cmd('pipelines', 'get-build', ['pipeline-abc', '42']),
+        GLOBALS,
+      );
+      expect(jiraPipelinesMock.getBuild).toHaveBeenCalledWith('pipeline-abc', 42);
+      expect(result).toEqual(build);
+    });
+
+    it('get-build throws when pipelineId is missing', async () => {
+      await expect(executeJiraCommand(cmd('pipelines', 'get-build', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: pipelineId',
+      );
+    });
+
+    it('get-build throws when buildNumber is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('pipelines', 'get-build', ['pipeline-abc']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: buildNumber');
+    });
+
+    it('delete-build calls deleteBuild and returns deleted:true', async () => {
+      jiraPipelinesMock.deleteBuild.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('pipelines', 'delete-build', ['pipeline-abc', '42']),
+        GLOBALS,
+      );
+      expect(jiraPipelinesMock.deleteBuild).toHaveBeenCalledWith('pipeline-abc', 42);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-build throws when pipelineId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('pipelines', 'delete-build', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: pipelineId');
+    });
+
+    it('get-deployment calls getDeployment with pipelineId, environmentId, and sequence number', async () => {
+      const deployment = { deploymentSequenceNumber: 7, state: 'successful' };
+      jiraPipelinesMock.getDeployment.mockResolvedValue(deployment);
+      const result = await executeJiraCommand(
+        cmd('pipelines', 'get-deployment', ['pipeline-abc', 'env-prod', '7']),
+        GLOBALS,
+      );
+      expect(jiraPipelinesMock.getDeployment).toHaveBeenCalledWith('pipeline-abc', 'env-prod', 7);
+      expect(result).toEqual(deployment);
+    });
+
+    it('get-deployment throws when environmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('pipelines', 'get-deployment', ['pipeline-abc']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: environmentId');
+    });
+
+    it('get-deployment throws when deploymentSequenceNumber is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('pipelines', 'get-deployment', ['pipeline-abc', 'env-prod']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required argument: deploymentSequenceNumber');
+    });
+
+    it('delete-deployment calls deleteDeployment and returns deleted:true', async () => {
+      jiraPipelinesMock.deleteDeployment.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('pipelines', 'delete-deployment', ['pipeline-abc', 'env-prod', '7']),
+        GLOBALS,
+      );
+      expect(jiraPipelinesMock.deleteDeployment).toHaveBeenCalledWith(
+        'pipeline-abc',
+        'env-prod',
+        7,
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-deployment throws when environmentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('pipelines', 'delete-deployment', ['pipeline-abc']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: environmentId');
+    });
+
+    it('get-deployment-gating-status calls getDeploymentGatingStatus with all params', async () => {
+      const gatingStatus = { gatingStatus: 'awaiting_approval' };
+      jiraPipelinesMock.getDeploymentGatingStatus.mockResolvedValue(gatingStatus);
+      const result = await executeJiraCommand(
+        cmd('pipelines', 'get-deployment-gating-status', ['pipeline-abc', 'env-prod', '7']),
+        GLOBALS,
+      );
+      expect(jiraPipelinesMock.getDeploymentGatingStatus).toHaveBeenCalledWith(
+        'pipeline-abc',
+        'env-prod',
+        7,
+      );
+      expect(result).toEqual(gatingStatus);
+    });
+
+    it('get-deployment-gating-status throws when deploymentSequenceNumber is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('pipelines', 'get-deployment-gating-status', ['pipeline-abc', 'env-prod']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Missing required argument: deploymentSequenceNumber');
+    });
+
+    it('throws on unknown pipelines action', async () => {
+      await expect(executeJiraCommand(cmd('pipelines', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown pipelines action',
+      );
     });
   });
 });

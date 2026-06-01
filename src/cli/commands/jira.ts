@@ -223,6 +223,8 @@ export async function executeJiraCommand(
       return executePermissions(client, cmd);
     case 'repository':
       return executeRepository(client, cmd);
+    case 'pipelines':
+      return executePipelines(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7417,6 +7419,64 @@ async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise
     default:
       throw new Error(
         `Unknown issue-link action: ${cmd.action}. Actions: ${ISSUE_LINK_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── pipelines (B954, B955, B958, B959, B960) ─────────────────────────────────
+
+const PIPELINES_ACTIONS = [
+  'get-build',
+  'delete-build',
+  'get-deployment',
+  'delete-deployment',
+  'get-deployment-gating-status',
+] as const;
+
+async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  switch (cmd.action) {
+    case 'get-build': {
+      const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
+      const buildNumberStr = requireArg(cmd.positionalArgs[1], 'buildNumber');
+      const buildNumber = parseIntArg(buildNumberStr, 'buildNumber');
+      return client.pipelines.getBuild(pipelineId, buildNumber);
+    }
+    case 'delete-build': {
+      const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
+      const buildNumberStr = requireArg(cmd.positionalArgs[1], 'buildNumber');
+      const buildNumber = parseIntArg(buildNumberStr, 'buildNumber');
+      await client.pipelines.deleteBuild(pipelineId, buildNumber);
+      return { deleted: true };
+    }
+    case 'get-deployment': {
+      const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
+      const environmentId = requireArg(cmd.positionalArgs[1], 'environmentId');
+      const dsnStr = requireArg(cmd.positionalArgs[2], 'deploymentSequenceNumber');
+      const deploymentSequenceNumber = parseIntArg(dsnStr, 'deploymentSequenceNumber');
+      return client.pipelines.getDeployment(pipelineId, environmentId, deploymentSequenceNumber);
+    }
+    case 'delete-deployment': {
+      const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
+      const environmentId = requireArg(cmd.positionalArgs[1], 'environmentId');
+      const dsnStr = requireArg(cmd.positionalArgs[2], 'deploymentSequenceNumber');
+      const deploymentSequenceNumber = parseIntArg(dsnStr, 'deploymentSequenceNumber');
+      await client.pipelines.deleteDeployment(pipelineId, environmentId, deploymentSequenceNumber);
+      return { deleted: true };
+    }
+    case 'get-deployment-gating-status': {
+      const pipelineId = requireArg(cmd.positionalArgs[0], 'pipelineId');
+      const environmentId = requireArg(cmd.positionalArgs[1], 'environmentId');
+      const dsnStr = requireArg(cmd.positionalArgs[2], 'deploymentSequenceNumber');
+      const deploymentSequenceNumber = parseIntArg(dsnStr, 'deploymentSequenceNumber');
+      return client.pipelines.getDeploymentGatingStatus(
+        pipelineId,
+        environmentId,
+        deploymentSequenceNumber,
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown pipelines action: ${cmd.action}. Actions: ${PIPELINES_ACTIONS.join(', ')}`,
       );
   }
 }

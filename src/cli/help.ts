@@ -288,6 +288,7 @@ RESOURCES:
   worklog                deleted, list, updated
   ui-modifications       list, list-all, create, update, delete
   permissions            get-all, check, permitted-projects
+  pipelines              get-build, delete-build, get-deployment, delete-deployment, get-deployment-gating-status
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -622,6 +623,11 @@ EXAMPLES:
   atlas jira permissions get-all
   atlas jira permissions check --global-permissions '["ADMINISTER"]'
   atlas jira permissions permitted-projects --permissions '["BROWSE_PROJECTS"]'
+  atlas jira pipelines get-build pipeline-abc 42
+  atlas jira pipelines delete-build pipeline-abc 42
+  atlas jira pipelines get-deployment pipeline-abc env-prod 7
+  atlas jira pipelines delete-deployment pipeline-abc env-prod 7
+  atlas jira pipelines get-deployment-gating-status pipeline-abc env-prod 7
 `;
 
 /** Get help text for the given level. */

@@ -3918,3 +3918,36 @@ atlas jira permissions permitted-projects --permissions '["BROWSE_PROJECTS"]'
 # Get projects where user has multiple permissions — B615
 atlas jira permissions permitted-projects --permissions '["BROWSE_PROJECTS","EDIT_ISSUES"]'
 ```
+
+## `pipelines`
+
+Jira Software Pipelines resource — builds and deployments at pipeline/environment level (B954, B955, B958, B959, B960). Spans two integration APIs: `/rest/builds/0.1` and `/rest/deployments/0.1`.
+
+| Action                         | Positional                                      | Required flags | Optional flags |
+| ------------------------------ | ----------------------------------------------- | -------------- | -------------- |
+| `get-build`                    | `<pipelineId> <buildNumber>`                    | —              | —              |
+| `delete-build`                 | `<pipelineId> <buildNumber>`                    | —              | —              |
+| `get-deployment`               | `<pipelineId> <environmentId> <sequenceNumber>` | —              | —              |
+| `delete-deployment`            | `<pipelineId> <environmentId> <sequenceNumber>` | —              | —              |
+| `get-deployment-gating-status` | `<pipelineId> <environmentId> <sequenceNumber>` | —              | —              |
+
+- `pipelineId`: string identifier of the pipeline.
+- `environmentId`: string identifier of the target environment (deployments only).
+- `buildNumber` / `sequenceNumber`: integer.
+
+```sh
+# Get a build — B955
+atlas jira pipelines get-build pipeline-abc 42
+
+# Delete a build (async, 202 Accepted) — B954
+atlas jira pipelines delete-build pipeline-abc 42
+
+# Get a deployment — B959
+atlas jira pipelines get-deployment pipeline-abc env-prod 7
+
+# Delete a deployment (async, 202 Accepted) — B958
+atlas jira pipelines delete-deployment pipeline-abc env-prod 7
+
+# Get deployment gating status — B960
+atlas jira pipelines get-deployment-gating-status pipeline-abc env-prod 7
+```

@@ -2485,3 +2485,18 @@
 - [x] 🔴 🧩 Jira: B966 expose DELETE /rest/devinfo/0.10/repository/{repositoryId}/{entityType}/{entityId}
   - **Impl:** `RepositoryResource.deleteEntity(repositoryId, entityType, entityId, params?)` → void (204). All path segments encoded. Optional `_updateSequenceId` query param. CLI: `atlas jira repository delete-entity <repositoryId> <entityType> <entityId> [--update-sequence-id]`.
   - **Rat:** Spec-verified: 204 No Content. entityType is free-form string (e.g. commit, branch, pullRequest). All three path params required; empty-string guards throw `ValidationError`-style errors.
+- [x] 🔴 🧩 Jira: B954 expose DELETE /rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber}
+  - **Impl:** `PipelinesResource.deleteBuild(pipelineId, buildNumber)` → void (202 Accepted async). CLI: `atlas jira pipelines delete-build <pipelineId> <buildNumber>`. Both path params positional.
+  - **Rat:** Spec-verified: 202 Accepted (async deletion), no response body. `pipelineId` is string, `buildNumber` is integer. No query/body params. `encodePathSegment` applied to `pipelineId`.
+- [x] 🔴 🧩 Jira: B955 expose GET /rest/builds/0.1/pipelines/{pipelineId}/builds/{buildNumber}
+  - **Impl:** `PipelinesResource.getBuild(pipelineId, buildNumber)` → `Build` entity. CLI: `atlas jira pipelines get-build <pipelineId> <buildNumber>`. Both path params positional.
+  - **Rat:** Spec-verified: 200 → `BuildData` with `pipelineId` (string), `buildNumber` (integer), `state`, `displayName`, `issueKeys`, `testInfo`, etc. No query params. Constructor takes separate `buildsBaseUrl` and `deploymentsBaseUrl`.
+- [x] 🔴 🧩 Jira: B958 expose DELETE /rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}
+  - **Impl:** `PipelinesResource.deleteDeployment(pipelineId, environmentId, deploymentSequenceNumber)` → void (202 Accepted async). CLI: `atlas jira pipelines delete-deployment <pipelineId> <environmentId> <sequenceNumber>`. All path params positional.
+  - **Rat:** Spec-verified: 202 Accepted (async deletion), no response body. `pipelineId`/`environmentId` are strings, `deploymentSequenceNumber` is integer. `encodePathSegment` applied to both string params.
+- [x] 🔴 🧩 Jira: B959 expose GET /rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}
+  - **Impl:** `PipelinesResource.getDeployment(pipelineId, environmentId, deploymentSequenceNumber)` → `Deployment` entity. CLI: `atlas jira pipelines get-deployment <pipelineId> <environmentId> <sequenceNumber>`.
+  - **Rat:** Spec-verified: 200 → `DeploymentData` with `deploymentSequenceNumber` (integer), `state`, `pipeline` (object), `environment` (object), `issueKeys`, etc. No query params.
+- [x] 🔴 🧩 Jira: B960 expose GET /rest/deployments/0.1/pipelines/{pipelineId}/environments/{environmentId}/deployments/{deploymentSequenceNumber}/gating-status
+  - **Impl:** `PipelinesResource.getDeploymentGatingStatus(pipelineId, environmentId, deploymentSequenceNumber)` → `DeploymentGatingStatus`. CLI: `atlas jira pipelines get-deployment-gating-status <pipelineId> <environmentId> <sequenceNumber>`.
+  - **Rat:** Spec-verified gating-status response shape: `deploymentSequenceNumber`, `pipelineId`, `environmentId`, `gatingStatus` (`awaiting`/`allowed`/`prevented`/`invalid`), `updatedTimestamp`, and `details` as an array of `DeploymentGatingStatusDetail` (`type`/`issueKey`/`issueLink`). Verified: endpoint exists, 200/401/403/404. No query params.
