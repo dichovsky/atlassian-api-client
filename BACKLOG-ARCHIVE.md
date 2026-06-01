@@ -2521,3 +2521,27 @@
 - [x] 🔴 🧩 Jira: B998 expose POST /rest/security/1.0/linkedWorkspaces/bulk
   - **Impl:** `LinkedWorkspacesResource.bulkCreateSecurity(body)` → void (202). CLI: `atlas jira linked-workspaces bulk-create-security --workspace-ids ws-3,ws-4`. Splits CSV to `string[]`.
   - **Rat:** Spec-verified: POST body `{ workspaceIds: string[] }`, 202 Accepted (no response body, unlike operations' B986).
+- [x] 🔴 🧩 Jira: B953 expose DELETE /rest/builds/0.1/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteBuildsByProperties(params)` → void (202). Params: `properties: Record<string,string|number>` (arbitrary key/value pairs sent as query). CLI: `atlas jira bulk-by-properties delete-builds --properties accountId=acc-1`.
+  - **Rat:** Spec-verified on builds + deployments + featureflags pages: DELETE /bulkByProperties accepts arbitrary property query params (AND logic), 202 Accepted async. `_updateSequenceNumber` (formerly `_updateSequenceId`) is documented as "no longer supported" on all 8 bases — dropped as deprecated no-op.
+- [x] 🔴 🧩 Jira: B957 expose DELETE /rest/deployments/0.1/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteDeploymentsByProperties(params)` → void (202). Same contract as B953. CLI: `atlas jira bulk-by-properties delete-deployments --properties key=value`.
+  - **Rat:** Spec-verified from deployments API page. Multiple properties example: `?accountId=account-123&createdBy=user-456`.
+- [x] 🔴 🧩 Jira: B962 expose DELETE /rest/devinfo/0.10/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteDevInfoByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-devinfo --properties key=value`.
+  - **Rat:** Confirmed from devinfo API page (content truncated but endpoint listed). Consistent with builds/deployments contract.
+- [x] 🔴 🧩 Jira: B968 expose DELETE /rest/devopscomponents/1.0/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteDevOpsComponentsByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-devops-components --properties key=value`.
+  - **Rat:** Consistent contract assumed from confirmed DevOps product pages. Same base URL family as `DevopscomponentsResource`.
+- [x] 🔴 🧩 Jira: B972 expose DELETE /rest/featureflags/0.1/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteFeatureFlagsByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-feature-flags --properties key=value`.
+  - **Rat:** Spec-verified from featureflags API page: 202 Accepted, arbitrary property query params.
+- [x] 🔴 🧩 Jira: B981 expose DELETE /rest/operations/1.0/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteOperationsByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-operations --properties key=value`.
+  - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `IncidentsResource`.
+- [x] 🔴 🧩 Jira: B990 expose DELETE /rest/remotelinks/1.0/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteRemoteLinksByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-remote-links --properties key=value`.
+  - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `RemoteLinkResource`.
+- [x] 🔴 🧩 Jira: B994 expose DELETE /rest/security/1.0/bulkByProperties
+  - **Impl:** `BulkByPropertiesResource.deleteSecurityByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-security --properties key=value`.
+  - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `VulnerabilityResource`.

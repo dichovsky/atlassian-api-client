@@ -905,3 +905,8 @@ export type {
   BulkCreateSecurityLinkedWorkspacesBody,
 } from './resources/linked-workspaces.js';
 export { LinkedWorkspacesResource } from './resources/linked-workspaces.js';
+export type {
+  BulkByPropertiesParams,
+  BulkByPropertiesBaseUrls,
+} from './resources/bulk-by-properties.js';
+export { BulkByPropertiesResource } from './resources/bulk-by-properties.js';

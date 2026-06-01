@@ -290,6 +290,7 @@ RESOURCES:
   permissions            get-all, check, permitted-projects
   pipelines              get-build, delete-build, get-deployment, delete-deployment, get-deployment-gating-status
   linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
+  bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -633,6 +634,14 @@ EXAMPLES:
   atlas jira linked-workspaces bulk-create-operations --workspace-ids ws-1,ws-2
   atlas jira linked-workspaces list-security
   atlas jira linked-workspaces get-security ws-1
+  atlas jira bulk-by-properties delete-builds --properties accountId=account-123
+  atlas jira bulk-by-properties delete-deployments --properties accountId=account-123,environment=prod
+  atlas jira bulk-by-properties delete-devinfo --properties accountId=account-123
+  atlas jira bulk-by-properties delete-devops-components --properties accountId=account-123
+  atlas jira bulk-by-properties delete-feature-flags --properties accountId=account-123
+  atlas jira bulk-by-properties delete-operations --properties accountId=account-123
+  atlas jira bulk-by-properties delete-remote-links --properties accountId=account-123
+  atlas jira bulk-by-properties delete-security --properties accountId=account-123
 `;
 
 /** Get help text for the given level. */

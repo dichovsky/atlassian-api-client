@@ -227,6 +227,8 @@ export async function executeJiraCommand(
       return executePipelines(client, cmd);
     case 'linked-workspaces':
       return executeLinkedWorkspaces(client, cmd);
+    case 'bulk-by-properties':
+      return executeBulkByProperties(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7525,6 +7527,92 @@ async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): 
     default:
       throw new Error(
         `Unknown linked-workspaces action: ${cmd.action}. Actions: ${LINKED_WORKSPACES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── bulk-by-properties (B953,B957,B962,B968,B972,B981,B990,B994) ─────────────
+
+const BULK_BY_PROPERTIES_ACTIONS = [
+  'delete-builds',
+  'delete-deployments',
+  'delete-devinfo',
+  'delete-devops-components',
+  'delete-feature-flags',
+  'delete-operations',
+  'delete-remote-links',
+  'delete-security',
+] as const;
+
+async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  /**
+   * Build the properties Record<string,string|number> from --properties flag.
+   * The CLI accepts `--properties key=value[,key2=value2]`; they are
+   * collected into the record. At least one property must be provided.
+   */
+  function buildParams(): Parameters<typeof client.bulkByProperties.deleteBuildsByProperties>[0] {
+    const propertiesRaw = asString(opts['properties']);
+    if (!propertiesRaw) {
+      throw new Error(
+        'bulk-by-properties requires --properties in the form key=value[,key2=value2]',
+      );
+    }
+    const properties: Record<string, string> = {};
+    for (const pair of propertiesRaw.split(',')) {
+      const eqIdx = pair.indexOf('=');
+      if (eqIdx === -1) {
+        throw new Error(
+          `bulk-by-properties --properties: invalid pair "${pair}", expected key=value`,
+        );
+      }
+      const k = pair.slice(0, eqIdx).trim();
+      const v = pair.slice(eqIdx + 1).trim();
+      if (!k) {
+        throw new Error(`bulk-by-properties --properties: empty key in pair "${pair}"`);
+      }
+      properties[k] = v;
+    }
+    return { properties };
+  }
+
+  switch (cmd.action) {
+    case 'delete-builds': {
+      await client.bulkByProperties.deleteBuildsByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-deployments': {
+      await client.bulkByProperties.deleteDeploymentsByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-devinfo': {
+      await client.bulkByProperties.deleteDevInfoByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-devops-components': {
+      await client.bulkByProperties.deleteDevOpsComponentsByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-feature-flags': {
+      await client.bulkByProperties.deleteFeatureFlagsByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-operations': {
+      await client.bulkByProperties.deleteOperationsByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-remote-links': {
+      await client.bulkByProperties.deleteRemoteLinksByProperties(buildParams());
+      return { deleted: true };
+    }
+    case 'delete-security': {
+      await client.bulkByProperties.deleteSecurityByProperties(buildParams());
+      return { deleted: true };
+    }
+    default:
+      throw new Error(
+        `Unknown bulk-by-properties action: ${cmd.action}. Actions: ${BULK_BY_PROPERTIES_ACTIONS.join(', ')}`,
       );
   }
 }

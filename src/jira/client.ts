@@ -85,6 +85,7 @@ import { PermissionsResource } from './resources/permissions.js';
 import { RepositoryResource } from './resources/repository.js';
 import { PipelinesResource } from './resources/pipelines.js';
 import { LinkedWorkspacesResource } from './resources/linked-workspaces.js';
+import { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -253,6 +254,8 @@ export class JiraClient {
   readonly pipelines: PipelinesResource;
   /** Jira linked workspaces resource — operations + security API (B984-B986, B995-B998). */
   readonly linkedWorkspaces: LinkedWorkspacesResource;
+  /** Jira bulk-by-properties resource — DELETE by properties across 8 DevOps APIs (B953,B957,B962,B968,B972,B981,B990,B994). */
+  readonly bulkByProperties: BulkByPropertiesResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -368,5 +371,15 @@ export class JiraClient {
       operationsBaseUrl,
       securityBaseUrl,
     );
+    this.bulkByProperties = new BulkByPropertiesResource(transport, {
+      builds: buildsBaseUrl,
+      deployments: deploymentsBaseUrl,
+      devinfo: devInfoBaseUrl,
+      devopscomponents: devopscomponentsBaseUrl,
+      featureflags: featureFlagsBaseUrl,
+      operations: operationsBaseUrl,
+      remotelinks: remoteLinkBaseUrl,
+      security: securityBaseUrl,
+    });
   }
 }

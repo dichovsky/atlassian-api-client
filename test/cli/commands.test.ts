@@ -1181,6 +1181,17 @@ const jiraPipelinesMock = {
   getDeploymentGatingStatus: vi.fn(),
 };
 
+const jiraBulkByPropertiesMock = {
+  deleteBuildsByProperties: vi.fn(),
+  deleteDeploymentsByProperties: vi.fn(),
+  deleteDevInfoByProperties: vi.fn(),
+  deleteDevOpsComponentsByProperties: vi.fn(),
+  deleteFeatureFlagsByProperties: vi.fn(),
+  deleteOperationsByProperties: vi.fn(),
+  deleteRemoteLinksByProperties: vi.fn(),
+  deleteSecurityByProperties: vi.fn(),
+};
+
 const jiraUiModificationsMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1283,6 +1294,7 @@ vi.mock('../../src/jira/client.js', () => {
       permissions: jiraPermissionsMock,
       pipelines: jiraPipelinesMock,
       linkedWorkspaces: jiraLinkedWorkspacesMock,
+      bulkByProperties: jiraBulkByPropertiesMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -25025,6 +25037,154 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('linked-workspaces', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown linked-workspaces action',
       );
+    });
+  });
+
+  // ── bulk-by-properties (B953,B957,B962,B968,B972,B981,B990,B994) ──────────
+
+  describe('bulk-by-properties resource', () => {
+    it('delete-builds calls deleteBuildsByProperties with parsed properties', async () => {
+      jiraBulkByPropertiesMock.deleteBuildsByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-builds', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteBuildsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-builds supports multiple properties (key=value,key2=value2)', async () => {
+      jiraBulkByPropertiesMock.deleteBuildsByProperties.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-builds', [], {
+          properties: 'accountId=acc-1,env=prod',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteBuildsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1', env: 'prod' },
+      });
+    });
+
+    it('delete-deployments calls deleteDeploymentsByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteDeploymentsByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-deployments', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteDeploymentsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-devinfo calls deleteDevInfoByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteDevInfoByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-devinfo', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteDevInfoByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-devops-components calls deleteDevOpsComponentsByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteDevOpsComponentsByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-devops-components', [], {
+          properties: 'accountId=acc-1',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteDevOpsComponentsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-feature-flags calls deleteFeatureFlagsByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteFeatureFlagsByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-feature-flags', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteFeatureFlagsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-operations calls deleteOperationsByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteOperationsByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-operations', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteOperationsByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-remote-links calls deleteRemoteLinksByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteRemoteLinksByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-remote-links', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteRemoteLinksByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-security calls deleteSecurityByProperties', async () => {
+      jiraBulkByPropertiesMock.deleteSecurityByProperties.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('bulk-by-properties', 'delete-security', [], { properties: 'accountId=acc-1' }),
+        GLOBALS,
+      );
+      expect(jiraBulkByPropertiesMock.deleteSecurityByProperties).toHaveBeenCalledWith({
+        properties: { accountId: 'acc-1' },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('throws when --properties is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('bulk-by-properties', 'delete-builds'), GLOBALS),
+      ).rejects.toThrow('--properties');
+    });
+
+    it('throws when --properties pair has no = separator', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk-by-properties', 'delete-builds', [], { properties: 'accountId' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('invalid pair');
+    });
+
+    it('throws when --properties pair has empty key', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk-by-properties', 'delete-builds', [], { properties: '=value' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('empty key');
+    });
+
+    it('throws on unknown bulk-by-properties action', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('bulk-by-properties', 'delete-unknown', [], { properties: 'accountId=acc-1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Unknown bulk-by-properties action');
     });
   });
 });
