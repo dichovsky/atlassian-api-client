@@ -9,6 +9,7 @@ import { getHelpText } from './help.js';
 import { executeConfluenceCommand } from './commands/confluence.js';
 import { executeJiraCommand } from './commands/jira.js';
 import { executeInstallSkill } from './commands/install-skill.js';
+import { executeScopesCommand } from './commands/scopes.js';
 import { resolvePackageVersion } from './version.js';
 
 /** Stream-style writer used by {@link runCli} for stdout/stderr injection. */
@@ -44,6 +45,10 @@ export async function runCli(
 
   if (cmd.api === 'install-skill') {
     return executeInstallSkill(cmd, stdout, stderr);
+  }
+
+  if (cmd.api === 'scopes') {
+    return executeScopesCommand(cmd, stdout, stderr);
   }
 
   const globals = resolveGlobalOptions(cmd.options);

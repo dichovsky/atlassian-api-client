@@ -10,6 +10,7 @@ APIs:
 
 UTILITIES:
   install-skill    Install the bundled Claude Code skill (for coding agents)
+  scopes           Validate Atlassian OAuth 2.0 scope strings
 
 GLOBAL OPTIONS:
   --base-url, -u   Atlassian instance URL (or ATLASSIAN_BASE_URL)
@@ -31,6 +32,33 @@ EXAMPLES:
   atlas jira search --jql "project = PROJ"
   atlas confluence spaces list --base-url https://jira.internal.example --allowed-hosts jira.internal.example
   atlas install-skill --local
+  atlas scopes validate read:jira-work write:jira-work
+  atlas scopes validate read:jira-work write:made-up
+`;
+
+const SCOPES_HELP = `atlas scopes - Atlassian OAuth 2.0 scope utilities
+
+USAGE:
+  atlas scopes validate <scope> [scope...]
+
+ACTIONS:
+  validate    Check whether each scope string is a recognised Atlassian Cloud
+              OAuth 2.0 scope. Prints a JSON result with valid/unknown/allValid
+              fields. Exits 0 when all scopes are valid; exits 1 when any are
+              unknown.
+
+NOTES:
+  scopes validate is auth-free — it checks strings against the local scope
+  catalog and never makes an API request.
+
+EXIT CODES:
+  0   All supplied scope strings are valid
+  1   One or more scope strings are unknown, or usage error
+
+EXAMPLES:
+  atlas scopes validate read:jira-work
+  atlas scopes validate read:jira-work write:jira-work manage:jira-project
+  atlas scopes validate read:jira-work write:made-up
 `;
 
 const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill
@@ -653,6 +681,8 @@ export function getHelpText(api?: string): string {
       return JIRA_HELP;
     case 'install-skill':
       return INSTALL_SKILL_HELP;
+    case 'scopes':
+      return SCOPES_HELP;
     default:
       return GLOBAL_HELP;
   }

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "8a5533b331988d4a197c3c7b0ced68409df0bda13f049b79be89c3213965f05c",
+  "sourceHash": "713a10c62098e9835aa2308ee8c7bb8250574c2a1e28ec978105538c88d9f677",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5035,6 +5035,29 @@
       ]
     },
     {
+      "path": "src/cli/commands/scopes.ts",
+      "symbols": [
+        {
+          "name": "executeScopesCommand",
+          "kind": "function",
+          "line": 17,
+          "exported": true,
+          "signature": "export function executeScopesCommand( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void…",
+          "jsdoc": "CLI entrypoint for `atlas scopes <action>`."
+        },
+        {
+          "name": "executeValidate",
+          "kind": "function",
+          "line": 35,
+          "signature": "function executeValidate( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void, ): number"
+        }
+      ],
+      "imports": [
+        "../../core/scopes.js",
+        "../types.js"
+      ]
+    },
+    {
       "path": "src/cli/config.ts",
       "symbols": [
         {
@@ -5094,27 +5117,33 @@
           "signature": "const GLOBAL_HELP = `atlas - Atlassian Cloud API CLI\n\nUSAGE:\n  atlas <api> <resource> <action> [args] [options]\n  atlas …"
         },
         {
+          "name": "SCOPES_HELP",
+          "kind": "variable",
+          "line": 39,
+          "signature": "const SCOPES_HELP = `atlas scopes - Atlassian OAuth 2.0 scope utilities\n\nUSAGE:\n  atlas scopes validate <scope> [scope..…"
+        },
+        {
           "name": "INSTALL_SKILL_HELP",
           "kind": "variable",
-          "line": 36,
+          "line": 64,
           "signature": "const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill\n\nUSAGE:\n  atlas install-skill [o…"
         },
         {
           "name": "CONFLUENCE_HELP",
           "kind": "variable",
-          "line": 61,
+          "line": 89,
           "signature": "const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2\n\nRESOURCES:\n  pages                  list, get,…"
         },
         {
           "name": "JIRA_HELP",
           "kind": "variable",
-          "line": 209,
+          "line": 237,
           "signature": "const JIRA_HELP = `atlas jira - Jira Cloud Platform REST API v3\n\nRESOURCES:\n  issues        get, create, update, delete,…"
         },
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 648,
+          "line": 676,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -5127,7 +5156,7 @@
         {
           "name": "CliWriter",
           "kind": "type",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export type CliWriter = (line: string) => void;",
           "jsdoc": "Stream-style writer used by {@link runCli} for stdout/stderr injection."
@@ -5135,7 +5164,7 @@
         {
           "name": "VersionResolver",
           "kind": "type",
-          "line": 18,
+          "line": 19,
           "exported": true,
           "signature": "export type VersionResolver = () => string;",
           "jsdoc": "Resolver injection point for {@link runCli}; default reads the bundled package.json."
@@ -5143,13 +5172,13 @@
         {
           "name": "defaultVersionResolver",
           "kind": "function",
-          "line": 20,
+          "line": 21,
           "signature": "const defaultVersionResolver: VersionResolver = () =>"
         },
         {
           "name": "runCli",
           "kind": "function",
-          "line": 27,
+          "line": 28,
           "exported": true,
           "signature": "export async function runCli( argv: readonly string[], stdout: CliWriter, stderr: CliWriter, resolveVersion: VersionReso…",
           "jsdoc": "Execute the CLI. Extracted from the bin entry so tests can drive it with captured stdout/stderr and a stubbed version resolver — no subprocess spawning required."
@@ -5157,13 +5186,13 @@
         {
           "name": "main",
           "kind": "function",
-          "line": 72,
+          "line": 77,
           "signature": "async function main(): Promise<void>"
         },
         {
           "name": "isEntryPoint",
           "kind": "function",
-          "line": 92,
+          "line": 97,
           "signature": "function isEntryPoint(): boolean",
           "jsdoc": "Standard ESM \"is this module the entry point?\" check. When `node` is invoked with this file as `process.argv[1]`, `main()` runs and the CLI behaves as a bin. When the module is imported by a test (or any other consumer), `main()` is skipped so tests can drive {@link runCli} directly."
         }
@@ -5172,6 +5201,7 @@
         "./commands/confluence.js",
         "./commands/install-skill.js",
         "./commands/jira.js",
+        "./commands/scopes.js",
         "./config.js",
         "./help.js",
         "./output.js",
@@ -13454,6 +13484,37 @@
           "exported": true,
           "signature": "export function listKnownOperations(): readonly string[]",
           "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
+        },
+        {
+          "name": "KNOWN_SCOPES",
+          "kind": "variable",
+          "line": 220,
+          "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set<AtlassianScope>([ 'read:confluence-content.all', 'read:conflue…",
+          "jsdoc": "The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings. Derived from {@link AtlassianScope} so the two stay in sync automatically."
+        },
+        {
+          "name": "ScopeValidationResult",
+          "kind": "interface",
+          "line": 239,
+          "exported": true,
+          "signature": "export interface ScopeValidationResult { readonly valid: readonly AtlassianScope[]; readonly unknown: readonly string[];…",
+          "jsdoc": "Result of validating a set of scope strings."
+        },
+        {
+          "name": "validateScopes",
+          "kind": "function",
+          "line": 260,
+          "exported": true,
+          "signature": "export function validateScopes(scopes: readonly string[]): ScopeValidationResult",
+          "jsdoc": "Validates a list of scope strings against the known Atlassian OAuth 2.0 scope catalog. Returns two partitions: `valid` (recognised) and `unknown` (not in the catalog). Order within each partition follows the input order. @example validateScopes(['read:jira-work', 'write:made-up']) // → { valid: ['read:jira-wo…"
+        },
+        {
+          "name": "listKnownScopes",
+          "kind": "function",
+          "line": 277,
+          "exported": true,
+          "signature": "export function listKnownScopes(): readonly AtlassianScope[]",
+          "jsdoc": "Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order. Useful for listing available scopes in help output and validation tooling."
         }
       ]
     },
