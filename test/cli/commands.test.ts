@@ -712,6 +712,12 @@ const jiraExistsByPropertiesMock = {
   get: vi.fn(),
 };
 
+const jiraRepositoryMock = {
+  get: vi.fn(),
+  delete: vi.fn(),
+  deleteEntity: vi.fn(),
+};
+
 const jiraAppMock = {
   getFieldContextConfiguration: vi.fn(),
   updateFieldContextConfiguration: vi.fn(),
@@ -1223,6 +1229,7 @@ vi.mock('../../src/jira/client.js', () => {
       remoteLink: jiraRemoteLinkMock,
       serviceRegistry: jiraServiceRegistryMock,
       existsByProperties: jiraExistsByPropertiesMock,
+      repository: jiraRepositoryMock,
       app: jiraAppMock,
       applicationProperties: jiraApplicationPropertiesMock,
       configuration: jiraConfigurationMock,
@@ -14632,6 +14639,99 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('exists-by-properties', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown exists-by-properties action');
+    });
+  });
+
+  // ── repository ────────────────────────────────────────────────────────────
+
+  describe('repository resource', () => {
+    it('repository get calls client.repository.get() with repositoryId', async () => {
+      const repo = { id: 'repo-1', name: 'My Repo' };
+      jiraRepositoryMock.get.mockResolvedValue(repo);
+
+      const result = await executeJiraCommand(cmd('repository', 'get', ['repo-1']), GLOBALS);
+
+      expect(result).toEqual(repo);
+      expect(jiraRepositoryMock.get).toHaveBeenCalledWith('repo-1');
+    });
+
+    it('repository get throws when repositoryId is missing', async () => {
+      await expect(executeJiraCommand(cmd('repository', 'get', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: repositoryId',
+      );
+    });
+
+    it('repository delete calls client.repository.delete() and returns { deleted: true }', async () => {
+      jiraRepositoryMock.delete.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(cmd('repository', 'delete', ['repo-1']), GLOBALS);
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraRepositoryMock.delete).toHaveBeenCalledWith('repo-1', undefined);
+    });
+
+    it('repository delete passes updateSequenceId when --update-sequence-id is provided', async () => {
+      jiraRepositoryMock.delete.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('repository', 'delete', ['repo-1'], { 'update-sequence-id': '42' }),
+        GLOBALS,
+      );
+
+      expect(jiraRepositoryMock.delete).toHaveBeenCalledWith('repo-1', { updateSequenceId: 42 });
+    });
+
+    it('repository delete throws when repositoryId is missing', async () => {
+      await expect(executeJiraCommand(cmd('repository', 'delete', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: repositoryId',
+      );
+    });
+
+    it('repository delete-entity calls client.repository.deleteEntity() and returns { deleted: true }', async () => {
+      jiraRepositoryMock.deleteEntity.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('repository', 'delete-entity', ['repo-1', 'commit', 'abc123']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraRepositoryMock.deleteEntity).toHaveBeenCalledWith(
+        'repo-1',
+        'commit',
+        'abc123',
+        undefined,
+      );
+    });
+
+    it('repository delete-entity passes updateSequenceId when --update-sequence-id is provided', async () => {
+      jiraRepositoryMock.deleteEntity.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('repository', 'delete-entity', ['repo-1', 'pullRequest', 'pr-1'], {
+          'update-sequence-id': '99',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraRepositoryMock.deleteEntity).toHaveBeenCalledWith(
+        'repo-1',
+        'pullRequest',
+        'pr-1',
+        { updateSequenceId: 99 },
+      );
+    });
+
+    it('repository delete-entity throws when repositoryId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('repository', 'delete-entity', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: repositoryId');
+    });
+
+    it('repository unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('repository', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown repository action',
+      );
     });
   });
 

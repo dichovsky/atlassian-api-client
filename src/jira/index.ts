@@ -874,3 +874,11 @@ export type {
   GetAvatarImageParams,
 } from './resources/universal-avatar.js';
 export { UniversalAvatarResource } from './resources/universal-avatar.js';
+export type {
+  Repository,
+  RepositoryCommit,
+  RepositoryBranch,
+  RepositoryPullRequest,
+  DeleteRepositoryParams,
+} from './resources/repository.js';
+export { RepositoryResource } from './resources/repository.js';

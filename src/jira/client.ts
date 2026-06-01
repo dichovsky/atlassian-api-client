@@ -82,6 +82,7 @@ import { UniversalAvatarResource } from './resources/universal-avatar.js';
 import { WorklogResource } from './resources/worklog.js';
 import { UiModificationsResource } from './resources/uimodifications.js';
 import { PermissionsResource } from './resources/permissions.js';
+import { RepositoryResource } from './resources/repository.js';
 
 /** Client for the Atlassian Jira Cloud Platform REST API v3. */
 export class JiraClient {
@@ -244,6 +245,8 @@ export class JiraClient {
   readonly uiModifications: UiModificationsResource;
   /** Jira global permissions resource — get-all/check/permitted-projects (B613-B615). */
   readonly permissions: PermissionsResource;
+  /** Jira DevInfo repository resource — get/delete/delete-entity (B964-B966, base: /rest/devinfo/0.10). */
+  readonly repository: RepositoryResource;
 
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
@@ -352,5 +355,6 @@ export class JiraClient {
     this.worklog = new WorklogResource(transport, baseUrl);
     this.uiModifications = new UiModificationsResource(transport, baseUrl);
     this.permissions = new PermissionsResource(transport, baseUrl);
+    this.repository = new RepositoryResource(transport, devInfoBaseUrl);
   }
 }
