@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import { ValidationError } from '../../core/errors.js';
 
 // ── B946/B947: GET/POST /migration/{connectKey}/{jiraIssueFieldsKey}/task ────
 
@@ -133,8 +134,8 @@ export class MigrationResource {
     connectKey: string,
     jiraIssueFieldsKey: string,
   ): Promise<MigrationTaskProgress> {
-    if (!connectKey) throw new Error('connectKey is required');
-    if (!jiraIssueFieldsKey) throw new Error('jiraIssueFieldsKey is required');
+    if (!connectKey) throw new ValidationError('connectKey is required');
+    if (!jiraIssueFieldsKey) throw new ValidationError('jiraIssueFieldsKey is required');
     const response = await this.transport.request<MigrationTaskProgress>({
       method: 'GET',
       path: `${this.baseUrl}/migration/${encodePathSegment(connectKey, 'connectKey')}/${encodePathSegment(jiraIssueFieldsKey, 'jiraIssueFieldsKey')}/task`,
@@ -148,8 +149,8 @@ export class MigrationResource {
    * B947 — returns void (202 Accepted)
    */
   async submitMigrationTask(connectKey: string, jiraIssueFieldsKey: string): Promise<void> {
-    if (!connectKey) throw new Error('connectKey is required');
-    if (!jiraIssueFieldsKey) throw new Error('jiraIssueFieldsKey is required');
+    if (!connectKey) throw new ValidationError('connectKey is required');
+    if (!jiraIssueFieldsKey) throw new ValidationError('jiraIssueFieldsKey is required');
     await this.transport.request<unknown>({
       method: 'POST',
       path: `${this.baseUrl}/migration/${encodePathSegment(connectKey, 'connectKey')}/${encodePathSegment(jiraIssueFieldsKey, 'jiraIssueFieldsKey')}/task`,
@@ -162,7 +163,7 @@ export class MigrationResource {
    * B948 — requires `Atlassian-Transfer-Id` header (UUID)
    */
   async updateIssueFields(transferId: string, body: UpdateCustomFieldValuesBody): Promise<unknown> {
-    if (!transferId) throw new Error('transferId is required');
+    if (!transferId) throw new ValidationError('transferId is required');
     const response = await this.transport.request<unknown>({
       method: 'PUT',
       path: `${this.baseUrl}/migration/field`,
@@ -182,8 +183,8 @@ export class MigrationResource {
     entityType: MigrationEntityType,
     properties: EntityPropertyDetails[],
   ): Promise<void> {
-    if (!transferId) throw new Error('transferId is required');
-    if (!entityType) throw new Error('entityType is required');
+    if (!transferId) throw new ValidationError('transferId is required');
+    if (!entityType) throw new ValidationError('entityType is required');
     await this.transport.request<unknown>({
       method: 'PUT',
       path: `${this.baseUrl}/migration/properties/${encodePathSegment(entityType, 'entityType')}`,
@@ -201,9 +202,10 @@ export class MigrationResource {
     transferId: string,
     body: WorkflowRulesSearch,
   ): Promise<WorkflowRulesSearchDetails> {
-    if (!transferId) throw new Error('transferId is required');
-    if (!body.workflowEntityId) throw new Error('workflowEntityId is required');
-    if (!body.ruleIds || body.ruleIds.length === 0) throw new Error('ruleIds is required');
+    if (!transferId) throw new ValidationError('transferId is required');
+    if (!body.workflowEntityId) throw new ValidationError('workflowEntityId is required');
+    if (!body.ruleIds || body.ruleIds.length === 0)
+      throw new ValidationError('ruleIds is required');
     const response = await this.transport.request<WorkflowRulesSearchDetails>({
       method: 'POST',
       path: `${this.baseUrl}/migration/workflow/rule/search`,

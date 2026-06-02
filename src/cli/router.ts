@@ -453,8 +453,6 @@ const GLOBAL_OPTIONS = {
   'workspace-ids': { type: 'string' as const },
   // migration options (B946-B950)
   'transfer-id': { type: 'string' as const },
-  'connect-key': { type: 'string' as const },
-  'issue-fields-key': { type: 'string' as const },
   'update-value-list': { type: 'string' as const },
   'workflow-entity-id': { type: 'string' as const },
   'rule-ids': { type: 'string' as const },

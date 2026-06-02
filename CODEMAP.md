@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "f219be656f69edddc1b3fb72b720d7f742ecb4ceb60cf26b798dff86c052f729",
+  "sourceHash": "c13948a8a9cda342c1cc164efc9170f802e432755724af91b4679f718e7eb61c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5288,7 +5288,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 463,
+          "line": 461,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -27491,7 +27491,7 @@
         {
           "name": "MigrationTaskProgress",
           "kind": "interface",
-          "line": 7,
+          "line": 8,
           "exported": true,
           "signature": "export interface MigrationTaskProgress { readonly id: string; readonly self: string; readonly status: | 'ENQUEUED' | 'RU…",
           "jsdoc": "Task status detail returned by GET migration task (B946)."
@@ -27499,7 +27499,7 @@
         {
           "name": "ConnectCustomFieldValueType",
           "kind": "type",
-          "line": 33,
+          "line": 34,
           "exported": true,
           "signature": "export type ConnectCustomFieldValueType = | 'StringIssueField' | 'NumberIssueField' | 'RichTextIssueField' | 'SingleSele…",
           "jsdoc": "Discriminated union type for a Connect custom field update value (B948)."
@@ -27507,7 +27507,7 @@
         {
           "name": "ConnectCustomFieldValue",
           "kind": "interface",
-          "line": 42,
+          "line": 43,
           "exported": true,
           "signature": "export interface ConnectCustomFieldValue { readonly _type: ConnectCustomFieldValueType; readonly fieldID: number; readon…",
           "jsdoc": "A single custom field update detail (B948)."
@@ -27515,7 +27515,7 @@
         {
           "name": "UpdateCustomFieldValuesBody",
           "kind": "interface",
-          "line": 54,
+          "line": 55,
           "exported": true,
           "signature": "export interface UpdateCustomFieldValuesBody { readonly updateValueList?: ConnectCustomFieldValue[]; }",
           "jsdoc": "Request body for bulk update custom field values (B948)."
@@ -27523,7 +27523,7 @@
         {
           "name": "MigrationEntityType",
           "kind": "type",
-          "line": 61,
+          "line": 62,
           "exported": true,
           "signature": "export type MigrationEntityType = | 'IssueProperty' | 'CommentProperty' | 'DashboardItemProperty' | 'IssueTypeProperty' …",
           "jsdoc": "Allowed entity types for migration property updates (B949)."
@@ -27531,7 +27531,7 @@
         {
           "name": "EntityPropertyDetails",
           "kind": "interface",
-          "line": 73,
+          "line": 74,
           "exported": true,
           "signature": "export interface EntityPropertyDetails { readonly entityId: number; readonly key: string; readonly value: string; }",
           "jsdoc": "A single entity property update detail (B949)."
@@ -27539,7 +27539,7 @@
         {
           "name": "WorkflowRulesSearch",
           "kind": "interface",
-          "line": 82,
+          "line": 83,
           "exported": true,
           "signature": "export interface WorkflowRulesSearch { readonly workflowEntityId: string; readonly ruleIds: string[]; readonly expand?: …",
           "jsdoc": "Request body for workflow rule search (B950)."
@@ -27547,7 +27547,7 @@
         {
           "name": "AppWorkflowTransitionRule",
           "kind": "interface",
-          "line": 89,
+          "line": 90,
           "exported": true,
           "signature": "export interface AppWorkflowTransitionRule { readonly id?: string; readonly key?: string; readonly configuration?: { rea…",
           "jsdoc": "A single app workflow transition rule detail (B950)."
@@ -27555,7 +27555,7 @@
         {
           "name": "WorkflowTransitionRules",
           "kind": "interface",
-          "line": 97,
+          "line": 98,
           "exported": true,
           "signature": "export interface WorkflowTransitionRules { readonly workflowId: { readonly name?: string; readonly draft?: boolean }; re…",
           "jsdoc": "A workflow with transition rules (B950)."
@@ -27563,7 +27563,7 @@
         {
           "name": "WorkflowRulesSearchDetails",
           "kind": "interface",
-          "line": 105,
+          "line": 106,
           "exported": true,
           "signature": "export interface WorkflowRulesSearchDetails { readonly workflowEntityId?: string; readonly invalidRules?: string[]; read…",
           "jsdoc": "Response from workflow rule search (B950)."
@@ -27571,7 +27571,7 @@
         {
           "name": "MigrationResource",
           "kind": "class",
-          "line": 121,
+          "line": 122,
           "exported": true,
           "signature": "export class MigrationResource",
           "jsdoc": "Jira Connect migration resource.",
@@ -27579,37 +27579,38 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 122
+              "line": 123
             },
             {
               "name": "getMigrationTask",
               "kind": "method",
-              "line": 132
+              "line": 133
             },
             {
               "name": "submitMigrationTask",
               "kind": "method",
-              "line": 150
+              "line": 151
             },
             {
               "name": "updateIssueFields",
               "kind": "method",
-              "line": 164
+              "line": 165
             },
             {
               "name": "updateEntityProperties",
               "kind": "method",
-              "line": 180
+              "line": 181
             },
             {
               "name": "searchWorkflowRules",
               "kind": "method",
-              "line": 200
+              "line": 201
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/path.js",
         "../../core/types.js"
       ]
