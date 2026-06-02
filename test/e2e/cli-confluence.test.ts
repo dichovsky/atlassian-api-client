@@ -1241,8 +1241,12 @@ const matrix: readonly MatrixRow[] = [
     expectCall: { method: 'GET', pathname: `${P}/tasks` },
     expectQuery: (query) => {
       expect(query.status).toBe('incomplete');
-      expect(query.pageId).toBe('12345');
-      expect(query.assignedTo).toBe('acc-assignee');
+      // Confluence v2 GET /tasks expects kebab-case wire params; the camelCase
+      // SDK filters must be remapped or the server silently ignores them.
+      expect(query['page-id']).toBe('12345');
+      expect(query['assigned-to']).toBe('acc-assignee');
+      expect(query.pageId).toBeUndefined();
+      expect(query.assignedTo).toBeUndefined();
       expect(query.limit).toBe('25');
       expect(query.cursor).toBe('next');
     },

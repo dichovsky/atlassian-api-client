@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "4ea38d90026e21fcefd92704bb10b58b99e008ae8ef39a9a5beca031eceb5f6e",
+  "sourceHash": "9091ba4ca7d722ced8cd759f822e1dceab7a4cdbf34785169efebeb5839f7f29",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -9308,36 +9308,49 @@
       "path": "src/confluence/resources/tasks.ts",
       "symbols": [
         {
+          "name": "Query",
+          "kind": "type",
+          "line": 8,
+          "signature": "type Query = Record<string, string | number | boolean | undefined>;"
+        },
+        {
+          "name": "buildTasksQuery",
+          "kind": "function",
+          "line": 18,
+          "signature": "function buildTasksQuery(params?: ListTasksParams): Query | undefined",
+          "jsdoc": "Map the ergonomic camelCase `ListTasksParams` filters onto the kebab-case query parameters the Confluence v2 `GET /tasks` endpoint expects. Sending the camelCase names (`spaceId`, `pageId`, ...) is silently ignored by the server, which then returns tasks from every space/page instead of the requested ones. Keys already in wire form (`body-format`, `status`, `cursor`, `limit`) pass through unchanged."
+        },
+        {
           "name": "TasksResource",
           "kind": "class",
-          "line": 7,
+          "line": 51,
           "exported": true,
           "signature": "export class TasksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 8
+              "line": 52
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 14
+              "line": 58
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 25
+              "line": 69
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 35
+              "line": 79
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 45
+              "line": 89
             }
           ]
         }
@@ -9346,7 +9359,8 @@
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js",
-        "../types.js"
+        "../types.js",
+        "./query.js"
       ]
     },
     {
