@@ -68,6 +68,26 @@ describe('computeQsh', () => {
     expect(computeQsh('GET', '/path', { b: '2', a: '1' })).toBe(expected);
   });
 
+  // The Atlassian Connect QSH canonicalization sorts query parameters by
+  // codepoint (UTF-16 code-unit) order. The spec states verbatim:
+  // "Sorting is by codepoint: sort(["a","A","b","B"]) => ["A","B","a","b"]"
+  // — so uppercase keys (e.g. 'A' = U+0041) sort before lowercase
+  // (e.g. 'a' = U+0061). `localeCompare` is locale/collation-dependent and
+  // does not reliably produce codepoint order, so it yields a qsh the server
+  // cannot reproduce (→ 401).
+  // https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
+  it('orders an uppercase query key before its lowercase counterpart (codepoint sort)', () => {
+    const expected = createHash('sha256').update('GET&/path&A=2&a=1').digest('hex');
+    expect(computeQsh('GET', '/path', { a: '1', A: '2' })).toBe(expected);
+  });
+
+  it('sorts mixed-case query keys by codepoint per the Atlassian spec example', () => {
+    // sort(["a","A","b","B"]) => ["A","B","a","b"]
+    const canonical = 'GET&/path&A=2&B=4&a=1&b=3';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path', { a: '1', A: '2', b: '3', B: '4' })).toBe(expected);
+  });
+
   it('excludes undefined query values', () => {
     const withUndefined = computeQsh('GET', '/path', { a: '1', b: undefined });
     const withoutUndefined = computeQsh('GET', '/path', { a: '1' });

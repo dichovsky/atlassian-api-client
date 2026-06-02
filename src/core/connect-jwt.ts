@@ -62,7 +62,8 @@ export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions
  *
  * QSH = SHA-256(`METHOD&canonicalPath&canonicalQuery`)
  * - `canonicalPath`: path without the query string
- * - `canonicalQuery`: percent-encoded key=value pairs sorted alphabetically, `undefined` values excluded
+ * - `canonicalQuery`: percent-encoded key=value pairs sorted by codepoint
+ *   (uppercase before lowercase, per the Connect spec), `undefined` values excluded
  *
  * Exported for testing and manual verification.
  */
@@ -77,10 +78,18 @@ export function computeQsh(
   const canonicalPath = questionMark >= 0 ? path.slice(0, questionMark) : path;
 
   const canonicalQuery = query
-    ? Object.entries(query)
-        .filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    ? Object.keys(query)
+        .filter((key) => query[key] !== undefined)
+        // Sort keys by codepoint (UTF-16 code-unit) order, which is what the
+        // Atlassian Connect QSH spec requires:
+        //   sort(["a","A","b","B"]) => ["A","B","a","b"]
+        // The reference impl (`atlassian-jwt`) does exactly `Object.keys(q).sort()`,
+        // so the built-in default comparator is used here verbatim. The previous
+        // `localeCompare` is locale/collation-dependent and does not reliably
+        // produce codepoint order, so it yielded a qsh the server cannot
+        // reproduce → JWT rejected (401).
+        .sort()
+        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(query[key]))}`)
         .join('&')
     : '';
 
