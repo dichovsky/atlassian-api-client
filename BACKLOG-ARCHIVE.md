@@ -2557,3 +2557,18 @@
 - [x] 🔴 🧩 API: B942 Jira: expose PUT /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
   - **Impl:** `AddonsResource.setProperty(addonKey, propertyKey, value)` → `AddonPropertyOperationMessage` (`{ message, statusCode }`). Sends `value` as raw JSON body (schema `{}`). CLI: `atlas jira addons set-property <addonKey> <propertyKey> --value '<json>'`. Returns 200 (update) or 201 (create).
   - **Rat:** Spec-verified: requestBody schema is `{}` (arbitrary JSON), raw value sent as body matching `app.ts` Forge property pattern. `--value` flag already registered in `router.ts`.
+- [x] 🔴 🧩 API: B946 expose GET /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
+  - **Impl:** `MigrationResource.getMigrationTask(connectKey, jiraIssueFieldsKey)` → `MigrationTaskProgress`. CLI: `atlas jira migration get-task <connectKey> <jiraIssueFieldsKey>`. Uses serviceRegistryBaseUrl (`/rest/atlassian-connect/1`). No header required.
+  - **Rat:** Spec-verified: GET returns TaskProgress (status, progress, elapsedRuntime etc). Connect-to-Forge field migration tracking endpoint. No deprecated flag.
+- [x] 🔴 🧩 API: B947 expose POST /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
+  - **Impl:** `MigrationResource.submitMigrationTask(connectKey, jiraIssueFieldsKey)` → void (202). CLI: `atlas jira migration submit-task <connectKey> <jiraIssueFieldsKey>`. No request body, no header required.
+  - **Rat:** Spec-verified: 202 Accepted, no response body. Triggers background migration of Connect issue field data to Forge custom field.
+- [x] 🔴 🧩 API: B948 expose PUT /rest/atlassian-connect/1/migration/field
+  - **Impl:** `MigrationResource.updateIssueFields(transferId, body)` → unknown (200). CLI: `atlas jira migration update-fields --transfer-id <uuid> --update-value-list <JSON>`. Header `Atlassian-Transfer-Id` (UUID) is REQUIRED — passed via transport `headers:` option. Body: `ConnectCustomFieldValues { updateValueList: ConnectCustomFieldValue[] }`.
+  - **Rat:** Spec-verified: PUT requires `Atlassian-Transfer-Id` header (in: header, required: true, format: uuid). Bulk update custom field values on issues for Connect app migration.
+- [x] 🔴 🧩 API: B949 expose PUT /rest/atlassian-connect/1/migration/properties/{entityType}
+  - **Impl:** `MigrationResource.updateEntityProperties(transferId, entityType, properties)` → void (200). CLI: `atlas jira migration update-properties <entityType> --transfer-id <uuid> --value <JSON>`. Header `Atlassian-Transfer-Id` required. Body: array of `EntityPropertyDetails { entityId, key, value }`. entityType is enum of 9 values.
+  - **Rat:** Spec-verified: PUT requires `Atlassian-Transfer-Id` header. Body is `array` (not wrapped object) of EntityPropertyDetails. Up to 50 updates per request.
+- [x] 🔴 🧩 API: B950 expose POST /rest/atlassian-connect/1/migration/workflow/rule/search
+  - **Impl:** `MigrationResource.searchWorkflowRules(transferId, body)` → `WorkflowRulesSearchDetails`. CLI: `atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <csv-uuids> [--expand transition]`. Header `Atlassian-Transfer-Id` required.
+  - **Rat:** Spec-verified: POST requires `Atlassian-Transfer-Id` header. Body: `WorkflowRulesSearch { workflowEntityId (uuid, required), ruleIds (array, 1-10, required), expand? (string) }`. Returns `WorkflowRulesSearchDetails { workflowEntityId?, invalidRules?, validRules? }`.

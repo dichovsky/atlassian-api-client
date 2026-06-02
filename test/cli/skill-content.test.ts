@@ -337,6 +337,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'pipelines',
           'linked-workspaces',
           'bulk-by-properties',
+          'migration',
         ]).toContain(parsed.resource);
       }
     });
@@ -474,6 +475,7 @@ describe('Resource coverage drift check', () => {
     'pipelines',
     'linked-workspaces',
     'bulk-by-properties',
+    'migration',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

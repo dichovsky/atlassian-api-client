@@ -55,6 +55,11 @@ import type {
   AvatarViewSize,
   AvatarViewFormat,
 } from '../../jira/resources/universal-avatar.js';
+import type {
+  MigrationEntityType,
+  ConnectCustomFieldValue,
+  EntityPropertyDetails,
+} from '../../jira/resources/migration.js';
 import { buildClientConfig } from '../config.js';
 
 /** Execute a Jira CLI command. Returns the data to be printed. */
@@ -231,6 +236,8 @@ export async function executeJiraCommand(
       return executeLinkedWorkspaces(client, cmd);
     case 'bulk-by-properties':
       return executeBulkByProperties(client, cmd);
+    case 'migration':
+      return executeMigration(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7645,6 +7652,70 @@ async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): 
     default:
       throw new Error(
         `Unknown bulk-by-properties action: ${cmd.action}. Actions: ${BULK_BY_PROPERTIES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+const MIGRATION_ACTIONS = [
+  'get-task',
+  'submit-task',
+  'update-fields',
+  'update-properties',
+  'search-workflow-rules',
+] as const;
+
+async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'get-task': {
+      // B946: GET /migration/{connectKey}/{jiraIssueFieldsKey}/task
+      const connectKey = requireArg(cmd.positionalArgs[0], 'connectKey');
+      const jiraIssueFieldsKey = requireArg(cmd.positionalArgs[1], 'jiraIssueFieldsKey');
+      return client.migration.getMigrationTask(connectKey, jiraIssueFieldsKey);
+    }
+    case 'submit-task': {
+      // B947: POST /migration/{connectKey}/{jiraIssueFieldsKey}/task
+      const connectKey = requireArg(cmd.positionalArgs[0], 'connectKey');
+      const jiraIssueFieldsKey = requireArg(cmd.positionalArgs[1], 'jiraIssueFieldsKey');
+      await client.migration.submitMigrationTask(connectKey, jiraIssueFieldsKey);
+      return { submitted: true };
+    }
+    case 'update-fields': {
+      // B948: PUT /migration/field — requires --transfer-id and --update-value-list
+      const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
+      const updateValueListRaw = requireOpt(opts['update-value-list'], '--update-value-list');
+      const updateValueList = parseJsonArrayFlag(
+        updateValueListRaw,
+        '--update-value-list',
+      ) as ConnectCustomFieldValue[];
+      return client.migration.updateIssueFields(transferId, { updateValueList });
+    }
+    case 'update-properties': {
+      // B949: PUT /migration/properties/{entityType} — requires --transfer-id, positional entityType, and --value (JSON array)
+      const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
+      const entityType = requireArg(cmd.positionalArgs[0], 'entityType') as MigrationEntityType;
+      const valueRaw = requireOpt(opts['value'], '--value');
+      const properties = parseJsonArrayFlag(valueRaw, '--value') as EntityPropertyDetails[];
+      await client.migration.updateEntityProperties(transferId, entityType, properties);
+      return { updated: true };
+    }
+    case 'search-workflow-rules': {
+      // B950: POST /migration/workflow/rule/search — requires --transfer-id, --workflow-entity-id, --rule-ids
+      const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
+      const workflowEntityId = requireOpt(opts['workflow-entity-id'], '--workflow-entity-id');
+      const ruleIdsRaw = requireOpt(opts['rule-ids'], '--rule-ids');
+      const ruleIds = splitCsvIds(ruleIdsRaw);
+      const expand = asString(opts['expand']);
+      return client.migration.searchWorkflowRules(transferId, {
+        workflowEntityId,
+        ruleIds,
+        ...(expand !== undefined ? { expand } : {}),
+      });
+    }
+    default:
+      throw new Error(
+        `Unknown migration action: ${cmd.action}. Actions: ${MIGRATION_ACTIONS.join(', ')}`,
       );
   }
 }

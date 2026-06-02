@@ -159,6 +159,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   pipelines: 'executePipelines',
   'linked-workspaces': 'executeLinkedWorkspaces',
   'bulk-by-properties': 'executeBulkByProperties',
+  migration: 'executeMigration',
 };
 
 /**
