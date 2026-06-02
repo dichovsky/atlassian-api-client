@@ -214,26 +214,32 @@ export function listKnownOperations(): readonly string[] {
 }
 
 /**
- * The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings.
- * Derived from {@link AtlassianScope} so the two stay in sync automatically.
+ * Exhaustive catalog of every {@link AtlassianScope}. Typed as
+ * `Record<AtlassianScope, true>` so adding a member to the union WITHOUT adding
+ * it here is a compile error — that is what actually keeps the two in sync.
  */
-const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set<AtlassianScope>([
-  'read:confluence-content.all',
-  'read:confluence-content.summary',
-  'write:confluence-content',
-  'read:confluence-space.summary',
-  'read:confluence-user',
-  'read:confluence-props',
-  'write:confluence-props',
-  'read:confluence-content.permission',
-  'read:jira-work',
-  'write:jira-work',
-  'manage:jira-project',
-  'manage:jira-configuration',
-  'read:jira-user',
-  'manage:jira-webhook',
-  'manage:jira-data-provider',
-]);
+const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = {
+  'read:confluence-content.all': true,
+  'read:confluence-content.summary': true,
+  'write:confluence-content': true,
+  'read:confluence-space.summary': true,
+  'read:confluence-user': true,
+  'read:confluence-props': true,
+  'write:confluence-props': true,
+  'read:confluence-content.permission': true,
+  'read:jira-work': true,
+  'write:jira-work': true,
+  'manage:jira-project': true,
+  'manage:jira-configuration': true,
+  'read:jira-user': true,
+  'manage:jira-webhook': true,
+  'manage:jira-data-provider': true,
+};
+
+/** The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings. */
+const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set(
+  Object.keys(KNOWN_SCOPE_CATALOG) as AtlassianScope[],
+);
 
 /** Result of validating a set of scope strings. */
 export interface ScopeValidationResult {

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "713a10c62098e9835aa2308ee8c7bb8250574c2a1e28ec978105538c88d9f677",
+  "sourceHash": "7b9f31e3698d7206b211e51575ced64923d0a961f28d7bc4f9a0069dcda5f6f5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13486,16 +13486,23 @@
           "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
         },
         {
+          "name": "KNOWN_SCOPE_CATALOG",
+          "kind": "variable",
+          "line": 221,
+          "signature": "const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = { 'read:confluence-content.all': true, 'read:confluence-conten…",
+          "jsdoc": "Exhaustive catalog of every {@link AtlassianScope}. Typed as `Record<AtlassianScope, true>` so adding a member to the union WITHOUT adding it here is a compile error — that is what actually keeps the two in sync."
+        },
+        {
           "name": "KNOWN_SCOPES",
           "kind": "variable",
-          "line": 220,
-          "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set<AtlassianScope>([ 'read:confluence-content.all', 'read:conflue…",
-          "jsdoc": "The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings. Derived from {@link AtlassianScope} so the two stay in sync automatically."
+          "line": 240,
+          "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set( Object.keys(KNOWN_SCOPE_CATALOG) as AtlassianScope[], );",
+          "jsdoc": "The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings."
         },
         {
           "name": "ScopeValidationResult",
           "kind": "interface",
-          "line": 239,
+          "line": 245,
           "exported": true,
           "signature": "export interface ScopeValidationResult { readonly valid: readonly AtlassianScope[]; readonly unknown: readonly string[];…",
           "jsdoc": "Result of validating a set of scope strings."
@@ -13503,7 +13510,7 @@
         {
           "name": "validateScopes",
           "kind": "function",
-          "line": 260,
+          "line": 266,
           "exported": true,
           "signature": "export function validateScopes(scopes: readonly string[]): ScopeValidationResult",
           "jsdoc": "Validates a list of scope strings against the known Atlassian OAuth 2.0 scope catalog. Returns two partitions: `valid` (recognised) and `unknown` (not in the catalog). Order within each partition follows the input order. @example validateScopes(['read:jira-work', 'write:made-up']) // → { valid: ['read:jira-wo…"
@@ -13511,7 +13518,7 @@
         {
           "name": "listKnownScopes",
           "kind": "function",
-          "line": 277,
+          "line": 283,
           "exported": true,
           "signature": "export function listKnownScopes(): readonly AtlassianScope[]",
           "jsdoc": "Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order. Useful for listing available scopes in help output and validation tooling."
