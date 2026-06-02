@@ -282,6 +282,7 @@ RESOURCES:
   latest                 bulk-worklog
   remote-link            get, delete
   service-registry       get
+  addons                 list-properties, get-property, set-property, delete-property
   exists-by-properties   get
   repository             get, delete, delete-entity
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
@@ -306,6 +307,7 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   screenscheme           list, list-all, create, update, delete
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
+  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
   fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
@@ -319,6 +321,7 @@ RESOURCES:
   pipelines              get-build, delete-build, get-deployment, delete-deployment, get-deployment-gating-status
   linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
   bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
+  migration              get-task, submit-task, update-fields, update-properties, search-workflow-rules
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -363,6 +366,10 @@ EXAMPLES:
   atlas jira remote-link get rl-123
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
+  atlas jira addons list-properties my-connect-app
+  atlas jira addons get-property my-connect-app my-setting
+  atlas jira addons set-property my-connect-app my-setting --value '{"enabled":true}'
+  atlas jira addons delete-property my-connect-app my-setting
   atlas jira exists-by-properties get --entity-type repository
   atlas jira repository get my-repo-123
   atlas jira repository delete my-repo-123
@@ -548,6 +555,14 @@ EXAMPLES:
   atlas jira plans delete-atlassian-team 10001 team-abc-123
   atlas jira plans get-plan-only-team 10001 2001
   atlas jira plans delete-plan-only-team 10001 2001
+  atlas jira workflows list --max-results 50
+  atlas jira workflows get "Default Workflow"
+  atlas jira workflows delete fb759d53-a3a4-45ff-9de4-547c4b638dde
+  atlas jira workflows issue-type-usages fb759d53-a3a4-45ff-9de4-547c4b638dde 10001
+  atlas jira workflows issue-type-usages fb759d53-a3a4-45ff-9de4-547c4b638dde 10001 --max-results 25
+  atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
+  atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde --next-page-token eyJvIjoyfQ==
+  atlas jira workflows workflow-scheme-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
   atlas jira workflowscheme list --max-results 50
   atlas jira workflowscheme list --all
   atlas jira workflowscheme get 10001
@@ -670,6 +685,11 @@ EXAMPLES:
   atlas jira bulk-by-properties delete-operations --properties accountId=account-123
   atlas jira bulk-by-properties delete-remote-links --properties accountId=account-123
   atlas jira bulk-by-properties delete-security --properties accountId=account-123
+  atlas jira migration get-task com.example.app my-custom-field
+  atlas jira migration submit-task com.example.app my-custom-field
+  atlas jira migration update-fields --transfer-id <uuid> --update-value-list '[{"_type":"StringIssueField","issueID":10001,"fieldID":10076,"string":"new"}]'
+  atlas jira migration update-properties IssueProperty --transfer-id <uuid> --value '[{"entityId":123,"key":"mykey","value":"newValue"}]'
+  atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <uuid1>,<uuid2>
 `;
 
 /** Get help text for the given level. */

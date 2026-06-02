@@ -2548,3 +2548,45 @@
 - [x] 🔴 🧩 Jira: B994 expose DELETE /rest/security/1.0/bulkByProperties
   - **Impl:** `BulkByPropertiesResource.deleteSecurityByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-security --properties key=value`.
   - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `VulnerabilityResource`.
+- [x] 🔴 🧩 API: B837 Jira: expose DELETE /rest/api/3/workflow/{entityId}
+  - **Impl:** `WorkflowsResource.deleteWorkflow(entityId)` → void (204). CLI: `atlas jira workflows delete <entityId>`. Endpoint: `DELETE /rest/api/3/workflow/{entityId}`. Spec-verified: 204 No Content on success.
+  - **Rat:** Spec-verified from jira-platform-v3.json. Additive extension to existing WorkflowsResource.
+- [x] 🔴 🧩 API: B838 Jira: expose GET /rest/api/3/workflow/{workflowId}/project/{projectId}/issueTypeUsages
+  - **Impl:** `WorkflowsResource.getIssueTypeUsages(workflowId, projectId, params?)` → `WorkflowProjectIssueTypeUsage`. CLI: `atlas jira workflows issue-type-usages <workflowId> <projectId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — issue-type values contain only `id`.
+- [x] 🔴 🧩 API: B839 Jira: expose GET /rest/api/3/workflow/{workflowId}/projectUsages
+  - **Impl:** `WorkflowsResource.getProjectUsages(workflowId, params?)` → `WorkflowProjectUsage`. CLI: `atlas jira workflows project-usages <workflowId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, projects: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — project values contain only `id`.
+- [x] 🔴 🧩 API: B840 Jira: expose GET /rest/api/3/workflow/{workflowId}/workflowSchemes
+  - **Impl:** `WorkflowsResource.getWorkflowSchemeUsages(workflowId, params?)` → `WorkflowSchemeUsage`. CLI: `atlas jira workflows workflow-scheme-usages <workflowId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, workflowSchemes: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — workflow-scheme values contain only `id`.
+- [x] 🔴 🧩 API: B934 Jira: expose GET /rest/api/3/workflow/search
+  - **Impl:** Already implemented as `WorkflowsResource.list()` (prior to this PR). CLI: `atlas jira workflows list`. Spec note: endpoint is `deprecated: true` (removal planned June 1 2026 per changelog) but list() correctly covers it.
+  - **Rat:** Already-covered/stale-backlog. The existing `list()` calls `GET ${baseUrl}/workflow/search` with all documented query params (startAt, maxResults, expand, queryString, orderBy, isActive). No duplicate method added.
+- [x] 🔴 🧩 API: B939 Jira: expose GET /rest/atlassian-connect/1/addons/{addonKey}/properties
+  - **Impl:** `AddonsResource.listProperties(addonKey)` → `AddonPropertyKeys` (`{ keys?: AddonPropertyKey[] }`). CLI: `atlas jira addons list-properties <addonKey>`. Base URL reuses `serviceRegistryBaseUrl` (`/rest/atlassian-connect/1`).
+  - **Rat:** Spec-verified: `PropertyKeys` schema, GET returns array of `{ key, self }` pairs. Reserved key `connect_client_key_*` excluded by API.
+- [x] 🔴 🧩 API: B940 Jira: expose DELETE /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.deleteProperty(addonKey, propertyKey)` → void (204). CLI: `atlas jira addons delete-property <addonKey> <propertyKey>`. Both keys URL-encoded.
+  - **Rat:** Spec-verified: 204 No Content on success. Reserved keys return 403.
+- [x] 🔴 🧩 API: B941 Jira: expose GET /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.getProperty(addonKey, propertyKey)` → `AddonProperty` (`{ key?, value? }`). CLI: `atlas jira addons get-property <addonKey> <propertyKey>`. Value is arbitrary JSON (`unknown`).
+  - **Rat:** Spec-verified: `EntityProperty` schema, value is opaque JSON blob. Reserved `connect_client_key_*` returns synthetic clientKey value.
+- [x] 🔴 🧩 API: B942 Jira: expose PUT /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.setProperty(addonKey, propertyKey, value)` → `AddonPropertyOperationMessage` (`{ message, statusCode }`). Sends `value` as raw JSON body (schema `{}`). CLI: `atlas jira addons set-property <addonKey> <propertyKey> --value '<json>'`. Returns 200 (update) or 201 (create).
+  - **Rat:** Spec-verified: requestBody schema is `{}` (arbitrary JSON), raw value sent as body matching `app.ts` Forge property pattern. `--value` flag already registered in `router.ts`.
+- [x] 🔴 🧩 API: B946 expose GET /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
+  - **Impl:** `MigrationResource.getMigrationTask(connectKey, jiraIssueFieldsKey)` → `MigrationTaskProgress`. CLI: `atlas jira migration get-task <connectKey> <jiraIssueFieldsKey>`. Uses serviceRegistryBaseUrl (`/rest/atlassian-connect/1`). No header required.
+  - **Rat:** Spec-verified: GET returns TaskProgress (status, progress, elapsedRuntime etc). Connect-to-Forge field migration tracking endpoint. No deprecated flag.
+- [x] 🔴 🧩 API: B947 expose POST /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
+  - **Impl:** `MigrationResource.submitMigrationTask(connectKey, jiraIssueFieldsKey)` → void (202). CLI: `atlas jira migration submit-task <connectKey> <jiraIssueFieldsKey>`. No request body, no header required.
+  - **Rat:** Spec-verified: 202 Accepted, no response body. Triggers background migration of Connect issue field data to Forge custom field.
+- [x] 🔴 🧩 API: B948 expose PUT /rest/atlassian-connect/1/migration/field
+  - **Impl:** `MigrationResource.updateIssueFields(transferId, body)` → unknown (200). CLI: `atlas jira migration update-fields --transfer-id <uuid> --update-value-list <JSON>`. Header `Atlassian-Transfer-Id` (UUID) is REQUIRED — passed via transport `headers:` option. Body: `ConnectCustomFieldValues { updateValueList: ConnectCustomFieldValue[] }`.
+  - **Rat:** Spec-verified: PUT requires `Atlassian-Transfer-Id` header (in: header, required: true, format: uuid). Bulk update custom field values on issues for Connect app migration.
+- [x] 🔴 🧩 API: B949 expose PUT /rest/atlassian-connect/1/migration/properties/{entityType}
+  - **Impl:** `MigrationResource.updateEntityProperties(transferId, entityType, properties)` → void (200). CLI: `atlas jira migration update-properties <entityType> --transfer-id <uuid> --value <JSON>`. Header `Atlassian-Transfer-Id` required. Body: array of `EntityPropertyDetails { entityId, key, value }`. entityType is enum of 9 values.
+  - **Rat:** Spec-verified: PUT requires `Atlassian-Transfer-Id` header. Body is `array` (not wrapped object) of EntityPropertyDetails. Up to 50 updates per request.
+- [x] 🔴 🧩 API: B950 expose POST /rest/atlassian-connect/1/migration/workflow/rule/search
+  - **Impl:** `MigrationResource.searchWorkflowRules(transferId, body)` → `WorkflowRulesSearchDetails`. CLI: `atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <csv-uuids> [--expand transition]`. Header `Atlassian-Transfer-Id` required.
+  - **Rat:** Spec-verified: POST requires `Atlassian-Transfer-Id` header. Body: `WorkflowRulesSearch { workflowEntityId (uuid, required), ruleIds (array, 1-10, required), expand? (string) }`. Returns `WorkflowRulesSearchDetails { workflowEntityId?, invalidRules?, validRules? }`.
