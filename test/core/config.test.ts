@@ -214,7 +214,7 @@ describe('resolveConfig', () => {
     it('throws ValidationError when retryDelay is 0', () => {
       expect(() => resolveConfig({ ...validBasicConfig, retryDelay: 0 })).toThrow(ValidationError);
       expect(() => resolveConfig({ ...validBasicConfig, retryDelay: 0 })).toThrow(
-        'retryDelay must be a positive number',
+        'retryDelay must be a finite positive number',
       );
     });
 
@@ -228,6 +228,15 @@ describe('resolveConfig', () => {
       const config = { ...validBasicConfig, retryDelay: 'fast' } as unknown as ClientConfig;
       expect(() => resolveConfig(config)).toThrow(ValidationError);
     });
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+      'throws ValidationError when retryDelay is non-finite: %s',
+      (retryDelay) => {
+        expect(() => resolveConfig({ ...validBasicConfig, retryDelay })).toThrow(
+          'retryDelay must be a finite positive number',
+        );
+      },
+    );
   });
 
   describe('allowedHosts (B034)', () => {

@@ -154,8 +154,8 @@ function validateConfig(config: ClientConfig): void {
   }
 
   if (config.retryDelay !== undefined) {
-    if (typeof config.retryDelay !== 'number' || config.retryDelay <= 0) {
-      throw new ValidationError('retryDelay must be a positive number');
+    if (!Number.isFinite(config.retryDelay) || config.retryDelay <= 0) {
+      throw new ValidationError('retryDelay must be a finite positive number');
     }
   }
 
