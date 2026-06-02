@@ -403,4 +403,10 @@ describe('createCacheMiddleware option validation', () => {
   it('throws ValidationError when ttl is negative', () => {
     expect(() => createCacheMiddleware({ ttl: -100 })).toThrow('ttl must be a positive number');
   });
+
+  it('throws ValidationError when ttl is NaN', () => {
+    expect(() => createCacheMiddleware({ ttl: Number.NaN })).toThrow(
+      'ttl must be a positive number',
+    );
+  });
 });
