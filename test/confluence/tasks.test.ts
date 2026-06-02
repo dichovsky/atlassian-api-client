@@ -35,7 +35,7 @@ describe('TasksResource', () => {
       });
     });
 
-    it('calls GET /tasks with all supported params', async () => {
+    it('remaps camelCase filters onto the kebab-case wire query params', async () => {
       const payload = { results: [], _links: {} };
       transport.respondWith(payload);
       const params = {
@@ -60,7 +60,34 @@ describe('TasksResource', () => {
       const result = await resource.list(params);
 
       expect(result).toEqual(payload);
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      // Confluence v2 GET /tasks expects kebab-case query params; sending
+      // camelCase is silently ignored by the server (returns unfiltered tasks).
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'storage',
+        'include-blank-tasks': true,
+        status: 'incomplete',
+        'task-id': 100,
+        'space-id': 'SPACE',
+        'page-id': 'PAGE',
+        'blogpost-id': 'BLOG',
+        'created-by': 'user-1',
+        'assigned-to': 'user-2',
+        'completed-by': 'user-3',
+        'created-at-from': '2024-01-01T00:00:00Z',
+        'created-at-to': '2024-12-31T23:59:59Z',
+        'due-at-from': '2024-06-01T00:00:00Z',
+        'due-at-to': '2024-06-30T23:59:59Z',
+        cursor: 'abc',
+        limit: 25,
+      });
+    });
+
+    it('omits the query bag entirely when no params are given', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list();
+
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('throws RangeError for invalid limit', async () => {
@@ -139,17 +166,23 @@ describe('TasksResource', () => {
       expect(transport.calls).toHaveLength(2);
     });
 
-    it('passes params to the first request', async () => {
+    it('passes params to the first request, remapping camelCase filters to kebab-case', async () => {
       transport.respondWith({ results: [], _links: {} });
 
-      for await (const _ of resource.listAll({ status: 'incomplete', limit: 10 })) {
+      for await (const _ of resource.listAll({
+        status: 'incomplete',
+        limit: 10,
+        spaceId: 'SPACE',
+      })) {
         /* consume */
       }
 
       expect(transport.calls[0]?.options.query).toMatchObject({
         status: 'incomplete',
         limit: 10,
+        'space-id': 'SPACE',
       });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('spaceId');
     });
 
     it('propagates the cursor on subsequent requests', async () => {

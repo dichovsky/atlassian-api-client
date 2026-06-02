@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "4ea38d90026e21fcefd92704bb10b58b99e008ae8ef39a9a5beca031eceb5f6e",
+  "sourceHash": "ccd200663489fd4d93242a0e068c5d79e80e5c69f77e3879c0c89c5bcfc28bb9",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -9308,36 +9308,49 @@
       "path": "src/confluence/resources/tasks.ts",
       "symbols": [
         {
+          "name": "Query",
+          "kind": "type",
+          "line": 7,
+          "signature": "type Query = Record<string, string | number | boolean | undefined>;"
+        },
+        {
+          "name": "buildTasksQuery",
+          "kind": "function",
+          "line": 17,
+          "signature": "function buildTasksQuery(params?: ListTasksParams): Query | undefined",
+          "jsdoc": "Map the ergonomic camelCase `ListTasksParams` filters onto the kebab-case query parameters the Confluence v2 `GET /tasks` endpoint expects. Sending the camelCase names (`spaceId`, `pageId`, ...) is silently ignored by the server, which then returns tasks from every space/page instead of the requested ones. Keys already in wire form (`body-format`, `status`, `cursor`, `limit`) pass through unchanged."
+        },
+        {
           "name": "TasksResource",
           "kind": "class",
-          "line": 7,
+          "line": 50,
           "exported": true,
           "signature": "export class TasksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 8
+              "line": 51
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 14
+              "line": 57
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 25
+              "line": 68
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 35
+              "line": 78
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 45
+              "line": 88
             }
           ]
         }
