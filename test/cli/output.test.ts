@@ -538,6 +538,25 @@ describe('printOutput — B027 TTY sanitisation', () => {
     }
   });
 
+  it('sanitises control bytes in the primitive-array table branch when stdout is a TTY', () => {
+    // The non-object array branch (primitive/null elements) must keep the
+    // B027/B032 control-byte sanitisation that the columnar branch applies.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      printOutput([`${ESC}]0;pwned${BEL}evil`], 'table');
+      const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(all).not.toContain(`${ESC}`);
+      expect(all).toContain('\\x1B');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
   it('sanitises control bytes in minimal format when stdout is a TTY', () => {
     const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
