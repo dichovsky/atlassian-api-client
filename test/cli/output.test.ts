@@ -289,6 +289,57 @@ describe('printOutput', () => {
       const allOutput = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
       expect(allOutput).toContain('1');
     });
+
+    // Regression: a columnar table can only be derived from keyed objects.
+    // `Object.keys(data[0])` threw a TypeError when the first element was
+    // `null`, and produced per-character "columns" for primitive strings,
+    // while a `null` element anywhere crashed the row read. The json and
+    // minimal formats already handle these inputs; table must too.
+    it('does not throw and lists values when the first array element is null', () => {
+      // Act & Assert — pre-fix this threw "Cannot convert undefined or null to object"
+      expect(() => printOutput([null], 'table')).not.toThrow();
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      expect(calls).toContain('null\n');
+    });
+
+    it('lists primitive string array items one per line (no per-character columns)', () => {
+      // Act
+      printOutput(['PROJ-1', 'PROJ-2'], 'table');
+
+      // Assert — each value on its own line, like minimal/json
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      expect(calls).toContain('PROJ-1\n');
+      expect(calls).toContain('PROJ-2\n');
+    });
+
+    it('lists primitive number array items one per line', () => {
+      // Act
+      printOutput([42, 7], 'table');
+
+      // Assert
+      const calls = stdoutWrite.mock.calls.map((c) => c[0] as string);
+      expect(calls).toContain('42\n');
+      expect(calls).toContain('7\n');
+    });
+
+    it('does not throw when an object array contains a null element', () => {
+      // Arrange — first row is a keyed object (columnar path), later row is null
+      const data = [{ id: '1', key: 'PROJ-1' }, null];
+
+      // Act & Assert — pre-fix the row read `(null)['id']` threw
+      expect(() => printOutput(data, 'table')).not.toThrow();
+      const allOutput = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(allOutput).toContain('PROJ-1');
+    });
+
+    it('does not throw when an object array contains a primitive element', () => {
+      // Arrange — first row is an object, later row is a bare string
+      const data = [{ id: '1' }, 'stray'];
+
+      // Act & Assert
+      expect(() => printOutput(data, 'table')).not.toThrow();
+      expect(stdoutWrite).toHaveBeenCalled();
+    });
   });
 });
 
@@ -475,6 +526,25 @@ describe('printOutput — B027 TTY sanitisation', () => {
     Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
     try {
       printOutput([{ id: '1', summary: `${ESC}]0;pwned${BEL}evil` }], 'table');
+      const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
+      expect(all).not.toContain(`${ESC}`);
+      expect(all).toContain('\\x1B');
+    } finally {
+      if (ttyDescriptor) {
+        Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    }
+  });
+
+  it('sanitises control bytes in the primitive-array table branch when stdout is a TTY', () => {
+    // The non-object array branch (primitive/null elements) must keep the
+    // B027/B032 control-byte sanitisation that the columnar branch applies.
+    const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+    Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
+    try {
+      printOutput([`${ESC}]0;pwned${BEL}evil`], 'table');
       const all = stdoutWrite.mock.calls.map((c) => c[0] as string).join('');
       expect(all).not.toContain(`${ESC}`);
       expect(all).toContain('\\x1B');

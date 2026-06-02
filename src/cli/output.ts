@@ -132,6 +132,18 @@ export function sanitizeForJson(value: string, isTty: boolean): string {
   return chunks.join('');
 }
 
+/**
+ * Read a column cell from a table row. Returns `undefined` when the row is not
+ * a keyed object (a `null` or primitive element inside an otherwise-object
+ * array) so reading `null[key]` cannot throw and a stray primitive renders as
+ * an empty cell instead of crashing the whole table.
+ */
+function cellValue(row: unknown, key: string): unknown {
+  return row !== null && typeof row === 'object'
+    ? (row as Record<string, unknown>)[key]
+    : undefined;
+}
+
 function printTable(data: unknown): void {
   const isTty = stdoutIsTty();
   if (Array.isArray(data)) {
@@ -139,7 +151,18 @@ function printTable(data: unknown): void {
       process.stdout.write('(empty)\n');
       return;
     }
-    const firstRow = data[0] as Record<string, unknown>;
+    // A columnar table can only be derived from keyed objects. When the first
+    // element is `null` or a primitive there are no columns: `Object.keys(null)`
+    // throws and `Object.keys('ab')` yields per-character indices that render as
+    // garbage columns. Fall back to one stringified value per line — matching
+    // `printMinimal`/`printJson`, which already handle these inputs gracefully.
+    const firstRow = data[0];
+    if (firstRow === null || typeof firstRow !== 'object') {
+      for (const item of data) {
+        process.stdout.write(sanitizeForTerminal(String(item), isTty) + '\n');
+      }
+      return;
+    }
     const keys = Object.keys(firstRow);
     // PR review: column widths must be computed from SANITISED string
     // lengths. If a header key or row value contains control bytes, the
@@ -151,7 +174,7 @@ function printTable(data: unknown): void {
       let max = (safeKeys[i] as string).length;
       const key = keys[i] as string;
       for (const row of data) {
-        const val = sanitizeForTerminal(String((row as Record<string, unknown>)[key] ?? ''), isTty);
+        const val = sanitizeForTerminal(String(cellValue(row, key) ?? ''), isTty);
         if (val.length > max) max = val.length;
       }
       widths.push(max);
@@ -165,7 +188,7 @@ function printTable(data: unknown): void {
     for (const row of data) {
       const line = keys
         .map((k, i) => {
-          const val = sanitizeForTerminal(String((row as Record<string, unknown>)[k] ?? ''), isTty);
+          const val = sanitizeForTerminal(String(cellValue(row, k) ?? ''), isTty);
           return val.padEnd(widths[i] as number);
         })
         .join('  ');
