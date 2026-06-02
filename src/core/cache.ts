@@ -62,7 +62,7 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
   if (!Number.isInteger(maxSize) || maxSize < 1) {
     throw new ValidationError('CacheOptions.maxSize must be a positive integer');
   }
-  if (typeof ttl !== 'number' || ttl <= 0) {
+  if (typeof ttl !== 'number' || !Number.isFinite(ttl) || ttl <= 0) {
     throw new ValidationError('CacheOptions.ttl must be a positive number');
   }
 
