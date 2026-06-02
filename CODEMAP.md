@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "d4530ad8cd6c887fb1a1ab14cbdb187e59ab50cf9e27faa82130d75ceeef4d83",
+  "sourceHash": "8f12b2603b832b3e78e1182ed6212d0e16abf4174690f88b95fba1aff34a67d5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -12060,9 +12060,16 @@
           "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
         },
         {
+          "name": "encodeRfc3986",
+          "kind": "function",
+          "line": 112,
+          "signature": "function encodeRfc3986(value: string): string",
+          "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
+        },
+        {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 100,
+          "line": 119,
           "signature": "function base64UrlEncode(input: string): string"
         }
       ],
