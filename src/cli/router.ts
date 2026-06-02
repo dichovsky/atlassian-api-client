@@ -245,8 +245,14 @@ const GLOBAL_OPTIONS = {
   user: { type: 'string' as const },
   group: { type: 'string' as const },
   swap: { type: 'string' as const },
-  // workflows options (B837-B840)
+  // workflows options (B837-B840, B841-B845)
   'is-active': { type: 'string' as const },
+  'workflow-id': { type: 'string' as const },
+  'workflow-names': { type: 'string' as const },
+  'with-tags': { type: 'string' as const },
+  draft: { type: 'boolean' as const },
+  workflows: { type: 'string' as const },
+  types: { type: 'string' as const },
   // resolution options (B931, B712-B718)
   'query-string': { type: 'string' as const },
   'only-default': { type: 'boolean' as const },
