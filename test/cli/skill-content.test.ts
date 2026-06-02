@@ -300,6 +300,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'latest',
           'remote-link',
           'service-registry',
+          'addons',
           'exists-by-properties',
           'repository',
           'app',
@@ -336,6 +337,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'pipelines',
           'linked-workspaces',
           'bulk-by-properties',
+          'migration',
         ]).toContain(parsed.resource);
       }
     });
@@ -436,6 +438,7 @@ describe('Resource coverage drift check', () => {
     'latest',
     'remote-link',
     'service-registry',
+    'addons',
     'exists-by-properties',
     'repository',
     'app',
@@ -472,6 +475,7 @@ describe('Resource coverage drift check', () => {
     'pipelines',
     'linked-workspaces',
     'bulk-by-properties',
+    'migration',
   ]) {
     it(`Jira resource '${resource}' is documented in reference/jira.md`, () => {
       if (!jiraResources.includes(resource)) {

@@ -920,3 +920,23 @@ export type {
   BulkByPropertiesBaseUrls,
 } from './resources/bulk-by-properties.js';
 export { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
+export type {
+  MigrationTaskProgress,
+  ConnectCustomFieldValueType,
+  ConnectCustomFieldValue,
+  UpdateCustomFieldValuesBody,
+  MigrationEntityType,
+  EntityPropertyDetails,
+  WorkflowRulesSearch,
+  AppWorkflowTransitionRule,
+  WorkflowTransitionRules,
+  WorkflowRulesSearchDetails,
+} from './resources/migration.js';
+export { MigrationResource } from './resources/migration.js';
+export type {
+  AddonPropertyKey,
+  AddonPropertyKeys,
+  AddonProperty,
+  AddonPropertyOperationMessage,
+} from './resources/addons.js';
+export { AddonsResource } from './resources/addons.js';

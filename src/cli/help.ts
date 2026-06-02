@@ -254,6 +254,7 @@ RESOURCES:
   latest                 bulk-worklog
   remote-link            get, delete
   service-registry       get
+  addons                 list-properties, get-property, set-property, delete-property
   exists-by-properties   get
   repository             get, delete, delete-entity
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
@@ -292,6 +293,7 @@ RESOURCES:
   pipelines              get-build, delete-build, get-deployment, delete-deployment, get-deployment-gating-status
   linked-workspaces      list-operations, bulk-delete-operations, bulk-create-operations, list-security, get-security, bulk-delete-security, bulk-create-security
   bulk-by-properties     delete-builds, delete-deployments, delete-devinfo, delete-devops-components, delete-feature-flags, delete-operations, delete-remote-links, delete-security
+  migration              get-task, submit-task, update-fields, update-properties, search-workflow-rules
 
 EXAMPLES:
   atlas jira issues get PROJ-123
@@ -336,6 +338,10 @@ EXAMPLES:
   atlas jira remote-link get rl-123
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
+  atlas jira addons list-properties my-connect-app
+  atlas jira addons get-property my-connect-app my-setting
+  atlas jira addons set-property my-connect-app my-setting --value '{"enabled":true}'
+  atlas jira addons delete-property my-connect-app my-setting
   atlas jira exists-by-properties get --entity-type repository
   atlas jira repository get my-repo-123
   atlas jira repository delete my-repo-123
@@ -651,6 +657,11 @@ EXAMPLES:
   atlas jira bulk-by-properties delete-operations --properties accountId=account-123
   atlas jira bulk-by-properties delete-remote-links --properties accountId=account-123
   atlas jira bulk-by-properties delete-security --properties accountId=account-123
+  atlas jira migration get-task com.example.app my-custom-field
+  atlas jira migration submit-task com.example.app my-custom-field
+  atlas jira migration update-fields --transfer-id <uuid> --update-value-list '[{"_type":"StringIssueField","issueID":10001,"fieldID":10076,"string":"new"}]'
+  atlas jira migration update-properties IssueProperty --transfer-id <uuid> --value '[{"entityId":123,"key":"mykey","value":"newValue"}]'
+  atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <uuid1>,<uuid2>
 `;
 
 /** Get help text for the given level. */

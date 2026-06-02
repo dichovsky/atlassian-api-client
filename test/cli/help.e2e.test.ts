@@ -120,6 +120,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   latest: 'executeLatest',
   'remote-link': 'executeRemoteLink',
   'service-registry': 'executeServiceRegistry',
+  addons: 'executeAddons',
   'exists-by-properties': 'executeExistsByProperties',
   repository: 'executeRepository',
   dashboards: 'executeDashboards',
@@ -159,6 +160,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   pipelines: 'executePipelines',
   'linked-workspaces': 'executeLinkedWorkspaces',
   'bulk-by-properties': 'executeBulkByProperties',
+  migration: 'executeMigration',
 };
 
 /**

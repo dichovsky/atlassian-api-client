@@ -453,6 +453,11 @@ const GLOBAL_OPTIONS = {
   'project-permissions': { type: 'string' as const },
   // linked-workspaces options (B984-B986, B995-B998)
   'workspace-ids': { type: 'string' as const },
+  // migration options (B946-B950)
+  'transfer-id': { type: 'string' as const },
+  'update-value-list': { type: 'string' as const },
+  'workflow-entity-id': { type: 'string' as const },
+  'rule-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
