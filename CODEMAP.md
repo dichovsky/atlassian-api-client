@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "67d51f347d49ee4808695b51102786301ae3a83ecbe5eae5791864001f29343f",
+  "sourceHash": "c10f422dc19c1963b2ba063fbd048ebfc03f1f9e77da2ed0e07229d83689f3dc",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -12056,7 +12056,7 @@
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 99,
+          "line": 100,
           "signature": "function base64UrlEncode(input: string): string"
         }
       ],

@@ -78,17 +78,18 @@ export function computeQsh(
   const canonicalPath = questionMark >= 0 ? path.slice(0, questionMark) : path;
 
   const canonicalQuery = query
-    ? Object.entries(query)
-        .filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined)
-        // Sort by codepoint, NOT locale-aware/case-insensitively. The Atlassian
-        // Connect QSH spec requires `sort(["a","A","b","B"]) => ["A","B","a","b"]`
-        // (uppercase before lowercase) and the reference impl uses a plain
-        // `Array.sort()` (UTF-16 code-unit order). `localeCompare` produces the
-        // opposite order, yielding a qsh the server cannot reproduce → JWT
-        // rejected (401). Keys from `Object.entries` are unique, so the `a === b`
-        // case never arises and a two-way comparator is sufficient.
-        .sort(([a], [b]) => (a < b ? -1 : 1))
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    ? Object.keys(query)
+        .filter((key) => query[key] !== undefined)
+        // Sort keys by codepoint (UTF-16 code-unit) order, which is what the
+        // Atlassian Connect QSH spec requires:
+        //   sort(["a","A","b","B"]) => ["A","B","a","b"]
+        // The reference impl (`atlassian-jwt`) does exactly `Object.keys(q).sort()`,
+        // so the built-in default comparator is used here verbatim. The previous
+        // `localeCompare` is locale/collation-dependent and does not reliably
+        // produce codepoint order, so it yielded a qsh the server cannot
+        // reproduce → JWT rejected (401).
+        .sort()
+        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(query[key]))}`)
         .join('&')
     : '';
 

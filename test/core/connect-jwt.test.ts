@@ -69,11 +69,12 @@ describe('computeQsh', () => {
   });
 
   // The Atlassian Connect QSH canonicalization sorts query parameters by
-  // codepoint, NOT locale-aware / case-insensitively. The spec states
-  // verbatim: "Sorting is by codepoint: sort(["a","A","b","B"]) =>
-  // ["A","B","a","b"]" — so uppercase keys (e.g. 'A' = U+0041) must sort
-  // before lowercase (e.g. 'a' = U+0061). A locale-aware sort produces the
-  // opposite order, yielding a qsh the server cannot reproduce (→ 401).
+  // codepoint (UTF-16 code-unit) order. The spec states verbatim:
+  // "Sorting is by codepoint: sort(["a","A","b","B"]) => ["A","B","a","b"]"
+  // — so uppercase keys (e.g. 'A' = U+0041) sort before lowercase
+  // (e.g. 'a' = U+0061). `localeCompare` is locale/collation-dependent and
+  // does not reliably produce codepoint order, so it yields a qsh the server
+  // cannot reproduce (→ 401).
   // https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
   it('orders an uppercase query key before its lowercase counterpart (codepoint sort)', () => {
     const expected = createHash('sha256').update('GET&/path&A=2&a=1').digest('hex');
