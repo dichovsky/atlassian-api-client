@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "1894e9c175dd4d00b5305704d67b80cfe5c42fd8f93bdf427d25b25157217b7a",
+  "sourceHash": "e6a4713fae9a0987c7e2c78e500bca2ed710209c6e357e9382e240c259dc33ca",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2262,7 +2262,7 @@
       "name": "ListWorkflowsParams",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 103,
+      "line": 104,
       "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…",
       "typeOnly": true
     },
@@ -3204,7 +3204,7 @@
       "name": "Workflow",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 89,
+      "line": 90,
       "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…",
       "typeOnly": true
     },
@@ -3212,7 +3212,7 @@
       "name": "WorkflowStatus",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 83,
+      "line": 84,
       "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…",
       "typeOnly": true
     },
@@ -3220,7 +3220,7 @@
       "name": "WorkflowTransition",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 71,
+      "line": 72,
       "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…",
       "typeOnly": true
     },
@@ -31854,7 +31854,7 @@
         {
           "name": "WorkflowIssueTypeUsage",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface WorkflowIssueTypeUsage { readonly id: string; }",
           "jsdoc": "A single issue-type entry in the issueTypeUsages response."
@@ -31862,7 +31862,7 @@
         {
           "name": "WorkflowIssueTypeUsagePage",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface WorkflowIssueTypeUsagePage { readonly values: WorkflowIssueTypeUsage[]; readonly nextPageToken?: string…",
           "jsdoc": "Cursor-paginated page of issue types using the workflow in a project."
@@ -31870,7 +31870,7 @@
         {
           "name": "WorkflowProjectIssueTypeUsage",
           "kind": "interface",
-          "line": 20,
+          "line": 21,
           "exported": true,
           "signature": "export interface WorkflowProjectIssueTypeUsage { readonly workflowId: string; readonly projectId: string; readonly issue…",
           "jsdoc": "Response for GET /workflow/{workflowId}/project/{projectId}/issueTypeUsages (B838)."
@@ -31878,7 +31878,7 @@
         {
           "name": "WorkflowProjectUsageItem",
           "kind": "interface",
-          "line": 29,
+          "line": 30,
           "exported": true,
           "signature": "export interface WorkflowProjectUsageItem { readonly id: string; }",
           "jsdoc": "A single project entry in the projectUsages response."
@@ -31886,7 +31886,7 @@
         {
           "name": "WorkflowProjectUsagePage",
           "kind": "interface",
-          "line": 34,
+          "line": 35,
           "exported": true,
           "signature": "export interface WorkflowProjectUsagePage { readonly values: WorkflowProjectUsageItem[]; readonly nextPageToken?: string…",
           "jsdoc": "Cursor-paginated page of projects using the workflow."
@@ -31894,7 +31894,7 @@
         {
           "name": "WorkflowProjectUsage",
           "kind": "interface",
-          "line": 40,
+          "line": 41,
           "exported": true,
           "signature": "export interface WorkflowProjectUsage { readonly workflowId: string; readonly projects: WorkflowProjectUsagePage; }",
           "jsdoc": "Response for GET /workflow/{workflowId}/projectUsages (B839)."
@@ -31902,7 +31902,7 @@
         {
           "name": "WorkflowSchemeUsageItem",
           "kind": "interface",
-          "line": 48,
+          "line": 49,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsageItem { readonly id: string; }",
           "jsdoc": "A single workflow-scheme entry in the workflowSchemes response."
@@ -31910,7 +31910,7 @@
         {
           "name": "WorkflowSchemeUsagePage",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsagePage { readonly values: WorkflowSchemeUsageItem[]; readonly nextPageToken?: string; …",
           "jsdoc": "Cursor-paginated page of workflow schemes using the workflow."
@@ -31918,7 +31918,7 @@
         {
           "name": "WorkflowSchemeUsage",
           "kind": "interface",
-          "line": 59,
+          "line": 60,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsage { readonly workflowId: string; readonly workflowSchemes: WorkflowSchemeUsagePage; }",
           "jsdoc": "Response for GET /workflow/{workflowId}/workflowSchemes (B840)."
@@ -31926,79 +31926,79 @@
         {
           "name": "WorkflowUsagesParams",
           "kind": "interface",
-          "line": 66,
+          "line": 67,
           "exported": true,
           "signature": "export interface WorkflowUsagesParams { readonly nextPageToken?: string; readonly maxResults?: number; }"
         },
         {
           "name": "WorkflowTransition",
           "kind": "interface",
-          "line": 71,
+          "line": 72,
           "exported": true,
           "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…"
         },
         {
           "name": "WorkflowStatus",
           "kind": "interface",
-          "line": 83,
+          "line": 84,
           "exported": true,
           "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…"
         },
         {
           "name": "Workflow",
           "kind": "interface",
-          "line": 89,
+          "line": 90,
           "exported": true,
           "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…"
         },
         {
           "name": "ListWorkflowsParams",
           "kind": "interface",
-          "line": 103,
+          "line": 104,
           "exported": true,
           "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…"
         },
         {
           "name": "WorkflowsResource",
           "kind": "class",
-          "line": 112,
+          "line": 113,
           "exported": true,
           "signature": "export class WorkflowsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 113
+              "line": 114
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 119
+              "line": 120
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 140
+              "line": 141
             },
             {
               "name": "deleteWorkflow",
               "kind": "method",
-              "line": 157
+              "line": 158
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 168
+              "line": 169
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 188
+              "line": 189
             },
             {
               "name": "getWorkflowSchemeUsages",
               "kind": "method",
-              "line": 207
+              "line": 208
             }
           ]
         }
@@ -32006,6 +32006,7 @@
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },

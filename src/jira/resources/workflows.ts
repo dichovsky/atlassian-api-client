@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { NotFoundError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
@@ -157,7 +158,7 @@ export class WorkflowsResource {
   async deleteWorkflow(entityId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/workflow/${encodeURIComponent(entityId)}`,
+      path: `${this.baseUrl}/workflow/${encodePathSegment(entityId, 'entityId')}`,
     });
   }
 
@@ -175,7 +176,7 @@ export class WorkflowsResource {
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const resp = await this.transport.request<WorkflowProjectIssueTypeUsage>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/project/${encodeURIComponent(projectId)}/issueTypeUsages`,
+      path: `${this.baseUrl}/workflow/${encodePathSegment(workflowId, 'workflowId')}/project/${encodePathSegment(projectId, 'projectId')}/issueTypeUsages`,
       query,
     });
     return resp.data;
@@ -194,7 +195,7 @@ export class WorkflowsResource {
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const resp = await this.transport.request<WorkflowProjectUsage>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/projectUsages`,
+      path: `${this.baseUrl}/workflow/${encodePathSegment(workflowId, 'workflowId')}/projectUsages`,
       query,
     });
     return resp.data;
@@ -213,7 +214,7 @@ export class WorkflowsResource {
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     const resp = await this.transport.request<WorkflowSchemeUsage>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow/${encodeURIComponent(workflowId)}/workflowSchemes`,
+      path: `${this.baseUrl}/workflow/${encodePathSegment(workflowId, 'workflowId')}/workflowSchemes`,
       query,
     });
     return resp.data;
