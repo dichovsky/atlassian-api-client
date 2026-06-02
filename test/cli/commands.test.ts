@@ -11558,6 +11558,61 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    // Regression (fix/cli-start-at-zero): `--start-at` is a 0-based Jira offset, so
+    // `--start-at 0` (the first page, and the documented default) must be accepted.
+    // 21 actions across distinct handlers validated it with asPositiveInt (which
+    // rejects 0) instead of asNonNegativeInt; this block locks in the boundary for a
+    // representative spread covering the distinct handler functions.
+    describe('--start-at 0 is accepted (0-based offset)', () => {
+      it('boards get-issues forwards startAt: 0', async () => {
+        jiraBoardsMock.getIssues.mockResolvedValue({ values: [] });
+        await executeJiraCommand(cmd('boards', 'get-issues', ['42'], { 'start-at': '0' }), GLOBALS);
+        expect(jiraBoardsMock.getIssues).toHaveBeenCalledWith(
+          42,
+          expect.objectContaining({ startAt: 0 }),
+        );
+      });
+
+      it('sprints get-issues forwards startAt: 0', async () => {
+        jiraSprintsMock.getIssues.mockResolvedValue({ values: [] });
+        await executeJiraCommand(cmd('sprints', 'get-issues', ['7'], { 'start-at': '0' }), GLOBALS);
+        expect(jiraSprintsMock.getIssues).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ startAt: 0 }),
+        );
+      });
+
+      it('epic issues forwards startAt: 0', async () => {
+        jiraEpicMock.getIssues.mockResolvedValue({ issues: [] });
+        await executeJiraCommand(cmd('epic', 'issues', ['EPIC-1'], { 'start-at': '0' }), GLOBALS);
+        expect(jiraEpicMock.getIssues).toHaveBeenCalledWith(
+          'EPIC-1',
+          expect.objectContaining({ startAt: 0 }),
+        );
+      });
+
+      it('filters search forwards startAt: 0', async () => {
+        jiraFiltersMock.list.mockResolvedValue({ values: [] });
+        await executeJiraCommand(cmd('filters', 'search', [], { 'start-at': '0' }), GLOBALS);
+        expect(jiraFiltersMock.list).toHaveBeenCalledWith(expect.objectContaining({ startAt: 0 }));
+      });
+
+      it('groups list-members forwards startAt: 0', async () => {
+        jiraGroupsMock.listMembers.mockResolvedValue({ values: [] });
+        await executeJiraCommand(cmd('groups', 'list-members', [], { 'start-at': '0' }), GLOBALS);
+        expect(jiraGroupsMock.listMembers).toHaveBeenCalledWith(
+          expect.objectContaining({ startAt: 0 }),
+        );
+      });
+
+      it('still rejects a negative --start-at', async () => {
+        jiraBoardsMock.getIssues.mockResolvedValue({ values: [] });
+        await expect(
+          executeJiraCommand(cmd('boards', 'get-issues', ['42'], { 'start-at': '-1' }), GLOBALS),
+        ).rejects.toThrow('--start-at must be a non-negative integer');
+      });
+    });
+
     // B246: boards move-issues
     it('boards move-issues calls client.boards.moveIssues with boardId and issues', async () => {
       jiraBoardsMock.moveIssues.mockResolvedValue(undefined);

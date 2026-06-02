@@ -1364,7 +1364,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         type: asBoardType(opts['type']),
         name: asString(opts['name']),
         projectKeyOrId: asString(opts['project']),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1390,7 +1390,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.getBacklog(boardId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1401,7 +1401,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'list-epics': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listEpics(boardId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         done: asBoolFlag(opts['done']),
       });
@@ -1412,7 +1412,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.getEpicIssues(boardId, epicId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1421,7 +1421,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.getIssuesWithoutEpic(boardId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1443,7 +1443,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.getIssues(boardId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1460,14 +1460,14 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'list-projects': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listProjects(boardId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
     case 'list-projects-full': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listProjectsFull(boardId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1475,14 +1475,14 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listSprints(boardId, {
         state: asString(opts['state']),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
     case 'list-versions': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listVersions(boardId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         released: asBoolFlag(opts['released']),
       });
@@ -1496,7 +1496,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.getSprintIssues(boardId, sprintId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1531,7 +1531,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'list-quickfilters': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.listQuickFilters(boardId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1553,7 +1553,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         'filterId',
       );
       return client.boards.listByFilter(filterId, {
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1615,7 +1615,7 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
       return client.sprints.getIssues(sprintId, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1725,7 +1725,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       return client.epic.getIssues(epicIdOrKey, {
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -1755,7 +1755,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       return client.epic.getIssuesWithoutEpic({
         jql: asString(opts['jql']),
         fields: asString(opts['fields'])?.split(','),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     case 'remove-issues': {
@@ -1853,7 +1853,7 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
         : undefined;
       return client.dataPolicy.listProjectPolicies({
         ids,
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -2183,7 +2183,7 @@ async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise
         issueIdsOrKeys,
         ...(filterByAuthorAccountId !== undefined && { filterByAuthorAccountId }),
         ...(filterByFieldId !== undefined && { filterByFieldId }),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -2314,7 +2314,7 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
       const accessType = asAccessType(opts['access-type']);
       const applicationKey = asString(opts['application-key']);
       return client.groups.listBulk({
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(groupIds !== undefined ? { groupId: groupIds } : {}),
         ...(groupNames !== undefined ? { groupName: groupNames } : {}),
@@ -2327,7 +2327,7 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         ...(groupName !== undefined ? { groupname: groupName } : {}),
         ...(groupId !== undefined ? { groupId } : {}),
         includeInactiveUsers: asBoolFlag(opts['include-inactive-users']),
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
@@ -3627,7 +3627,7 @@ async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<u
             .map((s) => parsePositiveIntArg(s, '--ids'))
         : undefined;
       return client.filters.list({
-        startAt: asPositiveInt(opts['start-at'], '--start-at'),
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(asString(opts['expand']) !== undefined && { expand: asString(opts['expand']) }),
         ...(ids !== undefined && { id: ids }),
