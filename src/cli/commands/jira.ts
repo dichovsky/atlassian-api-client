@@ -38,6 +38,8 @@ import type {
   FieldAssociationsRequest,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
+  WorkflowTransitionRulesUpdateEntry,
+  WorkflowTransitionRulesDeleteEntry,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -2007,6 +2009,22 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`expected 'true' or 'false', got: ${value}`);
+}
+
+function asWorkflowMode(value: string | boolean | undefined): 'live' | 'draft' | undefined {
+  if (value === undefined) return undefined;
+  if (value === 'live' || value === 'draft') return value;
+  throw new Error(`--workflow-mode must be 'live' or 'draft'. Got: ${String(value)}`);
+}
+
+/** Require a positional arg that must be a positive integer; throws on missing or invalid input. */
+function requirePositiveInt(value: string | undefined, name: string): number {
+  const s = requireArg(value, name);
+  const n = Number(s);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(`${name} must be a positive integer, got: ${s}`);
+  }
+  return n;
 }
 
 async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -5988,7 +6006,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
   }
 }
 
-// ─── workflows (B837-B840) ─────────────────────────────────────────────────
+// ─── workflows (B837-B840, B841-B845, B846-B850, B935-B938) ──────────────────
 
 const WORKFLOWS_ACTIONS = [
   'list',
@@ -5997,6 +6015,20 @@ const WORKFLOWS_ACTIONS = [
   'issue-type-usages',
   'project-usages',
   'workflow-scheme-usages',
+  'bulk-get',
+  'capabilities',
+  'bulk-create',
+  'validate-create',
+  'default-editor',
+  'read-history',
+  'list-history',
+  'get-rule-config',
+  'update-rule-config',
+  'delete-rule-config',
+  'delete-transition-property',
+  'get-transition-properties',
+  'create-transition-property',
+  'update-transition-property',
   'preview',
   'search',
   'update',
@@ -6057,6 +6089,168 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
+    }
+
+    // B846: POST /rest/api/3/workflows
+    case 'bulk-get': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.bulkGet(
+        parseJsonObjectFlag(bodyRaw, '--body') as Parameters<typeof client.workflows.bulkGet>[0],
+      );
+    }
+
+    // B847: GET /rest/api/3/workflows/capabilities
+    case 'capabilities':
+      return client.workflows.getCapabilities({
+        workflowId: asString(opts['workflow-id']),
+        projectId: asString(opts['project-id']),
+        issueTypeId: asString(opts['issue-type-id']),
+      });
+
+    // B848: POST /rest/api/3/workflows/create
+    case 'bulk-create': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.bulkCreate(
+        parseJsonObjectFlag(bodyRaw, '--body') as Parameters<typeof client.workflows.bulkCreate>[0],
+      );
+    }
+
+    // B849: POST /rest/api/3/workflows/create/validation
+    case 'validate-create': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.validateCreate(
+        parseJsonObjectFlag(bodyRaw, '--body') as unknown as Parameters<
+          typeof client.workflows.validateCreate
+        >[0],
+      );
+    }
+
+    // B850: GET /rest/api/3/workflows/defaultEditor
+    case 'default-editor':
+      return client.workflows.getDefaultEditor();
+
+    // B841: POST /rest/api/3/workflow/history
+    case 'read-history': {
+      const workflowId = requireOpt(opts['workflow-id'], '--workflow-id');
+      const versionNumber = asPositiveInt(opts['version-number'], '--version-number');
+      return client.workflows.readWorkflowFromHistory({
+        workflowId,
+        ...(versionNumber !== undefined && { version: versionNumber }),
+      });
+    }
+
+    // B842: POST /rest/api/3/workflow/history/list
+    case 'list-history': {
+      const workflowId = requireOpt(opts['workflow-id'], '--workflow-id');
+      return client.workflows.listWorkflowHistory(
+        { workflowId },
+        { expand: asString(opts['expand']) },
+      );
+    }
+
+    // B843: GET /rest/api/3/workflow/rule/config
+    case 'get-rule-config': {
+      const typesRaw = requireOpt(opts['types'], '--types');
+      const types = typesRaw
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean) as ('postfunction' | 'condition' | 'validator')[];
+      const keysRaw = asString(opts['keys']);
+      const workflowNamesRaw = asString(opts['workflow-names']);
+      const withTagsRaw = asString(opts['with-tags']);
+      return client.workflows.getTransitionRuleConfigs({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        types,
+        keys: keysRaw ? keysRaw.split(',').map((k) => k.trim()) : undefined,
+        workflowNames: workflowNamesRaw
+          ? workflowNamesRaw.split(',').map((n) => n.trim())
+          : undefined,
+        withTags: withTagsRaw ? withTagsRaw.split(',').map((t) => t.trim()) : undefined,
+        draft: asBoolFlag(opts['draft']),
+        expand: asString(opts['expand']),
+      });
+    }
+
+    // B844: PUT /rest/api/3/workflow/rule/config
+    case 'update-rule-config': {
+      const workflowsRaw = requireOpt(opts['workflows'], '--workflows');
+      const workflows = parseJsonArrayFlag(
+        workflowsRaw,
+        '--workflows',
+      ) as WorkflowTransitionRulesUpdateEntry[];
+      return client.workflows.updateTransitionRuleConfigs({ workflows });
+    }
+
+    // B845: PUT /rest/api/3/workflow/rule/config/delete
+    case 'delete-rule-config': {
+      const workflowsRaw = requireOpt(opts['workflows'], '--workflows');
+      const workflows = parseJsonArrayFlag(
+        workflowsRaw,
+        '--workflows',
+      ) as WorkflowTransitionRulesDeleteEntry[];
+      return client.workflows.deleteTransitionRuleConfigs({ workflows });
+    }
+
+    // B935: DELETE /rest/api/3/workflow/transitions/{transitionId}/properties
+    case 'delete-transition-property': {
+      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
+      const key = requireOpt(opts['key'], '--key');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const workflowMode = asWorkflowMode(opts['workflow-mode']);
+      await client.workflows.deleteTransitionProperty(
+        transitionId,
+        key,
+        workflowName,
+        workflowMode,
+      );
+      return { deleted: true };
+    }
+
+    // B936: GET /rest/api/3/workflow/transitions/{transitionId}/properties
+    case 'get-transition-properties': {
+      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      return client.workflows.getTransitionProperties(transitionId, workflowName, {
+        includeReservedKeys:
+          opts['include-reserved-keys'] !== undefined
+            ? Boolean(opts['include-reserved-keys'])
+            : undefined,
+        key: asString(opts['key']),
+        workflowMode: asWorkflowMode(opts['workflow-mode']),
+      });
+    }
+
+    // B937: POST /rest/api/3/workflow/transitions/{transitionId}/properties
+    case 'create-transition-property': {
+      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
+      const key = requireOpt(opts['key'], '--key');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const value = requireOpt(opts['value'], '--value');
+      const workflowMode = asWorkflowMode(opts['workflow-mode']);
+      return client.workflows.createTransitionProperty(
+        transitionId,
+        key,
+        workflowName,
+        value,
+        workflowMode,
+      );
+    }
+
+    // B938: PUT /rest/api/3/workflow/transitions/{transitionId}/properties
+    case 'update-transition-property': {
+      const transitionId = requirePositiveInt(cmd.positionalArgs[0], 'transitionId');
+      const key = requireOpt(opts['key'], '--key');
+      const workflowName = requireOpt(opts['workflow-name'], '--workflow-name');
+      const value = requireOpt(opts['value'], '--value');
+      const workflowMode = asWorkflowMode(opts['workflow-mode']);
+      return client.workflows.updateTransitionProperty(
+        transitionId,
+        key,
+        workflowName,
+        value,
+        workflowMode,
+      );
     }
 
     // B851: POST /rest/api/3/workflows/preview

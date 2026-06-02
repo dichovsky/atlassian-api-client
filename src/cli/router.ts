@@ -245,8 +245,15 @@ const GLOBAL_OPTIONS = {
   user: { type: 'string' as const },
   group: { type: 'string' as const },
   swap: { type: 'string' as const },
-  // workflows options (B837-B840)
+  // workflows options (B837-B840, B841-B850, B935-B938)
   'is-active': { type: 'string' as const },
+  'workflow-id': { type: 'string' as const },
+  'issue-type-id': { type: 'string' as const },
+  'workflow-names': { type: 'string' as const },
+  'with-tags': { type: 'string' as const },
+  draft: { type: 'boolean' as const },
+  workflows: { type: 'string' as const },
+  types: { type: 'string' as const },
   // resolution options (B931, B712-B718)
   'query-string': { type: 'string' as const },
   'only-default': { type: 'boolean' as const },
@@ -393,6 +400,9 @@ const GLOBAL_OPTIONS = {
   'update-draft-if-needed': { type: 'boolean' as const },
   'workflow-name': { type: 'string' as const },
   'validate-only': { type: 'boolean' as const },
+  // workflow transition properties options (B935-B938)
+  'workflow-mode': { type: 'string' as const },
+  'include-reserved-keys': { type: 'boolean' as const },
   // fields context options (B415-B418)
   'context-id': { type: 'string' as const },
   'is-any-issue-type': { type: 'boolean' as const },
