@@ -178,6 +178,18 @@ describe('resolveConfig', () => {
         );
       },
     );
+
+    it('accepts timeout at the Node timer ceiling', () => {
+      expect(resolveConfig({ ...validBasicConfig, timeout: 2_147_483_647 }).timeout).toBe(
+        2_147_483_647,
+      );
+    });
+
+    it('throws ValidationError when timeout exceeds the Node timer ceiling', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, timeout: 2_147_483_648 })).toThrow(
+        'timeout must not exceed 2147483647ms',
+      );
+    });
   });
 
   describe('retries validation', () => {
