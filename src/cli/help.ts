@@ -254,6 +254,7 @@ RESOURCES:
   latest                 bulk-worklog
   remote-link            get, delete
   service-registry       get
+  addons                 list-properties, get-property, set-property, delete-property
   exists-by-properties   get
   repository             get, delete, delete-entity
   app                    get-field-context-configuration, update-field-context-configuration, update-field-value, list-field-context-configurations, bulk-update-field-value, get-dynamic-modules, register-dynamic-modules, delete-dynamic-modules, list-forge-properties, get-forge-property, set-forge-property, delete-forge-property
@@ -335,6 +336,10 @@ EXAMPLES:
   atlas jira remote-link get rl-123
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
+  atlas jira addons list-properties my-connect-app
+  atlas jira addons get-property my-connect-app my-setting
+  atlas jira addons set-property my-connect-app my-setting --value '{"enabled":true}'
+  atlas jira addons delete-property my-connect-app my-setting
   atlas jira exists-by-properties get --entity-type repository
   atlas jira repository get my-repo-123
   atlas jira repository delete my-repo-123

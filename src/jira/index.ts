@@ -910,3 +910,10 @@ export type {
   BulkByPropertiesBaseUrls,
 } from './resources/bulk-by-properties.js';
 export { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
+export type {
+  AddonPropertyKey,
+  AddonPropertyKeys,
+  AddonProperty,
+  AddonPropertyOperationMessage,
+} from './resources/addons.js';
+export { AddonsResource } from './resources/addons.js';
