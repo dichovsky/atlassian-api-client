@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "799b278b9b1a7d8e83638abf366054c272fec77fea288c24f02f547be3f362db",
+  "sourceHash": "a1a73f296aa383acbda2747b3a03c73392b99357c6177edb02e1a75a9253433c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -8760,157 +8760,157 @@
             {
               "name": "listAncestors",
               "kind": "method",
-              "line": 141
+              "line": 137
             },
             {
               "name": "listDescendants",
               "kind": "method",
-              "line": 162
+              "line": 158
             },
             {
               "name": "listDescendantsAll",
               "kind": "method",
-              "line": 181
+              "line": 177
             },
             {
               "name": "listDirectChildren",
               "kind": "method",
-              "line": 204
+              "line": 200
             },
             {
               "name": "listDirectChildrenAll",
               "kind": "method",
-              "line": 223
+              "line": 219
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 247
+              "line": 243
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 266
+              "line": 262
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 288
+              "line": 284
             },
             {
               "name": "updateClassificationLevel",
               "kind": "method",
-              "line": 312
+              "line": 308
             },
             {
               "name": "resetClassificationLevel",
               "kind": "method",
-              "line": 331
+              "line": 327
             },
             {
               "name": "listCustomContent",
               "kind": "method",
-              "line": 349
+              "line": 345
             },
             {
               "name": "listCustomContentAll",
               "kind": "method",
-              "line": 368
+              "line": 364
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 393
+              "line": 389
             },
             {
               "name": "listFooterCommentsAll",
               "kind": "method",
-              "line": 408
+              "line": 404
             },
             {
               "name": "listInlineComments",
               "kind": "method",
-              "line": 426
+              "line": 422
             },
             {
               "name": "listInlineCommentsAll",
               "kind": "method",
-              "line": 441
+              "line": 437
             },
             {
               "name": "getLikeCount",
               "kind": "method",
-              "line": 464
+              "line": 460
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 477
+              "line": 473
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 498
+              "line": 494
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 519
+              "line": 515
             },
             {
               "name": "redact",
               "kind": "method",
-              "line": 540
+              "line": 536
             },
             {
               "name": "updateTitle",
               "kind": "method",
-              "line": 561
+              "line": 557
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 584
+              "line": 580
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 608
+              "line": 604
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 629
+              "line": 625
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 643
+              "line": 639
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 660
+              "line": 656
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 678
+              "line": 674
             },
             {
               "name": "buildCustomContentQuery",
               "kind": "method",
-              "line": 688
+              "line": 684
             },
             {
               "name": "buildFooterCommentsQuery",
               "kind": "method",
-              "line": 701
+              "line": 697
             },
             {
               "name": "buildInlineCommentsQuery",
               "kind": "method",
-              "line": 716
+              "line": 712
             }
           ]
         }
@@ -8929,7 +8929,7 @@
         {
           "name": "csvOrScalar",
           "kind": "function",
-          "line": 17,
+          "line": 19,
           "exported": true,
           "signature": "export function csvOrScalar(value: string | readonly string[] | undefined): string | undefined",
           "jsdoc": "Normalise an array-or-scalar filter into the comma-joined scalar the wire format expects. Returns `undefined` for both omitted values and explicit empty arrays so callers can drop the key from the query bag entirely rather than emit `?keys=` with no payload (which the API treats as an unfiltered query — masking caller bugs)."
@@ -8937,18 +8937,37 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 25,
+          "line": 27,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
           "name": "nonEmptyQuery",
           "kind": "function",
-          "line": 31,
+          "line": 33,
           "exported": true,
           "signature": "export function nonEmptyQuery(query: Query): Query | undefined",
           "jsdoc": "Return `undefined` for an empty query bag so the transport does not append a stray `?` to the URL. Used by methods whose params are entirely optional."
+        },
+        {
+          "name": "SpaceScopedListParams",
+          "kind": "interface",
+          "line": 43,
+          "exported": true,
+          "signature": "export interface SpaceScopedListParams { readonly spaceId?: string; readonly title?: string; readonly status?: string; r…",
+          "jsdoc": "Shape shared by the Confluence v2 list endpoints that filter by space (`GET /pages`, `GET /blogposts`). The public SDK input uses the camelCase `spaceId` — matching the response-body field and the documented API — but the wire query parameter is the kebab-case `space-id`."
+        },
+        {
+          "name": "withSpaceIdParam",
+          "kind": "function",
+          "line": 59,
+          "exported": true,
+          "signature": "export function withSpaceIdParam(params?: SpaceScopedListParams): Query | undefined",
+          "jsdoc": "Build the query bag for a space-scoped list endpoint, remapping the ergonomic camelCase `spaceId` filter onto the kebab-case `space-id` query parameter the Confluence v2 API expects. Sending `spaceId` as a query parameter is silently ignored by the server, which then returns content from every space instead of the requested one."
         }
+      ],
+      "imports": [
+        "../types.js"
       ]
     },
     {

@@ -2,7 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar } from './query.js';
+import { csvOrScalar, withSpaceIdParam } from './query.js';
 import type {
   ChildPage,
   ContentProperty,
@@ -74,7 +74,7 @@ export class PagesResource {
     const response = await this.transport.request<CursorPaginatedResponse<Page>>({
       method: 'GET',
       path: `${this.baseUrl}/pages`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: withSpaceIdParam(params),
     });
     return response.data;
   }
@@ -120,11 +120,7 @@ export class PagesResource {
 
   /** Iterate over all pages across all result pages. */
   async *listAll(params?: Omit<ListPagesParams, 'cursor'>): AsyncGenerator<Page> {
-    yield* paginateCursor<Page>(
-      this.transport,
-      `${this.baseUrl}/pages`,
-      params as Record<string, string | number | boolean | undefined>,
-    );
+    yield* paginateCursor<Page>(this.transport, `${this.baseUrl}/pages`, withSpaceIdParam(params));
   }
 
   // ── hierarchy ─────────────────────────────────────────────────────────────
