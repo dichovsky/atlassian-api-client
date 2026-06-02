@@ -62,7 +62,8 @@ export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions
  *
  * QSH = SHA-256(`METHOD&canonicalPath&canonicalQuery`)
  * - `canonicalPath`: path without the query string
- * - `canonicalQuery`: percent-encoded key=value pairs sorted alphabetically, `undefined` values excluded
+ * - `canonicalQuery`: percent-encoded key=value pairs sorted by codepoint
+ *   (uppercase before lowercase, per the Connect spec), `undefined` values excluded
  *
  * Exported for testing and manual verification.
  */
@@ -79,7 +80,14 @@ export function computeQsh(
   const canonicalQuery = query
     ? Object.entries(query)
         .filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
+        // Sort by codepoint, NOT locale-aware/case-insensitively. The Atlassian
+        // Connect QSH spec requires `sort(["a","A","b","B"]) => ["A","B","a","b"]`
+        // (uppercase before lowercase) and the reference impl uses a plain
+        // `Array.sort()` (UTF-16 code-unit order). `localeCompare` produces the
+        // opposite order, yielding a qsh the server cannot reproduce → JWT
+        // rejected (401). Keys from `Object.entries` are unique, so the `a === b`
+        // case never arises and a two-way comparator is sufficient.
+        .sort(([a], [b]) => (a < b ? -1 : 1))
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';

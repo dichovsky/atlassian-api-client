@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "dc2553263d7368fa1391af4ce400eb1e2465480e0c4a6963146e9991f4251519",
+  "sourceHash": "67d51f347d49ee4808695b51102786301ae3a83ecbe5eae5791864001f29343f",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3228,7 +3228,7 @@
       "name": "computeQsh",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 69,
+      "line": 70,
       "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
       "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
     },
@@ -12048,7 +12048,7 @@
         {
           "name": "computeQsh",
           "kind": "function",
-          "line": 69,
+          "line": 70,
           "exported": true,
           "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
           "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
@@ -12056,7 +12056,7 @@
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 91,
+          "line": 99,
           "signature": "function base64UrlEncode(input: string): string"
         }
       ],
