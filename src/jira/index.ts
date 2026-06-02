@@ -156,6 +156,21 @@ export type {
   WorkflowSchemeUsagePage,
   WorkflowSchemeUsage,
   WorkflowUsagesParams,
+  WorkflowPreviewRequest,
+  WorkflowPreviewResponse,
+  WorkflowPreviewStatusItem,
+  WorkflowPreviewWorkflow,
+  WorkflowLayoutCoordinate,
+  WorkflowSearchParams,
+  WorkflowSearchResponse,
+  WorkflowReadResponse,
+  WorkflowUpdateRequest,
+  WorkflowUpdateResponse,
+  WorkflowUpdateResponseStatus,
+  WorkflowUpdateResponseWorkflow,
+  WorkflowUpdateValidateRequest,
+  WorkflowValidationErrorList,
+  WorkflowValidationError,
 } from './resources/workflows.js';
 export { DashboardsResource } from './resources/dashboards.js';
 export type {

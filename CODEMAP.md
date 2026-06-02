@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "c3f0e4d1bf37f004e32e9634fe7d7bcf6c0b693318e9798c76f8331c1c5dd031",
+  "sourceHash": "a0c73e204e0428febcc8113837ac6a40fe10280a00a4da4921ad35c295f13266",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2262,7 +2262,7 @@
       "name": "ListWorkflowsParams",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 104,
+      "line": 105,
       "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…",
       "typeOnly": true
     },
@@ -3204,7 +3204,7 @@
       "name": "Workflow",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 90,
+      "line": 91,
       "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…",
       "typeOnly": true
     },
@@ -3212,7 +3212,7 @@
       "name": "WorkflowStatus",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 84,
+      "line": 85,
       "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…",
       "typeOnly": true
     },
@@ -3220,7 +3220,7 @@
       "name": "WorkflowTransition",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 72,
+      "line": 73,
       "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…",
       "typeOnly": true
     },
@@ -4870,186 +4870,186 @@
           "name": "WORKFLOWS_ACTIONS",
           "kind": "variable",
           "line": 5993,
-          "signature": "const WORKFLOWS_ACTIONS = [ 'list', 'get', 'delete', 'issue-type-usages', 'project-usages', 'workflow-scheme-usages', ];"
+          "signature": "const WORKFLOWS_ACTIONS = [ 'list', 'get', 'delete', 'issue-type-usages', 'project-usages', 'workflow-scheme-usages', 'p…"
         },
         {
           "name": "executeWorkflows",
           "kind": "function",
-          "line": 6002,
+          "line": 6006,
           "signature": "async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKFLOWSCHEME_ACTIONS",
           "kind": "variable",
-          "line": 6067,
+          "line": 6107,
           "signature": "const WORKFLOWSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'get', 'update', 'delete-default', 'get-default', 'set-defa…"
         },
         {
           "name": "drainWorkflowSchemes",
           "kind": "function",
-          "line": 6105,
+          "line": 6145,
           "signature": "async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]>"
         },
         {
           "name": "executeWorkflowScheme",
           "kind": "function",
-          "line": 6111,
+          "line": 6151,
           "signature": "async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELDS_ACTIONS",
           "kind": "variable",
-          "line": 6385,
+          "line": 6425,
           "signature": "const FIELDS_ACTIONS = [ 'field-list', 'field-list-all', 'field-create', 'field-update', 'field-delete', 'context-list',…"
         },
         {
           "name": "executeFields",
           "kind": "function",
-          "line": 6427,
+          "line": 6467,
           "signature": "async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "JQL_ACTIONS",
           "kind": "variable",
-          "line": 6896,
+          "line": 6936,
           "signature": "const JQL_ACTIONS = [ 'autocomplete-data', 'autocomplete-data-post', 'autocomplete-suggestions', 'get-precomputations', …"
         },
         {
           "name": "executeJql",
           "kind": "function",
-          "line": 6909,
+          "line": 6949,
           "signature": "async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueLinkType",
           "kind": "function",
-          "line": 7044,
+          "line": 7084,
           "signature": "async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ACCESS_LEVELS",
           "kind": "variable",
-          "line": 7086,
+          "line": 7126,
           "signature": "const ACCESS_LEVELS = ['open', 'limited', 'private', 'free'] as const;"
         },
         {
           "name": "ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 7087,
+          "line": 7127,
           "signature": "const ASSIGNEE_TYPES = ['PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED'] as const;"
         },
         {
           "name": "SAVE_TEMPLATE_TYPES",
           "kind": "variable",
-          "line": 7088,
+          "line": 7128,
           "signature": "const SAVE_TEMPLATE_TYPES = ['LIVE', 'SNAPSHOT'] as const;"
         },
         {
           "name": "PROJECT_TEMPLATE_ACTIONS",
           "kind": "variable",
-          "line": 7090,
+          "line": 7130,
           "signature": "const PROJECT_TEMPLATE_ACTIONS = [ 'create', 'edit-template', 'live-template', 'remove-template', 'save-template', ] as …"
         },
         {
           "name": "executeProjectTemplate",
           "kind": "function",
-          "line": 7098,
+          "line": 7138,
           "signature": "async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKLOG_ACTIONS",
           "kind": "variable",
-          "line": 7303,
+          "line": 7343,
           "signature": "const WORKLOG_ACTIONS = ['deleted', 'list', 'updated'] as const;"
         },
         {
           "name": "executeWorklog",
           "kind": "function",
-          "line": 7305,
+          "line": 7345,
           "signature": "async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "UI_MODIFICATIONS_ACTIONS",
           "kind": "variable",
-          "line": 7349,
+          "line": 7389,
           "signature": "const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];"
         },
         {
           "name": "executeUiModifications",
           "kind": "function",
-          "line": 7351,
+          "line": 7391,
           "signature": "async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePermissions",
           "kind": "function",
-          "line": 7430,
+          "line": 7470,
           "signature": "async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRepository",
           "kind": "function",
-          "line": 7473,
+          "line": 7513,
           "signature": "async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_LINK_ACTIONS",
           "kind": "variable",
-          "line": 7514,
+          "line": 7554,
           "signature": "const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;"
         },
         {
           "name": "executeIssueLink",
           "kind": "function",
-          "line": 7516,
+          "line": 7556,
           "signature": "async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "PIPELINES_ACTIONS",
           "kind": "variable",
-          "line": 7547,
+          "line": 7587,
           "signature": "const PIPELINES_ACTIONS = [ 'get-build', 'delete-build', 'get-deployment', 'delete-deployment', 'get-deployment-gating-s…"
         },
         {
           "name": "executePipelines",
           "kind": "function",
-          "line": 7555,
+          "line": 7595,
           "signature": "async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "LINKED_WORKSPACES_ACTIONS",
           "kind": "variable",
-          "line": 7603,
+          "line": 7643,
           "signature": "const LINKED_WORKSPACES_ACTIONS = [ 'list-operations', 'bulk-delete-operations', 'bulk-create-operations', 'list-securit…"
         },
         {
           "name": "executeLinkedWorkspaces",
           "kind": "function",
-          "line": 7613,
+          "line": 7653,
           "signature": "async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "BULK_BY_PROPERTIES_ACTIONS",
           "kind": "variable",
-          "line": 7651,
+          "line": 7691,
           "signature": "const BULK_BY_PROPERTIES_ACTIONS = [ 'delete-builds', 'delete-deployments', 'delete-devinfo', 'delete-devops-components'…"
         },
         {
           "name": "executeBulkByProperties",
           "kind": "function",
-          "line": 7662,
+          "line": 7702,
           "signature": "async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 7735,
+          "line": 7775,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 7743,
+          "line": 7783,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -5174,7 +5174,7 @@
         {
           "name": "getHelpText",
           "kind": "function",
-          "line": 696,
+          "line": 700,
           "exported": true,
           "signature": "export function getHelpText(api?: string): string",
           "jsdoc": "Get help text for the given level."
@@ -20020,6 +20020,66 @@
             {
               "exported": "WorkflowUsagesParams",
               "original": "WorkflowUsagesParams"
+            },
+            {
+              "exported": "WorkflowPreviewRequest",
+              "original": "WorkflowPreviewRequest"
+            },
+            {
+              "exported": "WorkflowPreviewResponse",
+              "original": "WorkflowPreviewResponse"
+            },
+            {
+              "exported": "WorkflowPreviewStatusItem",
+              "original": "WorkflowPreviewStatusItem"
+            },
+            {
+              "exported": "WorkflowPreviewWorkflow",
+              "original": "WorkflowPreviewWorkflow"
+            },
+            {
+              "exported": "WorkflowLayoutCoordinate",
+              "original": "WorkflowLayoutCoordinate"
+            },
+            {
+              "exported": "WorkflowSearchParams",
+              "original": "WorkflowSearchParams"
+            },
+            {
+              "exported": "WorkflowSearchResponse",
+              "original": "WorkflowSearchResponse"
+            },
+            {
+              "exported": "WorkflowReadResponse",
+              "original": "WorkflowReadResponse"
+            },
+            {
+              "exported": "WorkflowUpdateRequest",
+              "original": "WorkflowUpdateRequest"
+            },
+            {
+              "exported": "WorkflowUpdateResponse",
+              "original": "WorkflowUpdateResponse"
+            },
+            {
+              "exported": "WorkflowUpdateResponseStatus",
+              "original": "WorkflowUpdateResponseStatus"
+            },
+            {
+              "exported": "WorkflowUpdateResponseWorkflow",
+              "original": "WorkflowUpdateResponseWorkflow"
+            },
+            {
+              "exported": "WorkflowUpdateValidateRequest",
+              "original": "WorkflowUpdateValidateRequest"
+            },
+            {
+              "exported": "WorkflowValidationErrorList",
+              "original": "WorkflowValidationErrorList"
+            },
+            {
+              "exported": "WorkflowValidationError",
+              "original": "WorkflowValidationError"
             }
           ]
         },
@@ -32251,7 +32311,7 @@
         {
           "name": "WorkflowIssueTypeUsage",
           "kind": "interface",
-          "line": 10,
+          "line": 11,
           "exported": true,
           "signature": "export interface WorkflowIssueTypeUsage { readonly id: string; }",
           "jsdoc": "A single issue-type entry in the issueTypeUsages response."
@@ -32259,7 +32319,7 @@
         {
           "name": "WorkflowIssueTypeUsagePage",
           "kind": "interface",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export interface WorkflowIssueTypeUsagePage { readonly values: WorkflowIssueTypeUsage[]; readonly nextPageToken?: string…",
           "jsdoc": "Cursor-paginated page of issue types using the workflow in a project."
@@ -32267,7 +32327,7 @@
         {
           "name": "WorkflowProjectIssueTypeUsage",
           "kind": "interface",
-          "line": 21,
+          "line": 22,
           "exported": true,
           "signature": "export interface WorkflowProjectIssueTypeUsage { readonly workflowId: string; readonly projectId: string; readonly issue…",
           "jsdoc": "Response for GET /workflow/{workflowId}/project/{projectId}/issueTypeUsages (B838)."
@@ -32275,7 +32335,7 @@
         {
           "name": "WorkflowProjectUsageItem",
           "kind": "interface",
-          "line": 30,
+          "line": 31,
           "exported": true,
           "signature": "export interface WorkflowProjectUsageItem { readonly id: string; }",
           "jsdoc": "A single project entry in the projectUsages response."
@@ -32283,7 +32343,7 @@
         {
           "name": "WorkflowProjectUsagePage",
           "kind": "interface",
-          "line": 35,
+          "line": 36,
           "exported": true,
           "signature": "export interface WorkflowProjectUsagePage { readonly values: WorkflowProjectUsageItem[]; readonly nextPageToken?: string…",
           "jsdoc": "Cursor-paginated page of projects using the workflow."
@@ -32291,7 +32351,7 @@
         {
           "name": "WorkflowProjectUsage",
           "kind": "interface",
-          "line": 41,
+          "line": 42,
           "exported": true,
           "signature": "export interface WorkflowProjectUsage { readonly workflowId: string; readonly projects: WorkflowProjectUsagePage; }",
           "jsdoc": "Response for GET /workflow/{workflowId}/projectUsages (B839)."
@@ -32299,7 +32359,7 @@
         {
           "name": "WorkflowSchemeUsageItem",
           "kind": "interface",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsageItem { readonly id: string; }",
           "jsdoc": "A single workflow-scheme entry in the workflowSchemes response."
@@ -32307,7 +32367,7 @@
         {
           "name": "WorkflowSchemeUsagePage",
           "kind": "interface",
-          "line": 54,
+          "line": 55,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsagePage { readonly values: WorkflowSchemeUsageItem[]; readonly nextPageToken?: string; …",
           "jsdoc": "Cursor-paginated page of workflow schemes using the workflow."
@@ -32315,7 +32375,7 @@
         {
           "name": "WorkflowSchemeUsage",
           "kind": "interface",
-          "line": 60,
+          "line": 61,
           "exported": true,
           "signature": "export interface WorkflowSchemeUsage { readonly workflowId: string; readonly workflowSchemes: WorkflowSchemeUsagePage; }",
           "jsdoc": "Response for GET /workflow/{workflowId}/workflowSchemes (B840)."
@@ -32323,88 +32383,229 @@
         {
           "name": "WorkflowUsagesParams",
           "kind": "interface",
-          "line": 67,
+          "line": 68,
           "exported": true,
           "signature": "export interface WorkflowUsagesParams { readonly nextPageToken?: string; readonly maxResults?: number; }"
         },
         {
           "name": "WorkflowTransition",
           "kind": "interface",
-          "line": 72,
+          "line": 73,
           "exported": true,
           "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…"
         },
         {
           "name": "WorkflowStatus",
           "kind": "interface",
-          "line": 84,
+          "line": 85,
           "exported": true,
           "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…"
         },
         {
           "name": "Workflow",
           "kind": "interface",
-          "line": 90,
+          "line": 91,
           "exported": true,
           "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…"
         },
         {
           "name": "ListWorkflowsParams",
           "kind": "interface",
-          "line": 104,
+          "line": 105,
           "exported": true,
           "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…"
         },
         {
           "name": "WorkflowsResource",
           "kind": "class",
-          "line": 113,
+          "line": 114,
           "exported": true,
           "signature": "export class WorkflowsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 114
+              "line": 115
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 120
+              "line": 121
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 141
+              "line": 142
             },
             {
               "name": "deleteWorkflow",
               "kind": "method",
-              "line": 158
+              "line": 159
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 169
+              "line": 170
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 190
+              "line": 191
             },
             {
               "name": "getWorkflowSchemeUsages",
               "kind": "method",
-              "line": 210
+              "line": 211
+            },
+            {
+              "name": "previewWorkflows",
+              "kind": "method",
+              "line": 231
+            },
+            {
+              "name": "searchWorkflows",
+              "kind": "method",
+              "line": 244
+            },
+            {
+              "name": "updateWorkflows",
+              "kind": "method",
+              "line": 268
+            },
+            {
+              "name": "validateWorkflowUpdate",
+              "kind": "method",
+              "line": 281
             }
           ]
+        },
+        {
+          "name": "WorkflowPreviewRequest",
+          "kind": "interface",
+          "line": 296,
+          "exported": true,
+          "signature": "export interface WorkflowPreviewRequest { readonly projectId: string; readonly workflowIds?: string[]; readonly workflow…",
+          "jsdoc": "Request body for POST /rest/api/3/workflows/preview (B851)."
+        },
+        {
+          "name": "WorkflowLayoutCoordinate",
+          "kind": "interface",
+          "line": 308,
+          "exported": true,
+          "signature": "export interface WorkflowLayoutCoordinate { readonly x?: number; readonly y?: number; }",
+          "jsdoc": "Layout coordinate for a workflow element in a preview."
+        },
+        {
+          "name": "WorkflowPreviewStatusItem",
+          "kind": "interface",
+          "line": 314,
+          "exported": true,
+          "signature": "export interface WorkflowPreviewStatusItem { readonly id?: string; readonly name?: string; readonly rawName?: string; re…",
+          "jsdoc": "Status entry in a WorkflowPreviewResponse."
+        },
+        {
+          "name": "WorkflowPreviewWorkflow",
+          "kind": "interface",
+          "line": 325,
+          "exported": true,
+          "signature": "export interface WorkflowPreviewWorkflow { readonly id?: string; readonly name?: string; readonly description?: string; …",
+          "jsdoc": "A workflow entry in a WorkflowPreviewResponse."
+        },
+        {
+          "name": "WorkflowPreviewResponse",
+          "kind": "interface",
+          "line": 339,
+          "exported": true,
+          "signature": "export interface WorkflowPreviewResponse { readonly workflows?: WorkflowPreviewWorkflow[]; readonly statuses?: WorkflowP…",
+          "jsdoc": "Response for POST /rest/api/3/workflows/preview (B851)."
+        },
+        {
+          "name": "WorkflowSearchParams",
+          "kind": "interface",
+          "line": 347,
+          "exported": true,
+          "signature": "export interface WorkflowSearchParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: strin…",
+          "jsdoc": "Query parameters for GET /rest/api/3/workflows/search (B852)."
+        },
+        {
+          "name": "WorkflowReadResponse",
+          "kind": "interface",
+          "line": 358,
+          "exported": true,
+          "signature": "export interface WorkflowReadResponse { readonly id?: string; readonly description?: string; readonly created?: string |…",
+          "jsdoc": "A workflow entry in a WorkflowSearchResponse (matches WorkflowReadResponse spec shape)."
+        },
+        {
+          "name": "WorkflowSearchResponse",
+          "kind": "interface",
+          "line": 371,
+          "exported": true,
+          "signature": "export interface WorkflowSearchResponse { readonly startAt?: number; readonly maxResults?: number; readonly total?: numb…",
+          "jsdoc": "Response for GET /rest/api/3/workflows/search (B852)."
+        },
+        {
+          "name": "WorkflowUpdateRequest",
+          "kind": "interface",
+          "line": 385,
+          "exported": true,
+          "signature": "export interface WorkflowUpdateRequest { readonly workflows?: Record<string, unknown>[]; readonly statuses?: Record<stri…",
+          "jsdoc": "Request body for POST /rest/api/3/workflows/update (B853)."
+        },
+        {
+          "name": "WorkflowUpdateResponseStatus",
+          "kind": "interface",
+          "line": 391,
+          "exported": true,
+          "signature": "export interface WorkflowUpdateResponseStatus { readonly id?: string; readonly name?: string; readonly description?: str…",
+          "jsdoc": "A status entry returned in WorkflowUpdateResponse (distinct from request statuses)."
+        },
+        {
+          "name": "WorkflowUpdateResponseWorkflow",
+          "kind": "interface",
+          "line": 401,
+          "exported": true,
+          "signature": "export interface WorkflowUpdateResponseWorkflow { readonly id?: string; readonly description?: string; readonly created?…",
+          "jsdoc": "A workflow entry returned in WorkflowUpdateResponse (distinct from request workflows)."
+        },
+        {
+          "name": "WorkflowUpdateResponse",
+          "kind": "interface",
+          "line": 414,
+          "exported": true,
+          "signature": "export interface WorkflowUpdateResponse { readonly taskId?: string | null; readonly workflows?: WorkflowUpdateResponseWo…",
+          "jsdoc": "Response for POST /rest/api/3/workflows/update (B853)."
+        },
+        {
+          "name": "WorkflowUpdateValidateRequest",
+          "kind": "interface",
+          "line": 424,
+          "exported": true,
+          "signature": "export interface WorkflowUpdateValidateRequest { readonly payload: WorkflowUpdateRequest; readonly validationOptions?: {…",
+          "jsdoc": "Request body for POST /rest/api/3/workflows/update/validation (B854)."
+        },
+        {
+          "name": "WorkflowValidationError",
+          "kind": "interface",
+          "line": 433,
+          "exported": true,
+          "signature": "export interface WorkflowValidationError { readonly code?: string; readonly message?: string; readonly level?: 'WARNING'…",
+          "jsdoc": "A single workflow validation error entry."
+        },
+        {
+          "name": "WorkflowValidationErrorList",
+          "kind": "interface",
+          "line": 443,
+          "exported": true,
+          "signature": "export interface WorkflowValidationErrorList { readonly errors?: WorkflowValidationError[]; }",
+          "jsdoc": "Response for POST /rest/api/3/workflows/update/validation (B854)."
         }
       ],
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/types.js"
+        "../../core/types.js",
+        "./workflowscheme.js"
       ]
     },
     {
