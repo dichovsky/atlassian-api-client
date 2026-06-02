@@ -358,6 +358,32 @@ describe('paginateOffset', () => {
     expect(items).toEqual(['a', 'b']);
     expect(transport.calls).toHaveLength(1);
   });
+
+  it('continues past a short page when the server explicitly sets isLast=false', async () => {
+    // A non-empty page shorter than the requested size but with an explicit
+    // `isLast: false` means "more data exists, call again" (e.g. server-side
+    // permission filtering trimmed the page). The short-page heuristic must not
+    // terminate here — that would silently drop the remaining rows.
+    const transport = new MockTransport();
+    const page1: OffsetPaginatedResponse<number> = {
+      values: [1, 2, 3],
+      startAt: 0,
+      maxResults: 5,
+      isLast: false,
+    };
+    const page2: OffsetPaginatedResponse<number> = {
+      values: [4, 5],
+      startAt: 3,
+      maxResults: 5,
+      isLast: true,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateOffset<number>(transport, '/items', {}, 5));
+    expect(items).toEqual([1, 2, 3, 4, 5]);
+    expect(transport.calls).toHaveLength(2);
+    expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 3, maxResults: 5 });
+  });
 });
 
 // ---------------------------------------------------------------------------
