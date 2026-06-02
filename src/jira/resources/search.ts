@@ -117,7 +117,10 @@ export class SearchResource {
     if (params.nextPageToken !== undefined) body['nextPageToken'] = params.nextPageToken;
     if (params.maxResults !== undefined) body['maxResults'] = params.maxResults;
     if (params.fields) body['fields'] = params.fields;
-    if (params.expand) body['expand'] = params.expand;
+    // `expand` is the one array-shaped param the /search/jql POST body
+    // (SearchAndReconcileRequestBean) defines as a comma-delimited STRING,
+    // not an array — unlike `fields`/`properties`. Mirror `searchJqlGet`.
+    if (params.expand) body['expand'] = params.expand.join(',');
     if (params.properties) body['properties'] = params.properties;
     if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
     const response = await this.transport.request<JqlSearchResult>({

@@ -362,10 +362,34 @@ describe('SearchResource', () => {
         nextPageToken: 'tok-1',
         maxResults: 50,
         fields: ['summary', 'status'],
-        expand: ['renderedFields'],
+        // `expand` is the lone array-shaped param the /search/jql POST body
+        // defines as a comma-delimited STRING (SearchAndReconcileRequestBean),
+        // unlike `fields`/`properties` which stay arrays.
+        expand: 'renderedFields',
         properties: ['my-prop'],
         fieldsByKeys: false,
       });
+    });
+
+    it('comma-joins expand into a string while fields/properties stay arrays', async () => {
+      // Arrange
+      transport.respondWith({ issues: [] });
+
+      // Act
+      await search.searchJqlPost({
+        jql: 'project = PROJ',
+        fields: ['summary', 'status'],
+        expand: ['renderedFields', 'changelog'],
+        properties: ['p1', 'p2'],
+      });
+
+      // Assert — per SearchAndReconcileRequestBean the body `expand` is a
+      // comma-delimited string, so multiple values must be joined; `fields`
+      // and `properties` are genuine string arrays and must NOT be joined.
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['expand']).toBe('renderedFields,changelog');
+      expect(body['fields']).toEqual(['summary', 'status']);
+      expect(body['properties']).toEqual(['p1', 'p2']);
     });
 
     it('omits undefined optional params from body', async () => {
