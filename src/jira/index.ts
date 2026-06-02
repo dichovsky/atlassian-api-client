@@ -156,6 +156,8 @@ export type {
   WorkflowSchemeUsagePage,
   WorkflowSchemeUsage,
   WorkflowUsagesParams,
+  WorkflowTransitionProperty,
+  GetTransitionPropertiesParams,
 } from './resources/workflows.js';
 export { DashboardsResource } from './resources/dashboards.js';
 export type {

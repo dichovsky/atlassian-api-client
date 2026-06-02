@@ -393,6 +393,9 @@ const GLOBAL_OPTIONS = {
   'update-draft-if-needed': { type: 'boolean' as const },
   'workflow-name': { type: 'string' as const },
   'validate-only': { type: 'boolean' as const },
+  // workflow transition properties options (B935-B938)
+  'workflow-mode': { type: 'string' as const },
+  'include-reserved-keys': { type: 'boolean' as const },
   // fields context options (B415-B418)
   'context-id': { type: 'string' as const },
   'is-any-issue-type': { type: 'boolean' as const },
