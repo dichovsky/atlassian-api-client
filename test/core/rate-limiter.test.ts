@@ -35,6 +35,27 @@ describe('getRetryAfterMs', () => {
     const headers = makeHeaders({ 'retry-after': '-5' });
     expect(getRetryAfterMs(headers)).toBeUndefined();
   });
+
+  it('returns undefined for the literal "Infinity"', () => {
+    const headers = makeHeaders({ 'retry-after': 'Infinity' });
+    expect(getRetryAfterMs(headers)).toBeUndefined();
+  });
+
+  it('returns undefined for a value that overflows to a non-finite number', () => {
+    // `Number('1e999')` === Infinity. A hostile or misconfigured upstream
+    // (the same B023 threat model the retry loop guards) must not slip a
+    // non-finite delay past the parse boundary.
+    const headers = makeHeaders({ 'retry-after': '1e999' });
+    expect(getRetryAfterMs(headers)).toBeUndefined();
+  });
+
+  it('returns undefined when finite seconds overflow to Infinity on ms conversion', () => {
+    // `Number('1e308')` is finite, but `1e308 * 1000` overflows to Infinity.
+    // The seconds check alone passes this through, so the conversion result
+    // must also be guarded to honour the "undefined if invalid" contract.
+    const headers = makeHeaders({ 'retry-after': '1e308' });
+    expect(getRetryAfterMs(headers)).toBeUndefined();
+  });
 });
 
 describe('parseRateLimitHeaders', () => {

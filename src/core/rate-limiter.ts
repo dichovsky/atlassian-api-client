@@ -6,9 +6,17 @@ export function getRetryAfterMs(headers: Headers): number | undefined {
   if (raw === null) return undefined;
 
   const seconds = Number(raw);
-  if (Number.isNaN(seconds) || seconds < 0) return undefined;
+  // Reject non-finite (NaN, ±Infinity) and negative values. `Number('1e999')`
+  // and `Number('Infinity')` coerce to Infinity, which is invalid and would
+  // otherwise propagate to the consumer-facing `RateLimitError.retryAfter` (B023).
+  if (!Number.isFinite(seconds) || seconds < 0) return undefined;
 
-  return seconds * 1000;
+  // Guard the conversion too: a finite-but-huge value (e.g. `1e308`) overflows
+  // to Infinity once scaled to milliseconds, which would re-leak a non-finite delay.
+  const ms = seconds * 1000;
+  if (!Number.isFinite(ms)) return undefined;
+
+  return ms;
 }
 
 /** Extract rate-limit metadata from response headers. */
