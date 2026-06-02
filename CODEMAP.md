@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "c10f422dc19c1963b2ba063fbd048ebfc03f1f9e77da2ed0e07229d83689f3dc",
+  "sourceHash": "d4530ad8cd6c887fb1a1ab14cbdb187e59ab50cf9e27faa82130d75ceeef4d83",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3348,7 +3348,7 @@
       "name": "resolveConfig",
       "kind": "function",
       "file": "src/core/config.ts",
-      "line": 49,
+      "line": 50,
       "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
       "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
     },
@@ -11972,16 +11972,22 @@
           "signature": "const DEFAULT_MAX_RETRY_DELAY = 30_000;"
         },
         {
+          "name": "MAX_TIMER_DELAY",
+          "kind": "variable",
+          "line": 14,
+          "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
+        },
+        {
           "name": "resolveAllowedHosts",
           "kind": "function",
-          "line": 28,
+          "line": 29,
           "signature": "function resolveAllowedHosts( baseUrlHostname: string, configured: readonly string[] | undefined, ): readonly string[]",
           "jsdoc": "Resolve the set of hosts that may receive the configured `Authorization` header. Returns the explicit allowlist when provided; otherwise returns just the `baseUrl` host so absolute paths can only target the configured tenant."
         },
         {
           "name": "resolveConfig",
           "kind": "function",
-          "line": 49,
+          "line": 50,
           "exported": true,
           "signature": "export function resolveConfig(config: ClientConfig): ResolvedConfig",
           "jsdoc": "Validate and resolve a {@link ClientConfig} into a {@link ResolvedConfig} with defaults applied."
@@ -11989,26 +11995,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 71,
+          "line": 72,
           "signature": "function validateConfig(config: ClientConfig): void"
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 183,
+          "line": 191,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 229,
+          "line": 237,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 245,
+          "line": 253,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],

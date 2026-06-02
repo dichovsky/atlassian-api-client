@@ -11,6 +11,7 @@ const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_RETRIES = 3;
 const DEFAULT_RETRY_DELAY = 1_000;
 const DEFAULT_MAX_RETRY_DELAY = 30_000;
+const MAX_TIMER_DELAY = 2_147_483_647;
 
 /**
  * Resolve the set of hosts that may receive the configured `Authorization`
@@ -130,8 +131,15 @@ function validateConfig(config: ClientConfig): void {
   validateAuth(config.auth);
 
   if (config.timeout !== undefined) {
-    if (typeof config.timeout !== 'number' || config.timeout <= 0) {
-      throw new ValidationError('timeout must be a positive number');
+    if (
+      typeof config.timeout !== 'number' ||
+      !Number.isFinite(config.timeout) ||
+      config.timeout <= 0
+    ) {
+      throw new ValidationError('timeout must be a finite positive number');
+    }
+    if (config.timeout > MAX_TIMER_DELAY) {
+      throw new ValidationError(`timeout must not exceed ${MAX_TIMER_DELAY}ms`);
     }
   }
 
