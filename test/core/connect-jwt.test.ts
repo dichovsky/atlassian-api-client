@@ -94,6 +94,38 @@ describe('computeQsh', () => {
     expect(withUndefined).toBe(withoutUndefined);
   });
 
+  // The Atlassian QSH spec requires RFC-3986 percent-encoding of query keys
+  // and values. The spec states verbatim: a whitespace char is "%20", "," is
+  // "%2C", "+" is "%2B", "*" is "%2A" and "~" is "~". `encodeURIComponent`
+  // leaves `! ' ( ) *` literal, so a value carrying any of them yields a qsh
+  // the server (which canonicalizes with RFC-3986) cannot reproduce → 401.
+  // https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
+  it('percent-encodes a "*" in a query value as %2A per the QSH spec', () => {
+    const canonical = 'GET&/path&jql=project%20%3D%20%2A';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path', { jql: 'project = *' })).toBe(expected);
+  });
+
+  it("percent-encodes all RFC-3986 sub-delims (! ' ( ) *) in a query value", () => {
+    // encodeURIComponent leaves these five literal; the spec requires %xx.
+    const canonical = 'GET&/path&q=a%2Ab%28c%29d%21e%27f';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path', { q: "a*b(c)d!e'f" })).toBe(expected);
+  });
+
+  it('percent-encodes RFC-3986 sub-delims in a query key', () => {
+    const canonical = 'GET&/path&key%2A=1';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path', { 'key*': '1' })).toBe(expected);
+  });
+
+  it('leaves the RFC-3986 unreserved tilde (~) literal', () => {
+    // Guards against over-encoding: the spec keeps "~" as "~".
+    const canonical = 'GET&/path&q=a~b';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path', { q: 'a~b' })).toBe(expected);
+  });
+
   it('strips query string appended to path', () => {
     const qsh1 = computeQsh('GET', '/path?ignored=1');
     const qsh2 = computeQsh('GET', '/path');

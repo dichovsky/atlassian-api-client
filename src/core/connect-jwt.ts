@@ -89,12 +89,31 @@ export function computeQsh(
         // produce codepoint order, so it yielded a qsh the server cannot
         // reproduce → JWT rejected (401).
         .sort()
-        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(String(query[key]))}`)
+        .map((key) => `${encodeRfc3986(key)}=${encodeRfc3986(String(query[key]))}`)
         .join('&')
     : '';
 
   const qshInput = `${canonicalMethod}&${canonicalPath}&${canonicalQuery}`;
   return createHash('sha256').update(qshInput).digest('hex');
+}
+
+/**
+ * RFC-3986 percent-encoding for QSH canonicalization.
+ *
+ * `encodeURIComponent` leaves the sub-delimiters `! ' ( ) *` literal, but the
+ * Atlassian Connect QSH spec requires them percent-encoded (e.g. `*` → `%2A`),
+ * matching the server's own canonicalization. Without this, a query carrying
+ * any of those characters yields a `qsh` the server cannot reproduce → 401.
+ * `~` stays literal (RFC-3986 unreserved), which `encodeURIComponent` already
+ * preserves.
+ *
+ * @see https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
+ */
+function encodeRfc3986(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 function base64UrlEncode(input: string): string {
