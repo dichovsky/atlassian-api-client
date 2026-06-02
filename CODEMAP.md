@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "dc62fbae1e59b18aae938e2f0d024b81779de11728082cef6969ec4e6ac0e4d1",
+  "sourceHash": "5d5cbd6420b08f109399bf019637ff2374431658e44b6d81cd8c702b1e7fd671",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13177,7 +13177,7 @@
         {
           "name": "parseRateLimitHeaders",
           "kind": "function",
-          "line": 15,
+          "line": 23,
           "exported": true,
           "signature": "export function parseRateLimitHeaders(headers: Headers): RateLimitInfo",
           "jsdoc": "Extract rate-limit metadata from response headers."
@@ -13185,7 +13185,7 @@
         {
           "name": "parseIntHeader",
           "kind": "function",
-          "line": 24,
+          "line": 32,
           "signature": "function parseIntHeader(headers: Headers, name: string): number | undefined"
         }
       ],
