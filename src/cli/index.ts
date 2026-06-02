@@ -51,6 +51,12 @@ export async function runCli(
     return executeScopesCommand(cmd, stdout, stderr);
   }
 
+  if (cmd.api !== 'confluence' && cmd.api !== 'jira') {
+    printError(`Unknown API: ${cmd.api}. Use 'confluence' or 'jira'.`);
+    stdout(getHelpText());
+    return 1;
+  }
+
   const globals = resolveGlobalOptions(cmd.options);
   let result: unknown;
 
@@ -61,10 +67,6 @@ export async function runCli(
     case 'jira':
       result = await executeJiraCommand(cmd, globals);
       break;
-    default:
-      printError(`Unknown API: ${cmd.api}. Use 'confluence' or 'jira'.`);
-      stdout(getHelpText());
-      return 1;
   }
 
   // printOutput writes directly to process.stdout to preserve existing
