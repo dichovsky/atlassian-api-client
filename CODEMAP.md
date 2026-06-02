@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "41362abc2850b38dc6dae32ac68c8a7e86a4744340443598050dad3dc53fd64e",
+  "sourceHash": "799b278b9b1a7d8e83638abf366054c272fec77fea288c24f02f547be3f362db",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13295,7 +13295,7 @@
         {
           "name": "buildHeaders",
           "kind": "function",
-          "line": 287,
+          "line": 290,
           "exported": true,
           "signature": "export function buildHeaders( callerHeaders: Readonly<Record<string, string>> | undefined, authHeaders: Readonly<Record<…",
           "jsdoc": "Merge caller-supplied headers with the auth provider's headers."
@@ -13303,7 +13303,7 @@
         {
           "name": "FetchBody",
           "kind": "interface",
-          "line": 320,
+          "line": 336,
           "exported": true,
           "signature": "export interface FetchBody { readonly body: FormData | Blob | string | undefined; readonly withJsonBody: boolean; readon…",
           "jsdoc": "Outcome of {@link buildFetchBody}."
@@ -13311,7 +13311,7 @@
         {
           "name": "buildFetchBody",
           "kind": "function",
-          "line": 336,
+          "line": 352,
           "exported": true,
           "signature": "export function buildFetchBody(options: RequestOptions): FetchBody",
           "jsdoc": "Resolve `RequestOptions.body` / `formData` / `binaryBody` into a `fetch`-ready body."
