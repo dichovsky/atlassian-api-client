@@ -19,15 +19,14 @@ export function executeScopesCommand(
   stdout: (line: string) => void,
   stderr: (line: string) => void,
 ): number {
-  switch (cmd.action) {
+  switch (cmd.resource) {
     case 'validate':
       return executeValidate(cmd, stdout, stderr);
     case '':
-    case undefined:
       stderr('Error: atlas scopes requires an action. Try: atlas scopes validate <scope...>');
       return 1;
     default:
-      stderr(`Error: Unknown scopes action '${cmd.action}'. Available: validate`);
+      stderr(`Error: Unknown scopes action '${cmd.resource}'. Available: validate`);
       return 1;
   }
 }
@@ -37,7 +36,7 @@ function executeValidate(
   stdout: (line: string) => void,
   stderr: (line: string) => void,
 ): number {
-  const scopes = cmd.positionalArgs;
+  const scopes = [cmd.action, ...cmd.positionalArgs].filter((s) => s.length > 0);
 
   if (scopes.length === 0) {
     stderr('Error: atlas scopes validate requires at least one scope argument.');

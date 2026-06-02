@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "7b9f31e3698d7206b211e51575ced64923d0a961f28d7bc4f9a0069dcda5f6f5",
+  "sourceHash": "ac036e3bced11623130b5c461d5684b6d808b0017ea18e1cc63a1942da4ef61c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5048,7 +5048,7 @@
         {
           "name": "executeValidate",
           "kind": "function",
-          "line": 35,
+          "line": 34,
           "signature": "function executeValidate( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void, ): number"
         }
       ],
