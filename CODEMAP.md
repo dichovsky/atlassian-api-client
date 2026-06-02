@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "897a6c19ddc30126a68159f577c2c6fdc594be6a3b97785ec8e3fbddb58b3c05",
+  "sourceHash": "41362abc2850b38dc6dae32ac68c8a7e86a4744340443598050dad3dc53fd64e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5307,27 +5307,34 @@
           "jsdoc": "TTY-safe sanitiser that preserves JSON validity. Escapes the same terminal-control byte ranges as `sanitizeForTerminal` (DEL, C1) but emits them as the JSON-valid `\\u00NN` form instead of the human- friendly `\\xNN` form. The standard C0 range below 0x20 is already `\\uNNNN`-escaped by `JSON.stringify` itself, so it never reaches this function in a non-string position — but we still escape it defensively in case the input is a non-JSON string (e.g. the \"undefined\" fallback). When stdout is NOT a TTY, the input is returned unchanged for log fidelity."
         },
         {
+          "name": "cellValue",
+          "kind": "function",
+          "line": 141,
+          "signature": "function cellValue(row: unknown, key: string): unknown",
+          "jsdoc": "Read a column cell from a table row. Returns `undefined` when the row is not a keyed object (a `null` or primitive element inside an otherwise-object array) so reading `null[key]` cannot throw and a stray primitive renders as an empty cell instead of crashing the whole table."
+        },
+        {
           "name": "printTable",
           "kind": "function",
-          "line": 135,
+          "line": 147,
           "signature": "function printTable(data: unknown): void"
         },
         {
           "name": "printMinimal",
           "kind": "function",
-          "line": 196,
+          "line": 219,
           "signature": "function printMinimal(data: unknown): void"
         },
         {
           "name": "extractId",
           "kind": "function",
-          "line": 213,
+          "line": 236,
           "signature": "function extractId(obj: unknown): string"
         },
         {
           "name": "printError",
           "kind": "function",
-          "line": 224,
+          "line": 247,
           "exported": true,
           "signature": "export function printError(message: string): void",
           "jsdoc": "Print an error message to stderr (sanitised for TTY safety — B032)."
