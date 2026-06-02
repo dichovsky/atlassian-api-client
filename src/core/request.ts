@@ -272,10 +272,13 @@ const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([
  * last so they always win.
  *
  * `Accept: application/json` is set as a default and may be overridden by a
- * caller-supplied `Accept` header. `Content-Type: application/json` (when
- * `withJsonBody` is `true`) is applied after the merge and cannot be
- * overridden by callers. When `binaryContentType` is set (raw `Blob` upload),
- * it is applied as `Content-Type` instead.
+ * caller-supplied `Accept` header (matched case-insensitively). `Content-Type:
+ * application/json` (when `withJsonBody` is `true`) is applied after the merge
+ * and cannot be overridden by callers. When `binaryContentType` is set (raw
+ * `Blob` upload), it is applied as `Content-Type` instead. Because HTTP header
+ * names are case-insensitive, caller variants that collide with these
+ * library-controlled headers are dropped so `fetch` does not merge two
+ * differently-cased keys into one comma-joined value.
  *
  * @param callerHeaders - Headers from the {@link RequestOptions.headers} field.
  * @param authHeaders - Headers returned by the configured `AuthProvider`.
@@ -290,14 +293,27 @@ export function buildHeaders(
   withJsonBody: boolean,
   binaryContentType?: string,
 ): Record<string, string> {
+  const forcesContentType = withJsonBody || binaryContentType !== undefined;
   const safeHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(callerHeaders ?? {})) {
-    if (!FORBIDDEN_CALLER_HEADERS.has(key.toLowerCase())) {
-      safeHeaders[key] = value;
+    const lower = key.toLowerCase();
+    if (FORBIDDEN_CALLER_HEADERS.has(lower)) {
+      continue;
     }
+    // HTTP header names are case-insensitive, but a plain object keyed by
+    // differing cases keeps both entries; `fetch` then merges them into one
+    // comma-joined value. Drop any caller variant that collides with a header
+    // the library forces below so the canonical value is the only one.
+    if (forcesContentType && lower === 'content-type') {
+      continue;
+    }
+    safeHeaders[key] = value;
   }
+  // Only default `Accept` when the caller did not supply one in any casing,
+  // so a caller `accept` overrides the default instead of merging with it.
+  const callerSetsAccept = Object.keys(safeHeaders).some((key) => key.toLowerCase() === 'accept');
   const headers: Record<string, string> = {
-    Accept: 'application/json',
+    ...(callerSetsAccept ? {} : { Accept: 'application/json' }),
     ...safeHeaders,
     ...authHeaders,
   };

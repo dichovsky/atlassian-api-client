@@ -376,6 +376,38 @@ describe('buildHeaders', () => {
     );
     expect(headers['X-Atlassian-Token']).toBe('no-check');
   });
+
+  it('forced Content-Type wins over a caller content-type in non-canonical case', () => {
+    const headers = buildHeaders(
+      { 'content-type': 'text/plain' },
+      { Authorization: 'Bearer real' },
+      true,
+    );
+    // No case-variant duplicate may survive: HTTP header names are
+    // case-insensitive, so a lingering `content-type` key would be merged with
+    // the forced `Content-Type` into a single comma-joined value by `fetch`.
+    expect(Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type')).toHaveLength(1);
+    expect(new Headers(headers).get('content-type')).toBe('application/json');
+  });
+
+  it('forced binaryContentType wins over a caller content-type in non-canonical case', () => {
+    const headers = buildHeaders(
+      { 'content-type': 'text/plain' },
+      { Authorization: 'Bearer real' },
+      false,
+      'image/png',
+    );
+    expect(Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type')).toHaveLength(1);
+    expect(new Headers(headers).get('content-type')).toBe('image/png');
+  });
+
+  it('caller Accept overrides the default even in non-canonical case', () => {
+    const headers = buildHeaders({ accept: 'text/csv' }, { Authorization: 'Bearer real' }, false);
+    // The default `Accept: application/json` must not linger alongside the
+    // caller's lowercase `accept` (otherwise `fetch` merges them).
+    expect(Object.keys(headers).filter((k) => k.toLowerCase() === 'accept')).toHaveLength(1);
+    expect(new Headers(headers).get('accept')).toBe('text/csv');
+  });
 });
 
 describe('buildFetchBody', () => {
