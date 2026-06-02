@@ -157,7 +157,7 @@ describe('resolveConfig', () => {
     it('throws ValidationError when timeout is 0', () => {
       expect(() => resolveConfig({ ...validBasicConfig, timeout: 0 })).toThrow(ValidationError);
       expect(() => resolveConfig({ ...validBasicConfig, timeout: 0 })).toThrow(
-        'timeout must be a positive number',
+        'timeout must be a finite positive number',
       );
     });
 
@@ -169,6 +169,15 @@ describe('resolveConfig', () => {
       const config = { ...validBasicConfig, timeout: 'fast' } as unknown as ClientConfig;
       expect(() => resolveConfig(config)).toThrow(ValidationError);
     });
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+      'throws ValidationError when timeout is non-finite: %s',
+      (timeout) => {
+        expect(() => resolveConfig({ ...validBasicConfig, timeout })).toThrow(
+          'timeout must be a finite positive number',
+        );
+      },
+    );
   });
 
   describe('retries validation', () => {

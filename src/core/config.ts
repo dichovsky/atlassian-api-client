@@ -130,8 +130,12 @@ function validateConfig(config: ClientConfig): void {
   validateAuth(config.auth);
 
   if (config.timeout !== undefined) {
-    if (typeof config.timeout !== 'number' || config.timeout <= 0) {
-      throw new ValidationError('timeout must be a positive number');
+    if (
+      typeof config.timeout !== 'number' ||
+      !Number.isFinite(config.timeout) ||
+      config.timeout <= 0
+    ) {
+      throw new ValidationError('timeout must be a finite positive number');
     }
   }
 
