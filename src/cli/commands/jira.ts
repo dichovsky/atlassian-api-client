@@ -38,6 +38,8 @@ import type {
   FieldAssociationsRequest,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
+  WorkflowTransitionRulesUpdateEntry,
+  WorkflowTransitionRulesDeleteEntry,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -6013,6 +6015,11 @@ const WORKFLOWS_ACTIONS = [
   'issue-type-usages',
   'project-usages',
   'workflow-scheme-usages',
+  'read-history',
+  'list-history',
+  'get-rule-config',
+  'update-rule-config',
+  'delete-rule-config',
   'delete-transition-property',
   'get-transition-properties',
   'create-transition-property',
@@ -6073,6 +6080,69 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
+    }
+
+    // B841: POST /rest/api/3/workflow/history
+    case 'read-history': {
+      const workflowId = requireOpt(opts['workflow-id'], '--workflow-id');
+      const versionNumber = asPositiveInt(opts['version-number'], '--version-number');
+      return client.workflows.readWorkflowFromHistory({
+        workflowId,
+        ...(versionNumber !== undefined && { version: versionNumber }),
+      });
+    }
+
+    // B842: POST /rest/api/3/workflow/history/list
+    case 'list-history': {
+      const workflowId = requireOpt(opts['workflow-id'], '--workflow-id');
+      return client.workflows.listWorkflowHistory(
+        { workflowId },
+        { expand: asString(opts['expand']) },
+      );
+    }
+
+    // B843: GET /rest/api/3/workflow/rule/config
+    case 'get-rule-config': {
+      const typesRaw = requireOpt(opts['types'], '--types');
+      const types = typesRaw
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean) as ('postfunction' | 'condition' | 'validator')[];
+      const keysRaw = asString(opts['keys']);
+      const workflowNamesRaw = asString(opts['workflow-names']);
+      const withTagsRaw = asString(opts['with-tags']);
+      return client.workflows.getTransitionRuleConfigs({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        types,
+        keys: keysRaw ? keysRaw.split(',').map((k) => k.trim()) : undefined,
+        workflowNames: workflowNamesRaw
+          ? workflowNamesRaw.split(',').map((n) => n.trim())
+          : undefined,
+        withTags: withTagsRaw ? withTagsRaw.split(',').map((t) => t.trim()) : undefined,
+        draft: asBoolFlag(opts['draft']),
+        expand: asString(opts['expand']),
+      });
+    }
+
+    // B844: PUT /rest/api/3/workflow/rule/config
+    case 'update-rule-config': {
+      const workflowsRaw = requireOpt(opts['workflows'], '--workflows');
+      const workflows = parseJsonArrayFlag(
+        workflowsRaw,
+        '--workflows',
+      ) as WorkflowTransitionRulesUpdateEntry[];
+      return client.workflows.updateTransitionRuleConfigs({ workflows });
+    }
+
+    // B845: PUT /rest/api/3/workflow/rule/config/delete
+    case 'delete-rule-config': {
+      const workflowsRaw = requireOpt(opts['workflows'], '--workflows');
+      const workflows = parseJsonArrayFlag(
+        workflowsRaw,
+        '--workflows',
+      ) as WorkflowTransitionRulesDeleteEntry[];
+      return client.workflows.deleteTransitionRuleConfigs({ workflows });
     }
 
     // B935: DELETE /rest/api/3/workflow/transitions/{transitionId}/properties

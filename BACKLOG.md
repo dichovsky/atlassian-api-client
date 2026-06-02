@@ -135,21 +135,6 @@
 > - Jira Cloud Platform REST API v3 — https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about
 > - Confluence Cloud REST API v2 — https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#about
 
-- [ ] 🔴 🧩 API: B841 Jira: expose POST /rest/api/3/workflow/history
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B842 Jira: expose POST /rest/api/3/workflow/history/list
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B843 Jira: expose GET /rest/api/3/workflow/rule/config
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B844 Jira: expose PUT /rest/api/3/workflow/rule/config
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B845 Jira: expose PUT /rest/api/3/workflow/rule/config/delete
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🔴 🧩 API: B846 Jira: expose POST /rest/api/3/workflows
   - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none

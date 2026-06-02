@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkflowsResource } from '../../src/jira/resources/workflows.js';
+import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -363,6 +364,324 @@ describe('WorkflowsResource', () => {
       await expect(
         workflows.getWorkflowSchemeUsages(WORKFLOW_ID, { maxResults: -2 }),
       ).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── readWorkflowFromHistory (B841) ─────────────────────────────────────────
+
+  describe('readWorkflowFromHistory()', () => {
+    const historyReadResponse = {
+      statuses: [{ id: '10003', name: 'To Do', statusReference: '10003' }],
+      workflows: [
+        {
+          id: WORKFLOW_ID,
+          name: 'Example Workflow',
+          version: { id: 'ver-uuid', versionNumber: 4 },
+        },
+      ],
+    };
+
+    it('calls POST /workflow/history and returns response', async () => {
+      transport.respondWith(historyReadResponse);
+
+      const result = await workflows.readWorkflowFromHistory({
+        workflowId: WORKFLOW_ID,
+        version: 4,
+      });
+
+      expect(result).toEqual(historyReadResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflow/history`,
+        body: { workflowId: WORKFLOW_ID, version: 4 },
+      });
+    });
+
+    it('calls POST /workflow/history without version when omitted', async () => {
+      transport.respondWith(historyReadResponse);
+
+      await workflows.readWorkflowFromHistory({ workflowId: WORKFLOW_ID });
+
+      expect(transport.lastCall?.options.body).toEqual({ workflowId: WORKFLOW_ID });
+    });
+
+    it('throws ValidationError when workflowId is empty', async () => {
+      await expect(workflows.readWorkflowFromHistory({ workflowId: '' })).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
+
+  // ── listWorkflowHistory (B842) ─────────────────────────────────────────────
+
+  describe('listWorkflowHistory()', () => {
+    const historyListResponse = {
+      entries: [
+        {
+          isIntermediate: false,
+          workflowId: WORKFLOW_ID,
+          workflowVersion: 4,
+          writtenAt: '2025-11-20',
+        },
+        {
+          isIntermediate: true,
+          workflowId: WORKFLOW_ID,
+          workflowVersion: 3,
+          writtenAt: '2025-11-19',
+        },
+      ],
+    };
+
+    it('calls POST /workflow/history/list and returns response', async () => {
+      transport.respondWith(historyListResponse);
+
+      const result = await workflows.listWorkflowHistory({ workflowId: WORKFLOW_ID });
+
+      expect(result).toEqual(historyListResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflow/history/list`,
+        body: { workflowId: WORKFLOW_ID },
+      });
+    });
+
+    it('passes expand query param when provided', async () => {
+      transport.respondWith(historyListResponse);
+
+      await workflows.listWorkflowHistory(
+        { workflowId: WORKFLOW_ID },
+        { expand: 'includeIntermediateWorkflows' },
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        expand: 'includeIntermediateWorkflows',
+      });
+    });
+
+    it('does not include expand query param when not provided', async () => {
+      transport.respondWith(historyListResponse);
+
+      await workflows.listWorkflowHistory({ workflowId: WORKFLOW_ID });
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['expand']).toBeUndefined();
+    });
+
+    it('throws ValidationError when workflowId is empty', async () => {
+      await expect(workflows.listWorkflowHistory({ workflowId: '' })).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
+
+  // ── getTransitionRuleConfigs (B843) ────────────────────────────────────────
+
+  describe('getTransitionRuleConfigs()', () => {
+    const ruleConfigPage = {
+      isLast: true,
+      maxResults: 10,
+      startAt: 0,
+      total: 1,
+      values: [
+        {
+          workflowId: { name: 'My Workflow', draft: false },
+          postFunctions: [
+            {
+              id: 'b4d6cbdc',
+              key: 'postfunction-key',
+              configuration: { value: '{}', disabled: false },
+            },
+          ],
+        },
+      ],
+    };
+
+    it('calls GET /workflow/rule/config with required types param', async () => {
+      transport.respondWith(ruleConfigPage);
+
+      const result = await workflows.getTransitionRuleConfigs({ types: ['postfunction'] });
+
+      expect(result).toEqual(ruleConfigPage);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflow/rule/config`,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({ types: 'postfunction' });
+    });
+
+    it('passes multiple types as comma-separated string', async () => {
+      transport.respondWith(ruleConfigPage);
+
+      await workflows.getTransitionRuleConfigs({
+        types: ['postfunction', 'condition', 'validator'],
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        types: 'postfunction,condition,validator',
+      });
+    });
+
+    it('passes all optional params correctly', async () => {
+      transport.respondWith(ruleConfigPage);
+
+      await workflows.getTransitionRuleConfigs({
+        types: ['postfunction'],
+        startAt: 0,
+        maxResults: 10,
+        keys: ['key-a', 'key-b'],
+        workflowNames: ['My Workflow'],
+        withTags: ['tag1'],
+        draft: false,
+        expand: 'transition',
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        types: 'postfunction',
+        startAt: 0,
+        maxResults: 10,
+        keys: 'key-a,key-b',
+        workflowNames: 'My Workflow',
+        withTags: 'tag1',
+        draft: false,
+        expand: 'transition',
+      });
+    });
+
+    it('does not include optional params when not provided', async () => {
+      transport.respondWith(ruleConfigPage);
+
+      await workflows.getTransitionRuleConfigs({ types: ['postfunction'] });
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['startAt']).toBeUndefined();
+      expect(query['maxResults']).toBeUndefined();
+      expect(query['keys']).toBeUndefined();
+      expect(query['workflowNames']).toBeUndefined();
+      expect(query['withTags']).toBeUndefined();
+      expect(query['draft']).toBeUndefined();
+      expect(query['expand']).toBeUndefined();
+    });
+
+    it('throws ValidationError when types array is empty', async () => {
+      await expect(workflows.getTransitionRuleConfigs({ types: [] })).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('throws RangeError for maxResults out of range', async () => {
+      await expect(
+        workflows.getTransitionRuleConfigs({ types: ['postfunction'], maxResults: 0 }),
+      ).rejects.toThrow(RangeError);
+    });
+  });
+
+  // ── updateTransitionRuleConfigs (B844) ─────────────────────────────────────
+
+  describe('updateTransitionRuleConfigs()', () => {
+    const updateResponse = {
+      updateResults: [
+        {
+          workflowId: { name: 'My Workflow', draft: false },
+          ruleUpdateErrors: {},
+          updateErrors: [],
+        },
+      ],
+    };
+
+    it('calls PUT /workflow/rule/config and returns response', async () => {
+      transport.respondWith(updateResponse);
+
+      const result = await workflows.updateTransitionRuleConfigs({
+        workflows: [
+          {
+            workflowId: { name: 'My Workflow', draft: false },
+            postFunctions: [{ id: 'rule-id', configuration: { value: '{}' } }],
+          },
+        ],
+      });
+
+      expect(result).toEqual(updateResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflow/rule/config`,
+      });
+    });
+
+    it('passes the workflows body correctly', async () => {
+      transport.respondWith(updateResponse);
+
+      const body = {
+        workflows: [
+          {
+            workflowId: { name: 'Workflow A' },
+            conditions: [{ id: 'cond-id', configuration: { value: '{"x":1}', disabled: false } }],
+          },
+        ],
+      };
+      await workflows.updateTransitionRuleConfigs(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+
+    it('throws ValidationError when workflows array is empty', async () => {
+      await expect(workflows.updateTransitionRuleConfigs({ workflows: [] })).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
+
+  // ── deleteTransitionRuleConfigs (B845) ─────────────────────────────────────
+
+  describe('deleteTransitionRuleConfigs()', () => {
+    const deleteResponse = {
+      updateResults: [
+        {
+          workflowId: { name: 'My Workflow', draft: false },
+          ruleUpdateErrors: {},
+          updateErrors: [],
+        },
+      ],
+    };
+
+    it('calls PUT /workflow/rule/config/delete and returns response', async () => {
+      transport.respondWith(deleteResponse);
+
+      const result = await workflows.deleteTransitionRuleConfigs({
+        workflows: [
+          {
+            workflowId: { name: 'My Workflow' },
+            workflowRuleIds: ['rule-id-1', 'rule-id-2'],
+          },
+        ],
+      });
+
+      expect(result).toEqual(deleteResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflow/rule/config/delete`,
+      });
+    });
+
+    it('passes the workflows body correctly', async () => {
+      transport.respondWith(deleteResponse);
+
+      const body = {
+        workflows: [
+          {
+            workflowId: { name: 'Workflow B', draft: false },
+            workflowRuleIds: ['abc', 'def'],
+          },
+        ],
+      };
+      await workflows.deleteTransitionRuleConfigs(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+
+    it('throws ValidationError when workflows array is empty', async () => {
+      await expect(workflows.deleteTransitionRuleConfigs({ workflows: [] })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
