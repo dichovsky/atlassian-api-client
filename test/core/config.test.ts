@@ -214,7 +214,7 @@ describe('resolveConfig', () => {
     it('throws ValidationError when retryDelay is 0', () => {
       expect(() => resolveConfig({ ...validBasicConfig, retryDelay: 0 })).toThrow(ValidationError);
       expect(() => resolveConfig({ ...validBasicConfig, retryDelay: 0 })).toThrow(
-        'retryDelay must be a positive number',
+        'retryDelay must be a finite positive number',
       );
     });
 
@@ -227,6 +227,27 @@ describe('resolveConfig', () => {
     it('throws ValidationError when retryDelay is not a number', () => {
       const config = { ...validBasicConfig, retryDelay: 'fast' } as unknown as ClientConfig;
       expect(() => resolveConfig(config)).toThrow(ValidationError);
+    });
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+      'throws ValidationError when retryDelay is non-finite: %s',
+      (retryDelay) => {
+        expect(() => resolveConfig({ ...validBasicConfig, retryDelay })).toThrow(
+          'retryDelay must be a finite positive number',
+        );
+      },
+    );
+
+    it('accepts retryDelay at the Node timer ceiling', () => {
+      expect(resolveConfig({ ...validBasicConfig, retryDelay: 2_147_483_647 }).retryDelay).toBe(
+        2_147_483_647,
+      );
+    });
+
+    it('throws ValidationError when retryDelay exceeds the Node timer ceiling', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, retryDelay: 2_147_483_648 })).toThrow(
+        'retryDelay must not exceed 2147483647ms',
+      );
     });
   });
 
@@ -482,6 +503,18 @@ describe('resolveConfig', () => {
     it('throws ValidationError when maxRetryDelay is not a number', () => {
       const config = { ...validBasicConfig, maxRetryDelay: true } as unknown as ClientConfig;
       expect(() => resolveConfig(config)).toThrow(ValidationError);
+    });
+
+    it('accepts maxRetryDelay at the Node timer ceiling', () => {
+      expect(
+        resolveConfig({ ...validBasicConfig, maxRetryDelay: 2_147_483_647 }).maxRetryDelay,
+      ).toBe(2_147_483_647);
+    });
+
+    it('throws ValidationError when maxRetryDelay exceeds the Node timer ceiling', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, maxRetryDelay: 2_147_483_648 })).toThrow(
+        'maxRetryDelay must not exceed 2147483647ms',
+      );
     });
   });
 
