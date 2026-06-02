@@ -2545,6 +2545,21 @@
 - [x] 🔴 🧩 Jira: B994 expose DELETE /rest/security/1.0/bulkByProperties
   - **Impl:** `BulkByPropertiesResource.deleteSecurityByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-security --properties key=value`.
   - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `VulnerabilityResource`.
+- [x] 🔴 🧩 API: B837 Jira: expose DELETE /rest/api/3/workflow/{entityId}
+  - **Impl:** `WorkflowsResource.deleteWorkflow(entityId)` → void (204). CLI: `atlas jira workflows delete <entityId>`. Endpoint: `DELETE /rest/api/3/workflow/{entityId}`. Spec-verified: 204 No Content on success.
+  - **Rat:** Spec-verified from jira-platform-v3.json. Additive extension to existing WorkflowsResource.
+- [x] 🔴 🧩 API: B838 Jira: expose GET /rest/api/3/workflow/{workflowId}/project/{projectId}/issueTypeUsages
+  - **Impl:** `WorkflowsResource.getIssueTypeUsages(workflowId, projectId, params?)` → `WorkflowProjectIssueTypeUsage`. CLI: `atlas jira workflows issue-type-usages <workflowId> <projectId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — issue-type values contain only `id`.
+- [x] 🔴 🧩 API: B839 Jira: expose GET /rest/api/3/workflow/{workflowId}/projectUsages
+  - **Impl:** `WorkflowsResource.getProjectUsages(workflowId, params?)` → `WorkflowProjectUsage`. CLI: `atlas jira workflows project-usages <workflowId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, projects: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — project values contain only `id`.
+- [x] 🔴 🧩 API: B840 Jira: expose GET /rest/api/3/workflow/{workflowId}/workflowSchemes
+  - **Impl:** `WorkflowsResource.getWorkflowSchemeUsages(workflowId, params?)` → `WorkflowSchemeUsage`. CLI: `atlas jira workflows workflow-scheme-usages <workflowId> [--next-page-token] [--max-results]`. Cursor-paginated; returns `{ workflowId, workflowSchemes: { values: [{id}], nextPageToken? } }`.
+  - **Rat:** Spec-verified. Distinct page-bean shape — workflow-scheme values contain only `id`.
+- [x] 🔴 🧩 API: B934 Jira: expose GET /rest/api/3/workflow/search
+  - **Impl:** Already implemented as `WorkflowsResource.list()` (prior to this PR). CLI: `atlas jira workflows list`. Spec note: endpoint is `deprecated: true` (removal planned June 1 2026 per changelog) but list() correctly covers it.
+  - **Rat:** Already-covered/stale-backlog. The existing `list()` calls `GET ${baseUrl}/workflow/search` with all documented query params (startAt, maxResults, expand, queryString, orderBy, isActive). No duplicate method added.
 - [x] 🔴 🧩 API: B939 Jira: expose GET /rest/atlassian-connect/1/addons/{addonKey}/properties
   - **Impl:** `AddonsResource.listProperties(addonKey)` → `AddonPropertyKeys` (`{ keys?: AddonPropertyKey[] }`). CLI: `atlas jira addons list-properties <addonKey>`. Base URL reuses `serviceRegistryBaseUrl` (`/rest/atlassian-connect/1`).
   - **Rat:** Spec-verified: `PropertyKeys` schema, GET returns array of `{ key, self }` pairs. Reserved key `connect_client_key_*` excluded by API.

@@ -1117,6 +1117,15 @@ const jiraFieldsMock = {
   listTrashedFields: vi.fn(),
 };
 
+const jiraWorkflowsMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  deleteWorkflow: vi.fn(),
+  getIssueTypeUsages: vi.fn(),
+  getProjectUsages: vi.fn(),
+  getWorkflowSchemeUsages: vi.fn(),
+};
+
 const jiraWorkflowSchemeMock = {
   list: vi.fn(),
   listAll: vi.fn(),
@@ -1298,6 +1307,7 @@ vi.mock('../../src/jira/client.js', () => {
       screens: jiraScreensMock,
       screenScheme: jiraScreenSchemeMock,
       plans: jiraPlansMock,
+      workflows: jiraWorkflowsMock,
       workflowScheme: jiraWorkflowSchemeMock,
       fields: jiraFieldsMock,
       jql: jiraJqlMock,
@@ -21536,6 +21546,169 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('plans', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown plans action',
       );
+    });
+  });
+
+  // ── workflows resource (B837-B840) ────────────────────────────────────────
+
+  describe('workflows resource', () => {
+    const WORKFLOW_ID = 'fb759d53-a3a4-45ff-9de4-547c4b638dde';
+    const PROJECT_ID = '10001';
+
+    it('list calls client.workflows.list with pagination params', async () => {
+      const page = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      jiraWorkflowsMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'list', [], { 'start-at': '0', 'max-results': '50' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0, maxResults: 50 }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('list passes is-active=true as boolean', async () => {
+      jiraWorkflowsMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'true' }), GLOBALS);
+      expect(jiraWorkflowsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: true }),
+      );
+    });
+
+    it('list passes is-active=false as boolean', async () => {
+      jiraWorkflowsMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'false' }), GLOBALS);
+      expect(jiraWorkflowsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: false }),
+      );
+    });
+
+    it('list throws when --is-active has an invalid value', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'foo' }), GLOBALS),
+      ).rejects.toThrow("expected 'true' or 'false'");
+      await expect(
+        executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'False' }), GLOBALS),
+      ).rejects.toThrow("expected 'true' or 'false'");
+    });
+
+    it('get calls client.workflows.get with workflow name', async () => {
+      const workflow = { id: { name: 'Default Workflow' }, description: '' };
+      jiraWorkflowsMock.get.mockResolvedValue(workflow);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'get', ['Default Workflow'], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.get).toHaveBeenCalledWith('Default Workflow');
+      expect(result).toEqual(workflow);
+    });
+
+    it('get throws when workflowName is missing', async () => {
+      await expect(executeJiraCommand(cmd('workflows', 'get', [], {}), GLOBALS)).rejects.toThrow(
+        'workflowName',
+      );
+    });
+
+    it('delete calls client.workflows.deleteWorkflow and returns { deleted: true }', async () => {
+      jiraWorkflowsMock.deleteWorkflow.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'delete', [WORKFLOW_ID], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.deleteWorkflow).toHaveBeenCalledWith(WORKFLOW_ID);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete throws when entityId is missing', async () => {
+      await expect(executeJiraCommand(cmd('workflows', 'delete', [], {}), GLOBALS)).rejects.toThrow(
+        'entityId',
+      );
+    });
+
+    it('issue-type-usages calls client.workflows.getIssueTypeUsages', async () => {
+      const response = {
+        workflowId: WORKFLOW_ID,
+        projectId: PROJECT_ID,
+        issueTypes: { values: [{ id: '10000' }] },
+      };
+      jiraWorkflowsMock.getIssueTypeUsages.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'issue-type-usages', [WORKFLOW_ID, PROJECT_ID], { 'max-results': '25' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getIssueTypeUsages).toHaveBeenCalledWith(
+        WORKFLOW_ID,
+        PROJECT_ID,
+        expect.objectContaining({ maxResults: 25 }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('issue-type-usages throws when workflowId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'issue-type-usages', [], {}), GLOBALS),
+      ).rejects.toThrow('workflowId');
+    });
+
+    it('issue-type-usages throws when projectId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'issue-type-usages', [WORKFLOW_ID], {}), GLOBALS),
+      ).rejects.toThrow('projectId');
+    });
+
+    it('project-usages calls client.workflows.getProjectUsages', async () => {
+      const response = {
+        workflowId: WORKFLOW_ID,
+        projects: { values: [{ id: '10001' }] },
+      };
+      jiraWorkflowsMock.getProjectUsages.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'project-usages', [WORKFLOW_ID], {
+          'next-page-token': 'eyJvIjoyfQ==',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getProjectUsages).toHaveBeenCalledWith(
+        WORKFLOW_ID,
+        expect.objectContaining({ nextPageToken: 'eyJvIjoyfQ==' }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('project-usages throws when workflowId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'project-usages', [], {}), GLOBALS),
+      ).rejects.toThrow('workflowId');
+    });
+
+    it('workflow-scheme-usages calls client.workflows.getWorkflowSchemeUsages', async () => {
+      const response = {
+        workflowId: WORKFLOW_ID,
+        workflowSchemes: { values: [{ id: '1000' }] },
+      };
+      jiraWorkflowsMock.getWorkflowSchemeUsages.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'workflow-scheme-usages', [WORKFLOW_ID], {}),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getWorkflowSchemeUsages).toHaveBeenCalledWith(
+        WORKFLOW_ID,
+        expect.objectContaining({}),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('workflow-scheme-usages throws when workflowId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'workflow-scheme-usages', [], {}), GLOBALS),
+      ).rejects.toThrow('workflowId');
+    });
+
+    it('throws on unknown workflows action', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'unknown-action', [], {}), GLOBALS),
+      ).rejects.toThrow('Unknown workflows action');
     });
   });
 

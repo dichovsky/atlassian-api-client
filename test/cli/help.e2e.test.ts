@@ -146,6 +146,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   screens: 'executeScreens',
   screenscheme: 'executeScreenScheme',
   plans: 'executePlans',
+  workflows: 'executeWorkflows',
   workflowscheme: 'executeWorkflowScheme',
   fields: 'executeFields',
   jql: 'executeJql',

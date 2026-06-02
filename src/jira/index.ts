@@ -146,6 +146,16 @@ export type {
   WorkflowTransition,
   WorkflowStatus,
   ListWorkflowsParams,
+  WorkflowIssueTypeUsage,
+  WorkflowIssueTypeUsagePage,
+  WorkflowProjectIssueTypeUsage,
+  WorkflowProjectUsageItem,
+  WorkflowProjectUsagePage,
+  WorkflowProjectUsage,
+  WorkflowSchemeUsageItem,
+  WorkflowSchemeUsagePage,
+  WorkflowSchemeUsage,
+  WorkflowUsagesParams,
 } from './resources/workflows.js';
 export { DashboardsResource } from './resources/dashboards.js';
 export type {

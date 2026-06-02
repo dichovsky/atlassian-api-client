@@ -208,6 +208,8 @@ export async function executeJiraCommand(
       return executeScreenScheme(client, cmd);
     case 'plans':
       return executePlans(client, cmd);
+    case 'workflows':
+      return executeWorkflows(client, cmd);
     case 'workflowscheme':
       return executeWorkflowScheme(client, cmd);
     case 'fields':
@@ -5983,6 +5985,80 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
     }
     default:
       throw new Error(`Unknown plans action: ${cmd.action}. Actions: ${PLANS_ACTIONS.join(', ')}`);
+  }
+}
+
+// ─── workflows (B837-B840) ─────────────────────────────────────────────────
+
+const WORKFLOWS_ACTIONS = [
+  'list',
+  'get',
+  'delete',
+  'issue-type-usages',
+  'project-usages',
+  'workflow-scheme-usages',
+];
+
+async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // B934 (already-covered by existing list()): GET /rest/api/3/workflow/search
+    case 'list':
+      return client.workflows.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        expand: asString(opts['expand']),
+        queryString: asString(opts['query-string']),
+        orderBy: asString(opts['order-by']),
+        isActive: asBoolFlag(opts['is-active']),
+      });
+
+    // Existing get() – not a new endpoint, kept for CLI completeness
+    case 'get': {
+      const workflowName = requireArg(cmd.positionalArgs[0], 'workflowName');
+      return client.workflows.get(workflowName);
+    }
+
+    // B837: DELETE /rest/api/3/workflow/{entityId}
+    case 'delete': {
+      const entityId = requireArg(cmd.positionalArgs[0], 'entityId');
+      await client.workflows.deleteWorkflow(entityId);
+      return { deleted: true };
+    }
+
+    // B838: GET /rest/api/3/workflow/{workflowId}/project/{projectId}/issueTypeUsages
+    case 'issue-type-usages': {
+      const workflowId = requireArg(cmd.positionalArgs[0], 'workflowId');
+      const projectId = requireArg(cmd.positionalArgs[1], 'projectId');
+      return client.workflows.getIssueTypeUsages(workflowId, projectId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+
+    // B839: GET /rest/api/3/workflow/{workflowId}/projectUsages
+    case 'project-usages': {
+      const workflowId = requireArg(cmd.positionalArgs[0], 'workflowId');
+      return client.workflows.getProjectUsages(workflowId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+
+    // B840: GET /rest/api/3/workflow/{workflowId}/workflowSchemes
+    case 'workflow-scheme-usages': {
+      const workflowId = requireArg(cmd.positionalArgs[0], 'workflowId');
+      return client.workflows.getWorkflowSchemeUsages(workflowId, {
+        nextPageToken: asString(opts['next-page-token']),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+
+    default:
+      throw new Error(
+        `Unknown workflows action: ${cmd.action}. Actions: ${WORKFLOWS_ACTIONS.join(', ')}`,
+      );
   }
 }
 

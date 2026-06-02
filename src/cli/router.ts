@@ -245,6 +245,8 @@ const GLOBAL_OPTIONS = {
   user: { type: 'string' as const },
   group: { type: 'string' as const },
   swap: { type: 'string' as const },
+  // workflows options (B837-B840)
+  'is-active': { type: 'string' as const },
   // resolution options (B931, B712-B718)
   'query-string': { type: 'string' as const },
   'only-default': { type: 'boolean' as const },

@@ -156,6 +156,7 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `screenscheme`           | `list`, `list-all`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `plans`                  | `list`, `create`, `get`, `update`, `archive`, `duplicate`, `list-teams`, `add-atlassian-team`, `delete-atlassian-team`, `get-atlassian-team`, `update-atlassian-team`, `create-plan-only-team`, `delete-plan-only-team`, `get-plan-only-team`, `update-plan-only-team`, `trash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `workflowscheme`         | `list`, `create`, `delete`, `get`, `update`, `delete-default`, `get-default`, `set-default`, `delete-issuetype`, `get-issuetype`, `set-issuetype`, `delete-workflow`, `get-workflow`, `set-workflow`, `project-usages`, `list-by-project`, `assign-project`, `switch-project`, `create-draft`, `delete-draft`, `get-draft`, `update-draft`, `delete-draft-default`, `get-draft-default`, `set-draft-default`, `delete-draft-issuetype`, `get-draft-issuetype`, `set-draft-issuetype`, `publish-draft`, `delete-draft-workflow`, `get-draft-workflow`, `set-draft-workflow`, `bulk-read`, `bulk-update`, `bulk-mappings`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `workflows`              | `list`, `get`, `delete`, `issue-type-usages`, `project-usages`, `workflow-scheme-usages`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `fields`                 | `field-list`, `field-list-all`, `field-create`, `field-update`, `field-delete`, `context-list`, `context-create`, `context-update`, `context-delete`, `context-option-list`, `context-option-create`, `context-option-update`, `context-option-delete`, `context-option-replace-issues`, `context-option-move`, `context-issuetype-set`, `context-issuetype-remove`, `context-issuetype-mapping`, `context-default-list`, `context-default-set`, `context-project-set`, `context-project-remove`, `context-mapping`, `context-project-mapping`, `field-option-list`, `field-option-create`, `field-option-delete`, `field-option-get`, `field-option-update`, `field-option-replace-issues`, `field-option-suggestions-edit`, `field-option-suggestions-search`, `field-project-associations`, `field-screens`, `field-restore`, `field-trash`, `field-remove-associations`, `field-create-associations`, `field-trash-list`                                                                                                                                         |
 | `jql`                    | `autocomplete-data`, `autocomplete-data-post`, `autocomplete-suggestions`, `get-precomputations`, `update-precomputations`, `get-precomputations-by-id`, `match-issues`, `parse`, `migrate-queries`, `sanitize`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `issuelinktype`          | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -3205,6 +3206,47 @@ atlas jira plans delete-plan-only-team 10001 2001
 
 # Update a plan-only team (JSON-patch)
 atlas jira plans update-plan-only-team 10001 2001 --body '{"op":"replace","path":"/name","value":"Renamed Team"}'
+```
+
+## `workflows`
+
+Classic workflow management — `/rest/api/3/workflow` (B837–B840 + B934 archived as already-covered).
+
+**Pagination:** `list` is offset-paginated (`--start-at`, `--max-results`). The usage actions (`issue-type-usages`, `project-usages`, `workflow-scheme-usages`) use cursor pagination (`--next-page-token`, `--max-results`).
+
+**Note:** `GET /rest/api/3/workflow/search` (B934) is implemented as `list` and was already present before this PR.
+
+### Actions
+
+| Action                   | Positional args        | Key options                                                                              |
+| ------------------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
+| `list`                   | —                      | `--start-at`, `--max-results`, `--expand`, `--query-string`, `--order-by`, `--is-active` |
+| `get`                    | `workflowName`         | —                                                                                        |
+| `delete`                 | `entityId`             | —                                                                                        |
+| `issue-type-usages`      | `workflowId projectId` | `--next-page-token`, `--max-results`                                                     |
+| `project-usages`         | `workflowId`           | `--next-page-token`, `--max-results`                                                     |
+| `workflow-scheme-usages` | `workflowId`           | `--next-page-token`, `--max-results`                                                     |
+
+```sh
+# List paginated classic workflows — B934
+atlas jira workflows list --max-results 50
+
+# Get a workflow by name
+atlas jira workflows get "Default Workflow"
+
+# Delete an inactive workflow by entity ID — B837
+atlas jira workflows delete fb759d53-a3a4-45ff-9de4-547c4b638dde
+
+# Get issue types using a workflow in a project — B838
+atlas jira workflows issue-type-usages fb759d53-a3a4-45ff-9de4-547c4b638dde 10001
+atlas jira workflows issue-type-usages fb759d53-a3a4-45ff-9de4-547c4b638dde 10001 --max-results 25
+
+# Get projects using a workflow — B839
+atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
+atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde --next-page-token eyJvIjoyfQ==
+
+# Get workflow schemes using a workflow — B840
+atlas jira workflows workflow-scheme-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
 ```
 
 ## `workflowscheme`
