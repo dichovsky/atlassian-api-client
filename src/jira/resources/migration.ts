@@ -206,6 +206,7 @@ export class MigrationResource {
     if (!body.workflowEntityId) throw new ValidationError('workflowEntityId is required');
     if (!body.ruleIds || body.ruleIds.length === 0)
       throw new ValidationError('ruleIds is required');
+    if (body.ruleIds.length > 10) throw new ValidationError('ruleIds accepts at most 10 rule IDs');
     const response = await this.transport.request<WorkflowRulesSearchDetails>({
       method: 'POST',
       path: `${this.baseUrl}/migration/workflow/rule/search`,

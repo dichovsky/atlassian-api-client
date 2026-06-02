@@ -25309,6 +25309,30 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--update-value-list');
     });
 
+    it('update-fields throws when --update-value-list is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-fields', [], {
+            'transfer-id': TRANSFER_ID,
+            'update-value-list': 'not-json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--update-value-list');
+    });
+
+    it('update-fields throws when --update-value-list is not a JSON array', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-fields', [], {
+            'transfer-id': TRANSFER_ID,
+            'update-value-list': '{"_type":"StringIssueField"}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--update-value-list must be a JSON array');
+    });
+
     it('update-properties calls updateEntityProperties with positional entityType', async () => {
       // Arrange
       jiraMigrationMock.updateEntityProperties.mockResolvedValue(undefined);
@@ -25364,6 +25388,30 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('--value');
+    });
+
+    it('update-properties throws when --value is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-properties', ['IssueProperty'], {
+            'transfer-id': TRANSFER_ID,
+            value: 'not-json',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('update-properties throws when --value is not a JSON array', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('migration', 'update-properties', ['IssueProperty'], {
+            'transfer-id': TRANSFER_ID,
+            value: '{"entityId":1}',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value must be a JSON array');
     });
 
     it('search-workflow-rules calls searchWorkflowRules with required flags', async () => {
@@ -25449,6 +25497,27 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('--rule-ids');
+    });
+
+    it('search-workflow-rules strips empty tokens from --rule-ids (splitCsvIds)', async () => {
+      // Arrange
+      jiraMigrationMock.searchWorkflowRules.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('migration', 'search-workflow-rules', [], {
+          'transfer-id': TRANSFER_ID,
+          'workflow-entity-id': TRANSFER_ID,
+          'rule-ids': 'rule-1,,rule-2, ,rule-3',
+        }),
+        GLOBALS,
+      );
+
+      // Assert — empty tokens stripped; only non-empty values passed
+      expect(jiraMigrationMock.searchWorkflowRules).toHaveBeenCalledWith(
+        TRANSFER_ID,
+        expect.objectContaining({ ruleIds: ['rule-1', 'rule-2', 'rule-3'] }),
+      );
     });
 
     it('throws on unknown migration action', async () => {

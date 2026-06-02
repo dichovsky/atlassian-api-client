@@ -367,6 +367,16 @@ describe('MigrationResource', () => {
       ).rejects.toThrow('ruleIds is required');
     });
 
+    it('throws when ruleIds has more than 10 items', async () => {
+      const ruleIds = Array.from({ length: 11 }, (_, i) => `rule-${i + 1}`);
+      await expect(
+        migration.searchWorkflowRules(TRANSFER_ID, {
+          workflowEntityId: 'wf-1',
+          ruleIds,
+        }),
+      ).rejects.toThrow('ruleIds accepts at most 10 rule IDs');
+    });
+
     it('propagates transport errors', async () => {
       // Arrange
       transport.respondWithError(new Error('bad request'));

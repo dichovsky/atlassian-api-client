@@ -58,6 +58,7 @@ import type {
 import type {
   MigrationEntityType,
   ConnectCustomFieldValue,
+  EntityPropertyDetails,
 } from '../../jira/resources/migration.js';
 import { buildClientConfig } from '../config.js';
 
@@ -7651,22 +7652,19 @@ async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise
     case 'update-fields': {
       // B948: PUT /migration/field — requires --transfer-id and --update-value-list
       const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
-      const updateValueListRaw = asString(opts['update-value-list']);
-      if (!updateValueListRaw) {
-        throw new Error('update-fields requires at least one of: --update-value-list');
-      }
-      const updateValueList = JSON.parse(updateValueListRaw) as ConnectCustomFieldValue[];
+      const updateValueListRaw = requireOpt(opts['update-value-list'], '--update-value-list');
+      const updateValueList = parseJsonArrayFlag(
+        updateValueListRaw,
+        '--update-value-list',
+      ) as ConnectCustomFieldValue[];
       return client.migration.updateIssueFields(transferId, { updateValueList });
     }
     case 'update-properties': {
       // B949: PUT /migration/properties/{entityType} — requires --transfer-id, positional entityType, and --value (JSON array)
       const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
       const entityType = requireArg(cmd.positionalArgs[0], 'entityType') as MigrationEntityType;
-      const valueRaw = asString(opts['value']);
-      if (!valueRaw) {
-        throw new Error('update-properties requires at least one of: --value');
-      }
-      const properties = JSON.parse(valueRaw);
+      const valueRaw = requireOpt(opts['value'], '--value');
+      const properties = parseJsonArrayFlag(valueRaw, '--value') as EntityPropertyDetails[];
       await client.migration.updateEntityProperties(transferId, entityType, properties);
       return { updated: true };
     }
@@ -7675,7 +7673,7 @@ async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise
       const transferId = requireOpt(opts['transfer-id'], '--transfer-id');
       const workflowEntityId = requireOpt(opts['workflow-entity-id'], '--workflow-entity-id');
       const ruleIdsRaw = requireOpt(opts['rule-ids'], '--rule-ids');
-      const ruleIds = ruleIdsRaw.split(',').map((s) => s.trim());
+      const ruleIds = splitCsvIds(ruleIdsRaw);
       const expand = asString(opts['expand']);
       return client.migration.searchWorkflowRules(transferId, {
         workflowEntityId,
