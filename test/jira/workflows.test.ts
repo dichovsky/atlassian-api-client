@@ -241,6 +241,15 @@ describe('WorkflowsResource', () => {
         `${BASE_URL}/workflow/wf%2Fid/project/proj%2Fid/issueTypeUsages`,
       );
     });
+
+    it('rejects out-of-range maxResults', async () => {
+      await expect(
+        workflows.getIssueTypeUsages(WORKFLOW_ID, PROJECT_ID, { maxResults: 0 }),
+      ).rejects.toThrow(RangeError);
+      await expect(
+        workflows.getIssueTypeUsages(WORKFLOW_ID, PROJECT_ID, { maxResults: -1 }),
+      ).rejects.toThrow(RangeError);
+    });
   });
 
   // ── getProjectUsages ───────────────────────────────────────────────────────
@@ -289,6 +298,15 @@ describe('WorkflowsResource', () => {
       expect(query['nextPageToken']).toBeUndefined();
       expect(query['maxResults']).toBeUndefined();
     });
+
+    it('rejects out-of-range maxResults', async () => {
+      await expect(workflows.getProjectUsages(WORKFLOW_ID, { maxResults: 0 })).rejects.toThrow(
+        RangeError,
+      );
+      await expect(workflows.getProjectUsages(WORKFLOW_ID, { maxResults: -5 })).rejects.toThrow(
+        RangeError,
+      );
+    });
   });
 
   // ── getWorkflowSchemeUsages ────────────────────────────────────────────────
@@ -336,6 +354,15 @@ describe('WorkflowsResource', () => {
       const query = transport.lastCall?.options.query ?? {};
       expect(query['nextPageToken']).toBeUndefined();
       expect(query['maxResults']).toBeUndefined();
+    });
+
+    it('rejects out-of-range maxResults', async () => {
+      await expect(
+        workflows.getWorkflowSchemeUsages(WORKFLOW_ID, { maxResults: 0 }),
+      ).rejects.toThrow(RangeError);
+      await expect(
+        workflows.getWorkflowSchemeUsages(WORKFLOW_ID, { maxResults: -2 }),
+      ).rejects.toThrow(RangeError);
     });
   });
 });

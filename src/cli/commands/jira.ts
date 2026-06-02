@@ -5972,7 +5972,7 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         expand: asString(opts['expand']),
         queryString: asString(opts['query-string']),
         orderBy: asString(opts['order-by']),
-        isActive: opts['is-active'] !== undefined ? opts['is-active'] === 'true' : undefined,
+        isActive: asBoolFlag(opts['is-active']),
       });
 
     // Existing get() – not a new endpoint, kept for CLI completeness

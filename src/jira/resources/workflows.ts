@@ -171,6 +171,7 @@ export class WorkflowsResource {
     projectId: string,
     params?: WorkflowUsagesParams,
   ): Promise<WorkflowProjectIssueTypeUsage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
@@ -190,6 +191,7 @@ export class WorkflowsResource {
     workflowId: string,
     params?: WorkflowUsagesParams,
   ): Promise<WorkflowProjectUsage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
@@ -209,6 +211,7 @@ export class WorkflowsResource {
     workflowId: string,
     params?: WorkflowUsagesParams,
   ): Promise<WorkflowSchemeUsage> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;

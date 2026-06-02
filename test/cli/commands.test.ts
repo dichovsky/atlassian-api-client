@@ -21480,6 +21480,15 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('list throws when --is-active has an invalid value', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'foo' }), GLOBALS),
+      ).rejects.toThrow("expected 'true' or 'false'");
+      await expect(
+        executeJiraCommand(cmd('workflows', 'list', [], { 'is-active': 'False' }), GLOBALS),
+      ).rejects.toThrow("expected 'true' or 'false'");
+    });
+
     it('get calls client.workflows.get with workflow name', async () => {
       const workflow = { id: { name: 'Default Workflow' }, description: '' };
       jiraWorkflowsMock.get.mockResolvedValue(workflow);

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "e6a4713fae9a0987c7e2c78e500bca2ed710209c6e357e9382e240c259dc33ca",
+  "sourceHash": "257a640effcd9123eb1df8ae31e6e73ae279e445cbd5968607e701245e0e44fb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -31993,12 +31993,12 @@
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 189
+              "line": 190
             },
             {
               "name": "getWorkflowSchemeUsages",
               "kind": "method",
-              "line": 208
+              "line": 210
             }
           ]
         }
