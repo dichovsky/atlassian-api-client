@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "b1f74e35251629107f2cf67ecc645627e3fa19f2d683eb1e714255e279832a58",
+  "sourceHash": "92e0bbbed5ab1719be961dc71c969218e3164e7995ad94098d74c61ca4eaabf2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -12001,20 +12001,20 @@
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 191,
+          "line": 197,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 237,
+          "line": 243,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 253,
+          "line": 259,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],

@@ -157,6 +157,9 @@ function validateConfig(config: ClientConfig): void {
     if (!Number.isFinite(config.retryDelay) || config.retryDelay <= 0) {
       throw new ValidationError('retryDelay must be a finite positive number');
     }
+    if (config.retryDelay > MAX_TIMER_DELAY) {
+      throw new ValidationError(`retryDelay must not exceed ${MAX_TIMER_DELAY}ms`);
+    }
   }
 
   if (config.maxRetryDelay !== undefined) {
@@ -169,6 +172,9 @@ function validateConfig(config: ClientConfig): void {
       config.maxRetryDelay <= 0
     ) {
       throw new ValidationError('maxRetryDelay must be a finite positive number');
+    }
+    if (config.maxRetryDelay > MAX_TIMER_DELAY) {
+      throw new ValidationError(`maxRetryDelay must not exceed ${MAX_TIMER_DELAY}ms`);
     }
   }
 
