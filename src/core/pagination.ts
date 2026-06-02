@@ -315,7 +315,10 @@ export async function* paginateOffset<T>(
       done = true;
     } else if (total !== undefined && startAt + values.length >= total) {
       done = true;
-    } else if (values.length < Math.min(pageSize, serverMaxResults ?? pageSize)) {
+    } else if (
+      isLast !== false &&
+      values.length < Math.min(pageSize, serverMaxResults ?? pageSize)
+    ) {
       // Short page — the page is shorter than both the caller's intent and
       // the server's own capacity, so there is no further data even if the
       // response omitted `isLast` and `total`. Using `min(pageSize,
@@ -323,6 +326,10 @@ export async function* paginateOffset<T>(
       // when the server clamps `maxResults` below `pageSize` and returns a
       // full clamped page, and (2) trusting a misleadingly large
       // server-echoed `maxResults` when the caller-requested size was met.
+      // The `isLast !== false` guard ensures this heuristic only fires when the
+      // server stayed silent: an explicit `isLast: false` (e.g. a page trimmed
+      // by server-side permission filtering) means more data exists, so we must
+      // fall through and advance rather than silently dropping the rest.
       done = true;
     } else {
       // Advance by the row count actually delivered. Never trust the
