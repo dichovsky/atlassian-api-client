@@ -2632,3 +2632,15 @@
 - [x] 🔴 🧩 API: B938 Jira: expose PUT /rest/api/3/workflow/transitions/{transitionId}/properties
   - **Impl:** `WorkflowsResource.updateTransitionProperty(transitionId, key, workflowName, value, workflowMode?)` → `WorkflowTransitionProperty`. CLI: `atlas jira workflows update-transition-property <transitionId> --key <k> --workflow-name <n> --value <v> [--workflow-mode]`. Body: `{ value }`.
   - **Rat:** Spec-verified: identical param shape to POST (key + workflowName required, workflowMode optional). Trying to update a nonexistent property creates it (upsert behaviour). `deprecated: true`.
+- [x] 🔴 🧩 API: B851 Jira: expose POST /rest/api/3/workflows/preview
+  - **Impl:** `WorkflowsResource.previewWorkflows(body: WorkflowPreviewRequest)` → `WorkflowPreviewResponse`. CLI: `atlas jira workflows preview --body '{"projectId":"10001","workflowIds":["..."]}'`. Returns read-only preview of workflows with statuses and transitions.
+  - **Rat:** Spec-verified: POST /rest/api/3/workflows/preview, operationId `readWorkflowPreviews`. Required field: `projectId`. Response schema `WorkflowPreviewResponse` (distinct from update/read schemas). Not deprecated.
+- [x] 🔴 🧩 API: B852 Jira: expose GET /rest/api/3/workflows/search
+  - **Impl:** `WorkflowsResource.searchWorkflows(params?: WorkflowSearchParams)` → `WorkflowSearchResponse`. Offset-paginated (startAt/maxResults). CLI: `atlas jira workflows search --query-string "Default" --is-active true --scope GLOBAL`. Supports all 7 query params.
+  - **Rat:** Spec-verified: GET /rest/api/3/workflows/search, response schema `WorkflowSearchResponse` (offset pagination: startAt/maxResults/total/isLast). Distinct from classic /rest/api/3/workflow/search (B934). `scope` param is a string, `isActive` is boolean. Not deprecated.
+- [x] 🔴 🧩 API: B853 Jira: expose POST /rest/api/3/workflows/update
+  - **Impl:** `WorkflowsResource.updateWorkflows(body: WorkflowUpdateRequest)` → `WorkflowUpdateResponse`. CLI: `atlas jira workflows update --body '{"workflows":[...]}'`. Response includes distinct `WorkflowUpdateResponseWorkflow`/`WorkflowUpdateResponseStatus` types separate from request schemas; optional `taskId` for async operations.
+  - **Rat:** Spec-verified: POST /rest/api/3/workflows/update. Request: `WorkflowUpdateRequest` (workflows[], statuses[]). Response: `WorkflowUpdateResponse` (DISTINCT — different field shapes). Deeply nested body passed via `--body` JSON flag. Not deprecated.
+- [x] 🔴 🧩 API: B854 Jira: expose POST /rest/api/3/workflows/update/validation
+  - **Impl:** `WorkflowsResource.validateWorkflowUpdate(body: WorkflowUpdateValidateRequest)` → `WorkflowValidationErrorList`. CLI: `atlas jira workflows validate-update --body '{"payload":{...}}'`. Required `payload` field wraps the update body; optional `validationOptions.levels` array.
+  - **Rat:** Spec-verified: POST /rest/api/3/workflows/update/validation. Request: `WorkflowUpdateValidateRequestBean` (required: `payload`; optional: `validationOptions`). Response: `WorkflowValidationErrorList` with `errors[]` including code/message/level/type/elementReference. Not deprecated.

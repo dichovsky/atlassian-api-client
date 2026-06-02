@@ -1138,6 +1138,10 @@ const jiraWorkflowsMock = {
   getTransitionProperties: vi.fn(),
   createTransitionProperty: vi.fn(),
   updateTransitionProperty: vi.fn(),
+  previewWorkflows: vi.fn(),
+  searchWorkflows: vi.fn(),
+  updateWorkflows: vi.fn(),
+  validateWorkflowUpdate: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -22217,6 +22221,102 @@ describe('executeJiraCommand', () => {
           GLOBALS,
         ),
       ).rejects.toThrow('--workflow-mode');
+    });
+
+    // B851: POST /rest/api/3/workflows/preview
+    it('preview calls client.workflows.previewWorkflows with body', async () => {
+      const response = { workflows: [], statuses: [] };
+      jiraWorkflowsMock.previewWorkflows.mockResolvedValue(response);
+      const body = JSON.stringify({ projectId: '10001', workflowIds: [WORKFLOW_ID] });
+      const result = await executeJiraCommand(cmd('workflows', 'preview', [], { body }), GLOBALS);
+      expect(jiraWorkflowsMock.previewWorkflows).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: '10001' }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('preview throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'preview', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // B852: GET /rest/api/3/workflows/search
+    it('search calls client.workflows.searchWorkflows with pagination params', async () => {
+      const response = { startAt: 0, maxResults: 25, total: 1, isLast: true, values: [] };
+      jiraWorkflowsMock.searchWorkflows.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'search', [], {
+          'start-at': '0',
+          'max-results': '25',
+          'query-string': 'Default',
+          'is-active': 'true',
+          scope: 'GLOBAL',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.searchWorkflows).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startAt: 0,
+          maxResults: 25,
+          queryString: 'Default',
+          isActive: true,
+          scope: 'GLOBAL',
+        }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('search accepts startAt: 0 (non-negative)', async () => {
+      jiraWorkflowsMock.searchWorkflows.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('workflows', 'search', [], { 'start-at': '0' }), GLOBALS);
+      expect(jiraWorkflowsMock.searchWorkflows).toHaveBeenCalledWith(
+        expect.objectContaining({ startAt: 0 }),
+      );
+    });
+
+    // B853: POST /rest/api/3/workflows/update
+    it('update calls client.workflows.updateWorkflows with body', async () => {
+      const response = { taskId: null, workflows: [], statuses: [] };
+      jiraWorkflowsMock.updateWorkflows.mockResolvedValue(response);
+      const body = JSON.stringify({ workflows: [{ id: WORKFLOW_ID, description: 'Updated' }] });
+      const result = await executeJiraCommand(cmd('workflows', 'update', [], { body }), GLOBALS);
+      expect(jiraWorkflowsMock.updateWorkflows).toHaveBeenCalledWith(
+        expect.objectContaining({ workflows: [{ id: WORKFLOW_ID, description: 'Updated' }] }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('update throws when --body is missing', async () => {
+      await expect(executeJiraCommand(cmd('workflows', 'update', [], {}), GLOBALS)).rejects.toThrow(
+        '--body',
+      );
+    });
+
+    // B854: POST /rest/api/3/workflows/update/validation
+    it('validate-update calls client.workflows.validateWorkflowUpdate with body', async () => {
+      const response = { errors: [] };
+      jiraWorkflowsMock.validateWorkflowUpdate.mockResolvedValue(response);
+      const body = JSON.stringify({
+        payload: { workflows: [{ id: WORKFLOW_ID }] },
+        validationOptions: { levels: ['ERROR'] },
+      });
+      const result = await executeJiraCommand(
+        cmd('workflows', 'validate-update', [], { body }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.validateWorkflowUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ workflows: [{ id: WORKFLOW_ID }] }),
+        }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('validate-update throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'validate-update', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
     });
   });
 

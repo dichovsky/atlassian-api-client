@@ -217,6 +217,16 @@ export type {
   WorkflowsWithTransitionRulesDetails,
   WorkflowTransitionProperty,
   GetTransitionPropertiesParams,
+  WorkflowPreviewRequest,
+  WorkflowPreviewResponse,
+  WorkflowPreviewWorkflow,
+  WorkflowSearchParams,
+  WorkflowSearchResponse,
+  WorkflowUpdateRequest,
+  WorkflowUpdateResponse,
+  WorkflowUpdateResponseStatus,
+  WorkflowUpdateResponseWorkflow,
+  WorkflowUpdateValidateRequest,
 } from './resources/workflows.js';
 export { DashboardsResource } from './resources/dashboards.js';
 export type {

@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkflowsResource } from '../../src/jira/resources/workflows.js';
+import type {
+  WorkflowPreviewRequest,
+  WorkflowUpdateRequest,
+  WorkflowUpdateValidateRequest,
+} from '../../src/jira/resources/workflows.js';
 import { ValidationError } from '../../src/core/errors.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -1161,6 +1166,231 @@ describe('WorkflowsResource', () => {
       await expect(
         workflows.updateTransitionProperty(0, 'jira.permission', 'My Workflow', 'editissue'),
       ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  // ── previewWorkflows (B851) ────────────────────────────────────────────────
+
+  describe('previewWorkflows()', () => {
+    const previewResponse = {
+      workflows: [
+        {
+          id: WORKFLOW_ID,
+          name: 'Sample Workflow',
+          statuses: [],
+          transitions: [],
+        },
+      ],
+      statuses: [{ id: '1', name: 'To Do', statusCategory: 'TODO' }],
+    };
+
+    const previewBody: WorkflowPreviewRequest = {
+      projectId: PROJECT_ID,
+      workflowIds: [WORKFLOW_ID],
+    };
+
+    it('calls POST /workflows/preview with body', async () => {
+      transport.respondWith(previewResponse);
+
+      const result = await workflows.previewWorkflows(previewBody);
+
+      expect(result).toEqual(previewResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/preview`,
+        body: previewBody,
+      });
+    });
+
+    it('sends the full request body including optional fields', async () => {
+      transport.respondWith(previewResponse);
+
+      const body: WorkflowPreviewRequest = {
+        projectId: PROJECT_ID,
+        workflowIds: [WORKFLOW_ID],
+        workflowNames: ['Default Workflow'],
+        issueTypeIds: ['10001'],
+      };
+      await workflows.previewWorkflows(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+  });
+
+  // ── searchWorkflows (B852) ─────────────────────────────────────────────────
+
+  describe('searchWorkflows()', () => {
+    const searchResponse = {
+      startAt: 0,
+      maxResults: 50,
+      total: 1,
+      isLast: true,
+      values: [{ id: WORKFLOW_ID, description: 'A workflow' }],
+      statuses: [],
+    };
+
+    it('calls GET /workflows/search with no params', async () => {
+      transport.respondWith(searchResponse);
+
+      const result = await workflows.searchWorkflows();
+
+      expect(result).toEqual(searchResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflows/search`,
+      });
+    });
+
+    it('passes all supported query params', async () => {
+      transport.respondWith(searchResponse);
+
+      await workflows.searchWorkflows({
+        startAt: 0,
+        maxResults: 25,
+        expand: 'transitions',
+        queryString: 'Default',
+        orderBy: 'name',
+        scope: 'GLOBAL',
+        isActive: true,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        startAt: 0,
+        maxResults: 25,
+        expand: 'transitions',
+        queryString: 'Default',
+        orderBy: 'name',
+        scope: 'GLOBAL',
+        isActive: true,
+      });
+    });
+
+    it('passes isActive: false correctly', async () => {
+      transport.respondWith(searchResponse);
+
+      await workflows.searchWorkflows({ isActive: false });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ isActive: false });
+    });
+
+    it('does not include undefined query params when called with empty params', async () => {
+      transport.respondWith(searchResponse);
+
+      await workflows.searchWorkflows({});
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['expand']).toBeUndefined();
+      expect(query['queryString']).toBeUndefined();
+      expect(query['orderBy']).toBeUndefined();
+      expect(query['scope']).toBeUndefined();
+      expect(query['isActive']).toBeUndefined();
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(workflows.searchWorkflows({ maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+
+    it('throws RangeError for maxResults: -1', async () => {
+      await expect(workflows.searchWorkflows({ maxResults: -1 })).rejects.toThrow(RangeError);
+    });
+
+    it('accepts startAt: 0 (valid)', async () => {
+      transport.respondWith(searchResponse);
+      await workflows.searchWorkflows({ startAt: 0 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0 });
+    });
+  });
+
+  // ── updateWorkflows (B853) ─────────────────────────────────────────────────
+
+  describe('updateWorkflows()', () => {
+    const updateResponse = {
+      taskId: null,
+      workflows: [{ id: WORKFLOW_ID, description: 'Updated' }],
+      statuses: [{ id: '1', statusReference: '1', statusCategory: 'TODO' }],
+    };
+
+    const updateBody: WorkflowUpdateRequest = {
+      workflows: [{ id: WORKFLOW_ID, description: 'Updated' }],
+      statuses: [{ statusReference: '1', name: 'To Do', statusCategory: 'TODO' }],
+    };
+
+    it('calls POST /workflows/update with body', async () => {
+      transport.respondWith(updateResponse);
+
+      const result = await workflows.updateWorkflows(updateBody);
+
+      expect(result).toEqual(updateResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/update`,
+        body: updateBody,
+      });
+    });
+
+    it('sends optional statuses array in body', async () => {
+      transport.respondWith(updateResponse);
+
+      const body: WorkflowUpdateRequest = {
+        workflows: [{ id: WORKFLOW_ID }],
+        statuses: [{ name: 'In Progress', statusCategory: 'IN_PROGRESS', statusReference: '2' }],
+      };
+      await workflows.updateWorkflows(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+  });
+
+  // ── validateWorkflowUpdate (B854) ──────────────────────────────────────────
+
+  describe('validateWorkflowUpdate()', () => {
+    const validationResponse = {
+      errors: [
+        {
+          code: 'INVALID_DESCRIPTION',
+          message: 'Description exceeds max length',
+          level: 'WARNING',
+        },
+      ],
+    };
+
+    const validateBody: WorkflowUpdateValidateRequest = {
+      payload: {
+        workflows: [{ id: WORKFLOW_ID, description: 'Test' }],
+      },
+    };
+
+    it('calls POST /workflows/update/validation with body', async () => {
+      transport.respondWith(validationResponse);
+
+      const result = await workflows.validateWorkflowUpdate(validateBody);
+
+      expect(result).toEqual(validationResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/update/validation`,
+        body: validateBody,
+      });
+    });
+
+    it('returns empty errors array when payload is valid', async () => {
+      transport.respondWith({ errors: [] });
+
+      const result = await workflows.validateWorkflowUpdate({ payload: {} });
+
+      expect(result).toEqual({ errors: [] });
+    });
+
+    it('sends validationOptions.levels in body when provided', async () => {
+      transport.respondWith({ errors: [] });
+
+      const body: WorkflowUpdateValidateRequest = {
+        payload: { workflows: [{ id: WORKFLOW_ID }] },
+        validationOptions: { levels: ['ERROR'] },
+      };
+      await workflows.validateWorkflowUpdate(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
     });
   });
 });

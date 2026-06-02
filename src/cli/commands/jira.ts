@@ -6029,6 +6029,10 @@ const WORKFLOWS_ACTIONS = [
   'get-transition-properties',
   'create-transition-property',
   'update-transition-property',
+  'preview',
+  'search',
+  'update',
+  'validate-update',
 ];
 
 async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
@@ -6248,6 +6252,42 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         workflowMode,
       );
     }
+
+    // B851: POST /rest/api/3/workflows/preview
+    case 'preview':
+      return client.workflows.previewWorkflows(
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as unknown as Parameters<
+          typeof client.workflows.previewWorkflows
+        >[0],
+      );
+
+    // B852: GET /rest/api/3/workflows/search
+    case 'search':
+      return client.workflows.searchWorkflows({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        expand: asString(opts['expand']),
+        queryString: asString(opts['query-string']),
+        orderBy: asString(opts['order-by']),
+        scope: asString(opts['scope']),
+        isActive: asBoolFlag(opts['is-active']),
+      });
+
+    // B853: POST /rest/api/3/workflows/update
+    case 'update':
+      return client.workflows.updateWorkflows(
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as Parameters<
+          typeof client.workflows.updateWorkflows
+        >[0],
+      );
+
+    // B854: POST /rest/api/3/workflows/update/validation
+    case 'validate-update':
+      return client.workflows.validateWorkflowUpdate(
+        parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body') as unknown as Parameters<
+          typeof client.workflows.validateWorkflowUpdate
+        >[0],
+      );
 
     default:
       throw new Error(

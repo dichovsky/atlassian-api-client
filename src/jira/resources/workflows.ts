@@ -251,6 +251,19 @@ export class WorkflowsResource {
   }
 
   /**
+   * Preview workflows for a project (B851).
+   * POST /rest/api/3/workflows/preview
+   */
+  async previewWorkflows(body: WorkflowPreviewRequest): Promise<WorkflowPreviewResponse> {
+    const resp = await this.transport.request<WorkflowPreviewResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflows/preview`,
+      body,
+    });
+    return resp.data;
+  }
+
+  /**
    * Bulk get workflows by IDs/names/project+issueType pairs (B846).
    * POST /rest/api/3/workflows
    */
@@ -259,6 +272,30 @@ export class WorkflowsResource {
       method: 'POST',
       path: `${this.baseUrl}/workflows`,
       body,
+    });
+    return resp.data;
+  }
+
+  /**
+   * Search workflows (B852).
+   * GET /rest/api/3/workflows/search
+   */
+  async searchWorkflows(params?: WorkflowSearchParams): Promise<WorkflowSearchResponse> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.startAt !== undefined) query['startAt'] = params.startAt;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.queryString !== undefined) query['queryString'] = params.queryString;
+      if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.scope !== undefined) query['scope'] = params.scope;
+      if (params.isActive !== undefined) query['isActive'] = params.isActive;
+    }
+    const resp = await this.transport.request<WorkflowSearchResponse>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflows/search`,
+      query,
     });
     return resp.data;
   }
@@ -297,6 +334,19 @@ export class WorkflowsResource {
   }
 
   /**
+   * Bulk update workflows (B853).
+   * POST /rest/api/3/workflows/update
+   */
+  async updateWorkflows(body: WorkflowUpdateRequest): Promise<WorkflowUpdateResponse> {
+    const resp = await this.transport.request<WorkflowUpdateResponse>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflows/update`,
+      body,
+    });
+    return resp.data;
+  }
+
+  /**
    * List workflow history entries (B842).
    * POST /rest/api/3/workflow/history/list
    */
@@ -311,6 +361,21 @@ export class WorkflowsResource {
       method: 'POST',
       path: `${this.baseUrl}/workflow/history/list`,
       query,
+      body,
+    });
+    return resp.data;
+  }
+
+  /**
+   * Validate a workflow update payload (B854).
+   * POST /rest/api/3/workflows/update/validation
+   */
+  async validateWorkflowUpdate(
+    body: WorkflowUpdateValidateRequest,
+  ): Promise<WorkflowValidationErrorList> {
+    const resp = await this.transport.request<WorkflowValidationErrorList>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflows/update/validation`,
       body,
     });
     return resp.data;
@@ -749,7 +814,22 @@ export interface WorkflowCreateValidateRequest {
   readonly validationOptions?: ValidationOptionsForCreate;
 }
 
-/** A single validation error from create/validate. */
+/** Element reference in a validation error. */
+export interface WorkflowElementReference {
+  readonly ruleId?: string;
+  readonly statusMappingReference?: ProjectAndIssueTypePair;
+  readonly statusReference?: string;
+  readonly transitionId?: string;
+  readonly propertyKey?: string;
+}
+
+/** Workflow ID reference in a validation error element (B849). */
+export interface WorkflowIdRefForValidation {
+  readonly entityId?: string;
+  readonly name?: string;
+}
+
+/** A single validation error from create/validate or update/validate. */
 export interface WorkflowValidationError {
   readonly message?: string;
   readonly code?: string;
@@ -759,22 +839,8 @@ export interface WorkflowValidationError {
   readonly elementReference?: WorkflowElementReference;
 }
 
-/** Element reference in a validation error. */
-export interface WorkflowElementReference {
-  readonly ruleId?: string;
-  readonly statusMappingReference?: ProjectAndIssueTypePair;
-  readonly statusMappingReferenceNodeId?: string;
-  readonly transitionId?: string;
-  readonly workflowId?: WorkflowIdRefForValidation;
-}
-
-/** Workflow ID reference in a validation error element (B849). */
-export interface WorkflowIdRefForValidation {
-  readonly entityId?: string;
-  readonly name?: string;
-}
-
-/** Response for POST /rest/api/3/workflows/create/validation — B849. */
+/** Response for POST /rest/api/3/workflows/create/validation (B849)
+ *  and POST /rest/api/3/workflows/update/validation (B854). */
 export interface WorkflowValidationErrorList {
   readonly errors?: WorkflowValidationError[];
 }
@@ -1007,4 +1073,113 @@ export interface WorkflowTransitionRulesDeleteEntry {
 /** Request body for PUT /workflow/rule/config/delete (B845). */
 export interface WorkflowsWithTransitionRulesDetails {
   readonly workflows: WorkflowTransitionRulesDeleteEntry[];
+}
+
+// ── B851 types ──────────────────────────────────────────────────────────────
+
+/** Request body for POST /rest/api/3/workflows/preview (B851). */
+export interface WorkflowPreviewRequest {
+  /** Required: the project ID for permission checks. */
+  readonly projectId: string;
+  /** Workflow IDs to preview (max 25). */
+  readonly workflowIds?: string[];
+  /** Workflow names to preview (max 25). */
+  readonly workflowNames?: string[];
+  /** Issue type IDs to filter (max 25). */
+  readonly issueTypeIds?: string[];
+}
+
+/** A workflow entry in a WorkflowPreviewResponse. */
+export interface WorkflowPreviewWorkflow {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly version?: { readonly id?: string; readonly versionNumber?: number };
+  readonly scope?: WorkflowScope;
+  readonly startPointLayout?: WorkflowLayout;
+  readonly loopedTransitionContainerLayout?: WorkflowLayout;
+  readonly statuses?: Record<string, unknown>[];
+  readonly transitions?: Record<string, unknown>[];
+  readonly queryContext?: Record<string, unknown>[];
+}
+
+/** Response for POST /rest/api/3/workflows/preview (B851). */
+export interface WorkflowPreviewResponse {
+  readonly workflows?: WorkflowPreviewWorkflow[];
+  readonly statuses?: JiraWorkflowStatus[];
+}
+
+// ── B852 types ──────────────────────────────────────────────────────────────
+
+/** Query parameters for GET /rest/api/3/workflows/search (B852). */
+export interface WorkflowSearchParams {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly expand?: string;
+  readonly queryString?: string;
+  readonly orderBy?: string;
+  readonly scope?: string;
+  readonly isActive?: boolean;
+}
+
+/** Response for GET /rest/api/3/workflows/search (B852). */
+export interface WorkflowSearchResponse {
+  readonly startAt?: number;
+  readonly maxResults?: number;
+  readonly total?: number;
+  readonly isLast?: boolean;
+  readonly self?: string;
+  readonly nextPage?: string;
+  readonly values?: JiraWorkflow[];
+  readonly statuses?: JiraWorkflowStatus[];
+}
+
+// ── B853 types ──────────────────────────────────────────────────────────────
+
+/** Request body for POST /rest/api/3/workflows/update (B853). */
+export interface WorkflowUpdateRequest {
+  readonly workflows?: Record<string, unknown>[];
+  readonly statuses?: Record<string, unknown>[];
+}
+
+/** A status entry returned in WorkflowUpdateResponse (distinct from request statuses). */
+export interface WorkflowUpdateResponseStatus {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  readonly statusReference?: string;
+  readonly scope?: WorkflowScope;
+}
+
+/** A workflow entry returned in WorkflowUpdateResponse (distinct from request workflows). */
+export interface WorkflowUpdateResponseWorkflow {
+  readonly id?: string;
+  readonly description?: string;
+  readonly created?: string | null;
+  readonly updated?: string | null;
+  readonly isDefault?: boolean;
+  readonly scope?: WorkflowScope;
+  readonly statuses?: Record<string, unknown>[];
+  readonly transitions?: Record<string, unknown>[];
+  readonly version?: { readonly id?: string; readonly versionNumber?: number };
+}
+
+/** Response for POST /rest/api/3/workflows/update (B853). */
+export interface WorkflowUpdateResponse {
+  /** If an async task was triggered, its ID. */
+  readonly taskId?: string | null;
+  readonly workflows?: WorkflowUpdateResponseWorkflow[];
+  readonly statuses?: WorkflowUpdateResponseStatus[];
+}
+
+// ── B854 types ──────────────────────────────────────────────────────────────
+
+/** Request body for POST /rest/api/3/workflows/update/validation (B854). */
+export interface WorkflowUpdateValidateRequest {
+  /** Required: the update payload to validate (same shape as WorkflowUpdateRequest). */
+  readonly payload: WorkflowUpdateRequest;
+  readonly validationOptions?: {
+    readonly levels?: ('WARNING' | 'ERROR')[];
+  };
 }
