@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "cecd2602bd0d842d5cce168ceafb9c25006a3eff9aef52247bd943220ef92c3d",
+  "sourceHash": "b044a3c68c0ff4dca75832438d0aa302bd496d77e090c345d0fdcdd155132119",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -32725,8 +32725,8 @@
           "kind": "interface",
           "line": 480,
           "exported": true,
-          "signature": "export interface TransitionUpdateDTO { readonly id: string; readonly name: string; readonly type: string; readonly toSta…",
-          "jsdoc": "A transition in a WorkflowCreate entry."
+          "signature": "export interface TransitionUpdateDTO { readonly id?: string; readonly name?: string; readonly type?: string; readonly to…",
+          "jsdoc": "A transition in a WorkflowCreate entry. Spec marks no fields required."
         },
         {
           "name": "WorkflowCreate",

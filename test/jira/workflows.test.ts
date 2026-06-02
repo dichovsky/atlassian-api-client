@@ -484,7 +484,9 @@ describe('WorkflowsResource', () => {
       workflows: [
         {
           name: 'Software workflow 1',
-          statuses: [{ statusReference: 'f0b24de5-25e7-4fab-ab94-63d81db6c0c0' }],
+          statuses: [
+            { statusReference: 'f0b24de5-25e7-4fab-ab94-63d81db6c0c0', properties: {} },
+          ],
           transitions: [
             {
               id: '1',

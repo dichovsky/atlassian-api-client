@@ -473,15 +473,15 @@ export interface WorkflowStatusUpdate {
 export interface StatusLayoutUpdate {
   readonly statusReference: string;
   readonly layout?: WorkflowLayout;
-  readonly properties?: Record<string, string>;
+  readonly properties: Record<string, string>;
 }
 
-/** A transition in a WorkflowCreate entry. */
+/** A transition in a WorkflowCreate entry. Spec marks no fields required. */
 export interface TransitionUpdateDTO {
-  readonly id: string;
-  readonly name: string;
-  readonly type: string;
-  readonly toStatusReference: string;
+  readonly id?: string;
+  readonly name?: string;
+  readonly type?: string;
+  readonly toStatusReference?: string;
   readonly description?: string;
   readonly links?: WorkflowTransitionLink[];
   readonly actions?: WorkflowRuleConfiguration[];
