@@ -2545,6 +2545,18 @@
 - [x] 🔴 🧩 Jira: B994 expose DELETE /rest/security/1.0/bulkByProperties
   - **Impl:** `BulkByPropertiesResource.deleteSecurityByProperties(params)` → void (202). CLI: `atlas jira bulk-by-properties delete-security --properties key=value`.
   - **Rat:** Consistent contract assumed from confirmed endpoints. Same base URL as `VulnerabilityResource`.
+- [x] 🔴 🧩 API: B939 Jira: expose GET /rest/atlassian-connect/1/addons/{addonKey}/properties
+  - **Impl:** `AddonsResource.listProperties(addonKey)` → `AddonPropertyKeys` (`{ keys?: AddonPropertyKey[] }`). CLI: `atlas jira addons list-properties <addonKey>`. Base URL reuses `serviceRegistryBaseUrl` (`/rest/atlassian-connect/1`).
+  - **Rat:** Spec-verified: `PropertyKeys` schema, GET returns array of `{ key, self }` pairs. Reserved key `connect_client_key_*` excluded by API.
+- [x] 🔴 🧩 API: B940 Jira: expose DELETE /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.deleteProperty(addonKey, propertyKey)` → void (204). CLI: `atlas jira addons delete-property <addonKey> <propertyKey>`. Both keys URL-encoded.
+  - **Rat:** Spec-verified: 204 No Content on success. Reserved keys return 403.
+- [x] 🔴 🧩 API: B941 Jira: expose GET /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.getProperty(addonKey, propertyKey)` → `AddonProperty` (`{ key?, value? }`). CLI: `atlas jira addons get-property <addonKey> <propertyKey>`. Value is arbitrary JSON (`unknown`).
+  - **Rat:** Spec-verified: `EntityProperty` schema, value is opaque JSON blob. Reserved `connect_client_key_*` returns synthetic clientKey value.
+- [x] 🔴 🧩 API: B942 Jira: expose PUT /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}
+  - **Impl:** `AddonsResource.setProperty(addonKey, propertyKey, value)` → `AddonPropertyOperationMessage` (`{ message, statusCode }`). Sends `value` as raw JSON body (schema `{}`). CLI: `atlas jira addons set-property <addonKey> <propertyKey> --value '<json>'`. Returns 200 (update) or 201 (create).
+  - **Rat:** Spec-verified: requestBody schema is `{}` (arbitrary JSON), raw value sent as body matching `app.ts` Forge property pattern. `--value` flag already registered in `router.ts`.
 - [x] 🔴 🧩 API: B946 expose GET /rest/atlassian-connect/1/migration/{connectKey}/{jiraIssueFieldsKey}/task
   - **Impl:** `MigrationResource.getMigrationTask(connectKey, jiraIssueFieldsKey)` → `MigrationTaskProgress`. CLI: `atlas jira migration get-task <connectKey> <jiraIssueFieldsKey>`. Uses serviceRegistryBaseUrl (`/rest/atlassian-connect/1`). No header required.
   - **Rat:** Spec-verified: GET returns TaskProgress (status, progress, elapsedRuntime etc). Connect-to-Forge field migration tracking endpoint. No deprecated flag.

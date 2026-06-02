@@ -158,6 +158,8 @@ export async function executeJiraCommand(
       return executeRemoteLink(client, cmd);
     case 'service-registry':
       return executeServiceRegistry(client, cmd);
+    case 'addons':
+      return executeAddons(client, cmd);
     case 'exists-by-properties':
       return executeExistsByProperties(client, cmd);
     case 'app':
@@ -2536,6 +2538,36 @@ async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): P
       return client.serviceRegistry.get();
     default:
       throw new Error(`Unknown service-registry action: ${cmd.action}. Actions: get`);
+  }
+}
+
+async function executeAddons(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list-properties':
+      return client.addons.listProperties(requireArg(cmd.positionalArgs[0], 'addonKey'));
+    case 'get-property':
+      return client.addons.getProperty(
+        requireArg(cmd.positionalArgs[0], 'addonKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+    case 'set-property':
+      return client.addons.setProperty(
+        requireArg(cmd.positionalArgs[0], 'addonKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+    case 'delete-property':
+      await client.addons.deleteProperty(
+        requireArg(cmd.positionalArgs[0], 'addonKey'),
+        requireArg(cmd.positionalArgs[1], 'propertyKey'),
+      );
+      return { deleted: true };
+    default:
+      throw new Error(
+        `Unknown addons action: ${cmd.action}. Actions: list-properties, get-property, set-property, delete-property`,
+      );
   }
 }
 

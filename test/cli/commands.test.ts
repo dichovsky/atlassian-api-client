@@ -708,6 +708,13 @@ const jiraServiceRegistryMock = {
   get: vi.fn(),
 };
 
+const jiraAddonsMock = {
+  listProperties: vi.fn(),
+  getProperty: vi.fn(),
+  setProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+};
+
 const jiraExistsByPropertiesMock = {
   get: vi.fn(),
 };
@@ -1265,6 +1272,7 @@ vi.mock('../../src/jira/client.js', () => {
       latest: jiraLatestMock,
       remoteLink: jiraRemoteLinkMock,
       serviceRegistry: jiraServiceRegistryMock,
+      addons: jiraAddonsMock,
       existsByProperties: jiraExistsByPropertiesMock,
       repository: jiraRepositoryMock,
       app: jiraAppMock,
@@ -14643,6 +14651,93 @@ describe('executeJiraCommand', () => {
     it('service-registry unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('service-registry', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown service-registry action',
+      );
+    });
+  });
+
+  // ── addons ────────────────────────────────────────────────────────────────
+
+  describe('addons resource', () => {
+    it('addons list-properties calls client.addons.listProperties(addonKey)', async () => {
+      const data = { keys: [{ key: 'my-setting', self: 'https://test.atlassian.net/...' }] };
+      jiraAddonsMock.listProperties.mockResolvedValue(data);
+
+      const result = await executeJiraCommand(
+        cmd('addons', 'list-properties', ['my-app']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(data);
+      expect(jiraAddonsMock.listProperties).toHaveBeenCalledWith('my-app');
+    });
+
+    it('addons list-properties throws when addonKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('addons', 'list-properties', []), GLOBALS),
+      ).rejects.toThrow('addonKey');
+    });
+
+    it('addons get-property calls client.addons.getProperty(addonKey, propertyKey)', async () => {
+      const data = { key: 'my-setting', value: { enabled: true } };
+      jiraAddonsMock.getProperty.mockResolvedValue(data);
+
+      const result = await executeJiraCommand(
+        cmd('addons', 'get-property', ['my-app', 'my-setting']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(data);
+      expect(jiraAddonsMock.getProperty).toHaveBeenCalledWith('my-app', 'my-setting');
+    });
+
+    it('addons get-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('addons', 'get-property', ['my-app']), GLOBALS),
+      ).rejects.toThrow('propertyKey');
+    });
+
+    it('addons set-property calls client.addons.setProperty with parsed value', async () => {
+      const opMsg = { message: 'Property updated.', statusCode: 200 };
+      jiraAddonsMock.setProperty.mockResolvedValue(opMsg);
+
+      const result = await executeJiraCommand(
+        cmd('addons', 'set-property', ['my-app', 'my-setting'], { value: '{"enabled":true}' }),
+        GLOBALS,
+      );
+
+      expect(result).toEqual(opMsg);
+      expect(jiraAddonsMock.setProperty).toHaveBeenCalledWith('my-app', 'my-setting', {
+        enabled: true,
+      });
+    });
+
+    it('addons set-property throws when --value flag is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('addons', 'set-property', ['my-app', 'my-setting']), GLOBALS),
+      ).rejects.toThrow('--value');
+    });
+
+    it('addons delete-property calls client.addons.deleteProperty and returns deleted:true', async () => {
+      jiraAddonsMock.deleteProperty.mockResolvedValue(undefined);
+
+      const result = await executeJiraCommand(
+        cmd('addons', 'delete-property', ['my-app', 'my-setting']),
+        GLOBALS,
+      );
+
+      expect(result).toEqual({ deleted: true });
+      expect(jiraAddonsMock.deleteProperty).toHaveBeenCalledWith('my-app', 'my-setting');
+    });
+
+    it('addons delete-property throws when addonKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('addons', 'delete-property', []), GLOBALS),
+      ).rejects.toThrow('addonKey');
+    });
+
+    it('addons unknown action throws', async () => {
+      await expect(executeJiraCommand(cmd('addons', 'nope'), GLOBALS)).rejects.toThrow(
+        'Unknown addons action',
       );
     });
   });

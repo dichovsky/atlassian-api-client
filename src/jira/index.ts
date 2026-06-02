@@ -923,3 +923,10 @@ export type {
   WorkflowRulesSearchDetails,
 } from './resources/migration.js';
 export { MigrationResource } from './resources/migration.js';
+export type {
+  AddonPropertyKey,
+  AddonPropertyKeys,
+  AddonProperty,
+  AddonPropertyOperationMessage,
+} from './resources/addons.js';
+export { AddonsResource } from './resources/addons.js';
