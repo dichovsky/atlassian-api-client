@@ -212,3 +212,74 @@ export function detectRequiredScopes(operations: readonly string[]): AtlassianSc
 export function listKnownOperations(): readonly string[] {
   return Object.keys(OPERATION_SCOPES).sort();
 }
+
+/**
+ * Exhaustive catalog of every {@link AtlassianScope}. Typed as
+ * `Record<AtlassianScope, true>` so adding a member to the union WITHOUT adding
+ * it here is a compile error — that is what actually keeps the two in sync.
+ */
+const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = {
+  'read:confluence-content.all': true,
+  'read:confluence-content.summary': true,
+  'write:confluence-content': true,
+  'read:confluence-space.summary': true,
+  'read:confluence-user': true,
+  'read:confluence-props': true,
+  'write:confluence-props': true,
+  'read:confluence-content.permission': true,
+  'read:jira-work': true,
+  'write:jira-work': true,
+  'manage:jira-project': true,
+  'manage:jira-configuration': true,
+  'read:jira-user': true,
+  'manage:jira-webhook': true,
+  'manage:jira-data-provider': true,
+};
+
+/** The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings. */
+const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set(
+  Object.keys(KNOWN_SCOPE_CATALOG) as AtlassianScope[],
+);
+
+/** Result of validating a set of scope strings. */
+export interface ScopeValidationResult {
+  /** Scope strings that are present in the known-scope catalog. */
+  readonly valid: readonly AtlassianScope[];
+  /** Scope strings that are NOT in the known-scope catalog. */
+  readonly unknown: readonly string[];
+}
+
+/**
+ * Validates a list of scope strings against the known Atlassian OAuth 2.0
+ * scope catalog. Returns two partitions: `valid` (recognised) and `unknown`
+ * (not in the catalog). Order within each partition follows the input order.
+ *
+ * This is a read-only utility; it does not affect authorization state.
+ *
+ * @param scopes - Arbitrary strings to validate.
+ * @returns {@link ScopeValidationResult} with `valid` and `unknown` partitions.
+ *
+ * @example
+ * validateScopes(['read:jira-work', 'write:made-up'])
+ * // → { valid: ['read:jira-work'], unknown: ['write:made-up'] }
+ */
+export function validateScopes(scopes: readonly string[]): ScopeValidationResult {
+  const valid: AtlassianScope[] = [];
+  const unknown: string[] = [];
+  for (const scope of scopes) {
+    if (KNOWN_SCOPES.has(scope as AtlassianScope)) {
+      valid.push(scope as AtlassianScope);
+    } else {
+      unknown.push(scope);
+    }
+  }
+  return { valid, unknown };
+}
+
+/**
+ * Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order.
+ * Useful for listing available scopes in help output and validation tooling.
+ */
+export function listKnownScopes(): readonly AtlassianScope[] {
+  return [...KNOWN_SCOPES].sort();
+}

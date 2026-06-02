@@ -40,10 +40,6 @@
 
 ## 🖥️ CLI
 
-- [ ] 🟢 📦 CLI: B019 `atlas scopes validate` command
-  - files: `src/cli/commands/scopes.ts`, `src/cli/router.ts`, `src/core/scopes.ts`
-  - deps: none
-
 ## 🧪 QA
 
 - [ ] 🔴 🧪 QA: B012 Mock-server transport tests

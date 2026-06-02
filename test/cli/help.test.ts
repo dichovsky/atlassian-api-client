@@ -91,4 +91,14 @@ describe('getHelpText', () => {
     expect(text).toContain('options-only command');
     expect(text).toContain('EXIT CODES:');
   });
+
+  it('returns scopes help text for "scopes"', () => {
+    // Act
+    const text = getHelpText('scopes');
+
+    // Assert
+    expect(text).toContain('atlas scopes');
+    expect(text).toContain('validate');
+    expect(text).toContain('EXIT CODES:');
+  });
 });
