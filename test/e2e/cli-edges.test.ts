@@ -99,6 +99,18 @@ describe('atlas — unknown command refusal', () => {
     expect(result.stderr).toContain('Unknown API');
   });
 
+  it('rejects an unknown api verb before requiring credentials', async () => {
+    const result = await runAtlas(['bitbucket', 'foo', 'bar'], {
+      env: {
+        ATLASSIAN_BASE_URL: undefined,
+        ATLASSIAN_EMAIL: undefined,
+        ATLASSIAN_API_TOKEN: undefined,
+      },
+    });
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('Unknown API');
+  });
+
   it('rejects an unknown confluence resource', async () => {
     const result = await runAtlas(['confluence', 'widgets', 'list']);
     expect(result.code).toBe(1);
