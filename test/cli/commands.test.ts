@@ -13480,6 +13480,25 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('auditing list accepts --offset 0 (0-based first page)', async () => {
+      // Arrange
+      jiraAuditingMock.list.mockResolvedValue({ offset: 0, limit: 50, total: 0, records: [] });
+
+      // Act
+      await executeJiraCommand(cmd('auditing', 'list', [], { offset: '0', limit: '50' }), GLOBALS);
+
+      // Assert
+      expect(jiraAuditingMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ offset: 0, limit: 50 }),
+      );
+    });
+
+    it('auditing list rejects negative --offset', async () => {
+      await expect(
+        executeJiraCommand(cmd('auditing', 'list', [], { offset: '-1' }), GLOBALS),
+      ).rejects.toThrow('--offset must be a non-negative integer');
+    });
+
     it('auditing unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('auditing', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown auditing action',

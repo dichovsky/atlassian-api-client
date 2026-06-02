@@ -2135,7 +2135,7 @@ async function executeAuditing(client: JiraClient, cmd: ParsedCommand): Promise<
   switch (cmd.action) {
     case 'list':
       return client.auditing.list({
-        offset: asPositiveInt(opts['offset'], '--offset'),
+        offset: asNonNegativeInt(opts['offset'], '--offset'),
         limit: asPositiveInt(opts['limit'], '--limit'),
         filter: asString(opts['filter']),
         from: asString(opts['from']),
