@@ -1129,6 +1129,15 @@ const jiraWorkflowsMock = {
   bulkCreate: vi.fn(),
   validateCreate: vi.fn(),
   getDefaultEditor: vi.fn(),
+  readWorkflowFromHistory: vi.fn(),
+  listWorkflowHistory: vi.fn(),
+  getTransitionRuleConfigs: vi.fn(),
+  updateTransitionRuleConfigs: vi.fn(),
+  deleteTransitionRuleConfigs: vi.fn(),
+  deleteTransitionProperty: vi.fn(),
+  getTransitionProperties: vi.fn(),
+  createTransitionProperty: vi.fn(),
+  updateTransitionProperty: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21710,6 +21719,164 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('workflowId');
     });
 
+    it('read-history calls client.workflows.readWorkflowFromHistory', async () => {
+      const response = { statuses: [], workflows: [] };
+      jiraWorkflowsMock.readWorkflowFromHistory.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'read-history', [], { 'workflow-id': WORKFLOW_ID, 'version-number': '4' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.readWorkflowFromHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ workflowId: WORKFLOW_ID, version: 4 }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('read-history calls without version when omitted', async () => {
+      jiraWorkflowsMock.readWorkflowFromHistory.mockResolvedValue({ statuses: [], workflows: [] });
+      await executeJiraCommand(
+        cmd('workflows', 'read-history', [], { 'workflow-id': WORKFLOW_ID }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.readWorkflowFromHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ workflowId: WORKFLOW_ID }),
+      );
+      const call = jiraWorkflowsMock.readWorkflowFromHistory.mock.calls.at(-1)?.[0];
+      expect(call).not.toHaveProperty('version');
+    });
+
+    it('read-history throws when --workflow-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'read-history', [], {}), GLOBALS),
+      ).rejects.toThrow('--workflow-id');
+    });
+
+    it('list-history calls client.workflows.listWorkflowHistory', async () => {
+      const response = { entries: [] };
+      jiraWorkflowsMock.listWorkflowHistory.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'list-history', [], { 'workflow-id': WORKFLOW_ID }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.listWorkflowHistory).toHaveBeenCalledWith(
+        { workflowId: WORKFLOW_ID },
+        expect.objectContaining({}),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('list-history passes expand param', async () => {
+      jiraWorkflowsMock.listWorkflowHistory.mockResolvedValue({ entries: [] });
+      await executeJiraCommand(
+        cmd('workflows', 'list-history', [], {
+          'workflow-id': WORKFLOW_ID,
+          expand: 'includeIntermediateWorkflows',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.listWorkflowHistory).toHaveBeenCalledWith(
+        { workflowId: WORKFLOW_ID },
+        expect.objectContaining({ expand: 'includeIntermediateWorkflows' }),
+      );
+    });
+
+    it('list-history throws when --workflow-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'list-history', [], {}), GLOBALS),
+      ).rejects.toThrow('--workflow-id');
+    });
+
+    it('get-rule-config calls client.workflows.getTransitionRuleConfigs', async () => {
+      const response = { isLast: true, maxResults: 10, startAt: 0, total: 0, values: [] };
+      jiraWorkflowsMock.getTransitionRuleConfigs.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'get-rule-config', [], { types: 'postfunction,condition' }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getTransitionRuleConfigs).toHaveBeenCalledWith(
+        expect.objectContaining({ types: ['postfunction', 'condition'] }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('get-rule-config passes optional params', async () => {
+      jiraWorkflowsMock.getTransitionRuleConfigs.mockResolvedValue({ values: [] });
+      await executeJiraCommand(
+        cmd('workflows', 'get-rule-config', [], {
+          types: 'postfunction',
+          keys: 'key-a,key-b',
+          'workflow-names': 'My Workflow',
+          'with-tags': 'tag1',
+          expand: 'transition',
+          'max-results': '10',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getTransitionRuleConfigs).toHaveBeenCalledWith(
+        expect.objectContaining({
+          types: ['postfunction'],
+          keys: ['key-a', 'key-b'],
+          workflowNames: ['My Workflow'],
+          withTags: ['tag1'],
+          expand: 'transition',
+          maxResults: 10,
+        }),
+      );
+    });
+
+    it('get-rule-config throws when --types is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'get-rule-config', [], {}), GLOBALS),
+      ).rejects.toThrow('--types');
+    });
+
+    it('update-rule-config calls client.workflows.updateTransitionRuleConfigs', async () => {
+      const response = { updateResults: [] };
+      jiraWorkflowsMock.updateTransitionRuleConfigs.mockResolvedValue(response);
+      const workflowsJson = JSON.stringify([
+        {
+          workflowId: { name: 'My Workflow' },
+          postFunctions: [{ id: 'r1', configuration: { value: '{}' } }],
+        },
+      ]);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'update-rule-config', [], { workflows: workflowsJson }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.updateTransitionRuleConfigs).toHaveBeenCalledWith(
+        expect.objectContaining({ workflows: expect.any(Array) }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('update-rule-config throws when --workflows is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'update-rule-config', [], {}), GLOBALS),
+      ).rejects.toThrow('--workflows');
+    });
+
+    it('delete-rule-config calls client.workflows.deleteTransitionRuleConfigs', async () => {
+      const response = { updateResults: [] };
+      jiraWorkflowsMock.deleteTransitionRuleConfigs.mockResolvedValue(response);
+      const workflowsJson = JSON.stringify([
+        { workflowId: { name: 'My Workflow' }, workflowRuleIds: ['r1', 'r2'] },
+      ]);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'delete-rule-config', [], { workflows: workflowsJson }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.deleteTransitionRuleConfigs).toHaveBeenCalledWith(
+        expect.objectContaining({ workflows: expect.any(Array) }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('delete-rule-config throws when --workflows is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'delete-rule-config', [], {}), GLOBALS),
+      ).rejects.toThrow('--workflows');
+    });
+
     it('throws on unknown workflows action', async () => {
       await expect(
         executeJiraCommand(cmd('workflows', 'unknown-action', [], {}), GLOBALS),
@@ -21830,6 +21997,226 @@ describe('executeJiraCommand', () => {
 
       expect(jiraWorkflowsMock.getDefaultEditor).toHaveBeenCalled();
       expect(result).toEqual(editorResponse);
+    });
+
+    // B935-B938: transition properties
+
+    it('delete-transition-property throws when transitionId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'delete-transition-property', ['abc'], {
+            key: 'jira.permission',
+            'workflow-name': 'My Workflow',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('transitionId must be a positive integer');
+    });
+
+    it('delete-transition-property calls deleteTransitionProperty and returns { deleted: true }', async () => {
+      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'delete-transition-property', ['10000'], {
+          key: 'jira.permission',
+          'workflow-name': 'My Workflow',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.deleteTransitionProperty).toHaveBeenCalledWith(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        undefined,
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-transition-property passes workflowMode', async () => {
+      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('workflows', 'delete-transition-property', ['10000'], {
+          key: 'jira.permission',
+          'workflow-name': 'My Workflow',
+          'workflow-mode': 'draft',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.deleteTransitionProperty).toHaveBeenCalledWith(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'draft',
+      );
+    });
+
+    it('delete-transition-property throws when transitionId is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'delete-transition-property', [], {
+            key: 'jira.permission',
+            'workflow-name': 'My Workflow',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('transitionId');
+    });
+
+    it('delete-transition-property throws when --key is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'delete-transition-property', ['10000'], {
+            'workflow-name': 'My Workflow',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--key');
+    });
+
+    it('delete-transition-property throws when --workflow-name is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'delete-transition-property', ['10000'], {
+            key: 'jira.permission',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--workflow-name');
+    });
+
+    it('get-transition-properties calls getTransitionProperties', async () => {
+      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
+      jiraWorkflowsMock.getTransitionProperties.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'get-transition-properties', ['10000'], {
+          'workflow-name': 'My Workflow',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getTransitionProperties).toHaveBeenCalledWith(
+        10000,
+        'My Workflow',
+        expect.objectContaining({}),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('get-transition-properties passes optional params', async () => {
+      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
+      jiraWorkflowsMock.getTransitionProperties.mockResolvedValue(response);
+      await executeJiraCommand(
+        cmd('workflows', 'get-transition-properties', ['10000'], {
+          'workflow-name': 'My Workflow',
+          key: 'jira.permission',
+          'workflow-mode': 'live',
+          'include-reserved-keys': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.getTransitionProperties).toHaveBeenCalledWith(
+        10000,
+        'My Workflow',
+        expect.objectContaining({
+          key: 'jira.permission',
+          workflowMode: 'live',
+          includeReservedKeys: true,
+        }),
+      );
+    });
+
+    it('get-transition-properties throws when transitionId is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'get-transition-properties', [], { 'workflow-name': 'My Workflow' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('transitionId');
+    });
+
+    it('get-transition-properties throws when --workflow-name is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'get-transition-properties', ['10000'], {}), GLOBALS),
+      ).rejects.toThrow('--workflow-name');
+    });
+
+    it('create-transition-property calls createTransitionProperty', async () => {
+      const response = { key: 'jira.permission', value: 'createissue', id: 'jira.permission' };
+      jiraWorkflowsMock.createTransitionProperty.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'create-transition-property', ['10000'], {
+          key: 'jira.permission',
+          'workflow-name': 'My Workflow',
+          value: 'createissue',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.createTransitionProperty).toHaveBeenCalledWith(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'createissue',
+        undefined,
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('create-transition-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'create-transition-property', ['10000'], {
+            key: 'jira.permission',
+            'workflow-name': 'My Workflow',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('update-transition-property calls updateTransitionProperty', async () => {
+      const response = { key: 'jira.permission', value: 'editissue', id: 'jira.permission' };
+      jiraWorkflowsMock.updateTransitionProperty.mockResolvedValue(response);
+      const result = await executeJiraCommand(
+        cmd('workflows', 'update-transition-property', ['10000'], {
+          key: 'jira.permission',
+          'workflow-name': 'My Workflow',
+          value: 'editissue',
+          'workflow-mode': 'live',
+        }),
+        GLOBALS,
+      );
+      expect(jiraWorkflowsMock.updateTransitionProperty).toHaveBeenCalledWith(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'editissue',
+        'live',
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('update-transition-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'update-transition-property', ['10000'], {
+            key: 'jira.permission',
+            'workflow-name': 'My Workflow',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('throws on invalid --workflow-mode', async () => {
+      jiraWorkflowsMock.deleteTransitionProperty.mockResolvedValue(undefined);
+      await expect(
+        executeJiraCommand(
+          cmd('workflows', 'delete-transition-property', ['10000'], {
+            key: 'jira.permission',
+            'workflow-name': 'My Workflow',
+            'workflow-mode': 'invalid',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--workflow-mode');
     });
   });
 
