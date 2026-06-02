@@ -90,6 +90,14 @@ describe('TasksResource', () => {
       expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
+    it('omits the query bag when an empty options object is given', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list({});
+
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
     it('throws RangeError for invalid limit', async () => {
       await expect(resource.list({ limit: -1 })).rejects.toThrow(RangeError);
       expect(transport.calls).toHaveLength(0);

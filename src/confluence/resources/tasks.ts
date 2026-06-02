@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { nonEmptyQuery } from './query.js';
 import type { ConfluenceTask, ListTasksParams, GetTaskParams, UpdateTaskData } from '../types.js';
 
 type Query = Record<string, string | number | boolean | undefined>;
@@ -44,7 +45,7 @@ function buildTasksQuery(params?: ListTasksParams): Query | undefined {
   if (createdAtTo !== undefined) query['created-at-to'] = createdAtTo;
   if (dueAtFrom !== undefined) query['due-at-from'] = dueAtFrom;
   if (dueAtTo !== undefined) query['due-at-to'] = dueAtTo;
-  return Object.keys(query).length === 0 ? undefined : query;
+  return nonEmptyQuery(query);
 }
 
 export class TasksResource {
