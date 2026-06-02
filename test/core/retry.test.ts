@@ -353,36 +353,76 @@ describe('executeWithRetry', () => {
     }
   });
 
-  it('B023 (PR review): defensive cap fires when maxRetryDelay is Infinity', async () => {
-    // `resolveConfig` rejects Infinity up front, but a direct caller (e.g.
-    // a test building a RetryConfig literal) can still bypass that gate.
-    // The defensive ceiling in `getRetryDelay` must clamp anyway, otherwise
-    // a hostile Retry-After re-opens the unbounded-wait DoS that B023 closed.
-    vi.useFakeTimers();
-    try {
-      vi.spyOn(Math, 'random').mockReturnValue(0);
-      const err = new RateLimitError('rate limited', 2_147_483_647);
-      const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
+  it.each([Number.POSITIVE_INFINITY, 2_147_483_648])(
+    'B023 (PR review): defensive cap fires when maxRetryDelay is unschedulable: %s',
+    async (maxRetryDelay) => {
+      // `resolveConfig` rejects these values up front, but a direct caller
+      // (e.g. a custom transport building a RetryConfig literal) can still
+      // bypass that gate. The defensive ceiling in `getRetryDelay` must clamp
+      // anyway, otherwise a hostile Retry-After re-opens the rapid-retry DoS.
+      vi.useFakeTimers();
+      try {
+        vi.spyOn(Math, 'random').mockReturnValue(0);
+        const err = new RateLimitError('rate limited', 2_147_483_647);
+        const operation = vi.fn().mockRejectedValueOnce(err).mockResolvedValueOnce('ok');
 
-      const setSpy = vi.spyOn(globalThis, 'setTimeout');
-      const promise = executeWithRetry(operation, {
-        retries: 1,
-        retryDelay: 100,
-        maxRetryDelay: Number.POSITIVE_INFINITY,
-      });
-      // Advance past the hard-ceiling (60s) so the retry sleep resolves.
-      await vi.advanceTimersByTimeAsync(60_000);
-      await promise;
+        const setSpy = vi.spyOn(globalThis, 'setTimeout');
+        const promise = executeWithRetry(operation, {
+          retries: 1,
+          retryDelay: 100,
+          maxRetryDelay,
+        });
+        // Advance past the hard-ceiling (60s) so the retry sleep resolves.
+        await vi.advanceTimersByTimeAsync(60_000);
+        await promise;
 
-      // Sleep duration must be the documented hard-ceiling, NOT the
-      // attacker-supplied 2_147_483_647 seconds.
-      const slept = setSpy.mock.calls[0]?.[1];
-      expect(typeof slept).toBe('number');
-      expect(slept).toBeLessThanOrEqual(60_000);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
+        // Sleep duration must be the documented hard-ceiling, NOT an
+        // unschedulable value that Node coerces to a near-immediate timer.
+        const slept = setSpy.mock.calls[0]?.[1];
+        expect(typeof slept).toBe('number');
+        expect(slept).toBeLessThanOrEqual(60_000);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 2_147_483_648])(
+    'uses a safe fallback when direct RetryConfig delays are unschedulable: %s',
+    async (retryDelay) => {
+      // `executeWithRetry` is exported for custom transports, whose structural
+      // RetryConfig values can bypass `resolveConfig`. Never forward an
+      // unschedulable delay to Node's setTimeout(), which coerces it to 1ms.
+      vi.useFakeTimers();
+      const controller = new AbortController();
+      try {
+        vi.spyOn(Math, 'random').mockReturnValue(0);
+        const operation = vi.fn().mockRejectedValue(new HttpError('flap', 503));
+        const setSpy = vi.spyOn(globalThis, 'setTimeout');
+        const promise = executeWithRetry(
+          operation,
+          {
+            retries: 1,
+            retryDelay,
+            maxRetryDelay: retryDelay,
+          },
+          controller.signal,
+        );
+        void promise.catch((_err: unknown) => undefined);
+        await vi.advanceTimersByTimeAsync(0);
+
+        const slept = setSpy.mock.calls[0]?.[1];
+        try {
+          expect(slept).toBe(60_000);
+        } finally {
+          controller.abort(new Error('cancelled'));
+          await promise.catch((_err: unknown) => undefined);
+        }
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
 
   it('falls back to exponential backoff when RateLimitError has no retryAfter', async () => {
     vi.useFakeTimers();

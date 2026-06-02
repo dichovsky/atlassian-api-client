@@ -9,9 +9,11 @@ export function isRetryableStatus(status: number): boolean {
 
 /** Calculate retry delay with exponential backoff and jitter. */
 export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number {
-  const exponential = baseDelay * Math.pow(2, attempt);
-  const jitter = Math.random() * baseDelay;
-  return Math.min(exponential + jitter, maxDelay);
+  const ceiling = effectiveMaxDelay(maxDelay);
+  const delay = effectiveBaseDelay(baseDelay, ceiling);
+  const exponential = delay * Math.pow(2, attempt);
+  const jitter = Math.random() * delay;
+  return Math.min(exponential + jitter, ceiling);
 }
 
 /**
@@ -145,18 +147,25 @@ function shouldRetry(error: unknown, attempt: number, retries: number): boolean 
 }
 
 /**
- * Hard ceiling applied when `maxRetryDelay` is non-finite. `resolveConfig`
- * rejects non-finite values up front (PR review of [[B023]]) — this constant
- * is defence-in-depth for callers that bypass `resolveConfig` (e.g. unit
- * tests that build a config literal directly). Without it, `Math.min(x,
- * Infinity)` degenerates to `x`, re-opening the unbounded-Retry-After DoS.
+ * Hard ceiling applied when a retry delay is unschedulable. `resolveConfig`
+ * rejects invalid values up front — this constant is defence-in-depth for
+ * callers that bypass `resolveConfig` (e.g. custom transports building a
+ * structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and
+ * values above its timer ceiling to near-immediate timers.
  */
 const RETRY_DELAY_HARD_CEILING = 60_000;
+const MAX_TIMER_DELAY = 2_147_483_647;
 
 function effectiveMaxDelay(maxRetryDelay: number): number {
-  return Number.isFinite(maxRetryDelay) && maxRetryDelay > 0
+  return Number.isFinite(maxRetryDelay) && maxRetryDelay > 0 && maxRetryDelay <= MAX_TIMER_DELAY
     ? maxRetryDelay
     : RETRY_DELAY_HARD_CEILING;
+}
+
+function effectiveBaseDelay(retryDelay: number, ceiling: number): number {
+  return Number.isFinite(retryDelay) && retryDelay > 0 && retryDelay <= MAX_TIMER_DELAY
+    ? Math.min(retryDelay, ceiling)
+    : Math.min(RETRY_DELAY_HARD_CEILING, ceiling);
 }
 
 function getRetryDelay(
@@ -166,6 +175,7 @@ function getRetryDelay(
   maxRetryDelay: number,
 ): number {
   const ceiling = effectiveMaxDelay(maxRetryDelay);
+  const baseDelay = effectiveBaseDelay(retryDelay, ceiling);
   if (error instanceof RateLimitError && error.retryAfter !== undefined) {
     // B023: cap the server-advertised wait against `ceiling` so a hostile
     // or misconfigured endpoint returning `Retry-After: 9999999999` cannot
@@ -174,12 +184,12 @@ function getRetryDelay(
     // that want to honour a longer wait can opt in explicitly.
     const requested = error.retryAfter * 1000;
     const base = Math.min(requested, ceiling);
-    const jitter = Math.random() * retryDelay;
+    const jitter = Math.random() * baseDelay;
     const maxAdditionalDelay = Math.max(0, ceiling - base);
     return base + Math.min(jitter, maxAdditionalDelay);
   }
 
-  return calculateDelay(attempt, retryDelay, ceiling);
+  return calculateDelay(attempt, baseDelay, ceiling);
 }
 
 /**
