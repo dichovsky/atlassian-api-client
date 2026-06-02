@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "b50bc48ac8b4328ec8bca7b614aed1c6a2558887e6d34457da68dd6d95e9aeea",
+  "sourceHash": "475f367aa275c500193ef82fc058056fd78186d0bd2d7552ba34452817fc80a5",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -20263,7 +20263,7 @@
         {
           "name": "AddonPropertyKey",
           "kind": "interface",
-          "line": 8,
+          "line": 9,
           "exported": true,
           "signature": "export interface AddonPropertyKey { readonly key?: string; readonly self?: string; }",
           "jsdoc": "A single property key entry returned by the list-properties endpoint."
@@ -20271,7 +20271,7 @@
         {
           "name": "AddonPropertyKeys",
           "kind": "interface",
-          "line": 20,
+          "line": 21,
           "exported": true,
           "signature": "export interface AddonPropertyKeys { readonly keys?: readonly AddonPropertyKey[]; }",
           "jsdoc": "Response from `GET /rest/atlassian-connect/1/addons/{addonKey}/properties`."
@@ -20279,7 +20279,7 @@
         {
           "name": "AddonProperty",
           "kind": "interface",
-          "line": 30,
+          "line": 31,
           "exported": true,
           "signature": "export interface AddonProperty { readonly key?: string; readonly value?: unknown; }",
           "jsdoc": "A single app property returned by the get-property endpoint."
@@ -20287,7 +20287,7 @@
         {
           "name": "AddonPropertyOperationMessage",
           "kind": "interface",
-          "line": 42,
+          "line": 43,
           "exported": true,
           "signature": "export interface AddonPropertyOperationMessage { readonly message: string; readonly statusCode: number; }",
           "jsdoc": "Response from PUT /rest/atlassian-connect/1/addons/{addonKey}/properties/{propertyKey}."
@@ -20295,7 +20295,7 @@
         {
           "name": "AddonsResource",
           "kind": "class",
-          "line": 63,
+          "line": 64,
           "exported": true,
           "signature": "export class AddonsResource",
           "jsdoc": "Jira Connect addons properties resource.",
@@ -20303,32 +20303,33 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 64
+              "line": 65
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 76
+              "line": 77
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 90
+              "line": 91
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 107
+              "line": 108
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 126
+              "line": 127
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },

@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A single property key entry returned by the list-properties endpoint.
@@ -76,7 +77,7 @@ export class AddonsResource {
   async listProperties(addonKey: string): Promise<AddonPropertyKeys> {
     const response = await this.transport.request<AddonPropertyKeys>({
       method: 'GET',
-      path: `${this.baseUrl}/addons/${encodeURIComponent(addonKey)}/properties`,
+      path: `${this.baseUrl}/addons/${encodePathSegment(addonKey, 'addonKey')}/properties`,
     });
     return response.data;
   }
@@ -90,7 +91,7 @@ export class AddonsResource {
   async getProperty(addonKey: string, propertyKey: string): Promise<AddonProperty> {
     const response = await this.transport.request<AddonProperty>({
       method: 'GET',
-      path: `${this.baseUrl}/addons/${encodeURIComponent(addonKey)}/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.baseUrl}/addons/${encodePathSegment(addonKey, 'addonKey')}/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
     });
     return response.data;
   }
@@ -111,7 +112,7 @@ export class AddonsResource {
   ): Promise<AddonPropertyOperationMessage> {
     const response = await this.transport.request<AddonPropertyOperationMessage>({
       method: 'PUT',
-      path: `${this.baseUrl}/addons/${encodeURIComponent(addonKey)}/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.baseUrl}/addons/${encodePathSegment(addonKey, 'addonKey')}/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
       body: value,
     });
     return response.data;
@@ -126,7 +127,7 @@ export class AddonsResource {
   async deleteProperty(addonKey: string, propertyKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/addons/${encodeURIComponent(addonKey)}/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.baseUrl}/addons/${encodePathSegment(addonKey, 'addonKey')}/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
     });
   }
 }
