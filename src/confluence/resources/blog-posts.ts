@@ -2,7 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import { csvOrScalar } from './query.js';
+import { csvOrScalar, withSpaceIdParam } from './query.js';
 import type {
   Attachment,
   BlogPost,
@@ -67,7 +67,7 @@ export class BlogPostsResource {
     const response = await this.transport.request<CursorPaginatedResponse<BlogPost>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts`,
-      query: params as Record<string, string | number | boolean | undefined>,
+      query: withSpaceIdParam(params),
     });
     return response.data;
   }
@@ -158,7 +158,7 @@ export class BlogPostsResource {
     yield* paginateCursor<BlogPost>(
       this.transport,
       `${this.baseUrl}/blogposts`,
-      params as Record<string, string | number | boolean | undefined>,
+      withSpaceIdParam(params),
     );
   }
 

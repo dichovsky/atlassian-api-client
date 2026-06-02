@@ -55,7 +55,28 @@ describe('BlogPostsResource', () => {
       await blogPosts.list(params);
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject(params);
+      // `spaceId` is the ergonomic public input; the Confluence v2 GET /blogposts
+      // query parameter is the kebab-case `space-id` (camelCase `spaceId` is the
+      // response-body field and is silently ignored as a query param).
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'space-id': 'SPACE',
+        title: 'My Post',
+        status: 'current',
+        'body-format': 'storage',
+        limit: 20,
+        cursor: 'tok',
+      });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('spaceId');
+    });
+
+    it('maps the spaceId filter onto the space-id query param', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await blogPosts.list({ spaceId: 'ENG' });
+
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['space-id']).toBe('ENG');
+      expect(query).not.toHaveProperty('spaceId');
     });
 
     it('rejects non-positive --limit before the request', async () => {
@@ -254,9 +275,10 @@ describe('BlogPostsResource', () => {
 
       // Assert
       expect(transport.calls[0]?.options.query).toMatchObject({
-        spaceId: 'MY_SPACE',
+        'space-id': 'MY_SPACE',
         limit: 5,
       });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('spaceId');
     });
 
     it('propagates the cursor on subsequent requests', async () => {
