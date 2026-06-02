@@ -307,7 +307,7 @@ RESOURCES:
   screens                list, create, delete, update, list-available-fields, list-tabs, create-tab, delete-tab, update-tab, list-tab-fields, add-field-to-tab, remove-field-from-tab, move-field, move-tab, add-to-default, list-all-tabs
   screenscheme           list, list-all, create, update, delete
   plans                  list, create, get, update, archive, duplicate, list-teams, add-atlassian-team, delete-atlassian-team, get-atlassian-team, update-atlassian-team, create-plan-only-team, delete-plan-only-team, get-plan-only-team, update-plan-only-team, trash
-  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, delete-transition-property, get-transition-properties, create-transition-property, update-transition-property
+  workflows              list, get, delete, issue-type-usages, project-usages, workflow-scheme-usages, bulk-get, capabilities, bulk-create, validate-create, default-editor, read-history, list-history, get-rule-config, update-rule-config, delete-rule-config, delete-transition-property, get-transition-properties, create-transition-property, update-transition-property
   workflowscheme         list, create, delete, get, update, delete-default, get-default, set-default, delete-issuetype, get-issuetype, set-issuetype, delete-workflow, get-workflow, set-workflow, project-usages, list-by-project, assign-project, switch-project, create-draft, delete-draft, get-draft, update-draft, delete-draft-default, get-draft-default, set-draft-default, delete-draft-issuetype, get-draft-issuetype, set-draft-issuetype, publish-draft, delete-draft-workflow, get-draft-workflow, set-draft-workflow, bulk-read, bulk-update, bulk-mappings
   fields                 field-list, field-list-all, field-create, field-update, field-delete, context-list, context-create, context-update, context-delete, context-option-list, context-option-create, context-option-update, context-option-delete, context-option-replace-issues, context-option-move, context-issuetype-set, context-issuetype-remove, context-issuetype-mapping, context-default-list, context-default-set, context-project-set, context-project-remove, context-mapping, context-project-mapping, field-option-list, field-option-create, field-option-delete, field-option-get, field-option-update, field-option-replace-issues, field-option-suggestions-edit, field-option-suggestions-search, field-project-associations, field-screens, field-restore, field-trash, field-remove-associations, field-create-associations, field-trash-list
   jql                    autocomplete-data, autocomplete-data-post, autocomplete-suggestions, get-precomputations, update-precomputations, get-precomputations-by-id, match-issues, parse, migrate-queries, sanitize
@@ -563,6 +563,12 @@ EXAMPLES:
   atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
   atlas jira workflows project-usages fb759d53-a3a4-45ff-9de4-547c4b638dde --next-page-token eyJvIjoyfQ==
   atlas jira workflows workflow-scheme-usages fb759d53-a3a4-45ff-9de4-547c4b638dde
+  atlas jira workflows bulk-get --body '{"workflowIds":["fb759d53-a3a4-45ff-9de4-547c4b638dde"]}'
+  atlas jira workflows capabilities --workflow-id fb759d53-a3a4-45ff-9de4-547c4b638dde
+  atlas jira workflows capabilities --project-id 10001 --issue-type-id 10000
+  atlas jira workflows bulk-create --body '{"scope":{"type":"GLOBAL"},"statuses":[...],"workflows":[...]}'
+  atlas jira workflows validate-create --body '{"payload":{"scope":{"type":"GLOBAL"},"statuses":[...],"workflows":[...]},"validationOptions":{"levels":["ERROR","WARNING"]}}'
+  atlas jira workflows default-editor
   atlas jira workflows read-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --version-number 4
   atlas jira workflows list-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c
   atlas jira workflows list-history --workflow-id c5ef565c-1b1e-427e-bc3b-e677b0dc027c --expand includeIntermediateWorkflows

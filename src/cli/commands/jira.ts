@@ -6006,7 +6006,7 @@ async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unk
   }
 }
 
-// ─── workflows (B837-B840, B935-B938) ──────────────────────────────────────
+// ─── workflows (B837-B840, B841-B845, B846-B850, B935-B938) ──────────────────
 
 const WORKFLOWS_ACTIONS = [
   'list',
@@ -6015,6 +6015,11 @@ const WORKFLOWS_ACTIONS = [
   'issue-type-usages',
   'project-usages',
   'workflow-scheme-usages',
+  'bulk-get',
+  'capabilities',
+  'bulk-create',
+  'validate-create',
+  'default-editor',
   'read-history',
   'list-history',
   'get-rule-config',
@@ -6081,6 +6086,44 @@ async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
+
+    // B846: POST /rest/api/3/workflows
+    case 'bulk-get': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.bulkGet(
+        parseJsonObjectFlag(bodyRaw, '--body') as Parameters<typeof client.workflows.bulkGet>[0],
+      );
+    }
+
+    // B847: GET /rest/api/3/workflows/capabilities
+    case 'capabilities':
+      return client.workflows.getCapabilities({
+        workflowId: asString(opts['workflow-id']),
+        projectId: asString(opts['project-id']),
+        issueTypeId: asString(opts['issue-type-id']),
+      });
+
+    // B848: POST /rest/api/3/workflows/create
+    case 'bulk-create': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.bulkCreate(
+        parseJsonObjectFlag(bodyRaw, '--body') as Parameters<typeof client.workflows.bulkCreate>[0],
+      );
+    }
+
+    // B849: POST /rest/api/3/workflows/create/validation
+    case 'validate-create': {
+      const bodyRaw = requireOpt(opts['body'], '--body');
+      return client.workflows.validateCreate(
+        parseJsonObjectFlag(bodyRaw, '--body') as unknown as Parameters<
+          typeof client.workflows.validateCreate
+        >[0],
+      );
+    }
+
+    // B850: GET /rest/api/3/workflows/defaultEditor
+    case 'default-editor':
+      return client.workflows.getDefaultEditor();
 
     // B841: POST /rest/api/3/workflow/history
     case 'read-history': {
