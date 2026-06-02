@@ -1124,6 +1124,11 @@ const jiraWorkflowsMock = {
   getIssueTypeUsages: vi.fn(),
   getProjectUsages: vi.fn(),
   getWorkflowSchemeUsages: vi.fn(),
+  bulkGet: vi.fn(),
+  getCapabilities: vi.fn(),
+  bulkCreate: vi.fn(),
+  validateCreate: vi.fn(),
+  getDefaultEditor: vi.fn(),
 };
 
 const jiraWorkflowSchemeMock = {
@@ -21709,6 +21714,122 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('workflows', 'unknown-action', [], {}), GLOBALS),
       ).rejects.toThrow('Unknown workflows action');
+    });
+
+    // B846: bulk-get
+    it('bulk-get calls client.workflows.bulkGet with parsed body', async () => {
+      const response = { workflows: [{ id: WORKFLOW_ID }], statuses: [] };
+      jiraWorkflowsMock.bulkGet.mockResolvedValue(response);
+      const body = JSON.stringify({ workflowIds: [WORKFLOW_ID] });
+
+      const result = await executeJiraCommand(cmd('workflows', 'bulk-get', [], { body }), GLOBALS);
+
+      expect(jiraWorkflowsMock.bulkGet).toHaveBeenCalledWith({ workflowIds: [WORKFLOW_ID] });
+      expect(result).toEqual(response);
+    });
+
+    it('bulk-get throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'bulk-get', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    it('bulk-get throws when --body is not valid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'bulk-get', [], { body: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // B847: capabilities
+    it('capabilities calls client.workflows.getCapabilities with all query params', async () => {
+      const response = {
+        editorScope: 'GLOBAL',
+        systemRules: [],
+        connectRules: [],
+        forgeRules: [],
+        projectTypes: [],
+        triggerRules: [],
+      };
+      jiraWorkflowsMock.getCapabilities.mockResolvedValue(response);
+
+      const result = await executeJiraCommand(
+        cmd('workflows', 'capabilities', [], {
+          'workflow-id': WORKFLOW_ID,
+          'project-id': '10001',
+          'issue-type-id': '10000',
+        }),
+        GLOBALS,
+      );
+
+      expect(jiraWorkflowsMock.getCapabilities).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workflowId: WORKFLOW_ID,
+          projectId: '10001',
+          issueTypeId: '10000',
+        }),
+      );
+      expect(result).toEqual(response);
+    });
+
+    it('capabilities works with no params', async () => {
+      jiraWorkflowsMock.getCapabilities.mockResolvedValue({});
+
+      await executeJiraCommand(cmd('workflows', 'capabilities', [], {}), GLOBALS);
+
+      expect(jiraWorkflowsMock.getCapabilities).toHaveBeenCalled();
+    });
+
+    // B848: bulk-create
+    it('bulk-create calls client.workflows.bulkCreate with parsed body', async () => {
+      const createResponse = { workflows: [{ id: WORKFLOW_ID, name: 'My WF' }], statuses: [] };
+      jiraWorkflowsMock.bulkCreate.mockResolvedValue(createResponse);
+      const payload = { scope: { type: 'GLOBAL' }, statuses: [], workflows: [] };
+
+      const result = await executeJiraCommand(
+        cmd('workflows', 'bulk-create', [], { body: JSON.stringify(payload) }),
+        GLOBALS,
+      );
+
+      expect(jiraWorkflowsMock.bulkCreate).toHaveBeenCalledWith(payload);
+      expect(result).toEqual(createResponse);
+    });
+
+    it('bulk-create throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'bulk-create', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // B849: validate-create
+    it('validate-create calls client.workflows.validateCreate with parsed body', async () => {
+      const validationResponse = { errors: [] };
+      jiraWorkflowsMock.validateCreate.mockResolvedValue(validationResponse);
+      const payload = { payload: { scope: { type: 'GLOBAL' }, statuses: [], workflows: [] } };
+
+      const result = await executeJiraCommand(
+        cmd('workflows', 'validate-create', [], { body: JSON.stringify(payload) }),
+        GLOBALS,
+      );
+
+      expect(jiraWorkflowsMock.validateCreate).toHaveBeenCalledWith(payload);
+      expect(result).toEqual(validationResponse);
+    });
+
+    it('validate-create throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('workflows', 'validate-create', [], {}), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    // B850: default-editor
+    it('default-editor calls client.workflows.getDefaultEditor', async () => {
+      const editorResponse = { value: 'NEW' };
+      jiraWorkflowsMock.getDefaultEditor.mockResolvedValue(editorResponse);
+
+      const result = await executeJiraCommand(cmd('workflows', 'default-editor', [], {}), GLOBALS);
+
+      expect(jiraWorkflowsMock.getDefaultEditor).toHaveBeenCalled();
+      expect(result).toEqual(editorResponse);
     });
   });
 

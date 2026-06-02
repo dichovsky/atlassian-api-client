@@ -365,4 +365,268 @@ describe('WorkflowsResource', () => {
       ).rejects.toThrow(RangeError);
     });
   });
+
+  // ── bulkGet (B846) ─────────────────────────────────────────────────────────
+
+  describe('bulkGet()', () => {
+    const readRequest = { workflowIds: [WORKFLOW_ID] };
+    const readResponse = {
+      workflows: [{ id: WORKFLOW_ID, name: 'My Workflow' }],
+      statuses: [{ id: '10001', name: 'To Do', statusCategory: 'TODO' }],
+    };
+
+    it('calls POST /workflows with request body and returns WorkflowReadResponse', async () => {
+      transport.respondWith(readResponse);
+
+      const result = await workflows.bulkGet(readRequest);
+
+      expect(result).toEqual(readResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows`,
+        body: readRequest,
+      });
+    });
+
+    it('accepts all request fields: workflowNames and projectAndIssueTypes', async () => {
+      transport.respondWith(readResponse);
+
+      const body = {
+        workflowIds: [WORKFLOW_ID],
+        workflowNames: ['My Workflow'],
+        projectAndIssueTypes: [{ projectId: '10001', issueTypeId: '10000' }],
+      };
+
+      await workflows.bulkGet(body);
+
+      expect(transport.lastCall?.options.body).toEqual(body);
+    });
+
+    it('accepts empty request body (no filter fields)', async () => {
+      transport.respondWith({ workflows: [], statuses: [] });
+
+      await workflows.bulkGet({});
+
+      expect(transport.lastCall?.options.method).toBe('POST');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/workflows`);
+    });
+  });
+
+  // ── getCapabilities (B847) ─────────────────────────────────────────────────
+
+  describe('getCapabilities()', () => {
+    const capabilitiesResponse = {
+      editorScope: 'GLOBAL',
+      systemRules: [
+        { name: 'Assign a request', ruleKey: 'system:change-assignee', ruleType: 'Function' },
+      ],
+      connectRules: [],
+      forgeRules: [],
+      projectTypes: ['software'],
+      triggerRules: [],
+    };
+
+    it('calls GET /workflows/capabilities with no params', async () => {
+      transport.respondWith(capabilitiesResponse);
+
+      const result = await workflows.getCapabilities();
+
+      expect(result).toEqual(capabilitiesResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflows/capabilities`,
+      });
+    });
+
+    it('passes workflowId query param', async () => {
+      transport.respondWith(capabilitiesResponse);
+
+      await workflows.getCapabilities({ workflowId: WORKFLOW_ID });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ workflowId: WORKFLOW_ID });
+    });
+
+    it('passes projectId and issueTypeId query params', async () => {
+      transport.respondWith(capabilitiesResponse);
+
+      await workflows.getCapabilities({ projectId: '10001', issueTypeId: '10000' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        projectId: '10001',
+        issueTypeId: '10000',
+      });
+    });
+
+    it('does not include undefined query params when no params provided', async () => {
+      transport.respondWith(capabilitiesResponse);
+
+      await workflows.getCapabilities({});
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['workflowId']).toBeUndefined();
+      expect(query['projectId']).toBeUndefined();
+      expect(query['issueTypeId']).toBeUndefined();
+    });
+  });
+
+  // ── bulkCreate (B848) ──────────────────────────────────────────────────────
+
+  describe('bulkCreate()', () => {
+    const createRequest = {
+      scope: { type: 'GLOBAL' as const },
+      statuses: [
+        {
+          name: 'To Do',
+          statusCategory: 'TODO',
+          statusReference: 'f0b24de5-25e7-4fab-ab94-63d81db6c0c0',
+        },
+      ],
+      workflows: [
+        {
+          name: 'Software workflow 1',
+          statuses: [{ statusReference: 'f0b24de5-25e7-4fab-ab94-63d81db6c0c0' }],
+          transitions: [
+            {
+              id: '1',
+              name: 'Create',
+              type: 'INITIAL',
+              toStatusReference: 'f0b24de5-25e7-4fab-ab94-63d81db6c0c0',
+            },
+          ],
+        },
+      ],
+    };
+
+    const createResponse = {
+      workflows: [{ id: WORKFLOW_ID, name: 'Software workflow 1' }],
+      statuses: [{ id: '10001', name: 'To Do', statusCategory: 'TODO' }],
+    };
+
+    it('calls POST /workflows/create with request body', async () => {
+      transport.respondWith(createResponse);
+
+      const result = await workflows.bulkCreate(createRequest);
+
+      expect(result).toEqual(createResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/create`,
+        body: createRequest,
+      });
+    });
+
+    it('response schema is distinct from WorkflowReadResponse (both have workflows+statuses fields)', async () => {
+      // WorkflowCreateResponse and WorkflowReadResponse share the same field names
+      // but are different types from different spec schemas — ensure bulkCreate returns the right shape
+      transport.respondWith(createResponse);
+
+      const result = await workflows.bulkCreate(createRequest);
+
+      expect(result).toHaveProperty('workflows');
+      expect(result).toHaveProperty('statuses');
+    });
+
+    it('accepts minimal request with just workflows array', async () => {
+      transport.respondWith({ workflows: [], statuses: [] });
+
+      await workflows.bulkCreate({});
+
+      expect(transport.lastCall?.options.method).toBe('POST');
+    });
+  });
+
+  // ── validateCreate (B849) ─────────────────────────────────────────────────
+
+  describe('validateCreate()', () => {
+    const validateRequest = {
+      payload: {
+        scope: { type: 'GLOBAL' as const },
+        statuses: [],
+        workflows: [],
+      },
+      validationOptions: { levels: ['ERROR', 'WARNING'] },
+    };
+
+    const validationResponse = {
+      errors: [
+        {
+          message: 'Workflow name is required',
+          code: 'REQUIRED_FIELD',
+          level: 'ERROR',
+          type: 'WORKFLOW',
+        },
+      ],
+    };
+
+    it('calls POST /workflows/create/validation with request body', async () => {
+      transport.respondWith(validationResponse);
+
+      const result = await workflows.validateCreate(validateRequest);
+
+      expect(result).toEqual(validationResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflows/create/validation`,
+        body: validateRequest,
+      });
+    });
+
+    it('returns empty errors array when validation passes', async () => {
+      transport.respondWith({ errors: [] });
+
+      const result = await workflows.validateCreate({
+        payload: {},
+      });
+
+      expect(result.errors).toEqual([]);
+    });
+
+    it('body includes required payload field and optional validationOptions', async () => {
+      transport.respondWith({});
+
+      await workflows.validateCreate({
+        payload: {},
+        validationOptions: { levels: ['ERROR'] },
+      });
+
+      expect(transport.lastCall?.options.body).toMatchObject({
+        payload: {},
+        validationOptions: { levels: ['ERROR'] },
+      });
+    });
+  });
+
+  // ── getDefaultEditor (B850) ────────────────────────────────────────────────
+
+  describe('getDefaultEditor()', () => {
+    it('calls GET /workflows/defaultEditor and returns response', async () => {
+      transport.respondWith({ value: 'NEW' });
+
+      const result = await workflows.getDefaultEditor();
+
+      expect(result).toEqual({ value: 'NEW' });
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflows/defaultEditor`,
+      });
+    });
+
+    it('returns value: LEGACY for legacy editor', async () => {
+      transport.respondWith({ value: 'LEGACY' });
+
+      const result = await workflows.getDefaultEditor();
+
+      expect(result.value).toBe('LEGACY');
+    });
+
+    it('does not send a request body or query params', async () => {
+      transport.respondWith({ value: 'NEW' });
+
+      await workflows.getDefaultEditor();
+
+      const call = transport.lastCall?.options;
+      expect(call?.body).toBeUndefined();
+      expect(call?.query).toBeUndefined();
+    });
+  });
 });

@@ -2590,3 +2590,18 @@
 - [x] 🔴 🧩 API: B950 expose POST /rest/atlassian-connect/1/migration/workflow/rule/search
   - **Impl:** `MigrationResource.searchWorkflowRules(transferId, body)` → `WorkflowRulesSearchDetails`. CLI: `atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <csv-uuids> [--expand transition]`. Header `Atlassian-Transfer-Id` required.
   - **Rat:** Spec-verified: POST requires `Atlassian-Transfer-Id` header. Body: `WorkflowRulesSearch { workflowEntityId (uuid, required), ruleIds (array, 1-10, required), expand? (string) }`. Returns `WorkflowRulesSearchDetails { workflowEntityId?, invalidRules?, validRules? }`.
+- [x] 🔴 🧩 API: B846 Jira: expose POST /rest/api/3/workflows
+  - **Impl:** `WorkflowsResource.bulkGet(body)` → `WorkflowReadResponse` (`{ workflows?: JiraWorkflow[], statuses?: JiraWorkflowStatus[] }`). CLI: `atlas jira workflows bulk-get --body '<WorkflowReadRequest JSON>'`. Request: `WorkflowReadRequest { workflowIds?, workflowNames?, projectAndIssueTypes? }`.
+  - **Rat:** Spec-verified: `WorkflowReadRequest` → `WorkflowReadResponse` schemas. POST body, no query params. NOTE: `WorkflowReadResponse` and `WorkflowCreateResponse` share same field names but are distinct spec schemas — typed separately.
+- [x] 🔴 🧩 API: B847 Jira: expose GET /rest/api/3/workflows/capabilities
+  - **Impl:** `WorkflowsResource.getCapabilities(params?)` → `WorkflowCapabilities`. CLI: `atlas jira workflows capabilities [--workflow-id <id>] [--project-id <id>] [--issue-type-id <id>]`. Optional query params: `workflowId`, `projectId`, `issueTypeId`.
+  - **Rat:** Spec-verified: `WorkflowCapabilities` schema — `connectRules`, `editorScope`, `forgeRules`, `projectTypes`, `systemRules`, `triggerRules`. All fields optional.
+- [x] 🔴 🧩 API: B848 Jira: expose POST /rest/api/3/workflows/create
+  - **Impl:** `WorkflowsResource.bulkCreate(body)` → `WorkflowCreateResponse` (`{ workflows?: JiraWorkflow[], statuses?: JiraWorkflowStatus[] }`). CLI: `atlas jira workflows bulk-create --body '<WorkflowCreateRequest JSON>'`. Request: `WorkflowCreateRequest { scope?, statuses?: WorkflowStatusUpdate[], workflows?: WorkflowCreate[] }`.
+  - **Rat:** Spec-verified: `WorkflowCreateRequest` → `WorkflowCreateResponse` schemas. Deeply nested create body: `WorkflowCreate` has `statuses: StatusLayoutUpdate[]` and `transitions: TransitionUpdateDTO[]`. CRITICAL: distinct schema from `WorkflowReadRequest`/`WorkflowReadResponse` — NOT shared.
+- [x] 🔴 🧩 API: B849 Jira: expose POST /rest/api/3/workflows/create/validation
+  - **Impl:** `WorkflowsResource.validateCreate(body)` → `WorkflowValidationErrorList` (`{ errors?: WorkflowValidationError[] }`). CLI: `atlas jira workflows validate-create --body '<WorkflowCreateValidateRequest JSON>'`. Request: `WorkflowCreateValidateRequest { payload: WorkflowCreateRequest (required), validationOptions?: { levels?: string[] } }`.
+  - **Rat:** Spec-verified: `WorkflowCreateValidateRequest` wraps `WorkflowCreateRequest` under required `payload` key. `payload` is required per spec. `--body` cast via `unknown` to avoid TS overlap error on `required` field in Record<string,unknown>.
+- [x] 🔴 🧩 API: B850 Jira: expose GET /rest/api/3/workflows/defaultEditor
+  - **Impl:** `WorkflowsResource.getDefaultEditor()` → `DefaultWorkflowEditorResponse` (`{ value?: string }`). CLI: `atlas jira workflows default-editor`. No params, no body.
+  - **Rat:** Spec-verified: `DefaultWorkflowEditorResponse` with single optional `value` field (expected values: `"NEW"` | `"LEGACY"`). Simplest endpoint in this group.
