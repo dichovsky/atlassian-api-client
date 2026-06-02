@@ -62,6 +62,32 @@ export interface WorkflowSchemeUsage {
   readonly workflowSchemes: WorkflowSchemeUsagePage;
 }
 
+// ── B935-B938 types ─────────────────────────────────────────────────────────
+
+/**
+ * A workflow transition property.
+ * Schema: WorkflowTransitionProperty — only `value` is writable; `key` and `id` are read-only.
+ * @deprecated Endpoints removed June 1, 2026; use Bulk update workflows instead.
+ */
+export interface WorkflowTransitionProperty {
+  /** The key of the transition property. */
+  readonly key?: string;
+  /** The value of the transition property. */
+  readonly value: string;
+  /** The ID of the transition property (same as key). */
+  readonly id?: string;
+}
+
+/** Optional query params for GET /workflow/transitions/{transitionId}/properties (B936). */
+export interface GetTransitionPropertiesParams {
+  /** Include reserved `jira.*` keys in results. Default: false. */
+  readonly includeReservedKeys?: boolean;
+  /** Filter by this property key; returns all properties if omitted. */
+  readonly key?: string;
+  /** Workflow mode: 'live' (default) or 'draft'. */
+  readonly workflowMode?: 'live' | 'draft';
+}
+
 // ── Shared cursor-pagination params ────────────────────────────────────────
 
 export interface WorkflowUsagesParams {
@@ -320,6 +346,109 @@ export class WorkflowsResource {
       method: 'PUT',
       path: `${this.baseUrl}/workflow/rule/config/delete`,
       body,
+    });
+    return resp.data;
+  }
+
+  // ── B935-B938: transition properties ─────────────────────────────────────
+
+  /**
+   * Delete a workflow transition property (B935).
+   * DELETE /rest/api/3/workflow/transitions/{transitionId}/properties
+   * @deprecated Removal planned June 1, 2026.
+   */
+  async deleteTransitionProperty(
+    transitionId: number,
+    key: string,
+    workflowName: string,
+    workflowMode?: 'live' | 'draft',
+  ): Promise<void> {
+    if (!Number.isInteger(transitionId) || transitionId <= 0) {
+      throw new ValidationError('transitionId must be a positive integer');
+    }
+    const query: Record<string, string | undefined> = { key, workflowName };
+    if (workflowMode !== undefined) query['workflowMode'] = workflowMode;
+    await this.transport.request<undefined>({
+      method: 'DELETE',
+      path: `${this.baseUrl}/workflow/transitions/${encodePathSegment(String(transitionId), 'transitionId')}/properties`,
+      query,
+    });
+  }
+
+  /**
+   * Get workflow transition properties (B936).
+   * GET /rest/api/3/workflow/transitions/{transitionId}/properties
+   * @deprecated Removal planned June 1, 2026.
+   */
+  async getTransitionProperties(
+    transitionId: number,
+    workflowName: string,
+    params?: GetTransitionPropertiesParams,
+  ): Promise<WorkflowTransitionProperty> {
+    if (!Number.isInteger(transitionId) || transitionId <= 0) {
+      throw new ValidationError('transitionId must be a positive integer');
+    }
+    const query: Record<string, string | boolean | undefined> = { workflowName };
+    if (params?.includeReservedKeys !== undefined)
+      query['includeReservedKeys'] = params.includeReservedKeys;
+    if (params?.key !== undefined) query['key'] = params.key;
+    if (params?.workflowMode !== undefined) query['workflowMode'] = params.workflowMode;
+    const resp = await this.transport.request<WorkflowTransitionProperty>({
+      method: 'GET',
+      path: `${this.baseUrl}/workflow/transitions/${encodePathSegment(String(transitionId), 'transitionId')}/properties`,
+      query,
+    });
+    return resp.data;
+  }
+
+  /**
+   * Create a workflow transition property (B937).
+   * POST /rest/api/3/workflow/transitions/{transitionId}/properties
+   * @deprecated Removal planned June 1, 2026.
+   */
+  async createTransitionProperty(
+    transitionId: number,
+    key: string,
+    workflowName: string,
+    value: string,
+    workflowMode?: 'live' | 'draft',
+  ): Promise<WorkflowTransitionProperty> {
+    if (!Number.isInteger(transitionId) || transitionId <= 0) {
+      throw new ValidationError('transitionId must be a positive integer');
+    }
+    const query: Record<string, string | undefined> = { key, workflowName };
+    if (workflowMode !== undefined) query['workflowMode'] = workflowMode;
+    const resp = await this.transport.request<WorkflowTransitionProperty>({
+      method: 'POST',
+      path: `${this.baseUrl}/workflow/transitions/${encodePathSegment(String(transitionId), 'transitionId')}/properties`,
+      query,
+      body: { value },
+    });
+    return resp.data;
+  }
+
+  /**
+   * Update a workflow transition property (B938).
+   * PUT /rest/api/3/workflow/transitions/{transitionId}/properties
+   * @deprecated Removal planned June 1, 2026.
+   */
+  async updateTransitionProperty(
+    transitionId: number,
+    key: string,
+    workflowName: string,
+    value: string,
+    workflowMode?: 'live' | 'draft',
+  ): Promise<WorkflowTransitionProperty> {
+    if (!Number.isInteger(transitionId) || transitionId <= 0) {
+      throw new ValidationError('transitionId must be a positive integer');
+    }
+    const query: Record<string, string | undefined> = { key, workflowName };
+    if (workflowMode !== undefined) query['workflowMode'] = workflowMode;
+    const resp = await this.transport.request<WorkflowTransitionProperty>({
+      method: 'PUT',
+      path: `${this.baseUrl}/workflow/transitions/${encodePathSegment(String(transitionId), 'transitionId')}/properties`,
+      query,
+      body: { value },
     });
     return resp.data;
   }

@@ -684,4 +684,219 @@ describe('WorkflowsResource', () => {
       );
     });
   });
+
+  // ── deleteTransitionProperty (B935) ───────────────────────────────────────
+
+  describe('deleteTransitionProperty()', () => {
+    it('calls DELETE /workflow/transitions/{transitionId}/properties with required params', async () => {
+      transport.respondWith(undefined);
+
+      await workflows.deleteTransitionProperty(10000, 'jira.permission', 'My Workflow');
+
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'DELETE',
+        path: `${BASE_URL}/workflow/transitions/10000/properties`,
+        query: { key: 'jira.permission', workflowName: 'My Workflow' },
+      });
+    });
+
+    it('includes workflowMode when provided', async () => {
+      transport.respondWith(undefined);
+
+      await workflows.deleteTransitionProperty(10000, 'jira.permission', 'My Workflow', 'draft');
+
+      expect(transport.lastCall?.options.query).toMatchObject({ workflowMode: 'draft' });
+    });
+
+    it('does not include workflowMode when omitted', async () => {
+      transport.respondWith(undefined);
+
+      await workflows.deleteTransitionProperty(10000, 'jira.permission', 'My Workflow');
+
+      expect(transport.lastCall?.options.query?.['workflowMode']).toBeUndefined();
+    });
+
+    it('throws ValidationError for non-positive transitionId', async () => {
+      const { ValidationError } = await import('../../src/core/errors.js');
+      await expect(
+        workflows.deleteTransitionProperty(0, 'jira.permission', 'My Workflow'),
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        workflows.deleteTransitionProperty(-1, 'jira.permission', 'My Workflow'),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  // ── getTransitionProperties (B936) ────────────────────────────────────────
+
+  describe('getTransitionProperties()', () => {
+    const transitionPropertyResponse = {
+      key: 'jira.permission',
+      value: 'createissue',
+      id: 'jira.permission',
+    };
+
+    it('calls GET /workflow/transitions/{transitionId}/properties with workflowName', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      const result = await workflows.getTransitionProperties(10000, 'My Workflow');
+
+      expect(result).toEqual(transitionPropertyResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/workflow/transitions/10000/properties`,
+        query: { workflowName: 'My Workflow' },
+      });
+    });
+
+    it('passes optional key and workflowMode params', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      await workflows.getTransitionProperties(10000, 'My Workflow', {
+        key: 'jira.permission',
+        workflowMode: 'draft',
+        includeReservedKeys: true,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        workflowName: 'My Workflow',
+        key: 'jira.permission',
+        workflowMode: 'draft',
+        includeReservedKeys: true,
+      });
+    });
+
+    it('does not include optional params when omitted', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      await workflows.getTransitionProperties(10000, 'My Workflow');
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['key']).toBeUndefined();
+      expect(query['workflowMode']).toBeUndefined();
+      expect(query['includeReservedKeys']).toBeUndefined();
+    });
+
+    it('throws ValidationError for non-positive transitionId', async () => {
+      const { ValidationError } = await import('../../src/core/errors.js');
+      await expect(workflows.getTransitionProperties(0, 'My Workflow')).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
+
+  // ── createTransitionProperty (B937) ───────────────────────────────────────
+
+  describe('createTransitionProperty()', () => {
+    const transitionPropertyResponse = {
+      key: 'jira.permission',
+      value: 'createissue',
+      id: 'jira.permission',
+    };
+
+    it('calls POST /workflow/transitions/{transitionId}/properties with key, workflowName, body', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      const result = await workflows.createTransitionProperty(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'createissue',
+      );
+
+      expect(result).toEqual(transitionPropertyResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/workflow/transitions/10000/properties`,
+        query: { key: 'jira.permission', workflowName: 'My Workflow' },
+        body: { value: 'createissue' },
+      });
+    });
+
+    it('includes workflowMode when provided', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      await workflows.createTransitionProperty(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'createissue',
+        'live',
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({ workflowMode: 'live' });
+    });
+
+    it('throws ValidationError for non-positive transitionId', async () => {
+      const { ValidationError } = await import('../../src/core/errors.js');
+      await expect(
+        workflows.createTransitionProperty(0, 'jira.permission', 'My Workflow', 'createissue'),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  // ── updateTransitionProperty (B938) ───────────────────────────────────────
+
+  describe('updateTransitionProperty()', () => {
+    const transitionPropertyResponse = {
+      key: 'jira.permission',
+      value: 'editissue',
+      id: 'jira.permission',
+    };
+
+    it('calls PUT /workflow/transitions/{transitionId}/properties with key, workflowName, body', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      const result = await workflows.updateTransitionProperty(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'editissue',
+      );
+
+      expect(result).toEqual(transitionPropertyResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'PUT',
+        path: `${BASE_URL}/workflow/transitions/10000/properties`,
+        query: { key: 'jira.permission', workflowName: 'My Workflow' },
+        body: { value: 'editissue' },
+      });
+    });
+
+    it('includes workflowMode when provided', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      await workflows.updateTransitionProperty(
+        10000,
+        'jira.permission',
+        'My Workflow',
+        'editissue',
+        'draft',
+      );
+
+      expect(transport.lastCall?.options.query).toMatchObject({ workflowMode: 'draft' });
+    });
+
+    it('encodes transitionId in path', async () => {
+      transport.respondWith(transitionPropertyResponse);
+
+      await workflows.updateTransitionProperty(
+        12345,
+        'jira.permission',
+        'My Workflow',
+        'editissue',
+      );
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/transitions/12345/properties`,
+      );
+    });
+
+    it('throws ValidationError for non-positive transitionId', async () => {
+      const { ValidationError } = await import('../../src/core/errors.js');
+      await expect(
+        workflows.updateTransitionProperty(0, 'jira.permission', 'My Workflow', 'editissue'),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
 });

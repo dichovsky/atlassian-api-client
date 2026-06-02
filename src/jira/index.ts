@@ -184,6 +184,8 @@ export type {
   WorkflowTransitionRulesUpdateErrors,
   WorkflowTransitionRulesDeleteEntry,
   WorkflowsWithTransitionRulesDetails,
+  WorkflowTransitionProperty,
+  GetTransitionPropertiesParams,
 } from './resources/workflows.js';
 export { DashboardsResource } from './resources/dashboards.js';
 export type {
