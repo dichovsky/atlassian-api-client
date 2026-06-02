@@ -620,6 +620,41 @@ describe('HttpTransport', () => {
       });
     }
 
+    function stallingBodyResponse(
+      status: number,
+      signal: AbortSignal,
+      fallbackErrorMs: number,
+    ): Response {
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      const encoder = new TextEncoder();
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode('{"id":'));
+          let settled = false;
+          const fallbackId = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            controller.error(new Error('body read was not aborted'));
+          }, fallbackErrorMs);
+          signal.addEventListener(
+            'abort',
+            () => {
+              if (settled) return;
+              settled = true;
+              clearTimeout(fallbackId);
+              controller.error(abortError);
+            },
+            { once: true },
+          );
+        },
+      });
+      return new Response(body, {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     it('throws TimeoutError when the timeout signal aborts the request', async () => {
       vi.stubGlobal('fetch', hangingFetchMock());
 
@@ -642,6 +677,67 @@ describe('HttpTransport', () => {
       );
       expect(error).toBeInstanceOf(TimeoutError);
       expect((error as TimeoutError).timeoutMs).toBe(5_000);
+    });
+
+    it('throws TimeoutError when a successful response body stalls after headers', async () => {
+      const timeout = 100;
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) =>
+        Promise.resolve(stallingBodyResponse(200, init.signal, timeout + 1)),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0, timeout };
+      const transport = makeTransport(noRetryConfig);
+
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      await vi.advanceTimersByTimeAsync(timeout + 1);
+
+      await expect(resultPromise).rejects.toBeInstanceOf(TimeoutError);
+      await expect(resultPromise).rejects.toHaveProperty('timeoutMs', timeout);
+    });
+
+    it('throws TimeoutError when an error response body stalls after headers', async () => {
+      const timeout = 100;
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) =>
+        Promise.resolve(stallingBodyResponse(500, init.signal, timeout + 1)),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0, timeout };
+      const transport = makeTransport(noRetryConfig);
+
+      const resultPromise = transport.request({ method: 'GET', path: '/pages' });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      await vi.advanceTimersByTimeAsync(timeout + 1);
+
+      await expect(resultPromise).rejects.toBeInstanceOf(TimeoutError);
+      await expect(resultPromise).rejects.toHaveProperty('timeoutMs', timeout);
+    });
+
+    it('preserves caller AbortError when the caller aborts during body parsing', async () => {
+      const external = new AbortController();
+      const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) =>
+        Promise.resolve(stallingBodyResponse(200, init.signal, 100)),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const noRetryConfig: ResolvedConfig = { ...defaultConfig, retries: 0, timeout: 5_000 };
+      const transport = makeTransport(noRetryConfig);
+
+      const resultPromise = transport.request({
+        method: 'GET',
+        path: '/pages',
+        signal: external.signal,
+      });
+      void resultPromise.catch((_e: unknown) => undefined);
+
+      external.abort();
+      await vi.runAllTimersAsync();
+
+      await expect(resultPromise).rejects.toHaveProperty('name', 'AbortError');
     });
   });
 

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "fb4c34f2728a234cf094fc44d99bdf5c01c0153d1cfbe8d7781379f6959d437b",
+  "sourceHash": "e28c20e619b8dba1cff27c14ae77feca95de644a16292db9aa4b170975fe78d4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -13384,9 +13384,15 @@
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
         },
         {
+          "name": "isAbortError",
+          "kind": "function",
+          "line": 67,
+          "signature": "function isAbortError(error: unknown): boolean"
+        },
+        {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 81,
+          "line": 86,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -13394,7 +13400,7 @@
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 132,
+          "line": 137,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -13402,28 +13408,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 161,
+          "line": 166,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 244,
+          "line": 249,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 258,
+          "line": 263,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 276,
+          "line": 281,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
@@ -13698,16 +13704,22 @@
           ]
         },
         {
-          "name": "computeAuthIdentity",
+          "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
           "line": 259,
+          "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
+        },
+        {
+          "name": "computeAuthIdentity",
+          "kind": "function",
+          "line": 285,
           "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 278,
+          "line": 304,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
