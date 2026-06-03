@@ -360,6 +360,55 @@ const client = new JiraClient({
 
 Coalesces concurrent identical in-flight requests so only one HTTP call is made.
 
+### Circuit Breaker
+
+```typescript
+import { createCircuitBreakerMiddleware, CircuitBreakerOpenError } from 'atlassian-api-client';
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email: '...', apiToken: '...' },
+  middleware: [createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 })],
+});
+
+try {
+  await client.issues.getIssue('PROJ-1');
+} catch (error) {
+  if (error instanceof CircuitBreakerOpenError) {
+    console.warn(`Circuit open; retry after ~${error.msUntilHalfOpen}ms`);
+  }
+}
+```
+
+Protects against cascading failures from an unhealthy downstream. After `failureThreshold` consecutive qualifying failures (5xx, network errors, timeouts) the breaker opens and subsequent requests are rejected immediately with `CircuitBreakerOpenError` — no HTTP calls are made. After `resetTimeoutMs` the breaker transitions to half-open and admits a single trial request; a successful trial resets the breaker to closed.
+
+**Failure classification:** only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status count as failures. 4xx responses (including 429), `ValidationError`, abort errors, and other non-transport errors pass through without affecting the counter — the circuit only opens on infrastructure-level failures.
+
+**Per-baseUrl semantics:** each `createCircuitBreakerMiddleware()` call creates an isolated state machine. Install one instance per client to get per-baseUrl isolation:
+
+```typescript
+// Isolated breakers: a Confluence outage does not block Jira calls.
+const confluenceBreaker = createCircuitBreakerMiddleware();
+const jiraBreaker = createCircuitBreakerMiddleware();
+
+const confluenceClient = new ConfluenceClient({ ..., middleware: [confluenceBreaker] });
+const jiraClient = new JiraClient({ ..., middleware: [jiraBreaker] });
+```
+
+**Recommended compose order:** place the circuit breaker outermost (first in the array) so an open breaker short-circuits before spending a rate-limit token or running OAuth refresh logic:
+
+```typescript
+middleware: [
+  createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 }),
+  createRateLimiterMiddleware(...),
+  createOAuthRefreshMiddleware(...),
+  createCacheMiddleware(...),
+  createBatchMiddleware(),
+]
+```
+
+**Retry interaction:** `executeWithRetry` never retries a `CircuitBreakerOpenError` — an open circuit means the downstream is presumed unhealthy, so burning through retry attempts would only delay the caller.
+
 ## OAuth Scope Detection
 
 Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:
