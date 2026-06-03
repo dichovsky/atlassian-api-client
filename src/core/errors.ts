@@ -270,15 +270,16 @@ export class ResponseTooLargeError extends AtlassianError {
  * Circuit breaker open error.
  *
  * Thrown by {@link createCircuitBreakerMiddleware} when a request is rejected
- * because the breaker is in the OPEN state and the reset timeout has not yet
- * elapsed. The `msUntilHalfOpen` field gives an approximate wait time — after
- * that the breaker will transition to HALF_OPEN and admit a single trial
- * request.
+ * because (a) the breaker is in the OPEN state and the reset timeout has not
+ * yet elapsed, or (b) a concurrent request arrives while a HALF_OPEN trial is
+ * already in flight. The `msUntilHalfOpen` field gives an approximate wait
+ * time — after that the breaker will transition to HALF_OPEN and admit a
+ * single trial request.
  *
- * This error is intentionally NOT retried by {@link executeWithRetry} — an
- * open breaker means the downstream is presumed unhealthy, so spinning through
- * retry attempts would only hammer the failure counter further once the breaker
- * transitions back to CLOSED.
+ * This error is intentionally NOT retried by {@link executeWithRetry} for two
+ * reasons: (a) burning through retry attempts wastes quota before surfacing the
+ * open state to the caller, and (b) if the reset timer elapses mid-retry-loop,
+ * the first retry after timeout would consume the single HALF_OPEN trial.
  *
  * @example
  * ```ts

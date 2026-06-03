@@ -380,7 +380,7 @@ try {
 }
 ```
 
-Protects against cascading failures from an unhealthy downstream. After `failureThreshold` consecutive qualifying failures (5xx, network errors, timeouts) the breaker opens and subsequent requests are rejected immediately with `CircuitBreakerOpenError` — no HTTP calls are made. After `resetTimeoutMs` the breaker transitions to half-open and admits a single trial request; a successful trial resets the breaker to closed.
+Protects against cascading failures from an unhealthy downstream. After `failureThreshold` consecutive qualifying failures (5xx, network errors, timeouts) the breaker opens and subsequent requests are rejected immediately with `CircuitBreakerOpenError` — no HTTP calls are made. After `resetTimeoutMs` elapses, the transition to half-open is **lazy**: it occurs on the next incoming request after the timeout expires, not via a background timer. That request becomes the single trial; a successful trial resets the breaker to closed.
 
 **Failure classification:** only `NetworkError`, `TimeoutError`, and `HttpError` with a 5xx status count as failures. 4xx responses (including 429), `ValidationError`, abort errors, and other non-transport errors pass through without affecting the counter — the circuit only opens on infrastructure-level failures.
 
@@ -400,14 +400,15 @@ const jiraClient = new JiraClient({ ..., middleware: [jiraBreaker] });
 ```typescript
 middleware: [
   createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 }),
-  createRateLimiterMiddleware(...),
   createOAuthRefreshMiddleware(...),
-  createCacheMiddleware(...),
+  createCacheMiddleware(),
   createBatchMiddleware(),
 ]
 ```
 
-**Retry interaction:** `executeWithRetry` never retries a `CircuitBreakerOpenError` — an open circuit means the downstream is presumed unhealthy, so burning through retry attempts would only delay the caller.
+**Retry interaction:** `executeWithRetry` never retries a `CircuitBreakerOpenError`. There are two reasons: (a) burning through retry attempts wastes quota before surfacing the open state to the caller, and (b) if the reset timer elapses mid-retry-loop, the first retry after timeout would consume the single HALF_OPEN trial attempt.
+
+**Interaction with `retries` option:** the circuit breaker middleware runs _inside_ `executeWithRetry`, so each retry attempt counts as an independent qualifying failure. With the default `retries: 3`, a single logical user request can contribute up to 4 qualifying failures (initial attempt + 3 retries). Choose `failureThreshold` relative to your `retries` setting — for example, `failureThreshold: 5` with `retries: 3` means the breaker can open after as few as 2 logical requests that each exhaust all retries.
 
 ## OAuth Scope Detection
 

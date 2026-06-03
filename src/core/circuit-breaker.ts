@@ -78,10 +78,20 @@ type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
  * per-baseUrl isolation automatically — the breaker state is scoped to the
  * closure, not shared across clients.
  *
+ * ## Retry-loop coupling
+ *
+ * This middleware runs **inside** `executeWithRetry`, so every retry attempt
+ * is an independent qualifying failure. With the default `retries: 3`, a
+ * single logical user request can contribute up to 4 qualifying failures
+ * (initial attempt + 3 retries). Choose `failureThreshold` relative to your
+ * `retries` setting — e.g. `failureThreshold: 5` with `retries: 3` means the
+ * breaker can open after as few as 2 logical requests that each exhaust all
+ * retries.
+ *
  * ## Recommended compose order
  *
- * Place the circuit breaker **outside** (before) rate-limiter middleware so
- * that an open breaker short-circuits before spending a rate-limit token:
+ * Place the circuit breaker **outside** (before) other middleware so that an
+ * open breaker short-circuits before running OAuth refresh or cache logic:
  *
  * ```ts
  * const transport = new HttpTransport({
@@ -89,7 +99,8 @@ type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
  *   auth: { type: 'bearer', token: process.env.ATLASSIAN_TOKEN! },
  *   middleware: [
  *     createCircuitBreakerMiddleware({ failureThreshold: 5, resetTimeoutMs: 30_000 }),
- *     createRateLimiterMiddleware({ requestsPerSecond: 10 }),
+ *     createOAuthRefreshMiddleware(...),
+ *     createCacheMiddleware(),
  *   ],
  * });
  * ```
@@ -158,8 +169,9 @@ export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions):
           openedAt = Date.now();
           trialInFlight = false;
         } else {
-          // Non-qualifying error in HALF_OPEN: reset to CLOSED
-          // (the downstream is not exhibiting server-side failure).
+          // Non-qualifying error in HALF_OPEN: reset to CLOSED.
+          // Any downstream response (even a 4xx) proves infra is healthy enough
+          // to reply — close the breaker and let callers handle the error normally.
           state = 'CLOSED';
           failureCount = 0;
           trialInFlight = false;

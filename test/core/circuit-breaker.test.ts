@@ -174,7 +174,7 @@ describe('createCircuitBreakerMiddleware — CLOSED state', () => {
     expect(next).toHaveBeenCalledTimes(4);
   });
 
-  it('does NOT count 429 RateLimitError as a failure', async () => {
+  it('does NOT count 429 HttpError as a failure', async () => {
     const mw = createCircuitBreakerMiddleware({ failureThreshold: 3, resetTimeoutMs: 30_000 });
     const err = new HttpError('rate limited', 429);
     const next = vi.fn().mockRejectedValue(err);
