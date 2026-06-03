@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Repo guidance. Goal: correctness per token. Prefer short, verifiable steps.
 
@@ -30,7 +30,7 @@ npm run validate                              # full gate — run before broad c
 - `src/core/*`: transport/auth/config/errors/pagination.
 - `src/confluence/*`, `src/jira/*`: API clients + resources.
 - `src/cli/*`: router/commands via `node:util.parseArgs`.
-- `skill/*`: bundled Claude Code skill `atlassian-api-client-cli`; installed via `atlas install-skill` (`--local` for project-scoped). Version is injected from `package.json` at install time.
+- `skill/*`: bundled Codex skill `atlassian-api-client-cli`; installed via `atlas install-skill` (`--local` for project-scoped). Version is injected from `package.json` at install time.
 
 ## Critical Invariants
 
@@ -65,4 +65,4 @@ Fix:
 Rule:
 ```
 
-Store project-specific mistakes in `.claude/memory`; generalizable rules in global memory.
+Store project-specific mistakes in `.Codex/memory`; generalizable rules in global memory.

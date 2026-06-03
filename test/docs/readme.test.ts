@@ -41,7 +41,10 @@ describe('README package documentation', () => {
 
   it('ships linked package documentation and funding metadata', () => {
     expect(PACKAGE_JSON.files).toContain('docs/ARCHITECTURE.md');
-    expect(PACKAGE_JSON.funding).toBe('https://buymeacoffee.com/dichovsky');
+    expect(PACKAGE_JSON.funding).toEqual({
+      type: 'buymeacoffee',
+      url: 'https://buymeacoffee.com/dichovsky',
+    });
     expect(README).toContain('[Support development](https://buymeacoffee.com/dichovsky)');
   });
 });
