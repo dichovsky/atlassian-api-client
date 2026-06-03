@@ -119,15 +119,21 @@ describe('GroupUserPickerResource', () => {
       });
     });
 
-    it('forwards excludeConnectUsers param', async () => {
+    it('maps excludeConnectUsers to the excludeConnectAddons wire param', async () => {
       // Arrange
       transport.respondWith(makePickerResponse());
 
       // Act
       await picker.pick({ excludeConnectUsers: true });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ excludeConnectUsers: true });
+      // Assert: the GET /groupuserpicker endpoint's documented query param is
+      // `excludeConnectAddons` (see spec/jira-platform-v3.json). Sending the
+      // `/user/picker` param name `excludeConnectUsers` would be silently
+      // ignored by the server, so the exclusion filter must hit the wire as
+      // `excludeConnectAddons`.
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).toMatchObject({ excludeConnectAddons: true });
+      expect(query).not.toHaveProperty('excludeConnectUsers');
     });
 
     it('omits undefined params from query', async () => {
