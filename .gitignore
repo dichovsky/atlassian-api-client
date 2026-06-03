@@ -12,3 +12,4 @@ bench/.results.json
 .vscode/
 .idea/
 .claude/
+.codex/
