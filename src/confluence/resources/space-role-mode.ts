@@ -1,5 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import type { SpaceRoleMode } from '../types.js';
+import type { SpaceRoleMode } from '../types/space-roles.js';
 
 /**
  * Resource for the Confluence v2 space-role-mode API.

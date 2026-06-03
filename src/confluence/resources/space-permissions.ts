@@ -1,7 +1,7 @@
 import type { Transport } from '../../core/types.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import type { ListSpacePermissionsParams, SpacePermission } from '../types.js';
+import type { ListSpacePermissionsParams, SpacePermission } from '../types/space-permissions.js';
 
 /**
  * Resource for the Confluence v2 `space-permissions` API.

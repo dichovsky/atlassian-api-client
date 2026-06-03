@@ -1,5 +1,8 @@
 import type { Transport } from '../../core/types.js';
-import type { ConvertContentIdsToTypesData, ConvertContentIdsToTypesResponse } from '../types.js';
+import type {
+  ConvertContentIdsToTypesData,
+  ConvertContentIdsToTypesResponse,
+} from '../types/content.js';
 
 /**
  * Resource for the Confluence v2 content API.

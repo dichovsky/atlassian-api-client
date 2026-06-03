@@ -15,7 +15,7 @@ import type {
   ListFooterCommentLikeUsersParams,
   ListFooterCommentVersionsParams,
   ListFooterCommentsTenantParams,
-} from '../types.js';
+} from '../types/comments.js';
 
 /**
  * Resource for the tenant-wide Confluence v2 footer-comments surface

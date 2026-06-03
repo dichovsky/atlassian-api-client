@@ -3,29 +3,31 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { csvOrScalar, nonEmptyQuery } from './query.js';
+import type { Attachment } from '../types/attachments.js';
 import type {
-  Attachment,
   ContentProperty,
-  ContentVersion,
   CreateContentPropertyData,
+  Label,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type { FooterComment } from '../types/comments.js';
+import type {
   CreateCustomContentData,
   CustomContent,
   CustomContentChild,
   CustomContentOperationsResponse,
   DeleteCustomContentParams,
-  FooterComment,
   GetCustomContentParams,
-  Label,
   ListCustomContentAttachmentsParams,
   ListCustomContentChildrenParams,
   ListCustomContentFooterCommentsParams,
   ListCustomContentLabelsParams,
   ListCustomContentParams,
   ListCustomContentVersionsParams,
-  ListSharedContentPropertiesParams,
   UpdateCustomContentData,
-  UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/custom-content.js';
+import type { ContentVersion } from '../types/versions.js';
 
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;

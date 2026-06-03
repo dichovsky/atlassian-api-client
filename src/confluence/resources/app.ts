@@ -2,7 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import type { AppProperty, ListAppPropertiesParams, UpsertAppPropertyData } from '../types.js';
+import type { AppProperty, ListAppPropertiesParams, UpsertAppPropertyData } from '../types/app.js';
 
 /**
  * Resource for Confluence Forge / Connect app properties.

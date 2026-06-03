@@ -2,9 +2,9 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import type { ClassificationLevel } from '../types/classification-levels.js';
+import type { ContentProperty, CreateContentPropertyData } from '../types/common.js';
 import type {
-  ContentProperty,
-  CreateContentPropertyData,
   CreateDatabaseData,
   CreateDatabaseParams,
   Database,
@@ -20,8 +20,7 @@ import type {
   ResetDatabaseClassificationLevelData,
   UpdateDatabaseClassificationLevelData,
   UpdateDatabasePropertyData,
-} from '../types.js';
-import type { ClassificationLevel } from '../types.js';
+} from '../types/databases.js';
 
 /**
  * Resource for Confluence v2 databases.

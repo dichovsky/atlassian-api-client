@@ -10,7 +10,7 @@ import type {
   SpaceRoleDetail,
   UpdateSpaceRoleData,
   UpdateSpaceRoleResponse,
-} from '../types.js';
+} from '../types/space-roles.js';
 
 /**
  * Resource for the Confluence v2 `space-roles` API.

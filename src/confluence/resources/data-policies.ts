@@ -1,7 +1,11 @@
 import type { Transport } from '../../core/types.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import type { DataPolicyMetadata, DataPolicySpace, ListDataPolicySpacesParams } from '../types.js';
+import type {
+  DataPolicyMetadata,
+  DataPolicySpace,
+  ListDataPolicySpacesParams,
+} from '../types/data-policies.js';
 
 /**
  * Resource for the Confluence v2 `data-policies` API.

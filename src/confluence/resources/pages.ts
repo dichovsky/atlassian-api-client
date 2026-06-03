@@ -3,17 +3,21 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { csvOrScalar, withSpaceIdParam } from './query.js';
+import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
-  ChildPage,
   ContentProperty,
   CreateContentPropertyData,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type { CustomContent } from '../types/custom-content.js';
+import type { FooterComment, InlineComment } from '../types/comments.js';
+import type {
+  ChildPage,
   CreatePageData,
-  CustomContent,
   DeletePageParams,
-  FooterComment,
   GetPageClassificationLevelParams,
   GetPageParams,
-  InlineComment,
   ListChildPagesParams,
   ListPageAncestorsParams,
   ListPageCustomContentParams,
@@ -23,7 +27,6 @@ import type {
   ListPageInlineCommentsParams,
   ListPageLikeUsersParams,
   ListPagesParams,
-  ListSharedContentPropertiesParams,
   Page,
   PageAncestorsResponse,
   PageChild,
@@ -34,12 +37,10 @@ import type {
   RedactPageData,
   RedactPageResponse,
   ResetPageClassificationLevelData,
-  ClassificationLevel,
   UpdatePageClassificationLevelData,
   UpdatePageData,
   UpdatePageTitleData,
-  UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/pages.js';
 
 /**
  * Resource for Confluence v2 pages.

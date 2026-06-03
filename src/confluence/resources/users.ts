@@ -1,5 +1,8 @@
 import type { Transport } from '../../core/types.js';
-import type { CheckAccessByEmailResponse, CheckAccessOrInviteByEmailRequest } from '../types.js';
+import type {
+  CheckAccessByEmailResponse,
+  CheckAccessOrInviteByEmailRequest,
+} from '../types/users.js';
 
 /**
  * Resource for the Confluence v2 single-user access APIs.

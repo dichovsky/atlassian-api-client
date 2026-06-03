@@ -1,5 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import type { ListClassificationLevelsResponse } from '../types.js';
+import type { ListClassificationLevelsResponse } from '../types/classification-levels.js';
 
 /**
  * Resource for the Confluence v2 classification-levels API.

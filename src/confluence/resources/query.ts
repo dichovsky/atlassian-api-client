@@ -7,7 +7,7 @@
  * Add new helpers here only when a coercion is reused across 2+ resources.
  */
 
-import type { BodyFormat } from '../types.js';
+import type { BodyFormat } from '../types/common.js';
 
 /**
  * Normalise an array-or-scalar filter into the comma-joined scalar the wire

@@ -8,22 +8,24 @@ import type {
   AttachmentDetailedVersion,
   AttachmentFooterComment,
   AttachmentOperationsResponse,
-  AttachmentStatus,
   AttachmentVersion,
-  ContentProperty,
-  CreateContentPropertyData,
   DeleteAttachmentParams,
   GetAttachmentParams,
   GetAttachmentThumbnailParams,
-  Label,
   ListAllAttachmentsParams,
   ListAttachmentFooterCommentsParams,
   ListAttachmentLabelsParams,
   ListAttachmentVersionsParams,
   ListAttachmentsParams,
+} from '../types/attachments.js';
+import type {
+  AttachmentStatus,
+  ContentProperty,
+  CreateContentPropertyData,
+  Label,
   ListSharedContentPropertiesParams,
   UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/common.js';
 
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;

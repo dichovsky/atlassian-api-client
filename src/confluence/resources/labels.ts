@@ -2,17 +2,17 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor } from '../../core/pagination.js';
+import type { Attachment } from '../types/attachments.js';
+import type { BlogPost } from '../types/blog-posts.js';
+import type { Label } from '../types/common.js';
 import type {
-  Attachment,
-  BlogPost,
-  Label,
   ListAllLabelsParams,
   ListAttachmentsByLabelParams,
   ListBlogPostsByLabelParams,
   ListLabelsParams,
   ListPagesByLabelParams,
-  Page,
-} from '../types.js';
+} from '../types/labels.js';
+import type { Page } from '../types/pages.js';
 
 /** Query shape accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;

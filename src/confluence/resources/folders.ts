@@ -5,6 +5,10 @@ import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
   ContentProperty,
   CreateContentPropertyData,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type {
   CreateFolderData,
   Folder,
   FolderAncestorsResponse,
@@ -15,9 +19,7 @@ import type {
   ListFolderAncestorsParams,
   ListFolderChildrenParams,
   ListFolderDescendantsParams,
-  ListSharedContentPropertiesParams,
-  UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/folders.js';
 
 /**
  * Resource for Confluence v2 folders.

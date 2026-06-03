@@ -4,7 +4,6 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
-  ContentVersion,
   InlineComment,
   InlineCommentLikeUser,
   InlineCommentLikesCount,
@@ -13,7 +12,8 @@ import type {
   ListInlineCommentLikeUsersParams,
   ListInlineCommentVersionsParams,
   ListInlineCommentsAllParams,
-} from '../types.js';
+} from '../types/comments.js';
+import type { ContentVersion } from '../types/versions.js';
 
 /**
  * Resource for the tenant-wide Confluence v2 inline-comments surface.
