@@ -410,6 +410,36 @@ middleware: [
 
 **Interaction with `retries` option:** the circuit breaker middleware runs _inside_ `executeWithRetry`, so each retry attempt counts as an independent qualifying failure. With the default `retries: 3`, a single logical user request can contribute up to 4 qualifying failures (initial attempt + 3 retries). Choose `failureThreshold` relative to your `retries` setting — for example, `failureThreshold: 5` with `retries: 3` means the breaker can open after as few as 2 logical requests that each exhaust all retries.
 
+### Proactive Rate Limiting (Token Bucket)
+
+Smooth outbound traffic before it reaches the Atlassian API with a client-side token-bucket limiter. Unlike the reactive `RateLimitError` path (which fires after the server returns HTTP 429), this middleware enforces a local quota and **waits** when the bucket is empty instead of dispatching the request and letting the server reject it.
+
+```typescript
+import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-client';
+
+const client = new JiraClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'bearer', token: accessToken },
+  middleware: [
+    createRateLimiterMiddleware({
+      tokensPerInterval: 10, // allow up to 10 requests per second
+      intervalMs: 1000,
+      maxWaitMs: 5000, // throw RateLimiterExhaustedError after 5s wait
+    }),
+  ],
+});
+```
+
+Key behaviours:
+
+- **Bucket starts full** — an initial burst up to `tokensPerInterval` requests is allowed without any delay.
+- **Waits, never rejects by default** — when the bucket is empty the middleware sleeps until the next token is available, smoothing traffic rather than failing fast. Set `maxWaitMs` to cap the wait and throw `RateLimiterExhaustedError` instead.
+- **Abort-aware** — the wait honours `RequestOptions.signal`, so caller-initiated cancellations and transport timeouts still work correctly during a wait.
+- **Retry interaction** — each retry attempt re-enters the middleware and consumes a token. This is intentional: retried requests represent real outbound traffic and should be rate-limited just like first attempts.
+- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and before cache/batch so cached hits are free.
+
+`RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error, distinct from the server-side `RateLimitError` (HTTP 429).
+
 ## OAuth Scope Detection
 
 Map Atlassian operation names to the required Cloud OAuth 2.0 scopes:

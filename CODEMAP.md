@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "1c3ceb7772942f4e8bc46c2cc2ec9a56adcf3acd43c3d3f0b38fc135036a0d90",
+  "sourceHash": "fd60ee903cfe7e4f316e014e0c8e78f432c2130f8e6c9339309c2e5ad01cb71c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -126,7 +126,7 @@
       "name": "AuthConfig",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 132,
+      "line": 120,
       "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
       "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…",
       "typeOnly": true
@@ -135,7 +135,7 @@
       "name": "AuthenticationError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 75,
+      "line": 59,
       "signature": "export class AuthenticationError extends HttpError",
       "jsdoc": "401 Unauthorized error. @example ```ts try { await client.pages.getPage(pageId); } catch (error) { if (error inst…"
     },
@@ -143,7 +143,7 @@
       "name": "BasicAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 98,
+      "line": 86,
       "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
       "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -152,7 +152,7 @@
       "name": "BearerAuthConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 115,
+      "line": 103,
       "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
       "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -341,23 +341,6 @@
       "typeOnly": true
     },
     {
-      "name": "CircuitBreakerOpenError",
-      "kind": "class",
-      "file": "src/core/errors.ts",
-      "line": 295,
-      "signature": "export class CircuitBreakerOpenError extends AtlassianError",
-      "jsdoc": "Circuit breaker open error. @example ```ts try { await transport.request({ method: 'GET', path: '/issue/AC-1' }); } c…"
-    },
-    {
-      "name": "CircuitBreakerOptions",
-      "kind": "interface",
-      "file": "src/core/circuit-breaker.ts",
-      "line": 11,
-      "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
-      "jsdoc": "Options for the circuit breaker middleware.",
-      "typeOnly": true
-    },
-    {
       "name": "ClassificationLevel",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -370,7 +353,7 @@
       "name": "ClientConfig",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 150,
+      "line": 138,
       "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
       "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
       "typeOnly": true
@@ -1230,7 +1213,7 @@
       "name": "ForbiddenError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 99,
+      "line": 71,
       "signature": "export class ForbiddenError extends HttpError",
       "jsdoc": "403 Forbidden error."
     },
@@ -1381,7 +1364,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 37,
+      "line": 36,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -2287,7 +2270,7 @@
       "name": "Logger",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 332,
+      "line": 266,
       "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
       "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger.",
       "typeOnly": true
@@ -2296,7 +2279,7 @@
       "name": "Middleware",
       "kind": "type",
       "file": "src/core/types.ts",
-      "line": 347,
+      "line": 281,
       "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
       "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport.",
       "typeOnly": true
@@ -2305,7 +2288,7 @@
       "name": "NetworkError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 186,
+      "line": 133,
       "signature": "export class NetworkError extends AtlassianError",
       "jsdoc": "Network-level error (DNS failure, connection refused, etc.)."
     },
@@ -2313,7 +2296,7 @@
       "name": "NotFoundError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 116,
+      "line": 83,
       "signature": "export class NotFoundError extends HttpError",
       "jsdoc": "404 Not Found error."
     },
@@ -2464,7 +2447,7 @@
       "name": "PaginationError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 212,
+      "line": 159,
       "signature": "export class PaginationError extends AtlassianError",
       "jsdoc": "Pagination safety error."
     },
@@ -2506,7 +2489,7 @@
       "name": "RateLimitError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 141,
+      "line": 96,
       "signature": "export class RateLimitError extends HttpError",
       "jsdoc": "429 Too Many Requests error."
     },
@@ -2514,9 +2497,26 @@
       "name": "RateLimitInfo",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 321,
+      "line": 255,
       "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
       "jsdoc": "Rate limit information parsed from response headers.",
+      "typeOnly": true
+    },
+    {
+      "name": "RateLimiterExhaustedError",
+      "kind": "class",
+      "file": "src/core/errors.ts",
+      "line": 236,
+      "signature": "export class RateLimiterExhaustedError extends AtlassianError",
+      "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…"
+    },
+    {
+      "name": "RateLimiterOptions",
+      "kind": "interface",
+      "file": "src/core/rate-limiter.ts",
+      "line": 66,
+      "signature": "export interface RateLimiterOptions { readonly tokensPerInterval: number; readonly intervalMs: number; readonly maxWaitM…",
+      "jsdoc": "Options for the proactive token-bucket rate limiter middleware (B017). @example ```ts // Allow 10 requests per second, wait up to 5 s before giving up. const rl…",
       "typeOnly": true
     },
     {
@@ -2590,15 +2590,6 @@
       "typeOnly": true
     },
     {
-      "name": "RequestIdOptions",
-      "kind": "interface",
-      "file": "src/core/types.ts",
-      "line": 291,
-      "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
-      "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…",
-      "typeOnly": true
-    },
-    {
       "name": "RequestOptions",
       "kind": "interface",
       "file": "src/core/types.ts",
@@ -2647,7 +2638,7 @@
       "name": "ResponseTooLargeError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 245,
+      "line": 192,
       "signature": "export class ResponseTooLargeError extends AtlassianError",
       "jsdoc": "Response-too-large error (B026)."
     },
@@ -2655,7 +2646,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 92,
+      "line": 86,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -2868,7 +2859,7 @@
       "name": "TimeoutError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 170,
+      "line": 117,
       "signature": "export class TimeoutError extends AtlassianError",
       "jsdoc": "Timeout error (AbortController)."
     },
@@ -2894,7 +2885,7 @@
       "name": "Transport",
       "kind": "interface",
       "file": "src/core/types.ts",
-      "line": 82,
+      "line": 70,
       "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
       "jsdoc": "Transport abstraction — the only interface resource modules depend on.",
       "typeOnly": true
@@ -3115,7 +3106,7 @@
       "name": "ValidationError",
       "kind": "class",
       "file": "src/core/errors.ts",
-      "line": 198,
+      "line": 145,
       "signature": "export class ValidationError extends AtlassianError",
       "jsdoc": "Validation error for invalid config or parameters."
     },
@@ -3275,14 +3266,6 @@
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
     {
-      "name": "createCircuitBreakerMiddleware",
-      "kind": "function",
-      "file": "src/core/circuit-breaker.ts",
-      "line": 115,
-      "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
-      "jsdoc": "Creates an opt-in circuit breaker middleware."
-    },
-    {
       "name": "createConnectJwtMiddleware",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
@@ -3307,6 +3290,14 @@
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
     },
     {
+      "name": "createRateLimiterMiddleware",
+      "kind": "function",
+      "file": "src/core/rate-limiter.ts",
+      "line": 132,
+      "signature": "export function createRateLimiterMiddleware(options: RateLimiterOptions): Middleware",
+      "jsdoc": "Creates a proactive token-bucket rate limiter middleware (B017). @example ```ts import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-cli…"
+    },
+    {
       "name": "detectRequiredScopes",
       "kind": "function",
       "file": "src/core/scopes.ts",
@@ -3318,7 +3309,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 117,
+      "line": 111,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -3398,7 +3389,7 @@
       "name": "toJSON",
       "kind": "function",
       "file": "src/core/response.ts",
-      "line": 24,
+      "line": 23,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
     }
@@ -12026,44 +12017,6 @@
       ]
     },
     {
-      "path": "src/core/circuit-breaker.ts",
-      "symbols": [
-        {
-          "name": "CircuitBreakerOptions",
-          "kind": "interface",
-          "line": 11,
-          "exported": true,
-          "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
-          "jsdoc": "Options for the circuit breaker middleware."
-        },
-        {
-          "name": "State",
-          "kind": "type",
-          "line": 28,
-          "signature": "type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';"
-        },
-        {
-          "name": "createCircuitBreakerMiddleware",
-          "kind": "function",
-          "line": 115,
-          "exported": true,
-          "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
-          "jsdoc": "Creates an opt-in circuit breaker middleware."
-        },
-        {
-          "name": "isQualifyingFailure",
-          "kind": "function",
-          "line": 208,
-          "signature": "function isQualifyingFailure(error: unknown): boolean",
-          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, or {@link HttpError} with a 5xx status. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
-        }
-      ],
-      "imports": [
-        "./errors.js",
-        "./types.js"
-      ]
-    },
-    {
       "path": "src/core/config.ts",
       "symbols": [
         {
@@ -12114,32 +12067,26 @@
         {
           "name": "validateConfig",
           "kind": "function",
-          "line": 73,
+          "line": 72,
           "signature": "function validateConfig(config: ClientConfig): void"
-        },
-        {
-          "name": "validateRequestIdOptions",
-          "kind": "function",
-          "line": 202,
-          "signature": "function validateRequestIdOptions(opts: NonNullable<ClientConfig['requestId']>): void"
         },
         {
           "name": "validateAllowedHosts",
           "kind": "function",
-          "line": 228,
+          "line": 197,
           "signature": "function validateAllowedHosts(hosts: readonly string[]): void"
         },
         {
           "name": "renderHostForError",
           "kind": "function",
-          "line": 274,
+          "line": 243,
           "signature": "function renderHostForError(host: string): string",
           "jsdoc": "Render a rejected `allowedHosts` entry safely for inclusion in a `ValidationError` message. `JSON.stringify` escapes C0 (0x00–0x1F), backslash, and quote — but leaves DEL (0x7F) and C1 (0x80–0x9F) raw. This validation branch is reached SPECIFICALLY when one of those bytes is present, so without explicit escaping the error message would carry the raw terminal control byte itself (PR review of round 4)."
         },
         {
           "name": "validateAuth",
           "kind": "function",
-          "line": 290,
+          "line": 259,
           "signature": "function validateAuth(auth: ClientConfig['auth']): void"
         }
       ],
@@ -12245,26 +12192,21 @@
               "line": 18
             },
             {
-              "name": "requestId",
-              "kind": "property",
-              "line": 25
-            },
-            {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 20
             },
             {
               "name": "toJSON",
               "kind": "method",
-              "line": 48
+              "line": 38
             }
           ]
         },
         {
           "name": "AuthenticationError",
           "kind": "class",
-          "line": 75,
+          "line": 59,
           "exported": true,
           "signature": "export class AuthenticationError extends HttpError",
           "jsdoc": "401 Unauthorized error. @example ```ts try { await client.pages.getPage(pageId); } catch (error) { if (error inst…",
@@ -12272,18 +12214,53 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 76
+              "line": 60
             }
           ]
         },
         {
           "name": "ForbiddenError",
           "kind": "class",
-          "line": 99,
+          "line": 71,
           "exported": true,
           "signature": "export class ForbiddenError extends HttpError",
           "jsdoc": "403 Forbidden error.",
           "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 72
+            }
+          ]
+        },
+        {
+          "name": "NotFoundError",
+          "kind": "class",
+          "line": 83,
+          "exported": true,
+          "signature": "export class NotFoundError extends HttpError",
+          "jsdoc": "404 Not Found error.",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 84
+            }
+          ]
+        },
+        {
+          "name": "RateLimitError",
+          "kind": "class",
+          "line": 96,
+          "exported": true,
+          "signature": "export class RateLimitError extends HttpError",
+          "jsdoc": "429 Too Many Requests error.",
+          "members": [
+            {
+              "name": "retryAfter",
+              "kind": "property",
+              "line": 98
+            },
             {
               "name": "constructor",
               "kind": "constructor",
@@ -12292,44 +12269,9 @@
           ]
         },
         {
-          "name": "NotFoundError",
-          "kind": "class",
-          "line": 116,
-          "exported": true,
-          "signature": "export class NotFoundError extends HttpError",
-          "jsdoc": "404 Not Found error.",
-          "members": [
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 117
-            }
-          ]
-        },
-        {
-          "name": "RateLimitError",
-          "kind": "class",
-          "line": 141,
-          "exported": true,
-          "signature": "export class RateLimitError extends HttpError",
-          "jsdoc": "429 Too Many Requests error.",
-          "members": [
-            {
-              "name": "retryAfter",
-              "kind": "property",
-              "line": 143
-            },
-            {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 145
-            }
-          ]
-        },
-        {
           "name": "TimeoutError",
           "kind": "class",
-          "line": 170,
+          "line": 117,
           "exported": true,
           "signature": "export class TimeoutError extends AtlassianError",
           "jsdoc": "Timeout error (AbortController).",
@@ -12337,19 +12279,19 @@
             {
               "name": "timeoutMs",
               "kind": "property",
-              "line": 172
+              "line": 119
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 174
+              "line": 121
             }
           ]
         },
         {
           "name": "NetworkError",
           "kind": "class",
-          "line": 186,
+          "line": 133,
           "exported": true,
           "signature": "export class NetworkError extends AtlassianError",
           "jsdoc": "Network-level error (DNS failure, connection refused, etc.).",
@@ -12357,14 +12299,14 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 187
+              "line": 134
             }
           ]
         },
         {
           "name": "ValidationError",
           "kind": "class",
-          "line": 198,
+          "line": 145,
           "exported": true,
           "signature": "export class ValidationError extends AtlassianError",
           "jsdoc": "Validation error for invalid config or parameters.",
@@ -12372,14 +12314,14 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 199
+              "line": 146
             }
           ]
         },
         {
           "name": "PaginationError",
           "kind": "class",
-          "line": 212,
+          "line": 159,
           "exported": true,
           "signature": "export class PaginationError extends AtlassianError",
           "jsdoc": "Pagination safety error.",
@@ -12387,14 +12329,14 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 213
+              "line": 160
             }
           ]
         },
         {
           "name": "ResponseTooLargeError",
           "kind": "class",
-          "line": 245,
+          "line": 192,
           "exported": true,
           "signature": "export class ResponseTooLargeError extends AtlassianError",
           "jsdoc": "Response-too-large error (B026).",
@@ -12402,96 +12344,91 @@
             {
               "name": "limitBytes",
               "kind": "property",
-              "line": 247
+              "line": 194
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 254
+              "line": 201
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 256
+              "line": 203
             }
           ]
         },
         {
-          "name": "CircuitBreakerOpenError",
+          "name": "RateLimiterExhaustedError",
           "kind": "class",
-          "line": 295,
+          "line": 236,
           "exported": true,
-          "signature": "export class CircuitBreakerOpenError extends AtlassianError",
-          "jsdoc": "Circuit breaker open error. @example ```ts try { await transport.request({ method: 'GET', path: '/issue/AC-1' }); } c…",
+          "signature": "export class RateLimiterExhaustedError extends AtlassianError",
+          "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…",
           "members": [
-            {
-              "name": "msUntilHalfOpen",
-              "kind": "property",
-              "line": 301
-            },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 303
+              "line": 237
             }
           ]
         },
         {
           "name": "createHttpError",
           "kind": "function",
-          "line": 331,
+          "line": 259,
           "exported": true,
-          "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, requestId?: string, ): Http…",
+          "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, ): HttpError",
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
         },
         {
           "name": "MAX_ERROR_MESSAGE_LENGTH",
           "kind": "variable",
-          "line": 365,
+          "line": 285,
           "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
           "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
         },
         {
           "name": "SEPARATOR",
           "kind": "variable",
-          "line": 366,
+          "line": 286,
           "signature": "const SEPARATOR = '; ';"
         },
         {
           "name": "CappedString",
           "kind": "interface",
-          "line": 368,
+          "line": 288,
           "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
         },
         {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 373,
+          "line": 293,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
         },
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 379,
+          "line": 299,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 407,
+          "line": 327,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 442,
+          "line": 362,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 449,
+          "line": 369,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -12551,28 +12488,6 @@
             {
               "exported": "createCacheMiddleware",
               "original": "createCacheMiddleware"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./circuit-breaker.js",
-          "typeOnly": true,
-          "names": [
-            {
-              "exported": "CircuitBreakerOptions",
-              "original": "CircuitBreakerOptions"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./circuit-breaker.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "createCircuitBreakerMiddleware",
-              "original": "createCircuitBreakerMiddleware"
             }
           ]
         },
@@ -12667,8 +12582,8 @@
               "original": "ResponseTooLargeError"
             },
             {
-              "exported": "CircuitBreakerOpenError",
-              "original": "CircuitBreakerOpenError"
+              "exported": "RateLimiterExhaustedError",
+              "original": "RateLimiterExhaustedError"
             },
             {
               "exported": "createHttpError",
@@ -12809,6 +12724,21 @@
             {
               "exported": "parseRateLimitHeaders",
               "original": "parseRateLimitHeaders"
+            },
+            {
+              "exported": "createRateLimiterMiddleware",
+              "original": "createRateLimiterMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./rate-limiter.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "RateLimiterOptions",
+              "original": "RateLimiterOptions"
             }
           ]
         },
@@ -12961,10 +12891,6 @@
             {
               "exported": "Middleware",
               "original": "Middleware"
-            },
-            {
-              "exported": "RequestIdOptions",
-              "original": "RequestIdOptions"
             }
           ]
         }
@@ -13349,7 +13275,7 @@
         {
           "name": "getRetryAfterMs",
           "kind": "function",
-          "line": 4,
+          "line": 8,
           "exported": true,
           "signature": "export function getRetryAfterMs(headers: Headers): number | undefined",
           "jsdoc": "Parse the Retry-After header value into milliseconds. Returns undefined if absent or invalid."
@@ -13357,7 +13283,7 @@
         {
           "name": "parseRateLimitHeaders",
           "kind": "function",
-          "line": 23,
+          "line": 27,
           "exported": true,
           "signature": "export function parseRateLimitHeaders(headers: Headers): RateLimitInfo",
           "jsdoc": "Extract rate-limit metadata from response headers."
@@ -13365,11 +13291,29 @@
         {
           "name": "parseIntHeader",
           "kind": "function",
-          "line": 32,
+          "line": 36,
           "signature": "function parseIntHeader(headers: Headers, name: string): number | undefined"
+        },
+        {
+          "name": "RateLimiterOptions",
+          "kind": "interface",
+          "line": 66,
+          "exported": true,
+          "signature": "export interface RateLimiterOptions { readonly tokensPerInterval: number; readonly intervalMs: number; readonly maxWaitM…",
+          "jsdoc": "Options for the proactive token-bucket rate limiter middleware (B017). @example ```ts // Allow 10 requests per second, wait up to 5 s before giving up. const rl…"
+        },
+        {
+          "name": "createRateLimiterMiddleware",
+          "kind": "function",
+          "line": 132,
+          "exported": true,
+          "signature": "export function createRateLimiterMiddleware(options: RateLimiterOptions): Middleware",
+          "jsdoc": "Creates a proactive token-bucket rate limiter middleware (B017). @example ```ts import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-cli…"
         }
       ],
       "imports": [
+        "./errors.js",
+        "./retry.js",
         "./types.js"
       ]
     },
@@ -13510,7 +13454,7 @@
         {
           "name": "toJSON",
           "kind": "function",
-          "line": 24,
+          "line": 23,
           "exported": true,
           "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
           "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
@@ -13518,7 +13462,7 @@
         {
           "name": "safeParseBody",
           "kind": "function",
-          "line": 52,
+          "line": 50,
           "exported": true,
           "signature": "export async function safeParseBody(response: Response, maxBytes?: number): Promise<unknown>",
           "jsdoc": "Parse a response body as JSON, swallowing parse failures."
@@ -13526,13 +13470,13 @@
         {
           "name": "isAbortError",
           "kind": "function",
-          "line": 69,
+          "line": 67,
           "signature": "function isAbortError(error: unknown): boolean"
         },
         {
           "name": "parseResponseBody",
           "kind": "function",
-          "line": 88,
+          "line": 86,
           "exported": true,
           "signature": "export async function parseResponseBody( response: Response, responseType: RequestOptions['responseType'], maxBytes?: nu…",
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
@@ -13540,36 +13484,36 @@
         {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 142,
+          "line": 137,
           "exported": true,
-          "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
+          "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, ): ApiResponse<unknown>",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
         },
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 173,
+          "line": 166,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 256,
+          "line": 249,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 270,
+          "line": 263,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 288,
+          "line": 281,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
@@ -13585,13 +13529,13 @@
         {
           "name": "RETRYABLE_STATUS_CODES",
           "kind": "variable",
-          "line": 9,
+          "line": 3,
           "signature": "const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);"
         },
         {
           "name": "isRetryableStatus",
           "kind": "function",
-          "line": 12,
+          "line": 6,
           "exported": true,
           "signature": "export function isRetryableStatus(status: number): boolean",
           "jsdoc": "Check whether an HTTP status code is retryable."
@@ -13599,7 +13543,7 @@
         {
           "name": "calculateDelay",
           "kind": "function",
-          "line": 17,
+          "line": 11,
           "exported": true,
           "signature": "export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number",
           "jsdoc": "Calculate retry delay with exponential backoff and jitter."
@@ -13607,14 +13551,14 @@
         {
           "name": "RETRYABLE_CAUSE_CODES",
           "kind": "variable",
-          "line": 30,
+          "line": 24,
           "signature": "const RETRYABLE_CAUSE_CODES = new Set([ 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'EPIPE', 'U…",
           "jsdoc": "System-level error codes that represent transient network failures eligible for retry. Covers both libuv (`ECONN*`, `ENOTFOUND`, `EAI_AGAIN`) and undici-specific (`UND_ERR_*`) causes."
         },
         {
           "name": "isNetworkError",
           "kind": "function",
-          "line": 42,
+          "line": 36,
           "exported": true,
           "signature": "export function isNetworkError(error: unknown): boolean",
           "jsdoc": "Check whether a caught error represents a retryable network failure."
@@ -13622,14 +13566,14 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 64,
+          "line": 58,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 81,
+          "line": 75,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -13637,7 +13581,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 92,
+          "line": 86,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -13645,7 +13589,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 117,
+          "line": 111,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -13653,44 +13597,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 139,
+          "line": 133,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 167,
+          "line": 156,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 168,
+          "line": 157,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 170,
+          "line": 159,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 176,
+          "line": 165,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 182,
+          "line": 171,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 214,
+          "line": 203,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -13698,7 +13642,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 239,
+          "line": 228,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -13786,7 +13730,7 @@
         {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 37,
+          "line": 36,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -13794,27 +13738,32 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 38
+              "line": 37
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 39
+              "line": 38
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 47
+              "line": 46
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 48
+              "line": 47
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 56
+              "line": 55
+            },
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 63
             },
             {
               "name": "constructor",
@@ -13822,58 +13771,39 @@
               "line": 64
             },
             {
-              "name": "constructor",
-              "kind": "constructor",
-              "line": 65
-            },
-            {
               "name": "request",
               "kind": "method",
-              "line": 92
+              "line": 91
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 172
+              "line": 141
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 192
+              "line": 161
             }
           ]
         },
         {
-          "name": "DEFAULT_INBOUND_HEADERS",
-          "kind": "variable",
-          "line": 302,
-          "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
-          "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
-        },
-        {
-          "name": "captureRequestId",
-          "kind": "function",
-          "line": 309,
-          "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
-          "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
-        },
-        {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 317,
+          "line": 259,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 343,
+          "line": 285,
           "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 362,
+          "line": 304,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
@@ -13887,8 +13817,7 @@
         "./request.js",
         "./response.js",
         "./retry.js",
-        "./types.js",
-        "node:crypto"
+        "./types.js"
       ]
     },
     {
@@ -13921,7 +13850,7 @@
         {
           "name": "Transport",
           "kind": "interface",
-          "line": 82,
+          "line": 70,
           "exported": true,
           "signature": "export interface Transport { request<T>(options: RequestOptions): Promise<ApiResponse<T>>; }",
           "jsdoc": "Transport abstraction — the only interface resource modules depend on."
@@ -13929,7 +13858,7 @@
         {
           "name": "BasicAuthConfig",
           "kind": "interface",
-          "line": 98,
+          "line": 86,
           "exported": true,
           "signature": "export interface BasicAuthConfig { readonly type: 'basic'; readonly email: string; readonly apiToken: string; }",
           "jsdoc": "Basic auth config (email + API token). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -13937,7 +13866,7 @@
         {
           "name": "BearerAuthConfig",
           "kind": "interface",
-          "line": 115,
+          "line": 103,
           "exported": true,
           "signature": "export interface BearerAuthConfig { readonly type: 'bearer'; readonly token: string; }",
           "jsdoc": "Bearer auth config (OAuth 2.0 access token or PAT). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -13945,7 +13874,7 @@
         {
           "name": "AuthConfig",
           "kind": "type",
-          "line": 132,
+          "line": 120,
           "exported": true,
           "signature": "export type AuthConfig = BasicAuthConfig | BearerAuthConfig;",
           "jsdoc": "Discriminated union of supported auth strategies. @example ```ts // Basic auth const basicAuth: AuthConfig = { type: 'basic', email: 'user@…"
@@ -13953,7 +13882,7 @@
         {
           "name": "ClientConfig",
           "kind": "interface",
-          "line": 150,
+          "line": 138,
           "exported": true,
           "signature": "export interface ClientConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout?: number; readonly…",
           "jsdoc": "Client configuration. @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
@@ -13961,23 +13890,15 @@
         {
           "name": "ResolvedConfig",
           "kind": "interface",
-          "line": 239,
+          "line": 216,
           "exported": true,
           "signature": "export interface ResolvedConfig { readonly baseUrl: string; readonly auth: AuthConfig; readonly timeout: number; readonl…",
           "jsdoc": "Internal resolved config with defaults applied."
         },
         {
-          "name": "RequestIdOptions",
-          "kind": "interface",
-          "line": 291,
-          "exported": true,
-          "signature": "export interface RequestIdOptions { readonly generate?: boolean; readonly header?: string; readonly generator?: () => st…",
-          "jsdoc": "Options controlling X-Request-Id propagation (B011). @example ```ts const config: ClientConfig = { baseUrl: 'https://mycompany.atlassian.net',…"
-        },
-        {
           "name": "RateLimitInfo",
           "kind": "interface",
-          "line": 321,
+          "line": 255,
           "exported": true,
           "signature": "export interface RateLimitInfo { readonly limit?: number; readonly remaining?: number; readonly reset?: string; readonly…",
           "jsdoc": "Rate limit information parsed from response headers."
@@ -13985,7 +13906,7 @@
         {
           "name": "Logger",
           "kind": "interface",
-          "line": 332,
+          "line": 266,
           "exported": true,
           "signature": "export interface Logger { debug(message: string, context?: Record<string, unknown>): void; info(message: string, context…",
           "jsdoc": "Logger interface for request/response observability. Compatible with console, pino, winston, and any structured logger."
@@ -13993,7 +13914,7 @@
         {
           "name": "Middleware",
           "kind": "type",
-          "line": 347,
+          "line": 281,
           "exported": true,
           "signature": "export type Middleware = ( options: RequestOptions, next: (options: RequestOptions) => Promise<ApiResponse<unknown>>, ) …",
           "jsdoc": "Middleware function for intercepting and transforming requests. Call next(options) to pass control to the next middleware or the transport."
@@ -15111,8 +15032,8 @@
               "original": "ResponseTooLargeError"
             },
             {
-              "exported": "CircuitBreakerOpenError",
-              "original": "CircuitBreakerOpenError"
+              "exported": "RateLimiterExhaustedError",
+              "original": "RateLimiterExhaustedError"
             },
             {
               "exported": "OAuthError",
@@ -15164,10 +15085,6 @@
             {
               "exported": "Middleware",
               "original": "Middleware"
-            },
-            {
-              "exported": "RequestIdOptions",
-              "original": "RequestIdOptions"
             }
           ]
         },
@@ -15378,8 +15295,8 @@
           "typeOnly": false,
           "names": [
             {
-              "exported": "createCircuitBreakerMiddleware",
-              "original": "createCircuitBreakerMiddleware"
+              "exported": "createRateLimiterMiddleware",
+              "original": "createRateLimiterMiddleware"
             }
           ]
         },
@@ -15389,8 +15306,8 @@
           "typeOnly": true,
           "names": [
             {
-              "exported": "CircuitBreakerOptions",
-              "original": "CircuitBreakerOptions"
+              "exported": "RateLimiterOptions",
+              "original": "RateLimiterOptions"
             }
           ]
         },

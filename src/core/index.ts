@@ -29,6 +29,7 @@ export {
   PaginationError,
   ResponseTooLargeError,
   CircuitBreakerOpenError,
+  RateLimiterExhaustedError,
   createHttpError,
 } from './errors.js';
 
@@ -56,7 +57,12 @@ export {
 } from './retry.js';
 
 // Rate limiter
-export { getRetryAfterMs, parseRateLimitHeaders } from './rate-limiter.js';
+export {
+  getRetryAfterMs,
+  parseRateLimitHeaders,
+  createRateLimiterMiddleware,
+} from './rate-limiter.js';
+export type { RateLimiterOptions } from './rate-limiter.js';
 
 // Pagination
 export type {

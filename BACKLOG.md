@@ -16,9 +16,6 @@
 - [ ] 🟡 📦 Core: B015 RS256 Connect JWT
   - files: `src/core/connect-jwt.ts`, `src/core/index.ts`
   - deps: none
-- [ ] 🟢 📦 Core: B017 Proactive rate-limit (token bucket)
-  - files: `src/core/rate-limiter.ts`, `src/core/config.ts`, `src/core/transport.ts`, `test/core/rate-limiter.test.ts`
-  - deps: B010
 
 ## 🧩 Confluence
 

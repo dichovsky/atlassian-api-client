@@ -10,8 +10,10 @@ import {
   resolveConfig,
   PaginationError,
   ResponseTooLargeError,
+  RateLimiterExhaustedError,
   executeWithRetry,
   createMiddlewareChain,
+  createRateLimiterMiddleware,
   paginateCursor,
   paginateOffset,
   paginateSearch,
@@ -210,6 +212,13 @@ describe('root re-exports documented core surface', () => {
     expect(new PaginationError('boom')).toBeInstanceOf(Error);
     expect(typeof ResponseTooLargeError).toBe('function');
     expect(new ResponseTooLargeError(1024, 200)).toBeInstanceOf(Error);
+  });
+
+  it('exports rate limiter middleware factory and error class', () => {
+    expect(typeof createRateLimiterMiddleware).toBe('function');
+    expect(typeof RateLimiterExhaustedError).toBe('function');
+    expect(new RateLimiterExhaustedError()).toBeInstanceOf(Error);
+    expect(new RateLimiterExhaustedError('custom')).toBeInstanceOf(Error);
   });
 
   it('exports retry + middleware composition helpers', () => {
