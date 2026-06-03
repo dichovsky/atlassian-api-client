@@ -253,8 +253,8 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
   switch (cmd.action) {
     case 'get':
       return client.issues.get(requireArg(cmd.positionalArgs[0], 'issue key'), {
-        fields: asString(opts['fields'])?.split(','),
-        expand: asString(opts['expand'])?.split(','),
+        fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
       });
     case 'create':
       return client.issues.create({
@@ -967,7 +967,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.search.searchGet({
         jql,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
       });
     }
     case 'approximate-count': {
@@ -981,8 +981,8 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        fields: asString(opts['fields'])?.split(','),
-        expand: asString(opts['expand'])?.split(','),
+        fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
       });
     }
     case 'jql-post': {
@@ -991,8 +991,8 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
         jql: asString(opts['jql']),
         nextPageToken: asString(opts['next-page-token']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        fields: asString(opts['fields'])?.split(','),
-        expand: asString(opts['expand'])?.split(','),
+        fields: csvFlag(opts['fields']),
+        expand: csvFlag(opts['expand']),
       });
     }
     default: {
@@ -1002,7 +1002,7 @@ async function executeSearch(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.search.search({
         jql,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
       });
     }
   }
@@ -1389,7 +1389,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.getBacklog(boardId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1411,7 +1411,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const epicId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'epicId'), 'epicId');
       return client.boards.getEpicIssues(boardId, epicId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1420,7 +1420,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.getIssuesWithoutEpic(boardId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1442,7 +1442,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       return client.boards.getIssues(boardId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1495,7 +1495,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
       return client.boards.getSprintIssues(boardId, sprintId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1614,7 +1614,7 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
       );
       return client.sprints.getIssues(sprintId, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1724,7 +1724,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
       return client.epic.getIssues(epicIdOrKey, {
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -1754,7 +1754,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     case 'issues-none':
       return client.epic.getIssuesWithoutEpic({
         jql: asString(opts['jql']),
-        fields: asString(opts['fields'])?.split(','),
+        fields: csvFlag(opts['fields']),
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
@@ -2890,6 +2890,22 @@ function splitCsvIds(raw: string): string[] {
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+}
+
+/**
+ * Split a `--fields`/`--expand`-style CSV flag into trimmed, non-empty tokens.
+ * Returns `undefined` when the flag was not supplied, or when it contains no
+ * non-empty tokens (e.g. `--fields ,`), so callers can omit it rather than
+ * sending an empty `fields=` query param (which Jira reads as a filter, not as
+ * "all fields"). Trimming matters: an untrimmed ` status` token is sent
+ * verbatim as a leading-space field name (`fields=summary,%20status`) that
+ * Jira does not recognise and silently drops from the response.
+ */
+function csvFlag(value: string | boolean | undefined): string[] | undefined {
+  const raw = asString(value);
+  if (raw === undefined) return undefined;
+  const tokens = splitCsvIds(raw);
+  return tokens.length > 0 ? tokens : undefined;
 }
 
 function parseJsonValueFlag(raw: string, flag: string): unknown {

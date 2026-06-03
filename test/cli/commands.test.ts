@@ -7687,6 +7687,54 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('issues get trims whitespace around CSV fields and expand tokens', async () => {
+      // Arrange — a user typing `--fields "summary, status"` includes spaces
+      // after the commas. Untrimmed tokens (` status`) become a leading-space
+      // field name on the wire (`fields=summary,%20status`), which Jira does
+      // not recognise and silently drops from the response.
+      jiraIssuesMock.get.mockResolvedValue({ id: '1', key: 'PROJ-1' });
+      const parsed = cmd('issues', 'get', ['PROJ-1'], {
+        fields: 'summary, status',
+        expand: 'renderedFields, changelog',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraIssuesMock.get).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({
+          fields: ['summary', 'status'],
+          expand: ['renderedFields', 'changelog'],
+        }),
+      );
+    });
+
+    it('issues get omits --fields/--expand that trim to no tokens', async () => {
+      // Arrange — a flag supplied with only separators/whitespace (`--fields ,`)
+      // has no real tokens. It must be omitted, not sent as an empty `fields=`
+      // query param, which Jira would interpret as a filter rather than "all
+      // fields". csvFlag returns undefined so the resource layer drops it.
+      jiraIssuesMock.get.mockResolvedValue({ id: '1', key: 'PROJ-1' });
+      const parsed = cmd('issues', 'get', ['PROJ-1'], {
+        fields: ',',
+        expand: ' , ',
+      });
+
+      // Act
+      await executeJiraCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(jiraIssuesMock.get).toHaveBeenCalledWith(
+        'PROJ-1',
+        expect.objectContaining({
+          fields: undefined,
+          expand: undefined,
+        }),
+      );
+    });
+
     it('issues get throws when issue key is missing', async () => {
       await expect(executeJiraCommand(cmd('issues', 'get', []), GLOBALS)).rejects.toThrow(
         'Missing required argument: issue key',
