@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "1c3ceb7772942f4e8bc46c2cc2ec9a56adcf3acd43c3d3f0b38fc135036a0d90",
+  "sourceHash": "95a60460988e99fdcf89c5109d30075798361c11d8ae9786c59419b374534a8c",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2520,6 +2520,23 @@
       "typeOnly": true
     },
     {
+      "name": "RateLimiterExhaustedError",
+      "kind": "class",
+      "file": "src/core/errors.ts",
+      "line": 339,
+      "signature": "export class RateLimiterExhaustedError extends AtlassianError",
+      "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…"
+    },
+    {
+      "name": "RateLimiterOptions",
+      "kind": "interface",
+      "file": "src/core/rate-limiter.ts",
+      "line": 66,
+      "signature": "export interface RateLimiterOptions { readonly tokensPerInterval: number; readonly intervalMs: number; readonly maxWaitM…",
+      "jsdoc": "Options for the proactive token-bucket rate limiter middleware (B017). @example ```ts // Allow 10 requests per second, wait up to 5 s before giving up. const rl…",
+      "typeOnly": true
+    },
+    {
       "name": "RedactBlogPostData",
       "kind": "interface",
       "file": "src/confluence/types.ts",
@@ -3305,6 +3322,14 @@
       "line": 143,
       "signature": "export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middleware",
       "jsdoc": "Creates middleware that automatically refreshes an OAuth 2.0 access token on 401 responses."
+    },
+    {
+      "name": "createRateLimiterMiddleware",
+      "kind": "function",
+      "file": "src/core/rate-limiter.ts",
+      "line": 132,
+      "signature": "export function createRateLimiterMiddleware(options: RateLimiterOptions): Middleware",
+      "jsdoc": "Creates a proactive token-bucket rate limiter middleware (B017). @example ```ts import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-cli…"
     },
     {
       "name": "detectRequiredScopes",
@@ -12437,9 +12462,24 @@
           ]
         },
         {
+          "name": "RateLimiterExhaustedError",
+          "kind": "class",
+          "line": 339,
+          "exported": true,
+          "signature": "export class RateLimiterExhaustedError extends AtlassianError",
+          "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…",
+          "members": [
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 340
+            }
+          ]
+        },
+        {
           "name": "createHttpError",
           "kind": "function",
-          "line": 331,
+          "line": 363,
           "exported": true,
           "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, requestId?: string, ): Http…",
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
@@ -12447,51 +12487,51 @@
         {
           "name": "MAX_ERROR_MESSAGE_LENGTH",
           "kind": "variable",
-          "line": 365,
+          "line": 397,
           "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
           "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
         },
         {
           "name": "SEPARATOR",
           "kind": "variable",
-          "line": 366,
+          "line": 398,
           "signature": "const SEPARATOR = '; ';"
         },
         {
           "name": "CappedString",
           "kind": "interface",
-          "line": 368,
+          "line": 400,
           "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
         },
         {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 373,
+          "line": 405,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
         },
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 379,
+          "line": 411,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 407,
+          "line": 439,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 442,
+          "line": 474,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 449,
+          "line": 481,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -12671,6 +12711,10 @@
               "original": "CircuitBreakerOpenError"
             },
             {
+              "exported": "RateLimiterExhaustedError",
+              "original": "RateLimiterExhaustedError"
+            },
+            {
               "exported": "createHttpError",
               "original": "createHttpError"
             }
@@ -12809,6 +12853,21 @@
             {
               "exported": "parseRateLimitHeaders",
               "original": "parseRateLimitHeaders"
+            },
+            {
+              "exported": "createRateLimiterMiddleware",
+              "original": "createRateLimiterMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./rate-limiter.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "RateLimiterOptions",
+              "original": "RateLimiterOptions"
             }
           ]
         },
@@ -13349,7 +13408,7 @@
         {
           "name": "getRetryAfterMs",
           "kind": "function",
-          "line": 4,
+          "line": 8,
           "exported": true,
           "signature": "export function getRetryAfterMs(headers: Headers): number | undefined",
           "jsdoc": "Parse the Retry-After header value into milliseconds. Returns undefined if absent or invalid."
@@ -13357,7 +13416,7 @@
         {
           "name": "parseRateLimitHeaders",
           "kind": "function",
-          "line": 23,
+          "line": 27,
           "exported": true,
           "signature": "export function parseRateLimitHeaders(headers: Headers): RateLimitInfo",
           "jsdoc": "Extract rate-limit metadata from response headers."
@@ -13365,11 +13424,29 @@
         {
           "name": "parseIntHeader",
           "kind": "function",
-          "line": 32,
+          "line": 36,
           "signature": "function parseIntHeader(headers: Headers, name: string): number | undefined"
+        },
+        {
+          "name": "RateLimiterOptions",
+          "kind": "interface",
+          "line": 66,
+          "exported": true,
+          "signature": "export interface RateLimiterOptions { readonly tokensPerInterval: number; readonly intervalMs: number; readonly maxWaitM…",
+          "jsdoc": "Options for the proactive token-bucket rate limiter middleware (B017). @example ```ts // Allow 10 requests per second, wait up to 5 s before giving up. const rl…"
+        },
+        {
+          "name": "createRateLimiterMiddleware",
+          "kind": "function",
+          "line": 132,
+          "exported": true,
+          "signature": "export function createRateLimiterMiddleware(options: RateLimiterOptions): Middleware",
+          "jsdoc": "Creates a proactive token-bucket rate limiter middleware (B017). @example ```ts import { JiraClient, createRateLimiterMiddleware } from 'atlassian-api-cli…"
         }
       ],
       "imports": [
+        "./errors.js",
+        "./retry.js",
         "./types.js"
       ]
     },
@@ -15115,6 +15192,10 @@
               "original": "CircuitBreakerOpenError"
             },
             {
+              "exported": "RateLimiterExhaustedError",
+              "original": "RateLimiterExhaustedError"
+            },
+            {
               "exported": "OAuthError",
               "original": "OAuthError"
             }
@@ -15391,6 +15472,28 @@
             {
               "exported": "CircuitBreakerOptions",
               "original": "CircuitBreakerOptions"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./core/index.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "createRateLimiterMiddleware",
+              "original": "createRateLimiterMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./core/index.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "RateLimiterOptions",
+              "original": "RateLimiterOptions"
             }
           ]
         },

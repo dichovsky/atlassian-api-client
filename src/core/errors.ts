@@ -316,6 +316,38 @@ export class CircuitBreakerOpenError extends AtlassianError {
 }
 
 /**
+ * Client-side token-bucket rate limiter exhausted error (B017).
+ *
+ * Thrown by {@link createRateLimiterMiddleware} when `maxWaitMs` is configured
+ * and the wait required to acquire the next available token would exceed that
+ * limit. `maxWaitMs` bounds the per-acquisition wait, not an aggregate across
+ * multiple requests. This is a **client-side** guard — it is entirely distinct from the
+ * server-side {@link RateLimitError} (HTTP 429), which indicates the remote
+ * Atlassian API rejected a request after it was dispatched.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await client.issues.getIssue('AC-1');
+ * } catch (error) {
+ *   if (error instanceof RateLimiterExhaustedError) {
+ *     console.error('Local rate limiter: too many requests in flight');
+ *   }
+ * }
+ * ```
+ */
+export class RateLimiterExhaustedError extends AtlassianError {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(
+      message ?? 'Rate limiter exhausted: required wait exceeds maxWaitMs',
+      'RATE_LIMITER_EXHAUSTED',
+      options,
+    );
+    this.name = 'RateLimiterExhaustedError';
+  }
+}
+
+/**
  * Create the appropriate {@link HttpError} subclass from an HTTP status code.
  *
  * Maps status codes to specific error classes: 401 → {@link AuthenticationError},

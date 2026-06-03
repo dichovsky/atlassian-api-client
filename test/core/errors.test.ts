@@ -11,6 +11,7 @@ import {
   ValidationError,
   PaginationError,
   ResponseTooLargeError,
+  RateLimiterExhaustedError,
   createHttpError,
 } from '../../src/core/errors.js';
 
@@ -30,6 +31,7 @@ describe('src/core/index.ts barrel re-exports', () => {
     expect(CoreIndex.ValidationError).toBe(ValidationError);
     expect(CoreIndex.PaginationError).toBe(PaginationError);
     expect(CoreIndex.ResponseTooLargeError).toBe(ResponseTooLargeError);
+    expect(CoreIndex.RateLimiterExhaustedError).toBe(RateLimiterExhaustedError);
     expect(CoreIndex.createHttpError).toBe(createHttpError);
   });
 
@@ -43,6 +45,7 @@ describe('src/core/index.ts barrel re-exports', () => {
     expect(typeof CoreIndex.sleep).toBe('function');
     expect(typeof CoreIndex.getRetryAfterMs).toBe('function');
     expect(typeof CoreIndex.parseRateLimitHeaders).toBe('function');
+    expect(typeof CoreIndex.createRateLimiterMiddleware).toBe('function');
     expect(typeof CoreIndex.extractCursor).toBe('function');
     expect(typeof CoreIndex.paginateCursor).toBe('function');
     expect(typeof CoreIndex.paginateOffset).toBe('function');
@@ -593,5 +596,34 @@ describe('HttpError B011: requestId field', () => {
   it('createHttpError with no requestId → requestId undefined', () => {
     const err = createHttpError(500);
     expect(err.requestId).toBeUndefined();
+  });
+});
+
+describe('RateLimiterExhaustedError', () => {
+  it('uses default message when none provided', () => {
+    const err = new RateLimiterExhaustedError();
+    expect(err.message).toBe('Rate limiter exhausted: required wait exceeds maxWaitMs');
+    expect(err.code).toBe('RATE_LIMITER_EXHAUSTED');
+    expect(err.name).toBe('RateLimiterExhaustedError');
+  });
+
+  it('uses supplied message', () => {
+    const err = new RateLimiterExhaustedError('need to wait 1000ms but maxWaitMs is 500ms');
+    expect(err.message).toBe('need to wait 1000ms but maxWaitMs is 500ms');
+    expect(err.code).toBe('RATE_LIMITER_EXHAUSTED');
+  });
+
+  it('instanceof chain: Error → AtlassianError → RateLimiterExhaustedError', () => {
+    const err = new RateLimiterExhaustedError();
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(AtlassianError);
+    expect(err).toBeInstanceOf(RateLimiterExhaustedError);
+  });
+
+  it('is distinct from RateLimitError (server-side 429)', () => {
+    const serverErr = new RateLimitError();
+    const clientErr = new RateLimiterExhaustedError();
+    expect(clientErr).not.toBeInstanceOf(RateLimitError);
+    expect(serverErr).not.toBeInstanceOf(RateLimiterExhaustedError);
   });
 });
