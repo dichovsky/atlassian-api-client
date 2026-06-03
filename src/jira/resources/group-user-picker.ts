@@ -86,8 +86,11 @@ export class GroupUserPickerResource {
     if (params?.projectRole !== undefined) query['projectRole'] = params.projectRole;
     if (params?.excludeAccountIds !== undefined)
       query['excludeAccountIds'] = params.excludeAccountIds.join(',');
+    // The groupuserpicker endpoint's documented filter is `excludeConnectAddons`
+    // (the `excludeConnectUsers` spelling belongs to GET /user/picker). Keep the
+    // public param name but send the correct wire param so the filter is applied.
     if (params?.excludeConnectUsers !== undefined)
-      query['excludeConnectUsers'] = params.excludeConnectUsers;
+      query['excludeConnectAddons'] = params.excludeConnectUsers;
 
     const response = await this.transport.request<GroupUserPickerResponse>({
       method: 'GET',
