@@ -4,6 +4,10 @@
 
 ## ⚙️ Core
 
+- [x] 🟡 📦 Core: B010 Circuit breaker per `baseUrl`
+  - files: `src/core/circuit-breaker.ts`, `src/core/errors.ts`, `src/core/retry.ts`, `src/core/index.ts`, `src/index.ts`, `test/core/circuit-breaker.test.ts`, `test/core/retry.test.ts`
+  - **Impl:** `createCircuitBreakerMiddleware(options?)` factory; `CircuitBreakerOpenError` (code `CIRCUIT_BREAKER_OPEN`, carries `msUntilHalfOpen`); CLOSED→OPEN→HALF_OPEN state machine in closure; qualifying failures = NetworkError | TimeoutError | HttpError 5xx; `shouldRetry` bails on `CircuitBreakerOpenError`; exported from `src/core/index.ts` and `src/index.ts`.
+  - **Rat:** Middleware-factory pattern keeps transport.ts untouched; per-instance state is per-baseUrl when one breaker is installed per client; opt-in preserves existing behaviour.
 - [x] 🟢 ♻️ Core: B002 `ApiResponse<T>.error` structured-data preservation (obsolete)
   - **Impl:** No code change; marked obsolete 2026-05-16.
   - **Rat:** `ApiResponse<T>` has no `error` field; typed errors already preserve structured payload on `HttpError.responseBody`.

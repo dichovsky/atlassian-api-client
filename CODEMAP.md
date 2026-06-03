@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "18e84c6c106609fd944b91d753cbebcc7cf9c722170e364e8b7347d4b0b6f73c",
+  "sourceHash": "1c3ceb7772942f4e8bc46c2cc2ec9a56adcf3acd43c3d3f0b38fc135036a0d90",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -338,6 +338,23 @@
       "line": 2288,
       "signature": "export type ChildPageSortOrder = | 'created-date' | '-created-date' | 'id' | '-id' | 'child-position' | '-child-position…",
       "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title`).",
+      "typeOnly": true
+    },
+    {
+      "name": "CircuitBreakerOpenError",
+      "kind": "class",
+      "file": "src/core/errors.ts",
+      "line": 295,
+      "signature": "export class CircuitBreakerOpenError extends AtlassianError",
+      "jsdoc": "Circuit breaker open error. @example ```ts try { await transport.request({ method: 'GET', path: '/issue/AC-1' }); } c…"
+    },
+    {
+      "name": "CircuitBreakerOptions",
+      "kind": "interface",
+      "file": "src/core/circuit-breaker.ts",
+      "line": 11,
+      "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
+      "jsdoc": "Options for the circuit breaker middleware.",
       "typeOnly": true
     },
     {
@@ -2638,7 +2655,7 @@
       "name": "RetryConfig",
       "kind": "interface",
       "file": "src/core/retry.ts",
-      "line": 86,
+      "line": 92,
       "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
       "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting.",
       "typeOnly": true
@@ -3258,6 +3275,14 @@
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
     {
+      "name": "createCircuitBreakerMiddleware",
+      "kind": "function",
+      "file": "src/core/circuit-breaker.ts",
+      "line": 115,
+      "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
+      "jsdoc": "Creates an opt-in circuit breaker middleware."
+    },
+    {
       "name": "createConnectJwtMiddleware",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
@@ -3293,7 +3318,7 @@
       "name": "executeWithRetry",
       "kind": "function",
       "file": "src/core/retry.ts",
-      "line": 111,
+      "line": 117,
       "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
       "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
     },
@@ -12001,6 +12026,44 @@
       ]
     },
     {
+      "path": "src/core/circuit-breaker.ts",
+      "symbols": [
+        {
+          "name": "CircuitBreakerOptions",
+          "kind": "interface",
+          "line": 11,
+          "exported": true,
+          "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
+          "jsdoc": "Options for the circuit breaker middleware."
+        },
+        {
+          "name": "State",
+          "kind": "type",
+          "line": 28,
+          "signature": "type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';"
+        },
+        {
+          "name": "createCircuitBreakerMiddleware",
+          "kind": "function",
+          "line": 115,
+          "exported": true,
+          "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
+          "jsdoc": "Creates an opt-in circuit breaker middleware."
+        },
+        {
+          "name": "isQualifyingFailure",
+          "kind": "function",
+          "line": 208,
+          "signature": "function isQualifyingFailure(error: unknown): boolean",
+          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, or {@link HttpError} with a 5xx status. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
+        }
+      ],
+      "imports": [
+        "./errors.js",
+        "./types.js"
+      ]
+    },
+    {
       "path": "src/core/config.ts",
       "symbols": [
         {
@@ -12354,9 +12417,29 @@
           ]
         },
         {
+          "name": "CircuitBreakerOpenError",
+          "kind": "class",
+          "line": 295,
+          "exported": true,
+          "signature": "export class CircuitBreakerOpenError extends AtlassianError",
+          "jsdoc": "Circuit breaker open error. @example ```ts try { await transport.request({ method: 'GET', path: '/issue/AC-1' }); } c…",
+          "members": [
+            {
+              "name": "msUntilHalfOpen",
+              "kind": "property",
+              "line": 301
+            },
+            {
+              "name": "constructor",
+              "kind": "constructor",
+              "line": 303
+            }
+          ]
+        },
+        {
           "name": "createHttpError",
           "kind": "function",
-          "line": 282,
+          "line": 331,
           "exported": true,
           "signature": "export function createHttpError( status: number, body?: unknown, retryAfterSeconds?: number, requestId?: string, ): Http…",
           "jsdoc": "Create the appropriate {@link HttpError} subclass from an HTTP status code."
@@ -12364,51 +12447,51 @@
         {
           "name": "MAX_ERROR_MESSAGE_LENGTH",
           "kind": "variable",
-          "line": 316,
+          "line": 365,
           "signature": "const MAX_ERROR_MESSAGE_LENGTH = 1024;",
           "jsdoc": "Hard cap on the size of the assembled error message. Bounds the heap impact of a hostile error response that returns thousands of `errorMessages` (B032) and ensures the message remains usable in a single terminal scroll."
         },
         {
           "name": "SEPARATOR",
           "kind": "variable",
-          "line": 317,
+          "line": 366,
           "signature": "const SEPARATOR = '; ';"
         },
         {
           "name": "CappedString",
           "kind": "interface",
-          "line": 319,
+          "line": 368,
           "signature": "interface CappedString { readonly value: string; readonly truncated: boolean; }"
         },
         {
           "name": "extractErrorMessage",
           "kind": "function",
-          "line": 324,
+          "line": 373,
           "signature": "function extractErrorMessage(body: unknown): string | undefined"
         },
         {
           "name": "extractErrorMessageRaw",
           "kind": "function",
-          "line": 330,
+          "line": 379,
           "signature": "function extractErrorMessageRaw(body: unknown): CappedString | undefined"
         },
         {
           "name": "joinWithCap",
           "kind": "function",
-          "line": 358,
+          "line": 407,
           "signature": "function joinWithCap(messages: readonly unknown[]): CappedString | undefined",
           "jsdoc": "Join string entries with `'; '` while enforcing a running length cap, so a hostile response with thousands of `errorMessages` cannot allocate a multi-megabyte intermediate before truncation (PR-review hardening of B032). The returned `truncated` flag drives the outer `extractErrorMessage` ellipsis so callers can still see at a glance that content was elided."
         },
         {
           "name": "capLength",
           "kind": "function",
-          "line": 393,
+          "line": 442,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 400,
+          "line": 449,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -12468,6 +12551,28 @@
             {
               "exported": "createCacheMiddleware",
               "original": "createCacheMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./circuit-breaker.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "CircuitBreakerOptions",
+              "original": "CircuitBreakerOptions"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./circuit-breaker.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "createCircuitBreakerMiddleware",
+              "original": "createCircuitBreakerMiddleware"
             }
           ]
         },
@@ -12560,6 +12665,10 @@
             {
               "exported": "ResponseTooLargeError",
               "original": "ResponseTooLargeError"
+            },
+            {
+              "exported": "CircuitBreakerOpenError",
+              "original": "CircuitBreakerOpenError"
             },
             {
               "exported": "createHttpError",
@@ -13476,13 +13585,13 @@
         {
           "name": "RETRYABLE_STATUS_CODES",
           "kind": "variable",
-          "line": 3,
+          "line": 9,
           "signature": "const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);"
         },
         {
           "name": "isRetryableStatus",
           "kind": "function",
-          "line": 6,
+          "line": 12,
           "exported": true,
           "signature": "export function isRetryableStatus(status: number): boolean",
           "jsdoc": "Check whether an HTTP status code is retryable."
@@ -13490,7 +13599,7 @@
         {
           "name": "calculateDelay",
           "kind": "function",
-          "line": 11,
+          "line": 17,
           "exported": true,
           "signature": "export function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): number",
           "jsdoc": "Calculate retry delay with exponential backoff and jitter."
@@ -13498,14 +13607,14 @@
         {
           "name": "RETRYABLE_CAUSE_CODES",
           "kind": "variable",
-          "line": 24,
+          "line": 30,
           "signature": "const RETRYABLE_CAUSE_CODES = new Set([ 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'EPIPE', 'U…",
           "jsdoc": "System-level error codes that represent transient network failures eligible for retry. Covers both libuv (`ECONN*`, `ENOTFOUND`, `EAI_AGAIN`) and undici-specific (`UND_ERR_*`) causes."
         },
         {
           "name": "isNetworkError",
           "kind": "function",
-          "line": 36,
+          "line": 42,
           "exported": true,
           "signature": "export function isNetworkError(error: unknown): boolean",
           "jsdoc": "Check whether a caught error represents a retryable network failure."
@@ -13513,14 +13622,14 @@
         {
           "name": "hasRetryableCode",
           "kind": "function",
-          "line": 58,
+          "line": 64,
           "signature": "function hasRetryableCode(error: unknown): boolean",
           "jsdoc": "Walk the error + `cause` chain looking for a known-retryable system code."
         },
         {
           "name": "sleep",
           "kind": "function",
-          "line": 75,
+          "line": 81,
           "exported": true,
           "signature": "export function sleep(ms: number): Promise<void>",
           "jsdoc": "Sleep for the given number of milliseconds."
@@ -13528,7 +13637,7 @@
         {
           "name": "RetryConfig",
           "kind": "interface",
-          "line": 86,
+          "line": 92,
           "exported": true,
           "signature": "export interface RetryConfig { readonly retries: number; readonly retryDelay: number; readonly maxRetryDelay: number; }",
           "jsdoc": "Configuration consumed by {@link executeWithRetry}. A {@link ResolvedConfig} satisfies this shape structurally, so the transport can pass its own config object without adapting."
@@ -13536,7 +13645,7 @@
         {
           "name": "executeWithRetry",
           "kind": "function",
-          "line": 111,
+          "line": 117,
           "exported": true,
           "signature": "export async function executeWithRetry<T>( operation: () => Promise<T>, config: RetryConfig, signal?: AbortSignal, ): Pr…",
           "jsdoc": "Run an async operation with retry, exponential backoff, and abort-aware sleep."
@@ -13544,44 +13653,44 @@
         {
           "name": "shouldRetry",
           "kind": "function",
-          "line": 133,
+          "line": 139,
           "signature": "function shouldRetry(error: unknown, attempt: number, retries: number): boolean"
         },
         {
           "name": "RETRY_DELAY_HARD_CEILING",
           "kind": "variable",
-          "line": 156,
+          "line": 167,
           "signature": "const RETRY_DELAY_HARD_CEILING = 60_000;",
           "jsdoc": "Hard ceiling applied when a retry delay is unschedulable. `resolveConfig` rejects invalid values up front — this constant is defence-in-depth for callers that bypass `resolveConfig` (e.g. custom transports building a structural `RetryConfig`). Without it, Node coerces `NaN`, `Infinity`, and values above its timer ceiling to near-immediate timers."
         },
         {
           "name": "MAX_TIMER_DELAY",
           "kind": "variable",
-          "line": 157,
+          "line": 168,
           "signature": "const MAX_TIMER_DELAY = 2_147_483_647;"
         },
         {
           "name": "effectiveMaxDelay",
           "kind": "function",
-          "line": 159,
+          "line": 170,
           "signature": "function effectiveMaxDelay(maxRetryDelay: number): number"
         },
         {
           "name": "effectiveBaseDelay",
           "kind": "function",
-          "line": 165,
+          "line": 176,
           "signature": "function effectiveBaseDelay(retryDelay: number, ceiling: number): number"
         },
         {
           "name": "getRetryDelay",
           "kind": "function",
-          "line": 171,
+          "line": 182,
           "signature": "function getRetryDelay( error: unknown, attempt: number, retryDelay: number, maxRetryDelay: number, ): number"
         },
         {
           "name": "sleepWithAbort",
           "kind": "function",
-          "line": 203,
+          "line": 214,
           "exported": true,
           "signature": "export async function sleepWithAbort(delayMs: number, signal?: AbortSignal): Promise<void>",
           "jsdoc": "Sleep for `delayMs` milliseconds, rejecting with the signal's normalised abort reason if `signal` fires before the timer. Exported so other middleware (e.g. OAuth refresh jitter) can share a single abort-aware sleep implementation rather than duplicating timer + listener cleanup. Listener is registered with `{ once: true }` AND explicitly removed on the resolve path so it never outlives the sleep."
@@ -13589,7 +13698,7 @@
         {
           "name": "getAbortReason",
           "kind": "function",
-          "line": 228,
+          "line": 239,
           "signature": "function getAbortReason(signal: AbortSignal): Error"
         }
       ],
@@ -15002,6 +15111,10 @@
               "original": "ResponseTooLargeError"
             },
             {
+              "exported": "CircuitBreakerOpenError",
+              "original": "CircuitBreakerOpenError"
+            },
+            {
               "exported": "OAuthError",
               "original": "OAuthError"
             }
@@ -15256,6 +15369,28 @@
             {
               "exported": "createBatchMiddleware",
               "original": "createBatchMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./core/index.js",
+          "typeOnly": false,
+          "names": [
+            {
+              "exported": "createCircuitBreakerMiddleware",
+              "original": "createCircuitBreakerMiddleware"
+            }
+          ]
+        },
+        {
+          "kind": "named",
+          "from": "./core/index.js",
+          "typeOnly": true,
+          "names": [
+            {
+              "exported": "CircuitBreakerOptions",
+              "original": "CircuitBreakerOptions"
             }
           ]
         },

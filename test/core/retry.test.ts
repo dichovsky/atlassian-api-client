@@ -6,7 +6,13 @@ import {
   sleep,
   executeWithRetry,
 } from '../../src/core/retry.js';
-import { HttpError, NetworkError, RateLimitError, TimeoutError } from '../../src/core/errors.js';
+import {
+  CircuitBreakerOpenError,
+  HttpError,
+  NetworkError,
+  RateLimitError,
+  TimeoutError,
+} from '../../src/core/errors.js';
 
 describe('isRetryableStatus', () => {
   it.each([429, 500, 502, 503, 504])('returns true for status %i', (status) => {
@@ -498,6 +504,17 @@ describe('executeWithRetry', () => {
     await expect(
       executeWithRetry(operation, { retries: 0, retryDelay: 10, maxRetryDelay: 1000 }),
     ).rejects.toBe(err);
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry CircuitBreakerOpenError', async () => {
+    // An open circuit breaker rejects requests without calling the transport.
+    // Retrying would spin through all attempts before the caller learns the
+    // breaker is open — wasteful and misleading.
+    const err = new CircuitBreakerOpenError(5_000);
+    const operation = vi.fn().mockRejectedValue(err);
+
+    await expect(executeWithRetry(operation, config)).rejects.toBe(err);
     expect(operation).toHaveBeenCalledTimes(1);
   });
 });

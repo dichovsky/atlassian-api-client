@@ -28,6 +28,7 @@ export {
   ValidationError,
   PaginationError,
   ResponseTooLargeError,
+  CircuitBreakerOpenError,
   createHttpError,
 } from './errors.js';
 
@@ -80,6 +81,10 @@ export { createCacheMiddleware } from './cache.js';
 
 // Request batching (deduplication)
 export { createBatchMiddleware } from './batch.js';
+
+// Circuit breaker
+export type { CircuitBreakerOptions } from './circuit-breaker.js';
+export { createCircuitBreakerMiddleware } from './circuit-breaker.js';
 
 // Response helpers
 export type { SerializableApiResponse } from './response.js';

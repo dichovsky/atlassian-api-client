@@ -267,6 +267,55 @@ export class ResponseTooLargeError extends AtlassianError {
 }
 
 /**
+ * Circuit breaker open error.
+ *
+ * Thrown by {@link createCircuitBreakerMiddleware} when a request is rejected
+ * because (a) the breaker is in the OPEN state and the reset timeout has not
+ * yet elapsed, or (b) a concurrent request arrives while a HALF_OPEN trial is
+ * already in flight. The `msUntilHalfOpen` field gives an approximate wait
+ * time — after that the breaker will transition to HALF_OPEN and admit a
+ * single trial request.
+ *
+ * This error is intentionally NOT retried by {@link executeWithRetry} for two
+ * reasons: (a) burning through retry attempts wastes quota before surfacing the
+ * open state to the caller, and (b) if the reset timer elapses mid-retry-loop,
+ * the first retry after timeout would consume the single HALF_OPEN trial.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await transport.request({ method: 'GET', path: '/issue/AC-1' });
+ * } catch (error) {
+ *   if (error instanceof CircuitBreakerOpenError) {
+ *     console.warn(`Circuit open; retry after ~${error.msUntilHalfOpen}ms`);
+ *   }
+ * }
+ * ```
+ */
+export class CircuitBreakerOpenError extends AtlassianError {
+  /**
+   * Approximate milliseconds until the breaker may transition to HALF_OPEN and
+   * admit a trial request. `0` once the reset timeout has elapsed but the
+   * breaker has not yet been probed.
+   */
+  readonly msUntilHalfOpen: number;
+
+  constructor(msUntilHalfOpen: number, options?: ErrorOptions) {
+    const approx =
+      msUntilHalfOpen > 0
+        ? ` Circuit may half-open in ~${msUntilHalfOpen}ms.`
+        : ' Circuit may half-open on the next request.';
+    super(
+      `Circuit breaker is OPEN — request rejected without calling the transport.${approx}`,
+      'CIRCUIT_BREAKER_OPEN',
+      options,
+    );
+    this.name = 'CircuitBreakerOpenError';
+    this.msUntilHalfOpen = msUntilHalfOpen;
+  }
+}
+
+/**
  * Create the appropriate {@link HttpError} subclass from an HTTP status code.
  *
  * Maps status codes to specific error classes: 401 → {@link AuthenticationError},

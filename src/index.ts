@@ -11,6 +11,7 @@ export {
   ValidationError,
   PaginationError,
   ResponseTooLargeError,
+  CircuitBreakerOpenError,
   OAuthError,
 } from './core/index.js';
 
@@ -61,6 +62,10 @@ export type { CacheOptions } from './core/index.js';
 
 // Request batching (deduplication)
 export { createBatchMiddleware } from './core/index.js';
+
+// Circuit breaker
+export { createCircuitBreakerMiddleware } from './core/index.js';
+export type { CircuitBreakerOptions } from './core/index.js';
 
 // OAuth scope detection
 export { detectRequiredScopes, listKnownOperations } from './core/index.js';

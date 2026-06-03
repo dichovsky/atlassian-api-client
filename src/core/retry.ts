@@ -1,4 +1,10 @@
-import { HttpError, NetworkError, RateLimitError, TimeoutError } from './errors.js';
+import {
+  CircuitBreakerOpenError,
+  HttpError,
+  NetworkError,
+  RateLimitError,
+  TimeoutError,
+} from './errors.js';
 
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
 
@@ -132,6 +138,11 @@ export async function executeWithRetry<T>(
 
 function shouldRetry(error: unknown, attempt: number, retries: number): boolean {
   if (attempt >= retries) return false;
+
+  // An open circuit breaker should never be retried — the downstream is
+  // presumed unhealthy. Spinning through retry attempts would only delay the
+  // caller and potentially re-open the breaker as soon as it half-opens.
+  if (error instanceof CircuitBreakerOpenError) return false;
 
   if (error instanceof RateLimitError) return true;
 
