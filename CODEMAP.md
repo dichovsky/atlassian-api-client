@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "95a60460988e99fdcf89c5109d30075798361c11d8ae9786c59419b374534a8c",
+  "sourceHash": "a544bc09374dec2922b7f667decab17a1396b6b411f05ed8b8174f69e651675a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22,6 +22,15 @@
       "line": 55,
       "signature": "export interface ApiResponse<T> { readonly data: T; readonly status: number; readonly headers: Headers; readonly rateLim…",
       "jsdoc": "Parsed API response.",
+      "typeOnly": true
+    },
+    {
+      "name": "AsymmetricJwtVerifyOptions",
+      "kind": "interface",
+      "file": "src/core/connect-jwt.ts",
+      "line": 162,
+      "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
+      "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}.",
       "typeOnly": true
     },
     {
@@ -518,7 +527,7 @@
       "name": "ConnectJwtConfig",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 5,
+      "line": 13,
       "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
       "jsdoc": "Configuration for the Atlassian Connect JWT middleware.",
       "typeOnly": true
@@ -3271,7 +3280,7 @@
       "name": "computeQsh",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 70,
+      "line": 78,
       "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
       "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
     },
@@ -3303,7 +3312,7 @@
       "name": "createConnectJwtMiddleware",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 27,
+      "line": 35,
       "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
       "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
     },
@@ -3415,7 +3424,7 @@
       "name": "signConnectJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 44,
+      "line": 52,
       "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
       "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
     },
@@ -3426,6 +3435,14 @@
       "line": 24,
       "signature": "export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T>",
       "jsdoc": "Convert an {@link ApiResponse} into a plain JSON-serialisable object."
+    },
+    {
+      "name": "verifyConnectAsymmetricJwt",
+      "kind": "function",
+      "file": "src/core/connect-jwt.ts",
+      "line": 251,
+      "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
+      "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
     }
   ],
   "files": [
@@ -12180,7 +12197,7 @@
         {
           "name": "ConnectJwtConfig",
           "kind": "interface",
-          "line": 5,
+          "line": 13,
           "exported": true,
           "signature": "export interface ConnectJwtConfig { readonly issuer: string; readonly sharedSecret: string; readonly tokenLifetimeSecond…",
           "jsdoc": "Configuration for the Atlassian Connect JWT middleware."
@@ -12188,7 +12205,7 @@
         {
           "name": "createConnectJwtMiddleware",
           "kind": "function",
-          "line": 27,
+          "line": 35,
           "exported": true,
           "signature": "export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware",
           "jsdoc": "Creates middleware that signs every request with an Atlassian Connect JWT."
@@ -12196,7 +12213,7 @@
         {
           "name": "signConnectJwt",
           "kind": "function",
-          "line": 44,
+          "line": 52,
           "exported": true,
           "signature": "export function signConnectJwt(config: ConnectJwtConfig, options: RequestOptions): string",
           "jsdoc": "Signs a Connect JWT for the given request options. Exported for testing and advanced scenarios (e.g. signing outside middleware)."
@@ -12204,7 +12221,7 @@
         {
           "name": "computeQsh",
           "kind": "function",
-          "line": 70,
+          "line": 78,
           "exported": true,
           "signature": "export function computeQsh( method: HttpMethod, path: string, query?: Readonly<Record<string, string | number | boolean …",
           "jsdoc": "Computes the Query String Hash (QSH) per the Atlassian Connect specification."
@@ -12212,18 +12229,112 @@
         {
           "name": "encodeRfc3986",
           "kind": "function",
-          "line": 112,
+          "line": 120,
           "signature": "function encodeRfc3986(value: string): string",
           "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
         },
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 119,
+          "line": 127,
           "signature": "function base64UrlEncode(input: string): string"
+        },
+        {
+          "name": "ASYMMETRIC_JWT_ALG",
+          "kind": "variable",
+          "line": 142,
+          "signature": "const ASYMMETRIC_JWT_ALG = 'RS256';",
+          "jsdoc": "The only signing algorithm Atlassian uses for asymmetric Connect JWTs."
+        },
+        {
+          "name": "DEFAULT_MAX_CLOCK_SKEW_SECONDS",
+          "kind": "variable",
+          "line": 152,
+          "signature": "const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 30;",
+          "jsdoc": "Default clock-skew tolerance (seconds) for `exp`/`iat`/`nbf` validation."
+        },
+        {
+          "name": "AsymmetricJwtVerifyOptions",
+          "kind": "interface",
+          "line": 162,
+          "exported": true,
+          "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
+          "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}."
+        },
+        {
+          "name": "verifyConnectAsymmetricJwt",
+          "kind": "function",
+          "line": 251,
+          "exported": true,
+          "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
+          "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
+        },
+        {
+          "name": "parseJwt",
+          "kind": "function",
+          "line": 308,
+          "signature": "function parseJwt(token: string): { signingInput: string; header: Record<string, unknown>; payload: Record<string, unkno…",
+          "jsdoc": "Splits and decodes a compact JWT, validating structural shape only."
+        },
+        {
+          "name": "decodeJsonSegment",
+          "kind": "function",
+          "line": 330,
+          "signature": "function decodeJsonSegment(segment: string, name: string): Record<string, unknown>",
+          "jsdoc": "Decodes a base64url JSON segment into a plain object."
+        },
+        {
+          "name": "resolvePublicKey",
+          "kind": "function",
+          "line": 344,
+          "signature": "async function resolvePublicKey( header: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): Promise<KeyObj…",
+          "jsdoc": "Resolves the verifying key from an injected key or the caller's resolver."
+        },
+        {
+          "name": "toKeyObject",
+          "kind": "function",
+          "line": 371,
+          "signature": "function toKeyObject(key: string | KeyObject): KeyObject",
+          "jsdoc": "Normalises a PEM string or KeyObject into a public KeyObject."
+        },
+        {
+          "name": "validateTimeClaims",
+          "kind": "function",
+          "line": 383,
+          "signature": "function validateTimeClaims( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
+          "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
+        },
+        {
+          "name": "readNumericClaim",
+          "kind": "function",
+          "line": 407,
+          "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
+          "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
+        },
+        {
+          "name": "validateIssuer",
+          "kind": "function",
+          "line": 417,
+          "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
+          "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
+        },
+        {
+          "name": "validateAudience",
+          "kind": "function",
+          "line": 428,
+          "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
+          "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
+        },
+        {
+          "name": "validateQsh",
+          "kind": "function",
+          "line": 444,
+          "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
+          "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }
       ],
       "imports": [
+        "./errors.js",
         "./types.js",
         "node:crypto"
       ]
@@ -12635,6 +12746,10 @@
             {
               "exported": "ConnectJwtConfig",
               "original": "ConnectJwtConfig"
+            },
+            {
+              "exported": "AsymmetricJwtVerifyOptions",
+              "original": "AsymmetricJwtVerifyOptions"
             }
           ]
         },
@@ -12654,6 +12769,10 @@
             {
               "exported": "computeQsh",
               "original": "computeQsh"
+            },
+            {
+              "exported": "verifyConnectAsymmetricJwt",
+              "original": "verifyConnectAsymmetricJwt"
             }
           ]
         },
@@ -15406,6 +15525,10 @@
             {
               "exported": "computeQsh",
               "original": "computeQsh"
+            },
+            {
+              "exported": "verifyConnectAsymmetricJwt",
+              "original": "verifyConnectAsymmetricJwt"
             }
           ]
         },
@@ -15417,6 +15540,10 @@
             {
               "exported": "ConnectJwtConfig",
               "original": "ConnectJwtConfig"
+            },
+            {
+              "exported": "AsymmetricJwtVerifyOptions",
+              "original": "AsymmetricJwtVerifyOptions"
             }
           ]
         },

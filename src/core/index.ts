@@ -78,8 +78,13 @@ export type { OAuthTokens, OAuthRefreshConfig } from './oauth.js';
 export { OAuthError, createOAuthRefreshMiddleware, fetchRefreshedTokens } from './oauth.js';
 
 // Atlassian Connect JWT
-export type { ConnectJwtConfig } from './connect-jwt.js';
-export { createConnectJwtMiddleware, signConnectJwt, computeQsh } from './connect-jwt.js';
+export type { ConnectJwtConfig, AsymmetricJwtVerifyOptions } from './connect-jwt.js';
+export {
+  createConnectJwtMiddleware,
+  signConnectJwt,
+  computeQsh,
+  verifyConnectAsymmetricJwt,
+} from './connect-jwt.js';
 
 // Response caching
 export type { CacheOptions } from './cache.js';

@@ -54,8 +54,13 @@ export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index
 export type { OAuthRefreshConfig, OAuthTokens } from './core/index.js';
 
 // Atlassian Connect JWT
-export { createConnectJwtMiddleware, signConnectJwt, computeQsh } from './core/index.js';
-export type { ConnectJwtConfig } from './core/index.js';
+export {
+  createConnectJwtMiddleware,
+  signConnectJwt,
+  computeQsh,
+  verifyConnectAsymmetricJwt,
+} from './core/index.js';
+export type { ConnectJwtConfig, AsymmetricJwtVerifyOptions } from './core/index.js';
 
 // Response caching
 export { createCacheMiddleware } from './core/index.js';
