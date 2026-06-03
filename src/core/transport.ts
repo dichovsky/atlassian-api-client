@@ -110,10 +110,27 @@ export class HttpTransport implements Transport {
       const header = this.config.requestId.header ?? 'X-Request-Id';
       const generator = this.config.requestId.generator ?? randomUUID;
       const id = generator();
-      augmentedOptions = {
-        ...augmentedOptions,
-        headers: { ...(augmentedOptions.headers ?? {}), [header]: id },
-      };
+      // Skip the header entirely when the generator returns an empty string
+      // (defensive: an empty id is worse than no id — it misleads servers into
+      // thinking they received a correlation id when they received nothing useful).
+      if (id !== '') {
+        const headerLower = header.toLowerCase();
+        // Strip any existing caller-supplied header whose name collides
+        // case-insensitively with the canonical configured header. Without this,
+        // `fetch` merges the two differently-cased keys into one comma-joined
+        // value (e.g. `x-request-id: caller-id, X-Request-Id: generated-id`),
+        // corrupting the id. Mirrors the content-type/accept case-dedupe already
+        // applied by buildHeaders (PR #163 hardened this class of collision).
+        const existingHeaders = augmentedOptions.headers ?? {};
+        const dedupedHeaders: Record<string, string> = {};
+        for (const [k, v] of Object.entries(existingHeaders)) {
+          if (k.toLowerCase() !== headerLower) {
+            dedupedHeaders[k] = v;
+          }
+        }
+        dedupedHeaders[header] = id;
+        augmentedOptions = { ...augmentedOptions, headers: dedupedHeaders };
+      }
     }
 
     const response = await executeWithRetry(

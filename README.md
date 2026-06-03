@@ -551,7 +551,7 @@ The client always captures the server-assigned request id from response headers 
 Outbound id generation is opt-in. Set `requestId: { generate: true }` to attach a UUID to every request. The **same id is reused across all retry attempts** so the server can correlate a logical request regardless of how many tries it took.
 
 ```typescript
-import { ConfluenceClient, type RequestIdOptions } from 'atlassian-api-client';
+import { ConfluenceClient, HttpError, type RequestIdOptions } from 'atlassian-api-client';
 
 const client = new ConfluenceClient({
   baseUrl: 'https://yourcompany.atlassian.net',
@@ -572,8 +572,8 @@ console.log('server request id:', response.requestId); // e.g. 'arq-a1b2c3...'
 try {
   await client.pages.get('missing');
 } catch (err) {
-  if (err instanceof Error && 'requestId' in err) {
-    console.error('failed request id:', (err as { requestId?: string }).requestId);
+  if (err instanceof HttpError) {
+    console.error('failed request id:', err.requestId);
   }
 }
 ```

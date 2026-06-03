@@ -2246,6 +2246,56 @@ describe('HttpTransport', () => {
       expect(headers['X-Request-Id']).toBe('my-custom-id-xyz');
     });
 
+    it('dedupes case-insensitive caller header: lowercase x-request-id + generate → exactly one canonical header', async () => {
+      // Regression: caller passes 'x-request-id' (lowercase), generate:true
+      // configures 'X-Request-Id'. Without deduplication fetch merges the two
+      // differently-cased keys into one comma-joined value, corrupting the id.
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true, generator: () => 'generated-id' },
+      });
+      // Pass a colliding lowercase header AND a non-colliding custom header to
+      // exercise both branches of the dedupe loop (drop collision / keep others).
+      await runRequest(transport, {
+        method: 'GET',
+        path: '/pages',
+        headers: { 'x-request-id': 'caller-id', 'X-Custom-Header': 'kept' },
+      });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      // Caller-supplied lowercase variant must be absent
+      expect(headers['x-request-id']).toBeUndefined();
+      // Canonical configured header carries exactly the generated id (not a comma-joined value)
+      expect(headers['X-Request-Id']).toBe('generated-id');
+      // Confirm there is no other casing variant present
+      const allKeys = Object.keys(headers).filter((k) => k.toLowerCase() === 'x-request-id');
+      expect(allKeys).toHaveLength(1);
+      expect(allKeys[0]).toBe('X-Request-Id');
+      // Non-colliding caller header is preserved unchanged
+      expect(headers['X-Custom-Header']).toBe('kept');
+    });
+
+    it('skips setting outbound header when generator returns empty string', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true, generator: () => '' },
+      });
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers['X-Request-Id']).toBeUndefined();
+    });
+
     it('generates a new id per top-level request() call', async () => {
       // Use a factory so each call gets a fresh Response (body can only be read once)
       const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(makeResponse(200, {})));
