@@ -1,4 +1,10 @@
-import { createHash, createHmac, createPublicKey, verify as cryptoVerify } from 'node:crypto';
+import {
+  constants as cryptoConstants,
+  createHash,
+  createHmac,
+  createPublicKey,
+  verify as cryptoVerify,
+} from 'node:crypto';
 import type { KeyObject } from 'node:crypto';
 import type { Middleware, RequestOptions, HttpMethod } from './types.js';
 import { ValidationError } from './errors.js';
@@ -212,8 +218,11 @@ export interface AsymmetricJwtVerifyOptions {
  *    everything else, especially `'none'` and `'HS256'` (algorithm confusion).
  * 3. Resolve the public key from {@link AsymmetricJwtVerifyOptions.publicKey} or,
  *    failing that, by passing the header `kid` to
- *    {@link AsymmetricJwtVerifyOptions.publicKeyResolver}.
- * 4. Verify the RSA-SHA256 signature over `header.payload`.
+ *    {@link AsymmetricJwtVerifyOptions.publicKeyResolver}, then **pin its type to
+ *    RSA** (an EC/Ed25519 key under an `RS256` header is rejected — `crypto.verify`
+ *    dispatches by key type, not the `alg` string, so this is required to keep the
+ *    verify an RSA-PKCS1 operation).
+ * 4. Verify the RSA-SHA256 (PKCS#1 v1.5) signature over `header.payload`.
  * 5. Validate claims: `exp`/`iat`/`nbf` (with clock skew), `iss`, `aud`, `qsh`.
  * 6. Return the decoded claims.
  *
@@ -223,8 +232,9 @@ export interface AsymmetricJwtVerifyOptions {
  * @param token - The compact-serialised JWT (`header.payload.signature`).
  * @param options - Verification options; supply `publicKey` or `publicKeyResolver`.
  * @returns The verified claims (the decoded payload).
- * @throws {ValidationError} on malformed token, wrong algorithm, missing key,
- *   bad signature, expired/not-yet-valid token, or `iss`/`aud`/`qsh` mismatch.
+ * @throws {ValidationError} on malformed token, wrong algorithm, missing or
+ *   non-RSA key, invalid key material, bad signature, expired/not-yet-valid
+ *   token, or `iss`/`aud`/`qsh` mismatch.
  *
  * @see https://developer.atlassian.com/cloud/jira/platform/understanding-jwt-for-connect-apps/
  *
@@ -256,11 +266,28 @@ export async function verifyConnectAsymmetricJwt(
   // reaches out).
   const key = await resolvePublicKey(header, options);
 
-  // Step 4 — verify the RSA-SHA256 signature before trusting any claim.
+  // Step 3b — pin the key TYPE to RSA. `crypto.verify('RSA-SHA256', …)`
+  // dispatches by the *key* type, not the algorithm string, so an EC (e.g.
+  // P-256) or Ed25519 public key would be verified with ECDSA/EdDSA even though
+  // the header claims `alg:RS256`. That is an algorithm/key-confusion hole: an
+  // attacker who controls the key delivered to a resolver (or who substitutes a
+  // key) could present an EC keypair and have an ECDSA signature accepted under
+  // an RS256 header. Asserting the key is RSA here keeps the invariant that an
+  // RS256 token is *only ever* verified by an RSA-PKCS1 operation.
+  if (key.asymmetricKeyType !== 'rsa') {
+    throw new ValidationError('JWT verification key must be RSA for RS256');
+  }
+
+  // Step 4 — verify the RSA-SHA256 signature before trusting any claim. The key
+  // is passed in object form with explicit PKCS#1 v1.5 padding as defence-in-depth
+  // so the verify can only ever be an RSA-PKCS1 operation. An incompatible key can
+  // no longer reach here (the RSA type-pin above rejects non-RSA keys) and the
+  // signature is always a Buffer, so `crypto.verify` returns false rather than
+  // throwing on a bad signature — it does not need a try/catch wrapper.
   const signatureValid = cryptoVerify(
     'RSA-SHA256',
     Buffer.from(signingInput, 'utf8'),
-    key,
+    { key, padding: cryptoConstants.RSA_PKCS1_PADDING },
     signature,
   );
   if (!signatureValid) {
@@ -334,10 +361,20 @@ async function resolvePublicKey(
   );
 }
 
-/** Normalises a PEM string or KeyObject into a public KeyObject. */
+/**
+ * Normalises a PEM string or KeyObject into a public KeyObject.
+ *
+ * `createPublicKey` throws a raw OpenSSL error (e.g. `error:1E08010C…`) on a
+ * malformed PEM; wrap it so callers see the {@link ValidationError} taxonomy and
+ * no raw key material leaks into the message.
+ */
 function toKeyObject(key: string | KeyObject): KeyObject {
   if (typeof key === 'string') {
-    return createPublicKey(key);
+    try {
+      return createPublicKey(key);
+    } catch {
+      throw new ValidationError('invalid verification key');
+    }
   }
   return key;
 }

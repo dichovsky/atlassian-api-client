@@ -11,6 +11,7 @@ import {
   createHmac,
   createSign,
   generateKeyPairSync,
+  sign as cryptoSign,
   type KeyObject,
 } from 'node:crypto';
 import { ValidationError } from '../../src/core/errors.js';
@@ -348,6 +349,96 @@ describe('verifyConnectAsymmetricJwt', () => {
     await expect(
       verifyConnectAsymmetricJwt(unsigned, { publicKey: publicKeyPem, now: fixedNow }),
     ).rejects.toThrow(/Unsupported JWT algorithm/);
+  });
+
+  // Key-confusion: `crypto.verify('RSA-SHA256', …)` dispatches on the KEY type,
+  // not the `alg` string, so without an explicit RSA key-type pin an EC (P-256)
+  // public key + a real ECDSA signature would be accepted under an `alg:RS256`
+  // header — letting an attacker who controls the delivered key forge a token.
+  it('rejects an EC P-256 key carrying an ECDSA signature under an alg:RS256 header', async () => {
+    const ec = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const ecPublicPem = ec.publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    // Header lies: alg:RS256, but signed with EC private key (ECDSA-SHA256).
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const signingInput = `${b64url(header)}.${b64url(validPayload({ iss: 'attacker' }))}`;
+    const signature = createSign('SHA256')
+      .update(signingInput)
+      .sign(ec.privateKey)
+      .toString('base64url');
+    const forged = `${signingInput}.${signature}`;
+    await expect(
+      verifyConnectAsymmetricJwt(forged, { publicKey: ecPublicPem, now: fixedNow }),
+    ).rejects.toThrow(/key must be RSA/);
+  });
+
+  it('rejects an EC key delivered via publicKeyResolver under alg:RS256', async () => {
+    const ec = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const ecPublicPem = ec.publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const header = { alg: 'RS256', typ: 'JWT', kid: 'attacker-key' };
+    const signingInput = `${b64url(header)}.${b64url(validPayload({ iss: 'attacker' }))}`;
+    const signature = createSign('SHA256')
+      .update(signingInput)
+      .sign(ec.privateKey)
+      .toString('base64url');
+    const forged = `${signingInput}.${signature}`;
+    await expect(
+      verifyConnectAsymmetricJwt(forged, {
+        publicKeyResolver: () => ecPublicPem,
+        now: fixedNow,
+      }),
+    ).rejects.toThrow(/key must be RSA/);
+  });
+
+  it('rejects an Ed25519 key under an alg:RS256 header', async () => {
+    const ed = generateKeyPairSync('ed25519');
+    const edPublicPem = ed.publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const signingInput = `${b64url(header)}.${b64url(validPayload({ iss: 'attacker' }))}`;
+    // Ed25519 is a one-shot sign (no streaming hash → algorithm must be null).
+    const signature = cryptoSign(null, Buffer.from(signingInput, 'utf8'), ed.privateKey).toString(
+      'base64url',
+    );
+    const forged = `${signingInput}.${signature}`;
+    await expect(
+      verifyConnectAsymmetricJwt(forged, { publicKey: edPublicPem, now: fixedNow }),
+    ).rejects.toThrow(/key must be RSA/);
+  });
+
+  it('throws ValidationError (not a raw OpenSSL error) for a malformed PEM publicKey', async () => {
+    const token = signRs256(validPayload());
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: '-----BEGIN PUBLIC KEY-----\nnot-a-real-key\n-----END PUBLIC KEY-----',
+        now: fixedNow,
+      }),
+    ).rejects.toThrow(/invalid verification key/);
+  });
+
+  it('does not leak the malformed key material in the ValidationError message', async () => {
+    const token = signRs256(validPayload());
+    const badKey = '-----BEGIN PUBLIC KEY-----\nSEKRIT-KEY-MATERIAL\n-----END PUBLIC KEY-----';
+    try {
+      await verifyConnectAsymmetricJwt(token, { publicKey: badKey, now: fixedNow });
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ValidationError);
+      const message = (error as Error).message;
+      expect(message).not.toContain('SEKRIT-KEY-MATERIAL');
+      expect(message).not.toContain('BEGIN');
+    }
+  });
+
+  it('surfaces a publicKeyResolver that throws (error propagates predictably)', async () => {
+    const token = signRs256(validPayload(), { kid: 'install-key-1' });
+    const boom = new Error('resolver upstream failed');
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKeyResolver: () => {
+          throw boom;
+        },
+        now: fixedNow,
+      }),
+    ).rejects.toThrow('resolver upstream failed');
   });
 
   it('rejects an expired token (beyond clock skew)', async () => {
