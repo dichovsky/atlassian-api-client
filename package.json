@@ -24,12 +24,12 @@
     "type": "git",
     "url": "https://github.com/dichovsky/atlassian-api-client.git"
   },
-  "license": "MIT",
-  "author": "Igor Magdich <magdich.igor@gmail.com>",
   "funding": {
     "type": "buymeacoffee",
     "url": "https://buymeacoffee.com/dichovsky"
   },
+  "license": "MIT",
+  "author": "Igor Magdich <magdich.igor@gmail.com>",
   "sideEffects": false,
   "type": "module",
   "exports": {
@@ -56,7 +56,10 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
     "clean": "rimraf dist coverage",
+    "codemap": "node scripts/generate-codemap.js",
+    "codemap:check": "node scripts/generate-codemap.js --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -64,12 +67,9 @@
     "prepublishOnly": "npm run validate",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
-    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
-    "typecheck": "tsc --noEmit",
     "test:exports": "node scripts/validate-exports.js",
-    "codemap": "node scripts/generate-codemap.js",
-    "codemap:check": "node scripts/generate-codemap.js --check",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "validate": "npm run clean && npm run typecheck && npm run codemap:check && npm run lint && npm run test:coverage && npm run format:check && npm run build && npm run test:exports"
   },
   "devDependencies": {
