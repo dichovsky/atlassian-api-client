@@ -109,8 +109,8 @@ export interface RateLimiterOptions {
  * rate-limited too.
  *
  * Recommended ordering: place AFTER the circuit breaker (B010) so a tripped
- * circuit can short-circuit without burning tokens, and BEFORE cache/batch
- * so cached hits are free.
+ * circuit can short-circuit without burning tokens, and AFTER (outside) cache/batch
+ * so cached/deduped hits don't burn a token.
  *
  * @param options - Token-bucket configuration.
  * @returns A {@link Middleware} factory to pass to `ClientConfig.middleware`.
@@ -150,46 +150,61 @@ export function createRateLimiterMiddleware(options: RateLimiterOptions): Middle
   let lastRefill = Date.now();
   // Serialisation gate: each caller appends to this chain so concurrent callers
   // queue fairly and cannot both consume the last token simultaneously.
+  // IMPORTANT: the gate covers ONLY token acquisition (refill + wait + decrement).
+  // Once a token is claimed the gate advances immediately so the next queued
+  // caller can start its own acquisition while this request is in-flight.
   let gate: Promise<void> = Promise.resolve();
 
-  return (opts, next) => {
-    // Append to the serialisation chain so each caller waits its turn.
-    const result = gate.then(async () => {
-      const now = Date.now();
-      const elapsed = now - lastRefill;
-      tokens = Math.min(capacity, tokens + (elapsed / intervalMs) * tokensPerInterval);
-      lastRefill = now;
+  /** Refill the bucket based on elapsed time and consume one token. */
+  async function acquireToken(signal: AbortSignal | undefined): Promise<void> {
+    // Initial refill on entry.
+    const now = Date.now();
+    const elapsed = now - lastRefill;
+    tokens = Math.min(capacity, tokens + (elapsed / intervalMs) * tokensPerInterval);
+    lastRefill = now;
 
-      if (tokens < 1) {
-        // Compute wait until the next whole token is available.
-        const waitMs = ((1 - tokens) / tokensPerInterval) * intervalMs;
+    // Loop until a whole token is available (handles fractional accumulation
+    // across multiple short sleeps without over-consuming).
+    while (tokens < 1) {
+      // Compute wait until the next whole token is available.
+      const waitMs = ((1 - tokens) / tokensPerInterval) * intervalMs;
 
-        if (maxWaitMs !== undefined && waitMs > maxWaitMs) {
-          throw new RateLimiterExhaustedError(
-            `Rate limiter exhausted: need to wait ${waitMs.toFixed(0)}ms but maxWaitMs is ${maxWaitMs}ms`,
-          );
-        }
-
-        await sleepWithAbort(waitMs, opts.signal);
-
-        // Refill again after sleeping so the token accounting stays accurate.
-        const now2 = Date.now();
-        const elapsed2 = now2 - lastRefill;
-        tokens = Math.min(capacity, tokens + (elapsed2 / intervalMs) * tokensPerInterval);
-        lastRefill = now2;
+      if (maxWaitMs !== undefined && waitMs > maxWaitMs) {
+        throw new RateLimiterExhaustedError(
+          `Rate limiter exhausted: need to wait ${waitMs.toFixed(0)}ms but maxWaitMs is ${maxWaitMs}ms`,
+        );
       }
 
-      tokens -= 1;
-      return next(opts);
-    });
+      await sleepWithAbort(waitMs, signal);
 
-    // The gate advances with each call; errors in one call must not jam the
-    // queue for subsequent callers, so we catch and suppress on the gate copy.
-    gate = result.then(
+      // Refill again after sleeping so the token accounting stays accurate.
+      const now2 = Date.now();
+      const elapsed2 = now2 - lastRefill;
+      tokens = Math.min(capacity, tokens + (elapsed2 / intervalMs) * tokensPerInterval);
+      lastRefill = now2;
+    }
+
+    tokens -= 1;
+  }
+
+  return (opts, next) => {
+    // Each caller appends its token-acquisition step to the gate chain.
+    // Using a local `acquired` promise lets us advance the shared gate
+    // (and unblock the next queued caller) as soon as this caller has
+    // claimed its token — BEFORE awaiting next(opts).  This means admitted
+    // requests execute next() concurrently rather than fully sequentially,
+    // preserving the documented "burst up to capacity without delay" behaviour.
+    const acquired = gate.then(() => acquireToken(opts.signal));
+
+    // The gate must always advance, even when this acquisition fails
+    // (abort / exhaustion / error), so subsequent callers are not jammed.
+    gate = acquired.then(
       () => undefined,
       () => undefined,
     );
 
-    return result;
+    // Run the actual request OUTSIDE the gated section so in-flight requests
+    // don't block the next caller's token acquisition.
+    return acquired.then(() => next(opts));
   };
 }

@@ -436,7 +436,7 @@ Key behaviours:
 - **Waits, never rejects by default** — when the bucket is empty the middleware sleeps until the next token is available, smoothing traffic rather than failing fast. Set `maxWaitMs` to cap the wait and throw `RateLimiterExhaustedError` instead.
 - **Abort-aware** — the wait honours `RequestOptions.signal`, so caller-initiated cancellations and transport timeouts still work correctly during a wait.
 - **Retry interaction** — each retry attempt re-enters the middleware and consumes a token. This is intentional: retried requests represent real outbound traffic and should be rate-limited just like first attempts.
-- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and before cache/batch so cached hits are free.
+- **Recommended ordering** — place this middleware after the circuit breaker (when present) so a tripped circuit short-circuits without burning tokens, and after (outside) cache/batch so cached/deduped hits don't burn a token.
 
 `RateLimiterExhaustedError` (code `'RATE_LIMITER_EXHAUSTED'`) is a client-side error, distinct from the server-side `RateLimitError` (HTTP 429).
 

@@ -261,8 +261,8 @@ describe('createRateLimiterMiddleware — wait-then-proceed', () => {
     expect(resolved).toBe(false);
     expect(next).toHaveBeenCalledTimes(2);
 
-    // Advance time enough for one token to accrue (500ms for half a token is
-    // not enough — need ~500ms for the first full token at 2/1000ms rate).
+    // Advance time enough for one token to accrue (at 2/1000ms, 500ms = one
+    // full token; we advance 600ms to ensure the sleep timer fires).
     await vi.advanceTimersByTimeAsync(600);
     const result = await third;
 
@@ -430,5 +430,36 @@ describe('createRateLimiterMiddleware — abort signal', () => {
     // Pre-aborted signal — should reject without sleeping.
     await expect(mw(makeOpts({ signal: controller.signal }), next)).rejects.toThrow('pre-aborted');
     expect(next).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('createRateLimiterMiddleware — concurrency (real timers)', () => {
+  it('admitted requests execute next() concurrently, not sequentially', async () => {
+    // 4 tokens available — fire 4 concurrent requests each with a 50ms
+    // simulated latency.  If next() were serialised the wall-clock would be
+    // ~200ms; with correct parallel execution it should be ~50ms.
+    const capacity = 4;
+    const requestLatencyMs = 50;
+    const mw = createRateLimiterMiddleware({ tokensPerInterval: capacity, intervalMs: 10_000 });
+
+    let maxConcurrent = 0;
+    let inFlight = 0;
+
+    const next = async (): Promise<ApiResponse<unknown>> => {
+      inFlight++;
+      if (inFlight > maxConcurrent) maxConcurrent = inFlight;
+      await new Promise<void>((resolve) => setTimeout(resolve, requestLatencyMs));
+      inFlight--;
+      return makeResponse('ok');
+    };
+
+    const start = Date.now();
+    await Promise.all(Array.from({ length: capacity }, () => mw(makeOpts(), next)));
+    const elapsed = Date.now() - start;
+
+    // All 4 requests should have been in-flight simultaneously.
+    expect(maxConcurrent).toBe(capacity);
+    // Wall-clock must be much less than N × latency (allow 3× slack for CI).
+    expect(elapsed).toBeLessThan(requestLatencyMs * 3);
   });
 });
