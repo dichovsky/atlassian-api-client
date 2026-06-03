@@ -327,6 +327,33 @@ const client = new JiraClient({
 
 Signs every request with an HS256 JWT per the Atlassian Connect spec (QSH, iss, iat, exp claims).
 
+#### Verifying inbound asymmetric (RS256) JWTs
+
+Atlassian signs lifecycle callbacks (installed/uninstalled) and context/iframe
+tokens with **RS256** using a per-install key pair. Apps verify those tokens
+against the matching public key — `verifyConnectAsymmetricJwt` does exactly
+that, with strict algorithm pinning (only `RS256` is accepted; `none` and
+`HS256` are rejected to defeat algorithm-confusion attacks).
+
+```typescript
+import { verifyConnectAsymmetricJwt } from 'atlassian-api-client';
+
+const claims = await verifyConnectAsymmetricJwt(token, {
+  // The library core never makes network calls. Supply a resolver that fetches
+  // the PEM public key by `kid`, or pass a `publicKey` you already hold.
+  publicKeyResolver: async (kid) =>
+    fetch(`https://connect-install-keys.atlassian.com/${kid}`).then((r) => r.text()),
+  issuer: clientKey, // require iss === clientKey
+  audience: 'https://my-app.example.com', // require this value in aud
+});
+```
+
+The verifier checks the signature **before** trusting any claim, then validates
+`exp`/`iat`/`nbf` (with a 30s default clock skew, configurable via
+`maxClockSkewSeconds`), and optionally `iss`, `aud`, and `qsh`. All failures
+throw `ValidationError` with a distinct, non-leaking message (the token,
+signature, and key material are never echoed).
+
 ### Response Caching
 
 ```typescript

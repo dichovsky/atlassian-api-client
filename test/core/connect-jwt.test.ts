@@ -3,9 +3,17 @@ import {
   createConnectJwtMiddleware,
   signConnectJwt,
   computeQsh,
+  verifyConnectAsymmetricJwt,
 } from '../../src/core/connect-jwt.js';
 import type { RequestOptions, ApiResponse } from '../../src/core/types.js';
-import { createHash, createHmac } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  createSign,
+  generateKeyPairSync,
+  type KeyObject,
+} from 'node:crypto';
+import { ValidationError } from '../../src/core/errors.js';
 
 const makeOpts = (overrides?: Partial<RequestOptions>): RequestOptions => ({
   method: 'GET',
@@ -248,5 +256,338 @@ describe('createConnectJwtMiddleware', () => {
     const { payload } = decodeJwt(token);
     const expectedQsh = computeQsh('GET', '/rest/api/3/issue', { expand: 'names' });
     expect(payload['qsh']).toBe(expectedQsh);
+  });
+});
+
+describe('verifyConnectAsymmetricJwt', () => {
+  // One 2048-bit RSA keypair shared across the suite (keygen is the slow part).
+  const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const publicKeyPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+
+  const b64url = (obj: unknown): string =>
+    Buffer.from(JSON.stringify(obj), 'utf8').toString('base64url');
+
+  // Sign a token with RS256 using the test private key (override the header to
+  // craft algorithm-confusion / 'none' cases).
+  function signRs256(
+    payload: Record<string, unknown>,
+    headerOverride: Record<string, unknown> = {},
+  ): string {
+    const header = { alg: 'RS256', typ: 'JWT', ...headerOverride };
+    const signingInput = `${b64url(header)}.${b64url(payload)}`;
+    const signature = createSign('RSA-SHA256')
+      .update(signingInput)
+      .sign(privateKey)
+      .toString('base64url');
+    return `${signingInput}.${signature}`;
+  }
+
+  // A fresh, never-expiring-soon payload anchored to a fixed clock.
+  const FIXED_NOW_MS = 1_700_000_000_000;
+  const fixedNow = (): number => FIXED_NOW_MS;
+  const nowSeconds = Math.floor(FIXED_NOW_MS / 1000);
+  const validPayload = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
+    iss: 'client-key-123',
+    iat: nowSeconds - 10,
+    exp: nowSeconds + 300,
+    ...extra,
+  });
+
+  it('returns the claims for a valid token with an injected public key', async () => {
+    const token = signRs256(validPayload());
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+    });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('accepts a KeyObject public key', async () => {
+    const token = signRs256(validPayload());
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKey as KeyObject,
+      now: fixedNow,
+    });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('rejects a token whose payload was tampered after signing', async () => {
+    const token = signRs256(validPayload());
+    const parts = token.split('.');
+    const forgedPayload = b64url(validPayload({ iss: 'attacker' }));
+    const tampered = `${parts[0]}.${forgedPayload}.${parts[2]}`;
+    await expect(
+      verifyConnectAsymmetricJwt(tampered, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/signature verification failed/);
+  });
+
+  it('rejects a token with a corrupted signature', async () => {
+    const token = signRs256(validPayload());
+    const parts = token.split('.');
+    const badSig = Buffer.from('not-the-real-signature', 'utf8').toString('base64url');
+    const tampered = `${parts[0]}.${parts[1]}.${badSig}`;
+    await expect(
+      verifyConnectAsymmetricJwt(tampered, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it('rejects an HS256 token signed with the public key as HMAC secret (alg confusion)', async () => {
+    // Classic attack: forge HS256 using the (public) RSA key as the shared secret.
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const signingInput = `${b64url(header)}.${b64url(validPayload())}`;
+    const forgedSig = createHmac('sha256', publicKeyPem).update(signingInput).digest('base64url');
+    const forged = `${signingInput}.${forgedSig}`;
+    await expect(
+      verifyConnectAsymmetricJwt(forged, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/Unsupported JWT algorithm/);
+  });
+
+  it("rejects an 'alg: none' unsigned token", async () => {
+    const header = { alg: 'none', typ: 'JWT' };
+    const unsigned = `${b64url(header)}.${b64url(validPayload())}.`;
+    await expect(
+      verifyConnectAsymmetricJwt(unsigned, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/Unsupported JWT algorithm/);
+  });
+
+  it('rejects an expired token (beyond clock skew)', async () => {
+    const token = signRs256(validPayload({ exp: nowSeconds - 100 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/expired/);
+  });
+
+  it('accepts a just-expired token within the clock-skew window', async () => {
+    // exp 10s in the past, default skew 30s → still valid.
+    const token = signRs256(validPayload({ exp: nowSeconds - 10 }));
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+    });
+    expect(claims['exp']).toBe(nowSeconds - 10);
+  });
+
+  it('respects a custom maxClockSkewSeconds', async () => {
+    const token = signRs256(validPayload({ exp: nowSeconds - 10 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        maxClockSkewSeconds: 0,
+      }),
+    ).rejects.toThrow(/expired/);
+  });
+
+  it('rejects a not-yet-valid token (nbf in the future beyond skew)', async () => {
+    const token = signRs256(validPayload({ nbf: nowSeconds + 100 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/not yet valid/);
+  });
+
+  it('rejects a token whose iat is in the future beyond skew', async () => {
+    const token = signRs256(validPayload({ iat: nowSeconds + 100 }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/issued-at/);
+  });
+
+  it('rejects a token with a non-numeric exp claim', async () => {
+    const token = signRs256(validPayload({ exp: 'soon' }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem, now: fixedNow }),
+    ).rejects.toThrow(/"exp" is not a valid number/);
+  });
+
+  it('passes when no time claims are present', async () => {
+    const token = signRs256({ iss: 'client-key-123' });
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+    });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('uses the real clock (Date.now) when no now() is injected', async () => {
+    // exp far in the future so this passes against the wall clock; exercises
+    // the `?? Date.now()` default branch.
+    const realNow = Math.floor(Date.now() / 1000);
+    const token = signRs256({ iss: 'client-key-123', iat: realNow - 10, exp: realNow + 3600 });
+    const claims = await verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('rejects an issuer mismatch when issuer is configured', async () => {
+    const token = signRs256(validPayload());
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        issuer: 'expected-client-key',
+      }),
+    ).rejects.toThrow(/issuer .*mismatch/);
+  });
+
+  it('accepts a matching issuer', async () => {
+    const token = signRs256(validPayload());
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+      issuer: 'client-key-123',
+    });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('rejects an audience mismatch (string aud)', async () => {
+    const token = signRs256(validPayload({ aud: 'https://other-app.example.com' }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        audience: 'https://my-app.example.com',
+      }),
+    ).rejects.toThrow(/audience .*mismatch/);
+  });
+
+  it('accepts a matching string audience', async () => {
+    const token = signRs256(validPayload({ aud: 'https://my-app.example.com' }));
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+      audience: 'https://my-app.example.com',
+    });
+    expect(claims['aud']).toBe('https://my-app.example.com');
+  });
+
+  it('accepts an audience present in an array aud claim', async () => {
+    const token = signRs256(
+      validPayload({ aud: ['https://my-app.example.com', 'https://other.example.com'] }),
+    );
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+      audience: 'https://my-app.example.com',
+    });
+    expect(Array.isArray(claims['aud'])).toBe(true);
+  });
+
+  it('rejects when audience is configured but the array aud lacks it', async () => {
+    const token = signRs256(validPayload({ aud: ['https://other.example.com'] }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        audience: 'https://my-app.example.com',
+      }),
+    ).rejects.toThrow(/audience .*mismatch/);
+  });
+
+  it('rejects a qsh mismatch when a request shape is provided', async () => {
+    const token = signRs256(validPayload({ qsh: 'deadbeef' }));
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKey: publicKeyPem,
+        now: fixedNow,
+        qsh: { method: 'GET', path: '/rest/api/3/myself' },
+      }),
+    ).rejects.toThrow(/query-string hash .*mismatch/);
+  });
+
+  it('accepts a qsh computed from the request shape via computeQsh', async () => {
+    const expectedQsh = computeQsh('GET', '/rest/api/3/myself', { expand: 'groups' });
+    const token = signRs256(validPayload({ qsh: expectedQsh }));
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+      qsh: { method: 'GET', path: '/rest/api/3/myself', query: { expand: 'groups' } },
+    });
+    expect(claims['qsh']).toBe(expectedQsh);
+  });
+
+  it('accepts a raw qsh string (e.g. the fixed context-qsh value)', async () => {
+    const token = signRs256(validPayload({ qsh: 'context-qsh' }));
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKey: publicKeyPem,
+      now: fixedNow,
+      qsh: 'context-qsh',
+    });
+    expect(claims['qsh']).toBe('context-qsh');
+  });
+
+  it('resolves the public key via publicKeyResolver using the header kid', async () => {
+    const resolver = vi.fn(async (kid: string) => {
+      expect(kid).toBe('install-key-1');
+      return publicKeyPem;
+    });
+    const token = signRs256(validPayload(), { kid: 'install-key-1' });
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKeyResolver: resolver,
+      now: fixedNow,
+    });
+    expect(claims['iss']).toBe('client-key-123');
+    expect(resolver).toHaveBeenCalledOnce();
+  });
+
+  it('supports a synchronous publicKeyResolver returning a KeyObject', async () => {
+    const token = signRs256(validPayload(), { kid: 'install-key-1' });
+    const claims = await verifyConnectAsymmetricJwt(token, {
+      publicKeyResolver: () => publicKey as KeyObject,
+      now: fixedNow,
+    });
+    expect(claims['iss']).toBe('client-key-123');
+  });
+
+  it('rejects when the resolver path is used but the header has no kid', async () => {
+    const token = signRs256(validPayload()); // no kid
+    await expect(
+      verifyConnectAsymmetricJwt(token, {
+        publicKeyResolver: () => publicKeyPem,
+        now: fixedNow,
+      }),
+    ).rejects.toThrow(/missing "kid"/);
+  });
+
+  it('rejects when neither publicKey nor publicKeyResolver is provided', async () => {
+    const token = signRs256(validPayload());
+    await expect(verifyConnectAsymmetricJwt(token, { now: fixedNow })).rejects.toThrow(
+      /provide options.publicKey or options.publicKeyResolver/,
+    );
+  });
+
+  it('rejects a token without three segments', async () => {
+    await expect(
+      verifyConnectAsymmetricJwt('only.two', { publicKey: publicKeyPem }),
+    ).rejects.toThrow(/three dot-separated segments/);
+  });
+
+  it('rejects a token whose header is not valid base64url JSON', async () => {
+    const bad = `${Buffer.from('not json', 'utf8').toString('base64url')}.${b64url(
+      validPayload(),
+    )}.sig`;
+    await expect(verifyConnectAsymmetricJwt(bad, { publicKey: publicKeyPem })).rejects.toThrow(
+      /header is not valid base64url JSON/,
+    );
+  });
+
+  it('rejects a token whose payload decodes to a JSON array, not an object', async () => {
+    const header = b64url({ alg: 'RS256', typ: 'JWT' });
+    const arrayPayload = Buffer.from(JSON.stringify([1, 2, 3]), 'utf8').toString('base64url');
+    const bad = `${header}.${arrayPayload}.sig`;
+    await expect(verifyConnectAsymmetricJwt(bad, { publicKey: publicKeyPem })).rejects.toThrow(
+      /payload is not a JSON object/,
+    );
+  });
+
+  it('never includes raw token or key material in error messages', async () => {
+    const token = signRs256(validPayload({ exp: nowSeconds - 100 }));
+    try {
+      await verifyConnectAsymmetricJwt(token, { publicKey: publicKeyPem, now: fixedNow });
+      expect.unreachable('should have thrown');
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).not.toContain(token);
+      expect(message).not.toContain(publicKeyPem);
+      expect(message).not.toContain('BEGIN');
+    }
   });
 });

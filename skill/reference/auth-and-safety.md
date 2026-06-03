@@ -29,6 +29,11 @@ atlas confluence spaces list \
 
 Multiple comma-separated entries are permitted. The `baseUrl` host itself must be included.
 
+## Connect JWT (SDK, not CLI)
+
+- Outbound product-API signing: `createConnectJwtMiddleware` / `signConnectJwt` (HS256, shared secret).
+- Inbound verification: `verifyConnectAsymmetricJwt(token, options)` verifies Atlassian-signed lifecycle/context tokens (RS256). It pins `alg` to `RS256` (rejects `none`/`HS256` — algorithm-confusion guard), checks the signature before any claim, then validates `exp`/`iat`/`nbf` (30s default skew), and optionally `iss`/`aud`/`qsh`. Core is network-free: pass `publicKey` or a `publicKeyResolver(kid)` (e.g. fetch `https://connect-install-keys.atlassian.com/{kid}`). Failures throw `ValidationError` with non-leaking messages.
+
 ## Error handling
 
 - `401`: auth invalid or expired — STOP. Do not retry. Surface to user and request new credentials. Retrying on 401 may trigger account lockout.

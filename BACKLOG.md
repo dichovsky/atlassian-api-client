@@ -13,9 +13,6 @@
 - [ ] 🔴 ♻️ Core: B025 OpenAPI $ref injection hardening
   - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
   - deps: none
-- [ ] 🟡 📦 Core: B015 RS256 Connect JWT
-  - files: `src/core/connect-jwt.ts`, `src/core/index.ts`
-  - deps: none
 
 ## 🧩 Confluence
 
