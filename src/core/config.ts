@@ -66,6 +66,7 @@ export function resolveConfig(config: ClientConfig): ResolvedConfig {
     fetch: config.fetch,
     logger: config.logger,
     middleware: config.middleware,
+    requestId: config.requestId,
   };
 }
 
@@ -190,6 +191,36 @@ function validateConfig(config: ClientConfig): void {
       config.maxResponseBytes <= 0
     ) {
       throw new ValidationError('maxResponseBytes must be a finite positive integer');
+    }
+  }
+
+  if (config.requestId !== undefined) {
+    validateRequestIdOptions(config.requestId);
+  }
+}
+
+function validateRequestIdOptions(opts: NonNullable<ClientConfig['requestId']>): void {
+  if (opts.generate !== undefined && typeof opts.generate !== 'boolean') {
+    throw new ValidationError('requestId.generate must be a boolean');
+  }
+  if (opts.header !== undefined) {
+    if (typeof opts.header !== 'string' || opts.header.trim() === '') {
+      throw new ValidationError('requestId.header must be a non-empty string');
+    }
+  }
+  if (opts.generator !== undefined && typeof opts.generator !== 'function') {
+    throw new ValidationError('requestId.generator must be a function');
+  }
+  if (opts.readResponseHeaders !== undefined) {
+    if (!Array.isArray(opts.readResponseHeaders) || opts.readResponseHeaders.length === 0) {
+      throw new ValidationError('requestId.readResponseHeaders must be a non-empty array');
+    }
+    for (const h of opts.readResponseHeaders) {
+      if (typeof h !== 'string' || h.trim() === '') {
+        throw new ValidationError(
+          'requestId.readResponseHeaders entries must be non-empty strings',
+        );
+      }
     }
   }
 }

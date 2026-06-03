@@ -7,6 +7,7 @@ export interface SerializableApiResponse<T> {
   readonly status: number;
   readonly headers: Record<string, string>;
   readonly rateLimit?: RateLimitInfo;
+  readonly requestId?: string;
 }
 
 /**
@@ -31,6 +32,7 @@ export function toJSON<T>(response: ApiResponse<T>): SerializableApiResponse<T> 
     status: response.status,
     headers,
     ...(response.rateLimit !== undefined ? { rateLimit: response.rateLimit } : {}),
+    ...(response.requestId !== undefined ? { requestId: response.requestId } : {}),
   };
 }
 
@@ -133,17 +135,22 @@ export async function parseResponseBody(
  * fields inside it are undefined when the corresponding header is absent.
  * {@link ApiResponse.rateLimit} remains optional at the type level so custom
  * `Transport` implementations may omit it entirely.
+ *
+ * The `requestId` parameter carries the server-assigned request id captured
+ * from the response headers (B011). Pass `undefined` when the header was absent.
  */
 export function buildApiResponse(
   response: Response,
   data: unknown,
   rateLimit: RateLimitInfo,
+  requestId?: string,
 ): ApiResponse<unknown> {
   return {
     data,
     status: response.status,
     headers: response.headers,
     rateLimit,
+    ...(requestId !== undefined ? { requestId } : {}),
   };
 }
 

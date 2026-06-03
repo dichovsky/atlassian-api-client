@@ -64,6 +64,18 @@ export interface ApiResponse<T> {
    * header is absent or malformed.
    */
   readonly rateLimit?: RateLimitInfo;
+  /**
+   * Server-assigned request identifier captured from the response headers
+   * (B011). `HttpTransport` reads the first match from
+   * {@link ClientConfig.requestId | `requestId.readResponseHeaders`}
+   * (defaults to `['X-AREQUESTID', 'X-Request-Id']`) on both the success and
+   * error paths. Useful for correlating client-side logs with server-side
+   * traces. `undefined` when the server did not return a matching header.
+   *
+   * Note: this reflects what the **server returned**, which may differ from
+   * the outbound id sent via `requestId.generate` (they are kept distinct).
+   */
+  readonly requestId?: string;
 }
 
 /** Transport abstraction — the only interface resource modules depend on. */
@@ -205,6 +217,17 @@ export interface ClientConfig {
   readonly logger?: Logger;
   /** Optional middleware chain for request/response interception. */
   readonly middleware?: Middleware[];
+  /**
+   * X-Request-Id propagation options (B011).
+   *
+   * Inbound capture is always-on: the transport reads the server's response
+   * request-id header (per {@link RequestIdOptions.readResponseHeaders}) and
+   * exposes it on {@link ApiResponse.requestId} and {@link HttpError.requestId}.
+   *
+   * Outbound generation is opt-in: set `generate: true` to attach a unique id
+   * to every outgoing request. The same id is reused across retry attempts.
+   */
+  readonly requestId?: RequestIdOptions;
 }
 
 /**
@@ -245,6 +268,49 @@ export interface ResolvedConfig {
   readonly logger?: Logger;
   /** Optional middleware chain. */
   readonly middleware?: Middleware[];
+  /**
+   * Resolved X-Request-Id propagation options. Present only when the caller
+   * supplied `ClientConfig.requestId`; `undefined` means feature is unconfigured
+   * (inbound capture still always runs via the transport defaults).
+   */
+  readonly requestId?: RequestIdOptions;
+}
+
+/**
+ * Options controlling X-Request-Id propagation (B011).
+ *
+ * @example
+ * ```ts
+ * const config: ClientConfig = {
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'token' },
+ *   requestId: { generate: true },
+ * };
+ * ```
+ */
+export interface RequestIdOptions {
+  /**
+   * When `true`, the transport generates a unique id for each top-level
+   * `request()` call and sends it in {@link header}. The same id is reused
+   * across all retry attempts so the server can correlate them. Default: `false`.
+   */
+  readonly generate?: boolean;
+  /**
+   * Name of the outbound request header to carry the generated id.
+   * Default: `'X-Request-Id'`.
+   */
+  readonly header?: string;
+  /**
+   * Factory function used to produce the outbound request id. Must return a
+   * non-empty string. Default: `crypto.randomUUID` (from `node:crypto`).
+   */
+  readonly generator?: () => string;
+  /**
+   * Ordered list of response header names to look for the server-assigned
+   * request id (case-insensitive via `Headers.get`). The first matching header
+   * wins. Default: `['X-AREQUESTID', 'X-Request-Id']`.
+   */
+  readonly readResponseHeaders?: readonly string[];
 }
 
 /**

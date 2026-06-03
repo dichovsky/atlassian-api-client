@@ -26,6 +26,7 @@ export type {
   Transport,
   Logger,
   Middleware,
+  RequestIdOptions,
 } from './core/index.js';
 
 // Core config and transport
