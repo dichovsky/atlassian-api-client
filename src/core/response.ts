@@ -53,6 +53,7 @@ export async function safeParseBody(response: Response, maxBytes?: number): Prom
     text = await readBodyAsText(response, maxBytes);
   } catch (error) {
     if (error instanceof ResponseTooLargeError) throw error;
+    if (isAbortError(error)) throw error;
     return undefined;
   }
   if (text === '') return undefined;
@@ -61,6 +62,10 @@ export async function safeParseBody(response: Response, maxBytes?: number): Prom
   } catch {
     return undefined;
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 /**
