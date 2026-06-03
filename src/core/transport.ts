@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Transport, RequestOptions, ApiResponse, ResolvedConfig } from './types.js';
 import { hashAuthValue } from './auth-identity.js';
 import type { AuthProvider } from './auth.js';
@@ -100,7 +101,20 @@ export class HttpTransport implements Transport {
     //
     // `executeFetch` still merges the auth provider's headers via
     // `buildHeaders`, so the credential path on the wire is unchanged.
-    const augmentedOptions = this.injectAuthIdentity(options);
+    let augmentedOptions = this.injectAuthIdentity(options);
+
+    // B011: outbound request-id injection (opt-in). The id is generated ONCE
+    // here — before executeWithRetry — so all retry attempts carry the SAME
+    // id, enabling server-side correlation of a logical request across retries.
+    if (this.config.requestId?.generate === true) {
+      const header = this.config.requestId.header ?? 'X-Request-Id';
+      const generator = this.config.requestId.generator ?? randomUUID;
+      const id = generator();
+      augmentedOptions = {
+        ...augmentedOptions,
+        headers: { ...(augmentedOptions.headers ?? {}), [header]: id },
+      };
+    }
 
     const response = await executeWithRetry(
       () => this.requestHandler(augmentedOptions),
@@ -210,6 +224,13 @@ export class HttpTransport implements Transport {
         throw error;
       }
 
+      // B011: capture the server-assigned request id from the response headers.
+      // Always-on with no config required. Prefer X-AREQUESTID (Atlassian's
+      // actual header), then fall back to X-Request-Id. The list is configurable
+      // via config.requestId.readResponseHeaders.
+      const readHeaders = this.config.requestId?.readResponseHeaders ?? DEFAULT_INBOUND_HEADERS;
+      const serverRequestId = captureRequestId(response.headers, readHeaders);
+
       if (!response.ok) {
         // B026: cap the error-path body too. A hostile / misconfigured upstream
         // returning a multi-GB 5xx body would otherwise OOM us before we could
@@ -223,7 +244,7 @@ export class HttpTransport implements Transport {
         );
         const retryAfterMs = getRetryAfterMs(response.headers);
         const retryAfterSeconds = retryAfterMs !== undefined ? retryAfterMs / 1000 : undefined;
-        throw createHttpError(response.status, errBody, retryAfterSeconds);
+        throw createHttpError(response.status, errBody, retryAfterSeconds, serverRequestId);
       }
 
       const data: unknown = await parseBodyWithTimeoutHandling(
@@ -249,11 +270,31 @@ export class HttpTransport implements Transport {
         });
       }
 
-      return buildApiResponse(response, data, rateLimit);
+      return buildApiResponse(response, data, rateLimit, serverRequestId);
     } finally {
       clearTimeout(timeoutId);
     }
   }
+}
+
+/**
+ * Default inbound response headers to check for a server-assigned request id
+ * (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the
+ * conventional RFC draft / de-facto standard fallback.
+ */
+const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];
+
+/**
+ * Read the first matching request-id header from the response. Returns the
+ * header value, or `undefined` when none of the candidates are present.
+ * `Headers.get()` is case-insensitive per the WHATWG Fetch spec.
+ */
+function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined {
+  for (const name of candidates) {
+    const value = headers.get(name);
+    if (value !== null) return value;
+  }
+  return undefined;
 }
 
 async function parseBodyWithTimeoutHandling<T>(

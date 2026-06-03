@@ -540,4 +540,58 @@ describe('HttpError.toJSON()', () => {
     expect(json).not.toHaveProperty('responseBody');
     expect(json).toMatchObject({ status: 401, message: 'denied' });
   });
+
+  it('B011: includes requestId in toJSON when present', () => {
+    const err = new HttpError('err', 500, undefined, undefined, 'HTTP_ERROR', 'req-abc');
+    const json = err.toJSON();
+    expect(json.requestId).toBe('req-abc');
+  });
+
+  it('B011: omits requestId from toJSON when absent', () => {
+    const err = new HttpError('err', 500);
+    const json = err.toJSON();
+    expect(json).not.toHaveProperty('requestId');
+  });
+});
+
+describe('HttpError B011: requestId field', () => {
+  it('stores requestId when provided to constructor', () => {
+    const err = new HttpError('msg', 500, undefined, undefined, 'HTTP_ERROR', 'trace-999');
+    expect(err.requestId).toBe('trace-999');
+  });
+
+  it('requestId is undefined when not provided', () => {
+    const err = new HttpError('msg', 500);
+    expect(err.requestId).toBeUndefined();
+  });
+
+  it('createHttpError threads requestId to AuthenticationError (401)', () => {
+    const err = createHttpError(401, undefined, undefined, 'rid-401');
+    expect(err.requestId).toBe('rid-401');
+  });
+
+  it('createHttpError threads requestId to ForbiddenError (403)', () => {
+    const err = createHttpError(403, undefined, undefined, 'rid-403');
+    expect(err.requestId).toBe('rid-403');
+  });
+
+  it('createHttpError threads requestId to NotFoundError (404)', () => {
+    const err = createHttpError(404, undefined, undefined, 'rid-404');
+    expect(err.requestId).toBe('rid-404');
+  });
+
+  it('createHttpError threads requestId to RateLimitError (429)', () => {
+    const err = createHttpError(429, undefined, 30, 'rid-429');
+    expect(err.requestId).toBe('rid-429');
+  });
+
+  it('createHttpError threads requestId to generic HttpError (500)', () => {
+    const err = createHttpError(500, undefined, undefined, 'rid-500');
+    expect(err.requestId).toBe('rid-500');
+  });
+
+  it('createHttpError with no requestId → requestId undefined', () => {
+    const err = createHttpError(500);
+    expect(err.requestId).toBeUndefined();
+  });
 });

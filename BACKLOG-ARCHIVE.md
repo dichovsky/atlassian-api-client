@@ -2644,3 +2644,11 @@
 - [x] 🔴 🧩 API: B854 Jira: expose POST /rest/api/3/workflows/update/validation
   - **Impl:** `WorkflowsResource.validateWorkflowUpdate(body: WorkflowUpdateValidateRequest)` → `WorkflowValidationErrorList`. CLI: `atlas jira workflows validate-update --body '{"payload":{...}}'`. Required `payload` field wraps the update body; optional `validationOptions.levels` array.
   - **Rat:** Spec-verified: POST /rest/api/3/workflows/update/validation. Request: `WorkflowUpdateValidateRequestBean` (required: `payload`; optional: `validationOptions`). Response: `WorkflowValidationErrorList` with `errors[]` including code/message/level/type/elementReference. Not deprecated.
+
+## ⚙️ Core — B011 (2026-06-03)
+
+- [x] 🟡 📦 Core: B011 X-Request-Id propagation
+  - files: `src/core/types.ts`, `src/core/transport.ts`, `src/core/errors.ts`, `src/core/config.ts`, `src/core/response.ts`, `test/core/transport.test.ts`, `test/core/errors.test.ts`, `test/core/config.test.ts`
+  - deps: B006 archived
+  - **Impl:** Inbound capture always-on: `executeFetch` reads `X-AREQUESTID` then `X-Request-Id` from every response (configurable via `RequestIdOptions.readResponseHeaders`); exposes the value on `ApiResponse.requestId` (success) and `HttpError.requestId` (errors, also included in `toJSON()`). Outbound generation opt-in: when `ClientConfig.requestId.generate: true`, a UUID is generated ONCE per `request()` call (before `executeWithRetry`) and injected immutably into headers so all retry attempts carry the same id. Header name and generator are configurable. New type `RequestIdOptions` exported from package root.
+  - **Rat:** Enable server-side trace correlation from client logs; stable-across-retries design lets servers correlate a logical request regardless of how many attempts it took. Additive/opt-in outbound path avoids breaking existing middleware or header policies.

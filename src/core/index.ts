@@ -12,6 +12,7 @@ export type {
   RateLimitInfo,
   Logger,
   Middleware,
+  RequestIdOptions,
 } from './types.js';
 
 // Errors

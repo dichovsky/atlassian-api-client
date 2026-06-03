@@ -16,6 +16,13 @@ export class HttpError extends AtlassianError {
   readonly status: number;
   /** Parsed response body, if any. */
   readonly responseBody?: unknown;
+  /**
+   * Server-assigned request identifier captured from the error response
+   * headers (B011). Matches the value of `ApiResponse.requestId` that would
+   * have been set had the request succeeded. `undefined` when the server did
+   * not return a matching header.
+   */
+  readonly requestId?: string;
 
   constructor(
     message: string,
@@ -23,20 +30,29 @@ export class HttpError extends AtlassianError {
     responseBody?: unknown,
     options?: ErrorOptions,
     code = 'HTTP_ERROR',
+    requestId?: string,
   ) {
     super(message, code, options);
     this.name = 'HttpError';
     this.status = status;
     this.responseBody = responseBody;
+    this.requestId = requestId;
   }
 
   /**
    * Safe serialisation — omits `responseBody` to prevent raw API payloads
    * (which may include internal tenant identifiers or auth details) from
    * being sent to log aggregators via `JSON.stringify(error)`.
+   * `requestId` is included as it is non-secret and useful for log correlation.
    */
   toJSON(): Record<string, unknown> {
-    return { name: this.name, code: this.code, status: this.status, message: this.message };
+    return {
+      name: this.name,
+      code: this.code,
+      status: this.status,
+      message: this.message,
+      ...(this.requestId !== undefined ? { requestId: this.requestId } : {}),
+    };
   }
 }
 
@@ -57,8 +73,20 @@ export class HttpError extends AtlassianError {
  * ```
  */
 export class AuthenticationError extends HttpError {
-  constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
-    super(message ?? 'Authentication failed', 401, responseBody, options, 'AUTHENTICATION_ERROR');
+  constructor(
+    message?: string,
+    responseBody?: unknown,
+    options?: ErrorOptions,
+    requestId?: string,
+  ) {
+    super(
+      message ?? 'Authentication failed',
+      401,
+      responseBody,
+      options,
+      'AUTHENTICATION_ERROR',
+      requestId,
+    );
     this.name = 'AuthenticationError';
   }
 }
@@ -69,8 +97,13 @@ export class AuthenticationError extends HttpError {
  * Thrown when the API returns a 403 status code, indicating the authenticated user lacks permissions for the requested resource.
  */
 export class ForbiddenError extends HttpError {
-  constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
-    super(message ?? 'Access forbidden', 403, responseBody, options, 'FORBIDDEN_ERROR');
+  constructor(
+    message?: string,
+    responseBody?: unknown,
+    options?: ErrorOptions,
+    requestId?: string,
+  ) {
+    super(message ?? 'Access forbidden', 403, responseBody, options, 'FORBIDDEN_ERROR', requestId);
     this.name = 'ForbiddenError';
   }
 }
@@ -81,8 +114,20 @@ export class ForbiddenError extends HttpError {
  * Thrown when the API returns a 404 status code, indicating the requested resource does not exist.
  */
 export class NotFoundError extends HttpError {
-  constructor(message?: string, responseBody?: unknown, options?: ErrorOptions) {
-    super(message ?? 'Resource not found', 404, responseBody, options, 'NOT_FOUND_ERROR');
+  constructor(
+    message?: string,
+    responseBody?: unknown,
+    options?: ErrorOptions,
+    requestId?: string,
+  ) {
+    super(
+      message ?? 'Resource not found',
+      404,
+      responseBody,
+      options,
+      'NOT_FOUND_ERROR',
+      requestId,
+    );
     this.name = 'NotFoundError';
   }
 }
@@ -102,8 +147,16 @@ export class RateLimitError extends HttpError {
     retryAfter?: number,
     responseBody?: unknown,
     options?: ErrorOptions,
+    requestId?: string,
   ) {
-    super(message ?? 'Rate limit exceeded', 429, responseBody, options, 'RATE_LIMIT_ERROR');
+    super(
+      message ?? 'Rate limit exceeded',
+      429,
+      responseBody,
+      options,
+      'RATE_LIMIT_ERROR',
+      requestId,
+    );
     this.name = 'RateLimitError';
     this.retryAfter = retryAfter;
   }
@@ -223,26 +276,35 @@ export class ResponseTooLargeError extends AtlassianError {
  * @param status - HTTP status code.
  * @param body - Parsed response body (used to extract error message).
  * @param retryAfterSeconds - Retry-After header value in seconds (for 429 responses).
+ * @param requestId - Server-assigned request id captured from the error response headers (B011).
  * @returns An {@link HttpError} instance with the appropriate subclass for the status code.
  */
 export function createHttpError(
   status: number,
   body?: unknown,
   retryAfterSeconds?: number,
+  requestId?: string,
 ): HttpError {
   const message = extractErrorMessage(body);
 
   switch (status) {
     case 401:
-      return new AuthenticationError(message, body);
+      return new AuthenticationError(message, body, undefined, requestId);
     case 403:
-      return new ForbiddenError(message, body);
+      return new ForbiddenError(message, body, undefined, requestId);
     case 404:
-      return new NotFoundError(message, body);
+      return new NotFoundError(message, body, undefined, requestId);
     case 429:
-      return new RateLimitError(message, retryAfterSeconds, body);
+      return new RateLimitError(message, retryAfterSeconds, body, undefined, requestId);
     default:
-      return new HttpError(message ?? `HTTP error ${status}`, status, body);
+      return new HttpError(
+        message ?? `HTTP error ${status}`,
+        status,
+        body,
+        undefined,
+        'HTTP_ERROR',
+        requestId,
+      );
   }
 }
 

@@ -2023,4 +2023,285 @@ describe('HttpTransport', () => {
       expect(raw.bodyUsed).toBe(false);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // B011 — X-Request-Id propagation
+  // -------------------------------------------------------------------------
+  describe('X-Request-Id propagation (B011)', () => {
+    // ---- inbound capture (always-on) ----------------------------------------
+
+    it('captures X-AREQUESTID from a successful response', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(makeResponse(200, { ok: true }, { 'X-AREQUESTID': 'arq-abc123' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.requestId).toBe('arq-abc123');
+    });
+
+    it('falls back to X-Request-Id when X-AREQUESTID is absent', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(makeResponse(200, { ok: true }, { 'X-Request-Id': 'req-fallback' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.requestId).toBe('req-fallback');
+    });
+
+    it('prefers X-AREQUESTID over X-Request-Id when both are present', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        makeResponse(
+          200,
+          { ok: true },
+          {
+            'X-AREQUESTID': 'arq-primary',
+            'X-Request-Id': 'req-secondary',
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.requestId).toBe('arq-primary');
+    });
+
+    it('requestId is undefined when no matching inbound header is present', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.requestId).toBeUndefined();
+    });
+
+    it('captures requestId on the error path (HttpError.requestId)', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          makeResponse(500, { message: 'oops' }, { 'X-AREQUESTID': 'arq-err-001' }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+        (e: unknown) => e,
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as { requestId?: string }).requestId).toBe('arq-err-001');
+    });
+
+    it('HttpError.requestId is undefined when server returns no matching header on error response', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(404, { message: 'not found' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const error = await runRequest(transport, { method: 'GET', path: '/pages/x' }).catch(
+        (e: unknown) => e,
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as { requestId?: string }).requestId).toBeUndefined();
+    });
+
+    it('HttpError.toJSON() includes requestId when present', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          makeResponse(401, { message: 'unauth' }, { 'X-Request-Id': 'json-req-42' }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+        (e: unknown) => e,
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      const json = (error as { toJSON: () => Record<string, unknown> }).toJSON();
+      expect(json.requestId).toBe('json-req-42');
+    });
+
+    it('HttpError.toJSON() omits requestId when absent', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(403, { message: 'forbidden' }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      const error = await runRequest(transport, { method: 'GET', path: '/pages' }).catch(
+        (e: unknown) => e,
+      );
+
+      expect(error).toBeInstanceOf(Error);
+      const json = (error as { toJSON: () => Record<string, unknown> }).toJSON();
+      expect(json).not.toHaveProperty('requestId');
+    });
+
+    it('respects custom readResponseHeaders list (config override)', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          makeResponse(200, { ok: true }, { 'X-Custom-Trace-Id': 'custom-trace-99' }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { readResponseHeaders: ['X-Custom-Trace-Id'] },
+      });
+      const result = await runRequest<ApiResponse<unknown>>(transport, {
+        method: 'GET',
+        path: '/pages',
+      });
+
+      expect(result.requestId).toBe('custom-trace-99');
+    });
+
+    // ---- outbound generation (opt-in) ---------------------------------------
+
+    it('default config: NO outbound X-Request-Id header is sent', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = makeTransport({ ...defaultConfig, retries: 0 });
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers['X-Request-Id']).toBeUndefined();
+      expect(headers['X-AREQUESTID']).toBeUndefined();
+    });
+
+    it('sends X-Request-Id when generate: true', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true },
+      });
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers['X-Request-Id']).toBeDefined();
+      expect(typeof headers['X-Request-Id']).toBe('string');
+      expect((headers['X-Request-Id'] ?? '').length).toBeGreaterThan(0);
+    });
+
+    it('uses custom header name when header is configured', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true, header: 'X-My-Trace-Id' },
+      });
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers['X-My-Trace-Id']).toBeDefined();
+      expect(headers['X-Request-Id']).toBeUndefined();
+    });
+
+    it('uses the custom generator function when provided', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(makeResponse(200, {}));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const customGenerator = vi.fn().mockReturnValue('my-custom-id-xyz');
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true, generator: customGenerator },
+      });
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      expect(customGenerator).toHaveBeenCalledOnce();
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers['X-Request-Id']).toBe('my-custom-id-xyz');
+    });
+
+    it('generates a new id per top-level request() call', async () => {
+      // Use a factory so each call gets a fresh Response (body can only be read once)
+      const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(makeResponse(200, {})));
+      vi.stubGlobal('fetch', fetchMock);
+
+      let counter = 0;
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 0,
+        requestId: { generate: true, generator: () => `id-${++counter}` },
+      });
+
+      await runRequest(transport, { method: 'GET', path: '/pages/1' });
+      await runRequest(transport, { method: 'GET', path: '/pages/2' });
+
+      const id1 = (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers as Record<
+        string,
+        string
+      >;
+      const id2 = (fetchMock.mock.calls[1] as [string, RequestInit])[1].headers as Record<
+        string,
+        string
+      >;
+      expect(id1['X-Request-Id']).toBe('id-1');
+      expect(id2['X-Request-Id']).toBe('id-2');
+    });
+
+    it('sends the SAME outbound id on all retry attempts', async () => {
+      const sentIds: string[] = [];
+      const fetchMock = vi.fn((_url: string, init: RequestInit): Promise<Response> => {
+        const hdrs = init.headers as Record<string, string>;
+        sentIds.push(hdrs['X-Request-Id'] ?? '');
+        if (sentIds.length < 3) {
+          return Promise.resolve(makeResponse(500, { message: 'err' }));
+        }
+        return Promise.resolve(makeResponse(200, { ok: true }));
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const transport = new HttpTransport({
+        ...defaultConfig,
+        retries: 2,
+        retryDelay: 0,
+        requestId: { generate: true, generator: () => 'stable-id-across-retries' },
+      });
+
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+
+      // 3 total attempts (initial + 2 retries)
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      // All three must carry the same id
+      expect(sentIds).toEqual([
+        'stable-id-across-retries',
+        'stable-id-across-retries',
+        'stable-id-across-retries',
+      ]);
+    });
+  });
 });

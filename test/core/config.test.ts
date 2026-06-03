@@ -573,4 +573,98 @@ describe('resolveConfig', () => {
       expect(() => resolveConfig(config)).toThrow(ValidationError);
     });
   });
+
+  describe('requestId validation (B011)', () => {
+    it('accepts requestId: { generate: true }', () => {
+      const result = resolveConfig({ ...validBasicConfig, requestId: { generate: true } });
+      expect(result.requestId).toEqual({ generate: true });
+    });
+
+    it('accepts requestId: { generate: false }', () => {
+      const result = resolveConfig({ ...validBasicConfig, requestId: { generate: false } });
+      expect(result.requestId).toEqual({ generate: false });
+    });
+
+    it('accepts requestId with custom header', () => {
+      const result = resolveConfig({
+        ...validBasicConfig,
+        requestId: { generate: true, header: 'X-Trace-Id' },
+      });
+      expect(result.requestId?.header).toBe('X-Trace-Id');
+    });
+
+    it('accepts requestId with custom generator function', () => {
+      const gen = () => 'fixed-id';
+      const result = resolveConfig({
+        ...validBasicConfig,
+        requestId: { generate: true, generator: gen },
+      });
+      expect(result.requestId?.generator).toBe(gen);
+    });
+
+    it('accepts requestId with custom readResponseHeaders', () => {
+      const result = resolveConfig({
+        ...validBasicConfig,
+        requestId: { readResponseHeaders: ['X-Trace', 'X-Req-Id'] },
+      });
+      expect(result.requestId?.readResponseHeaders).toEqual(['X-Trace', 'X-Req-Id']);
+    });
+
+    it('throws ValidationError when requestId.generate is not a boolean', () => {
+      const config = {
+        ...validBasicConfig,
+        requestId: { generate: 'yes' },
+      } as unknown as ClientConfig;
+      expect(() => resolveConfig(config)).toThrow(ValidationError);
+      expect(() => resolveConfig(config)).toThrow(/requestId\.generate/);
+    });
+
+    it('throws ValidationError when requestId.header is an empty string', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, requestId: { header: '' } })).toThrow(
+        ValidationError,
+      );
+      expect(() => resolveConfig({ ...validBasicConfig, requestId: { header: '' } })).toThrow(
+        /requestId\.header/,
+      );
+    });
+
+    it('throws ValidationError when requestId.header is whitespace-only', () => {
+      expect(() => resolveConfig({ ...validBasicConfig, requestId: { header: '   ' } })).toThrow(
+        ValidationError,
+      );
+    });
+
+    it('throws ValidationError when requestId.generator is not a function', () => {
+      const config = {
+        ...validBasicConfig,
+        requestId: { generator: 'not-a-function' },
+      } as unknown as ClientConfig;
+      expect(() => resolveConfig(config)).toThrow(ValidationError);
+      expect(() => resolveConfig(config)).toThrow(/requestId\.generator/);
+    });
+
+    it('throws ValidationError when requestId.readResponseHeaders is empty array', () => {
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, requestId: { readResponseHeaders: [] } }),
+      ).toThrow(ValidationError);
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, requestId: { readResponseHeaders: [] } }),
+      ).toThrow(/requestId\.readResponseHeaders/);
+    });
+
+    it('throws ValidationError when requestId.readResponseHeaders contains empty string', () => {
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, requestId: { readResponseHeaders: ['X-Id', ''] } }),
+      ).toThrow(ValidationError);
+      expect(() =>
+        resolveConfig({ ...validBasicConfig, requestId: { readResponseHeaders: ['X-Id', ''] } }),
+      ).toThrow(/requestId\.readResponseHeaders entries/);
+    });
+
+    it('resolveConfig passes through requestId to ResolvedConfig', () => {
+      const opts = { generate: true, header: 'X-Request-Id' };
+      const result = resolveConfig({ ...validBasicConfig, requestId: opts });
+      expect(result.requestId).toEqual(opts);
+    });
+  });
 });

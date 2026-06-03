@@ -85,6 +85,31 @@ describe('toJSON', () => {
     expect('rateLimit' in json).toBe(false);
   });
 
+  it('B011: includes requestId when present', () => {
+    const response: ApiResponse<null> = {
+      data: null,
+      status: 200,
+      headers: new Headers(),
+      requestId: 'arq-xyz-789',
+    };
+
+    const json = toJSON(response);
+
+    expect(json.requestId).toBe('arq-xyz-789');
+  });
+
+  it('B011: omits requestId when absent', () => {
+    const response: ApiResponse<null> = {
+      data: null,
+      status: 200,
+      headers: new Headers(),
+    };
+
+    const json = toJSON(response);
+
+    expect('requestId' in json).toBe(false);
+  });
+
   it('handles an empty Headers instance', () => {
     const response: ApiResponse<number> = {
       data: 0,
@@ -192,6 +217,24 @@ describe('buildApiResponse', () => {
     expect(api.status).toBe(201);
     expect(api.headers.get('x-foo')).toBe('bar');
     expect(api.rateLimit).toBe(rateLimit);
+  });
+
+  it('B011: includes requestId when provided', () => {
+    const response = new Response('{}', { status: 200 });
+    const rateLimit: RateLimitInfo = {};
+
+    const api = buildApiResponse(response, {}, rateLimit, 'request-id-abc');
+
+    expect(api.requestId).toBe('request-id-abc');
+  });
+
+  it('B011: omits requestId when undefined', () => {
+    const response = new Response('{}', { status: 200 });
+    const rateLimit: RateLimitInfo = {};
+
+    const api = buildApiResponse(response, {}, rateLimit, undefined);
+
+    expect(api.requestId).toBeUndefined();
   });
 });
 

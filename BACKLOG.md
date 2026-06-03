@@ -16,9 +16,6 @@
 - [ ] 🟡 📦 Core: B010 Circuit breaker per `baseUrl`
   - files: `src/core/circuit-breaker.ts`, `src/core/config.ts`, `src/core/transport.ts`, `test/core/circuit-breaker.test.ts`
   - deps: B006 archived
-- [ ] 🟡 📦 Core: B011 X-Request-Id propagation
-  - files: `src/core/types.ts`, `src/core/transport.ts`, `src/core/errors.ts`, `test/core/transport.test.ts`
-  - deps: B006 archived
 - [ ] 🟡 📦 Core: B015 RS256 Connect JWT
   - files: `src/core/connect-jwt.ts`, `src/core/index.ts`
   - deps: none

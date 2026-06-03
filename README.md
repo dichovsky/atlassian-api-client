@@ -544,6 +544,40 @@ const client = new ConfluenceClient({
 });
 ```
 
+### X-Request-Id propagation
+
+The client always captures the server-assigned request id from response headers (`X-AREQUESTID` first, then `X-Request-Id`) and exposes it as `response.requestId`. On error responses the id is available as `error.requestId` (also serialised by `error.toJSON()` for structured logging).
+
+Outbound id generation is opt-in. Set `requestId: { generate: true }` to attach a UUID to every request. The **same id is reused across all retry attempts** so the server can correlate a logical request regardless of how many tries it took.
+
+```typescript
+import { ConfluenceClient, type RequestIdOptions } from 'atlassian-api-client';
+
+const client = new ConfluenceClient({
+  baseUrl: 'https://yourcompany.atlassian.net',
+  auth: { type: 'basic', email, apiToken },
+  requestId: {
+    generate: true, // attach X-Request-Id to every outbound request
+    header: 'X-Request-Id', // default; override to match your gateway's expected name
+    // generator: () => myIdGen(), // optional: replace crypto.randomUUID with your own factory
+    // readResponseHeaders: ['X-AREQUESTID', 'X-Request-Id'], // default inbound header list
+  },
+});
+
+// Success path — the server's response id is on the ApiResponse
+const response = await client.pages.get('123456');
+console.log('server request id:', response.requestId); // e.g. 'arq-a1b2c3...'
+
+// Error path — same field on HttpError, included in toJSON() for structured loggers
+try {
+  await client.pages.get('missing');
+} catch (err) {
+  if (err instanceof Error && 'requestId' in err) {
+    console.error('failed request id:', (err as { requestId?: string }).requestId);
+  }
+}
+```
+
 ### Proxy / custom `fetch` dispatcher
 
 Install [`undici`](https://www.npmjs.com/package/undici), then inject an `undici`-powered `fetch` to route transport requests through a proxy or tune keep-alive. OAuth token refresh has a separate `fetch` option; pass the same function to `createOAuthRefreshMiddleware` when refresh calls should use the proxy too.
