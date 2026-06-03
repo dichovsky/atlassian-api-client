@@ -7558,8 +7558,7 @@ async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<u
   switch (cmd.action) {
     // B890: GET /rest/api/3/worklog/deleted
     case 'deleted': {
-      const sinceRaw = asString(opts['since']);
-      const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+      const since = asNonNegativeInt(opts['since'], '--since');
       return client.worklog.getDeleted(since);
     }
 
@@ -7579,8 +7578,7 @@ async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<u
 
     // B892: GET /rest/api/3/worklog/updated
     case 'updated': {
-      const sinceRaw = asString(opts['since']);
-      const since = sinceRaw !== undefined ? Number(sinceRaw) : undefined;
+      const since = asNonNegativeInt(opts['since'], '--since');
       const expand = asString(opts['expand']);
       return client.worklog.getUpdated({
         ...(since !== undefined && { since }),

@@ -25401,6 +25401,13 @@ describe('executeJiraCommand', () => {
       expect(jiraWorklogMock.getDeleted).toHaveBeenCalledWith(1700000000000);
     });
 
+    it('worklog deleted rejects a non-numeric --since', async () => {
+      await expect(
+        executeJiraCommand(cmd('worklog', 'deleted', [], { since: 'not-a-timestamp' }), GLOBALS),
+      ).rejects.toThrow('--since must be a non-negative integer');
+      expect(jiraWorklogMock.getDeleted).not.toHaveBeenCalled();
+    });
+
     it('worklog list calls getList with ids', async () => {
       const worklogs = [{ id: '1' }, { id: '2' }];
       jiraWorklogMock.getList.mockResolvedValue(worklogs);
@@ -25455,6 +25462,13 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(cmd('worklog', 'updated', [], { since: '1700000000000' }), GLOBALS);
 
       expect(jiraWorklogMock.getUpdated).toHaveBeenCalledWith({ since: 1700000000000 });
+    });
+
+    it('worklog updated rejects a non-numeric --since', async () => {
+      await expect(
+        executeJiraCommand(cmd('worklog', 'updated', [], { since: 'not-a-timestamp' }), GLOBALS),
+      ).rejects.toThrow('--since must be a non-negative integer');
+      expect(jiraWorklogMock.getUpdated).not.toHaveBeenCalled();
     });
 
     it('worklog updated calls getUpdated with expand', async () => {
