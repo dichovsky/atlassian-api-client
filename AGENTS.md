@@ -65,4 +65,4 @@ Fix:
 Rule:
 ```
 
-Store project-specific mistakes in `.Codex/memory`; generalizable rules in global memory.
+Store project-specific mistakes in `.codex/memory`; generalizable rules in global memory.
