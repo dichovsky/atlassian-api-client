@@ -14334,6 +14334,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('group-user-picker pick forwards exclude-connect-users', async () => {
+      // Arrange
+      jiraGroupUserPickerMock.pick.mockResolvedValue({});
+
+      // Act
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], { 'exclude-connect-users': true }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({ excludeConnectUsers: true }),
+      );
+    });
+
     it('group-user-picker unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('group-user-picker', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown group-user-picker action',
