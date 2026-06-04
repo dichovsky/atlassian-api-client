@@ -75,7 +75,7 @@ export class MockServer {
     return this._baseUrl;
   }
 
-  /** All requests captured since the last `resetRequests()` call. */
+  /** All requests captured since the last `reset()` call. */
   get requests(): readonly CapturedRequest[] {
     return this._requests;
   }
@@ -89,11 +89,6 @@ export class MockServer {
   /** Set the fallback handler used when no per-path handler matches. */
   setDefaultHandler(handler: Handler): void {
     this.defaultHandler = handler;
-  }
-
-  /** Clear captured requests (useful in beforeEach when the server is shared). */
-  resetRequests(): void {
-    this._requests = [];
   }
 
   /** Clear both captured requests and all registered per-path handlers. */
