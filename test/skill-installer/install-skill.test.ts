@@ -21,8 +21,8 @@ import {
   stampVersion,
   readSkillVersion,
   runInstall,
-  executeInstallSkill,
-} from '../../src/cli/commands/install-skill.js';
+} from '../../src/skill-installer/index.js';
+import { executeInstallSkill } from '../../src/cli/commands/install-skill.js';
 import type { ParsedCommand } from '../../src/cli/types.js';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));

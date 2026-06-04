@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCommand } from '../../src/cli/router.js';
-import { readSkillVersion } from '../../src/cli/commands/install-skill.js';
+import { readSkillVersion } from '../../src/skill-installer/index.js';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(TEST_DIR, '..', '..');
