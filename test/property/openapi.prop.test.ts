@@ -48,8 +48,13 @@ const nonIdentifierArb = fc
 // backslash, and other special chars.
 const enumValueArb = fc.string({ minLength: 0, maxLength: 40 });
 
-// Arbitrary for description strings — may contain "*/" which must be escaped.
-const descriptionArb = fc.string({ minLength: 0, maxLength: 100 });
+// Arbitrary for description strings — biased toward comment-breaking tokens so
+// the escape-branch assertion runs frequently (otherwise "*/" appears in ~1/5000
+// unbiased strings, starving the branch). Most generated descriptions will contain
+// at least one "*/" sequence, exercising the escaping path in every run.
+const descriptionArb = fc
+  .array(fc.constantFrom('*/', '*', '/', 'x', ' ', 'a', 'b'), { maxLength: 40 })
+  .map((a) => a.join(''));
 
 // ---------------------------------------------------------------------------
 // Property 1: valid identifier schema names → accepted, appear in output
@@ -66,11 +71,16 @@ describe('generateTypes: valid schema names (property)', () => {
     );
   });
 
-  it('emits the schema name in the generated source', () => {
+  it('emits the schema name as a type or interface declaration in the generated source', () => {
     fc.assert(
       fc.property(identifierArb, (name) => {
         const { source } = generateTypes(makeSpec({ [name]: { type: 'string' } }));
-        expect(source).toContain(name);
+        // Assert the name appears in a declaration position: "export type <name> " or
+        // "export interface <name> {". Using toContain with a space after the name
+        // avoids regex issues with metacharacters ($) in valid identifier names.
+        const asType = `export type ${name} `;
+        const asInterface = `export interface ${name} `;
+        expect(source.includes(asType) || source.includes(asInterface)).toBe(true);
       }),
       FC_OPTIONS,
     );
@@ -244,32 +254,69 @@ describe('generateTypes: non-identifier property key quoting (property)', () => 
 });
 
 // ---------------------------------------------------------------------------
-// Property 6: allOf / oneOf / anyOf schemas with descriptions are safe
+// Property 6: allOf / oneOf / anyOf schemas emit correct operator and member types
 // ---------------------------------------------------------------------------
 
-describe('generateTypes: composed schemas with descriptions (property)', () => {
-  it('allOf schemas with injected descriptions are safe against comment injection', () => {
+// Arbitrary that generates a composed-schema keyword together with the
+// expected TypeScript join operator.
+const composedKeywordArb = fc.constantFrom(
+  { keyword: 'allOf' as const, operator: '&' },
+  { keyword: 'oneOf' as const, operator: '|' },
+  { keyword: 'anyOf' as const, operator: '|' },
+);
+
+describe('generateTypes: composed schemas (property)', () => {
+  it('emits export type with correct operator joining member primitive types', () => {
+    // Use two simple primitive member schemas so the expected type string is
+    // fully predictable without resolving $ref chains.
+    fc.assert(
+      fc.property(
+        identifierArb,
+        composedKeywordArb,
+        fc.array(
+          fc.constantFrom(
+            { schema: { type: 'string' } as const, tsType: 'string' },
+            { schema: { type: 'number' } as const, tsType: 'number' },
+            { schema: { type: 'boolean' } as const, tsType: 'boolean' },
+          ),
+          { minLength: 1, maxLength: 4 },
+        ),
+        (name, { keyword, operator }, members) => {
+          const memberSchemas = members.map((m) => m.schema);
+          const memberTypes = members.map((m) => m.tsType);
+          const { source } = generateTypes(makeSpec({ [name]: { [keyword]: memberSchemas } }));
+          // Must declare the name as a type alias (composed schemas never emit
+          // an interface — they always emit `export type`). Using toContain with
+          // a space after the name avoids regex issues with metacharacters ($).
+          expect(source).toContain(`export type ${name} `);
+          // Must join member types with the correct operator.
+          const expectedRhs = memberTypes.join(` ${operator} `);
+          expect(source).toContain(`export type ${name} = ${expectedRhs};`);
+        },
+      ),
+      FC_OPTIONS,
+    );
+  });
+
+  it('composed types carry no JSDoc description (documented invariant: generateComposedType never emits one)', () => {
+    // generateComposedType intentionally does not read schema.description.
+    // This test documents and locks that invariant: no /** */ block must appear
+    // in the output for composed schemas (no accidental future JSDoc leakage).
     fc.assert(
       fc.property(identifierArb, descriptionArb, (name, description) => {
         const { source } = generateTypes(
           makeSpec({
             [name]: {
-              allOf: [{ $ref: '#/components/schemas/Base' }],
+              allOf: [{ type: 'string' }],
               description,
             },
           }),
         );
-        // The source must be produced without error.
-        expect(source).toContain('export type');
-        // If description had "*/" it should be escaped.
-        if (description.includes('*/')) {
-          expect(source).not.toContain(
-            // The raw "*/" must not appear inside the JSDoc opening /** ... */ context
-            // (it may appear at the structural closing of the JSDoc block itself).
-            // Verify the escaped form is present.
-            description, // raw description containing "*/" should not appear verbatim
-          );
-        }
+        // The output is exactly `export type <Name> = string;` — no JSDoc block.
+        expect(source).toContain(`export type ${name} = string;`);
+        // No JSDoc comment block (/** ... */) must appear anywhere in the output.
+        // The boilerplate uses // comments only; a /** indicates leaked description.
+        expect(source).not.toMatch(/\/\*\*/);
       }),
       FC_OPTIONS,
     );

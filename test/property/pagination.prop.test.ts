@@ -273,6 +273,95 @@ describe('paginateOffset (property)', () => {
       FC_OPTIONS,
     );
   });
+
+  it('yields all items and stops when the final page is short and carries no isLast/total', async () => {
+    // Exercises the short-page heuristic: a trailing page shorter than pageSize
+    // with neither isLast nor total signals termination. This is the regression
+    // class from PR #165 (silent row-drop when isLast===false was ignored).
+    // Here isLast is absent so the heuristic should fire correctly.
+    await fc.assert(
+      fc.asyncProperty(
+        fc
+          .tuple(
+            fc.integer({ min: 1, max: 3 }), // number of full interior pages
+            fc.integer({ min: 1, max: 9 }), // short final page size (< pageSize=10)
+          )
+          .chain(([numFull, lastSize]) => {
+            const pageSize = 10;
+            const fullPages: OffsetPaginatedResponse<number>[] = Array.from(
+              { length: numFull },
+              (_, pi) => ({
+                values: Array.from({ length: pageSize }, (__, pos) => pi * 100 + pos),
+                startAt: pi * pageSize,
+                maxResults: pageSize,
+                // No isLast, no total — only the short final page signals done
+              }),
+            );
+            const lastValues = Array.from({ length: lastSize }, (_, pos) => numFull * 100 + pos);
+            const lastPage: OffsetPaginatedResponse<number> = {
+              values: lastValues,
+              startAt: numFull * pageSize,
+              maxResults: pageSize,
+              // Intentionally no isLast and no total: short-page heuristic must trigger
+            };
+            const allPages = [...fullPages, lastPage];
+            const expected = [...fullPages.flatMap((p) => p.values), ...lastValues];
+            return fc.constant({ pages: allPages, expected, pageSize });
+          }),
+        async ({ pages, expected, pageSize }) => {
+          const transport = makeOffsetTransport(pages);
+          const result = await collect(paginateOffset<number>(transport, '/test', {}, pageSize));
+          expect(result).toEqual(expected);
+        },
+      ),
+      FC_OPTIONS,
+    );
+  });
+
+  it('honors explicit isLast=false on a short page and continues yielding remaining items', async () => {
+    // Exercises the PR #165 regression class: a short page that carries
+    // isLast===false must NOT be treated as the last page by the short-page
+    // heuristic. The paginator must continue and yield the subsequent pages.
+    await fc.assert(
+      fc.asyncProperty(
+        fc
+          .tuple(
+            fc.integer({ min: 1, max: 9 }), // short mid-stream page size (< pageSize=10)
+            fc.integer({ min: 1, max: 3 }), // number of full pages after the short one
+          )
+          .chain(([shortSize, numTrailing]) => {
+            const pageSize = 10;
+            // Page 0: a short page with explicit isLast=false (authoritative "more exists")
+            const shortPage: OffsetPaginatedResponse<number> = {
+              values: Array.from({ length: shortSize }, (_, i) => i),
+              startAt: 0,
+              maxResults: pageSize,
+              isLast: false, // authoritative signal: must not stop here
+            };
+            // Trailing full pages after the short one
+            const trailingPages: OffsetPaginatedResponse<number>[] = Array.from(
+              { length: numTrailing },
+              (_, pi) => ({
+                values: Array.from({ length: pageSize }, (__, pos) => (pi + 1) * 100 + pos),
+                startAt: shortSize + pi * pageSize,
+                maxResults: pageSize,
+                isLast: pi === numTrailing - 1 ? (true as boolean | undefined) : undefined,
+              }),
+            );
+            const allPages = [shortPage, ...trailingPages];
+            const expected = [...shortPage.values, ...trailingPages.flatMap((p) => p.values)];
+            return fc.constant({ pages: allPages, expected, pageSize });
+          }),
+        async ({ pages, expected, pageSize }) => {
+          const transport = makeOffsetTransport(pages);
+          const result = await collect(paginateOffset<number>(transport, '/test', {}, pageSize));
+          // Every item from every page must appear exactly once — no drops, no dups.
+          expect(result).toEqual(expected);
+        },
+      ),
+      FC_OPTIONS,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
