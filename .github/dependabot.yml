@@ -33,8 +33,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
 
+    # The github-actions ecosystem supports only `default-days` for cooldown;
+    # semver-granular keys are npm-only and rejected by Dependabot's validator.
     cooldown:
       default-days: 7
-      semver-patch-days: 3
-      semver-minor-days: 7
-      semver-major-days: 30
