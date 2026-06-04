@@ -60,9 +60,19 @@ describe('.github/dependabot.yml automated-update configuration (B031)', () => {
     expect(DEPENDABOT).toMatch(/semver-minor-days:\s*\d+/);
   });
 
-  it('sets semver-major cooldown with the longest window', () => {
-    // Verify the key exists with a positive integer value
-    expect(DEPENDABOT).toMatch(/semver-major-days:\s*[1-9]\d*/);
+  it('sets semver-major cooldown with the longest window (major >= minor >= patch)', () => {
+    const majorMatch = DEPENDABOT.match(/semver-major-days:\s*(\d+)/);
+    const minorMatch = DEPENDABOT.match(/semver-minor-days:\s*(\d+)/);
+    const patchMatch = DEPENDABOT.match(/semver-patch-days:\s*(\d+)/);
+    expect(majorMatch).not.toBeNull();
+    expect(minorMatch).not.toBeNull();
+    expect(patchMatch).not.toBeNull();
+    const majorDays = Number(majorMatch![1]);
+    const minorDays = Number(minorMatch![1]);
+    const patchDays = Number(patchMatch![1]);
+    // Riskier bumps must wait longer before Dependabot opens a PR (B031 security intent)
+    expect(majorDays).toBeGreaterThanOrEqual(minorDays);
+    expect(minorDays).toBeGreaterThanOrEqual(patchDays);
   });
 
   it('limits open pull requests to avoid PR flood', () => {
