@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "7811cd34e9ff4b2e4eb9ca9b7656bd01ccfcf5f2470ff76fdc8d1cd82b54de47",
+  "sourceHash": "282a399dfc342c723d88366d9901e501a0c162c6975d673be243b173b459b948",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3946,7 +3946,7 @@
         {
           "name": "executeInstallSkill",
           "kind": "function",
-          "line": 25,
+          "line": 10,
           "exported": true,
           "signature": "export function executeInstallSkill( cmd: ParsedCommand, stdout: (line: string) => void, stderr: (line: string) => void,…",
           "jsdoc": "CLI entrypoint for `atlas install-skill`. Returns the exit code."
@@ -3954,69 +3954,13 @@
         {
           "name": "emitResult",
           "kind": "function",
-          "line": 54,
+          "line": 39,
           "signature": "function emitResult( result: InstallSkillResult, stdout: (line: string) => void, stderr: (line: string) => void, ): void"
         }
       ],
       "imports": [
         "../../skill-installer/index.js",
         "../types.js"
-      ],
-      "reExports": [
-        {
-          "kind": "named",
-          "from": "../../skill-installer/index.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SKILL_NAME",
-              "original": "SKILL_NAME"
-            },
-            {
-              "exported": "InstallSkillError",
-              "original": "InstallSkillError"
-            },
-            {
-              "exported": "InstallSkillOptions",
-              "original": "InstallSkillOptions"
-            },
-            {
-              "exported": "InstallSkillResult",
-              "original": "InstallSkillResult"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "../../skill-installer/index.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "resolveSkillSource",
-              "original": "resolveSkillSource"
-            },
-            {
-              "exported": "resolvePackageVersion",
-              "original": "resolvePackageVersion"
-            },
-            {
-              "exported": "resolveInstallTarget",
-              "original": "resolveInstallTarget"
-            },
-            {
-              "exported": "stampVersion",
-              "original": "stampVersion"
-            },
-            {
-              "exported": "readSkillVersion",
-              "original": "readSkillVersion"
-            },
-            {
-              "exported": "runInstall",
-              "original": "runInstall"
-            }
-          ]
-        }
       ]
     },
     {
@@ -35255,8 +35199,7 @@
           "name": "realFs",
           "kind": "variable",
           "line": 168,
-          "exported": true,
-          "signature": "export const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => wr…"
+          "signature": "const realFs: FilesystemDeps = { readFile: (path) => readFileSync(path, 'utf8'), writeFile: (path, content) => writeFile…"
         },
         {
           "name": "resolveSkillSource",

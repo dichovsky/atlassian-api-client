@@ -6,21 +6,6 @@ import {
   type FilesystemDeps,
 } from '../../skill-installer/index.js';
 
-export {
-  SKILL_NAME,
-  InstallSkillError,
-  InstallSkillOptions,
-  InstallSkillResult,
-} from '../../skill-installer/index.js';
-export {
-  resolveSkillSource,
-  resolvePackageVersion,
-  resolveInstallTarget,
-  stampVersion,
-  readSkillVersion,
-  runInstall,
-} from '../../skill-installer/index.js';
-
 /** CLI entrypoint for `atlas install-skill`. Returns the exit code. */
 export function executeInstallSkill(
   cmd: ParsedCommand,

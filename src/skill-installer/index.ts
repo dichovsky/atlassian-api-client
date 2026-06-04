@@ -165,7 +165,7 @@ function writeFileNoFollow(path: string, content: string): void {
   }
 }
 
-export const realFs: FilesystemDeps = {
+const realFs: FilesystemDeps = {
   readFile: (path) => readFileSync(path, 'utf8'),
   writeFile: (path, content) => writeFileNoFollow(path, content),
   mkdir: (path) => mkdirSync(path, { recursive: true }),
