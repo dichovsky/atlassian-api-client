@@ -18,7 +18,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "noEmit": true
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*", "test/**/*", "examples/**/*", "bench/**/*"]
+  "include": ["src/**/*", "test/**/*", "examples/**/*", "bench/**/*", "scripts/**/*"]
 }
