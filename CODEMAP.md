@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.0.1"
   },
-  "sourceHash": "282a399dfc342c723d88366d9901e501a0c162c6975d673be243b173b459b948",
+  "sourceHash": "225b1c38a1c3344159a3f2c95665e6a9b91b17796804bf4c4cecd453e4dbf9ec",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -233,48 +233,54 @@
       "name": "Board",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 8,
+      "line": 9,
       "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…",
+      "jsdoc": "An agile board (Scrum, Kanban, or Simple) in Jira Software.",
       "typeOnly": true
     },
     {
       "name": "BoardIssue",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 39,
+      "line": 42,
       "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
+      "jsdoc": "A Jira issue as returned by board-scoped issue listing endpoints.",
       "typeOnly": true
     },
     {
       "name": "BulkCreateIssueData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 22,
+      "line": 23,
       "signature": "export interface BulkCreateIssueData { readonly issueUpdates: BulkIssueUpdate[]; }",
+      "jsdoc": "Request body for bulk-creating multiple Jira issues in a single call.",
       "typeOnly": true
     },
     {
       "name": "BulkCreatedIssues",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 26,
+      "line": 28,
       "signature": "export interface BulkCreatedIssues { readonly issues: BulkCreatedIssue[]; readonly errors?: BulkIssueError[]; }",
+      "jsdoc": "Response from the bulk issue creation endpoint listing created issues and any per-issue errors.",
       "typeOnly": true
     },
     {
       "name": "BulkDeleteIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 40,
+      "line": 44,
       "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: string[]; readonly currentValue?…",
+      "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues.",
       "typeOnly": true
     },
     {
       "name": "BulkSetIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 31,
+      "line": 34,
       "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …",
+      "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues.",
       "typeOnly": true
     },
     {
@@ -444,9 +450,9 @@
       "name": "ConfluenceClient",
       "kind": "class",
       "file": "src/confluence/client.ts",
-      "line": 32,
+      "line": 45,
       "signature": "export class ConfluenceClient",
-      "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2."
+      "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2. @example ```ts import { ConfluenceClient } from 'atlassian-api-client'; const client = ne…"
     },
     {
       "name": "ConfluenceContentType",
@@ -608,8 +614,9 @@
       "name": "CreateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 36,
+      "line": 40,
       "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+      "jsdoc": "Request body for creating a new Jira dashboard.",
       "typeOnly": true
     },
     {
@@ -643,16 +650,18 @@
       "name": "CreateFieldData",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 28,
+      "line": 30,
       "signature": "export interface CreateFieldData { readonly name: string; readonly description?: string; readonly type: string; readonly…",
+      "jsdoc": "Request body for creating a new custom Jira field.",
       "typeOnly": true
     },
     {
       "name": "CreateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 44,
+      "line": 47,
       "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
+      "jsdoc": "Request body for creating a new Jira saved filter.",
       "typeOnly": true
     },
     {
@@ -731,8 +740,9 @@
       "name": "CreateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 34,
+      "line": 36,
       "signature": "export interface CreateSprintData { readonly name: string; readonly originBoardId: number; readonly startDate?: string; …",
+      "jsdoc": "Request body for creating a new sprint.",
       "typeOnly": true
     },
     {
@@ -865,16 +875,18 @@
       "name": "Dashboard",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 15,
+      "line": 17,
       "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
+      "jsdoc": "A Jira dashboard containing gadgets and share permissions.",
       "typeOnly": true
     },
     {
       "name": "DashboardSharePermission",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 7,
+      "line": 8,
       "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…",
+      "jsdoc": "A share permission entry on a Jira dashboard.",
       "typeOnly": true
     },
     {
@@ -1079,16 +1091,18 @@
       "name": "Field",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 6,
+      "line": 7,
       "signature": "export interface Field { readonly id: string; readonly name: string; readonly custom: boolean; readonly orderable?: bool…",
+      "jsdoc": "A Jira issue field (system or custom).",
       "typeOnly": true
     },
     {
       "name": "Filter",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 22,
+      "line": 23,
       "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…",
+      "jsdoc": "A Jira saved filter containing a JQL query and share permissions.",
       "typeOnly": true
     },
     {
@@ -1497,9 +1511,9 @@
       "name": "JiraClient",
       "kind": "class",
       "file": "src/jira/client.ts",
-      "line": 93,
+      "line": 106,
       "signature": "export class JiraClient",
-      "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3."
+      "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3. @example ```ts import { JiraClient } from 'atlassian-api-client'; const client = new Jira…"
     },
     {
       "name": "JiraLabel",
@@ -1524,24 +1538,27 @@
       "name": "JqlAutocompleteData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 110,
+      "line": 111,
       "signature": "export interface JqlAutocompleteData { readonly visibleFieldNames?: JqlAutocompleteField[]; readonly visibleFunctionName…",
+      "jsdoc": "Autocomplete data for building JQL queries (field names, function names, reserved words).",
       "typeOnly": true
     },
     {
       "name": "JqlSuggestions",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 187,
+      "line": 194,
       "signature": "export interface JqlSuggestions { readonly results: JqlSuggestion[]; }",
+      "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint.",
       "typeOnly": true
     },
     {
       "name": "JqlSuggestionsParams",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 175,
+      "line": 181,
       "signature": "export interface JqlSuggestionsParams { readonly fieldName: string; readonly fieldValue?: string; readonly predicateName…",
+      "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete.",
       "typeOnly": true
     },
     {
@@ -1719,16 +1736,18 @@
       "name": "ListBoardIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 46,
+      "line": 50,
       "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…",
+      "jsdoc": "Query parameters for listing issues on a board.",
       "typeOnly": true
     },
     {
       "name": "ListBoardsParams",
       "kind": "interface",
       "file": "src/jira/resources/boards.ts",
-      "line": 21,
+      "line": 23,
       "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…",
+      "jsdoc": "Query parameters for listing agile boards.",
       "typeOnly": true
     },
     {
@@ -1816,8 +1835,9 @@
       "name": "ListDashboardsParams",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 28,
+      "line": 31,
       "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
+      "jsdoc": "Query parameters for listing Jira dashboards.",
       "typeOnly": true
     },
     {
@@ -1896,16 +1916,18 @@
       "name": "ListFieldsParams",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 41,
+      "line": 45,
       "signature": "export interface ListFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom' |…",
+      "jsdoc": "Query parameters for listing Jira fields.",
       "typeOnly": true
     },
     {
       "name": "ListFiltersParams",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 36,
+      "line": 38,
       "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …",
+      "jsdoc": "Query parameters for listing Jira saved filters.",
       "typeOnly": true
     },
     {
@@ -2236,8 +2258,9 @@
       "name": "ListSprintIssuesParams",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 50,
+      "line": 54,
       "signature": "export interface ListSprintIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string…",
+      "jsdoc": "Query parameters for listing issues in a sprint.",
       "typeOnly": true
     },
     {
@@ -2253,8 +2276,9 @@
       "name": "ListWebhooksParams",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 36,
+      "line": 40,
       "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
+      "jsdoc": "Query parameters for listing registered Jira webhooks.",
       "typeOnly": true
     },
     {
@@ -2288,8 +2312,9 @@
       "name": "ListWorkflowsParams",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 131,
+      "line": 135,
       "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…",
+      "jsdoc": "Query parameters for listing Jira workflows.",
       "typeOnly": true
     },
     {
@@ -2481,16 +2506,18 @@
       "name": "ParseJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 137,
+      "line": 139,
       "signature": "export interface ParseJqlQueriesData { readonly queries: string[]; readonly validation?: 'strict' | 'warn' | 'none'; }",
+      "jsdoc": "Request body for parsing one or more JQL query strings.",
       "typeOnly": true
     },
     {
       "name": "ParsedJqlQueries",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 142,
+      "line": 145,
       "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }",
+      "jsdoc": "Response from the JQL parse endpoint containing parsed query representations.",
       "typeOnly": true
     },
     {
@@ -2603,16 +2630,18 @@
       "name": "RegisterWebhookData",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 27,
+      "line": 29,
       "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
+      "jsdoc": "Request body for registering one or more Jira webhooks at a URL.",
       "typeOnly": true
     },
     {
       "name": "RegisteredWebhooks",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 32,
+      "line": 35,
       "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
+      "jsdoc": "Response returned after registering webhooks, listing per-registration results.",
       "typeOnly": true
     },
     {
@@ -2690,16 +2719,18 @@
       "name": "SanitizeJqlQueriesData",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 167,
+      "line": 171,
       "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
+      "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data).",
       "typeOnly": true
     },
     {
       "name": "SanitizedJqlQueries",
       "kind": "interface",
       "file": "src/jira/resources/jql.ts",
-      "line": 171,
+      "line": 176,
       "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
+      "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings.",
       "typeOnly": true
     },
     {
@@ -2877,8 +2908,9 @@
       "name": "Sprint",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 22,
+      "line": 23,
       "signature": "export interface Sprint { readonly id: number; readonly self: string; readonly state: 'active' | 'closed' | 'future'; re…",
+      "jsdoc": "An agile sprint in Jira Software.",
       "typeOnly": true
     },
     {
@@ -2974,8 +3006,9 @@
       "name": "UpdateDashboardData",
       "kind": "interface",
       "file": "src/jira/resources/dashboards.ts",
-      "line": 43,
+      "line": 48,
       "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+      "jsdoc": "Request body for updating an existing Jira dashboard.",
       "typeOnly": true
     },
     {
@@ -3000,16 +3033,18 @@
       "name": "UpdateFieldData",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 35,
+      "line": 38,
       "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: string;…",
+      "jsdoc": "Request body for updating an existing custom Jira field.",
       "typeOnly": true
     },
     {
       "name": "UpdateFilterData",
       "kind": "interface",
       "file": "src/jira/resources/filters.ts",
-      "line": 53,
+      "line": 57,
       "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…",
+      "jsdoc": "Request body for updating an existing Jira saved filter.",
       "typeOnly": true
     },
     {
@@ -3106,8 +3141,9 @@
       "name": "UpdateSprintData",
       "kind": "interface",
       "file": "src/jira/resources/sprints.ts",
-      "line": 42,
+      "line": 45,
       "signature": "export interface UpdateSprintData { readonly name?: string; readonly state?: 'active' | 'closed' | 'future'; readonly st…",
+      "jsdoc": "Request body for updating an existing sprint.",
       "typeOnly": true
     },
     {
@@ -3158,8 +3194,9 @@
       "name": "Webhook",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 5,
+      "line": 6,
       "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly…",
+      "jsdoc": "A registered Jira webhook that fires on matching events.",
       "typeOnly": true
     },
     {
@@ -3256,24 +3293,27 @@
       "name": "Workflow",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 117,
+      "line": 120,
       "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…",
+      "jsdoc": "A Jira workflow definition including its transitions and statuses.",
       "typeOnly": true
     },
     {
       "name": "WorkflowStatus",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 111,
+      "line": 113,
       "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…",
+      "jsdoc": "A status node within a Jira workflow.",
       "typeOnly": true
     },
     {
       "name": "WorkflowTransition",
       "kind": "interface",
       "file": "src/jira/resources/workflows.ts",
-      "line": 99,
+      "line": 100,
       "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…",
+      "jsdoc": "A workflow transition connecting two statuses in a Jira workflow.",
       "typeOnly": true
     },
     {
@@ -5397,145 +5437,145 @@
         {
           "name": "ConfluenceClient",
           "kind": "class",
-          "line": 32,
+          "line": 45,
           "exported": true,
           "signature": "export class ConfluenceClient",
-          "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2.",
+          "jsdoc": "Client for the Atlassian Confluence Cloud REST API v2. @example ```ts import { ConfluenceClient } from 'atlassian-api-client'; const client = ne…",
           "members": [
             {
               "name": "pages",
               "kind": "property",
-              "line": 33
+              "line": 47
             },
             {
               "name": "spaces",
               "kind": "property",
-              "line": 34
+              "line": 49
             },
             {
               "name": "blogPosts",
               "kind": "property",
-              "line": 35
+              "line": 51
             },
             {
               "name": "comments",
               "kind": "property",
-              "line": 36
+              "line": 53
             },
             {
               "name": "attachments",
               "kind": "property",
-              "line": 37
+              "line": 55
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 38
+              "line": 57
             },
             {
               "name": "contentProperties",
               "kind": "property",
-              "line": 40
+              "line": 59
             },
             {
               "name": "customContent",
               "kind": "property",
-              "line": 42
+              "line": 61
             },
             {
               "name": "whiteboards",
               "kind": "property",
-              "line": 44
+              "line": 63
             },
             {
               "name": "tasks",
               "kind": "property",
-              "line": 46
+              "line": 65
             },
             {
               "name": "versions",
               "kind": "property",
-              "line": 48
+              "line": 67
             },
             {
               "name": "adminKey",
               "kind": "property",
-              "line": 50
+              "line": 69
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 52
+              "line": 71
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 54
+              "line": 73
             },
             {
               "name": "content",
               "kind": "property",
-              "line": 56
+              "line": 75
             },
             {
               "name": "dataPolicies",
               "kind": "property",
-              "line": 58
+              "line": 77
             },
             {
               "name": "databases",
               "kind": "property",
-              "line": 60
+              "line": 79
             },
             {
               "name": "embeds",
               "kind": "property",
-              "line": 62
+              "line": 81
             },
             {
               "name": "folders",
               "kind": "property",
-              "line": 64
+              "line": 83
             },
             {
               "name": "footerComments",
               "kind": "property",
-              "line": 69
+              "line": 88
             },
             {
               "name": "inlineComments",
               "kind": "property",
-              "line": 76
+              "line": 95
             },
             {
               "name": "spacePermissions",
               "kind": "property",
-              "line": 78
+              "line": 97
             },
             {
               "name": "spaceRoleMode",
               "kind": "property",
-              "line": 80
+              "line": 99
             },
             {
               "name": "spaceRoles",
               "kind": "property",
-              "line": 82
+              "line": 101
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 84
+              "line": 103
             },
             {
               "name": "usersBulk",
               "kind": "property",
-              "line": 86
+              "line": 105
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 88
+              "line": 113
             }
           ]
         }
@@ -14213,51 +14253,51 @@
             {
               "name": "request",
               "kind": "method",
-              "line": 92
+              "line": 106
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 172
+              "line": 186
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 192
+              "line": 206
             }
           ]
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 302,
+          "line": 316,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 309,
+          "line": 323,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 317,
+          "line": 331,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 343,
+          "line": 357,
           "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 362,
+          "line": 376,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }
@@ -16154,450 +16194,450 @@
         {
           "name": "JiraClient",
           "kind": "class",
-          "line": 93,
+          "line": 106,
           "exported": true,
           "signature": "export class JiraClient",
-          "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3.",
+          "jsdoc": "Client for the Atlassian Jira Cloud Platform REST API v3. @example ```ts import { JiraClient } from 'atlassian-api-client'; const client = new Jira…",
           "members": [
             {
               "name": "issues",
               "kind": "property",
-              "line": 94
+              "line": 108
             },
             {
               "name": "projects",
               "kind": "property",
-              "line": 95
+              "line": 110
             },
             {
               "name": "search",
               "kind": "property",
-              "line": 96
+              "line": 112
             },
             {
               "name": "users",
               "kind": "property",
-              "line": 97
+              "line": 114
             },
             {
               "name": "issueTypes",
               "kind": "property",
-              "line": 98
+              "line": 116
             },
             {
               "name": "issueType",
               "kind": "property",
-              "line": 100
+              "line": 118
             },
             {
               "name": "priorities",
               "kind": "property",
-              "line": 101
+              "line": 120
             },
             {
               "name": "statuses",
               "kind": "property",
-              "line": 102
+              "line": 122
             },
             {
               "name": "issueComments",
               "kind": "property",
-              "line": 104
+              "line": 124
             },
             {
               "name": "issueAttachments",
               "kind": "property",
-              "line": 106
+              "line": 126
             },
             {
               "name": "labels",
               "kind": "property",
-              "line": 108
+              "line": 128
             },
             {
               "name": "boards",
               "kind": "property",
-              "line": 110
+              "line": 130
             },
             {
               "name": "sprints",
               "kind": "property",
-              "line": 112
+              "line": 132
             },
             {
               "name": "workflows",
               "kind": "property",
-              "line": 114
+              "line": 134
             },
             {
               "name": "dashboards",
               "kind": "property",
-              "line": 116
+              "line": 136
             },
             {
               "name": "filters",
               "kind": "property",
-              "line": 118
+              "line": 138
             },
             {
               "name": "fields",
               "kind": "property",
-              "line": 120
+              "line": 140
             },
             {
               "name": "webhooks",
               "kind": "property",
-              "line": 122
+              "line": 142
             },
             {
               "name": "jql",
               "kind": "property",
-              "line": 124
+              "line": 144
             },
             {
               "name": "bulk",
               "kind": "property",
-              "line": 126
+              "line": 146
             },
             {
               "name": "epic",
               "kind": "property",
-              "line": 128
+              "line": 148
             },
             {
               "name": "backlog",
               "kind": "property",
-              "line": 130
+              "line": 150
             },
             {
               "name": "announcementBanner",
               "kind": "property",
-              "line": 132
+              "line": 152
             },
             {
               "name": "applicationRole",
               "kind": "property",
-              "line": 134
+              "line": 154
             },
             {
               "name": "dataPolicy",
               "kind": "property",
-              "line": 136
+              "line": 156
             },
             {
               "name": "status",
               "kind": "property",
-              "line": 138
+              "line": 158
             },
             {
               "name": "statusCategory",
               "kind": "property",
-              "line": 140
+              "line": 160
             },
             {
               "name": "serverInfo",
               "kind": "property",
-              "line": 142
+              "line": 162
             },
             {
               "name": "instance",
               "kind": "property",
-              "line": 144
+              "line": 164
             },
             {
               "name": "myPermissions",
               "kind": "property",
-              "line": 146
+              "line": 166
             },
             {
               "name": "myPreferences",
               "kind": "property",
-              "line": 148
+              "line": 168
             },
             {
               "name": "auditing",
               "kind": "property",
-              "line": 150
+              "line": 170
             },
             {
               "name": "events",
               "kind": "property",
-              "line": 152
+              "line": 172
             },
             {
               "name": "changelog",
               "kind": "property",
-              "line": 154
+              "line": 174
             },
             {
               "name": "forge",
               "kind": "property",
-              "line": 156
+              "line": 176
             },
             {
               "name": "incidents",
               "kind": "property",
-              "line": 158
+              "line": 178
             },
             {
               "name": "postIncidentReviews",
               "kind": "property",
-              "line": 160
+              "line": 180
             },
             {
               "name": "vulnerability",
               "kind": "property",
-              "line": 162
+              "line": 182
             },
             {
               "name": "devopscomponents",
               "kind": "property",
-              "line": 164
+              "line": 184
             },
             {
               "name": "groups",
               "kind": "property",
-              "line": 166
+              "line": 186
             },
             {
               "name": "groupUserPicker",
               "kind": "property",
-              "line": 168
+              "line": 188
             },
             {
               "name": "securityLevel",
               "kind": "property",
-              "line": 170
+              "line": 190
             },
             {
               "name": "license",
               "kind": "property",
-              "line": 172
+              "line": 192
             },
             {
               "name": "settings",
               "kind": "property",
-              "line": 174
+              "line": 194
             },
             {
               "name": "redact",
               "kind": "property",
-              "line": 176
+              "line": 196
             },
             {
               "name": "flag",
               "kind": "property",
-              "line": 178
+              "line": 198
             },
             {
               "name": "task",
               "kind": "property",
-              "line": 180
+              "line": 200
             },
             {
               "name": "avatar",
               "kind": "property",
-              "line": 182
+              "line": 202
             },
             {
               "name": "customFieldOption",
               "kind": "property",
-              "line": 184
+              "line": 204
             },
             {
               "name": "classificationLevels",
               "kind": "property",
-              "line": 186
+              "line": 206
             },
             {
               "name": "latest",
               "kind": "property",
-              "line": 188
+              "line": 208
             },
             {
               "name": "remoteLink",
               "kind": "property",
-              "line": 190
+              "line": 210
             },
             {
               "name": "serviceRegistry",
               "kind": "property",
-              "line": 192
+              "line": 212
             },
             {
               "name": "existsByProperties",
               "kind": "property",
-              "line": 194
+              "line": 214
             },
             {
               "name": "app",
               "kind": "property",
-              "line": 200
+              "line": 220
             },
             {
               "name": "component",
               "kind": "property",
-              "line": 202
+              "line": 222
             },
             {
               "name": "applicationProperties",
               "kind": "property",
-              "line": 204
+              "line": 224
             },
             {
               "name": "configuration",
               "kind": "property",
-              "line": 206
+              "line": 226
             },
             {
               "name": "issueTypeScreenSchemes",
               "kind": "property",
-              "line": 208
+              "line": 228
             },
             {
               "name": "permissionSchemes",
               "kind": "property",
-              "line": 210
+              "line": 230
             },
             {
               "name": "issueTypeSchemes",
               "kind": "property",
-              "line": 212
+              "line": 232
             },
             {
               "name": "roles",
               "kind": "property",
-              "line": 214
+              "line": 234
             },
             {
               "name": "resolutions",
               "kind": "property",
-              "line": 216
+              "line": 236
             },
             {
               "name": "expression",
               "kind": "property",
-              "line": 218
+              "line": 238
             },
             {
               "name": "fieldConfigurations",
               "kind": "property",
-              "line": 220
+              "line": 240
             },
             {
               "name": "notificationSchemes",
               "kind": "property",
-              "line": 222
+              "line": 242
             },
             {
               "name": "prioritySchemes",
               "kind": "property",
-              "line": 224
+              "line": 244
             },
             {
               "name": "version",
               "kind": "property",
-              "line": 226
+              "line": 246
             },
             {
               "name": "config",
               "kind": "property",
-              "line": 228
+              "line": 248
             },
             {
               "name": "issueSecuritySchemes",
               "kind": "property",
-              "line": 230
+              "line": 250
             },
             {
               "name": "screens",
               "kind": "property",
-              "line": 232
+              "line": 252
             },
             {
               "name": "screenScheme",
               "kind": "property",
-              "line": 234
+              "line": 254
             },
             {
               "name": "plans",
               "kind": "property",
-              "line": 236
+              "line": 256
             },
             {
               "name": "workflowScheme",
               "kind": "property",
-              "line": 238
+              "line": 258
             },
             {
               "name": "issueLinkType",
               "kind": "property",
-              "line": 240
+              "line": 260
             },
             {
               "name": "issueLink",
               "kind": "property",
-              "line": 242
+              "line": 262
             },
             {
               "name": "projectTemplate",
               "kind": "property",
-              "line": 244
+              "line": 264
             },
             {
               "name": "universalAvatar",
               "kind": "property",
-              "line": 246
+              "line": 266
             },
             {
               "name": "worklog",
               "kind": "property",
-              "line": 248
+              "line": 268
             },
             {
               "name": "uiModifications",
               "kind": "property",
-              "line": 250
+              "line": 270
             },
             {
               "name": "permissions",
               "kind": "property",
-              "line": 252
+              "line": 272
             },
             {
               "name": "repository",
               "kind": "property",
-              "line": 254
+              "line": 274
             },
             {
               "name": "pipelines",
               "kind": "property",
-              "line": 256
+              "line": 276
             },
             {
               "name": "linkedWorkspaces",
               "kind": "property",
-              "line": 258
+              "line": 278
             },
             {
               "name": "bulkByProperties",
               "kind": "property",
-              "line": 260
+              "line": 280
             },
             {
               "name": "migration",
               "kind": "property",
-              "line": 262
+              "line": 282
             },
             {
               "name": "addons",
               "kind": "property",
-              "line": 264
+              "line": 284
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 266
+              "line": 292
             }
           ]
         }
@@ -22033,296 +22073,300 @@
         {
           "name": "Board",
           "kind": "interface",
-          "line": 8,
+          "line": 9,
           "exported": true,
-          "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…"
+          "signature": "export interface Board { readonly id: number; readonly self: string; readonly name: string; readonly type: 'scrum' | 'ka…",
+          "jsdoc": "An agile board (Scrum, Kanban, or Simple) in Jira Software."
         },
         {
           "name": "ListBoardsParams",
           "kind": "interface",
-          "line": 21,
+          "line": 23,
           "exported": true,
-          "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…"
+          "signature": "export interface ListBoardsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: 'scrum' | '…",
+          "jsdoc": "Query parameters for listing agile boards."
         },
         {
           "name": "CreateBoardData",
           "kind": "interface",
-          "line": 29,
+          "line": 31,
           "exported": true,
           "signature": "export interface CreateBoardData { readonly name: string; readonly type: 'scrum' | 'kanban' | 'simple'; readonly filterI…"
         },
         {
           "name": "BoardIssue",
           "kind": "interface",
-          "line": 39,
+          "line": 42,
           "exported": true,
-          "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…"
+          "signature": "export interface BoardIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
+          "jsdoc": "A Jira issue as returned by board-scoped issue listing endpoints."
         },
         {
           "name": "ListBoardIssuesParams",
           "kind": "interface",
-          "line": 46,
+          "line": 50,
           "exported": true,
-          "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…"
+          "signature": "export interface ListBoardIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string;…",
+          "jsdoc": "Query parameters for listing issues on a board."
         },
         {
           "name": "ListBoardSprintsParams",
           "kind": "interface",
-          "line": 53,
+          "line": 57,
           "exported": true,
           "signature": "export interface ListBoardSprintsParams { readonly startAt?: number; readonly maxResults?: number; readonly state?: stri…"
         },
         {
           "name": "BoardPropertyKey",
           "kind": "interface",
-          "line": 59,
+          "line": 63,
           "exported": true,
           "signature": "export interface BoardPropertyKey { readonly self: string; readonly key: string; }"
         },
         {
           "name": "BoardPropertyKeys",
           "kind": "interface",
-          "line": 64,
+          "line": 68,
           "exported": true,
           "signature": "export interface BoardPropertyKeys { readonly keys: readonly BoardPropertyKey[]; }"
         },
         {
           "name": "BoardProperty",
           "kind": "interface",
-          "line": 68,
+          "line": 72,
           "exported": true,
           "signature": "export interface BoardProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "QuickFilter",
           "kind": "interface",
-          "line": 73,
+          "line": 77,
           "exported": true,
           "signature": "export interface QuickFilter { readonly id: number; readonly boardId: number; readonly name: string; readonly jql: strin…"
         },
         {
           "name": "ListQuickFiltersParams",
           "kind": "interface",
-          "line": 82,
+          "line": 86,
           "exported": true,
           "signature": "export interface ListQuickFiltersParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "BoardReports",
           "kind": "type",
-          "line": 87,
+          "line": 91,
           "exported": true,
           "signature": "export type BoardReports = Record<string, unknown>;"
         },
         {
           "name": "BoardConfiguration",
           "kind": "interface",
-          "line": 89,
+          "line": 93,
           "exported": true,
           "signature": "export interface BoardConfiguration { readonly id: number; readonly self: string; readonly name: string; readonly type: …"
         },
         {
           "name": "Epic",
           "kind": "interface",
-          "line": 100,
+          "line": 104,
           "exported": true,
           "signature": "export interface Epic { readonly id: number; readonly self: string; readonly name: string; readonly summary?: string; re…"
         },
         {
           "name": "ListEpicIssuesParams",
           "kind": "interface",
-          "line": 109,
+          "line": 113,
           "exported": true,
           "signature": "export interface ListEpicIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string; …"
         },
         {
           "name": "BoardFeature",
           "kind": "interface",
-          "line": 116,
+          "line": 120,
           "exported": true,
           "signature": "export interface BoardFeature { readonly boardFeature: string; readonly boardId: number; readonly state: 'ENABLED' | 'DI…"
         },
         {
           "name": "BoardFeaturesResponse",
           "kind": "interface",
-          "line": 123,
+          "line": 127,
           "exported": true,
           "signature": "export interface BoardFeaturesResponse { readonly features: readonly BoardFeature[]; }"
         },
         {
           "name": "ToggleFeatureData",
           "kind": "interface",
-          "line": 127,
+          "line": 131,
           "exported": true,
           "signature": "export interface ToggleFeatureData { readonly feature: string; readonly state: 'ENABLED' | 'DISABLED'; }"
         },
         {
           "name": "BoardProject",
           "kind": "interface",
-          "line": 132,
+          "line": 136,
           "exported": true,
           "signature": "export interface BoardProject { readonly id: string; readonly key: string; readonly self: string; readonly name: string;…"
         },
         {
           "name": "BoardVersion",
           "kind": "interface",
-          "line": 141,
+          "line": 145,
           "exported": true,
           "signature": "export interface BoardVersion { readonly id: number; readonly self: string; readonly name: string; readonly description?…"
         },
         {
           "name": "ListBoardVersionsParams",
           "kind": "interface",
-          "line": 152,
+          "line": 156,
           "exported": true,
           "signature": "export interface ListBoardVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly released?: …"
         },
         {
           "name": "BoardsResource",
           "kind": "class",
-          "line": 158,
+          "line": 162,
           "exported": true,
           "signature": "export class BoardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 159
+              "line": 163
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 165
+              "line": 169
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 185
+              "line": 189
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 204
+              "line": 208
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 216
+              "line": 220
             },
             {
               "name": "getBacklog",
               "kind": "method",
-              "line": 227
+              "line": 231
             },
             {
               "name": "getConfiguration",
               "kind": "method",
-              "line": 252
+              "line": 256
             },
             {
               "name": "listEpics",
               "kind": "method",
-              "line": 264
+              "line": 268
             },
             {
               "name": "getEpicIssues",
               "kind": "method",
-              "line": 288
+              "line": 292
             },
             {
               "name": "getIssuesWithoutEpic",
               "kind": "method",
-              "line": 317
+              "line": 321
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 342
+              "line": 346
             },
             {
               "name": "toggleFeature",
               "kind": "method",
-              "line": 354
+              "line": 358
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 373
+              "line": 377
             },
             {
               "name": "moveIssues",
               "kind": "method",
-              "line": 398
+              "line": 402
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 431
+              "line": 435
             },
             {
               "name": "listProjectsFull",
               "kind": "method",
-              "line": 454
+              "line": 458
             },
             {
               "name": "listSprints",
               "kind": "method",
-              "line": 477
+              "line": 481
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 501
+              "line": 505
             },
             {
               "name": "getSprintIssues",
               "kind": "method",
-              "line": 525
+              "line": 529
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 554
+              "line": 558
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 566
+              "line": 570
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 580
+              "line": 584
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 595
+              "line": 599
             },
             {
               "name": "listQuickFilters",
               "kind": "method",
-              "line": 610
+              "line": 614
             },
             {
               "name": "getQuickFilter",
               "kind": "method",
-              "line": 632
+              "line": 636
             },
             {
               "name": "getReports",
               "kind": "method",
-              "line": 647
+              "line": 651
             },
             {
               "name": "listByFilter",
               "kind": "method",
-              "line": 659
+              "line": 663
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 682
+              "line": 686
             }
           ]
         }
@@ -22449,35 +22493,39 @@
         {
           "name": "BulkCreateIssueData",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
-          "signature": "export interface BulkCreateIssueData { readonly issueUpdates: BulkIssueUpdate[]; }"
+          "signature": "export interface BulkCreateIssueData { readonly issueUpdates: BulkIssueUpdate[]; }",
+          "jsdoc": "Request body for bulk-creating multiple Jira issues in a single call."
         },
         {
           "name": "BulkCreatedIssues",
           "kind": "interface",
-          "line": 26,
+          "line": 28,
           "exported": true,
-          "signature": "export interface BulkCreatedIssues { readonly issues: BulkCreatedIssue[]; readonly errors?: BulkIssueError[]; }"
+          "signature": "export interface BulkCreatedIssues { readonly issues: BulkCreatedIssue[]; readonly errors?: BulkIssueError[]; }",
+          "jsdoc": "Response from the bulk issue creation endpoint listing created issues and any per-issue errors."
         },
         {
           "name": "BulkSetIssuePropertyData",
           "kind": "interface",
-          "line": 31,
+          "line": 34,
           "exported": true,
-          "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …"
+          "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …",
+          "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues."
         },
         {
           "name": "BulkDeleteIssuePropertyData",
           "kind": "interface",
-          "line": 40,
+          "line": 44,
           "exported": true,
-          "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: string[]; readonly currentValue?…"
+          "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: string[]; readonly currentValue?…",
+          "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues."
         },
         {
           "name": "SubmittedBulkOperation",
           "kind": "interface",
-          "line": 54,
+          "line": 58,
           "exported": true,
           "signature": "export interface SubmittedBulkOperation { readonly taskId: string; }",
           "jsdoc": "Async task identifier returned by every bulk POST endpoint (B345, B347, B348, B350, B351, B352). Callers poll `GET /rest/api/3/bulk/queue/{taskId}` (B353) until `status` is COMPLETE or FAILED — polling is intentionally NOT auto-driven inside the POST methods so the caller controls the cadence/timeout."
@@ -22485,140 +22533,140 @@
         {
           "name": "BulkDeleteIssuesInput",
           "kind": "interface",
-          "line": 60,
+          "line": 64,
           "exported": true,
           "signature": "export interface BulkDeleteIssuesInput { readonly selectedIssueIdsOrKeys: string[]; readonly sendBulkNotification?: bool…"
         },
         {
           "name": "BulkGetIssueFieldsParams",
           "kind": "interface",
-          "line": 67,
+          "line": 71,
           "exported": true,
           "signature": "export interface BulkGetIssueFieldsParams { readonly issueIdsOrKeys: string; readonly searchText?: string; readonly endi…"
         },
         {
           "name": "BulkEditableField",
           "kind": "interface",
-          "line": 74,
+          "line": 78,
           "exported": true,
           "signature": "export interface BulkEditableField { readonly id: string; readonly name: string; readonly type: string; readonly isRequi…"
         },
         {
           "name": "BulkEditableFieldsResponse",
           "kind": "interface",
-          "line": 85,
+          "line": 89,
           "exported": true,
           "signature": "export interface BulkEditableFieldsResponse { readonly fields: BulkEditableField[]; }"
         },
         {
           "name": "BulkEditIssueFieldsInput",
           "kind": "interface",
-          "line": 94,
+          "line": 98,
           "exported": true,
           "signature": "export interface BulkEditIssueFieldsInput { readonly editedFieldsInput: Record<string, unknown>; readonly selectedAction…"
         },
         {
           "name": "BulkMoveIssuesInput",
           "kind": "interface",
-          "line": 103,
+          "line": 107,
           "exported": true,
           "signature": "export interface BulkMoveIssuesInput { readonly sendBulkNotification?: boolean; readonly targetToSourcesMapping: Record<…"
         },
         {
           "name": "BulkGetTransitionsParams",
           "kind": "interface",
-          "line": 110,
+          "line": 114,
           "exported": true,
           "signature": "export interface BulkGetTransitionsParams { readonly issueIdsOrKeys: string; }"
         },
         {
           "name": "BulkAvailableTransitionTarget",
           "kind": "interface",
-          "line": 114,
+          "line": 118,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionTarget { readonly statusId: string; readonly statusName: string; }"
         },
         {
           "name": "BulkAvailableTransition",
           "kind": "interface",
-          "line": 119,
+          "line": 123,
           "exported": true,
           "signature": "export interface BulkAvailableTransition { readonly to: BulkAvailableTransitionTarget; readonly transitionId: string; re…"
         },
         {
           "name": "BulkAvailableTransitionsForIssues",
           "kind": "interface",
-          "line": 125,
+          "line": 129,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionsForIssues { readonly isTransitionsFiltered: boolean; readonly issues: string[];…"
         },
         {
           "name": "BulkAvailableTransitionsResponse",
           "kind": "interface",
-          "line": 131,
+          "line": 135,
           "exported": true,
           "signature": "export interface BulkAvailableTransitionsResponse { readonly availableTransitions: BulkAvailableTransitionsForIssues[]; …"
         },
         {
           "name": "BulkTransitionInput",
           "kind": "interface",
-          "line": 137,
+          "line": 141,
           "exported": true,
           "signature": "export interface BulkTransitionInput { readonly selectedIssueIdsOrKeys: string[]; readonly transitionId: string; }"
         },
         {
           "name": "BulkTransitionIssuesInput",
           "kind": "interface",
-          "line": 142,
+          "line": 146,
           "exported": true,
           "signature": "export interface BulkTransitionIssuesInput { readonly bulkTransitionInputs: BulkTransitionInput[]; readonly sendBulkNoti…"
         },
         {
           "name": "BulkWatchIssuesInput",
           "kind": "interface",
-          "line": 149,
+          "line": 153,
           "exported": true,
           "signature": "export interface BulkWatchIssuesInput { readonly selectedIssueIdsOrKeys: string[]; }"
         },
         {
           "name": "BulkOperationSubmittedBy",
           "kind": "interface",
-          "line": 155,
+          "line": 159,
           "exported": true,
           "signature": "export interface BulkOperationSubmittedBy { readonly accountId: string; }"
         },
         {
           "name": "BulkOperationProgress",
           "kind": "interface",
-          "line": 159,
+          "line": 163,
           "exported": true,
           "signature": "export interface BulkOperationProgress { readonly taskId: string; readonly status: string; readonly progressPercent: num…"
         },
         {
           "name": "DevopsBulkAcceptedEntity",
           "kind": "interface",
-          "line": 176,
+          "line": 180,
           "exported": true,
           "signature": "export interface DevopsBulkAcceptedEntity { readonly id: string; }"
         },
         {
           "name": "DevopsBulkFailedEntity",
           "kind": "interface",
-          "line": 180,
+          "line": 184,
           "exported": true,
           "signature": "export interface DevopsBulkFailedEntity { readonly key?: string; readonly errors?: unknown[]; }"
         },
         {
           "name": "DevopsBulkSubmitResponse",
           "kind": "interface",
-          "line": 185,
+          "line": 189,
           "exported": true,
           "signature": "export interface DevopsBulkSubmitResponse { readonly acceptedBuilds?: DevopsBulkAcceptedEntity[]; readonly acceptedDeplo…"
         },
         {
           "name": "BulkResourceBaseUrls",
           "kind": "interface",
-          "line": 204,
+          "line": 208,
           "exported": true,
           "signature": "export interface BulkResourceBaseUrls { readonly builds: string; readonly deployments: string; readonly devInfo: string;…",
           "jsdoc": "Extra base URLs accepted alongside the v3 `baseUrl`. Each maps 1:1 to one of the DevOps integration APIs that exposes a POST `/bulk` ingest endpoint (B952, B956, B961, B967, B971, B980, B989, B993). They're injected from `JiraClient` so the resource stays transport-agnostic and the prefixes live in a single place."
@@ -22626,119 +22674,119 @@
         {
           "name": "BulkResource",
           "kind": "class",
-          "line": 215,
+          "line": 219,
           "exported": true,
           "signature": "export class BulkResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 216
+              "line": 220
             },
             {
               "name": "createBulk",
               "kind": "method",
-              "line": 223
+              "line": 227
             },
             {
               "name": "setPropertyBulk",
               "kind": "method",
-              "line": 233
+              "line": 237
             },
             {
               "name": "deletePropertyBulk",
               "kind": "method",
-              "line": 242
+              "line": 246
             },
             {
               "name": "deleteIssuesBulk",
               "kind": "method",
-              "line": 257
+              "line": 261
             },
             {
               "name": "getIssueFieldsBulk",
               "kind": "method",
-              "line": 272
+              "line": 276
             },
             {
               "name": "editIssueFieldsBulk",
               "kind": "method",
-              "line": 292
+              "line": 296
             },
             {
               "name": "moveIssuesBulk",
               "kind": "method",
-              "line": 308
+              "line": 312
             },
             {
               "name": "getAvailableTransitionsBulk",
               "kind": "method",
-              "line": 323
+              "line": 327
             },
             {
               "name": "transitionIssuesBulk",
               "kind": "method",
-              "line": 341
+              "line": 345
             },
             {
               "name": "unwatchIssuesBulk",
               "kind": "method",
-              "line": 357
+              "line": 361
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 373
+              "line": 377
             },
             {
               "name": "getBulkOperationStatus",
               "kind": "method",
-              "line": 388
+              "line": 392
             },
             {
               "name": "submitBuilds",
               "kind": "method",
-              "line": 406
+              "line": 410
             },
             {
               "name": "submitDeployments",
               "kind": "method",
-              "line": 418
+              "line": 422
             },
             {
               "name": "submitDevInfo",
               "kind": "method",
-              "line": 430
+              "line": 434
             },
             {
               "name": "submitDevopsComponents",
               "kind": "method",
-              "line": 442
+              "line": 446
             },
             {
               "name": "submitFeatureFlags",
               "kind": "method",
-              "line": 454
+              "line": 458
             },
             {
               "name": "submitOperations",
               "kind": "method",
-              "line": 466
+              "line": 470
             },
             {
               "name": "submitRemoteLinks",
               "kind": "method",
-              "line": 478
+              "line": 482
             },
             {
               "name": "submitSecurity",
               "kind": "method",
-              "line": 490
+              "line": 494
             },
             {
               "name": "requireDevopsBaseUrls",
               "kind": "method",
-              "line": 499
+              "line": 503
             }
           ]
         }
@@ -23457,42 +23505,47 @@
         {
           "name": "DashboardSharePermission",
           "kind": "interface",
-          "line": 7,
+          "line": 8,
           "exported": true,
-          "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…"
+          "signature": "export interface DashboardSharePermission { readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user'; readonl…",
+          "jsdoc": "A share permission entry on a Jira dashboard."
         },
         {
           "name": "Dashboard",
           "kind": "interface",
-          "line": 15,
+          "line": 17,
           "exported": true,
-          "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …"
+          "signature": "export interface Dashboard { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
+          "jsdoc": "A Jira dashboard containing gadgets and share permissions."
         },
         {
           "name": "ListDashboardsParams",
           "kind": "interface",
-          "line": 28,
+          "line": 31,
           "exported": true,
-          "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …"
+          "signature": "export interface ListDashboardsParams { readonly startAt?: number; readonly maxResults?: number; readonly filter?: 'my' …",
+          "jsdoc": "Query parameters for listing Jira dashboards."
         },
         {
           "name": "CreateDashboardData",
           "kind": "interface",
-          "line": 36,
+          "line": 40,
           "exported": true,
-          "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …"
+          "signature": "export interface CreateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+          "jsdoc": "Request body for creating a new Jira dashboard."
         },
         {
           "name": "UpdateDashboardData",
           "kind": "interface",
-          "line": 43,
+          "line": 48,
           "exported": true,
-          "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …"
+          "signature": "export interface UpdateDashboardData { readonly name: string; readonly description?: string; readonly sharePermissions: …",
+          "jsdoc": "Request body for updating an existing Jira dashboard."
         },
         {
           "name": "DashboardGadgetPosition",
           "kind": "interface",
-          "line": 51,
+          "line": 56,
           "exported": true,
           "signature": "export interface DashboardGadgetPosition { readonly row: number; readonly column: number; }",
           "jsdoc": "Position of a gadget on its dashboard."
@@ -23500,7 +23553,7 @@
         {
           "name": "DashboardGadget",
           "kind": "interface",
-          "line": 57,
+          "line": 62,
           "exported": true,
           "signature": "export interface DashboardGadget { readonly id: number; readonly moduleKey?: string; readonly uri?: string; readonly col…",
           "jsdoc": "A gadget instance attached to a dashboard."
@@ -23508,56 +23561,56 @@
         {
           "name": "DashboardGadgetsResponse",
           "kind": "interface",
-          "line": 66,
+          "line": 71,
           "exported": true,
           "signature": "export interface DashboardGadgetsResponse { readonly gadgets: DashboardGadget[]; }"
         },
         {
           "name": "AddDashboardGadgetData",
           "kind": "interface",
-          "line": 70,
+          "line": 75,
           "exported": true,
           "signature": "export interface AddDashboardGadgetData { readonly moduleKey?: string; readonly uri?: string; readonly color?: string; r…"
         },
         {
           "name": "UpdateDashboardGadgetData",
           "kind": "interface",
-          "line": 79,
+          "line": 84,
           "exported": true,
           "signature": "export interface UpdateDashboardGadgetData { readonly title?: string; readonly color?: string; readonly position?: Dashb…"
         },
         {
           "name": "DashboardItemPropertyKey",
           "kind": "interface",
-          "line": 85,
+          "line": 90,
           "exported": true,
           "signature": "export interface DashboardItemPropertyKey { readonly self: string; readonly key: string; }"
         },
         {
           "name": "DashboardItemPropertyKeys",
           "kind": "interface",
-          "line": 90,
+          "line": 95,
           "exported": true,
           "signature": "export interface DashboardItemPropertyKeys { readonly keys: readonly DashboardItemPropertyKey[]; }"
         },
         {
           "name": "DashboardItemProperty",
           "kind": "interface",
-          "line": 94,
+          "line": 99,
           "exported": true,
           "signature": "export interface DashboardItemProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "CopyDashboardData",
           "kind": "interface",
-          "line": 99,
+          "line": 104,
           "exported": true,
           "signature": "export interface CopyDashboardData { readonly name?: string; readonly description?: string; readonly sharePermissions?: …"
         },
         {
           "name": "BulkEditDashboardAction",
           "kind": "type",
-          "line": 107,
+          "line": 112,
           "exported": true,
           "signature": "export type BulkEditDashboardAction = | 'changeOwner' | 'changePermission' | 'addPermission' | 'removePermission' | 'cha…",
           "jsdoc": "Action verb accepted by `PUT /dashboard/bulk/edit`."
@@ -23565,21 +23618,21 @@
         {
           "name": "BulkEditDashboardsData",
           "kind": "interface",
-          "line": 115,
+          "line": 120,
           "exported": true,
           "signature": "export interface BulkEditDashboardsData { readonly entityIds: readonly string[]; readonly action: BulkEditDashboardActio…"
         },
         {
           "name": "BulkEditDashboardsResponse",
           "kind": "interface",
-          "line": 129,
+          "line": 134,
           "exported": true,
           "signature": "export interface BulkEditDashboardsResponse { readonly taskId?: string; readonly status?: string; }"
         },
         {
           "name": "AvailableDashboardGadget",
           "kind": "interface",
-          "line": 135,
+          "line": 140,
           "exported": true,
           "signature": "export interface AvailableDashboardGadget { readonly moduleKey?: string; readonly uri?: string; readonly title: string; …",
           "jsdoc": "A descriptor for an available (catalogue) gadget — `GET /dashboard/gadgets`."
@@ -23587,21 +23640,21 @@
         {
           "name": "AvailableDashboardGadgetsResponse",
           "kind": "interface",
-          "line": 141,
+          "line": 146,
           "exported": true,
           "signature": "export interface AvailableDashboardGadgetsResponse { readonly gadgets: AvailableDashboardGadget[]; }"
         },
         {
           "name": "ListAvailableGadgetsParams",
           "kind": "interface",
-          "line": 145,
+          "line": 150,
           "exported": true,
           "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: readonly string[]; readonly uri?: readonly string[]; …"
         },
         {
           "name": "SearchDashboardsOrderBy",
           "kind": "type",
-          "line": 153,
+          "line": 158,
           "exported": true,
           "signature": "export type SearchDashboardsOrderBy = | 'description' | '-description' | '+description' | 'favorite_count' | '-favorite_…",
           "jsdoc": "Sort orders accepted by `GET /dashboard/search`."
@@ -23609,7 +23662,7 @@
         {
           "name": "SearchDashboardsStatus",
           "kind": "type",
-          "line": 174,
+          "line": 179,
           "exported": true,
           "signature": "export type SearchDashboardsStatus = 'active' | 'archived' | 'deleted';",
           "jsdoc": "Status filter for `GET /dashboard/search`."
@@ -23617,123 +23670,123 @@
         {
           "name": "SearchDashboardsParams",
           "kind": "interface",
-          "line": 176,
+          "line": 181,
           "exported": true,
           "signature": "export interface SearchDashboardsParams { readonly dashboardName?: string; readonly accountId?: string; readonly owner?:…"
         },
         {
           "name": "DashboardsResource",
           "kind": "class",
-          "line": 190,
+          "line": 195,
           "exported": true,
           "signature": "export class DashboardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 191
+              "line": 196
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 197
+              "line": 202
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 228
+              "line": 233
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 237
+              "line": 242
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 247
+              "line": 252
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 257
+              "line": 262
             },
             {
               "name": "listGadgets",
               "kind": "method",
-              "line": 265
+              "line": 270
             },
             {
               "name": "addGadget",
               "kind": "method",
-              "line": 274
+              "line": 279
             },
             {
               "name": "updateGadget",
               "kind": "method",
-              "line": 293
+              "line": 298
             },
             {
               "name": "removeGadget",
               "kind": "method",
-              "line": 313
+              "line": 318
             },
             {
               "name": "listItemProperties",
               "kind": "method",
-              "line": 324
+              "line": 329
             },
             {
               "name": "getItemProperty",
               "kind": "method",
-              "line": 338
+              "line": 343
             },
             {
               "name": "setItemProperty",
               "kind": "method",
-              "line": 356
+              "line": 361
             },
             {
               "name": "deleteItemProperty",
               "kind": "method",
-              "line": 375
+              "line": 380
             },
             {
               "name": "copy",
               "kind": "method",
-              "line": 392
+              "line": 397
             },
             {
               "name": "bulkEdit",
               "kind": "method",
-              "line": 407
+              "line": 412
             },
             {
               "name": "listAvailableGadgets",
               "kind": "method",
-              "line": 434
+              "line": 439
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 455
+              "line": 460
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 495
+              "line": 500
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 538
+              "line": 543
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 590,
+          "line": 595,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
@@ -24321,35 +24374,39 @@
         {
           "name": "Field",
           "kind": "interface",
-          "line": 6,
+          "line": 7,
           "exported": true,
-          "signature": "export interface Field { readonly id: string; readonly name: string; readonly custom: boolean; readonly orderable?: bool…"
+          "signature": "export interface Field { readonly id: string; readonly name: string; readonly custom: boolean; readonly orderable?: bool…",
+          "jsdoc": "A Jira issue field (system or custom)."
         },
         {
           "name": "CreateFieldData",
           "kind": "interface",
-          "line": 28,
+          "line": 30,
           "exported": true,
-          "signature": "export interface CreateFieldData { readonly name: string; readonly description?: string; readonly type: string; readonly…"
+          "signature": "export interface CreateFieldData { readonly name: string; readonly description?: string; readonly type: string; readonly…",
+          "jsdoc": "Request body for creating a new custom Jira field."
         },
         {
           "name": "UpdateFieldData",
           "kind": "interface",
-          "line": 35,
+          "line": 38,
           "exported": true,
-          "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: string;…"
+          "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: string;…",
+          "jsdoc": "Request body for updating an existing custom Jira field."
         },
         {
           "name": "ListFieldsParams",
           "kind": "interface",
-          "line": 41,
+          "line": 45,
           "exported": true,
-          "signature": "export interface ListFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom' |…"
+          "signature": "export interface ListFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom' |…",
+          "jsdoc": "Query parameters for listing Jira fields."
         },
         {
           "name": "FieldContext",
           "kind": "interface",
-          "line": 54,
+          "line": 58,
           "exported": true,
           "signature": "export interface FieldContext { readonly id: string; readonly name: string; readonly description: string; readonly isGlo…",
           "jsdoc": "A custom field context."
@@ -24357,7 +24414,7 @@
         {
           "name": "FieldContextPage",
           "kind": "type",
-          "line": 63,
+          "line": 67,
           "exported": true,
           "signature": "export type FieldContextPage = OffsetPaginatedResponse<FieldContext>;",
           "jsdoc": "Paginated page of FieldContext items."
@@ -24365,7 +24422,7 @@
         {
           "name": "ListFieldContextsParams",
           "kind": "interface",
-          "line": 66,
+          "line": 70,
           "exported": true,
           "signature": "export interface ListFieldContextsParams { readonly isAnyIssueType?: boolean; readonly isGlobalContext?: boolean; readon…",
           "jsdoc": "Query parameters for listing field contexts (B415)."
@@ -24373,7 +24430,7 @@
         {
           "name": "CreateFieldContextData",
           "kind": "interface",
-          "line": 75,
+          "line": 79,
           "exported": true,
           "signature": "export interface CreateFieldContextData { readonly name: string; readonly description?: string; readonly projectIds?: st…",
           "jsdoc": "Request body for creating a custom field context (B416)."
@@ -24381,7 +24438,7 @@
         {
           "name": "CreatedFieldContext",
           "kind": "interface",
-          "line": 83,
+          "line": 87,
           "exported": true,
           "signature": "export interface CreatedFieldContext { readonly id?: string; readonly name: string; readonly description?: string; reado…",
           "jsdoc": "Response shape returned by POST /field/{fieldId}/context (CreateCustomFieldContext). B416"
@@ -24389,7 +24446,7 @@
         {
           "name": "UpdateFieldContextData",
           "kind": "interface",
-          "line": 92,
+          "line": 96,
           "exported": true,
           "signature": "export interface UpdateFieldContextData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for updating a custom field context (B418)."
@@ -24397,7 +24454,7 @@
         {
           "name": "FieldContextOption",
           "kind": "interface",
-          "line": 98,
+          "line": 102,
           "exported": true,
           "signature": "export interface FieldContextOption { readonly id: string; readonly value: string; readonly disabled: boolean; readonly …",
           "jsdoc": "A single custom field context option (B421)."
@@ -24405,7 +24462,7 @@
         {
           "name": "FieldContextOptionPage",
           "kind": "type",
-          "line": 106,
+          "line": 110,
           "exported": true,
           "signature": "export type FieldContextOptionPage = OffsetPaginatedResponse<FieldContextOption>;",
           "jsdoc": "Paginated page of FieldContextOption items (B421)."
@@ -24413,7 +24470,7 @@
         {
           "name": "ListFieldContextOptionsParams",
           "kind": "interface",
-          "line": 109,
+          "line": 113,
           "exported": true,
           "signature": "export interface ListFieldContextOptionsParams { readonly optionId?: number; readonly onlyOptions?: boolean; readonly st…",
           "jsdoc": "Query parameters for listing field context options (B421)."
@@ -24421,7 +24478,7 @@
         {
           "name": "FieldContextOptionCreateItem",
           "kind": "interface",
-          "line": 117,
+          "line": 121,
           "exported": true,
           "signature": "export interface FieldContextOptionCreateItem { readonly value: string; readonly disabled?: boolean; readonly optionId?:…",
           "jsdoc": "A single option to create within a field context (B422)."
@@ -24429,7 +24486,7 @@
         {
           "name": "BulkCreateFieldContextOptionData",
           "kind": "interface",
-          "line": 124,
+          "line": 128,
           "exported": true,
           "signature": "export interface BulkCreateFieldContextOptionData { readonly options?: readonly FieldContextOptionCreateItem[]; }",
           "jsdoc": "Request body for bulk-creating custom field context options (B422)."
@@ -24437,7 +24494,7 @@
         {
           "name": "CreatedFieldContextOptionsList",
           "kind": "interface",
-          "line": 129,
+          "line": 133,
           "exported": true,
           "signature": "export interface CreatedFieldContextOptionsList { readonly options?: readonly FieldContextOption[]; }",
           "jsdoc": "Response envelope returned by POST /field/{fieldId}/context/{contextId}/option (B422)."
@@ -24445,7 +24502,7 @@
         {
           "name": "FieldContextOptionUpdateItem",
           "kind": "interface",
-          "line": 134,
+          "line": 138,
           "exported": true,
           "signature": "export interface FieldContextOptionUpdateItem { readonly id: string; readonly value?: string; readonly disabled?: boolea…",
           "jsdoc": "A single option to update within a field context (B423)."
@@ -24453,7 +24510,7 @@
         {
           "name": "BulkUpdateFieldContextOptionData",
           "kind": "interface",
-          "line": 141,
+          "line": 145,
           "exported": true,
           "signature": "export interface BulkUpdateFieldContextOptionData { readonly options?: readonly FieldContextOptionUpdateItem[]; }",
           "jsdoc": "Request body for bulk-updating custom field context options (B423)."
@@ -24461,7 +24518,7 @@
         {
           "name": "UpdatedFieldContextOptionsList",
           "kind": "interface",
-          "line": 148,
+          "line": 152,
           "exported": true,
           "signature": "export interface UpdatedFieldContextOptionsList { readonly options?: readonly FieldContextOptionUpdateItem[]; }",
           "jsdoc": "Response envelope returned by PUT /field/{fieldId}/context/{contextId}/option (B423). Note: the spec's `CustomFieldUpdatedContextOptionsList` wraps `CustomFieldOptionUpdate` items (id + value? + disabled?), not the full `CustomFieldContextOption` shape."
@@ -24469,7 +24526,7 @@
         {
           "name": "ReplaceContextOptionOnIssuesParams",
           "kind": "interface",
-          "line": 153,
+          "line": 157,
           "exported": true,
           "signature": "export interface ReplaceContextOptionOnIssuesParams { readonly replaceWith?: number; readonly jql?: string; }",
           "jsdoc": "Query parameters for replacing a custom field option on issues (B425)."
@@ -24477,7 +24534,7 @@
         {
           "name": "TaskProgressBeanRemoveOptionFromIssuesResult",
           "kind": "interface",
-          "line": 159,
+          "line": 163,
           "exported": true,
           "signature": "export interface TaskProgressBeanRemoveOptionFromIssuesResult { readonly id: string; readonly self: string; readonly des…",
           "jsdoc": "Task progress result returned by DELETE /field/{fieldId}/context/{contextId}/option/{optionId}/issue (B425, 303)."
@@ -24485,7 +24542,7 @@
         {
           "name": "OrderFieldContextOptionsData",
           "kind": "interface",
-          "line": 180,
+          "line": 184,
           "exported": true,
           "signature": "export interface OrderFieldContextOptionsData { readonly customFieldOptionIds: readonly string[]; readonly after?: strin…",
           "jsdoc": "Request body for reordering custom field context options (B426)."
@@ -24493,7 +24550,7 @@
         {
           "name": "FieldContextIssueTypeIdsBody",
           "kind": "interface",
-          "line": 189,
+          "line": 193,
           "exported": true,
           "signature": "export interface FieldContextIssueTypeIdsBody { readonly issueTypeIds: readonly string[]; }",
           "jsdoc": "Request body for adding or removing issue types from a context (B419, B420)."
@@ -24501,7 +24558,7 @@
         {
           "name": "FieldContextIssueTypeMapping",
           "kind": "interface",
-          "line": 194,
+          "line": 198,
           "exported": true,
           "signature": "export interface FieldContextIssueTypeMapping { readonly contextId: string; readonly issueTypeId?: string; readonly isAn…",
           "jsdoc": "A single mapping of a context to an issue type (B429)."
@@ -24509,7 +24566,7 @@
         {
           "name": "FieldContextIssueTypeMappingPage",
           "kind": "type",
-          "line": 204,
+          "line": 208,
           "exported": true,
           "signature": "export type FieldContextIssueTypeMappingPage = OffsetPaginatedResponse<FieldContextIssueTypeMapping>;",
           "jsdoc": "Paginated page of FieldContextIssueTypeMapping items (B429)."
@@ -24517,7 +24574,7 @@
         {
           "name": "ListFieldContextIssueTypeMappingParams",
           "kind": "interface",
-          "line": 208,
+          "line": 212,
           "exported": true,
           "signature": "export interface ListFieldContextIssueTypeMappingParams { readonly contextId?: number[]; readonly startAt?: number; read…",
           "jsdoc": "Query parameters for listing field context issue-type mappings (B429)."
@@ -24525,7 +24582,7 @@
         {
           "name": "FieldContextUserFilter",
           "kind": "interface",
-          "line": 253,
+          "line": 257,
           "exported": true,
           "signature": "export interface FieldContextUserFilter { readonly enabled: boolean; readonly groups?: readonly string[]; readonly roleI…",
           "jsdoc": "Filter applied to user-picker autocomplete suggestions."
@@ -24533,7 +24590,7 @@
         {
           "name": "FieldContextDefaultValueCascadingOption",
           "kind": "interface",
-          "line": 260,
+          "line": 264,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueCascadingOption { readonly type: 'option.cascading'; readonly contextId: string…",
           "jsdoc": "type: `option.cascading` — cascading select list default."
@@ -24541,7 +24598,7 @@
         {
           "name": "FieldContextDefaultValueMultipleOption",
           "kind": "interface",
-          "line": 268,
+          "line": 272,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleOption { readonly type: 'option.multiple'; readonly contextId: string; …",
           "jsdoc": "type: `option.multiple` — multi-select / checkbox default."
@@ -24549,7 +24606,7 @@
         {
           "name": "FieldContextDefaultValueSingleOption",
           "kind": "interface",
-          "line": 275,
+          "line": 279,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleOption { readonly type: 'option.single'; readonly contextId: string; read…",
           "jsdoc": "type: `option.single` — single-select / radio-button default."
@@ -24557,7 +24614,7 @@
         {
           "name": "FieldContextDefaultValueSingleUserPicker",
           "kind": "interface",
-          "line": 282,
+          "line": 286,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleUserPicker { readonly type: 'single.user.select'; readonly contextId: str…",
           "jsdoc": "type: `single.user.select` — single user picker default."
@@ -24565,7 +24622,7 @@
         {
           "name": "FieldContextDefaultValueMultiUserPicker",
           "kind": "interface",
-          "line": 290,
+          "line": 294,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultiUserPicker { readonly type: 'multi.user.select'; readonly contextId: strin…",
           "jsdoc": "type: `multi.user.select` — multi user picker default."
@@ -24573,7 +24630,7 @@
         {
           "name": "FieldContextDefaultValueSingleGroupPicker",
           "kind": "interface",
-          "line": 297,
+          "line": 301,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleGroupPicker { readonly type: 'grouppicker.single'; readonly contextId: st…",
           "jsdoc": "type: `grouppicker.single` — single group picker default."
@@ -24581,7 +24638,7 @@
         {
           "name": "FieldContextDefaultValueMultipleGroupPicker",
           "kind": "interface",
-          "line": 304,
+          "line": 308,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleGroupPicker { readonly type: 'grouppicker.multiple'; readonly contextId…",
           "jsdoc": "type: `grouppicker.multiple` — multiple group picker default."
@@ -24589,7 +24646,7 @@
         {
           "name": "FieldContextDefaultValueDate",
           "kind": "interface",
-          "line": 311,
+          "line": 315,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueDate { readonly type: 'datepicker'; readonly contextId: string; readonly date?:…",
           "jsdoc": "type: `datepicker` — date field default (ISO date string)."
@@ -24597,7 +24654,7 @@
         {
           "name": "FieldContextDefaultValueDateTime",
           "kind": "interface",
-          "line": 319,
+          "line": 323,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueDateTime { readonly type: 'datetimepicker'; readonly contextId: string; readonl…",
           "jsdoc": "type: `datetimepicker` — date-time field default (ISO datetime string)."
@@ -24605,7 +24662,7 @@
         {
           "name": "FieldContextDefaultValueURL",
           "kind": "interface",
-          "line": 327,
+          "line": 331,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueURL { readonly type: 'url'; readonly contextId: string; readonly url: string; }",
           "jsdoc": "type: `url` — URL field default."
@@ -24613,7 +24670,7 @@
         {
           "name": "FieldContextDefaultValueProject",
           "kind": "interface",
-          "line": 334,
+          "line": 338,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueProject { readonly type: 'project'; readonly contextId: string; readonly projec…",
           "jsdoc": "type: `project` — project picker default."
@@ -24621,7 +24678,7 @@
         {
           "name": "FieldContextDefaultValueFloat",
           "kind": "interface",
-          "line": 341,
+          "line": 345,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueFloat { readonly type: 'float'; readonly contextId: string; readonly number: nu…",
           "jsdoc": "type: `float` — floating-point number default."
@@ -24629,7 +24686,7 @@
         {
           "name": "FieldContextDefaultValueLabels",
           "kind": "interface",
-          "line": 348,
+          "line": 352,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueLabels { readonly type: 'labels'; readonly contextId: string; readonly labels: …",
           "jsdoc": "type: `labels` — labels field default."
@@ -24637,7 +24694,7 @@
         {
           "name": "FieldContextDefaultValueTextField",
           "kind": "interface",
-          "line": 355,
+          "line": 359,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueTextField { readonly type: 'textfield'; readonly contextId: string; readonly te…",
           "jsdoc": "type: `textfield` — text field default (max 254 chars)."
@@ -24645,7 +24702,7 @@
         {
           "name": "FieldContextDefaultValueTextArea",
           "kind": "interface",
-          "line": 362,
+          "line": 366,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueTextArea { readonly type: 'textarea'; readonly contextId: string; readonly text…",
           "jsdoc": "type: `textarea` — text area field default (max 32767 chars)."
@@ -24653,7 +24710,7 @@
         {
           "name": "FieldContextDefaultValueReadOnly",
           "kind": "interface",
-          "line": 369,
+          "line": 373,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueReadOnly { readonly type: 'readonly'; readonly contextId: string; readonly text…",
           "jsdoc": "type: `readonly` — read-only text field default (max 255 chars)."
@@ -24661,7 +24718,7 @@
         {
           "name": "FieldContextDefaultValueSingleVersionPicker",
           "kind": "interface",
-          "line": 376,
+          "line": 380,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleVersionPicker { readonly type: 'version.single'; readonly contextId: stri…",
           "jsdoc": "type: `version.single` — single version picker default."
@@ -24669,7 +24726,7 @@
         {
           "name": "FieldContextDefaultValueMultipleVersionPicker",
           "kind": "interface",
-          "line": 384,
+          "line": 388,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleVersionPicker { readonly type: 'version.multiple'; readonly contextId: …",
           "jsdoc": "type: `version.multiple` — multiple version picker default."
@@ -24677,7 +24734,7 @@
         {
           "name": "FieldContextDefaultValueForgeStringField",
           "kind": "interface",
-          "line": 392,
+          "line": 396,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeStringField { readonly type: 'forge.string'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.string` — Forge string field default (max 254 chars)."
@@ -24685,7 +24742,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiStringField",
           "kind": "interface",
-          "line": 399,
+          "line": 403,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiStringField { readonly type: 'forge.string.list'; readonly contextId:…",
           "jsdoc": "type: `forge.string.list` — Forge collection-of-strings field default."
@@ -24693,7 +24750,7 @@
         {
           "name": "FieldContextDefaultValueForgeObjectField",
           "kind": "interface",
-          "line": 406,
+          "line": 410,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeObjectField { readonly type: 'forge.object'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.object` — Forge object field default."
@@ -24701,7 +24758,7 @@
         {
           "name": "FieldContextDefaultValueForgeDateTimeField",
           "kind": "interface",
-          "line": 413,
+          "line": 417,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeDateTimeField { readonly type: 'forge.datetime'; readonly contextId: strin…",
           "jsdoc": "type: `forge.datetime` — Forge date-time field default."
@@ -24709,7 +24766,7 @@
         {
           "name": "FieldContextDefaultValueForgeGroupField",
           "kind": "interface",
-          "line": 421,
+          "line": 425,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeGroupField { readonly type: 'forge.group'; readonly contextId: string; rea…",
           "jsdoc": "type: `forge.group` — Forge group field default."
@@ -24717,7 +24774,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiGroupField",
           "kind": "interface",
-          "line": 428,
+          "line": 432,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiGroupField { readonly type: 'forge.group.list'; readonly contextId: s…",
           "jsdoc": "type: `forge.group.list` — Forge group-collection field default."
@@ -24725,7 +24782,7 @@
         {
           "name": "FieldContextDefaultValueForgeNumberField",
           "kind": "interface",
-          "line": 435,
+          "line": 439,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeNumberField { readonly type: 'forge.number'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.number` — Forge number field default."
@@ -24733,7 +24790,7 @@
         {
           "name": "FieldContextDefaultValueForgeUserField",
           "kind": "interface",
-          "line": 442,
+          "line": 446,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeUserField { readonly type: 'forge.user'; readonly contextId: string; reado…",
           "jsdoc": "type: `forge.user` — Forge user field default."
@@ -24741,7 +24798,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiUserField",
           "kind": "interface",
-          "line": 450,
+          "line": 454,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiUserField { readonly type: 'forge.user.list'; readonly contextId: str…",
           "jsdoc": "type: `forge.user.list` — Forge user-collection field default."
@@ -24749,7 +24806,7 @@
         {
           "name": "FieldContextDefaultValueUnknown",
           "kind": "interface",
-          "line": 461,
+          "line": 465,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueUnknown { readonly type: string; readonly contextId: string; readonly [key: str…",
           "jsdoc": "Forward-compat fallback for default-value variants not yet defined in the spec snapshot (2026-05-30). Placed last in the union so typed variants take precedence in narrowing."
@@ -24757,7 +24814,7 @@
         {
           "name": "FieldContextDefaultValue",
           "kind": "type",
-          "line": 473,
+          "line": 477,
           "exported": true,
           "signature": "export type FieldContextDefaultValue = | FieldContextDefaultValueCascadingOption | FieldContextDefaultValueMultipleOptio…",
           "jsdoc": "Polymorphic union for CustomFieldContextDefaultValue. Discriminated by the `type` string literal. 27 variants typed exactly per spec snapshot 2026-05-30. FieldContextDefaultValueUnknown at the end covers future variants."
@@ -24765,7 +24822,7 @@
         {
           "name": "FieldContextDefaultValuePage",
           "kind": "type",
-          "line": 504,
+          "line": 508,
           "exported": true,
           "signature": "export type FieldContextDefaultValuePage = OffsetPaginatedResponse<FieldContextDefaultValue>;",
           "jsdoc": "Paginated page of FieldContextDefaultValue items (B905)."
@@ -24773,7 +24830,7 @@
         {
           "name": "ListFieldContextDefaultValueParams",
           "kind": "interface",
-          "line": 507,
+          "line": 511,
           "exported": true,
           "signature": "export interface ListFieldContextDefaultValueParams { readonly contextId?: number[]; readonly startAt?: number; readonly…",
           "jsdoc": "Query parameters for listing field context default values (B905)."
@@ -24781,7 +24838,7 @@
         {
           "name": "FieldContextDefaultValueUpdateBody",
           "kind": "interface",
-          "line": 514,
+          "line": 518,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueUpdateBody { readonly defaultValues?: readonly FieldContextDefaultValue[]; }",
           "jsdoc": "Request body for bulk-updating field context default values (B906)."
@@ -24789,7 +24846,7 @@
         {
           "name": "IssueFieldOptionScope",
           "kind": "interface",
-          "line": 524,
+          "line": 528,
           "exported": true,
           "signature": "export interface IssueFieldOptionScope { readonly projects?: readonly number[]; readonly projects2?: readonly { readonly…",
           "jsdoc": "Scope configuration for a field-key option. Spec: IssueFieldOptionConfiguration.scope (IssueFieldOptionScopeBean)"
@@ -24797,7 +24854,7 @@
         {
           "name": "IssueFieldOptionConfiguration",
           "kind": "interface",
-          "line": 545,
+          "line": 549,
           "exported": true,
           "signature": "export interface IssueFieldOptionConfiguration { readonly attributes?: readonly ('notSelectable' | 'defaultValue')[]; re…",
           "jsdoc": "Configuration for a field-key option. Spec: IssueFieldOptionConfiguration."
@@ -24805,7 +24862,7 @@
         {
           "name": "IssueFieldOption",
           "kind": "interface",
-          "line": 557,
+          "line": 561,
           "exported": true,
           "signature": "export interface IssueFieldOption { readonly id: number; readonly value: string; readonly properties?: Record<string, un…",
           "jsdoc": "A single issue field option (Connect-app-managed). Spec: IssueFieldOption — required: id, value. B433, B434, B436, B437"
@@ -24813,7 +24870,7 @@
         {
           "name": "IssueFieldOptionPage",
           "kind": "type",
-          "line": 569,
+          "line": 573,
           "exported": true,
           "signature": "export type IssueFieldOptionPage = OffsetPaginatedResponse<IssueFieldOption>;",
           "jsdoc": "Paginated page of IssueFieldOption items. B433, B439, B440"
@@ -24821,7 +24878,7 @@
         {
           "name": "ListIssueFieldOptionsParams",
           "kind": "interface",
-          "line": 572,
+          "line": 576,
           "exported": true,
           "signature": "export interface ListIssueFieldOptionsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query params for listing all field options (B433)."
@@ -24829,7 +24886,7 @@
         {
           "name": "CreateIssueFieldOptionData",
           "kind": "interface",
-          "line": 581,
+          "line": 585,
           "exported": true,
           "signature": "export interface CreateIssueFieldOptionData { readonly value: string; readonly properties?: Record<string, unknown>; rea…",
           "jsdoc": "Request body for creating a field option (B434). Spec: IssueFieldOptionCreateBean — required: value."
@@ -24837,7 +24894,7 @@
         {
           "name": "ReplaceIssueFieldOptionOnIssuesParams",
           "kind": "interface",
-          "line": 591,
+          "line": 595,
           "exported": true,
           "signature": "export interface ReplaceIssueFieldOptionOnIssuesParams { readonly replaceWith?: number; readonly jql?: string; readonly …",
           "jsdoc": "Query params for replacing a field option on issues (B438)."
@@ -24845,7 +24902,7 @@
         {
           "name": "ListIssueFieldOptionSuggestionsParams",
           "kind": "interface",
-          "line": 603,
+          "line": 607,
           "exported": true,
           "signature": "export interface ListIssueFieldOptionSuggestionsParams { readonly startAt?: number; readonly maxResults?: number; readon…",
           "jsdoc": "Query params for listing field option suggestions (B439, B440)."
@@ -24853,7 +24910,7 @@
         {
           "name": "FieldProjectAssociation",
           "kind": "interface",
-          "line": 614,
+          "line": 618,
           "exported": true,
           "signature": "export interface FieldProjectAssociation { readonly projectId?: string; }",
           "jsdoc": "A single project association entry returned by B414. Spec: FieldProjectAssociation"
@@ -24861,7 +24918,7 @@
         {
           "name": "FieldProjectAssociationPage",
           "kind": "type",
-          "line": 620,
+          "line": 624,
           "exported": true,
           "signature": "export type FieldProjectAssociationPage = OffsetPaginatedResponse<FieldProjectAssociation>;",
           "jsdoc": "Paginated page of FieldProjectAssociation items (B414). Spec: PageBeanFieldProjectAssociation"
@@ -24869,7 +24926,7 @@
         {
           "name": "ListFieldProjectAssociationsParams",
           "kind": "interface",
-          "line": 623,
+          "line": 627,
           "exported": true,
           "signature": "export interface ListFieldProjectAssociationsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for listing field project associations (B414)."
@@ -24877,7 +24934,7 @@
         {
           "name": "ScreenWithTab",
           "kind": "interface",
-          "line": 630,
+          "line": 634,
           "exported": true,
           "signature": "export interface ScreenWithTab { readonly id?: number; readonly name?: string; readonly description?: string; readonly s…",
           "jsdoc": "A single screen with tab info returned by B432. Spec: ScreenWithTab"
@@ -24885,7 +24942,7 @@
         {
           "name": "ScreenWithTabPage",
           "kind": "type",
-          "line": 643,
+          "line": 647,
           "exported": true,
           "signature": "export type ScreenWithTabPage = OffsetPaginatedResponse<ScreenWithTab>;",
           "jsdoc": "Paginated page of ScreenWithTab items (B432). Spec: PageBeanScreenWithTab"
@@ -24893,7 +24950,7 @@
         {
           "name": "ListScreensForFieldParams",
           "kind": "interface",
-          "line": 646,
+          "line": 650,
           "exported": true,
           "signature": "export interface ListScreensForFieldParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: …",
           "jsdoc": "Query parameters for listing screens for a field (B432)."
@@ -24901,7 +24958,7 @@
         {
           "name": "AssociationContextObject",
           "kind": "interface",
-          "line": 654,
+          "line": 658,
           "exported": true,
           "signature": "export interface AssociationContextObject { readonly type: string; readonly identifier?: unknown; }",
           "jsdoc": "Context association item in an association request (B444, B445). Spec: AssociationContextObject — discriminated by `type` (e.g. PROJECT_ID)."
@@ -24909,7 +24966,7 @@
         {
           "name": "FieldIdentifierObject",
           "kind": "interface",
-          "line": 661,
+          "line": 665,
           "exported": true,
           "signature": "export interface FieldIdentifierObject { readonly type: string; readonly identifier?: unknown; }",
           "jsdoc": "Field identifier item in an association request (B444, B445). Spec: FieldIdentifierObject — discriminated by `type` (e.g. FIELD_ID)."
@@ -24917,7 +24974,7 @@
         {
           "name": "FieldAssociationsRequest",
           "kind": "interface",
-          "line": 669,
+          "line": 673,
           "exported": true,
           "signature": "export interface FieldAssociationsRequest { readonly associationContexts: readonly AssociationContextObject[]; readonly …",
           "jsdoc": "Request body for PUT /rest/api/3/field/association (B445) and DELETE /rest/api/3/field/association (B444). Spec: FieldAssociationsRequest"
@@ -24925,7 +24982,7 @@
         {
           "name": "ListTrashedFieldsParams",
           "kind": "interface",
-          "line": 675,
+          "line": 679,
           "exported": true,
           "signature": "export interface ListTrashedFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/field/search/trashed (B447)."
@@ -24933,7 +24990,7 @@
         {
           "name": "FieldContextProjectIdsBody",
           "kind": "interface",
-          "line": 688,
+          "line": 692,
           "exported": true,
           "signature": "export interface FieldContextProjectIdsBody { readonly projectIds: readonly string[]; }",
           "jsdoc": "Request body for assigning or removing projects from a context (B427, B428). Spec: ProjectIds"
@@ -24941,7 +24998,7 @@
         {
           "name": "FieldContextProjectMapping",
           "kind": "interface",
-          "line": 694,
+          "line": 698,
           "exported": true,
           "signature": "export interface FieldContextProjectMapping { readonly contextId: string; readonly projectId?: string; readonly isGlobal…",
           "jsdoc": "A single context-to-project association entry (B431). Spec: CustomFieldContextProjectMapping"
@@ -24949,7 +25006,7 @@
         {
           "name": "FieldContextProjectMappingPage",
           "kind": "type",
-          "line": 705,
+          "line": 709,
           "exported": true,
           "signature": "export type FieldContextProjectMappingPage = OffsetPaginatedResponse<FieldContextProjectMapping>;",
           "jsdoc": "Paginated page of FieldContextProjectMapping items (B431). Spec: PageBeanCustomFieldContextProjectMapping"
@@ -24957,7 +25014,7 @@
         {
           "name": "ListFieldContextProjectMappingParams",
           "kind": "interface",
-          "line": 708,
+          "line": 712,
           "exported": true,
           "signature": "export interface ListFieldContextProjectMappingParams { readonly contextId?: number[]; readonly startAt?: number; readon…",
           "jsdoc": "Query parameters for listing context-to-project mappings (B431)."
@@ -24965,7 +25022,7 @@
         {
           "name": "FieldContextProjectIssueTypeMapping",
           "kind": "interface",
-          "line": 717,
+          "line": 721,
           "exported": true,
           "signature": "export interface FieldContextProjectIssueTypeMapping { readonly projectId: string; readonly issueTypeId: string; }",
           "jsdoc": "A single project+issueType entry in a bulk mapping lookup (B430). Spec: ProjectIssueTypeMapping"
@@ -24973,7 +25030,7 @@
         {
           "name": "FieldContextMappingBulkBody",
           "kind": "interface",
-          "line": 724,
+          "line": 728,
           "exported": true,
           "signature": "export interface FieldContextMappingBulkBody { readonly mappings: readonly FieldContextProjectIssueTypeMapping[]; }",
           "jsdoc": "Request body for bulk-looking up contexts by project+issueType pairs (B430). Spec: ProjectIssueTypeMappings"
@@ -24981,7 +25038,7 @@
         {
           "name": "FieldContextForProjectAndIssueType",
           "kind": "interface",
-          "line": 731,
+          "line": 735,
           "exported": true,
           "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string | null; readonly issueTypeId: string; r…",
           "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType. `contextId` is `null` when no context matches the {projectId, issueTypeId} pair."
@@ -24989,7 +25046,7 @@
         {
           "name": "FieldContextMappingPage",
           "kind": "type",
-          "line": 739,
+          "line": 743,
           "exported": true,
           "signature": "export type FieldContextMappingPage = OffsetPaginatedResponse<FieldContextForProjectAndIssueType>;",
           "jsdoc": "Paginated response for the bulk context lookup (B430). Spec: PageBeanContextForProjectAndIssueType"
@@ -24997,7 +25054,7 @@
         {
           "name": "GetFieldContextMappingsParams",
           "kind": "interface",
-          "line": 742,
+          "line": 746,
           "exported": true,
           "signature": "export interface GetFieldContextMappingsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the bulk context lookup (B430)."
@@ -25005,209 +25062,209 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 747,
+          "line": 751,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 748
+              "line": 752
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 754
+              "line": 758
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 777
+              "line": 781
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 786
+              "line": 790
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 796
+              "line": 800
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 806
+              "line": 810
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 814
+              "line": 818
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 833
+              "line": 837
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 843
+              "line": 847
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 856
+              "line": 860
             },
             {
               "name": "listContextOptions",
               "kind": "method",
-              "line": 864
+              "line": 868
             },
             {
               "name": "createContextOptions",
               "kind": "method",
-              "line": 886
+              "line": 890
             },
             {
               "name": "updateContextOptions",
               "kind": "method",
-              "line": 900
+              "line": 904
             },
             {
               "name": "deleteContextOption",
               "kind": "method",
-              "line": 914
+              "line": 918
             },
             {
               "name": "replaceContextOptionOnIssues",
               "kind": "method",
-              "line": 923
+              "line": 927
             },
             {
               "name": "reorderContextOptions",
               "kind": "method",
-              "line": 943
+              "line": 947
             },
             {
               "name": "setContextIssueTypes",
               "kind": "method",
-              "line": 956
+              "line": 960
             },
             {
               "name": "removeContextIssueTypes",
               "kind": "method",
-              "line": 969
+              "line": 973
             },
             {
               "name": "listContextIssueTypeMappings",
               "kind": "method",
-              "line": 982
+              "line": 986
             },
             {
               "name": "listContextDefaultValues",
               "kind": "method",
-              "line": 1003
+              "line": 1007
             },
             {
               "name": "setContextDefaultValues",
               "kind": "method",
-              "line": 1024
+              "line": 1028
             },
             {
               "name": "setContextProjects",
               "kind": "method",
-              "line": 1037
+              "line": 1041
             },
             {
               "name": "removeContextProjects",
               "kind": "method",
-              "line": 1051
+              "line": 1055
             },
             {
               "name": "getContextMappings",
               "kind": "method",
-              "line": 1065
+              "line": 1069
             },
             {
               "name": "listContextProjectMappings",
               "kind": "method",
-              "line": 1087
+              "line": 1091
             },
             {
               "name": "listFieldProjectAssociations",
               "kind": "method",
-              "line": 1110
+              "line": 1114
             },
             {
               "name": "listFieldScreens",
               "kind": "method",
-              "line": 1130
+              "line": 1134
             },
             {
               "name": "restoreField",
               "kind": "method",
-              "line": 1151
+              "line": 1155
             },
             {
               "name": "trashField",
               "kind": "method",
-              "line": 1160
+              "line": 1164
             },
             {
               "name": "removeAssociations",
               "kind": "method",
-              "line": 1169
+              "line": 1173
             },
             {
               "name": "createAssociations",
               "kind": "method",
-              "line": 1179
+              "line": 1183
             },
             {
               "name": "listTrashedFields",
               "kind": "method",
-              "line": 1189
+              "line": 1193
             },
             {
               "name": "listFieldOptions",
               "kind": "method",
-              "line": 1214
+              "line": 1218
             },
             {
               "name": "createFieldOption",
               "kind": "method",
-              "line": 1234
+              "line": 1238
             },
             {
               "name": "deleteFieldOption",
               "kind": "method",
-              "line": 1248
+              "line": 1252
             },
             {
               "name": "getFieldOption",
               "kind": "method",
-              "line": 1257
+              "line": 1261
             },
             {
               "name": "updateFieldOption",
               "kind": "method",
-              "line": 1268
+              "line": 1272
             },
             {
               "name": "replaceFieldOptionOnIssues",
               "kind": "method",
-              "line": 1284
+              "line": 1288
             },
             {
               "name": "listFieldOptionSuggestionsEdit",
               "kind": "method",
-              "line": 1308
+              "line": 1312
             },
             {
               "name": "listFieldOptionSuggestionsSearch",
               "kind": "method",
-              "line": 1329
+              "line": 1333
             }
           ]
         }
@@ -25232,35 +25289,39 @@
         {
           "name": "Filter",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
-          "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…"
+          "signature": "export interface Filter { readonly id: string; readonly self?: string; readonly name: string; readonly description?: str…",
+          "jsdoc": "A Jira saved filter containing a JQL query and share permissions."
         },
         {
           "name": "ListFiltersParams",
           "kind": "interface",
-          "line": 36,
+          "line": 38,
           "exported": true,
-          "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …"
+          "signature": "export interface ListFiltersParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string; …",
+          "jsdoc": "Query parameters for listing Jira saved filters."
         },
         {
           "name": "CreateFilterData",
           "kind": "interface",
-          "line": 44,
+          "line": 47,
           "exported": true,
-          "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…"
+          "signature": "export interface CreateFilterData { readonly name: string; readonly description?: string; readonly jql?: string; readonl…",
+          "jsdoc": "Request body for creating a new Jira saved filter."
         },
         {
           "name": "UpdateFilterData",
           "kind": "interface",
-          "line": 53,
+          "line": 57,
           "exported": true,
-          "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…"
+          "signature": "export interface UpdateFilterData { readonly name?: string; readonly description?: string; readonly jql?: string; readon…",
+          "jsdoc": "Request body for updating an existing Jira saved filter."
         },
         {
           "name": "FilterShareScope",
           "kind": "type",
-          "line": 69,
+          "line": 73,
           "exported": true,
           "signature": "export type FilterShareScope = 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE';",
           "jsdoc": "Default sharing scope for newly created filters."
@@ -25268,14 +25329,14 @@
         {
           "name": "DefaultShareScopeResponse",
           "kind": "interface",
-          "line": 71,
+          "line": 75,
           "exported": true,
           "signature": "export interface DefaultShareScopeResponse { readonly scope: FilterShareScope; }"
         },
         {
           "name": "AddFilterSharePermissionData",
           "kind": "interface",
-          "line": 92,
+          "line": 96,
           "exported": true,
           "signature": "export interface AddFilterSharePermissionData { readonly type: | 'user' | 'group' | 'project' | 'projectRole' | 'global'…",
           "jsdoc": "Write shape for share permission entries on a filter. Used by:"
@@ -25283,7 +25344,7 @@
         {
           "name": "FilterColumn",
           "kind": "interface",
-          "line": 110,
+          "line": 114,
           "exported": true,
           "signature": "export interface FilterColumn { readonly label: string; readonly value: string; }",
           "jsdoc": "A single column in the user's saved column configuration for a filter."
@@ -25291,7 +25352,7 @@
         {
           "name": "ListFavouriteFiltersParams",
           "kind": "interface",
-          "line": 116,
+          "line": 120,
           "exported": true,
           "signature": "export interface ListFavouriteFiltersParams { readonly expand?: string; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/favourite`."
@@ -25299,7 +25360,7 @@
         {
           "name": "ListMyFiltersParams",
           "kind": "interface",
-          "line": 121,
+          "line": 125,
           "exported": true,
           "signature": "export interface ListMyFiltersParams { readonly expand?: string; readonly includeFavourites?: boolean; }",
           "jsdoc": "Params for `GET /rest/api/3/filter/my`."
@@ -25307,114 +25368,114 @@
         {
           "name": "FiltersResource",
           "kind": "class",
-          "line": 126,
+          "line": 130,
           "exported": true,
           "signature": "export class FiltersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 127
+              "line": 131
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 133
+              "line": 137
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 155
+              "line": 159
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 164
+              "line": 168
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 174
+              "line": 178
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 184
+              "line": 188
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 194
+              "line": 198
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 211
+              "line": 215
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 220
+              "line": 224
             },
             {
               "name": "addFavourite",
               "kind": "method",
-              "line": 230
+              "line": 234
             },
             {
               "name": "removeFavourite",
               "kind": "method",
-              "line": 242
+              "line": 246
             },
             {
               "name": "listFavourites",
               "kind": "method",
-              "line": 254
+              "line": 258
             },
             {
               "name": "listMy",
               "kind": "method",
-              "line": 268
+              "line": 272
             },
             {
               "name": "changeOwner",
               "kind": "method",
-              "line": 285
+              "line": 289
             },
             {
               "name": "listPermissions",
               "kind": "method",
-              "line": 296
+              "line": 300
             },
             {
               "name": "addPermission",
               "kind": "method",
-              "line": 305
+              "line": 309
             },
             {
               "name": "getPermission",
               "kind": "method",
-              "line": 318
+              "line": 322
             },
             {
               "name": "deletePermission",
               "kind": "method",
-              "line": 327
+              "line": 331
             },
             {
               "name": "getDefaultShareScope",
               "kind": "method",
-              "line": 337
+              "line": 341
             },
             {
               "name": "setDefaultShareScope",
               "kind": "method",
-              "line": 346
+              "line": 350
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 356
+              "line": 360
             }
           ]
         }
@@ -28308,155 +28369,162 @@
         {
           "name": "JqlAutocompleteData",
           "kind": "interface",
-          "line": 110,
+          "line": 111,
           "exported": true,
-          "signature": "export interface JqlAutocompleteData { readonly visibleFieldNames?: JqlAutocompleteField[]; readonly visibleFunctionName…"
+          "signature": "export interface JqlAutocompleteData { readonly visibleFieldNames?: JqlAutocompleteField[]; readonly visibleFunctionName…",
+          "jsdoc": "Autocomplete data for building JQL queries (field names, function names, reserved words)."
         },
         {
           "name": "JqlAutocompleteField",
           "kind": "interface",
-          "line": 116,
+          "line": 117,
           "exported": true,
           "signature": "export interface JqlAutocompleteField { readonly value: string; readonly displayName?: string; readonly orderable?: stri…"
         },
         {
           "name": "JqlAutocompleteSuggestion",
           "kind": "interface",
-          "line": 129,
+          "line": 130,
           "exported": true,
           "signature": "export interface JqlAutocompleteSuggestion { readonly value: string; readonly displayName?: string; readonly isList?: st…"
         },
         {
           "name": "ParseJqlQueriesData",
           "kind": "interface",
-          "line": 137,
+          "line": 139,
           "exported": true,
-          "signature": "export interface ParseJqlQueriesData { readonly queries: string[]; readonly validation?: 'strict' | 'warn' | 'none'; }"
+          "signature": "export interface ParseJqlQueriesData { readonly queries: string[]; readonly validation?: 'strict' | 'warn' | 'none'; }",
+          "jsdoc": "Request body for parsing one or more JQL query strings."
         },
         {
           "name": "ParsedJqlQueries",
           "kind": "interface",
-          "line": 142,
+          "line": 145,
           "exported": true,
-          "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }"
+          "signature": "export interface ParsedJqlQueries { readonly queries: ParsedJqlQuery[]; }",
+          "jsdoc": "Response from the JQL parse endpoint containing parsed query representations."
         },
         {
           "name": "ParsedJqlQuery",
           "kind": "interface",
-          "line": 146,
+          "line": 149,
           "exported": true,
           "signature": "export interface ParsedJqlQuery { readonly query: string; readonly structure?: Record<string, unknown>; readonly errors?…"
         },
         {
           "name": "JqlQueryToSanitize",
           "kind": "interface",
-          "line": 152,
+          "line": 155,
           "exported": true,
           "signature": "export interface JqlQueryToSanitize { readonly query: string; readonly accountId?: string; }"
         },
         {
           "name": "SanitizedJqlQuery",
           "kind": "interface",
-          "line": 157,
+          "line": 160,
           "exported": true,
           "signature": "export interface SanitizedJqlQuery { readonly initialQuery: string; readonly sanitizedQuery?: string; readonly errors?: …"
         },
         {
           "name": "SanitizeJqlQueriesData",
           "kind": "interface",
-          "line": 167,
+          "line": 171,
           "exported": true,
-          "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }"
+          "signature": "export interface SanitizeJqlQueriesData { readonly queries: JqlQueryToSanitize[]; }",
+          "jsdoc": "Request body for sanitizing one or more JQL queries (removes personal data)."
         },
         {
           "name": "SanitizedJqlQueries",
           "kind": "interface",
-          "line": 171,
+          "line": 176,
           "exported": true,
-          "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }"
+          "signature": "export interface SanitizedJqlQueries { readonly queries: SanitizedJqlQuery[]; }",
+          "jsdoc": "Response from the JQL sanitize endpoint containing sanitized query strings."
         },
         {
           "name": "JqlSuggestionsParams",
           "kind": "interface",
-          "line": 175,
+          "line": 181,
           "exported": true,
-          "signature": "export interface JqlSuggestionsParams { readonly fieldName: string; readonly fieldValue?: string; readonly predicateName…"
+          "signature": "export interface JqlSuggestionsParams { readonly fieldName: string; readonly fieldValue?: string; readonly predicateName…",
+          "jsdoc": "Query parameters for fetching field-value suggestions for JQL autocomplete."
         },
         {
           "name": "JqlSuggestion",
           "kind": "interface",
-          "line": 182,
+          "line": 188,
           "exported": true,
           "signature": "export interface JqlSuggestion { readonly value: string; readonly displayName?: string; }"
         },
         {
           "name": "JqlSuggestions",
           "kind": "interface",
-          "line": 187,
+          "line": 194,
           "exported": true,
-          "signature": "export interface JqlSuggestions { readonly results: JqlSuggestion[]; }"
+          "signature": "export interface JqlSuggestions { readonly results: JqlSuggestion[]; }",
+          "jsdoc": "Field-value suggestions returned by the JQL field reference suggestions endpoint."
         },
         {
           "name": "JqlResource",
           "kind": "class",
-          "line": 191,
+          "line": 198,
           "exported": true,
           "signature": "export class JqlResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 192
+              "line": 199
             },
             {
               "name": "getAutocompleteData",
               "kind": "method",
-              "line": 198
+              "line": 205
             },
             {
               "name": "getFieldReferenceSuggestions",
               "kind": "method",
-              "line": 207
+              "line": 214
             },
             {
               "name": "parse",
               "kind": "method",
-              "line": 224
+              "line": 231
             },
             {
               "name": "sanitize",
               "kind": "method",
-              "line": 234
+              "line": 241
             },
             {
               "name": "getAutocompleteDataPost",
               "kind": "method",
-              "line": 244
+              "line": 251
             },
             {
               "name": "getPrecomputations",
               "kind": "method",
-              "line": 254
+              "line": 261
             },
             {
               "name": "updatePrecomputations",
               "kind": "method",
-              "line": 270
+              "line": 277
             },
             {
               "name": "getPrecomputationsById",
               "kind": "method",
-              "line": 288
+              "line": 295
             },
             {
               "name": "matchIssues",
               "kind": "method",
-              "line": 305
+              "line": 312
             },
             {
               "name": "migrateQueries",
               "kind": "method",
-              "line": 315
+              "line": 322
             }
           ]
         }
@@ -32136,102 +32204,106 @@
         {
           "name": "Sprint",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
-          "signature": "export interface Sprint { readonly id: number; readonly self: string; readonly state: 'active' | 'closed' | 'future'; re…"
+          "signature": "export interface Sprint { readonly id: number; readonly self: string; readonly state: 'active' | 'closed' | 'future'; re…",
+          "jsdoc": "An agile sprint in Jira Software."
         },
         {
           "name": "CreateSprintData",
           "kind": "interface",
-          "line": 34,
+          "line": 36,
           "exported": true,
-          "signature": "export interface CreateSprintData { readonly name: string; readonly originBoardId: number; readonly startDate?: string; …"
+          "signature": "export interface CreateSprintData { readonly name: string; readonly originBoardId: number; readonly startDate?: string; …",
+          "jsdoc": "Request body for creating a new sprint."
         },
         {
           "name": "UpdateSprintData",
           "kind": "interface",
-          "line": 42,
+          "line": 45,
           "exported": true,
-          "signature": "export interface UpdateSprintData { readonly name?: string; readonly state?: 'active' | 'closed' | 'future'; readonly st…"
+          "signature": "export interface UpdateSprintData { readonly name?: string; readonly state?: 'active' | 'closed' | 'future'; readonly st…",
+          "jsdoc": "Request body for updating an existing sprint."
         },
         {
           "name": "ListSprintIssuesParams",
           "kind": "interface",
-          "line": 50,
+          "line": 54,
           "exported": true,
-          "signature": "export interface ListSprintIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string…"
+          "signature": "export interface ListSprintIssuesParams { readonly startAt?: number; readonly maxResults?: number; readonly jql?: string…",
+          "jsdoc": "Query parameters for listing issues in a sprint."
         },
         {
           "name": "SprintsResource",
           "kind": "class",
-          "line": 57,
+          "line": 61,
           "exported": true,
           "signature": "export class SprintsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 58
+              "line": 62
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 64
+              "line": 68
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 76
+              "line": 80
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 86
+              "line": 90
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 99
+              "line": 103
             },
             {
               "name": "partialUpdate",
               "kind": "method",
-              "line": 110
+              "line": 114
             },
             {
               "name": "moveIssues",
               "kind": "method",
-              "line": 123
+              "line": 127
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 146
+              "line": 150
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 158
+              "line": 162
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 173
+              "line": 177
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 188
+              "line": 192
             },
             {
               "name": "swap",
               "kind": "method",
-              "line": 202
+              "line": 206
             },
             {
               "name": "getIssues",
               "kind": "method",
-              "line": 220
+              "line": 224
             }
           ]
         }
@@ -33126,49 +33198,53 @@
         {
           "name": "Webhook",
           "kind": "interface",
-          "line": 5,
+          "line": 6,
           "exported": true,
-          "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly…"
+          "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly…",
+          "jsdoc": "A registered Jira webhook that fires on matching events."
         },
         {
           "name": "WebhookRegistration",
           "kind": "interface",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export interface WebhookRegistration { readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly issuePro…"
         },
         {
           "name": "WebhookRegistrationResult",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export interface WebhookRegistrationResult { readonly createdWebhookId?: number; readonly errors?: string[]; }"
         },
         {
           "name": "RegisterWebhookData",
           "kind": "interface",
-          "line": 27,
+          "line": 29,
           "exported": true,
-          "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }"
+          "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
+          "jsdoc": "Request body for registering one or more Jira webhooks at a URL."
         },
         {
           "name": "RegisteredWebhooks",
           "kind": "interface",
-          "line": 32,
+          "line": 35,
           "exported": true,
-          "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }"
+          "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
+          "jsdoc": "Response returned after registering webhooks, listing per-registration results."
         },
         {
           "name": "ListWebhooksParams",
           "kind": "interface",
-          "line": 36,
+          "line": 40,
           "exported": true,
-          "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }"
+          "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
+          "jsdoc": "Query parameters for listing registered Jira webhooks."
         },
         {
           "name": "FailedWebhook",
           "kind": "interface",
-          "line": 42,
+          "line": 46,
           "exported": true,
           "signature": "export interface FailedWebhook { readonly id: string; readonly body?: string; readonly url: string; readonly failureTime…",
           "jsdoc": "A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed."
@@ -33176,51 +33252,51 @@
         {
           "name": "ListFailedWebhooksParams",
           "kind": "interface",
-          "line": 53,
+          "line": 57,
           "exported": true,
           "signature": "export interface ListFailedWebhooksParams { readonly maxResults?: number; readonly after?: number; }"
         },
         {
           "name": "WebhooksResource",
           "kind": "class",
-          "line": 59,
+          "line": 63,
           "exported": true,
           "signature": "export class WebhooksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 60
+              "line": 64
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 66
+              "line": 70
             },
             {
               "name": "register",
               "kind": "method",
-              "line": 83
+              "line": 87
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 93
+              "line": 97
             },
             {
               "name": "refresh",
               "kind": "method",
-              "line": 102
+              "line": 106
             },
             {
               "name": "listFailed",
               "kind": "method",
-              "line": 111
+              "line": 115
             },
             {
               "name": "listAllFailed",
               "kind": "method",
-              "line": 134
+              "line": 138
             }
           ]
         }
@@ -33331,169 +33407,173 @@
         {
           "name": "WorkflowTransition",
           "kind": "interface",
-          "line": 99,
+          "line": 100,
           "exported": true,
-          "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…"
+          "signature": "export interface WorkflowTransition { readonly id: string; readonly name: string; readonly description?: string; readonl…",
+          "jsdoc": "A workflow transition connecting two statuses in a Jira workflow."
         },
         {
           "name": "WorkflowStatus",
           "kind": "interface",
-          "line": 111,
+          "line": 113,
           "exported": true,
-          "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…"
+          "signature": "export interface WorkflowStatus { readonly id: string; readonly name: string; readonly properties?: Record<string, unkno…",
+          "jsdoc": "A status node within a Jira workflow."
         },
         {
           "name": "Workflow",
           "kind": "interface",
-          "line": 117,
+          "line": 120,
           "exported": true,
-          "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…"
+          "signature": "export interface Workflow { readonly id: { readonly name: string; readonly entityId?: string }; readonly description: st…",
+          "jsdoc": "A Jira workflow definition including its transitions and statuses."
         },
         {
           "name": "ListWorkflowsParams",
           "kind": "interface",
-          "line": 131,
+          "line": 135,
           "exported": true,
-          "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…"
+          "signature": "export interface ListWorkflowsParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: string…",
+          "jsdoc": "Query parameters for listing Jira workflows."
         },
         {
           "name": "WorkflowsResource",
           "kind": "class",
-          "line": 140,
+          "line": 144,
           "exported": true,
           "signature": "export class WorkflowsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 141
+              "line": 145
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 147
+              "line": 151
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 168
+              "line": 172
             },
             {
               "name": "deleteWorkflow",
               "kind": "method",
-              "line": 185
+              "line": 189
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 196
+              "line": 200
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 217
+              "line": 221
             },
             {
               "name": "getWorkflowSchemeUsages",
               "kind": "method",
-              "line": 237
+              "line": 241
             },
             {
               "name": "previewWorkflows",
               "kind": "method",
-              "line": 257
+              "line": 261
             },
             {
               "name": "bulkGet",
               "kind": "method",
-              "line": 270
+              "line": 274
             },
             {
               "name": "searchWorkflows",
               "kind": "method",
-              "line": 283
+              "line": 287
             },
             {
               "name": "readWorkflowFromHistory",
               "kind": "method",
-              "line": 307
+              "line": 311
             },
             {
               "name": "getCapabilities",
               "kind": "method",
-              "line": 323
+              "line": 327
             },
             {
               "name": "updateWorkflows",
               "kind": "method",
-              "line": 340
+              "line": 344
             },
             {
               "name": "listWorkflowHistory",
               "kind": "method",
-              "line": 353
+              "line": 357
             },
             {
               "name": "validateWorkflowUpdate",
               "kind": "method",
-              "line": 373
+              "line": 377
             },
             {
               "name": "bulkCreate",
               "kind": "method",
-              "line": 388
+              "line": 392
             },
             {
               "name": "getTransitionRuleConfigs",
               "kind": "method",
-              "line": 401
+              "line": 405
             },
             {
               "name": "validateCreate",
               "kind": "method",
-              "line": 430
+              "line": 434
             },
             {
               "name": "updateTransitionRuleConfigs",
               "kind": "method",
-              "line": 443
+              "line": 447
             },
             {
               "name": "getDefaultEditor",
               "kind": "method",
-              "line": 461
+              "line": 465
             },
             {
               "name": "deleteTransitionRuleConfigs",
               "kind": "method",
-              "line": 473
+              "line": 477
             },
             {
               "name": "deleteTransitionProperty",
               "kind": "method",
-              "line": 494
+              "line": 498
             },
             {
               "name": "getTransitionProperties",
               "kind": "method",
-              "line": 517
+              "line": 521
             },
             {
               "name": "createTransitionProperty",
               "kind": "method",
-              "line": 543
+              "line": 547
             },
             {
               "name": "updateTransitionProperty",
               "kind": "method",
-              "line": 569
+              "line": 573
             }
           ]
         },
         {
           "name": "ProjectAndIssueTypePair",
           "kind": "interface",
-          "line": 594,
+          "line": 598,
           "exported": true,
           "signature": "export interface ProjectAndIssueTypePair { readonly issueTypeId: string; readonly projectId: string; }",
           "jsdoc": "Project+issueType pair for bulk workflow lookup (B846)."
@@ -33501,7 +33581,7 @@
         {
           "name": "WorkflowReadRequest",
           "kind": "interface",
-          "line": 600,
+          "line": 604,
           "exported": true,
           "signature": "export interface WorkflowReadRequest { readonly projectAndIssueTypes?: ProjectAndIssueTypePair[]; readonly workflowIds?:…",
           "jsdoc": "Request body for POST /rest/api/3/workflows (bulk get) — B846."
@@ -33509,7 +33589,7 @@
         {
           "name": "JiraWorkflow",
           "kind": "interface",
-          "line": 607,
+          "line": 611,
           "exported": true,
           "signature": "export interface JiraWorkflow { readonly id?: string; readonly name?: string; readonly description?: string; readonly is…",
           "jsdoc": "A workflow returned by the bulk-read API (B846/B848 response)."
@@ -33517,7 +33597,7 @@
         {
           "name": "WorkflowLayout",
           "kind": "interface",
-          "line": 624,
+          "line": 628,
           "exported": true,
           "signature": "export interface WorkflowLayout { readonly x?: number; readonly y?: number; }",
           "jsdoc": "Layout coordinates used by workflow editor (sub-schema)."
@@ -33525,7 +33605,7 @@
         {
           "name": "WorkflowReferenceStatus",
           "kind": "interface",
-          "line": 630,
+          "line": 634,
           "exported": true,
           "signature": "export interface WorkflowReferenceStatus { readonly statusReference?: string; readonly layout?: WorkflowLayout; readonly…",
           "jsdoc": "Status reference with layout info used in JiraWorkflow (sub-schema)."
@@ -33533,7 +33613,7 @@
         {
           "name": "WorkflowTransitions",
           "kind": "interface",
-          "line": 638,
+          "line": 642,
           "exported": true,
           "signature": "export interface WorkflowTransitions { readonly id?: string; readonly name?: string; readonly description?: string; read…",
           "jsdoc": "Transition in a JiraWorkflow response (sub-schema)."
@@ -33541,7 +33621,7 @@
         {
           "name": "WorkflowTransitionLink",
           "kind": "interface",
-          "line": 652,
+          "line": 656,
           "exported": true,
           "signature": "export interface WorkflowTransitionLink { readonly fromStatusReference?: string; readonly fromPort?: number; readonly to…",
           "jsdoc": "A link between two statuses in a transition."
@@ -33549,7 +33629,7 @@
         {
           "name": "WorkflowRuleConfiguration",
           "kind": "interface",
-          "line": 659,
+          "line": 663,
           "exported": true,
           "signature": "export interface WorkflowRuleConfiguration { readonly ruleKey?: string; readonly parameters?: Record<string, string>; re…",
           "jsdoc": "A rule (action/validator) configuration on a transition."
@@ -33557,7 +33637,7 @@
         {
           "name": "WorkflowTrigger",
           "kind": "interface",
-          "line": 666,
+          "line": 670,
           "exported": true,
           "signature": "export interface WorkflowTrigger { readonly ruleKey?: string; readonly parameters?: Record<string, string>; readonly id?…",
           "jsdoc": "A trigger attached to a transition."
@@ -33565,7 +33645,7 @@
         {
           "name": "JiraWorkflowStatus",
           "kind": "interface",
-          "line": 673,
+          "line": 677,
           "exported": true,
           "signature": "export interface JiraWorkflowStatus { readonly id?: string; readonly name?: string; readonly description?: string; reado…",
           "jsdoc": "A status returned by the bulk-read API (B846/B848 response)."
@@ -33573,7 +33653,7 @@
         {
           "name": "WorkflowReadResponse",
           "kind": "interface",
-          "line": 683,
+          "line": 687,
           "exported": true,
           "signature": "export interface WorkflowReadResponse { readonly workflows?: JiraWorkflow[]; readonly statuses?: JiraWorkflowStatus[]; }",
           "jsdoc": "Response for POST /rest/api/3/workflows (bulk get) — B846."
@@ -33581,7 +33661,7 @@
         {
           "name": "WorkflowCapabilitiesParams",
           "kind": "interface",
-          "line": 689,
+          "line": 693,
           "exported": true,
           "signature": "export interface WorkflowCapabilitiesParams { readonly workflowId?: string; readonly projectId?: string; readonly issueT…",
           "jsdoc": "Query params for GET /rest/api/3/workflows/capabilities — B847."
@@ -33589,7 +33669,7 @@
         {
           "name": "AvailableWorkflowConnectRule",
           "kind": "interface",
-          "line": 696,
+          "line": 700,
           "exported": true,
           "signature": "export interface AvailableWorkflowConnectRule { readonly addonKey?: string; readonly createUrl?: string; readonly descri…",
           "jsdoc": "A Connect rule available in the workflow editor."
@@ -33597,7 +33677,7 @@
         {
           "name": "AvailableWorkflowForgeRule",
           "kind": "interface",
-          "line": 709,
+          "line": 713,
           "exported": true,
           "signature": "export interface AvailableWorkflowForgeRule { readonly description?: string; readonly id?: string; readonly name?: strin…",
           "jsdoc": "A Forge rule available in the workflow editor."
@@ -33605,7 +33685,7 @@
         {
           "name": "AvailableWorkflowSystemRule",
           "kind": "interface",
-          "line": 718,
+          "line": 722,
           "exported": true,
           "signature": "export interface AvailableWorkflowSystemRule { readonly description?: string; readonly incompatibleRuleKeys?: string[]; …",
           "jsdoc": "A system rule available in the workflow editor."
@@ -33613,7 +33693,7 @@
         {
           "name": "AvailableWorkflowTriggers",
           "kind": "interface",
-          "line": 729,
+          "line": 733,
           "exported": true,
           "signature": "export interface AvailableWorkflowTriggers { readonly availableTypes?: AvailableWorkflowTriggerType[]; readonly ruleKey?…",
           "jsdoc": "Trigger rules available in the workflow editor."
@@ -33621,7 +33701,7 @@
         {
           "name": "AvailableWorkflowTriggerType",
           "kind": "interface",
-          "line": 735,
+          "line": 739,
           "exported": true,
           "signature": "export interface AvailableWorkflowTriggerType { readonly description?: string; readonly name?: string; readonly type?: s…",
           "jsdoc": "A type of trigger available in the workflow editor."
@@ -33629,7 +33709,7 @@
         {
           "name": "WorkflowCapabilities",
           "kind": "interface",
-          "line": 742,
+          "line": 746,
           "exported": true,
           "signature": "export interface WorkflowCapabilities { readonly connectRules?: AvailableWorkflowConnectRule[]; readonly editorScope?: s…",
           "jsdoc": "Response for GET /rest/api/3/workflows/capabilities — B847."
@@ -33637,7 +33717,7 @@
         {
           "name": "WorkflowStatusUpdate",
           "kind": "interface",
-          "line": 752,
+          "line": 756,
           "exported": true,
           "signature": "export interface WorkflowStatusUpdate { readonly id?: string; readonly name: string; readonly statusCategory: string; re…",
           "jsdoc": "A status entry in the create request (B848)."
@@ -33645,7 +33725,7 @@
         {
           "name": "StatusLayoutUpdate",
           "kind": "interface",
-          "line": 761,
+          "line": 765,
           "exported": true,
           "signature": "export interface StatusLayoutUpdate { readonly statusReference: string; readonly layout?: WorkflowLayout; readonly prope…",
           "jsdoc": "A status with layout info in a WorkflowCreate entry."
@@ -33653,7 +33733,7 @@
         {
           "name": "TransitionUpdateDTO",
           "kind": "interface",
-          "line": 768,
+          "line": 772,
           "exported": true,
           "signature": "export interface TransitionUpdateDTO { readonly id?: string; readonly name?: string; readonly type?: string; readonly to…",
           "jsdoc": "A transition in a WorkflowCreate entry. Spec marks no fields required."
@@ -33661,7 +33741,7 @@
         {
           "name": "WorkflowCreate",
           "kind": "interface",
-          "line": 782,
+          "line": 786,
           "exported": true,
           "signature": "export interface WorkflowCreate { readonly name: string; readonly description?: string; readonly statuses: StatusLayoutU…",
           "jsdoc": "A single workflow definition in the create request."
@@ -33669,7 +33749,7 @@
         {
           "name": "WorkflowCreateRequest",
           "kind": "interface",
-          "line": 793,
+          "line": 797,
           "exported": true,
           "signature": "export interface WorkflowCreateRequest { readonly scope?: WorkflowScope; readonly statuses?: WorkflowStatusUpdate[]; rea…",
           "jsdoc": "Request body for POST /rest/api/3/workflows/create — B848. NOTE: distinct from WorkflowReadRequest — different schema name."
@@ -33677,7 +33757,7 @@
         {
           "name": "WorkflowCreateResponse",
           "kind": "interface",
-          "line": 801,
+          "line": 805,
           "exported": true,
           "signature": "export interface WorkflowCreateResponse { readonly workflows?: JiraWorkflow[]; readonly statuses?: JiraWorkflowStatus[];…",
           "jsdoc": "Response for POST /rest/api/3/workflows/create — B848. NOTE: distinct from WorkflowReadResponse — different schema name."
@@ -33685,7 +33765,7 @@
         {
           "name": "ValidationOptionsForCreate",
           "kind": "interface",
-          "line": 807,
+          "line": 811,
           "exported": true,
           "signature": "export interface ValidationOptionsForCreate { readonly levels?: string[]; }",
           "jsdoc": "Validation level options for validate-create."
@@ -33693,7 +33773,7 @@
         {
           "name": "WorkflowCreateValidateRequest",
           "kind": "interface",
-          "line": 812,
+          "line": 816,
           "exported": true,
           "signature": "export interface WorkflowCreateValidateRequest { readonly payload: WorkflowCreateRequest; readonly validationOptions?: V…",
           "jsdoc": "Request body for POST /rest/api/3/workflows/create/validation — B849."
@@ -33701,7 +33781,7 @@
         {
           "name": "WorkflowElementReference",
           "kind": "interface",
-          "line": 818,
+          "line": 822,
           "exported": true,
           "signature": "export interface WorkflowElementReference { readonly ruleId?: string; readonly statusMappingReference?: ProjectAndIssueT…",
           "jsdoc": "Element reference in a validation error."
@@ -33709,7 +33789,7 @@
         {
           "name": "WorkflowIdRefForValidation",
           "kind": "interface",
-          "line": 827,
+          "line": 831,
           "exported": true,
           "signature": "export interface WorkflowIdRefForValidation { readonly entityId?: string; readonly name?: string; }",
           "jsdoc": "Workflow ID reference in a validation error element (B849)."
@@ -33717,7 +33797,7 @@
         {
           "name": "WorkflowValidationError",
           "kind": "interface",
-          "line": 833,
+          "line": 837,
           "exported": true,
           "signature": "export interface WorkflowValidationError { readonly message?: string; readonly code?: string; readonly level?: string; r…",
           "jsdoc": "A single validation error from create/validate or update/validate."
@@ -33725,7 +33805,7 @@
         {
           "name": "WorkflowValidationErrorList",
           "kind": "interface",
-          "line": 844,
+          "line": 848,
           "exported": true,
           "signature": "export interface WorkflowValidationErrorList { readonly errors?: WorkflowValidationError[]; }",
           "jsdoc": "Response for POST /rest/api/3/workflows/create/validation (B849) and POST /rest/api/3/workflows/update/validation (B854)."
@@ -33733,7 +33813,7 @@
         {
           "name": "DefaultWorkflowEditorResponse",
           "kind": "interface",
-          "line": 849,
+          "line": 853,
           "exported": true,
           "signature": "export interface DefaultWorkflowEditorResponse { readonly value?: string; }",
           "jsdoc": "Response for GET /rest/api/3/workflows/defaultEditor — B850."
@@ -33741,7 +33821,7 @@
         {
           "name": "WorkflowHistoryReadRequest",
           "kind": "interface",
-          "line": 856,
+          "line": 860,
           "exported": true,
           "signature": "export interface WorkflowHistoryReadRequest { readonly workflowId: string; readonly version?: number; }",
           "jsdoc": "Request body for POST /workflow/history (B841)."
@@ -33749,7 +33829,7 @@
         {
           "name": "WorkflowDocumentStatus",
           "kind": "interface",
-          "line": 862,
+          "line": 866,
           "exported": true,
           "signature": "export interface WorkflowDocumentStatus { readonly description?: string; readonly id?: string; readonly name?: string; r…",
           "jsdoc": "A status entry in the workflow history read response."
@@ -33757,7 +33837,7 @@
         {
           "name": "WorkflowDocumentScope",
           "kind": "interface",
-          "line": 872,
+          "line": 876,
           "exported": true,
           "signature": "export interface WorkflowDocumentScope { readonly type?: 'PROJECT' | 'GLOBAL'; readonly project?: { readonly id?: string…",
           "jsdoc": "Scope for a workflow document status."
@@ -33765,7 +33845,7 @@
         {
           "name": "WorkflowDocumentLayout",
           "kind": "interface",
-          "line": 878,
+          "line": 882,
           "exported": true,
           "signature": "export interface WorkflowDocumentLayout { readonly x?: number; readonly y?: number; }",
           "jsdoc": "Layout position for a workflow element."
@@ -33773,7 +33853,7 @@
         {
           "name": "WorkflowDocumentVersion",
           "kind": "interface",
-          "line": 884,
+          "line": 888,
           "exported": true,
           "signature": "export interface WorkflowDocumentVersion { readonly id?: string; readonly versionNumber?: number; }",
           "jsdoc": "Version info for a workflow document."
@@ -33781,7 +33861,7 @@
         {
           "name": "WorkflowDocument",
           "kind": "interface",
-          "line": 890,
+          "line": 894,
           "exported": true,
           "signature": "export interface WorkflowDocument { readonly created?: string; readonly description?: string; readonly id?: string; read…",
           "jsdoc": "A workflow document in the history read response."
@@ -33789,7 +33869,7 @@
         {
           "name": "WorkflowReferenceStatusItem",
           "kind": "interface",
-          "line": 906,
+          "line": 910,
           "exported": true,
           "signature": "export interface WorkflowReferenceStatusItem { readonly deprecated?: boolean; readonly layout?: WorkflowDocumentLayout; …",
           "jsdoc": "A status reference in a workflow document."
@@ -33797,7 +33877,7 @@
         {
           "name": "WorkflowTransitionsItem",
           "kind": "interface",
-          "line": 914,
+          "line": 918,
           "exported": true,
           "signature": "export interface WorkflowTransitionsItem { readonly actions?: WorkflowRuleConfigurationItem[]; readonly conditions?: unk…",
           "jsdoc": "A transition in a workflow document."
@@ -33805,7 +33885,7 @@
         {
           "name": "WorkflowRuleConfigurationItem",
           "kind": "interface",
-          "line": 931,
+          "line": 935,
           "exported": true,
           "signature": "export interface WorkflowRuleConfigurationItem { readonly id?: string; readonly parameters?: Record<string, string>; rea…",
           "jsdoc": "A rule configuration item in a workflow."
@@ -33813,7 +33893,7 @@
         {
           "name": "WorkflowHistoryReadResponse",
           "kind": "interface",
-          "line": 938,
+          "line": 942,
           "exported": true,
           "signature": "export interface WorkflowHistoryReadResponse { readonly statuses?: WorkflowDocumentStatus[]; readonly workflows?: Workfl…",
           "jsdoc": "Response for POST /workflow/history (B841)."
@@ -33821,7 +33901,7 @@
         {
           "name": "WorkflowHistoryListRequest",
           "kind": "interface",
-          "line": 946,
+          "line": 950,
           "exported": true,
           "signature": "export interface WorkflowHistoryListRequest { readonly workflowId: string; }",
           "jsdoc": "Request body for POST /workflow/history/list (B842)."
@@ -33829,7 +33909,7 @@
         {
           "name": "WorkflowHistoryListParams",
           "kind": "interface",
-          "line": 951,
+          "line": 955,
           "exported": true,
           "signature": "export interface WorkflowHistoryListParams { readonly expand?: string; }",
           "jsdoc": "Query params for POST /workflow/history/list (B842)."
@@ -33837,7 +33917,7 @@
         {
           "name": "WorkflowHistoryItem",
           "kind": "interface",
-          "line": 956,
+          "line": 960,
           "exported": true,
           "signature": "export interface WorkflowHistoryItem { readonly isIntermediate?: boolean; readonly workflowId?: string; readonly workflo…",
           "jsdoc": "A single workflow history entry."
@@ -33845,7 +33925,7 @@
         {
           "name": "WorkflowHistoryListResponse",
           "kind": "interface",
-          "line": 964,
+          "line": 968,
           "exported": true,
           "signature": "export interface WorkflowHistoryListResponse { readonly entries?: WorkflowHistoryItem[]; }",
           "jsdoc": "Response for POST /workflow/history/list (B842)."
@@ -33853,7 +33933,7 @@
         {
           "name": "WorkflowTransitionRuleConfigParams",
           "kind": "interface",
-          "line": 971,
+          "line": 975,
           "exported": true,
           "signature": "export interface WorkflowTransitionRuleConfigParams { readonly startAt?: number; readonly maxResults?: number; readonly …",
           "jsdoc": "Query params for GET /workflow/rule/config (B843)."
@@ -33861,7 +33941,7 @@
         {
           "name": "TransitionRuleConfiguration",
           "kind": "interface",
-          "line": 985,
+          "line": 989,
           "exported": true,
           "signature": "export interface TransitionRuleConfiguration { readonly value: string; readonly disabled?: boolean; readonly tag?: strin…",
           "jsdoc": "A rule configuration on a transition rule."
@@ -33869,7 +33949,7 @@
         {
           "name": "TransitionRuleTransitionRef",
           "kind": "interface",
-          "line": 993,
+          "line": 997,
           "exported": true,
           "signature": "export interface TransitionRuleTransitionRef { readonly id: number; readonly name: string; }",
           "jsdoc": "A workflow transition reference in a rule."
@@ -33877,7 +33957,7 @@
         {
           "name": "AppWorkflowTransitionRuleItem",
           "kind": "interface",
-          "line": 999,
+          "line": 1003,
           "exported": true,
           "signature": "export interface AppWorkflowTransitionRuleItem { readonly id: string; readonly key: string; readonly configuration: Tran…",
           "jsdoc": "An individual workflow transition rule."
@@ -33885,7 +33965,7 @@
         {
           "name": "WorkflowIdRef",
           "kind": "interface",
-          "line": 1007,
+          "line": 1011,
           "exported": true,
           "signature": "export interface WorkflowIdRef { readonly name: string; readonly draft?: boolean; }",
           "jsdoc": "Identifies a workflow by name (and optionally draft status)."
@@ -33893,7 +33973,7 @@
         {
           "name": "WorkflowTransitionRulesEntry",
           "kind": "interface",
-          "line": 1014,
+          "line": 1018,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesEntry { readonly workflowId: WorkflowIdRef; readonly postFunctions?: AppWorkflow…",
           "jsdoc": "A workflow entry in the transition rule config response."
@@ -33901,7 +33981,7 @@
         {
           "name": "WorkflowTransitionRuleConfigPage",
           "kind": "interface",
-          "line": 1022,
+          "line": 1026,
           "exported": true,
           "signature": "export interface WorkflowTransitionRuleConfigPage { readonly isLast?: boolean; readonly maxResults?: number; readonly ne…",
           "jsdoc": "Paginated response for GET /workflow/rule/config (B843)."
@@ -33909,7 +33989,7 @@
         {
           "name": "TransitionRuleUpdateItem",
           "kind": "interface",
-          "line": 1035,
+          "line": 1039,
           "exported": true,
           "signature": "export interface TransitionRuleUpdateItem { readonly id: string; readonly configuration: TransitionRuleConfiguration; }",
           "jsdoc": "An individual rule update item in the update body."
@@ -33917,7 +33997,7 @@
         {
           "name": "WorkflowTransitionRulesUpdateEntry",
           "kind": "interface",
-          "line": 1041,
+          "line": 1045,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesUpdateEntry { readonly workflowId: WorkflowIdRef; readonly postFunctions?: Trans…",
           "jsdoc": "A workflow transition rule update entry."
@@ -33925,7 +34005,7 @@
         {
           "name": "WorkflowTransitionRulesUpdateBody",
           "kind": "interface",
-          "line": 1049,
+          "line": 1053,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesUpdateBody { readonly workflows: WorkflowTransitionRulesUpdateEntry[]; }",
           "jsdoc": "Request body for PUT /workflow/rule/config (B844)."
@@ -33933,7 +34013,7 @@
         {
           "name": "WorkflowTransitionRulesUpdateErrorDetail",
           "kind": "interface",
-          "line": 1054,
+          "line": 1058,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesUpdateErrorDetail { readonly workflowId: WorkflowIdRef; readonly ruleUpdateError…",
           "jsdoc": "Per-workflow update result in the response."
@@ -33941,7 +34021,7 @@
         {
           "name": "WorkflowTransitionRulesUpdateErrors",
           "kind": "interface",
-          "line": 1061,
+          "line": 1065,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesUpdateErrors { readonly updateResults: WorkflowTransitionRulesUpdateErrorDetail[…",
           "jsdoc": "Response for PUT /workflow/rule/config (B844) and PUT /workflow/rule/config/delete (B845)."
@@ -33949,7 +34029,7 @@
         {
           "name": "WorkflowTransitionRulesDeleteEntry",
           "kind": "interface",
-          "line": 1068,
+          "line": 1072,
           "exported": true,
           "signature": "export interface WorkflowTransitionRulesDeleteEntry { readonly workflowId: WorkflowIdRef; readonly workflowRuleIds: stri…",
           "jsdoc": "A single workflow entry for transition rule deletion."
@@ -33957,7 +34037,7 @@
         {
           "name": "WorkflowsWithTransitionRulesDetails",
           "kind": "interface",
-          "line": 1074,
+          "line": 1078,
           "exported": true,
           "signature": "export interface WorkflowsWithTransitionRulesDetails { readonly workflows: WorkflowTransitionRulesDeleteEntry[]; }",
           "jsdoc": "Request body for PUT /workflow/rule/config/delete (B845)."
@@ -33965,7 +34045,7 @@
         {
           "name": "WorkflowPreviewRequest",
           "kind": "interface",
-          "line": 1081,
+          "line": 1085,
           "exported": true,
           "signature": "export interface WorkflowPreviewRequest { readonly projectId: string; readonly workflowIds?: string[]; readonly workflow…",
           "jsdoc": "Request body for POST /rest/api/3/workflows/preview (B851)."
@@ -33973,7 +34053,7 @@
         {
           "name": "WorkflowPreviewWorkflow",
           "kind": "interface",
-          "line": 1093,
+          "line": 1097,
           "exported": true,
           "signature": "export interface WorkflowPreviewWorkflow { readonly id?: string; readonly name?: string; readonly description?: string; …",
           "jsdoc": "A workflow entry in a WorkflowPreviewResponse."
@@ -33981,7 +34061,7 @@
         {
           "name": "WorkflowPreviewResponse",
           "kind": "interface",
-          "line": 1107,
+          "line": 1111,
           "exported": true,
           "signature": "export interface WorkflowPreviewResponse { readonly workflows?: WorkflowPreviewWorkflow[]; readonly statuses?: JiraWorkf…",
           "jsdoc": "Response for POST /rest/api/3/workflows/preview (B851)."
@@ -33989,7 +34069,7 @@
         {
           "name": "WorkflowSearchParams",
           "kind": "interface",
-          "line": 1115,
+          "line": 1119,
           "exported": true,
           "signature": "export interface WorkflowSearchParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: strin…",
           "jsdoc": "Query parameters for GET /rest/api/3/workflows/search (B852)."
@@ -33997,7 +34077,7 @@
         {
           "name": "WorkflowSearchResponse",
           "kind": "interface",
-          "line": 1126,
+          "line": 1130,
           "exported": true,
           "signature": "export interface WorkflowSearchResponse { readonly startAt?: number; readonly maxResults?: number; readonly total?: numb…",
           "jsdoc": "Response for GET /rest/api/3/workflows/search (B852)."
@@ -34005,7 +34085,7 @@
         {
           "name": "WorkflowUpdateRequest",
           "kind": "interface",
-          "line": 1140,
+          "line": 1144,
           "exported": true,
           "signature": "export interface WorkflowUpdateRequest { readonly workflows?: Record<string, unknown>[]; readonly statuses?: Record<stri…",
           "jsdoc": "Request body for POST /rest/api/3/workflows/update (B853)."
@@ -34013,7 +34093,7 @@
         {
           "name": "WorkflowUpdateResponseStatus",
           "kind": "interface",
-          "line": 1146,
+          "line": 1150,
           "exported": true,
           "signature": "export interface WorkflowUpdateResponseStatus { readonly id?: string; readonly name?: string; readonly description?: str…",
           "jsdoc": "A status entry returned in WorkflowUpdateResponse (distinct from request statuses)."
@@ -34021,7 +34101,7 @@
         {
           "name": "WorkflowUpdateResponseWorkflow",
           "kind": "interface",
-          "line": 1156,
+          "line": 1160,
           "exported": true,
           "signature": "export interface WorkflowUpdateResponseWorkflow { readonly id?: string; readonly description?: string; readonly created?…",
           "jsdoc": "A workflow entry returned in WorkflowUpdateResponse (distinct from request workflows)."
@@ -34029,7 +34109,7 @@
         {
           "name": "WorkflowUpdateResponse",
           "kind": "interface",
-          "line": 1169,
+          "line": 1173,
           "exported": true,
           "signature": "export interface WorkflowUpdateResponse { readonly taskId?: string | null; readonly workflows?: WorkflowUpdateResponseWo…",
           "jsdoc": "Response for POST /rest/api/3/workflows/update (B853)."
@@ -34037,7 +34117,7 @@
         {
           "name": "WorkflowUpdateValidateRequest",
           "kind": "interface",
-          "line": 1179,
+          "line": 1183,
           "exported": true,
           "signature": "export interface WorkflowUpdateValidateRequest { readonly payload: WorkflowUpdateRequest; readonly validationOptions?: {…",
           "jsdoc": "Request body for POST /rest/api/3/workflows/update/validation (B854)."

@@ -4,6 +4,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 
+/** A share permission entry on a Jira dashboard. */
 export interface DashboardSharePermission {
   readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user';
   readonly project?: { readonly id: string };
@@ -12,6 +13,7 @@ export interface DashboardSharePermission {
   readonly user?: { readonly accountId: string };
 }
 
+/** A Jira dashboard containing gadgets and share permissions. */
 export interface Dashboard {
   readonly id: string;
   readonly self?: string;
@@ -25,6 +27,7 @@ export interface Dashboard {
   readonly view?: string;
 }
 
+/** Query parameters for listing Jira dashboards. */
 export interface ListDashboardsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -33,6 +36,7 @@ export interface ListDashboardsParams {
   readonly expand?: string;
 }
 
+/** Request body for creating a new Jira dashboard. */
 export interface CreateDashboardData {
   readonly name: string;
   readonly description?: string;
@@ -40,6 +44,7 @@ export interface CreateDashboardData {
   readonly editPermissions?: DashboardSharePermission[];
 }
 
+/** Request body for updating an existing Jira dashboard. */
 export interface UpdateDashboardData {
   readonly name: string;
   readonly description?: string;

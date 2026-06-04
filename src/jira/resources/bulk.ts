@@ -19,15 +19,18 @@ export interface BulkIssueError {
   readonly failedElementNumber?: number;
 }
 
+/** Request body for bulk-creating multiple Jira issues in a single call. */
 export interface BulkCreateIssueData {
   readonly issueUpdates: BulkIssueUpdate[];
 }
 
+/** Response from the bulk issue creation endpoint listing created issues and any per-issue errors. */
 export interface BulkCreatedIssues {
   readonly issues: BulkCreatedIssue[];
   readonly errors?: BulkIssueError[];
 }
 
+/** Request body for bulk-setting a property value on multiple Jira issues. */
 export interface BulkSetIssuePropertyData {
   readonly value: unknown;
   readonly filter?: {
@@ -37,6 +40,7 @@ export interface BulkSetIssuePropertyData {
   };
 }
 
+/** Request body for bulk-deleting a property from multiple Jira issues. */
 export interface BulkDeleteIssuePropertyData {
   readonly filter?: {
     readonly entityIds?: string[];

@@ -5,6 +5,7 @@ import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import type { Sprint } from './sprints.js';
 
+/** An agile board (Scrum, Kanban, or Simple) in Jira Software. */
 export interface Board {
   readonly id: number;
   readonly self: string;
@@ -18,6 +19,7 @@ export interface Board {
   };
 }
 
+/** Query parameters for listing agile boards. */
 export interface ListBoardsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -36,6 +38,7 @@ export interface CreateBoardData {
   };
 }
 
+/** A Jira issue as returned by board-scoped issue listing endpoints. */
 export interface BoardIssue {
   readonly id: string;
   readonly key: string;
@@ -43,6 +46,7 @@ export interface BoardIssue {
   readonly fields: Record<string, unknown>;
 }
 
+/** Query parameters for listing issues on a board. */
 export interface ListBoardIssuesParams {
   readonly startAt?: number;
   readonly maxResults?: number;

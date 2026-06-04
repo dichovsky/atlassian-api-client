@@ -96,6 +96,7 @@ export interface WorkflowUsagesParams {
   readonly maxResults?: number;
 }
 
+/** A workflow transition connecting two statuses in a Jira workflow. */
 export interface WorkflowTransition {
   readonly id: string;
   readonly name: string;
@@ -108,12 +109,14 @@ export interface WorkflowTransition {
   readonly properties?: Record<string, unknown>;
 }
 
+/** A status node within a Jira workflow. */
 export interface WorkflowStatus {
   readonly id: string;
   readonly name: string;
   readonly properties?: Record<string, unknown>;
 }
 
+/** A Jira workflow definition including its transitions and statuses. */
 export interface Workflow {
   readonly id: { readonly name: string; readonly entityId?: string };
   readonly description: string;
@@ -128,6 +131,7 @@ export interface Workflow {
   readonly updated?: string;
 }
 
+/** Query parameters for listing Jira workflows. */
 export interface ListWorkflowsParams {
   readonly startAt?: number;
   readonly maxResults?: number;

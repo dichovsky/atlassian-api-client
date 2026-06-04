@@ -28,13 +28,32 @@ import { SpaceRolesResource } from './resources/space-roles.js';
 import { UsersResource } from './resources/users.js';
 import { UsersBulkResource } from './resources/users-bulk.js';
 
-/** Client for the Atlassian Confluence Cloud REST API v2. */
+/**
+ * Client for the Atlassian Confluence Cloud REST API v2.
+ *
+ * @example
+ * ```ts
+ * import { ConfluenceClient } from 'atlassian-api-client';
+ *
+ * const client = new ConfluenceClient({
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'token' },
+ * });
+ * const page = await client.pages.get('123');
+ * ```
+ */
 export class ConfluenceClient {
+  /** Pages resource — CRUD and sub-resources for Confluence pages. */
   readonly pages: PagesResource;
+  /** Spaces resource — list and manage Confluence spaces. */
   readonly spaces: SpacesResource;
+  /** Blog posts resource — CRUD and sub-resources for Confluence blog posts. */
   readonly blogPosts: BlogPostsResource;
+  /** Comments resource — footer and inline comments for pages and blog posts. */
   readonly comments: CommentsResource;
+  /** Attachments resource — upload, download, and manage file attachments. */
   readonly attachments: AttachmentsResource;
+  /** Labels resource — list and manage content labels. */
   readonly labels: LabelsResource;
   /** Content properties resource. */
   readonly contentProperties: ContentPropertiesResource;
@@ -85,6 +104,12 @@ export class ConfluenceClient {
   /** Users bulk lookup resource. */
   readonly usersBulk: UsersBulkResource;
 
+  /**
+   * Create a new Confluence API v2 client.
+   *
+   * @param config - Client configuration including `baseUrl`, `auth`, and optional transport/middleware.
+   * @throws {ValidationError} if the configuration is invalid.
+   */
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/wiki/api/v2`;

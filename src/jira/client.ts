@@ -89,16 +89,36 @@ import { BulkByPropertiesResource } from './resources/bulk-by-properties.js';
 import { MigrationResource } from './resources/migration.js';
 import { AddonsResource } from './resources/addons.js';
 
-/** Client for the Atlassian Jira Cloud Platform REST API v3. */
+/**
+ * Client for the Atlassian Jira Cloud Platform REST API v3.
+ *
+ * @example
+ * ```ts
+ * import { JiraClient } from 'atlassian-api-client';
+ *
+ * const client = new JiraClient({
+ *   baseUrl: 'https://mycompany.atlassian.net',
+ *   auth: { type: 'basic', email: 'user@example.com', apiToken: 'token' },
+ * });
+ * const issue = await client.issues.get('PROJ-1');
+ * ```
+ */
 export class JiraClient {
+  /** Issues resource — get, create, update, delete, and transition Jira issues. */
   readonly issues: IssuesResource;
+  /** Projects resource — list and retrieve Jira projects. */
   readonly projects: ProjectsResource;
+  /** Search resource — JQL search for issues (POST and GET). */
   readonly search: SearchResource;
+  /** Users resource — get user info, current user, and search for users. */
   readonly users: UsersResource;
+  /** Issue types resource — list all issue types for a project or globally. */
   readonly issueTypes: IssueTypesResource;
   /** Issue type singular resource — create/update/delete + alternatives, avatar2, properties, project mapping. */
   readonly issueType: IssueTypeResource;
+  /** Priorities resource — list all issue priority levels. */
   readonly priorities: PrioritiesResource;
+  /** Statuses resource — list and manage workflow statuses. */
   readonly statuses: StatusesResource;
   /** Issue comments resource. */
   readonly issueComments: IssueCommentsResource;
@@ -263,6 +283,12 @@ export class JiraClient {
   /** Jira Connect addons properties resource — list/get/set/delete app properties (B939-B942, base: /rest/atlassian-connect/1). */
   readonly addons: AddonsResource;
 
+  /**
+   * Create a new Jira API v3 client.
+   *
+   * @param config - Client configuration including `baseUrl`, `auth`, and optional transport/middleware.
+   * @throws {ValidationError} if the configuration is invalid.
+   */
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
