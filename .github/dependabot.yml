@@ -1,0 +1,39 @@
+version: 2
+
+updates:
+  # ── npm ──────────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+    # Security cooldown: require a freshly-published version to age before
+    # Dependabot opens an upgrade PR, mitigating compromised-release windows.
+    # Key names verified against the GitHub Dependabot configuration reference.
+    cooldown:
+      default-days: 7
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 30
+
+    # Group all dev-dependency minor and patch bumps into one PR per week
+    # to reduce noise — major bumps remain individual for deliberate review.
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+    # The github-actions ecosystem supports only `default-days` for cooldown;
+    # semver-granular keys are npm-only and rejected by Dependabot's validator.
+    cooldown:
+      default-days: 7

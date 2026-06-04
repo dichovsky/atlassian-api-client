@@ -15,6 +15,7 @@ Zero runtime dependencies. Uses native `fetch` (Node.js 24+).
 - [Pagination](#pagination)
 - [Error Handling](#error-handling)
 - [Middleware](#middleware)
+- [OpenAPI Type Generation](#openapi-type-generation)
 - [CLI](#cli)
 - [Selected Resource Map](#selected-resource-map)
 - [Recipes](#recipes)
@@ -483,12 +484,16 @@ const allOps = listKnownOperations();
 
 ## OpenAPI Type Generation
 
-Generate TypeScript interfaces from an OpenAPI 3.x schema:
+`generateTypes(spec)` is a public utility that turns an OpenAPI 3.x spec object into TypeScript
+`interface` and `type` declarations. Call it on **your own specs** — this library does not
+vendor or commit any generated types.
 
 ```typescript
 import { generateTypes } from 'atlassian-api-client';
 
 const spec = {
+  openapi: '3.0.1',
+  info: { title: 'My API', version: '1.0.0' },
   components: {
     schemas: {
       Issue: {
@@ -502,11 +507,37 @@ const spec = {
   },
 };
 
-const { source } = generateTypes(spec);
-// → 'export interface Issue { id?: string; summary?: string | null; }'
+const { source, typeNames } = generateTypes(spec);
+// source → 'export interface Issue { id?: string; summary?: string | null; }'
+// typeNames → ['Issue']
 ```
 
 Supports `$ref`, `allOf`, `oneOf`, `anyOf`, enum, nullable, and `additionalProperties`.
+
+### Spec Drift Guard
+
+A CI script (`scripts/regenerate-types.ts`) monitors three upstream Atlassian OpenAPI specs for
+breaking changes that would affect `generateTypes()`. It fetches the live specs, calls
+`generateTypes()` on each, and reports any failures.
+
+**The script commits nothing** — it is a read-only smoke-test.
+
+```bash
+# Run locally
+npm run spec-drift
+```
+
+Example output:
+
+```
+✓ jiraPlatform: 968 types generated from https://developer.atlassian.com/cloud/.../swagger-v3.v3.json
+✓ jiraSoftware: 66 types generated from https://developer.atlassian.com/cloud/.../swagger.v3.json
+✓ confluence: 168 types generated from https://developer.atlassian.com/cloud/.../swagger.v3.json
+```
+
+In CI, the drift-guard runs on a **weekly schedule and on manual dispatch only** (`.github/workflows/spec-drift.yml`).
+It deliberately does **not** run on `push` or `pull_request` — a transient upstream outage must never
+block contributor PRs. A scheduled-job failure is the intended signal that a spec has drifted.
 
 ## CLI
 
