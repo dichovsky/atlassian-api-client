@@ -400,7 +400,7 @@ const client = new JiraClient({
 });
 
 try {
-  await client.issues.getIssue('PROJ-1');
+  await client.issues.get('PROJ-1');
 } catch (error) {
   if (error instanceof CircuitBreakerOpenError) {
     console.warn(`Circuit open; retry after ~${error.msUntilHalfOpen}ms`);
@@ -610,6 +610,17 @@ atlas jira users me
 atlas jira issues get PROJ-123 --format table
 atlas jira projects list --format minimal
 ```
+
+### Scope validation
+
+Check whether OAuth 2.0 scope strings are recognised Atlassian Cloud scopes — auth-free, no network calls. Prints a JSON `{ valid, unknown, allValid }` report; exits `0` when every scope is valid and `1` when any are unknown (handy in CI before requesting consent):
+
+```bash
+atlas scopes validate read:jira-work write:jira-work
+# → { "valid": ["read:jira-work", "write:jira-work"], "unknown": [], "allValid": true }
+```
+
+Run `atlas scopes validate` with no arguments to print the full known-scope catalog.
 
 ## Selected Resource Map
 

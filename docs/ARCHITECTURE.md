@@ -22,7 +22,8 @@
 │                               webhooks, jql, bulk            │
 ├──────────────────────────────────────────────────────────────┤
 │                      Middleware Chain                        │
-│  OAuthRefresh │ ConnectJwt │ Cache │ Batch │ (custom)        │
+│  CircuitBreaker │ RateLimiter │ OAuthRefresh │ ConnectJwt    │
+│  Cache │ Batch │ (custom)                                    │
 ├──────────────────────────────────────────────────────────────┤
 │                       Core Layer                             │
 │  Transport │ Auth │ Retry │ RateLimit │ Errors │ Path        │
@@ -64,7 +65,8 @@ src/
 │   ├── response.ts              # Body parsing, ApiResponse assembly, toJSON helper
 │   ├── middleware.ts            # createMiddlewareChain (outermost-first composition)
 │   ├── retry.ts                 # executeWithRetry + retry primitives (status, backoff, network errors)
-│   ├── rate-limiter.ts          # Rate-limit detection & backoff
+│   ├── circuit-breaker.ts       # Circuit-breaker middleware (B010)
+│   ├── rate-limiter.ts          # Reactive 429 detection/backoff + proactive token-bucket limiter (B017)
 │   ├── pagination.ts            # Pagination iterators
 │   ├── path.ts                  # Path encoding & dot-segment rejection
 │   ├── oauth.ts                 # OAuth 2.0 token refresh middleware
@@ -75,7 +77,7 @@ src/
 │   ├── openapi.ts               # OpenAPI 3.x → TypeScript type generator
 │   └── index.ts                 # Core barrel export
 ├── confluence/                  # Confluence Cloud REST API v2
-│   ├── types.ts                 # Confluence-specific types
+│   ├── types/                   # Per-domain type modules (pages, spaces, blog-posts, …)
 │   ├── resources/
 │   │   ├── pages.ts             # /wiki/api/v2/pages
 │   │   ├── spaces.ts            # /wiki/api/v2/spaces
@@ -249,7 +251,9 @@ AtlassianError (base)
 ├── NetworkError (fetch failures, DNS, connection)
 ├── ValidationError (invalid config/params)
 ├── PaginationError (non-advancing or inconsistent pagination)
-└── ResponseTooLargeError (buffered body exceeds maxResponseBytes)
+├── ResponseTooLargeError (buffered body exceeds maxResponseBytes)
+├── CircuitBreakerOpenError (breaker open; request rejected without dispatch)
+└── RateLimiterExhaustedError (client-side token-bucket wait exceeded maxWaitMs)
 ```
 
 Each error includes:
@@ -356,20 +360,23 @@ All user-controlled path segments (IDs, keys) are percent-encoded before URL con
 
 Built-in middleware factories:
 
-| Export                         | File             | Description                                                                                                                                                                                                         |
-| ------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createOAuthRefreshMiddleware` | `oauth.ts`       | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                                                      |
-| `createConnectJwtMiddleware`   | `connect-jwt.ts` | Signs requests with HS256 JWT (QSH)                                                                                                                                                                                 |
-| `createCacheMiddleware`        | `cache.ts`       | In-memory GET response cache (LRU, TTL); `maxSize` and `ttl` validated at construction; cache keys partition by auth identity and `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
-| `createBatchMiddleware`        | `batch.ts`       | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                                               |
+| Export                           | File                 | Description                                                                                                                                                                                                         |
+| -------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createOAuthRefreshMiddleware`   | `oauth.ts`           | Injects Bearer token; refreshes on 401 (HTTPS-only endpoint, single shared `refreshPromise` prevents concurrent refresh races)                                                                                      |
+| `createConnectJwtMiddleware`     | `connect-jwt.ts`     | Signs requests with HS256 JWT (QSH)                                                                                                                                                                                 |
+| `createCacheMiddleware`          | `cache.ts`           | In-memory GET response cache (LRU, TTL); `maxSize` and `ttl` validated at construction; cache keys partition by auth identity and `encodeURIComponent`-encode each query parameter to prevent key-collision attacks |
+| `createBatchMiddleware`          | `batch.ts`           | Deduplicates concurrent identical in-flight requests; same `encodeURIComponent` key encoding as cache                                                                                                               |
+| `createCircuitBreakerMiddleware` | `circuit-breaker.ts` | Opens after N consecutive transport failures (5xx/network/timeout); rejects with `CircuitBreakerOpenError` until a lazy half-open trial (B010)                                                                      |
+| `createRateLimiterMiddleware`    | `rate-limiter.ts`    | Proactive client-side token-bucket limiter; waits for a token or throws `RateLimiterExhaustedError` after `maxWaitMs` (B017)                                                                                        |
 
 Helper utilities:
 
-| Export                 | Description                                |
-| ---------------------- | ------------------------------------------ |
-| `signConnectJwt`       | Low-level JWT signing (iss, iat, exp, qsh) |
-| `computeQsh`           | Canonical request hash for Connect JWT     |
-| `fetchRefreshedTokens` | Low-level token endpoint call              |
+| Export                       | Description                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `signConnectJwt`             | Low-level JWT signing (iss, iat, exp, qsh)                                                      |
+| `computeQsh`                 | Canonical request hash for Connect JWT                                                          |
+| `fetchRefreshedTokens`       | Low-level token endpoint call                                                                   |
+| `verifyConnectAsymmetricJwt` | Verify inbound Atlassian Connect RS256 JWTs (strict algorithm pinning; `none`/`HS256` rejected) |
 
 #### Middleware ordering
 
@@ -546,12 +553,14 @@ export {
   AtlassianError, HttpError, AuthenticationError, ForbiddenError,
   NotFoundError, RateLimitError, TimeoutError, NetworkError,
   ValidationError, PaginationError, ResponseTooLargeError, OAuthError,
+  CircuitBreakerOpenError, RateLimiterExhaustedError,
 } from './core/index.js';
 
 // Core infrastructure types
 export type {
   ClientConfig, AuthConfig, BasicAuthConfig, BearerAuthConfig,
   RequestOptions, ApiResponse, RateLimitInfo, Transport, Logger, Middleware,
+  RequestIdOptions,
 } from './core/index.js';
 
 export { resolveConfig, HttpTransport, executeWithRetry, createMiddlewareChain } from './core/index.js';
@@ -567,13 +576,19 @@ export type { SerializableApiResponse } from './core/index.js';
 export { createOAuthRefreshMiddleware, fetchRefreshedTokens } from './core/index.js';
 export type { OAuthRefreshConfig, OAuthTokens } from './core/index.js';
 
-export { createConnectJwtMiddleware, signConnectJwt, computeQsh } from './core/index.js';
-export type { ConnectJwtConfig } from './core/index.js';
+export { createConnectJwtMiddleware, signConnectJwt, computeQsh, verifyConnectAsymmetricJwt } from './core/index.js';
+export type { ConnectJwtConfig, AsymmetricJwtVerifyOptions } from './core/index.js';
 
 export { createCacheMiddleware } from './core/index.js';
 export type { CacheOptions } from './core/index.js';
 
 export { createBatchMiddleware } from './core/index.js';
+
+export { createCircuitBreakerMiddleware } from './core/index.js';
+export type { CircuitBreakerOptions } from './core/index.js';
+
+export { createRateLimiterMiddleware } from './core/index.js';
+export type { RateLimiterOptions } from './core/index.js';
 
 // Utilities
 export { detectRequiredScopes, listKnownOperations } from './core/index.js';
@@ -636,15 +651,15 @@ The package uses only Node.js built-ins available in the supported runtime (Node
 
 ### Dev Dependencies
 
-| Package                            | Purpose                      |
-| ---------------------------------- | ---------------------------- |
-| `typescript`                       | TypeScript compiler          |
-| `vitest`                           | Test framework               |
-| `@vitest/coverage-v8`              | V8-based coverage            |
-| `eslint`                           | Linting                      |
-| `@typescript-eslint/eslint-plugin` | TypeScript lint rules        |
-| `@typescript-eslint/parser`        | TypeScript parser for ESLint |
-| `prettier`                         | Code formatting              |
+| Package               | Purpose                                    |
+| --------------------- | ------------------------------------------ |
+| `typescript`          | TypeScript compiler                        |
+| `vitest`              | Test framework                             |
+| `@vitest/coverage-v8` | V8-based coverage                          |
+| `eslint`              | Linting                                    |
+| `typescript-eslint`   | TypeScript ESLint rules + parser (unified) |
+| `prettier`            | Code formatting                            |
+| `fast-check`          | Property-based testing (B014)              |
 
 ---
 
@@ -684,8 +699,11 @@ src/cli/
 └── commands/
     ├── confluence.ts # All Confluence resource handlers
     ├── jira.ts       # All Jira resource handlers
-    └── install-skill.ts # Bundled coding-agent skill installer
+    ├── scopes.ts     # atlas scopes validate (OAuth scope checker)
+    └── install-skill.ts # Thin delegate to src/skill-installer/ (installSkill, InstallSkillError)
 ```
+
+The bundled coding-agent skill installer lives in its own module, `src/skill-installer/index.ts` (`installSkill`, `InstallSkillError`, `FilesystemDeps`), so the install logic is reusable and unit-testable independently of CLI arg parsing; the `commands/install-skill.ts` handler is a thin delegate.
 
 ### Auth Resolution
 
@@ -729,7 +747,7 @@ Default is `basic`. Unknown values fall back to `basic` so existing invocations 
 
 - `dist/` — compiled JavaScript (ESM) + declaration files (`.d.ts`) + source maps
 
-**Module format:** ESM-only (`"type": "module"` in `package.json`). CommonJS consumers on Node ≥ 22.12 can `require()` the ESM entry directly.
+**Module format:** ESM-only (`"type": "module"` in `package.json`). On the supported runtime (Node 24+), CommonJS consumers can `require()` the ESM entry directly (the unflagged `require(ESM)` capability landed in Node 22.12).
 
 **Published files:**
 
