@@ -19,6 +19,7 @@ export interface FilterSharePermission {
   readonly user?: { readonly accountId: string };
 }
 
+/** A Jira saved filter containing a JQL query and share permissions. */
 export interface Filter {
   readonly id: string;
   readonly self?: string;
@@ -33,6 +34,7 @@ export interface Filter {
   readonly sharePermissions?: FilterSharePermission[];
 }
 
+/** Query parameters for listing Jira saved filters. */
 export interface ListFiltersParams {
   readonly startAt?: number;
   readonly maxResults?: number;
@@ -41,6 +43,7 @@ export interface ListFiltersParams {
   readonly orderBy?: string;
 }
 
+/** Request body for creating a new Jira saved filter. */
 export interface CreateFilterData {
   readonly name: string;
   readonly description?: string;
@@ -50,6 +53,7 @@ export interface CreateFilterData {
   readonly editPermissions?: AddFilterSharePermissionData[];
 }
 
+/** Request body for updating an existing Jira saved filter. */
 export interface UpdateFilterData {
   readonly name?: string;
   readonly description?: string;

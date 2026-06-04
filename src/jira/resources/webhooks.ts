@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
+/** A registered Jira webhook that fires on matching events. */
 export interface Webhook {
   readonly id: number;
   readonly jqlFilter: string;
@@ -24,15 +25,18 @@ export interface WebhookRegistrationResult {
   readonly errors?: string[];
 }
 
+/** Request body for registering one or more Jira webhooks at a URL. */
 export interface RegisterWebhookData {
   readonly url: string;
   readonly webhooks: WebhookRegistration[];
 }
 
+/** Response returned after registering webhooks, listing per-registration results. */
 export interface RegisteredWebhooks {
   readonly webhookRegistrationResult: WebhookRegistrationResult[];
 }
 
+/** Query parameters for listing registered Jira webhooks. */
 export interface ListWebhooksParams {
   readonly startAt?: number;
   readonly maxResults?: number;

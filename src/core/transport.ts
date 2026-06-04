@@ -89,6 +89,20 @@ export class HttpTransport implements Transport {
     }
   }
 
+  /**
+   * Execute an HTTP request through the middleware chain with retry, auth injection, and timeout.
+   *
+   * Injects `authIdentity` before the chain runs so cache/batch middleware can
+   * partition by tenant without observing the raw credential. Generates an
+   * outbound request-id when `config.requestId.generate` is true (B011).
+   *
+   * @param options - Request options including method, path, query, body, and optional signal.
+   * @returns Parsed API response with data, status, headers, and optional rate-limit metadata.
+   * @throws {ValidationError} if the transport or middleware returns a malformed response shape.
+   * @throws {TimeoutError} if the request exceeds the configured timeout.
+   * @throws {NetworkError} if a transient network failure occurs.
+   * @throws {HttpError} (or a subclass) for non-2xx HTTP responses.
+   */
   async request<T>(options: RequestOptions): Promise<ApiResponse<T>> {
     // PR review (round 4 → round 5): expose only a non-secret hashed
     // identity to the middleware chain, NOT the raw `Authorization`

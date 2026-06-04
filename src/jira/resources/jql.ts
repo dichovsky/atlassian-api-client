@@ -107,6 +107,7 @@ export interface ConvertedJqlQueries {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Autocomplete data for building JQL queries (field names, function names, reserved words). */
 export interface JqlAutocompleteData {
   readonly visibleFieldNames?: JqlAutocompleteField[];
   readonly visibleFunctionNames?: JqlAutocompleteSuggestion[];
@@ -134,11 +135,13 @@ export interface JqlAutocompleteSuggestion {
   readonly supportsListAndSingleValueOperators?: string;
 }
 
+/** Request body for parsing one or more JQL query strings. */
 export interface ParseJqlQueriesData {
   readonly queries: string[];
   readonly validation?: 'strict' | 'warn' | 'none';
 }
 
+/** Response from the JQL parse endpoint containing parsed query representations. */
 export interface ParsedJqlQueries {
   readonly queries: ParsedJqlQuery[];
 }
@@ -164,14 +167,17 @@ export interface SanitizedJqlQuery {
   };
 }
 
+/** Request body for sanitizing one or more JQL queries (removes personal data). */
 export interface SanitizeJqlQueriesData {
   readonly queries: JqlQueryToSanitize[];
 }
 
+/** Response from the JQL sanitize endpoint containing sanitized query strings. */
 export interface SanitizedJqlQueries {
   readonly queries: SanitizedJqlQuery[];
 }
 
+/** Query parameters for fetching field-value suggestions for JQL autocomplete. */
 export interface JqlSuggestionsParams {
   readonly fieldName: string;
   readonly fieldValue?: string;
@@ -184,6 +190,7 @@ export interface JqlSuggestion {
   readonly displayName?: string;
 }
 
+/** Field-value suggestions returned by the JQL field reference suggestions endpoint. */
 export interface JqlSuggestions {
   readonly results: JqlSuggestion[];
 }

@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
+/** A Jira issue field (system or custom). */
 export interface Field {
   readonly id: string;
   readonly name: string;
@@ -25,6 +26,7 @@ export interface Field {
   readonly description?: string;
 }
 
+/** Request body for creating a new custom Jira field. */
 export interface CreateFieldData {
   readonly name: string;
   readonly description?: string;
@@ -32,12 +34,14 @@ export interface CreateFieldData {
   readonly searcherKey?: string;
 }
 
+/** Request body for updating an existing custom Jira field. */
 export interface UpdateFieldData {
   readonly name?: string;
   readonly description?: string;
   readonly searcherKey?: string;
 }
 
+/** Query parameters for listing Jira fields. */
 export interface ListFieldsParams {
   readonly startAt?: number;
   readonly maxResults?: number;

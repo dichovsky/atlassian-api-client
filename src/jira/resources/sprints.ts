@@ -19,6 +19,7 @@ export interface SprintProperty {
   readonly value: unknown;
 }
 
+/** An agile sprint in Jira Software. */
 export interface Sprint {
   readonly id: number;
   readonly self: string;
@@ -31,6 +32,7 @@ export interface Sprint {
   readonly goal?: string;
 }
 
+/** Request body for creating a new sprint. */
 export interface CreateSprintData {
   readonly name: string;
   readonly originBoardId: number;
@@ -39,6 +41,7 @@ export interface CreateSprintData {
   readonly goal?: string;
 }
 
+/** Request body for updating an existing sprint. */
 export interface UpdateSprintData {
   readonly name?: string;
   readonly state?: 'active' | 'closed' | 'future';
@@ -47,6 +50,7 @@ export interface UpdateSprintData {
   readonly goal?: string;
 }
 
+/** Query parameters for listing issues in a sprint. */
 export interface ListSprintIssuesParams {
   readonly startAt?: number;
   readonly maxResults?: number;
