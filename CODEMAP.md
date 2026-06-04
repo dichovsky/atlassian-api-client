@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "225b1c38a1c3344159a3f2c95665e6a9b91b17796804bf4c4cecd453e4dbf9ec",
+  "sourceHash": "5e7e7a8d5da270753b40e9f8678ca4b2c8d1cfa1c79226e1998e9e95775db6b2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2561,7 +2561,7 @@
       "file": "src/core/errors.ts",
       "line": 339,
       "signature": "export class RateLimiterExhaustedError extends AtlassianError",
-      "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…"
+      "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.get('AC-1'); } catch (error) { if (error instanc…"
     },
     {
       "name": "RateLimiterOptions",
@@ -12806,7 +12806,7 @@
           "line": 339,
           "exported": true,
           "signature": "export class RateLimiterExhaustedError extends AtlassianError",
-          "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.getIssue('AC-1'); } catch (error) { if (error in…",
+          "jsdoc": "Client-side token-bucket rate limiter exhausted error (B017). @example ```ts try { await client.issues.get('AC-1'); } catch (error) { if (error instanc…",
           "members": [
             {
               "name": "constructor",

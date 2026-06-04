@@ -620,7 +620,7 @@ atlas scopes validate read:jira-work write:jira-work
 # → { "valid": ["read:jira-work", "write:jira-work"], "unknown": [], "allValid": true }
 ```
 
-Run `atlas scopes validate` with no arguments to print the full known-scope catalog.
+Invoking `atlas scopes validate` with no scope arguments prints the full known-scope catalog (to stderr) as a usage hint.
 
 ## Selected Resource Map
 
