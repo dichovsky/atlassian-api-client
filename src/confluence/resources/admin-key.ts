@@ -1,5 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import type { AdminKey, CreateAdminKeyData } from '../types.js';
+import type { AdminKey, CreateAdminKeyData } from '../types/admin-key.js';
 
 /**
  * Confluence Admin Key resource.

@@ -5,17 +5,19 @@ import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
   ContentProperty,
   CreateContentPropertyData,
+  ListSharedContentPropertiesParams,
+  UpdateCommentData,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type {
   CreateFooterCommentData,
   CreateInlineCommentData,
   FooterComment,
   InlineComment,
-  ListSharedContentPropertiesParams,
   ListFooterCommentsParams,
   ListInlineCommentsParams,
-  UpdateCommentData,
-  UpdateSharedContentPropertyData,
   UpdateInlineCommentData,
-} from '../types.js';
+} from '../types/comments.js';
 
 export class CommentsResource {
   constructor(

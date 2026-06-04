@@ -5,6 +5,10 @@ import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
   ContentProperty,
   CreateContentPropertyData,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type {
   CreateEmbedData,
   Embed,
   EmbedAncestorsResponse,
@@ -15,9 +19,7 @@ import type {
   ListEmbedAncestorsParams,
   ListEmbedChildrenParams,
   ListEmbedDescendantsParams,
-  ListSharedContentPropertiesParams,
-  UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/embeds.js';
 
 /**
  * Resource for Confluence v2 embeds (Smart Links in the content tree).

@@ -1,12 +1,11 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
+import type { ContentProperty, CreateContentPropertyData } from '../types/common.js';
 import type {
-  ContentProperty,
   ListContentPropertiesParams,
-  CreateContentPropertyData,
   UpdateContentPropertyData,
-} from '../types.js';
+} from '../types/content-properties.js';
 import { validatePageSize } from '../../core/pagination.js';
 
 /**

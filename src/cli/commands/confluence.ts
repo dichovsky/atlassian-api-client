@@ -25,7 +25,7 @@ import type {
   VersionSortOrder,
   WhiteboardLocale,
   WhiteboardTemplateKey,
-} from '../../confluence/types.js';
+} from '../../confluence/index.js';
 
 /** Execute a Confluence CLI command. Returns the data to be printed. */
 export async function executeConfluenceCommand(

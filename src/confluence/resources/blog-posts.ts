@@ -3,24 +3,15 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { csvOrScalar, withSpaceIdParam } from './query.js';
+import type { Attachment } from '../types/attachments.js';
 import type {
-  Attachment,
   BlogPost,
   BlogPostLikesCount,
   BlogPostLikeUser,
   BlogPostOperationsResponse,
-  ClassificationLevel,
-  ContentProperty,
-  ContentVersion,
-  CreateContentPropertyData,
   CreateBlogPostData,
-  CustomContent,
-  FooterComment,
   GetBlogPostClassificationLevelParams,
   GetBlogPostParams,
-  InlineComment,
-  Label,
-  ListBlogPostsParams,
   ListBlogPostAttachmentsParams,
   ListBlogPostCustomContentParams,
   ListBlogPostFooterCommentsParams,
@@ -28,14 +19,24 @@ import type {
   ListBlogPostLabelsParams,
   ListBlogPostLikeUsersParams,
   ListBlogPostVersionsParams,
-  ListSharedContentPropertiesParams,
-  RedactBlogPostData,
-  RedactBlogPostResponse,
+  ListBlogPostsParams,
   ResetBlogPostClassificationLevelData,
   UpdateBlogPostClassificationLevelData,
   UpdateBlogPostData,
+} from '../types/blog-posts.js';
+import type { ClassificationLevel } from '../types/classification-levels.js';
+import type {
+  ContentProperty,
+  CreateContentPropertyData,
+  Label,
+  ListSharedContentPropertiesParams,
+  RedactBlogPostData,
+  RedactBlogPostResponse,
   UpdateSharedContentPropertyData,
-} from '../types.js';
+} from '../types/common.js';
+import type { FooterComment, InlineComment } from '../types/comments.js';
+import type { CustomContent } from '../types/custom-content.js';
+import type { ContentVersion } from '../types/versions.js';
 
 /**
  * Resource for Confluence v2 blog posts.

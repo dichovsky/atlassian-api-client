@@ -3,7 +3,8 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
-import type { ContentVersion, ListVersionsParams, ListBlogPostVersionsParams } from '../types.js';
+import type { ListBlogPostVersionsParams } from '../types/blog-posts.js';
+import type { ContentVersion, ListVersionsParams } from '../types/versions.js';
 
 export class VersionsResource {
   constructor(

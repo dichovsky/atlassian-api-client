@@ -1,5 +1,5 @@
 import type { Transport } from '../../core/types.js';
-import type { BulkUsersRequest, BulkUsersResponse } from '../types.js';
+import type { BulkUsersRequest, BulkUsersResponse } from '../types/users.js';
 
 /**
  * Resource for the Confluence v2 users-bulk lookup API.

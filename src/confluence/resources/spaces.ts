@@ -3,14 +3,20 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { csvOrScalar } from './query.js';
+import type { BlogPost } from '../types/blog-posts.js';
+import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
-  BlogPost,
-  ClassificationLevel,
   ContentProperty,
   CreateContentPropertyData,
-  CreateSpaceData,
   Label,
   ListSharedContentPropertiesParams,
+  SpaceRoleAssignment,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type { CustomContent } from '../types/custom-content.js';
+import type { Page } from '../types/pages.js';
+import type {
+  CreateSpaceData,
   ListSpaceBlogPostsParams,
   ListSpaceContentLabelsParams,
   ListSpaceCustomContentParams,
@@ -19,17 +25,13 @@ import type {
   ListSpacePermissionAssignmentsParams,
   ListSpaceRoleAssignmentsParams,
   ListSpacesParams,
-  CustomContent,
-  Page,
   SetSpaceRoleAssignmentsData,
   SetSpaceRoleAssignmentsResponse,
   Space,
   SpaceOperationsResponse,
   SpacePermissionAssignment,
-  SpaceRoleAssignment,
-  UpdateSharedContentPropertyData,
   UpdateSpaceDefaultClassificationLevelData,
-} from '../types.js';
+} from '../types/spaces.js';
 
 /** Query shape accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;

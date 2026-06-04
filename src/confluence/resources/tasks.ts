@@ -3,7 +3,12 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import { nonEmptyQuery } from './query.js';
-import type { ConfluenceTask, ListTasksParams, GetTaskParams, UpdateTaskData } from '../types.js';
+import type {
+  ConfluenceTask,
+  ListTasksParams,
+  GetTaskParams,
+  UpdateTaskData,
+} from '../types/tasks.js';
 
 type Query = Record<string, string | number | boolean | undefined>;
 

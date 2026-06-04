@@ -16,15 +16,7 @@
 
 ## 🧩 Confluence
 
-- [ ] 🔴 ♻️ Confluence: B007 Split types by domain
-  - files: `src/confluence/types/*`, `src/confluence/index.ts`
-  - deps: B006 archived
-
 ## 🧩 Jira
-
-- [ ] 🔴 ♻️ Jira: B008 Split types by domain
-  - files: `src/jira/types/*`, `src/jira/index.ts`
-  - deps: B007
 
 ## 🖥️ CLI
 

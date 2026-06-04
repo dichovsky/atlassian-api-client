@@ -2,26 +2,28 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import type { ClassificationLevel } from '../types/classification-levels.js';
 import type {
-  ClassificationLevel,
   ContentProperty,
   CreateContentPropertyData,
+  ListSharedContentPropertiesParams,
+  UpdateSharedContentPropertyData,
+} from '../types/common.js';
+import type {
   CreateWhiteboardData,
   CreateWhiteboardParams,
   GetWhiteboardParams,
-  ListSharedContentPropertiesParams,
   ListWhiteboardAncestorsParams,
   ListWhiteboardChildrenParams,
   ListWhiteboardDescendantsParams,
   ResetWhiteboardClassificationLevelData,
-  UpdateSharedContentPropertyData,
   UpdateWhiteboardClassificationLevelData,
   Whiteboard,
   WhiteboardAncestorsResponse,
   WhiteboardChild,
   WhiteboardDescendant,
   WhiteboardOperationsResponse,
-} from '../types.js';
+} from '../types/whiteboards.js';
 
 /**
  * Resource for Confluence v2 whiteboards.

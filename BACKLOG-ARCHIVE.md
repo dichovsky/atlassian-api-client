@@ -2668,3 +2668,19 @@
   - deps: none
   - **Impl:** `verifyConnectAsymmetricJwt(token, AsymmetricJwtVerifyOptions)` → verified claims. Inbound RS256 asymmetric-JWT verification for Atlassian Connect lifecycle/context tokens (outbound HS256 signer untouched). Strict `alg` pinning to `RS256` (rejects `none`/`HS256` algorithm-confusion); signature verified before any claim; validates `exp`/`iat`/`nbf` (30s default skew, configurable), optional `iss`/`aud` (string or array)/`qsh` (reuses `computeQsh`). Network-free core — caller supplies `publicKey` or `publicKeyResolver(kid)`. Throws `ValidationError` with non-leaking messages. Exported via `src/core/index.ts` + `src/index.ts`.
   - **Rat:** Per developer.atlassian.com "understanding-jwt-for-connect-apps": lifecycle callbacks signed RS256, `kid` header, PEM PKCS#8 public key at `https://connect-install-keys.atlassian.com/{kid}`, claims `iss`/`aud`(String|String[])/`iat`/`exp`. Inbound verification is the only RS256 flow Connect defines; alg-pinning prevents feeding the RSA public key into an HMAC verify.
+
+## 🧩 Confluence — B007 (2026-06-04)
+
+- [x] 🔴 ♻️ Confluence: B007 Split confluence/types.ts into per-domain modules
+  - files: `src/confluence/types/` (23 new modules), `src/confluence/types.ts` (deleted), `src/confluence/index.ts`, `src/confluence/resources/*.ts` (28 files repointed), `src/cli/commands/confluence.ts` (import path fixed), `CODEMAP.md`
+  - deps: B006 archived
+  - **Impl:** Split the 2896-LOC monolith `src/confluence/types.ts` (266 exported types) into 23 per-domain modules under `src/confluence/types/`: `common.ts` (shared primitives used by ≥2 domains — `ConfluenceVersion`, `ContentBody`, `BodyFormat`, `Label`, `ContentProperty`, sort-order unions, `CommentStatus`, `InlineCommentResolutionStatus`, `UpdateCommentData`, shared content-property params, redaction types, `SpaceRoleAssignment`, `SpaceRolePrincipalType`, `SpaceRoleType`, `BlogPostSortOrder`, `PageSortOrder`, etc.) + 22 domain modules mirroring resource boundaries. Deleted the monolith (`git rm`). Repointed 28 resource files (`src/confluence/resources/*.ts` incl. `query.ts`) to import from exact domain modules. Rebuilt `src/confluence/index.ts` barrel with per-module `export type { ... }` blocks. Also fixed `src/cli/commands/confluence.ts` which was importing directly from `types.js` — redirected to `index.js` (public API). Public export surface verified byte-identical: zero diff against the full 346-name package type surface (all 266 Confluence type names preserved).
+  - **Rat:** 2896-LOC monolith with 266 types was unmaintainable; new files are 50-290 LOC each (largest: `common.ts` ~270 LOC). Domain-colocated types improve discoverability and reduce context-load per feature area. Pure relocation — no behavioral change.
+
+## 🧩 Jira — B008 (2026-06-04)
+
+- [x] 🔴 ♻️ Jira: B008 Split jira types by domain (archived as already-satisfied)
+  - files: none
+  - deps: B007
+  - **Impl:** Archived without implementation. Jira types are already domain-colocated in their resource files (`src/jira/types.ts` holds only 51 shared-core types, <800 LOC). No monolith to split; a `types/` dir would add a competing 3rd type-location and increase indirection without benefit. Optional follow-up (colocate the jira user-management cluster) deferred as low priority.
+  - **Rat:** B008 was originally predicated on B007 revealing a splitting pattern applicable to Jira. Jira never developed the same monolith problem — its resource files already colocate domain types. The B007 pattern (split when >1000 LOC, 100+ types) does not apply here.
