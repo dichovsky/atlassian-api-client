@@ -2692,3 +2692,36 @@
   - deps: none
   - **Impl:** Lifted the 647-LOC `install-skill` installer out of `src/cli/commands/` into `src/skill-installer/index.ts` with a narrow public `installSkill(opts)` entry; `cli/commands/install-skill.ts` is now a ~79-line shim (`executeInstallSkill`) delegating to it. Pure relocation — security invariants (symlink/TOCTOU/permission guards), version stamping, and CLI behavior/exit-codes unchanged; `resolveSkillSource` depth verified. `installSkill` kept internal (not a public package export). The shim imports only what it uses (no helper re-exports) — consumers import installer helpers directly from `src/skill-installer/index.ts`.
   - **Rat:** `install-skill.ts` was the largest file in the repo (647 LOC) and a build-time concern sitting beside API command handlers by accident of being CLI-invoked. Moving it to `src/skill-installer/` colocates skill-bundling invariants (symlink policy, version injection, TOCTOU guards) with the installer rather than Confluence/Jira commands.
+
+## 📦 Wave D — Infra/QA/Docs (2026-06-04)
+
+- [x] 🔴 📝 Docs: B001 JSDoc public exports
+  - files: `src/index.ts` + ~12 public declaration files (clients, transport, Jira resource types), `CODEMAP.md`, `test/docs/jsdoc-public-exports.test.ts` (new)
+  - deps: none
+  - **Impl:** PR #183. Added JSDoc to ~50 public declarations reachable from `src/index.ts` (ConfluenceClient/JiraClient + constructors + resource properties, `HttpTransport.request()`, ~40 Jira resource types). Added enforcement test `test/docs/jsdoc-public-exports.test.ts` — TS compiler API walks the export graph through barrel chains (389 exports) and fails if any public export's declaration lacks a JSDoc block. Regenerated CODEMAP.md. Purely additive (comments only; no code/behavior change).
+  - **Rat:** Lock public-API documentation coverage with a CI-enforced gate so future undocumented public exports fail.
+- [x] 🔴 🧪 QA: B012 Mock-server transport tests
+  - files: `test/helpers/mock-server.ts` (new), `test/mock-server/transport.test.ts` (new)
+  - deps: B006 archived
+  - **Impl:** PR #181. Real in-process `node:http` mock server (ephemeral 127.0.0.1:0 port, programmable status/headers/body/delay, request capture) + 36 integration tests driving a real `HttpTransport` via a `makeMockFetch` origin-rewrite shim (rewrites origin to localhost, preserves path/query/headers/body so `allowedHosts` validation still applies). Covers the wire-level path: JSON parse, auth-header-wins, body encoding, 401/403/404/429/5xx→error taxonomy, retry attempt-counting, real-abort TimeoutError, ECONNREFUSED→NetworkError, ResponseTooLargeError (stream cap + Content-Length fast-fail), rate-limit metadata, X-Request-Id stable across retries.
+  - **Rat:** `MockTransport` bypasses `fetch`; this fills the previously-untested real-socket request/response/error path. Review removed an unused `resetRequests()` helper (no speculative surface).
+- [x] 🟡 🧪 QA: B014 Property-based tests
+  - files: `package.json` + `package-lock.json` (fast-check@4.8.0 devDep), `test/property/{pagination,encoding,openapi}.prop.test.ts` (new)
+  - deps: B006 archived
+  - **Impl:** PR #182. Added `fast-check@4.8.0` (dev-only, zero transitive runtime deps; runtime `dependencies` stays `{}`). Property tests: pagination (offset/cursor/search never drop/dup, `validatePageSize` bounds, **short-page + explicit `isLast=false` branches** — the PR #165 regression class), encoding (`encodePathSegment` round-trip, reserved-char escaping, dot-segment traversal rejection), openapi (`generateTypes` identifier/`*/` escaping safety, non-identifier schema names throw). Fixed seeds + bounded numRuns for determinism.
+  - **Rat:** Invariant-based tests complement example tests. Review caught a tautological composed-schema property (rewritten) and that the happy-path pagination props skipped the short-page/isLast branch (added).
+- [x] 🟡 📦 Infra: B018 OpenAPI type regeneration in CI (shipped as upstream-spec drift-guard)
+  - files: `scripts/regenerate-types.ts` (new), `.github/workflows/spec-drift.yml` (new), `package.json` (spec-drift script), `tsconfig.json`, `tsconfig.build.json`, `README.md`, `test/scripts/regenerate-types.test.ts` (new)
+  - deps: none
+  - **Impl:** PR #184. `runDriftGuard()` fetches the 3 live Atlassian OpenAPI specs, runs `generateTypes()` on each, asserts no-throw, prints type counts; commits nothing. Workflow is `schedule` (weekly) + `workflow_dispatch` ONLY (external fetch must never gate PRs), least-privilege `contents: read`, 10-min timeout. Script is `.ts` run via `node --experimental-strip-types` importing `src/core/openapi.ts`; `tsconfig.json` gains `allowImportingTsExtensions:true` (build config overrides to false). Unit tests inject a mock fetch (no network).
+  - **Rat:** Reinterpreted premise — the client vendors no specs and commits no generated types (`generateTypes` is a user-facing utility), so "regenerate the client's types" had nothing to regenerate. A drift-guard that catches upstream specs breaking the public generator is the real value.
+- [x] 🟡 🔒 Infra: B030 Hardening developer environments with local .npmrc
+  - files: `.npmrc` (new), `test/docs/dependency-hardening.test.ts` (new)
+  - deps: none
+  - **Impl:** PR #180. `.npmrc` with `save-exact=true`, `engine-strict=true`, `fund=false`, `audit=true`. Intentionally NO `ignore-scripts` (would break the dev toolchain). Assertion test mirrors `test/docs/readme.test.ts`; `npm ci` verified clean with the file present.
+  - **Rat:** Supply-chain hardening for dev environments without breaking installs (decision: keep installs reliable over max-hardening).
+- [x] 🟡 🔒 Infra: B031 Configure automated dependency upgrades with security cooldown
+  - files: `.github/dependabot.yml` (new), `test/docs/dependency-hardening.test.ts`
+  - deps: none
+  - **Impl:** PR #180 + hotfix PR #185. Dependabot v2 for `npm` + `github-actions`, weekly, `open-pull-requests-limit: 5`, dev-dep minor+patch grouping, and a security `cooldown` (npm: default 7 / patch 3 / minor 7 / major 30 days; github-actions: `default-days: 7` only). #185 hotfix: `cooldown` `semver-{patch,minor,major}-days` keys are npm-ecosystem-only — GitHub's live validator rejected them under `github-actions` after #180 merged. Test asserts directives + cooldown ordering (major ≥ minor ≥ patch).
+  - **Rat:** Cooldown blunts compromised-fresh-release supply-chain windows by aging new versions before upgrade PRs. Per-ecosystem schema means github-actions supports only `default-days`.

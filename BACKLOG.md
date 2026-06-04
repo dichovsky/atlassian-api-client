@@ -4,10 +4,6 @@
 
 ## 📝 Docs
 
-- [ ] 🔴 📝 Docs: B001 JSDoc public exports
-  - files: `src/index.ts`, `src/core/index.ts`, referenced public type files
-  - deps: none
-
 ## ⚙️ Core
 
 - [ ] 🔴 ♻️ Core: B025 OpenAPI $ref injection hardening
@@ -22,24 +18,7 @@
 
 ## 🧪 QA
 
-- [ ] 🔴 🧪 QA: B012 Mock-server transport tests
-  - files: `test/mock-server/*`
-  - deps: B006 archived
-- [ ] 🟡 🧪 QA: B014 Property-based tests
-  - files: `test/property/*`
-  - deps: B006 archived
-
 ## 🤖 Infra
-
-- [ ] 🟡 📦 Infra: B018 OpenAPI type regeneration in CI
-  - files: `scripts/regenerate-types.ts`, `.github/workflows/*`, `package.json`, `README.md`
-  - deps: none
-- [ ] 🟡 🔒 Infra: B030 Hardening developer environments with local .npmrc
-  - files: `.npmrc` (new)
-  - deps: none
-- [ ] 🟡 🔒 Infra: B031 Configure automated dependency upgrades with security cooldown
-  - files: `.github/dependabot.yml` (new)
-  - deps: none
 
 ## 🏛️ Architecture
 
