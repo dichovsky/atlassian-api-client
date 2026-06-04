@@ -492,6 +492,8 @@ vendor or commit any generated types.
 import { generateTypes } from 'atlassian-api-client';
 
 const spec = {
+  openapi: '3.0.1',
+  info: { title: 'My API', version: '1.0.0' },
   components: {
     schemas: {
       Issue: {

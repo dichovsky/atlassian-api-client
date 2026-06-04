@@ -9,10 +9,14 @@ on:
     - cron: '0 8 * * 1' # Every Monday at 08:00 UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   spec-drift:
     name: Spec Drift Guard
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v6
