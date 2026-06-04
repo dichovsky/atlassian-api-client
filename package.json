@@ -67,6 +67,7 @@
     "prepublishOnly": "npm run validate",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "spec-drift": "node --experimental-strip-types scripts/regenerate-types.ts",
     "test:exports": "node scripts/validate-exports.js",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
