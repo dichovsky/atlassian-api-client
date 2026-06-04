@@ -2684,3 +2684,11 @@
   - deps: B007
   - **Impl:** Archived without implementation. Jira types are already domain-colocated in their resource files (`src/jira/types.ts` holds only 51 shared-core types, <800 LOC). No monolith to split; a `types/` dir would add a competing 3rd type-location and increase indirection without benefit. Optional follow-up (colocate the jira user-management cluster) deferred as low priority.
   - **Rat:** B008 was originally predicated on B007 revealing a splitting pattern applicable to Jira. Jira never developed the same monolith problem — its resource files already colocate domain types. The B007 pattern (split when >1000 LOC, 100+ types) does not apply here.
+
+## 🏛️ Architecture — B042 (2026-06-04)
+
+- [x] 🟡 ♻️ Arch: B042 Lift `install-skill` into its own module
+  - files: `src/skill-installer/index.ts` (new, 625 LOC), `src/cli/commands/install-skill.ts` (→ 79-line shim), `test/skill-installer/install-skill.test.ts` (moved from `test/cli/`), `test/cli/skill-content.test.ts` (import repointed), `BACKLOG.md`, `BACKLOG-ARCHIVE.md`, `CODEMAP.md`
+  - deps: none
+  - **Impl:** Lifted the 647-LOC `install-skill` installer out of `src/cli/commands/` into `src/skill-installer/index.ts` with a narrow public `installSkill(opts)` entry; `cli/commands/install-skill.ts` is now a ~79-line shim (`executeInstallSkill`) delegating to it. Pure relocation — security invariants (symlink/TOCTOU/permission guards), version stamping, and CLI behavior/exit-codes unchanged; `resolveSkillSource` depth verified. `installSkill` kept internal (not a public package export). The shim imports only what it uses (no helper re-exports) — consumers import installer helpers directly from `src/skill-installer/index.ts`.
+  - **Rat:** `install-skill.ts` was the largest file in the repo (647 LOC) and a build-time concern sitting beside API command handlers by accident of being CLI-invoked. Moving it to `src/skill-installer/` colocates skill-bundling invariants (symlink policy, version injection, TOCTOU guards) with the installer rather than Confluence/Jira commands.
