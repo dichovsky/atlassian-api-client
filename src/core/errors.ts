@@ -328,7 +328,7 @@ export class CircuitBreakerOpenError extends AtlassianError {
  * @example
  * ```ts
  * try {
- *   await client.issues.getIssue('AC-1');
+ *   await client.issues.get('AC-1');
  * } catch (error) {
  *   if (error instanceof RateLimiterExhaustedError) {
  *     console.error('Local rate limiter: too many requests in flight');
