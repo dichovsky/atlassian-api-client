@@ -718,13 +718,16 @@ export class WorkflowSchemeResource {
     if (params.projectId.length === 0) {
       throw new RangeError('projectId must contain at least one value');
     }
-    const query: Record<string, string | number | boolean | undefined> = {
-      projectId: params.projectId.map((id) => String(id)).join(','),
-    };
+    // `projectId` is a repeatable query parameter (`projectId=10000&projectId=10001`,
+    // per the spec) — Jira parses a comma-joined value as a single (nonexistent)
+    // ID. The transport's `query` map collapses duplicate keys, so build the
+    // repeated params into the path (see UsersResource.bulkGet for the pattern).
+    const projectIdQs = params.projectId
+      .map((id) => `projectId=${encodeURIComponent(String(id))}`)
+      .join('&');
     const response = await this.transport.request<ContainerOfWorkflowSchemeAssociations>({
       method: 'GET',
-      path: `${this.baseUrl}/workflowscheme/project`,
-      query,
+      path: `${this.baseUrl}/workflowscheme/project?${projectIdQs}`,
     });
     return response.data;
   }
