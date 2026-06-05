@@ -484,6 +484,15 @@ const GLOBAL_OPTIONS = {
   'dashboard-name': { type: 'string' as const },
   owner: { type: 'string' as const },
   'max-pages': { type: 'string' as const },
+  // priorities create/update/search options
+  'icon-url': { type: 'string' as const },
+  'status-color': { type: 'string' as const },
+  'priority-name': { type: 'string' as const },
+  // issuetype create option
+  'hierarchy-level': { type: 'string' as const },
+  // app list-field-context-configurations options
+  'field-ids-or-keys': { type: 'string' as const },
+  'context-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
