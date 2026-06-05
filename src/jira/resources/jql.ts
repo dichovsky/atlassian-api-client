@@ -260,14 +260,26 @@ export class JqlResource {
   /** Get precomputations (apps). B590 */
   async getPrecomputations(params?: GetPrecomputationsParams): Promise<JqlPrecomputationsPage> {
     const query: Record<string, string | undefined> = {};
-    if (params?.functionKey !== undefined) query['functionKey'] = params.functionKey.join(',');
     if (params?.startAt !== undefined) query['startAt'] = String(params.startAt);
     if (params?.maxResults !== undefined) query['maxResults'] = String(params.maxResults);
     if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
 
+    // `functionKey` is a repeatable query parameter (`functionKey=a&functionKey=b`,
+    // per the spec — `type: array`). Jira parses a comma-joined value as a single
+    // (nonexistent) key, so the repeated params are appended to the path; the
+    // shared transport `query` map collapses duplicate keys. (See
+    // AppResource.deleteDynamicModules / WorkflowSchemeResource for the pattern.)
+    let path = `${this.baseUrl}/jql/function/computation`;
+    if (params?.functionKey !== undefined && params.functionKey.length > 0) {
+      const qs = params.functionKey
+        .map((key) => `functionKey=${encodeURIComponent(key)}`)
+        .join('&');
+      path = `${path}?${qs}`;
+    }
+
     const response = await this.transport.request<JqlPrecomputationsPage>({
       method: 'GET',
-      path: `${this.baseUrl}/jql/function/computation`,
+      path,
       ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;

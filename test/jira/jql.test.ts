@@ -287,21 +287,28 @@ describe('JqlResource', () => {
       });
     });
 
-    it('passes query params when provided', async () => {
+    it('sends functionKey as repeated query params and other params via the query map', async () => {
       // Arrange
       transport.respondWith({ values: [] });
 
-      // Act
+      // Act — `functionKey` is a `type: array` query param (Jira swagger), so it
+      // must be sent as repeated params (`functionKey=a&functionKey=b`), not
+      // comma-joined. Jira parses a CSV value as a single (nonexistent) key.
+      // Forge/Connect keys carry `:` and `/`, so each value is URL-encoded.
       await jql.getPrecomputations({
-        functionKey: ['myFn', 'otherFn'],
+        functionKey: ['myFn', 'ari:cloud::ext/Fn'],
         startAt: 0,
         maxResults: 50,
         orderBy: 'updated',
       });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        functionKey: 'myFn,otherFn',
+      // Assert: repeated, URL-encoded `functionKey` params live on the path
+      // (the transport `query` map collapses duplicate keys); the remaining
+      // scalar params travel through the `query` map.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/jql/function/computation?functionKey=myFn&functionKey=ari%3Acloud%3A%3Aext%2FFn`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
         startAt: '0',
         maxResults: '50',
         orderBy: 'updated',
