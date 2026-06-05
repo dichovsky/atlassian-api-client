@@ -14,19 +14,6 @@
 
 ## 🧩 Jira
 
-- [ ] 🟡 🖥️ CLI: B1012 Jira: wire `issue-comments` base CRUD into CLI
-  - actions: list, get, create, update, delete (only `*-property` + `bulk-fetch` wired today)
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🖥️ CLI: B1013 Jira: wire `labels` resource into CLI (entire resource unexposed)
-  - actions: list
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🖥️ CLI: B1014 Jira: expose `webhooks delete` action
-  - actions: delete (list/register/refresh/list-failed already wired)
-  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-
 ## 🧩 Confluence
 
 - [ ] 🟢 🖥️ CLI: B1016 Confluence: wire `inline-comments` read surface into CLI (entire resource unexposed)

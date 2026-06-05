@@ -194,6 +194,8 @@ export async function executeJiraCommand(
       return executeExpression(client, cmd);
     case 'issue-comments':
       return executeIssueComments(client, cmd);
+    case 'labels':
+      return executeLabels(client, cmd);
     case 'fieldconfiguration':
       return executeFieldConfiguration(client, cmd);
     case 'notification-schemes':
@@ -1901,9 +1903,16 @@ async function executeWebhooks(client: JiraClient, cmd: ParsedCommand): Promise<
         ...(after !== undefined && { after }),
       });
     }
+    case 'delete': {
+      const rawIds = asString(opts['webhook-ids']);
+      if (rawIds === undefined) throw new Error('--webhook-ids is required');
+      const webhookIds = parseJsonArrayFlag(rawIds, '--webhook-ids') as number[];
+      await client.webhooks.delete(webhookIds);
+      return { deleted: true };
+    }
     default:
       throw new Error(
-        `Unknown webhooks action: ${cmd.action}. Actions: list, register, refresh, list-failed`,
+        `Unknown webhooks action: ${cmd.action}. Actions: list, register, refresh, list-failed, delete`,
       );
   }
 }
@@ -4454,9 +4463,14 @@ async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promis
   }
 }
 
-// ── issue-comments (B356-B360) ────────────────────────────────────────────────
+// ── issue-comments (B1012, B356-B360) ────────────────────────────────────────
 
 const ISSUE_COMMENTS_ACTIONS = [
+  'list',
+  'get',
+  'create',
+  'update',
+  'delete',
   'list-properties',
   'get-property',
   'set-property',
@@ -4468,6 +4482,44 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
   const opts = cmd.options;
 
   switch (cmd.action) {
+    case 'list': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      return client.issueComments.list(issueIdOrKey, {
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        orderBy: asString(opts['order-by']),
+        expand: asString(opts['expand']),
+      });
+    }
+    case 'get': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      const commentId = requireArg(cmd.positionalArgs[1], 'commentId');
+      return client.issueComments.get(issueIdOrKey, commentId);
+    }
+    case 'create': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      const data = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.issueComments.create(
+        issueIdOrKey,
+        data as unknown as Parameters<typeof client.issueComments.create>[1],
+      );
+    }
+    case 'update': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      const commentId = requireArg(cmd.positionalArgs[1], 'commentId');
+      const data = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
+      return client.issueComments.update(
+        issueIdOrKey,
+        commentId,
+        data as unknown as Parameters<typeof client.issueComments.update>[2],
+      );
+    }
+    case 'delete': {
+      const issueIdOrKey = requireArg(cmd.positionalArgs[0], 'issueIdOrKey');
+      const commentId = requireArg(cmd.positionalArgs[1], 'commentId');
+      await client.issueComments.delete(issueIdOrKey, commentId);
+      return { deleted: true };
+    }
     case 'list-properties': {
       const commentId = requireArg(cmd.positionalArgs[0], 'commentId');
       return client.issueComments.listProperties(commentId);
@@ -4506,6 +4558,23 @@ async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Pro
       throw new Error(
         `Unknown issue-comments action: ${cmd.action}. Actions: ${ISSUE_COMMENTS_ACTIONS.join(', ')}`,
       );
+  }
+}
+
+// ── labels (B1013) ───────────────────────────────────────────────────────────
+
+async function executeLabels(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      return client.labels.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+      });
+    }
+    default:
+      throw new Error(`Unknown labels action: ${cmd.action}. Actions: list`);
   }
 }
 
