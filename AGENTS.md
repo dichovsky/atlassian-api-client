@@ -14,7 +14,7 @@ Repo guidance. Goal: correctness per token. Prefer short, verifiable steps.
 3. Implement minimal fix.
 4. Run focused checks first, then broader if needed.
 5. Summarize what changed + evidence (tests/commands).
-6. Before merging any PR: spawn an independent reviewer agent (Opus, fresh lineage, NOT the implementer). Resolve blocking findings before merge; address important findings unless risky/unjustified. Wave 8 (2026-05-30) caught 2 blocking spec-shape bugs in 4 PRs this way — gate is load-bearing.
+6. Before merging any PR: spawn an independent reviewer agent (Opus, fresh lineage, NOT the implementer). Resolve blocking findings before merge; address important findings unless risky/unjustified. Wave 8 (2026-05-30) caught 2 blocking spec-shape bugs in 4 PRs this way — gate is load-bearing. When a PR touches `src/*/resources/*`, `src/cli/commands/*`, or `skill/`, the reviewer verifies CLI/skill parity: (a) new/changed resource methods are CLI-reachable; (b) new/changed CLI actions are skill-documented to the construct-from-skill bar; (c) no orphan CLI actions or skill commands.
 
 ## Fast Commands
 
@@ -38,6 +38,7 @@ npm run validate                              # full gate — run before broad c
 - Keep resource APIs stable; avoid breaking public method signatures unless asked.
 - Prefer transport/middleware composition over resource-specific hacks.
 - Preserve retry, timeout, and error taxonomy in `core/errors.ts` and `core/transport.ts`.
+- **CLI/skill parity (hard rule, no exceptions):** every public method in `src/{confluence,jira}/resources/*.ts` is functionally reachable via the `atlas` CLI (complex bodies via JSON-valued flags, e.g. `--body '{...}'`), and every CLI action is documented in `skill/reference/*.md` well enough to construct the command from the skill alone. Bidirectional — no orphan CLI action (must back a resource method) or skill command (must back a CLI action). Functional, not 1:1: `*All` generators are covered by their base `list`/`search`.
 
 ## Testing Rules
 
