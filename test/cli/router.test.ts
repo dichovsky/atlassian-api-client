@@ -688,4 +688,73 @@ describe('parseCommand', () => {
     expect(result.action).toBe('create-plan-only-team');
     expect(result.options['member-account-ids']).toBe('acc-1,acc-2');
   });
+
+  // Flags consumed by jira command handlers must be registered in
+  // GLOBAL_OPTIONS, otherwise parseArgs (strict mode) throws "Unknown option"
+  // before dispatch — making the documented commands unusable.
+  it('parses jira issuetype create with --hierarchy-level', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'issuetype',
+      'create',
+      '--name',
+      'Spike',
+      '--hierarchy-level',
+      '0',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('issuetype');
+    expect(result.action).toBe('create');
+    expect(result.options['hierarchy-level']).toBe('0');
+  });
+
+  it('parses jira app list-field-context-configurations with --field-ids-or-keys and --context-ids', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'app',
+      'list-field-context-configurations',
+      '--field-ids-or-keys',
+      'customfield_10042',
+      '--context-ids',
+      '10100,10101',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('app');
+    expect(result.action).toBe('list-field-context-configurations');
+    expect(result.options['field-ids-or-keys']).toBe('customfield_10042');
+    expect(result.options['context-ids']).toBe('10100,10101');
+  });
+
+  it('parses jira priorities create with --icon-url and --status-color', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'priorities',
+      'create',
+      '--name',
+      'Critical',
+      '--icon-url',
+      'https://example.com/icon.png',
+      '--status-color',
+      '#FF0000',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('priorities');
+    expect(result.action).toBe('create');
+    expect(result.options['icon-url']).toBe('https://example.com/icon.png');
+    expect(result.options['status-color']).toBe('#FF0000');
+  });
+
+  it('parses jira priorities search with --priority-name', () => {
+    const argv = ['node', 'atlas', 'jira', 'priorities', 'search', '--priority-name', 'High'];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('priorities');
+    expect(result.action).toBe('search');
+    expect(result.options['priority-name']).toBe('High');
+  });
 });
