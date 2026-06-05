@@ -71,6 +71,7 @@ const DISPATCHER_FN_BY_RESOURCE: Record<string, string> = {
   embeds: 'executeEmbeds',
   folders: 'executeFolders',
   'footer-comments': 'executeFooterComments',
+  'inline-comments': 'executeInlineComments',
   'space-permissions': 'executeSpacePermissions',
   'space-role-mode': 'executeSpaceRoleMode',
   'space-roles': 'executeSpaceRoles',

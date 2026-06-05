@@ -92,7 +92,7 @@ RESOURCES:
   pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment
   spaces                 list, get, create, blog-posts, get-default-classification-level, update-default-classification-level, delete-default-classification-level, content-labels, custom-content, labels, operations, pages, permissions, role-assignments, set-role-assignments, list-properties, create-property, get-property, update-property, delete-property
   blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
-  comments               list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property
+  comments               list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
   labels                 list, list-all, attachments, blog-posts, pages
   admin-key              get, create, delete
@@ -105,6 +105,7 @@ RESOURCES:
   embeds                 create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
   folders                create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
   footer-comments        list, get, update, children, likes-count, likes-users, operations, versions, version
+  inline-comments        list, children, likes-count, likes-users, operations, versions, version
   space-permissions      list
   space-role-mode        get
   space-roles            list, get, create, update, delete
@@ -175,6 +176,13 @@ EXAMPLES:
   atlas confluence footer-comments children 77777
   atlas confluence footer-comments likes-count 77777
   atlas confluence footer-comments versions 77777 --sort -modified-date
+  atlas confluence comments update 77777 --body "Updated body" --version-number 2
+  atlas confluence comments update 77777 --body "Updated inline body" --version-number 2 --comment-type inline
+  atlas confluence inline-comments list --sort -created-date --limit 25
+  atlas confluence inline-comments children 77777 --sort created-date
+  atlas confluence inline-comments likes-count 77777
+  atlas confluence inline-comments versions 77777 --sort -modified-date
+  atlas confluence inline-comments version 77777 --version-number 3
   atlas confluence space-permissions list --limit 25
   atlas confluence space-role-mode get
   atlas confluence space-roles list --role-type CUSTOM --limit 25

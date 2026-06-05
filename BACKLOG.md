@@ -16,15 +16,6 @@
 
 ## 🧩 Confluence
 
-- [ ] 🟢 🖥️ CLI: B1016 Confluence: wire `inline-comments` read surface into CLI (entire resource unexposed)
-  - actions: list, listChildren, getLikesCount, listLikeUsers, getOperations, listVersions, getVersion
-  - note: mirror the already-wired top-level `footer-comments` resource (children/likes-count/likes-users/operations/versions/version)
-  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🖥️ CLI: B1017 Confluence: expose `comments update` action (footer + inline)
-  - actions: update (no `update` action exists today; covers `updateFooter` + `updateInline` via `--comment-type`, mirroring `comments list/get/create/delete`)
-  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 - [ ] 🟢 🖥️ CLI: B1018 Confluence: expose `labels` space/blogpost listing
   - actions: listForSpace, listForBlogPost (page-label listing already wired)
   - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
