@@ -1226,6 +1226,29 @@ const jiraBulkByPropertiesMock = {
   deleteSecurityByProperties: vi.fn(),
 };
 
+const jiraDashboardsMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  listGadgets: vi.fn(),
+  addGadget: vi.fn(),
+  updateGadget: vi.fn(),
+  removeGadget: vi.fn(),
+  listItemProperties: vi.fn(),
+  getItemProperty: vi.fn(),
+  setItemProperty: vi.fn(),
+  deleteItemProperty: vi.fn(),
+  copy: vi.fn(),
+  bulkEdit: vi.fn(),
+  listAvailableGadgets: vi.fn(),
+  search: vi.fn(),
+  searchAll: vi.fn().mockImplementation(async function* () {
+    // Default: empty async generator
+  }),
+};
+
 const jiraMigrationMock = {
   getMigrationTask: vi.fn(),
   submitMigrationTask: vi.fn(),
@@ -1340,6 +1363,7 @@ vi.mock('../../src/jira/client.js', () => {
       linkedWorkspaces: jiraLinkedWorkspacesMock,
       bulkByProperties: jiraBulkByPropertiesMock,
       migration: jiraMigrationMock,
+      dashboards: jiraDashboardsMock,
     };
   });
   return { JiraClient: MockJiraClient };
@@ -26552,6 +26576,621 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('migration', 'unknown-action', []), GLOBALS),
       ).rejects.toThrow('Unknown migration action');
+    });
+  });
+
+  // ── dashboards resource ────────────────────────────────────────────────────
+  describe('dashboards resource', () => {
+    it('list calls client.dashboards.list with pagination + filter + order-by', async () => {
+      jiraDashboardsMock.list.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 25,
+        total: 0,
+      });
+      await executeJiraCommand(
+        cmd('dashboards', 'list', [], {
+          'start-at': '5',
+          'max-results': '25',
+          filter: 'my',
+          'order-by': 'name',
+          expand: 'permissions',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.list).toHaveBeenCalledWith({
+        startAt: 5,
+        maxResults: 25,
+        filter: 'my',
+        orderBy: 'name',
+        expand: 'permissions',
+      });
+    });
+
+    it('list calls client.dashboards.list with no options when no flags supplied', async () => {
+      jiraDashboardsMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('dashboards', 'list'), GLOBALS);
+      expect(jiraDashboardsMock.list).toHaveBeenCalledWith({});
+    });
+
+    it('get calls client.dashboards.get with positional dashboardId', async () => {
+      jiraDashboardsMock.get.mockResolvedValue({ id: '10001', name: 'Sprint' });
+      const result = await executeJiraCommand(cmd('dashboards', 'get', ['10001']), GLOBALS);
+      expect(jiraDashboardsMock.get).toHaveBeenCalledWith('10001');
+      expect(result).toMatchObject({ id: '10001' });
+    });
+
+    it('get throws when dashboardId positional is missing', async () => {
+      await expect(executeJiraCommand(cmd('dashboards', 'get'), GLOBALS)).rejects.toThrow(
+        'dashboardId',
+      );
+    });
+
+    it('create calls client.dashboards.create with name + share-permissions JSON', async () => {
+      jiraDashboardsMock.create.mockResolvedValue({ id: '1', name: 'New' });
+      await executeJiraCommand(
+        cmd('dashboards', 'create', [], {
+          name: 'New',
+          description: 'desc',
+          'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[{"type":"loggedin"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.create).toHaveBeenCalledWith({
+        name: 'New',
+        description: 'desc',
+        sharePermissions: [{ type: 'global' }],
+        editPermissions: [{ type: 'loggedin' }],
+      });
+    });
+
+    it('create throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'create', [], { 'share-permissions': '[{"type":"global"}]' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--name');
+    });
+
+    it('create throws when --share-permissions is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'create', [], { name: 'X' }), GLOBALS),
+      ).rejects.toThrow('--share-permissions');
+    });
+
+    it('create throws on invalid --share-permissions JSON', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'create', [], { name: 'X', 'share-permissions': 'not-json' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow();
+    });
+
+    it('update calls client.dashboards.update with dashboardId + name + share-permissions', async () => {
+      jiraDashboardsMock.update.mockResolvedValue({ id: '10001', name: 'Renamed' });
+      await executeJiraCommand(
+        cmd('dashboards', 'update', ['10001'], {
+          name: 'Renamed',
+          'share-permissions': '[{"type":"global"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.update).toHaveBeenCalledWith('10001', {
+        name: 'Renamed',
+        sharePermissions: [{ type: 'global' }],
+      });
+    });
+
+    it('update forwards --edit-permissions when provided', async () => {
+      jiraDashboardsMock.update.mockResolvedValue({ id: '10001', name: 'X' });
+      await executeJiraCommand(
+        cmd('dashboards', 'update', ['10001'], {
+          name: 'X',
+          'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[{"type":"loggedin"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.update).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ editPermissions: [{ type: 'loggedin' }] }),
+      );
+    });
+
+    it('update throws when dashboardId positional is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update', [], {
+            name: 'X',
+            'share-permissions': '[{"type":"global"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('dashboardId');
+    });
+
+    it('delete calls client.dashboards.delete and returns { deleted: true }', async () => {
+      jiraDashboardsMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(cmd('dashboards', 'delete', ['10001']), GLOBALS);
+      expect(jiraDashboardsMock.delete).toHaveBeenCalledWith('10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete throws when dashboardId positional is missing', async () => {
+      await expect(executeJiraCommand(cmd('dashboards', 'delete'), GLOBALS)).rejects.toThrow(
+        'dashboardId',
+      );
+    });
+
+    it('list-gadgets calls client.dashboards.listGadgets with dashboardId', async () => {
+      jiraDashboardsMock.listGadgets.mockResolvedValue({ gadgets: [] });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'list-gadgets', ['10001']),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.listGadgets).toHaveBeenCalledWith('10001');
+      expect(result).toMatchObject({ gadgets: [] });
+    });
+
+    it('list-gadgets throws when dashboardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('dashboards', 'list-gadgets'), GLOBALS)).rejects.toThrow(
+        'dashboardId',
+      );
+    });
+
+    it('add-gadget calls client.dashboards.addGadget with dashboardId + module-key + position', async () => {
+      jiraDashboardsMock.addGadget.mockResolvedValue({ id: 5 });
+      await executeJiraCommand(
+        cmd('dashboards', 'add-gadget', ['10001'], {
+          'module-key': 'com.atlassian.jira.gadgets:filter-results-gadget',
+          row: '1',
+          column: '2',
+          title: 'My Gadget',
+          color: 'blue',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.addGadget).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({
+          moduleKey: 'com.atlassian.jira.gadgets:filter-results-gadget',
+          position: { row: 1, column: 2 },
+          title: 'My Gadget',
+          color: 'blue',
+        }),
+      );
+    });
+
+    it('add-gadget with --ignore-uri-and-module-key-validation flag', async () => {
+      jiraDashboardsMock.addGadget.mockResolvedValue({ id: 6 });
+      await executeJiraCommand(
+        cmd('dashboards', 'add-gadget', ['10001'], {
+          uri: 'https://example.com/gadget',
+          'ignore-uri-and-module-key-validation': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.addGadget).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({
+          uri: 'https://example.com/gadget',
+          ignoreUriAndModuleKeyValidation: true,
+        }),
+      );
+    });
+
+    it('update-gadget calls client.dashboards.updateGadget with numeric gadgetId', async () => {
+      jiraDashboardsMock.updateGadget.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'update-gadget', ['10001', '5'], { title: 'Renamed', color: 'red' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.updateGadget).toHaveBeenCalledWith('10001', 5, {
+        title: 'Renamed',
+        color: 'red',
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('update-gadget with row+column builds position object', async () => {
+      jiraDashboardsMock.updateGadget.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '2', column: '3' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.updateGadget).toHaveBeenCalledWith(
+        '10001',
+        5,
+        expect.objectContaining({ position: { row: 2, column: 3 } }),
+      );
+    });
+
+    it('update-gadget throws when gadgetId positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'update-gadget', ['10001']), GLOBALS),
+      ).rejects.toThrow('gadgetId');
+    });
+
+    it('add-gadget throws when only --row is supplied without --column', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'add-gadget', ['10001'], { 'module-key': 'com.x:a', row: '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('add-gadget throws when only --column is supplied without --row', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'add-gadget', ['10001'], { 'module-key': 'com.x:a', column: '2' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('update-gadget throws when only --row is supplied without --column', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('update-gadget throws when only --column is supplied without --row', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update-gadget', ['10001', '5'], { column: '2' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('remove-gadget calls client.dashboards.removeGadget with numeric gadgetId', async () => {
+      jiraDashboardsMock.removeGadget.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'remove-gadget', ['10001', '5']),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.removeGadget).toHaveBeenCalledWith('10001', 5);
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('remove-gadget throws when gadgetId positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'remove-gadget', ['10001']), GLOBALS),
+      ).rejects.toThrow('gadgetId');
+    });
+
+    it('list-item-properties calls client.dashboards.listItemProperties', async () => {
+      jiraDashboardsMock.listItemProperties.mockResolvedValue({ keys: [] });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'list-item-properties', ['10001', 'itm-1']),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.listItemProperties).toHaveBeenCalledWith('10001', 'itm-1');
+      expect(result).toMatchObject({ keys: [] });
+    });
+
+    it('list-item-properties throws when itemId positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'list-item-properties', ['10001']), GLOBALS),
+      ).rejects.toThrow('itemId');
+    });
+
+    it('get-item-property calls client.dashboards.getItemProperty', async () => {
+      jiraDashboardsMock.getItemProperty.mockResolvedValue({ key: 'my-key', value: 42 });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'get-item-property', ['10001', 'itm-1', 'my-key']),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.getItemProperty).toHaveBeenCalledWith('10001', 'itm-1', 'my-key');
+      expect(result).toMatchObject({ key: 'my-key' });
+    });
+
+    it('get-item-property throws when propertyKey positional is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'get-item-property', ['10001', 'itm-1']), GLOBALS),
+      ).rejects.toThrow('propertyKey');
+    });
+
+    it('set-item-property calls client.dashboards.setItemProperty with JSON value', async () => {
+      jiraDashboardsMock.setItemProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'set-item-property', ['10001', 'itm-1', 'my-key'], {
+          value: '{"enabled":true}',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.setItemProperty).toHaveBeenCalledWith('10001', 'itm-1', 'my-key', {
+        enabled: true,
+      });
+      expect(result).toEqual({ updated: true });
+    });
+
+    it('set-item-property accepts a quoted string value', async () => {
+      jiraDashboardsMock.setItemProperty.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('dashboards', 'set-item-property', ['10001', 'itm-1', 'my-key'], {
+          value: '"hello"',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.setItemProperty).toHaveBeenCalledWith(
+        '10001',
+        'itm-1',
+        'my-key',
+        'hello',
+      );
+    });
+
+    it('set-item-property throws when --value is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'set-item-property', ['10001', 'itm-1', 'my-key']),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--value');
+    });
+
+    it('delete-item-property calls client.dashboards.deleteItemProperty', async () => {
+      jiraDashboardsMock.deleteItemProperty.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'delete-item-property', ['10001', 'itm-1', 'my-key']),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.deleteItemProperty).toHaveBeenCalledWith(
+        '10001',
+        'itm-1',
+        'my-key',
+      );
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete-item-property throws when propertyKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'delete-item-property', ['10001', 'itm-1']), GLOBALS),
+      ).rejects.toThrow('propertyKey');
+    });
+
+    it('copy calls client.dashboards.copy with optional metadata', async () => {
+      jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy of Sprint' });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'copy', ['10001'], {
+          name: 'Copy of Sprint',
+          'share-permissions': '[{"type":"global"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
+        name: 'Copy of Sprint',
+        sharePermissions: [{ type: 'global' }],
+      });
+      expect(result).toMatchObject({ id: '20001' });
+    });
+
+    it('copy with no optional flags passes empty object', async () => {
+      jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy' });
+      await executeJiraCommand(cmd('dashboards', 'copy', ['10001']), GLOBALS);
+      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {});
+    });
+
+    it('copy forwards --description and --edit-permissions when provided', async () => {
+      jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy' });
+      await executeJiraCommand(
+        cmd('dashboards', 'copy', ['10001'], {
+          description: 'a copy',
+          'edit-permissions': '[{"type":"loggedin"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
+        description: 'a copy',
+        editPermissions: [{ type: 'loggedin' }],
+      });
+    });
+
+    it('copy throws when dashboardId is missing', async () => {
+      await expect(executeJiraCommand(cmd('dashboards', 'copy'), GLOBALS)).rejects.toThrow(
+        'dashboardId',
+      );
+    });
+
+    it('bulk-edit calls client.dashboards.bulkEdit with entityIds CSV and action', async () => {
+      jiraDashboardsMock.bulkEdit.mockResolvedValue({ status: 'ok' });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'bulk-edit', [], {
+          'entity-ids': '10001,10002',
+          action: 'delete',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityIds: ['10001', '10002'],
+          action: 'delete',
+        }),
+      );
+      expect(result).toMatchObject({ status: 'ok' });
+    });
+
+    it('bulk-edit changeOwner action passes changeOwnerDetails', async () => {
+      jiraDashboardsMock.bulkEdit.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('dashboards', 'bulk-edit', [], {
+          'entity-ids': '10001',
+          action: 'changeOwner',
+          'new-owner': 'acc-1',
+          'autofix-name': true,
+          'extend-admin-permissions': true,
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityIds: ['10001'],
+          action: 'changeOwner',
+          changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
+          extendAdminPermissions: true,
+        }),
+      );
+    });
+
+    it('bulk-edit with share/edit permissions builds permissionDetails', async () => {
+      jiraDashboardsMock.bulkEdit.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('dashboards', 'bulk-edit', [], {
+          'entity-ids': '10001',
+          action: 'addPermission',
+          'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[{"type":"loggedin"}]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          permissionDetails: {
+            sharePermissions: [{ type: 'global' }],
+            editPermissions: [{ type: 'loggedin' }],
+          },
+        }),
+      );
+    });
+
+    it('bulk-edit throws when --entity-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'bulk-edit', [], { action: 'delete' }), GLOBALS),
+      ).rejects.toThrow('--entity-ids');
+    });
+
+    it('bulk-edit throws when --action is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'bulk-edit', [], { 'entity-ids': '10001' }), GLOBALS),
+      ).rejects.toThrow('--action');
+    });
+
+    it('list-available-gadgets calls client.dashboards.listAvailableGadgets with csv-split params', async () => {
+      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
+      await executeJiraCommand(
+        cmd('dashboards', 'list-available-gadgets', [], {
+          'module-keys': 'com.x:a,com.x:b',
+          uris: 'https://a.com,https://b.com',
+          'gadget-ids': '1,2',
+          'dashboard-ids': '10001,10002',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({
+        moduleKey: ['com.x:a', 'com.x:b'],
+        uri: ['https://a.com', 'https://b.com'],
+        gadgetId: [1, 2],
+        dashboardId: [10001, 10002],
+      });
+    });
+
+    it('list-available-gadgets with no flags calls with empty object', async () => {
+      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
+      await executeJiraCommand(cmd('dashboards', 'list-available-gadgets'), GLOBALS);
+      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
+    });
+
+    it('list-available-gadgets omits params when csv flags contain only whitespace/empty tokens', async () => {
+      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
+      await executeJiraCommand(
+        cmd('dashboards', 'list-available-gadgets', [], {
+          'module-keys': ' , ',
+          uris: ',',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
+    });
+
+    it('search calls client.dashboards.search with all search params', async () => {
+      jiraDashboardsMock.search.mockResolvedValue({ values: [], startAt: 0, maxResults: 25 });
+      await executeJiraCommand(
+        cmd('dashboards', 'search', [], {
+          'dashboard-name': 'Sprint',
+          'account-id': 'acc-1',
+          owner: 'owner-1',
+          'group-name': 'developers',
+          'group-id': 'grp-1',
+          'project-id': '10001',
+          'order-by': '-favorite_count',
+          'start-at': '0',
+          'max-results': '25',
+          status: 'active',
+          expand: 'permissions',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.search).toHaveBeenCalledWith({
+        dashboardName: 'Sprint',
+        accountId: 'acc-1',
+        owner: 'owner-1',
+        groupname: 'developers',
+        groupId: 'grp-1',
+        projectId: 10001,
+        orderBy: '-favorite_count',
+        startAt: 0,
+        maxResults: 25,
+        status: 'active',
+        expand: 'permissions',
+      });
+    });
+
+    it('search with no flags passes empty options', async () => {
+      jiraDashboardsMock.search.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('dashboards', 'search'), GLOBALS);
+      expect(jiraDashboardsMock.search).toHaveBeenCalledWith({});
+    });
+
+    it('search-all collects generator items into array', async () => {
+      const items = [
+        { id: '1', name: 'A' },
+        { id: '2', name: 'B' },
+      ];
+      jiraDashboardsMock.searchAll.mockImplementation(async function* () {
+        yield* items;
+      });
+      const result = await executeJiraCommand(
+        cmd('dashboards', 'search-all', [], { 'dashboard-name': 'Sprint' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.searchAll).toHaveBeenCalledWith(
+        expect.objectContaining({ dashboardName: 'Sprint' }),
+        expect.any(Object),
+      );
+      expect(result).toEqual(items);
+    });
+
+    it('search-all passes max-pages as numeric option to generator', async () => {
+      jiraDashboardsMock.searchAll.mockImplementation(async function* () {
+        // empty — yields nothing
+      });
+      await executeJiraCommand(cmd('dashboards', 'search-all', [], { 'max-pages': '5' }), GLOBALS);
+      expect(jiraDashboardsMock.searchAll).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ maxPages: 5 }),
+      );
+    });
+
+    it('search-all with no flags collects empty array', async () => {
+      jiraDashboardsMock.searchAll.mockImplementation(async function* () {
+        // empty — yields nothing
+      });
+      const result = await executeJiraCommand(cmd('dashboards', 'search-all'), GLOBALS);
+      expect(result).toEqual([]);
+    });
+
+    it('throws on unknown dashboards action', async () => {
+      await expect(
+        executeJiraCommand(cmd('dashboards', 'unknown-action', []), GLOBALS),
+      ).rejects.toThrow('Unknown dashboards action');
     });
   });
 });

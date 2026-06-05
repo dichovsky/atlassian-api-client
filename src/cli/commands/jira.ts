@@ -40,6 +40,8 @@ import type {
   BulkDeleteIssuePropertyData,
   WorkflowTransitionRulesUpdateEntry,
   WorkflowTransitionRulesDeleteEntry,
+  BulkEditDashboardsData,
+  SearchDashboardsOrderBy,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -242,6 +244,8 @@ export async function executeJiraCommand(
       return executeBulkByProperties(client, cmd);
     case 'migration':
       return executeMigration(client, cmd);
+    case 'dashboards':
+      return executeDashboards(client, cmd);
     default:
       throw new Error(`Unknown Jira resource: ${cmd.resource}. Use --help for usage.`);
   }
@@ -7976,6 +7980,310 @@ async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): 
     default:
       throw new Error(
         `Unknown bulk-by-properties action: ${cmd.action}. Actions: ${BULK_BY_PROPERTIES_ACTIONS.join(', ')}`,
+      );
+  }
+}
+
+// ── dashboards (B391–B405) ────────────────────────────────────────────────────
+
+const DASHBOARDS_ACTIONS = [
+  'list',
+  'get',
+  'create',
+  'update',
+  'delete',
+  'list-gadgets',
+  'add-gadget',
+  'update-gadget',
+  'remove-gadget',
+  'list-item-properties',
+  'get-item-property',
+  'set-item-property',
+  'delete-item-property',
+  'copy',
+  'bulk-edit',
+  'list-available-gadgets',
+  'search',
+  'search-all',
+] as const;
+
+async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    // ── basic CRUD ──────────────────────────────────────────────────────────
+    case 'list':
+      return client.dashboards.list({
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        filter: asString(opts['filter']) as 'my' | 'favourite' | undefined,
+        orderBy: asString(opts['order-by']),
+        expand: asString(opts['expand']),
+      });
+
+    case 'get':
+      return client.dashboards.get(requireArg(cmd.positionalArgs[0], 'dashboardId'));
+
+    case 'create': {
+      const sharePermsRaw = requireOpt(opts['share-permissions'], '--share-permissions');
+      const editPermsRaw = asString(opts['edit-permissions']);
+      return client.dashboards.create({
+        name: requireOpt(opts['name'], '--name'),
+        description: asString(opts['description']),
+        sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
+          typeof parseJsonArrayFlag
+        >,
+        ...(editPermsRaw !== undefined && {
+          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
+            typeof parseJsonArrayFlag
+          >,
+        }),
+      } as Parameters<typeof client.dashboards.create>[0]);
+    }
+
+    case 'update': {
+      const dashId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      const sharePermsRaw = requireOpt(opts['share-permissions'], '--share-permissions');
+      const editPermsRaw = asString(opts['edit-permissions']);
+      return client.dashboards.update(dashId, {
+        name: requireOpt(opts['name'], '--name'),
+        description: asString(opts['description']),
+        sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
+          typeof parseJsonArrayFlag
+        >,
+        ...(editPermsRaw !== undefined && {
+          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
+            typeof parseJsonArrayFlag
+          >,
+        }),
+      } as Parameters<typeof client.dashboards.update>[1]);
+    }
+
+    case 'delete': {
+      await client.dashboards.delete(requireArg(cmd.positionalArgs[0], 'dashboardId'));
+      return { deleted: true };
+    }
+
+    // ── gadgets ─────────────────────────────────────────────────────────────
+    case 'list-gadgets':
+      return client.dashboards.listGadgets(requireArg(cmd.positionalArgs[0], 'dashboardId'));
+
+    case 'add-gadget': {
+      const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      const rowRaw = opts['row'];
+      const colRaw = opts['column'];
+      if ((rowRaw === undefined) !== (colRaw === undefined)) {
+        throw new Error('--row and --column must be supplied together');
+      }
+      let position: { row: number; column: number } | undefined;
+      if (rowRaw !== undefined && colRaw !== undefined) {
+        position = {
+          row: asPositiveInt(rowRaw, '--row') as number,
+          column: asPositiveInt(colRaw, '--column') as number,
+        };
+      }
+      return client.dashboards.addGadget(dashboardId, {
+        moduleKey: asString(opts['module-key']),
+        uri: asString(opts['uri']),
+        color: asString(opts['color']),
+        title: asString(opts['title']),
+        position,
+        ignoreUriAndModuleKeyValidation: asBoolFlag(opts['ignore-uri-and-module-key-validation']),
+      });
+    }
+
+    case 'update-gadget': {
+      const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      const gadgetId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'gadgetId'),
+        'gadgetId',
+      );
+      const rowRaw = opts['row'];
+      const colRaw = opts['column'];
+      if ((rowRaw === undefined) !== (colRaw === undefined)) {
+        throw new Error('--row and --column must be supplied together');
+      }
+      let position: { row: number; column: number } | undefined;
+      if (rowRaw !== undefined && colRaw !== undefined) {
+        position = {
+          row: asPositiveInt(rowRaw, '--row') as number,
+          column: asPositiveInt(colRaw, '--column') as number,
+        };
+      }
+      await client.dashboards.updateGadget(dashboardId, gadgetId, {
+        title: asString(opts['title']),
+        color: asString(opts['color']),
+        position,
+      });
+      return { updated: true };
+    }
+
+    case 'remove-gadget': {
+      const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      const gadgetId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'gadgetId'),
+        'gadgetId',
+      );
+      await client.dashboards.removeGadget(dashboardId, gadgetId);
+      return { removed: true };
+    }
+
+    // ── item properties ──────────────────────────────────────────────────────
+    case 'list-item-properties':
+      return client.dashboards.listItemProperties(
+        requireArg(cmd.positionalArgs[0], 'dashboardId'),
+        requireArg(cmd.positionalArgs[1], 'itemId'),
+      );
+
+    case 'get-item-property':
+      return client.dashboards.getItemProperty(
+        requireArg(cmd.positionalArgs[0], 'dashboardId'),
+        requireArg(cmd.positionalArgs[1], 'itemId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+      );
+
+    case 'set-item-property': {
+      await client.dashboards.setItemProperty(
+        requireArg(cmd.positionalArgs[0], 'dashboardId'),
+        requireArg(cmd.positionalArgs[1], 'itemId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+        parseJsonValueFlag(requireOpt(opts['value'], '--value'), '--value'),
+      );
+      return { updated: true };
+    }
+
+    case 'delete-item-property': {
+      await client.dashboards.deleteItemProperty(
+        requireArg(cmd.positionalArgs[0], 'dashboardId'),
+        requireArg(cmd.positionalArgs[1], 'itemId'),
+        requireArg(cmd.positionalArgs[2], 'propertyKey'),
+      );
+      return { deleted: true };
+    }
+
+    // ── copy ─────────────────────────────────────────────────────────────────
+    case 'copy': {
+      const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
+      const nameRaw = asString(opts['name']);
+      const descRaw = asString(opts['description']);
+      const sharePermsRaw = asString(opts['share-permissions']);
+      const editPermsRaw = asString(opts['edit-permissions']);
+      return client.dashboards.copy(dashboardId, {
+        ...(nameRaw !== undefined && { name: nameRaw }),
+        ...(descRaw !== undefined && { description: descRaw }),
+        ...(sharePermsRaw !== undefined && {
+          sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
+            typeof parseJsonArrayFlag
+          >,
+        }),
+        ...(editPermsRaw !== undefined && {
+          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
+            typeof parseJsonArrayFlag
+          >,
+        }),
+      } as Parameters<typeof client.dashboards.copy>[1]);
+    }
+
+    // ── bulk-edit ────────────────────────────────────────────────────────────
+    case 'bulk-edit': {
+      const entityIds = csvFlag(requireOpt(opts['entity-ids'], '--entity-ids')) as string[];
+      const action = requireOpt(opts['action'], '--action');
+      const newOwnerRaw = asString(opts['new-owner']);
+      const autofixNameRaw = asBoolFlag(opts['autofix-name']);
+      const extendAdminRaw = asBoolFlag(opts['extend-admin-permissions']);
+      const sharePermsRaw = asString(opts['share-permissions']);
+      const editPermsRaw = asString(opts['edit-permissions']);
+      const data: BulkEditDashboardsData = {
+        entityIds,
+        action: action as BulkEditDashboardsData['action'],
+        ...(newOwnerRaw !== undefined || autofixNameRaw !== undefined
+          ? {
+              changeOwnerDetails: {
+                ...(newOwnerRaw !== undefined && { newOwner: newOwnerRaw }),
+                ...(autofixNameRaw !== undefined && { autofixName: autofixNameRaw }),
+              } as BulkEditDashboardsData['changeOwnerDetails'],
+            }
+          : {}),
+        ...(extendAdminRaw !== undefined && { extendAdminPermissions: extendAdminRaw }),
+        ...((sharePermsRaw !== undefined || editPermsRaw !== undefined) && {
+          permissionDetails: {
+            ...(sharePermsRaw !== undefined && {
+              sharePermissions: parseJsonArrayFlag(
+                sharePermsRaw,
+                '--share-permissions',
+              ) as ReturnType<typeof parseJsonArrayFlag>,
+            }),
+            ...(editPermsRaw !== undefined && {
+              editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
+                typeof parseJsonArrayFlag
+              >,
+            }),
+          } as BulkEditDashboardsData['permissionDetails'],
+        }),
+      };
+      return client.dashboards.bulkEdit(data);
+    }
+
+    // ── list-available-gadgets ───────────────────────────────────────────────
+    case 'list-available-gadgets': {
+      const moduleKeys = csvFlag(opts['module-keys']);
+      const uris = csvFlag(opts['uris']);
+      const gadgetIdsTokens = csvFlag(opts['gadget-ids']);
+      const dashboardIdsTokens = csvFlag(opts['dashboard-ids']);
+      return client.dashboards.listAvailableGadgets({
+        ...(moduleKeys !== undefined && { moduleKey: moduleKeys }),
+        ...(uris !== undefined && { uri: uris }),
+        ...(gadgetIdsTokens !== undefined && {
+          gadgetId: gadgetIdsTokens.map((s) => parsePositiveIntArg(s, '--gadget-ids')),
+        }),
+        ...(dashboardIdsTokens !== undefined && {
+          dashboardId: dashboardIdsTokens.map((s) => parsePositiveIntArg(s, '--dashboard-ids')),
+        }),
+      });
+    }
+
+    // ── search / search-all ──────────────────────────────────────────────────
+    case 'search':
+      return client.dashboards.search({
+        dashboardName: asString(opts['dashboard-name']),
+        accountId: asString(opts['account-id']),
+        owner: asString(opts['owner']),
+        groupname: asString(opts['group-name']),
+        groupId: asString(opts['group-id']),
+        projectId: asPositiveInt(opts['project-id'], '--project-id'),
+        orderBy: asString(opts['order-by']) as SearchDashboardsOrderBy | undefined,
+        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
+        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        status: asString(opts['status']) as 'active' | 'archived' | 'deleted' | undefined,
+        expand: asString(opts['expand']),
+      });
+
+    case 'search-all': {
+      const maxPages = asPositiveInt(opts['max-pages'], '--max-pages');
+      const results: unknown[] = [];
+      for await (const item of client.dashboards.searchAll(
+        {
+          dashboardName: asString(opts['dashboard-name']),
+          accountId: asString(opts['account-id']),
+          owner: asString(opts['owner']),
+          groupname: asString(opts['group-name']),
+          groupId: asString(opts['group-id']),
+          projectId: asPositiveInt(opts['project-id'], '--project-id'),
+          orderBy: asString(opts['order-by']) as SearchDashboardsOrderBy | undefined,
+          maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+          status: asString(opts['status']) as 'active' | 'archived' | 'deleted' | undefined,
+          expand: asString(opts['expand']),
+        },
+        { maxPages },
+      )) {
+        results.push(item);
+      }
+      return results;
+    }
+
+    default:
+      throw new Error(
+        `Unknown dashboards action: ${cmd.action}. Actions: ${DASHBOARDS_ACTIONS.join(', ')}`,
       );
   }
 }

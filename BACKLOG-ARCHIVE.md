@@ -914,6 +914,12 @@
 - [x] 🟢 📦 CLI: B019 `atlas scopes validate` command
   - **Impl:** Branch `feat/cli-scopes-validate` (2026-06-02); new `src/core/scopes.ts` exports `validateScopes(scopes)` → `{ valid, unknown }` + `listKnownScopes()` built from the existing `AtlassianScope` union (additive, zero auth-behavior change); new `src/cli/commands/scopes.ts` exports `executeScopesCommand` handling `validate` (positional args → JSON result on stdout, error summary on stderr, exit 1 on unknowns), missing-action, and unrecognised-action branches; `src/cli/index.ts` routes `atlas scopes` before `resolveGlobalOptions` (auth-free, like `install-skill`); `src/cli/help.ts` adds `SCOPES_HELP`, wires `getHelpText('scopes')`, extends GLOBAL_HELP examples; `test/core/scopes.test.ts` extended (+35 tests covering `validateScopes` valid/unknown/mixed/edge + `listKnownScopes`); new `test/cli/scopes.test.ts` (18 tests, 100% branch coverage: all-valid, partial, all-unknown, empty-input, no-action, unknown-action).
   - **Rat:** `atlas scopes validate` gives developers a fast, offline check that scope strings in their OAuth app config are recognised before making any API calls. Read-only utility — no authorization behavior changed.
+- [x] 🟡 🖥️ CLI: B1011 Jira: wire `dashboards` resource into CLI
+  - **Impl:** Branch `feat/cli-jira-dashboards` (2026-06-05); new `executeDashboards` in `src/cli/commands/jira.ts` dispatching 18 actions (list/get/create/update/delete + list-gadgets/add-gadget/update-gadget/remove-gadget + list-item-properties/get-item-property/set-item-property/delete-item-property + copy/bulk-edit/list-available-gadgets/search/search-all) over `client.dashboards.*`; added missing `--flag`s to router `GLOBAL_OPTIONS`; help + skill-doc verified; full per-action CLI tests. SDK unchanged.
+  - **Rat:** SDK already implemented `client.dashboards`; the dashboards skill doc was pre-written. This wires the CLI dispatch that was never added, completing the resource's user-facing surface.
+- [x] 🟡 🖥️ CLI: B1015 Confluence: wire `content-properties` resource into CLI — WON'T DO (redundant)
+  - **Impl:** No code change (2026-06-05). Closed as redundant.
+  - **Rat:** Page content-properties are already fully reachable via the wired `pages list-properties/create-property/get-property/update-property/delete-property` actions (`client.pages.*Property`). A standalone top-level `content-properties` resource would duplicate them. Decision: code-verified audit, orchestrator-approved.
 
 ## 🧪 QA
 
