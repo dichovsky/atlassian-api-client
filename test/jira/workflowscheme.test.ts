@@ -607,6 +607,10 @@ describe('WorkflowSchemeResource', () => {
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/workflowscheme/project?projectId=10010&projectId=10020`,
       );
+      // No `query` map: the IDs live entirely in the path. Guards against a
+      // regression that re-adds a `query: { projectId }` field alongside the
+      // path params, which would send projectId twice.
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('throws when projectId is empty', async () => {
