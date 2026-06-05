@@ -31,7 +31,7 @@ source: atlassian-api-client npm package
 - Ask user for missing auth env; do not guess.
 - Return minimal output first (`--format minimal` when IDs/keys are sufficient).
 - Prefer pagination limits and cursors over bulk dumps.
-- Use SDK, not CLI, for unsupported complex updates.
+- Use JSON-valued flags (e.g. `--fields '{...}'`) for complex payloads; all resource operations are CLI-reachable.
 
 ## Command shape (compact schema)
 
