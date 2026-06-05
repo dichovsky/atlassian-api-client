@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "a3f1a7637d8428cbcb9555b8d3defa145ac122a941b3ba1a9ec1c2d572ab482c",
+  "sourceHash": "69b468b6671e6314d8bedc55cc97969fcd58206deffbd323ab82ac0061077a5e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -34659,104 +34659,104 @@
             {
               "name": "assignToProject",
               "kind": "method",
-              "line": 736
+              "line": 739
             },
             {
               "name": "switchProject",
               "kind": "method",
-              "line": 753
+              "line": 756
             },
             {
               "name": "createDraft",
               "kind": "method",
-              "line": 774
+              "line": 777
             },
             {
               "name": "deleteDraft",
               "kind": "method",
-              "line": 786
+              "line": 789
             },
             {
               "name": "getDraft",
               "kind": "method",
-              "line": 797
+              "line": 800
             },
             {
               "name": "updateDraft",
               "kind": "method",
-              "line": 812
+              "line": 815
             },
             {
               "name": "deleteDraftDefault",
               "kind": "method",
-              "line": 833
+              "line": 836
             },
             {
               "name": "getDraftDefault",
               "kind": "method",
-              "line": 845
+              "line": 848
             },
             {
               "name": "setDraftDefault",
               "kind": "method",
-              "line": 857
+              "line": 860
             },
             {
               "name": "deleteDraftIssueTypeMapping",
               "kind": "method",
-              "line": 877
+              "line": 880
             },
             {
               "name": "getDraftIssueTypeMapping",
               "kind": "method",
-              "line": 892
+              "line": 895
             },
             {
               "name": "setDraftIssueTypeMapping",
               "kind": "method",
-              "line": 907
+              "line": 910
             },
             {
               "name": "publishDraft",
               "kind": "method",
-              "line": 933
+              "line": 936
             },
             {
               "name": "deleteDraftWorkflowMapping",
               "kind": "method",
-              "line": 955
+              "line": 958
             },
             {
               "name": "getDraftWorkflowMapping",
               "kind": "method",
-              "line": 973
+              "line": 976
             },
             {
               "name": "setDraftWorkflowMapping",
               "kind": "method",
-              "line": 993
+              "line": 996
             },
             {
               "name": "bulkRead",
               "kind": "method",
-              "line": 1020
+              "line": 1023
             },
             {
               "name": "bulkUpdate",
               "kind": "method",
-              "line": 1038
+              "line": 1041
             },
             {
               "name": "bulkRequiredMappings",
               "kind": "method",
-              "line": 1069
+              "line": 1072
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 1088,
+          "line": 1091,
           "signature": "function buildListQuery( params: ListWorkflowSchemesParams | undefined, ): Record<string, string | number | boolean | un…"
         }
       ],

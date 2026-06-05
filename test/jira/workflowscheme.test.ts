@@ -581,8 +581,7 @@ describe('WorkflowSchemeResource', () => {
       expect(result).toEqual(container);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/workflowscheme/project`,
-        query: { projectId: '10010,10020' },
+        path: `${BASE_URL}/workflowscheme/project?projectId=10010&projectId=10020`,
       });
     });
 
@@ -591,7 +590,27 @@ describe('WorkflowSchemeResource', () => {
 
       await resource.getProjectAssociations({ projectId: [10010, 10020] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10010,10020' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflowscheme/project?projectId=10010&projectId=10020`,
+      );
+    });
+
+    // `projectId` is a repeatable query parameter: the spec documents only the
+    // ampersand-separated form (`projectId=10000&projectId=10001`), so multiple
+    // IDs must go on the wire as repeated params, NOT a single comma-joined
+    // value (which Jira parses as one nonexistent ID).
+    it('sends multiple project IDs as repeated query params, not a CSV value', async () => {
+      transport.respondWith({ values: [] });
+
+      await resource.getProjectAssociations({ projectId: ['10010', '10020'] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflowscheme/project?projectId=10010&projectId=10020`,
+      );
+      // No `query` map: the IDs live entirely in the path. Guards against a
+      // regression that re-adds a `query: { projectId }` field alongside the
+      // path params, which would send projectId twice.
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('throws when projectId is empty', async () => {
