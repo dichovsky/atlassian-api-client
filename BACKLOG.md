@@ -16,6 +16,12 @@
 
 ## 🧩 Confluence
 
+- [ ] 🟢 ♻️ Confluence: B1021 Add `sort` to `ListLabelsParams` (SDK type debt)
+  - problem: `ListLabelsParams` (`src/confluence/types/labels.ts`) omits `sort?: LabelSortOrder`, though the live v2 `GET /spaces/{id}/labels` and `GET /blogposts/{id}/labels` accept it. CLI `labels list-for-space`/`list-for-blog-post` (PR #195) forward `--sort` via object spread — works at runtime, but the param type doesn't declare it. Surfaced in PR #195 review.
+  - solution: add `sort?: LabelSortOrder` to `ListLabelsParams`; confirm `listForSpace`/`listForBlogPost` thread it through to the query (and `list`/`listForPage` if they share the type).
+  - files: `src/confluence/types/labels.ts`, `src/confluence/resources/labels.ts`, `test/confluence/labels.test.ts`
+  - deps: none
+
 ## 🧪 QA
 
 ## 🤖 Infra
