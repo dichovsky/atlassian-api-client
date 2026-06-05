@@ -289,6 +289,46 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       return client.versions.getForPage(requireArg(cmd.positionalArgs[0], 'page ID'), singleVerNum);
     }
 
+    // ── B1020: versions list ──────────────────────────────────────────────
+    // NOTE: ListVersionsParams only has limit+cursor (no sort/body-format)
+    case 'versions':
+      return client.versions.listForPage(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+
+    // ── B1019: footer / inline comments ──────────────────────────────────
+    case 'footer-comments': {
+      const fcSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const fcBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      const fcStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      return client.pages.listFooterComments(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        ...(fcBodyFormat !== undefined ? { 'body-format': fcBodyFormat } : {}),
+        ...(fcStatus !== undefined ? { status: fcStatus } : {}),
+        ...(fcSort !== undefined ? { sort: fcSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'inline-comments': {
+      const icSort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const icBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      const icStatus = asEnum(opts['status'], COMMENT_STATUSES, 'status');
+      const icResolution = asEnum(
+        opts['resolution-status'],
+        INLINE_COMMENT_RESOLUTION_STATUSES,
+        'resolution-status',
+      );
+      return client.pages.listInlineComments(requireArg(cmd.positionalArgs[0], 'page ID'), {
+        ...(icBodyFormat !== undefined ? { 'body-format': icBodyFormat } : {}),
+        ...(icStatus !== undefined ? { status: icStatus } : {}),
+        ...(icResolution !== undefined ? { 'resolution-status': icResolution } : {}),
+        ...(icSort !== undefined ? { sort: icSort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+
     // ── attachments upload (B893 — CLI+skill only) ────────────────────────
     case 'upload-attachment': {
       // Uses the existing `AttachmentsResource.upload(pageId, filename, blob, mime?)`
@@ -313,7 +353,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
 
     default:
       throw new Error(
-        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment`,
+        `Unknown pages action: ${cmd.action}. Actions: list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment`,
       );
   }
 }
@@ -1102,9 +1142,32 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
         cursor: asString(opts['cursor']),
       });
     }
+
+    // ── B1018: list labels FOR a space / blog post ────────────────────────
+    case 'list-for-space': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.labels.listForSpace(requireArg(cmd.positionalArgs[0], 'space ID'), {
+        ...(prefix !== undefined ? { prefix } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+    case 'list-for-blog-post': {
+      const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
+      const prefix = asEnum(opts['prefix'], LABEL_PREFIXES, 'prefix');
+      return client.labels.listForBlogPost(requireArg(cmd.positionalArgs[0], 'blog post ID'), {
+        ...(prefix !== undefined ? { prefix } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+    }
+
     default:
       throw new Error(
-        `Unknown labels action: ${cmd.action}. Actions: list, list-all, attachments, blog-posts, pages`,
+        `Unknown labels action: ${cmd.action}. Actions: list, list-all, attachments, blog-posts, pages, list-for-space, list-for-blog-post`,
       );
   }
 }

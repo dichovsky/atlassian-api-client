@@ -16,19 +16,6 @@
 
 ## 🧩 Confluence
 
-- [ ] 🟢 🖥️ CLI: B1018 Confluence: expose `labels` space/blogpost listing
-  - actions: listForSpace, listForBlogPost (page-label listing already wired)
-  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🖥️ CLI: B1019 Confluence: expose `pages` comment listing
-  - actions: listFooterComments, listInlineComments
-  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🖥️ CLI: B1020 Confluence: expose `pages versions` list action
-  - actions: listForPage (pages versions list; blog-posts `versions` list already wired, pages single `version` get already wired)
-  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-
 ## 🧪 QA
 
 ## 🤖 Infra

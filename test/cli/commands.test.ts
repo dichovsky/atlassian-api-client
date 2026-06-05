@@ -49,6 +49,9 @@ const confluencePagesMock = {
   getProperty: vi.fn(),
   updateProperty: vi.fn(),
   deleteProperty: vi.fn(),
+  // B1019: footer / inline comment listing
+  listFooterComments: vi.fn(),
+  listInlineComments: vi.fn(),
 };
 const confluenceSpacesMock = {
   list: vi.fn(),
@@ -102,6 +105,8 @@ const confluenceBlogPostsMock = {
 const confluenceVersionsMock = {
   getForBlogPost: vi.fn(),
   getForPage: vi.fn(),
+  // B1020: list versions for a page
+  listForPage: vi.fn(),
 };
 const confluenceCommentsMock = {
   listFooter: vi.fn(),
@@ -144,6 +149,9 @@ const confluenceLabelsMock = {
   listAttachments: vi.fn(),
   listBlogPosts: vi.fn(),
   listPages: vi.fn(),
+  // B1018: list labels FOR a space / blog post
+  listForSpace: vi.fn(),
+  listForBlogPost: vi.fn(),
 };
 const confluenceAdminKeyMock = {
   get: vi.fn(),
@@ -2085,6 +2093,138 @@ describe('executeConfluenceCommand', () => {
     it('pages upload-attachment throws when --file missing', async () => {
       const parsed = cmd('pages', 'upload-attachment', ['p-1']);
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--file');
+    });
+
+    // ── B1020: versions list ──────────────────────────────────────────────
+
+    it('pages versions calls client.versions.listForPage with page id', async () => {
+      confluenceVersionsMock.listForPage.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'versions', ['p-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceVersionsMock.listForPage).toHaveBeenCalledWith('p-1', {
+        cursor: undefined,
+        limit: undefined,
+      });
+      expect(result).toEqual({ results: [] });
+    });
+
+    it('pages versions forwards limit and cursor', async () => {
+      confluenceVersionsMock.listForPage.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'versions', ['p-1'], { limit: '10', cursor: 'tok' });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceVersionsMock.listForPage).toHaveBeenCalledWith('p-1', {
+        cursor: 'tok',
+        limit: 10,
+      });
+    });
+
+    it('pages versions throws when page ID missing', async () => {
+      await expect(executeConfluenceCommand(cmd('pages', 'versions'), GLOBALS)).rejects.toThrow(
+        'page ID',
+      );
+    });
+
+    // ── B1019: footer-comments ────────────────────────────────────────────
+
+    it('pages footer-comments calls client.pages.listFooterComments with page id', async () => {
+      confluencePagesMock.listFooterComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'footer-comments', ['p-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listFooterComments).toHaveBeenCalledWith(
+        'p-1',
+        expect.any(Object),
+      );
+      expect(result).toEqual({ results: [] });
+    });
+
+    it('pages footer-comments forwards body-format, status, sort, limit, cursor', async () => {
+      confluencePagesMock.listFooterComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'footer-comments', ['p-1'], {
+        'body-format': 'storage',
+        status: 'current',
+        sort: '-created-date',
+        limit: '20',
+        cursor: 'c1',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listFooterComments).toHaveBeenCalledWith('p-1', {
+        'body-format': 'storage',
+        status: 'current',
+        sort: '-created-date',
+        cursor: 'c1',
+        limit: 20,
+      });
+    });
+
+    it('pages footer-comments omits body-format and sort when not provided', async () => {
+      confluencePagesMock.listFooterComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'footer-comments', ['p-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const payload = confluencePagesMock.listFooterComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(payload).not.toHaveProperty('body-format');
+      expect(payload).not.toHaveProperty('sort');
+    });
+
+    it('pages footer-comments throws when page ID missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('pages', 'footer-comments'), GLOBALS),
+      ).rejects.toThrow('page ID');
+    });
+
+    // ── B1019: inline-comments ────────────────────────────────────────────
+
+    it('pages inline-comments calls client.pages.listInlineComments with page id', async () => {
+      confluencePagesMock.listInlineComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'inline-comments', ['p-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listInlineComments).toHaveBeenCalledWith(
+        'p-1',
+        expect.any(Object),
+      );
+      expect(result).toEqual({ results: [] });
+    });
+
+    it('pages inline-comments forwards resolution-status and all flags', async () => {
+      confluencePagesMock.listInlineComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'inline-comments', ['p-1'], {
+        'body-format': 'storage',
+        status: 'current',
+        'resolution-status': 'open',
+        sort: '-created-date',
+        limit: '15',
+        cursor: 'c2',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluencePagesMock.listInlineComments).toHaveBeenCalledWith('p-1', {
+        'body-format': 'storage',
+        status: 'current',
+        'resolution-status': 'open',
+        sort: '-created-date',
+        cursor: 'c2',
+        limit: 15,
+      });
+    });
+
+    it('pages inline-comments omits optional flags when absent', async () => {
+      confluencePagesMock.listInlineComments.mockResolvedValue({ results: [] });
+      const parsed = cmd('pages', 'inline-comments', ['p-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const payload = confluencePagesMock.listInlineComments.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(payload).not.toHaveProperty('body-format');
+      expect(payload).not.toHaveProperty('sort');
+      expect(payload).not.toHaveProperty('resolution-status');
+    });
+
+    it('pages inline-comments throws when page ID missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('pages', 'inline-comments'), GLOBALS),
+      ).rejects.toThrow('page ID');
     });
   });
 
@@ -4353,6 +4493,96 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
         '--sort must be one of',
       );
+    });
+
+    // ── B1018: list-for-space ────────────────────────────────────────────
+
+    it('labels list-for-space calls listForSpace with space id', async () => {
+      confluenceLabelsMock.listForSpace.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-space', ['sp-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listForSpace).toHaveBeenCalledWith('sp-1', expect.any(Object));
+      expect(result).toEqual({ results: [] });
+    });
+
+    it('labels list-for-space forwards prefix, sort, limit, cursor', async () => {
+      confluenceLabelsMock.listForSpace.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-space', ['sp-1'], {
+        prefix: 'global',
+        sort: '-name',
+        limit: '30',
+        cursor: 'c1',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listForSpace).toHaveBeenCalledWith('sp-1', {
+        prefix: 'global',
+        sort: '-name',
+        limit: 30,
+        cursor: 'c1',
+      });
+    });
+
+    it('labels list-for-space omits prefix and sort when absent', async () => {
+      confluenceLabelsMock.listForSpace.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-space', ['sp-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const payload = confluenceLabelsMock.listForSpace.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(payload).not.toHaveProperty('prefix');
+      expect(payload).not.toHaveProperty('sort');
+    });
+
+    it('labels list-for-space throws when space ID missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('labels', 'list-for-space'), GLOBALS),
+      ).rejects.toThrow('space ID');
+    });
+
+    // ── B1018: list-for-blog-post ─────────────────────────────────────────
+
+    it('labels list-for-blog-post calls listForBlogPost with blog post id', async () => {
+      confluenceLabelsMock.listForBlogPost.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-blog-post', ['bp-1']);
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listForBlogPost).toHaveBeenCalledWith('bp-1', expect.any(Object));
+      expect(result).toEqual({ results: [] });
+    });
+
+    it('labels list-for-blog-post forwards prefix, sort, limit, cursor', async () => {
+      confluenceLabelsMock.listForBlogPost.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-blog-post', ['bp-1'], {
+        prefix: 'team',
+        sort: 'id',
+        limit: '25',
+        cursor: 'c2',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceLabelsMock.listForBlogPost).toHaveBeenCalledWith('bp-1', {
+        prefix: 'team',
+        sort: 'id',
+        limit: 25,
+        cursor: 'c2',
+      });
+    });
+
+    it('labels list-for-blog-post omits prefix and sort when absent', async () => {
+      confluenceLabelsMock.listForBlogPost.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list-for-blog-post', ['bp-1']);
+      await executeConfluenceCommand(parsed, GLOBALS);
+      const payload = confluenceLabelsMock.listForBlogPost.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(payload).not.toHaveProperty('prefix');
+      expect(payload).not.toHaveProperty('sort');
+    });
+
+    it('labels list-for-blog-post throws when blog post ID missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('labels', 'list-for-blog-post'), GLOBALS),
+      ).rejects.toThrow('blog post ID');
     });
   });
 
