@@ -89,12 +89,12 @@ EXIT CODES:
 const CONFLUENCE_HELP = `atlas confluence - Confluence Cloud REST API v2
 
 RESOURCES:
-  pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, upload-attachment
+  pages                  list, get, create, update, delete, ancestors, descendants, direct-children, children, get-classification-level, update-classification-level, reset-classification-level, custom-content, likes-count, likes-users, operations, redact, update-title, list-properties, create-property, get-property, update-property, delete-property, version, versions, footer-comments, inline-comments, upload-attachment
   spaces                 list, get, create, blog-posts, get-default-classification-level, update-default-classification-level, delete-default-classification-level, content-labels, custom-content, labels, operations, pages, permissions, role-assignments, set-role-assignments, list-properties, create-property, get-property, update-property, delete-property
   blog-posts             list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property, attachments, get-classification-level, update-classification-level, reset-classification-level, custom-content, footer-comments, inline-comments, labels, likes-count, likes-users, operations, redact, versions, version
   comments               list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property
   attachments            list, list-all, get, delete, list-properties, create-property, get-property, update-property, delete-property, versions, get-version, footer-comments, labels, operations, thumbnail
-  labels                 list, list-all, attachments, blog-posts, pages
+  labels                 list, list-all, attachments, blog-posts, pages, list-for-space, list-for-blog-post
   admin-key              get, create, delete
   app                    list-properties, get-property, upsert-property, delete-property
   classification-levels  list
@@ -132,6 +132,9 @@ EXAMPLES:
   atlas confluence pages list-properties 456 --sort key
   atlas confluence pages create-property 456 --key reviewed --value true
   atlas confluence pages version 456 --version-number 2
+  atlas confluence pages versions 456 --limit 25
+  atlas confluence pages footer-comments 456 --sort -created-date --limit 25
+  atlas confluence pages inline-comments 456 --body-format storage --resolution-status open
   atlas confluence pages upload-attachment 456 --file ./screenshot.png
   atlas confluence spaces list
   atlas confluence app list-properties --limit 25
@@ -225,6 +228,8 @@ EXAMPLES:
   atlas confluence labels attachments 12345 --sort -created-date
   atlas confluence labels blog-posts 12345 --space-id 100,200 --limit 25
   atlas confluence labels pages 12345 --sort -modified-date
+  atlas confluence labels list-for-space 654321 --prefix global --sort -name
+  atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
   atlas confluence blog-posts list-properties 99999
   atlas confluence blog-posts create-property 99999 --key reviewed --value true
   atlas confluence blog-posts attachments 99999 --media-type image/png
