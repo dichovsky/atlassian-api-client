@@ -38,7 +38,7 @@ npm run validate                              # full gate — run before broad c
 - Keep resource APIs stable; avoid breaking public method signatures unless asked.
 - Prefer transport/middleware composition over resource-specific hacks.
 - Preserve retry, timeout, and error taxonomy in `core/errors.ts` and `core/transport.ts`.
-- **CLI/skill parity (hard rule, no exceptions):** every public method in `src/{confluence,jira}/resources/*.ts` is functionally reachable via the `atlas` CLI (complex bodies via JSON-valued flags, e.g. `--fields '{...}'`), and every CLI action is documented in `skill/reference/*.md` well enough to construct the command from the skill alone. Bidirectional — no orphan CLI action (must back a resource method) or skill command (must back a CLI action). Functional, not 1:1: `*All` generators are covered by their base `list`/`search`.
+- **CLI/skill parity (hard rule, no exceptions):** every public method in `src/{confluence,jira}/resources/*.ts` is functionally reachable via the `atlas` CLI (complex bodies via JSON-valued flags, e.g. `--body '{...}'`), and every CLI action is documented in `skill/reference/*.md` well enough to construct the command from the skill alone. Bidirectional — no orphan CLI action (must back a resource method) or skill command (must back a CLI action). Functional, not 1:1: `*All` generators are covered by their base `list`/`search`.
 
 ## Testing Rules
 
