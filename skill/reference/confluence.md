@@ -9,7 +9,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `pages`                 | `list`, `get`, `create`, `update`, `delete`, `ancestors`, `descendants`, `direct-children`, `children`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `custom-content`, `likes-count`, `likes-users`, `operations`, `redact`, `update-title`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `version`, `upload-attachment` |
 | `spaces`                | `list`, `get`, `create`, `blog-posts`, `get-default-classification-level`, `update-default-classification-level`, `delete-default-classification-level`, `content-labels`, `custom-content`, `labels`, `operations`, `pages`, `permissions`, `role-assignments`, `set-role-assignments`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                 |
 | `blog-posts`            | `list`, `get`, `create`, `update`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `attachments`, `get-classification-level`, `update-classification-level`, `reset-classification-level`, `custom-content`, `footer-comments`, `inline-comments`, `labels`, `likes-count`, `likes-users`, `operations`, `redact`, `versions`, `version`                      |
-| `comments`              | `list`, `get`, `create`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                                                                       |
+| `comments`              | `list`, `get`, `create`, `update`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                                                             |
 | `attachments`           | `list`, `list-all`, `get`, `delete`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`, `versions`, `get-version`, `footer-comments`, `labels`, `operations`, `thumbnail`                                                                                                                                                                                                  |
 | `labels`                | `list`, `list-all`, `attachments`, `blog-posts`, `pages`                                                                                                                                                                                                                                                                                                                                                            |
 | `admin-key`             | `get`, `create`, `delete`                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -22,6 +22,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `embeds`                | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                  |
 | `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                  |
 | `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                                              |
+| `inline-comments`       | `list`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                                                               |
 | `space-permissions`     | `list`                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                         |
@@ -274,9 +275,10 @@ atlas confluence blog-posts version 99999 --version-number 2
 | Action            | Positional    | Required flags                                          | Optional flags                           |
 | ----------------- | ------------- | ------------------------------------------------------- | ---------------------------------------- |
 | `list`            | —             | one of `--page-id` or `--blog-post-id`                  | `--limit`, `--cursor`, `--comment-type`  |
-| `get`             | `<commentId>` | —                                                       | —                                        |
-| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | —                                        |
-| `delete`          | `<commentId>` | —                                                       | —                                        |
+| `get`             | `<commentId>` | —                                                       | `--comment-type`                         |
+| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | `--comment-type`                         |
+| `update`          | `<commentId>` | `--body`, `--version-number`                            | `--comment-type`                         |
+| `delete`          | `<commentId>` | —                                                       | `--comment-type`                         |
 | `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit` |
 | `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                        |
 | `get-property`    | `<commentId>` | `--property-id`                                         | —                                        |
@@ -284,6 +286,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 | `delete-property` | `<commentId>` | `--property-id`                                         | —                                        |
 
 - `--comment-type` accepts `footer` (top-level) or `inline`. Default is `footer`.
+- `update` issues `PUT /footer-comments/{id}` (footer) or `PUT /inline-comments/{id}` (inline). `--body` is sent with `representation: "storage"`. `--version-number` must be exactly one greater than the comment's current version (Confluence enforces optimistic concurrency; mismatches return 409). For inline comments the underlying `UpdateInlineCommentData` type extends the footer shape with an optional `resolved` boolean — the CLI wires body+version, and SDK callers can pass `resolved` directly.
 - The `*-property` actions hit `/comments/{comment-id}/properties[/{property-id}]` and work for both footer and inline comments — Confluence resolves the comment by id regardless of type, so no `--comment-type` flag is needed.
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).
@@ -964,6 +967,46 @@ atlas confluence footer-comments operations 77777
 # Version history
 atlas confluence footer-comments versions 77777 --sort -modified-date
 atlas confluence footer-comments version 77777 --version-number 3
+```
+
+## `inline-comments`
+
+Tenant-wide inline comment surface exposed through `/wiki/api/v2/inline-comments`. The per-page inline comment CRUD (`list` by page, `create`, `get`, `update`, `delete`) lives on the `comments` resource; this resource covers tenant-wide listing, per-comment threaded children, likes (count + users), permitted operations, and the version history.
+
+| Action        | Positional    | Required flags     | Optional flags                                   |
+| ------------- | ------------- | ------------------ | ------------------------------------------------ |
+| `list`        | —             | —                  | `--body-format`, `--sort`, `--cursor`, `--limit` |
+| `children`    | `<commentId>` | —                  | `--body-format`, `--sort`, `--cursor`, `--limit` |
+| `likes-count` | `<commentId>` | —                  | —                                                |
+| `likes-users` | `<commentId>` | —                  | `--cursor`, `--limit`                            |
+| `operations`  | `<commentId>` | —                  | —                                                |
+| `versions`    | `<commentId>` | —                  | `--sort`, `--cursor`, `--limit`                  |
+| `version`     | `<commentId>` | `--version-number` | —                                                |
+
+- `--body-format` accepts `storage` or `atlas_doc_format` (the v2 `PrimaryBodyRepresentation` enum).
+- `--sort` on `list` and `children` accepts the `CommentSortOrder` vocabulary: `created-date`, `-created-date`, `modified-date`, `-modified-date`.
+- `--sort` on `versions` is the narrower `VersionSortOrder`: only `modified-date` / `-modified-date`.
+- `likes-count` returns the bare `{ count }` envelope and is not paginated.
+- `version` fetches a single past version by number; the response includes the body and audit metadata.
+- All list endpoints are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
+
+```sh
+# Tenant-wide listing, newest first
+atlas confluence inline-comments list --sort -created-date --limit 25
+
+# Walk child replies on an inline thread
+atlas confluence inline-comments children 77777 --sort created-date
+
+# Like counts and likers
+atlas confluence inline-comments likes-count 77777
+atlas confluence inline-comments likes-users 77777 --limit 50
+
+# Permitted operations
+atlas confluence inline-comments operations 77777
+
+# Version history
+atlas confluence inline-comments versions 77777 --sort -modified-date
+atlas confluence inline-comments version 77777 --version-number 3
 ```
 
 ## `whiteboards`

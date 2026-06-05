@@ -224,6 +224,19 @@ const confluenceFooterCommentsMock = {
   listVersionsAll: vi.fn(),
   getVersion: vi.fn(),
 };
+const confluenceInlineCommentsMock = {
+  list: vi.fn(),
+  listAll: vi.fn(),
+  listChildren: vi.fn(),
+  listChildrenAll: vi.fn(),
+  getLikesCount: vi.fn(),
+  listLikeUsers: vi.fn(),
+  listLikeUsersAll: vi.fn(),
+  getOperations: vi.fn(),
+  listVersions: vi.fn(),
+  listVersionsAll: vi.fn(),
+  getVersion: vi.fn(),
+};
 const confluenceDatabasesMock = {
   create: vi.fn(),
   get: vi.fn(),
@@ -306,6 +319,7 @@ vi.mock('../../src/confluence/client.js', () => {
       embeds: confluenceEmbedsMock,
       folders: confluenceFoldersMock,
       footerComments: confluenceFooterCommentsMock,
+      inlineComments: confluenceInlineCommentsMock,
       spacePermissions: confluenceSpacePermissionsMock,
       spaceRoleMode: confluenceSpaceRoleModeMock,
       spaceRoles: confluenceSpaceRolesMock,
@@ -3452,6 +3466,72 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('comments', 'delete', []), GLOBALS),
       ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    // ── update (B1017) ──────────────────────────────────────────────────────
+
+    it('comments update (footer default) calls updateFooter with body + version', async () => {
+      confluenceCommentsMock.updateFooter.mockResolvedValue({ id: 'c-1' });
+      const parsed = cmd('comments', 'update', ['c-1'], {
+        body: 'Updated body',
+        'version-number': '2',
+      });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateFooter).toHaveBeenCalledWith('c-1', {
+        version: { number: 2 },
+        body: { representation: 'storage', value: 'Updated body' },
+      });
+      expect(result).toEqual({ id: 'c-1' });
+    });
+
+    it('comments update with --comment-type inline calls updateInline', async () => {
+      confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'c-1' });
+      const parsed = cmd('comments', 'update', ['c-1'], {
+        body: 'Resolved',
+        'version-number': '3',
+        'comment-type': 'inline',
+      });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateInline).toHaveBeenCalledWith('c-1', {
+        version: { number: 3 },
+        body: { representation: 'storage', value: 'Resolved' },
+      });
+      expect(result).toEqual({ id: 'c-1' });
+    });
+
+    it('comments update throws when --body is missing', async () => {
+      const parsed = cmd('comments', 'update', ['c-1'], { 'version-number': '2' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
+    it('comments update throws when --version-number is missing', async () => {
+      const parsed = cmd('comments', 'update', ['c-1'], { body: 'x' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('comments update throws when --version-number is non-positive', async () => {
+      const parsed = cmd('comments', 'update', ['c-1'], { body: 'x', 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('comments update throws when comment ID is missing', async () => {
+      const parsed = cmd('comments', 'update', [], { body: 'x', 'version-number': '2' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required argument: comment ID',
+      );
+    });
+
+    it('comments update (inline) does not call updateFooter', async () => {
+      confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'c-1' });
+      const parsed = cmd('comments', 'update', ['c-1'], {
+        body: 'x',
+        'version-number': '2',
+        'comment-type': 'inline',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateFooter).not.toHaveBeenCalled();
     });
 
     it('comments unknown action throws', async () => {
@@ -7247,6 +7327,208 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('footer-comments', 'nope'), GLOBALS),
       ).rejects.toThrow('Unknown footer-comments action');
+    });
+  });
+
+  // ── inline-comments ───────────────────────────────────────────────────────
+
+  describe('inline-comments resource', () => {
+    it('inline-comments list with no flags calls list with empty cursor/limit', async () => {
+      confluenceInlineCommentsMock.list.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('inline-comments', 'list'), GLOBALS);
+      expect(confluenceInlineCommentsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ cursor: undefined, limit: undefined }),
+      );
+    });
+
+    it('inline-comments list passes sort + body-format + cursor + limit', async () => {
+      confluenceInlineCommentsMock.list.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('inline-comments', 'list', [], {
+        sort: '-created-date',
+        'body-format': 'storage',
+        cursor: 'tok',
+        limit: '25',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceInlineCommentsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sort: '-created-date',
+          'body-format': 'storage',
+          cursor: 'tok',
+          limit: 25,
+        }),
+      );
+    });
+
+    it('inline-comments list rejects invalid --sort', async () => {
+      const parsed = cmd('inline-comments', 'list', [], { sort: '-title' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: created-date, -created-date, modified-date, -modified-date, got: -title',
+      );
+      expect(confluenceInlineCommentsMock.list).not.toHaveBeenCalled();
+    });
+
+    it('inline-comments list rejects invalid --body-format', async () => {
+      const parsed = cmd('inline-comments', 'list', [], { 'body-format': 'view' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--body-format must be one of: storage, atlas_doc_format, got: view',
+      );
+    });
+
+    it('inline-comments children forwards body-format + sort + cursor + limit', async () => {
+      confluenceInlineCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('inline-comments', 'children', ['ic-1'], {
+        'body-format': 'storage',
+        sort: 'created-date',
+        cursor: 'tok',
+        limit: '10',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceInlineCommentsMock.listChildren).toHaveBeenCalledWith(
+        'ic-1',
+        expect.objectContaining({
+          'body-format': 'storage',
+          sort: 'created-date',
+          cursor: 'tok',
+          limit: 10,
+        }),
+      );
+    });
+
+    it('inline-comments children with no flags omits sort and body-format', async () => {
+      confluenceInlineCommentsMock.listChildren.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('inline-comments', 'children', ['ic-1']), GLOBALS);
+      const callArgs = confluenceInlineCommentsMock.listChildren.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+      expect(callArgs?.['body-format']).toBeUndefined();
+    });
+
+    it('inline-comments children throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'children', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('inline-comments likes-count calls getLikesCount', async () => {
+      confluenceInlineCommentsMock.getLikesCount.mockResolvedValue({ count: 3 });
+      const result = await executeConfluenceCommand(
+        cmd('inline-comments', 'likes-count', ['ic-1']),
+        GLOBALS,
+      );
+      expect(confluenceInlineCommentsMock.getLikesCount).toHaveBeenCalledWith('ic-1');
+      expect(result).toEqual({ count: 3 });
+    });
+
+    it('inline-comments likes-count throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'likes-count', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('inline-comments likes-users calls listLikeUsers with cursor + limit', async () => {
+      confluenceInlineCommentsMock.listLikeUsers.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('inline-comments', 'likes-users', ['ic-1'], {
+        cursor: 'tok',
+        limit: '50',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceInlineCommentsMock.listLikeUsers).toHaveBeenCalledWith(
+        'ic-1',
+        expect.objectContaining({ cursor: 'tok', limit: 50 }),
+      );
+    });
+
+    it('inline-comments likes-users throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'likes-users', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('inline-comments operations calls getOperations', async () => {
+      confluenceInlineCommentsMock.getOperations.mockResolvedValue({ operations: [] });
+      await executeConfluenceCommand(cmd('inline-comments', 'operations', ['ic-1']), GLOBALS);
+      expect(confluenceInlineCommentsMock.getOperations).toHaveBeenCalledWith('ic-1');
+    });
+
+    it('inline-comments operations throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'operations', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('inline-comments versions forwards sort + cursor + limit', async () => {
+      confluenceInlineCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('inline-comments', 'versions', ['ic-1'], {
+        sort: '-modified-date',
+        cursor: 'tok',
+        limit: '5',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceInlineCommentsMock.listVersions).toHaveBeenCalledWith(
+        'ic-1',
+        expect.objectContaining({
+          sort: '-modified-date',
+          cursor: 'tok',
+          limit: 5,
+        }),
+      );
+    });
+
+    it('inline-comments versions with no flags omits sort', async () => {
+      confluenceInlineCommentsMock.listVersions.mockResolvedValue({ results: [], _links: {} });
+      await executeConfluenceCommand(cmd('inline-comments', 'versions', ['ic-1']), GLOBALS);
+      const callArgs = confluenceInlineCommentsMock.listVersions.mock.calls[0]?.[1] as
+        | Record<string, unknown>
+        | undefined;
+      expect(callArgs?.sort).toBeUndefined();
+    });
+
+    it('inline-comments versions rejects invalid --sort (only VersionSortOrder accepted)', async () => {
+      const parsed = cmd('inline-comments', 'versions', ['ic-1'], { sort: 'created-date' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--sort must be one of: modified-date, -modified-date, got: created-date',
+      );
+    });
+
+    it('inline-comments versions throws when comment ID is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'versions', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: comment ID');
+    });
+
+    it('inline-comments version calls getVersion with both IDs', async () => {
+      confluenceInlineCommentsMock.getVersion.mockResolvedValue({ number: 2 });
+      const parsed = cmd('inline-comments', 'version', ['ic-1'], { 'version-number': '2' });
+      const result = await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceInlineCommentsMock.getVersion).toHaveBeenCalledWith('ic-1', 2);
+      expect(result).toEqual({ number: 2 });
+    });
+
+    it('inline-comments version requires --version-number', async () => {
+      const parsed = cmd('inline-comments', 'version', ['ic-1'], {});
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--version-number');
+    });
+
+    it('inline-comments version throws when --version-number is non-positive', async () => {
+      const parsed = cmd('inline-comments', 'version', ['ic-1'], { 'version-number': '0' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--version-number must be a positive integer',
+      );
+    });
+
+    it('inline-comments version throws when comment ID is missing', async () => {
+      const parsed = cmd('inline-comments', 'version', [], { 'version-number': '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Missing required argument: comment ID',
+      );
+    });
+
+    it('inline-comments unknown action throws with action list', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('inline-comments', 'nope'), GLOBALS),
+      ).rejects.toThrow('Unknown inline-comments action');
     });
   });
 

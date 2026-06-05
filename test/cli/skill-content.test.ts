@@ -244,6 +244,7 @@ describe('Example commands in skill docs parse correctly', () => {
           'embeds',
           'folders',
           'footer-comments',
+          'inline-comments',
           'space-permissions',
           'space-role-mode',
           'space-roles',

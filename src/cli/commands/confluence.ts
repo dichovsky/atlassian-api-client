@@ -67,6 +67,8 @@ export async function executeConfluenceCommand(
       return executeFolders(client, cmd);
     case 'footer-comments':
       return executeFooterComments(client, cmd);
+    case 'inline-comments':
+      return executeInlineComments(client, cmd);
     case 'space-permissions':
       return executeSpacePermissions(client, cmd);
     case 'space-role-mode':
@@ -812,6 +814,23 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         await client.comments.deleteFooter(requireArg(cmd.positionalArgs[0], 'comment ID'));
       }
       return { deleted: true };
+    case 'update': {
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      const body = {
+        representation: 'storage' as const,
+        value: requireOpt(opts['body'], '--body'),
+      };
+      if (commentType === 'inline') {
+        return client.comments.updateInline(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+          version: { number: versionNum },
+          body,
+        });
+      }
+      return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        version: { number: versionNum },
+        body,
+      });
+    }
     case 'list-properties':
       return client.comments.listProperties(requireArg(cmd.positionalArgs[0], 'comment ID'), {
         key: asString(opts['key']),
@@ -849,7 +868,7 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
       return { deleted: true };
     default:
       throw new Error(
-        `Unknown comments action: ${cmd.action}. Actions: list, get, create, delete, list-properties, create-property, get-property, update-property, delete-property`,
+        `Unknown comments action: ${cmd.action}. Actions: list, get, create, update, delete, list-properties, create-property, get-property, update-property, delete-property`,
       );
   }
 }
@@ -2029,6 +2048,64 @@ async function executeFooterComments(
     default:
       throw new Error(
         `Unknown footer-comments action: ${cmd.action}. Actions: list, get, update, children, likes-count, likes-users, operations, versions, version`,
+      );
+  }
+}
+
+async function executeInlineComments(
+  client: ConfluenceClient,
+  cmd: ParsedCommand,
+): Promise<unknown> {
+  const opts = cmd.options;
+
+  switch (cmd.action) {
+    case 'list': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.inlineComments.list({
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'children': {
+      const sort = asEnum(opts['sort'], COMMENT_SORT_ORDERS, 'sort');
+      const bodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
+      return client.inlineComments.listChildren(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(bodyFormat !== undefined ? { 'body-format': bodyFormat } : {}),
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'likes-count':
+      return client.inlineComments.getLikesCount(requireArg(cmd.positionalArgs[0], 'comment ID'));
+    case 'likes-users':
+      return client.inlineComments.listLikeUsers(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    case 'operations':
+      return client.inlineComments.getOperations(requireArg(cmd.positionalArgs[0], 'comment ID'));
+    case 'versions': {
+      const sort = asEnum(opts['sort'], VERSION_SORT_ORDERS, 'sort');
+      return client.inlineComments.listVersions(requireArg(cmd.positionalArgs[0], 'comment ID'), {
+        ...(sort !== undefined ? { sort } : {}),
+        cursor: asString(opts['cursor']),
+        limit: asPositiveInt(opts['limit'], '--limit'),
+      });
+    }
+    case 'version': {
+      const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      return client.inlineComments.getVersion(
+        requireArg(cmd.positionalArgs[0], 'comment ID'),
+        versionNum,
+      );
+    }
+    default:
+      throw new Error(
+        `Unknown inline-comments action: ${cmd.action}. Actions: list, children, likes-count, likes-users, operations, versions, version`,
       );
   }
 }

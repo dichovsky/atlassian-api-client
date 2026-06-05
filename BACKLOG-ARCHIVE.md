@@ -929,6 +929,12 @@
 - [x] 🟡 🖥️ CLI: B1015 Confluence: wire `content-properties` resource into CLI — WON'T DO (redundant)
   - **Impl:** No code change (2026-06-05). Closed as redundant.
   - **Rat:** Page content-properties are already fully reachable via the wired `pages list-properties/create-property/get-property/update-property/delete-property` actions (`client.pages.*Property`). A standalone top-level `content-properties` resource would duplicate them. Decision: code-verified audit, orchestrator-approved.
+- [x] 🟢 🖥️ CLI: B1016 Confluence: wire `inline-comments` read surface into CLI
+  - **Impl:** Branch `feat/cli-confluence-comments` (2026-06-05); added `case 'inline-comments'` to `executeConfluenceCommand`; new `executeInlineComments` function dispatching 7 actions (`list`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`) over `client.inlineComments.*`; mirrors `footer-comments` idioms exactly; `inline-comments` added to `CONFLUENCE_HELP` resources block + examples; matrix row + `## inline-comments` section added to `skill/reference/confluence.md`; drift-check and example-parse lists updated in `skill-content.test.ts`; 20 CLI tests (happy + error + unknown-action).
+  - **Rat:** `InlineCommentsResource` was fully implemented in the SDK but the CLI dispatcher had no `inline-comments` case — the entire resource surface was unreachable from the CLI.
+- [x] 🟡 🖥️ CLI: B1017 Confluence: expose `comments update` action (footer + inline)
+  - **Impl:** Branch `feat/cli-confluence-comments` (2026-06-05); added `update` case to `executeComments` dispatching to `client.comments.updateFooter` (default) or `client.comments.updateInline` (when `--comment-type inline`); payload: `{ version: { number }, body: { representation: 'storage', value } }` for footer (`UpdateCommentData`); same shape + optional `resolved` for inline (`UpdateInlineCommentData`); `update` added to default error string, help resources line, comments table in skill-doc; 8 CLI tests (footer happy + inline happy + missing-body + missing-version + non-positive-version + missing-id + cross-type isolation).
+  - **Rat:** `updateFooter` and `updateInline` existed in `CommentsResource` but no `update` action was wired in the CLI dispatcher — callers had no way to mutate an existing comment body or resolve an inline thread from the CLI.
 
 ## 🧪 QA
 
