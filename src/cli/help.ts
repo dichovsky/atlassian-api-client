@@ -255,7 +255,7 @@ RESOURCES:
   announcement-banner    get, update
   application-role       list, get
   data-policy            get-workspace, list-projects
-  webhooks               list, register, refresh, list-failed
+  webhooks               list, register, refresh, list-failed, delete
   server-info            get
   instance               get-license
   mypermissions          get
@@ -299,7 +299,8 @@ RESOURCES:
   notification-schemes   list, create, get, update, add-notifications, delete, remove-notification, list-projects
   roles                  list, get, create, update, partial-update, delete, get-actors, add-actors, delete-actors
   expression             analyse, eval, evaluate
-  issue-comments         list-properties, get-property, set-property, delete-property, bulk-fetch
+  labels                 list
+  issue-comments         list, get, create, update, delete, list-properties, get-property, set-property, delete-property, bulk-fetch
   fieldconfiguration     list, create, delete, update, list-fields, update-fields
   priority-schemes       list, create, delete, update, list-priorities, list-projects, suggested-mappings, available-priorities
   version                create, get, update, delete, merge, move, related-issue-counts, list-related-work, create-related-work, update-related-work, delete-and-replace, unresolved-issue-count, delete-related-work
@@ -719,6 +720,14 @@ EXAMPLES:
   atlas jira dashboards list-gadgets 10001
   atlas jira dashboards add-gadget 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget --row 1 --column 1
   atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
+  atlas jira labels list
+  atlas jira labels list --start-at 0 --max-results 50
+  atlas jira issue-comments list PROJ-123
+  atlas jira issue-comments get PROJ-123 10001
+  atlas jira issue-comments create PROJ-123 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Hello"}]}]}}'
+  atlas jira issue-comments update PROJ-123 10001 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Updated"}]}]}}'
+  atlas jira issue-comments delete PROJ-123 10001
+  atlas jira webhooks delete --webhook-ids '[10000,10001]'
 `;
 
 /** Get help text for the given level. */

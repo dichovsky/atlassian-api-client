@@ -916,11 +916,20 @@ const jiraIssueTypeSchemesMock = {
 };
 
 const jiraIssueCommentsMock = {
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
   listProperties: vi.fn(),
   getProperty: vi.fn(),
   setProperty: vi.fn(),
   deleteProperty: vi.fn(),
   bulkFetch: vi.fn(),
+};
+
+const jiraLabelsMock = {
+  list: vi.fn(),
 };
 
 const jiraFieldConfigurationsMock = {
@@ -1339,6 +1348,7 @@ vi.mock('../../src/jira/client.js', () => {
       resolutions: jiraResolutionsMock,
       expression: jiraExpressionMock,
       issueComments: jiraIssueCommentsMock,
+      labels: jiraLabelsMock,
       fieldConfigurations: jiraFieldConfigurationsMock,
       notificationSchemes: jiraNotificationSchemesMock,
       prioritySchemes: jiraPrioritySchemesMock,
@@ -13241,6 +13251,27 @@ describe('executeJiraCommand', () => {
       expect(jiraWebhooksMock.listFailed).toHaveBeenCalledWith({ after: 1700000000000 });
     });
 
+    it('delete calls client.webhooks.delete() with parsed webhook IDs', async () => {
+      // Arrange
+      jiraWebhooksMock.delete.mockResolvedValue(undefined);
+
+      // Act
+      const result = await executeJiraCommand(
+        cmd('webhooks', 'delete', [], { 'webhook-ids': '[10000,10001]' }),
+        GLOBALS,
+      );
+
+      // Assert
+      expect(jiraWebhooksMock.delete).toHaveBeenCalledWith([10000, 10001]);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('delete throws when --webhook-ids is missing', async () => {
+      await expect(executeJiraCommand(cmd('webhooks', 'delete', []), GLOBALS)).rejects.toThrow(
+        '--webhook-ids is required',
+      );
+    });
+
     it('throws on unknown webhooks action', async () => {
       await expect(executeJiraCommand(cmd('webhooks', 'unknown-action'), GLOBALS)).rejects.toThrow(
         'Unknown webhooks action',
@@ -18788,9 +18819,171 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--ids cannot exceed 1000');
     });
 
+    it('issue-comments list calls client.issueComments.list with issueIdOrKey', async () => {
+      const page = { comments: [], startAt: 0, maxResults: 50, total: 0 };
+      jiraIssueCommentsMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(cmd('issue-comments', 'list', ['PROJ-123']), GLOBALS);
+      expect(jiraIssueCommentsMock.list).toHaveBeenCalledWith('PROJ-123', {
+        startAt: undefined,
+        maxResults: undefined,
+        orderBy: undefined,
+        expand: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('issue-comments list passes pagination and sort flags', async () => {
+      jiraIssueCommentsMock.list.mockResolvedValue({
+        comments: [],
+        startAt: 0,
+        maxResults: 10,
+        total: 0,
+      });
+      await executeJiraCommand(
+        cmd('issue-comments', 'list', ['PROJ-123'], {
+          'start-at': '5',
+          'max-results': '10',
+          'order-by': '-created',
+          expand: 'renderedBody',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.list).toHaveBeenCalledWith('PROJ-123', {
+        startAt: 5,
+        maxResults: 10,
+        orderBy: '-created',
+        expand: 'renderedBody',
+      });
+    });
+
+    it('issue-comments list throws when issueIdOrKey is missing', async () => {
+      await expect(executeJiraCommand(cmd('issue-comments', 'list', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: issueIdOrKey',
+      );
+    });
+
+    it('issue-comments get calls client.issueComments.get', async () => {
+      const comment = { id: '10001', body: {} };
+      jiraIssueCommentsMock.get.mockResolvedValue(comment);
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'get', ['PROJ-123', '10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.get).toHaveBeenCalledWith('PROJ-123', '10001');
+      expect(result).toEqual(comment);
+    });
+
+    it('issue-comments get throws when commentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'get', ['PROJ-123']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: commentId');
+    });
+
+    it('issue-comments create calls client.issueComments.create with parsed body', async () => {
+      const comment = { id: '10002', body: {} };
+      jiraIssueCommentsMock.create.mockResolvedValue(comment);
+      const bodyJson = JSON.stringify({
+        body: { type: 'doc', version: 1, content: [] },
+      });
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'create', ['PROJ-123'], { body: bodyJson }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.create).toHaveBeenCalledWith('PROJ-123', {
+        body: { type: 'doc', version: 1, content: [] },
+      });
+      expect(result).toEqual(comment);
+    });
+
+    it('issue-comments create throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'create', ['PROJ-123']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --body');
+    });
+
+    it('issue-comments create throws when issueIdOrKey is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'create', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: issueIdOrKey');
+    });
+
+    it('issue-comments update calls client.issueComments.update with parsed body', async () => {
+      const comment = { id: '10001', body: {} };
+      jiraIssueCommentsMock.update.mockResolvedValue(comment);
+      const bodyJson = JSON.stringify({
+        body: { type: 'doc', version: 1, content: [] },
+      });
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'update', ['PROJ-123', '10001'], { body: bodyJson }),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.update).toHaveBeenCalledWith('PROJ-123', '10001', {
+        body: { type: 'doc', version: 1, content: [] },
+      });
+      expect(result).toEqual(comment);
+    });
+
+    it('issue-comments update throws when --body is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'update', ['PROJ-123', '10001']), GLOBALS),
+      ).rejects.toThrow('Missing required option: --body');
+    });
+
+    it('issue-comments update throws when commentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'update', ['PROJ-123']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: commentId');
+    });
+
+    it('issue-comments delete calls client.issueComments.delete and returns {deleted:true}', async () => {
+      jiraIssueCommentsMock.delete.mockResolvedValue(undefined);
+      const result = await executeJiraCommand(
+        cmd('issue-comments', 'delete', ['PROJ-123', '10001']),
+        GLOBALS,
+      );
+      expect(jiraIssueCommentsMock.delete).toHaveBeenCalledWith('PROJ-123', '10001');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('issue-comments delete throws when commentId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issue-comments', 'delete', ['PROJ-123']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: commentId');
+    });
+
     it('issue-comments unknown action throws', async () => {
       await expect(executeJiraCommand(cmd('issue-comments', 'nope'), GLOBALS)).rejects.toThrow(
         'Unknown issue-comments action',
+      );
+    });
+  });
+
+  // ── labels (B1013) ────────────────────────────────────────────────────────
+
+  describe('labels resource', () => {
+    it('labels list calls client.labels.list()', async () => {
+      const page = { values: ['accessibility', 'backend'], startAt: 0, maxResults: 50, total: 2 };
+      jiraLabelsMock.list.mockResolvedValue(page);
+      const result = await executeJiraCommand(cmd('labels', 'list'), GLOBALS);
+      expect(jiraLabelsMock.list).toHaveBeenCalledWith({
+        startAt: undefined,
+        maxResults: undefined,
+      });
+      expect(result).toEqual(page);
+    });
+
+    it('labels list passes --start-at and --max-results', async () => {
+      jiraLabelsMock.list.mockResolvedValue({ values: [], startAt: 10, maxResults: 10, total: 0 });
+      await executeJiraCommand(
+        cmd('labels', 'list', [], { 'start-at': '10', 'max-results': '10' }),
+        GLOBALS,
+      );
+      expect(jiraLabelsMock.list).toHaveBeenCalledWith({ startAt: 10, maxResults: 10 });
+    });
+
+    it('labels throws on unknown action', async () => {
+      await expect(executeJiraCommand(cmd('labels', 'unknown-action'), GLOBALS)).rejects.toThrow(
+        'Unknown labels action',
       );
     });
   });

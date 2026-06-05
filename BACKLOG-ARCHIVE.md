@@ -917,6 +917,15 @@
 - [x] 🟡 🖥️ CLI: B1011 Jira: wire `dashboards` resource into CLI
   - **Impl:** Branch `feat/cli-jira-dashboards` (2026-06-05); new `executeDashboards` in `src/cli/commands/jira.ts` dispatching 18 actions (list/get/create/update/delete + list-gadgets/add-gadget/update-gadget/remove-gadget + list-item-properties/get-item-property/set-item-property/delete-item-property + copy/bulk-edit/list-available-gadgets/search/search-all) over `client.dashboards.*`; added missing `--flag`s to router `GLOBAL_OPTIONS`; help + skill-doc verified; full per-action CLI tests. SDK unchanged.
   - **Rat:** SDK already implemented `client.dashboards`; the dashboards skill doc was pre-written. This wires the CLI dispatch that was never added, completing the resource's user-facing surface.
+- [x] 🟡 🖥️ CLI: B1012 Jira: wire `issue-comments` base CRUD into CLI
+  - **Impl:** Branch `feat/cli-jira-gaps` (2026-06-05); added `list`, `get`, `create`, `update`, `delete` cases to `executeIssueComments` in `src/cli/commands/jira.ts`; `--body` (JSON object) used for create/update matching `CreateIssueCommentData`/`UpdateIssueCommentData` (ADF body + optional visibility); `ISSUE_COMMENTS_ACTIONS` expanded; help + skill-doc updated; 11 new CLI tests added.
+  - **Rat:** SDK already implemented `client.issueComments.*` CRUD; only the `*-property` + `bulk-fetch` surface was wired. The base CRUD was missing from the CLI dispatch.
+- [x] 🟢 🖥️ CLI: B1013 Jira: wire `labels` resource into CLI (entire resource unexposed)
+  - **Impl:** Branch `feat/cli-jira-gaps` (2026-06-05); added `case 'labels'` to `executeJiraCommand` top-level switch; new `executeLabels` function dispatching `list` action over `client.labels.list(startAt, maxResults)`; `labels` added to help resources block, skill matrix, and new `## 'labels'` section in `skill/reference/jira.md`; 3 CLI tests added.
+  - **Rat:** SDK implemented `client.labels.list()` but the resource was entirely absent from the CLI dispatcher. No router flags needed (reuses existing `--start-at`/`--max-results`).
+- [x] 🟢 🖥️ CLI: B1014 Jira: expose `webhooks delete` action
+  - **Impl:** Branch `feat/cli-jira-gaps` (2026-06-05); added `delete` case to `executeWebhooks`; reads `--webhook-ids` as JSON array of numbers (same convention as `refresh`), calls `client.webhooks.delete(webhookIds)`, returns `{deleted:true}`; help + skill-doc updated; 2 CLI tests (happy + missing-flag).
+  - **Rat:** `list/register/refresh/list-failed` were already wired; `delete` was the only missing action. No new router flags needed (`--webhook-ids` already present).
 - [x] 🟡 🖥️ CLI: B1015 Confluence: wire `content-properties` resource into CLI — WON'T DO (redundant)
   - **Impl:** No code change (2026-06-05). Closed as redundant.
   - **Rat:** Page content-properties are already fully reachable via the wired `pages list-properties/create-property/get-property/update-property/delete-property` actions (`client.pages.*Property`). A standalone top-level `content-properties` resource would duplicate them. Decision: code-verified audit, orchestrator-approved.
