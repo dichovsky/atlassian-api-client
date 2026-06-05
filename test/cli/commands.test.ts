@@ -26814,6 +26814,42 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('gadgetId');
     });
 
+    it('add-gadget throws when only --row is supplied without --column', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'add-gadget', ['10001'], { 'module-key': 'com.x:a', row: '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('add-gadget throws when only --column is supplied without --row', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'add-gadget', ['10001'], { 'module-key': 'com.x:a', column: '2' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('update-gadget throws when only --row is supplied without --column', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '1' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
+    it('update-gadget throws when only --column is supplied without --row', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'update-gadget', ['10001', '5'], { column: '2' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('must be supplied together');
+    });
+
     it('remove-gadget calls client.dashboards.removeGadget with numeric gadgetId', async () => {
       jiraDashboardsMock.removeGadget.mockResolvedValue(undefined);
       const result = await executeJiraCommand(
@@ -27059,6 +27095,18 @@ describe('executeJiraCommand', () => {
     it('list-available-gadgets with no flags calls with empty object', async () => {
       jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
       await executeJiraCommand(cmd('dashboards', 'list-available-gadgets'), GLOBALS);
+      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
+    });
+
+    it('list-available-gadgets omits params when csv flags contain only whitespace/empty tokens', async () => {
+      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
+      await executeJiraCommand(
+        cmd('dashboards', 'list-available-gadgets', [], {
+          'module-keys': ' , ',
+          uris: ',',
+        }),
+        GLOBALS,
+      );
       expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
     });
 

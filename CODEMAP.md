@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "9c36434f19f7b0056c1d21b6205f82b375f1fcdee487ca8f5d8e32d292ff9477",
+  "sourceHash": "ff81dabbc07981d73227347f0934010d60e60f8b25e45712112d6f9586611966",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5039,13 +5039,13 @@
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 8303,
+          "line": 8291,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 8311,
+          "line": 8299,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],

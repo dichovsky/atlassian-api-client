@@ -8072,8 +8072,11 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
       const rowRaw = opts['row'];
       const colRaw = opts['column'];
+      if ((rowRaw === undefined) !== (colRaw === undefined)) {
+        throw new Error('--row and --column must be supplied together');
+      }
       let position: { row: number; column: number } | undefined;
-      if (rowRaw !== undefined || colRaw !== undefined) {
+      if (rowRaw !== undefined && colRaw !== undefined) {
         position = {
           row: asPositiveInt(rowRaw, '--row') as number,
           column: asPositiveInt(colRaw, '--column') as number,
@@ -8097,8 +8100,11 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       );
       const rowRaw = opts['row'];
       const colRaw = opts['column'];
+      if ((rowRaw === undefined) !== (colRaw === undefined)) {
+        throw new Error('--row and --column must be supplied together');
+      }
       let position: { row: number; column: number } | undefined;
-      if (rowRaw !== undefined || colRaw !== undefined) {
+      if (rowRaw !== undefined && colRaw !== undefined) {
         position = {
           row: asPositiveInt(rowRaw, '--row') as number,
           column: asPositiveInt(colRaw, '--column') as number,
@@ -8220,36 +8226,18 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
 
     // ── list-available-gadgets ───────────────────────────────────────────────
     case 'list-available-gadgets': {
-      const moduleKeysRaw = opts['module-keys'];
-      const urisRaw = opts['uris'];
-      const gadgetIdsRaw = opts['gadget-ids'];
-      const dashboardIdsRaw = opts['dashboard-ids'];
+      const moduleKeys = csvFlag(opts['module-keys']);
+      const uris = csvFlag(opts['uris']);
+      const gadgetIdsTokens = csvFlag(opts['gadget-ids']);
+      const dashboardIdsTokens = csvFlag(opts['dashboard-ids']);
       return client.dashboards.listAvailableGadgets({
-        ...(moduleKeysRaw !== undefined && {
-          moduleKey: (moduleKeysRaw as string)
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
+        ...(moduleKeys !== undefined && { moduleKey: moduleKeys }),
+        ...(uris !== undefined && { uri: uris }),
+        ...(gadgetIdsTokens !== undefined && {
+          gadgetId: gadgetIdsTokens.map((s) => parsePositiveIntArg(s, '--gadget-ids')),
         }),
-        ...(urisRaw !== undefined && {
-          uri: (urisRaw as string)
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        }),
-        ...(gadgetIdsRaw !== undefined && {
-          gadgetId: (gadgetIdsRaw as string)
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .map((s) => parsePositiveIntArg(s, '--gadget-ids')),
-        }),
-        ...(dashboardIdsRaw !== undefined && {
-          dashboardId: (dashboardIdsRaw as string)
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .map((s) => parsePositiveIntArg(s, '--dashboard-ids')),
+        ...(dashboardIdsTokens !== undefined && {
+          dashboardId: dashboardIdsTokens.map((s) => parsePositiveIntArg(s, '--dashboard-ids')),
         }),
       });
     }
