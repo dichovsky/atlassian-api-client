@@ -177,7 +177,7 @@ EXAMPLES:
   atlas confluence footer-comments likes-count 77777
   atlas confluence footer-comments versions 77777 --sort -modified-date
   atlas confluence comments update 77777 --body "Updated body" --version-number 2
-  atlas confluence comments update 77777 --body "Resolved" --version-number 2 --comment-type inline
+  atlas confluence comments update 77777 --body "Updated inline body" --version-number 2 --comment-type inline
   atlas confluence inline-comments list --sort -created-date --limit 25
   atlas confluence inline-comments children 77777 --sort created-date
   atlas confluence inline-comments likes-count 77777
