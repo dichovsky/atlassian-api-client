@@ -2,19 +2,54 @@
 
 > **Agent Rules:** Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 
-## 📝 Docs
-
 ## ⚙️ Core
 
 - [ ] 🔴 ♻️ Core: B025 OpenAPI $ref injection hardening
   - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
   - deps: none
 
-## 🧩 Confluence
+## 🖥️ CLI
+
+> SDK-implemented methods not exposed via `atlas` CLI/skill (audit 2026-06-05, code-verified 2026-06-05). SDK already covers these — tasks wire dispatch + router + help + skill docs + tests only; no `src/*/resources/*.ts` changes. `*All` pagination generators are excluded (their base `list`/`search` is already reachable).
 
 ## 🧩 Jira
 
-## 🖥️ CLI
+- [ ] 🟡 🖥️ CLI: B1012 Jira: wire `issue-comments` base CRUD into CLI
+  - actions: list, get, create, update, delete (only `*-property` + `bulk-fetch` wired today)
+  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟢 🖥️ CLI: B1013 Jira: wire `labels` resource into CLI (entire resource unexposed)
+  - actions: list
+  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟢 🖥️ CLI: B1014 Jira: expose `webhooks delete` action
+  - actions: delete (list/register/refresh/list-failed already wired)
+  - files: `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+
+## 🧩 Confluence
+
+- [ ] 🟢 🖥️ CLI: B1016 Confluence: wire `inline-comments` read surface into CLI (entire resource unexposed)
+  - actions: list, listChildren, getLikesCount, listLikeUsers, getOperations, listVersions, getVersion
+  - note: mirror the already-wired top-level `footer-comments` resource (children/likes-count/likes-users/operations/versions/version)
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟡 🖥️ CLI: B1017 Confluence: expose `comments update` action (footer + inline)
+  - actions: update (no `update` action exists today; covers `updateFooter` + `updateInline` via `--comment-type`, mirroring `comments list/get/create/delete`)
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟢 🖥️ CLI: B1018 Confluence: expose `labels` space/blogpost listing
+  - actions: listForSpace, listForBlogPost (page-label listing already wired)
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟢 🖥️ CLI: B1019 Confluence: expose `pages` comment listing
+  - actions: listFooterComments, listInlineComments
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
+- [ ] 🟢 🖥️ CLI: B1020 Confluence: expose `pages versions` list action
+  - actions: listForPage (pages versions list; blog-posts `versions` list already wired, pages single `version` get already wired)
+  - files: `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
+  - deps: none
 
 ## 🧪 QA
 

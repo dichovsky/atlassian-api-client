@@ -291,6 +291,7 @@ RESOURCES:
   bulk                   create-issues, delete-issues, get-fields, edit-fields, move-issues, get-transitions, transition-issues, unwatch-issues, watch-issues, get-status, set-property, delete-property, submit-builds, submit-deployments, submit-devinfo, submit-devops-components, submit-feature-flags, submit-operations, submit-remote-links, submit-security
   issue-attachments      list, get, delete, expand-human, expand-raw, download-content, get-meta, download-thumbnail, upload
   component              list, create, get, update, delete, related-issue-counts
+  dashboards             list, get, create, update, delete, list-gadgets, add-gadget, update-gadget, remove-gadget, list-item-properties, get-item-property, set-item-property, delete-item-property, copy, bulk-edit, list-available-gadgets, search, search-all
   filters                search, get, create, update, delete, list-favourites, list-my, add-favourite, remove-favourite, change-owner, get-columns, set-columns, reset-columns, list-permissions, add-permission, get-permission, delete-permission, get-default-share-scope, set-default-share-scope
   issue-type-screen-schemes  list, create, update, delete, update-mapping, update-default-mapping, remove-mappings, get-project, list-mapping, list-project-mappings, assign-to-project
   permission-schemes     list, get, create, update, delete, list-permissions, create-permission, get-permission, delete-permission
@@ -712,6 +713,12 @@ EXAMPLES:
   atlas jira migration update-fields --transfer-id <uuid> --update-value-list '[{"_type":"StringIssueField","issueID":10001,"fieldID":10076,"string":"new"}]'
   atlas jira migration update-properties IssueProperty --transfer-id <uuid> --value '[{"entityId":123,"key":"mykey","value":"newValue"}]'
   atlas jira migration search-workflow-rules --transfer-id <uuid> --workflow-entity-id <uuid> --rule-ids <uuid1>,<uuid2>
+  atlas jira dashboards list --max-results 25
+  atlas jira dashboards get 10001
+  atlas jira dashboards search --dashboard-name "Sprint" --order-by -favorite_count
+  atlas jira dashboards list-gadgets 10001
+  atlas jira dashboards add-gadget 10001 --module-key com.atlassian.jira.gadgets:filter-results-gadget --row 1 --column 1
+  atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
 `;
 
 /** Get help text for the given level. */

@@ -468,6 +468,22 @@ const GLOBAL_OPTIONS = {
   'update-value-list': { type: 'string' as const },
   'workflow-entity-id': { type: 'string' as const },
   'rule-ids': { type: 'string' as const },
+  // dashboards options (B391-B405)
+  'module-key': { type: 'string' as const },
+  uri: { type: 'string' as const },
+  row: { type: 'string' as const },
+  column: { type: 'string' as const },
+  'ignore-uri-and-module-key-validation': { type: 'boolean' as const },
+  'new-owner': { type: 'string' as const },
+  'autofix-name': { type: 'boolean' as const },
+  'extend-admin-permissions': { type: 'boolean' as const },
+  'module-keys': { type: 'string' as const },
+  uris: { type: 'string' as const },
+  'gadget-ids': { type: 'string' as const },
+  'dashboard-ids': { type: 'string' as const },
+  'dashboard-name': { type: 'string' as const },
+  owner: { type: 'string' as const },
+  'max-pages': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
