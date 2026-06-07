@@ -84,15 +84,21 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ showAvatar: true });
     });
 
-    it('forwards projectId array param as comma-joined string', async () => {
-      // Arrange
+    it('forwards projectId array as repeated query params in path, not CSV', async () => {
+      // Arrange — spec declares projectId as type:array, style:form, explode:true
+      // which requires ?projectId=10001&projectId=10002, NOT ?projectId=10001,10002
       transport.respondWith(makePickerResponse());
 
       // Act
       await picker.pick({ projectId: ['10001', '10002'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10001,10002' });
+      // Assert: repeated params are baked into the path string
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('projectId=10001');
+      expect(path).toContain('projectId=10002');
+      // Must NOT be CSV in the scalar query bag
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('projectId');
     });
 
     it('forwards projectRole param', async () => {
@@ -106,17 +112,31 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ projectRole: 'Developer' });
     });
 
-    it('forwards excludeAccountIds param as comma-joined string', async () => {
+    it('forwards fieldId as scalar query param', async () => {
       // Arrange
       transport.respondWith(makePickerResponse());
 
       // Act
-      await picker.pick({ excludeAccountIds: ['acc-99', 'acc-100'] });
+      await picker.pick({ fieldId: 'customfield_10050' });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        excludeAccountIds: 'acc-99,acc-100',
-      });
+      expect(transport.lastCall?.options.query).toMatchObject({ fieldId: 'customfield_10050' });
+    });
+
+    it('does NOT emit excludeAccountIds — deprecated, not a valid param on GET /groupuserpicker', async () => {
+      // The /groupuserpicker spec has no excludeAccountIds param. The property is
+      // retained in GroupUserPickerParams as @deprecated for backward compatibility,
+      // but must never be serialized onto the wire.
+      transport.respondWith(makePickerResponse());
+
+      // Act — pass deprecated excludeAccountIds; it must be silently dropped
+      await picker.pick({ query: 'alice', excludeAccountIds: ['acc-1', 'acc-2'] });
+
+      // Assert: excludeAccountIds is never emitted
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('excludeAccountIds');
+      const path = transport.lastCall?.options.path as string;
+      expect(path).not.toContain('excludeAccountIds');
     });
 
     it('maps excludeConnectUsers to the excludeConnectAddons wire param', async () => {
