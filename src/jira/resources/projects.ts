@@ -139,15 +139,14 @@ export interface UpdateProjectRoleData {
   readonly categorisedActors?: Record<string, string[]>;
 }
 
-export interface ProjectRoleActorInput {
-  readonly id?: number;
+/** Request body for `POST /rest/api/3/project/{projectIdOrKey}/role/{id}` (addActorUsers). Spec: ActorsMap, additionalProperties:false. */
+export interface ActorsMap {
+  /** Account IDs of users to add to the role. */
   readonly user?: readonly string[];
+  /** Group names to add (deprecated — prefer groupId). */
   readonly group?: readonly string[];
+  /** Group IDs to add (preferred over group). */
   readonly groupId?: readonly string[];
-}
-
-export interface SetProjectRoleData {
-  readonly actors?: ProjectRoleActorInput[];
 }
 
 // ── Statuses ───────────────────────────────────────────────────────────────
@@ -710,16 +709,20 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Add actors to a project role (B685). */
+  /** Add actors to a project role (B685). Body is flat ActorsMap per spec addActorUsers. */
   async addRoleActors(
     projectIdOrKey: string,
     roleId: number,
-    data: SetProjectRoleData,
+    data: ActorsMap,
   ): Promise<ProjectRole> {
+    const body: Record<string, unknown> = {};
+    if (data.user !== undefined && data.user.length > 0) body['user'] = data.user;
+    if (data.group !== undefined && data.group.length > 0) body['group'] = data.group;
+    if (data.groupId !== undefined && data.groupId.length > 0) body['groupId'] = data.groupId;
     const response = await this.transport.request<ProjectRole>({
       method: 'POST',
       path: `${this.baseUrl}/project/${encodePathSegment(projectIdOrKey)}/role/${roleId}`,
-      body: data as unknown as Record<string, unknown>,
+      body,
     });
     return response.data;
   }

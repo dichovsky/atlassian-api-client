@@ -882,17 +882,45 @@ describe('ProjectsResource', () => {
   // ── addRoleActors ─────────────────────────────────────────────────────────
 
   describe('addRoleActors()', () => {
-    it('sends POST /project/:id/role/:roleId with actors body', async () => {
+    it('sends POST /project/:id/role/:roleId with flat ActorsMap body', async () => {
       transport.respondWith({ id: 10001, actors: [] });
-      const result = await projects.addRoleActors('PROJ', 10001, {
-        actors: [{ user: ['acc-1'] }],
-      });
+      const result = await projects.addRoleActors('PROJ', 10001, { user: ['acc-1'] });
       expect(result).toMatchObject({ id: 10001 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/project/PROJ/role/10001`,
-        body: { actors: [{ user: ['acc-1'] }] },
+        body: { user: ['acc-1'] },
       });
+    });
+
+    it('REPRO sends the spec ActorsMap body { user } not a nested { actors: [...] } wrapper', async () => {
+      transport.respondWith({ id: 10001, actors: [] });
+      await projects.addRoleActors('PROJ', 10001, { user: ['acc-1'] });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      // Spec: POST /project/{id}/role/{id} (addActorUsers) body = ActorsMap = flat
+      // { user?: string[]; group?: string[]; groupId?: string[] }, additionalProperties:false.
+      expect('actors' in body).toBe(false);
+      expect(body['user']).toEqual(['acc-1']);
+    });
+
+    it('sends group array in ActorsMap body', async () => {
+      transport.respondWith({ id: 10001, actors: [] });
+      await projects.addRoleActors('PROJ', 10001, { group: ['group-name'] });
+      expect(transport.lastCall?.options.body).toEqual({ group: ['group-name'] });
+    });
+
+    it('sends groupId array in ActorsMap body', async () => {
+      transport.respondWith({ id: 10001, actors: [] });
+      await projects.addRoleActors('PROJ', 10001, { groupId: ['gid-1', 'gid-2'] });
+      expect(transport.lastCall?.options.body).toEqual({ groupId: ['gid-1', 'gid-2'] });
+    });
+
+    it('omits empty arrays from ActorsMap body', async () => {
+      transport.respondWith({ id: 10001, actors: [] });
+      await projects.addRoleActors('PROJ', 10001, { user: [], groupId: ['gid-1'] });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect('user' in body).toBe(false);
+      expect(body['groupId']).toEqual(['gid-1']);
     });
   });
 
