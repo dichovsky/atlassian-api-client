@@ -1118,7 +1118,7 @@ Full Agile board management: list, create, delete, and query board details, issu
 | `epic-issues`         | `<boardId> <epicId>`        | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
 | `issues-without-epic` | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
 | `get-features`        | `<boardId>`                 | —                                 | —                                                              |
-| `toggle-feature`      | `<boardId>`                 | `--feature`, `--state`            | —                                                              |
+| `toggle-feature`      | `<boardId>`                 | `--feature`, `--enabling`         | —                                                              |
 | `get-issues`          | `<boardId>`                 | —                                 | `--jql`, `--fields`, `--start-at`, `--max-results`             |
 | `move-issues`         | `<boardId>`                 | `--issues`                        | —                                                              |
 | `list-projects`       | `<boardId>`                 | —                                 | `--start-at`, `--max-results`                                  |
@@ -1139,7 +1139,7 @@ Full Agile board management: list, create, delete, and query board details, issu
 
 - `--type` accepts `scrum`, `kanban`, or `simple`.
 - `--state` (for `list-sprints`) accepts comma-separated sprint states: `future`, `active`, `closed`.
-- `--state` (for `toggle-feature`) accepts `ENABLED` or `DISABLED` (uppercase).
+- `--enabling` (for `toggle-feature`) accepts `true` or `false` — maps to the spec's boolean `enabling` field.
 - `--feature` is the feature key string (e.g. `SIMPLE_ROADMAP`, `BACKLOG`, `SPRINTS`).
 - `--issues` is comma-separated issue keys, e.g. `--issues PROJ-1,PROJ-2`.
 - `--fields` is comma-separated field names, e.g. `--fields summary,status,assignee`.
@@ -1187,7 +1187,10 @@ atlas jira boards issues-without-epic 42
 atlas jira boards get-features 42
 
 # Disable a feature on a board
-atlas jira boards toggle-feature 42 --feature SIMPLE_ROADMAP --state DISABLED
+atlas jira boards toggle-feature 42 --feature SIMPLE_ROADMAP --enabling false
+
+# Enable a feature on a board
+atlas jira boards toggle-feature 42 --feature SIMPLE_ROADMAP --enabling true
 
 # Get all issues on a board
 atlas jira boards get-issues 42 --jql "status != Done" --fields summary,status

@@ -1438,11 +1438,11 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'toggle-feature': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
       const feature = requireOpt(opts['feature'], '--feature');
-      const stateRaw = requireOpt(opts['state'], '--state');
-      if (stateRaw !== 'ENABLED' && stateRaw !== 'DISABLED') {
-        throw new Error('--state must be ENABLED or DISABLED');
+      const enablingRaw = requireOpt(opts['enabling'], '--enabling');
+      if (enablingRaw !== 'true' && enablingRaw !== 'false') {
+        throw new Error(`expected 'true' or 'false', got: ${enablingRaw}`);
       }
-      return client.boards.toggleFeature(boardId, { feature, state: stateRaw });
+      return client.boards.toggleFeature(boardId, { feature, enabling: enablingRaw === 'true' });
     }
     case 'get-issues': {
       const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');

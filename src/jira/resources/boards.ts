@@ -130,7 +130,7 @@ export interface BoardFeaturesResponse {
 
 export interface ToggleFeatureData {
   readonly feature: string;
-  readonly state: 'ENABLED' | 'DISABLED';
+  readonly enabling: boolean;
 }
 
 export interface BoardProject {
@@ -362,13 +362,13 @@ export class BoardsResource {
     if (!data.feature || typeof data.feature !== 'string') {
       throw new ValidationError('feature must be a non-empty string');
     }
-    if (data.state !== 'ENABLED' && data.state !== 'DISABLED') {
-      throw new ValidationError('state must be ENABLED or DISABLED');
+    if (typeof data.enabling !== 'boolean') {
+      throw new ValidationError('enabling must be a boolean');
     }
     const response = await this.transport.request<BoardFeaturesResponse>({
       method: 'PUT',
       path: `${this.baseUrl}/board/${boardId}/features`,
-      body: { ...data, boardId },
+      body: { boardId, enabling: data.enabling, feature: data.feature },
     });
     return response.data;
   }

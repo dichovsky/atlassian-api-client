@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "abb85c1b474668abe8421269a52d119b08f515ad6799856c2e00f9a9d174cd1d",
+  "sourceHash": "8b9ef41acebc406dcb198ac2f5d8565e65fac71c9cc590acf2e8b7a14cd131d1",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5351,7 +5351,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 498,
+          "line": 499,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -22226,7 +22226,7 @@
           "kind": "interface",
           "line": 131,
           "exported": true,
-          "signature": "export interface ToggleFeatureData { readonly feature: string; readonly state: 'ENABLED' | 'DISABLED'; }"
+          "signature": "export interface ToggleFeatureData { readonly feature: string; readonly enabling: boolean; }"
         },
         {
           "name": "BoardProject",

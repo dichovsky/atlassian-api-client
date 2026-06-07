@@ -998,43 +998,54 @@ describe('BoardsResource', () => {
   // ── toggleFeature ─────────────────────────────────────────────────────────
 
   describe('toggleFeature()', () => {
-    it('calls PUT /board/{boardId}/features with feature and state', async () => {
-      // Arrange
+    it('sends spec body field `enabling` (boolean), not `state` string — enabling=true', async () => {
+      // Agile spec toggleFeatures (PUT /board/{boardId}/features) body =
+      // { boardId: integer, enabling: boolean, feature: string }, additionalProperties:false.
       const payload = { features: [] };
       transport.respondWith(payload);
 
-      // Act
       const result = await boards.toggleFeature(42, {
         feature: 'SIMPLE_ROADMAP',
-        state: 'DISABLED',
+        enabling: true,
       });
 
-      // Assert
       expect(result).toEqual(payload);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/board/42/features`,
-        body: { feature: 'SIMPLE_ROADMAP', state: 'DISABLED', boardId: 42 },
+        body: { boardId: 42, enabling: true, feature: 'SIMPLE_ROADMAP' },
+      });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect('state' in body).toBe(false);
+    });
+
+    it('sends enabling=false when disabling a feature', async () => {
+      transport.respondWith({ features: [] });
+
+      await boards.toggleFeature(42, { feature: 'SIMPLE_ROADMAP', enabling: false });
+
+      expect(transport.lastCall?.options).toMatchObject({
+        body: { boardId: 42, enabling: false, feature: 'SIMPLE_ROADMAP' },
       });
     });
 
     it('throws ValidationError for boardId = 0', async () => {
       await expect(
-        boards.toggleFeature(0, { feature: 'SIMPLE_ROADMAP', state: 'ENABLED' }),
+        boards.toggleFeature(0, { feature: 'SIMPLE_ROADMAP', enabling: true }),
       ).rejects.toThrow('boardId must be a positive integer');
     });
 
     it('throws ValidationError for empty feature name', async () => {
-      await expect(boards.toggleFeature(42, { feature: '', state: 'ENABLED' })).rejects.toThrow(
+      await expect(boards.toggleFeature(42, { feature: '', enabling: true })).rejects.toThrow(
         'feature must be a non-empty string',
       );
     });
 
-    it('throws ValidationError for invalid state', async () => {
+    it('throws ValidationError when enabling is not a boolean', async () => {
       await expect(
         // @ts-expect-error testing invalid runtime value
-        boards.toggleFeature(42, { feature: 'SIMPLE_ROADMAP', state: 'INVALID' }),
-      ).rejects.toThrow('state must be ENABLED or DISABLED');
+        boards.toggleFeature(42, { feature: 'SIMPLE_ROADMAP', enabling: 'yes' }),
+      ).rejects.toThrow('enabling must be a boolean');
     });
   });
 
