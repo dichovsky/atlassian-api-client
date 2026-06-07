@@ -481,6 +481,30 @@ describe('createHttpError', () => {
       expect(err.message.endsWith('…')).toBe(true);
     });
 
+    it('#205 control: a lone 1024-char errorMessage is preserved verbatim', () => {
+      // A complete 1024-char message is within the cap and must not be sliced.
+      const A = 'x'.repeat(1024);
+      const err = createHttpError(400, { errorMessages: [A] });
+      expect(err.message).toBe(A);
+    });
+
+    it('#205 regression: a complete 1024-char first errorMessage is not corrupted when a second message follows', () => {
+      // Before the fix, the presence of a second errorMessage caused dropped=true
+      // to be OR-ed into truncated, which triggered extractErrorMessage to slice
+      // A to 1023 chars + '…', corrupting the complete first message.
+      const A = 'x'.repeat(1024);
+      const err = createHttpError(400, { errorMessages: [A, 'second error'] });
+      expect(err.message.startsWith(A)).toBe(true);
+    });
+
+    it('#205 boundary: complete 1023-char first errorMessage is not corrupted when a second message follows', () => {
+      // Below the cap: first message must survive intact even when a second
+      // message is dropped because the cap is already reached after appending.
+      const A = 'x'.repeat(1023);
+      const err = createHttpError(400, { errorMessages: [A, 'extra'] });
+      expect(err.message.startsWith(A)).toBe(true);
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');
