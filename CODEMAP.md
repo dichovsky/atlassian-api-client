@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "4af2cbcc39581647718fb9fc90f2ce5d28c75e4791148145f8b267a367da9f9d",
+  "sourceHash": "ae1e884bdfe3b0400b79cebdf5a7f8ca2f26e30c41243fddb4150c723b334869",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -33001,150 +33001,151 @@
         {
           "name": "UsersResource",
           "kind": "class",
-          "line": 32,
+          "line": 33,
           "exported": true,
           "signature": "export class UsersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 33
+              "line": 34
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 39
+              "line": 40
             },
             {
               "name": "getCurrentUser",
               "kind": "method",
-              "line": 49
+              "line": 50
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 58
+              "line": 59
             },
             {
               "name": "deleteUser",
               "kind": "method",
-              "line": 72
+              "line": 73
             },
             {
               "name": "createUser",
               "kind": "method",
-              "line": 81
+              "line": 82
             },
             {
               "name": "assignableMultiProjectSearch",
               "kind": "method",
-              "line": 91
+              "line": 92
             },
             {
               "name": "assignableSearch",
               "kind": "method",
-              "line": 108
+              "line": 109
             },
             {
               "name": "bulkGet",
               "kind": "method",
-              "line": 126
+              "line": 127
             },
             {
               "name": "bulkMigration",
               "kind": "method",
-              "line": 145
+              "line": 146
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 171
+              "line": 172
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 182
+              "line": 183
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 194
+              "line": 195
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 206
+              "line": 207
             },
             {
               "name": "bulkGetEmails",
               "kind": "method",
-              "line": 216
+              "line": 217
             },
             {
               "name": "getGroups",
               "kind": "method",
-              "line": 226
+              "line": 227
             },
             {
               "name": "getPermissionUsers",
               "kind": "method",
-              "line": 241
+              "line": 242
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 261
+              "line": 262
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 280
+              "line": 281
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 293
+              "line": 294
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 305
+              "line": 306
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 318
+              "line": 319
             },
             {
               "name": "searchQuery",
               "kind": "method",
-              "line": 335
+              "line": 336
             },
             {
               "name": "searchQueryKey",
               "kind": "method",
-              "line": 349
+              "line": 350
             },
             {
               "name": "viewIssueSearch",
               "kind": "method",
-              "line": 363
+              "line": 364
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 380
+              "line": 381
             },
             {
               "name": "listSearch",
               "kind": "method",
-              "line": 393
+              "line": 394
             }
           ]
         }
       ],
       "imports": [
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
