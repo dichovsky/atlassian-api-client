@@ -1175,27 +1175,33 @@ describe('IssuesResource', () => {
       expect(result).toMatchObject({ projects: [] });
     });
 
-    it('passes projectKeys and expand params', async () => {
+    it('sends projectKeys and projectIds as repeated params, not CSV', async () => {
       transport.respondWith({ projects: [] });
       await issues.getCreateMeta({ projectKeys: ['PROJ', 'OPS'], expand: 'projects.issuetypes' });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        projectKeys: 'PROJ,OPS',
-        expand: 'projects.issuetypes',
-      });
+      const opts = transport.lastCall?.options;
+      expect(opts?.path).toContain('projectKeys=PROJ');
+      expect(opts?.path).toContain('projectKeys=OPS');
+      expect(opts?.path).not.toContain('projectKeys=PROJ%2COPS');
+      expect(opts?.path).not.toContain('projectKeys=PROJ,OPS');
+      expect(opts?.query).toMatchObject({ expand: 'projects.issuetypes' });
+      expect(opts?.query).not.toHaveProperty('projectKeys');
     });
 
-    it('passes issuetypeIds and issuetypeNames', async () => {
+    it('sends issuetypeIds and issuetypeNames as repeated params, not CSV', async () => {
       transport.respondWith({});
       await issues.getCreateMeta({
-        projectIds: ['10001'],
+        projectIds: ['10001', '10002'],
         issuetypeIds: ['10000'],
         issuetypeNames: ['Bug'],
       });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        projectIds: '10001',
-        issuetypeIds: '10000',
-        issuetypeNames: 'Bug',
-      });
+      const opts = transport.lastCall?.options;
+      expect(opts?.path).toContain('projectIds=10001');
+      expect(opts?.path).toContain('projectIds=10002');
+      expect(opts?.path).toContain('issuetypeIds=10000');
+      expect(opts?.path).toContain('issuetypeNames=Bug');
+      expect(opts?.query).not.toHaveProperty('projectIds');
+      expect(opts?.query).not.toHaveProperty('issuetypeIds');
+      expect(opts?.query).not.toHaveProperty('issuetypeNames');
     });
   });
 

@@ -1,6 +1,7 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type {
   Issue,
   CreatedIssue,
@@ -1101,14 +1102,14 @@ export class IssuesResource {
    */
   async getCreateMeta(params?: CreateMetaParams): Promise<Record<string, unknown>> {
     const query: Record<string, string | undefined> = {};
-    if (params?.projectIds) query['projectIds'] = params.projectIds.join(',');
-    if (params?.projectKeys) query['projectKeys'] = params.projectKeys.join(',');
-    if (params?.issuetypeIds) query['issuetypeIds'] = params.issuetypeIds.join(',');
-    if (params?.issuetypeNames) query['issuetypeNames'] = params.issuetypeNames.join(',');
     if (params?.expand) query['expand'] = params.expand;
+    let path = appendRepeatedParams(`${this.baseUrl}/issue/createmeta`, 'projectIds', params?.projectIds);
+    path = appendRepeatedParams(path, 'projectKeys', params?.projectKeys);
+    path = appendRepeatedParams(path, 'issuetypeIds', params?.issuetypeIds);
+    path = appendRepeatedParams(path, 'issuetypeNames', params?.issuetypeNames);
     const response = await this.transport.request<Record<string, unknown>>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/createmeta`,
+      path,
       query,
     });
     return response.data;
