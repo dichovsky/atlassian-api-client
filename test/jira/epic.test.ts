@@ -3,6 +3,7 @@ import { EpicResource } from '../../src/jira/resources/epic.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
+const SOFTWARE_BASE_URL = 'https://test.atlassian.net/rest/software/1.0';
 
 const makeEpic = (id: number, name: string) => ({
   id,
@@ -32,7 +33,7 @@ describe('EpicResource', () => {
 
   beforeEach(() => {
     transport = new MockTransport();
-    epic = new EpicResource(transport, BASE_URL);
+    epic = new EpicResource(transport, BASE_URL, SOFTWARE_BASE_URL);
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -414,5 +415,176 @@ describe('EpicResource', () => {
         'issues entries must be non-empty strings',
       );
     });
+  });
+
+  // ── Enhanced (JSIS) epic issue endpoints (B1028-B1029) ───────────────────
+
+  const makeSoftwareIssueResults = (keys: string[]) => ({
+    issues: keys.map((key, i) => makeBoardIssue(String(i + 1), key)),
+    nextPageToken: 'TOKEN-2',
+    isLast: false,
+  });
+
+  describe('getIssuesEnhanced()', () => {
+    it('calls GET software /epic/{epicIdOrKey}/issue and passes the page through', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-1', 'PROJ-2']);
+      transport.respondWith(payload);
+
+      const result = await epic.getIssuesEnhanced('42');
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/epic/42/issue`,
+      });
+    });
+
+    it('encodes epicIdOrKey with special characters in the path', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await epic.getIssuesEnhanced('PROJ-42');
+
+      expect(transport.lastCall?.options.path).toBe(`${SOFTWARE_BASE_URL}/epic/PROJ-42/issue`);
+    });
+
+    it('threads params and repeated reconcileIssues', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await epic.getIssuesEnhanced('42', {
+        nextPageToken: 'TOK',
+        maxResults: 10,
+        jql: 'project = X',
+        fields: ['summary', 'status'],
+        expand: 'schema',
+        reconcileIssues: [10001, 10002],
+        validateQuery: false,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        nextPageToken: 'TOK',
+        maxResults: 10,
+        jql: 'project = X',
+        fields: 'summary,status',
+        expand: 'schema',
+        validateQuery: false,
+      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/epic/42/issue?reconcileIssues=10001&reconcileIssues=10002`,
+      );
+    });
+
+    it('omits undefined optional params from query (nextPageToken branch)', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      // Pass jql only — nextPageToken, expand, validateQuery absent → covers their false branches
+      await epic.getIssuesEnhanced('42', { jql: 'status = Done' });
+
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).toMatchObject({ jql: 'status = Done' });
+      expect(q).not.toHaveProperty('nextPageToken');
+      expect(q).not.toHaveProperty('expand');
+      expect(q).not.toHaveProperty('validateQuery');
+    });
+
+    it('omits undefined optional params from query (jql branch)', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      // Pass nextPageToken only — jql, fields, expand absent → covers their false branches
+      await epic.getIssuesEnhanced('42', { nextPageToken: 'cursor' });
+
+      const q = transport.lastCall?.options.query ?? {};
+      expect(q).toMatchObject({ nextPageToken: 'cursor' });
+      expect(q).not.toHaveProperty('jql');
+      expect(q).not.toHaveProperty('expand');
+    });
+
+    it('throws ValidationError for empty epicIdOrKey', async () => {
+      await expect(epic.getIssuesEnhanced('')).rejects.toThrow(
+        'epicIdOrKey must be a non-empty string',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(epic.getIssuesEnhanced('42', { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  describe('getIssuesWithoutEpicEnhanced()', () => {
+    it('calls GET software /epic/none/issue and passes the page through', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-9']);
+      transport.respondWith(payload);
+
+      const result = await epic.getIssuesWithoutEpicEnhanced();
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/epic/none/issue`,
+      });
+    });
+
+    it('threads jql, fields, validateQuery params', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await epic.getIssuesWithoutEpicEnhanced({
+        jql: 'priority = High',
+        fields: ['summary'],
+        validateQuery: true,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        jql: 'priority = High',
+        fields: 'summary',
+        validateQuery: true,
+      });
+    });
+
+    it('threads all params including nextPageToken, maxResults, expand', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await epic.getIssuesWithoutEpicEnhanced({
+        nextPageToken: 'TOK',
+        maxResults: 5,
+        jql: 'status = Done',
+        fields: ['id'],
+        expand: 'names',
+        validateQuery: false,
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        nextPageToken: 'TOK',
+        maxResults: 5,
+        jql: 'status = Done',
+        fields: 'id',
+        expand: 'names',
+        validateQuery: false,
+      });
+    });
+
+    it('serializes reconcileIssues as repeated params', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await epic.getIssuesWithoutEpicEnhanced({ reconcileIssues: [5, 6] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/epic/none/issue?reconcileIssues=5&reconcileIssues=6`,
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(epic.getIssuesWithoutEpicEnhanced({ maxResults: 0 })).rejects.toThrow(
+        RangeError,
+      );
+    });
+  });
+
+  it('derives softwareBaseUrl from agile baseUrl when not provided', async () => {
+    const t = new MockTransport();
+    t.respondWith({ issues: [], isLast: true });
+    const resource = new EpicResource(t, BASE_URL);
+    await resource.getIssuesEnhanced('42');
+    expect(t.lastCall?.options.path).toBe(
+      'https://test.atlassian.net/rest/software/1.0/epic/42/issue',
+    );
   });
 });

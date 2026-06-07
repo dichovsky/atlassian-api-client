@@ -577,6 +577,7 @@ const jiraSprintsMock = {
   update: vi.fn(),
   delete: vi.fn(),
   getIssues: vi.fn(),
+  getIssuesEnhanced: vi.fn(),
   partialUpdate: vi.fn(),
   moveIssues: vi.fn(),
   listProperties: vi.fn(),
@@ -589,9 +590,11 @@ const jiraEpicMock = {
   get: vi.fn(),
   partialUpdate: vi.fn(),
   getIssues: vi.fn(),
+  getIssuesEnhanced: vi.fn(),
   moveIssues: vi.fn(),
   rank: vi.fn(),
   getIssuesWithoutEpic: vi.fn(),
+  getIssuesWithoutEpicEnhanced: vi.fn(),
   removeIssuesFromEpic: vi.fn(),
 };
 const jiraBacklogMock = {
@@ -13401,6 +13404,32 @@ describe('executeJiraCommand', () => {
         'Unknown sprints action',
       );
     });
+
+    it('sprints get-issues-enhanced calls client.sprints.getIssuesEnhanced with sprintId', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraSprintsMock.getIssuesEnhanced.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('sprints', 'get-issues-enhanced', ['42'], { jql: 'project = X' }),
+        GLOBALS,
+      );
+      expect(jiraSprintsMock.getIssuesEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ jql: 'project = X' }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('sprints get-issues-enhanced throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'get-issues-enhanced', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
+    });
+
+    it('sprints get-issues-enhanced throws when sprintId is not a positive integer', async () => {
+      await expect(
+        executeJiraCommand(cmd('sprints', 'get-issues-enhanced', ['abc']), GLOBALS),
+      ).rejects.toThrow('sprintId must be a positive integer');
+    });
   });
 
   // ── epic ──────────────────────────────────────────────────────────────────
@@ -13631,6 +13660,39 @@ describe('executeJiraCommand', () => {
       await expect(executeJiraCommand(cmd('epic', 'nope', ['42']), GLOBALS)).rejects.toThrow(
         'Unknown epic action',
       );
+    });
+
+    it('epic issues-enhanced calls client.epic.getIssuesEnhanced with epicIdOrKey', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraEpicMock.getIssuesEnhanced.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('epic', 'issues-enhanced', ['PROJ-42'], { jql: 'status != Done' }),
+        GLOBALS,
+      );
+      expect(jiraEpicMock.getIssuesEnhanced).toHaveBeenCalledWith(
+        'PROJ-42',
+        expect.objectContaining({ jql: 'status != Done' }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('epic issues-enhanced throws when epicIdOrKey is missing', async () => {
+      await expect(executeJiraCommand(cmd('epic', 'issues-enhanced', []), GLOBALS)).rejects.toThrow(
+        'Missing required argument: epicIdOrKey',
+      );
+    });
+
+    it('epic issues-none-enhanced calls client.epic.getIssuesWithoutEpicEnhanced', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraEpicMock.getIssuesWithoutEpicEnhanced.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('epic', 'issues-none-enhanced', [], { jql: 'priority = High' }),
+        GLOBALS,
+      );
+      expect(jiraEpicMock.getIssuesWithoutEpicEnhanced).toHaveBeenCalledWith(
+        expect.objectContaining({ jql: 'priority = High' }),
+      );
+      expect(result).toEqual(payload);
     });
   });
 

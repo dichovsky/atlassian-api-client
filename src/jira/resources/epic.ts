@@ -1,8 +1,11 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { BoardIssue } from './boards.js';
+import type { ListSoftwareIssuesParams, SoftwareIssueResults } from './software-issues.js';
 
 export interface Epic {
   readonly id: number;
@@ -39,10 +42,22 @@ export interface RankEpicData {
 }
 
 export class EpicResource {
+  private readonly softwareBaseUrl: string;
+
   constructor(
     private readonly transport: Transport,
     private readonly baseUrl: string,
-  ) {}
+    /**
+     * Base URL for the Jira Software "enhanced" (JSIS) endpoints
+     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
+     * constructor callers: when omitted it is derived from `baseUrl` by
+     * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
+     */
+    softwareBaseUrl?: string,
+  ) {
+    this.softwareBaseUrl =
+      softwareBaseUrl ?? baseUrl.replace('/rest/agile/1.0', '/rest/software/1.0');
+  }
 
   /** Get an epic by ID or key (B260). */
   async get(epicIdOrKey: string): Promise<Epic> {
@@ -168,5 +183,67 @@ export class EpicResource {
       path: `${this.baseUrl}/epic/none/issue`,
       body: { issues },
     });
+  }
+
+  // ── Enhanced (JSIS) epic issue endpoints (B1028-B1029) ───────────────────
+
+  /**
+   * Get issues for an epic (token-paginated, non-deprecated) — operationId
+   * `getIssuesForEpicJSIS` (B1028). Hits `/rest/software/1.0/epic/{epicIdOrKey}/issue`.
+   * Use instead of the deprecated agile `getIssues` for new integrations.
+   */
+  async getIssuesEnhanced(
+    epicIdOrKey: string,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (typeof epicIdOrKey !== 'string' || epicIdOrKey.length === 0) {
+      throw new ValidationError('epicIdOrKey must be a non-empty string');
+    }
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+    }
+    const basePath = `${this.softwareBaseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}/issue`;
+    const finalPath = appendRepeatedParams(basePath, 'reconcileIssues', params?.reconcileIssues);
+    const response = await this.transport.request<SoftwareIssueResults>({
+      method: 'GET',
+      path: finalPath,
+      query,
+    });
+    return response.data;
+  }
+
+  /**
+   * Get issues without an epic (token-paginated, non-deprecated) — operationId
+   * `getIssuesWithoutEpicJSIS` (B1029). Hits `/rest/software/1.0/epic/none/issue`.
+   * Use instead of the deprecated agile `getIssuesWithoutEpic` for new integrations.
+   */
+  async getIssuesWithoutEpicEnhanced(
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+    }
+    const basePath = `${this.softwareBaseUrl}/epic/none/issue`;
+    const finalPath = appendRepeatedParams(basePath, 'reconcileIssues', params?.reconcileIssues);
+    const response = await this.transport.request<SoftwareIssueResults>({
+      method: 'GET',
+      path: finalPath,
+      query,
+    });
+    return response.data;
   }
 }

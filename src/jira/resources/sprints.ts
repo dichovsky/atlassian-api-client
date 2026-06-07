@@ -3,7 +3,9 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { BoardIssue } from './boards.js';
+import type { ListSoftwareIssuesParams, SoftwareIssueResults } from './software-issues.js';
 
 export interface SprintPropertyKey {
   readonly self: string;
@@ -59,10 +61,22 @@ export interface ListSprintIssuesParams {
 }
 
 export class SprintsResource {
+  private readonly softwareBaseUrl: string;
+
   constructor(
     private readonly transport: Transport,
     private readonly baseUrl: string,
-  ) {}
+    /**
+     * Base URL for the Jira Software "enhanced" (JSIS) endpoints
+     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
+     * constructor callers: when omitted it is derived from `baseUrl` by
+     * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
+     */
+    softwareBaseUrl?: string,
+  ) {
+    this.softwareBaseUrl =
+      softwareBaseUrl ?? baseUrl.replace('/rest/agile/1.0', '/rest/software/1.0');
+  }
 
   /** Get a sprint by ID. */
   async get(sprintId: number): Promise<Sprint> {
@@ -240,6 +254,40 @@ export class SprintsResource {
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
       path: `${this.baseUrl}/sprint/${sprintId}/issue`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Enhanced (JSIS) sprint issue endpoint (B1030) ────────────────────────
+
+  /**
+   * Get issues for a sprint (token-paginated, non-deprecated) — operationId
+   * `getIssuesForSprintJSIS` (B1030). Hits `/rest/software/1.0/sprint/{sprintId}/issue`.
+   * Use instead of the deprecated agile `getIssues` for new integrations.
+   */
+  async getIssuesEnhanced(
+    sprintId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
+      if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+    }
+    const basePath = `${this.softwareBaseUrl}/sprint/${sprintId}/issue`;
+    const finalPath = appendRepeatedParams(basePath, 'reconcileIssues', params?.reconcileIssues);
+    const response = await this.transport.request<SoftwareIssueResults>({
+      method: 'GET',
+      path: finalPath,
       query,
     });
     return response.data;

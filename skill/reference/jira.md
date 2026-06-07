@@ -16,8 +16,8 @@ Jira Cloud Platform REST API v3 surface. Load this file when you need a flag or 
 | `statuses`                  | `list`, `bulk-delete`, `bulk-create`, `bulk-update`, `get-issue-type-usages`, `get-project-usages`, `get-workflow-usages`, `by-names`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `resolutions`               | `list`, `get`, `create`, `update`, `delete`, `set-default`, `move`, `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `boards`                    | `list`, `get`, `create`, `delete`, `backlog`, `configuration`, `list-epics`, `epic-issues`, `issues-without-epic`, `get-features`, `toggle-feature`, `get-issues`, `move-issues`, `list-projects`, `list-projects-full`, `list-sprints`, `list-versions`, `sprint-issues`, `list-by-filter`, `list-properties`, `delete-property`, `get-property`, `set-property`, `list-quickfilters`, `get-quickfilter`, `get-reports`, `backlog-enhanced`, `get-issues-enhanced`, `issues-without-epic-enhanced`, `epic-issues-enhanced`, `sprint-issues-enhanced`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `sprints`                   | `get`, `create`, `update`, `delete`, `get-issues`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `epic`                      | `get`, `update`, `issues`, `move-issues`, `rank`, `issues-none`, `remove-issues`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `sprints`                   | `get`, `create`, `update`, `delete`, `get-issues`, `get-issues-enhanced`, `partial-update`, `move-issues`, `list-properties`, `get-property`, `set-property`, `delete-property`, `swap`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `epic`                      | `get`, `update`, `issues`, `issues-enhanced`, `move-issues`, `rank`, `issues-none`, `issues-none-enhanced`, `remove-issues`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `backlog`                   | `move`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `announcement-banner`       | `get`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `application-properties`    | `list`, `set`, `list-advanced-settings`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1550,19 +1550,49 @@ atlas jira sprints delete-property 42 my-flag
 atlas jira sprints swap 42 --with 99
 ```
 
+### Enhanced (JSIS) sprint issue action
+
+Non-deprecated, **token-paginated** replacement for `get-issues`. Hits Jira Software's `/rest/software/1.0/sprint/{sprintId}/issue` and returns a single page shaped `{ issues, nextPageToken?, isLast?, ... }`. There is **no `--start-at`**: pass the previous response's `nextPageToken` back via `--next-page-token` to fetch the next page; stop when `isLast` is `true` (or `nextPageToken` is absent).
+
+| Action                | Positionals  | Required flags | Optional flags                                                                                                  |
+| --------------------- | ------------ | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `get-issues-enhanced` | `<sprintId>` | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+
+- `--next-page-token` is the opaque cursor from the previous page's `nextPageToken`; omit for the first page.
+- `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to force-index before searching, e.g. `--reconcile-issues 10001,10002`.
+- `--validate-query` (boolean flag) controls server-side JQL validation; omit for the server default (`true`).
+- `--fields` is comma-separated field names; `--expand` is a single expand string.
+- `sprintId` is a numeric ID (not a name).
+
+```sh
+# First page of sprint issues (token-paginated, non-deprecated)
+atlas jira sprints get-issues-enhanced 42
+
+# Filter with JQL and select fields
+atlas jira sprints get-issues-enhanced 42 --jql "status = 'In Progress'" --fields summary,status,assignee
+
+# Next page using token from previous response
+atlas jira sprints get-issues-enhanced 42 --next-page-token <token>
+
+# Force reconcile specific issues before search
+atlas jira sprints get-issues-enhanced 42 --reconcile-issues 10001,10002 --jql "priority = High"
+```
+
 ## `epic`
 
 Manage Agile epics. Supports get, partial update (POST patch semantics), issue assignment, ranking, and epic-less issue queries.
 
-| Action          | Positionals     | Required flags          | Optional flags                                     |
-| --------------- | --------------- | ----------------------- | -------------------------------------------------- |
-| `get`           | `<epicIdOrKey>` | —                       | —                                                  |
-| `update`        | `<epicIdOrKey>` | —                       | `--name`, `--summary`, `--color`, `--done`         |
-| `issues`        | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--start-at`, `--max-results` |
-| `move-issues`   | `<epicIdOrKey>` | `--issues`              | —                                                  |
-| `rank`          | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                                   |
-| `issues-none`   | —               | —                       | `--jql`, `--fields`, `--start-at`, `--max-results` |
-| `remove-issues` | —               | `--issues`              | —                                                  |
+| Action                 | Positionals     | Required flags          | Optional flags                                                                                                  |
+| ---------------------- | --------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `get`                  | `<epicIdOrKey>` | —                       | —                                                                                                               |
+| `update`               | `<epicIdOrKey>` | —                       | `--name`, `--summary`, `--color`, `--done`                                                                      |
+| `issues`               | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`                                                              |
+| `issues-enhanced`      | `<epicIdOrKey>` | —                       | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `move-issues`          | `<epicIdOrKey>` | `--issues`              | —                                                                                                               |
+| `rank`                 | `<epicIdOrKey>` | `--before` or `--after` | `--custom-field`                                                                                                |
+| `issues-none`          | —               | —                       | `--jql`, `--fields`, `--start-at`, `--max-results`                                                              |
+| `issues-none-enhanced` | —               | —                       | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `remove-issues`        | —               | `--issues`              | —                                                                                                               |
 
 **Notes:**
 
@@ -1576,6 +1606,11 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 - `--custom-field` is an optional numeric ID of the rank custom field.
 - `issues-none` returns all issues that are not assigned to any epic.
 - `remove-issues` moves the specified issues out of their epics (sets epic link to none).
+- `issues-enhanced` and `issues-none-enhanced` are the non-deprecated, **token-paginated** replacements for `issues` and `issues-none` — they hit `/rest/software/1.0` and do not accept `--start-at`.
+- `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`); the value is path-encoded automatically.
+- `--next-page-token` is the opaque cursor from the previous page's `nextPageToken`; omit for the first page.
+- `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to force-index before searching, e.g. `--reconcile-issues 10001,10002`.
+- `--validate-query` (boolean flag) controls server-side JQL validation; omit for the server default (`true`).
 
 ```sh
 # Get an epic by ID
@@ -1590,11 +1625,23 @@ atlas jira epic update 42 --name "New Epic Name"
 # Mark an epic as done and set summary
 atlas jira epic update PROJ-42 --summary "All done" --done
 
-# List issues in an epic
+# List issues in an epic (deprecated agile, offset-paginated)
 atlas jira epic issues 42
 
 # List issues in an epic with JQL filter
 atlas jira epic issues 42 --jql "status != Done" --fields summary,status,assignee
+
+# List issues in an epic (token-paginated, non-deprecated)
+atlas jira epic issues-enhanced 42
+
+# List issues in an epic (token-paginated) with JQL filter and field selection
+atlas jira epic issues-enhanced PROJ-42 --jql "status != Done" --fields summary,status,assignee
+
+# Next page of epic issues using cursor from previous response
+atlas jira epic issues-enhanced 42 --next-page-token <token>
+
+# Force reconcile specific issues before searching
+atlas jira epic issues-enhanced 42 --reconcile-issues 10001,10002
 
 # Move issues into an epic
 atlas jira epic move-issues 42 --issues PROJ-1,PROJ-2,PROJ-3
@@ -1605,11 +1652,17 @@ atlas jira epic rank 42 --before 99
 # Rank epic 42 after epic PROJ-5
 atlas jira epic rank 42 --after PROJ-5
 
-# List all issues without an epic
+# List all issues without an epic (deprecated agile, offset-paginated)
 atlas jira epic issues-none
 
 # List issues without an epic with pagination
 atlas jira epic issues-none --start-at 50 --max-results 50
+
+# List all issues without an epic (token-paginated, non-deprecated)
+atlas jira epic issues-none-enhanced
+
+# List issues without an epic with JQL filter (token-paginated)
+atlas jira epic issues-none-enhanced --jql "priority = High" --fields summary,status
 
 # Remove issues from their epics
 atlas jira epic remove-issues --issues PROJ-10,PROJ-11

@@ -262,8 +262,8 @@ RESOURCES:
   status        list, get
   status-category  list, get
   boards        list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced
-  sprints       get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
-  epic                   get, update, issues, move-issues, rank, issues-none, remove-issues
+  sprints       get, create, update, delete, get-issues, get-issues-enhanced, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap
+  epic                   get, update, issues, issues-enhanced, move-issues, rank, issues-none, issues-none-enhanced, remove-issues
   backlog                move
   announcement-banner    get, update
   application-role       list, get
