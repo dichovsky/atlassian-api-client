@@ -198,7 +198,7 @@ export class UsersResource {
       method: 'PUT',
       path: `${this.baseUrl}/user/columns`,
       query,
-      body: columns,
+      body: { columns },
     });
   }
 
