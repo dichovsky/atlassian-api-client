@@ -112,6 +112,7 @@ const GLOBAL_OPTIONS = {
   // boards-specific options
   'filter-id': { type: 'string' as const },
   feature: { type: 'string' as const },
+  enabling: { type: 'string' as const },
   released: { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },

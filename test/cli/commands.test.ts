@@ -12171,33 +12171,55 @@ describe('executeJiraCommand', () => {
     });
 
     // B245: boards toggle-feature
-    it('boards toggle-feature calls client.boards.toggleFeature with boardId, feature, state', async () => {
+    it('boards toggle-feature calls client.boards.toggleFeature with boardId, feature, enabling=false', async () => {
       const payload = { features: [] };
       jiraBoardsMock.toggleFeature.mockResolvedValue(payload);
       const result = await executeJiraCommand(
-        cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP', state: 'DISABLED' }),
+        cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP', enabling: 'false' }),
         GLOBALS,
       );
       expect(jiraBoardsMock.toggleFeature).toHaveBeenCalledWith(42, {
         feature: 'SIMPLE_ROADMAP',
-        state: 'DISABLED',
+        enabling: false,
       });
       expect(result).toEqual(payload);
     });
 
+    it('boards toggle-feature calls client.boards.toggleFeature with enabling=true', async () => {
+      const payload = { features: [] };
+      jiraBoardsMock.toggleFeature.mockResolvedValue(payload);
+      await executeJiraCommand(
+        cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP', enabling: 'true' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.toggleFeature).toHaveBeenCalledWith(42, {
+        feature: 'SIMPLE_ROADMAP',
+        enabling: true,
+      });
+    });
+
     it('boards toggle-feature throws when --feature is missing', async () => {
       await expect(
-        executeJiraCommand(cmd('boards', 'toggle-feature', ['42'], { state: 'ENABLED' }), GLOBALS),
+        executeJiraCommand(cmd('boards', 'toggle-feature', ['42'], { enabling: 'true' }), GLOBALS),
       ).rejects.toThrow('Missing required option: --feature');
     });
 
-    it('boards toggle-feature throws when --state is invalid', async () => {
+    it('boards toggle-feature throws when --enabling is missing', async () => {
       await expect(
         executeJiraCommand(
-          cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP', state: 'bad' }),
+          cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('--state must be ENABLED or DISABLED');
+      ).rejects.toThrow('Missing required option: --enabling');
+    });
+
+    it('boards toggle-feature throws when --enabling is invalid', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'toggle-feature', ['42'], { feature: 'SIMPLE_ROADMAP', enabling: 'bad' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow("expected 'true' or 'false'");
     });
 
     // B899: boards get-issues
