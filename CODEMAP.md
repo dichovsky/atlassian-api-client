@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "5a3f4faddf9298e7c026a938a5a50d002aea3d721538db3bbf5a2e2c098adac8",
+  "sourceHash": "7143dc96d4191dc9a0c47580a749c1a97d03232a82b8151e2001edd1d43e8567",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -25847,67 +25847,67 @@
             {
               "name": "get",
               "kind": "method",
-              "line": 206
+              "line": 209
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 224
+              "line": 227
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 239
+              "line": 242
             },
             {
               "name": "listBulk",
               "kind": "method",
-              "line": 259
+              "line": 262
             },
             {
               "name": "listAllBulk",
               "kind": "method",
-              "line": 277
+              "line": 280
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 297
+              "line": 300
             },
             {
               "name": "listAllMembers",
               "kind": "method",
-              "line": 314
+              "line": 317
             },
             {
               "name": "removeUser",
               "kind": "method",
-              "line": 334
+              "line": 337
             },
             {
               "name": "addUser",
               "kind": "method",
-              "line": 353
+              "line": 356
             }
           ]
         },
         {
           "name": "buildBulkQuery",
           "kind": "function",
-          "line": 370,
+          "line": 373,
           "signature": "function buildBulkQuery( params: ListBulkGroupsParams | undefined, ): Record<string, string | number | boolean | undefin…"
         },
         {
           "name": "buildBulkPath",
           "kind": "function",
-          "line": 384,
+          "line": 387,
           "signature": "function buildBulkPath(basePath: string, params: ListBulkGroupsParams | undefined): string",
           "jsdoc": "Append the repeated `groupId` and `groupName` (`type: array`) params to the bulk path."
         },
         {
           "name": "buildMemberQuery",
           "kind": "function",
-          "line": 390,
+          "line": 393,
           "signature": "function buildMemberQuery( params: ListGroupMembersParams | undefined, ): Record<string, string | number | boolean | und…"
         }
       ],

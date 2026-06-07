@@ -186,13 +186,16 @@ export class GroupsResource {
   async picker(params?: GroupPickerParams): Promise<GroupPickerResponse> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.query !== undefined) query['query'] = params.query;
-    if (params?.exclude !== undefined) query['exclude'] = params.exclude.join(',');
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params?.userName !== undefined) query['userName'] = params.userName;
 
+    // `exclude` is `type:array` in the Jira v3 spec — emit as repeated params
+    // built into the path (?exclude=g1&exclude=g2), not CSV.
+    const path = appendRepeatedParams(`${this.baseUrl}/groups/picker`, 'exclude', params?.exclude);
+
     const response = await this.transport.request<GroupPickerResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/groups/picker`,
+      path,
       query,
     });
     return response.data;
