@@ -452,9 +452,16 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       );
       return { watching: true };
     }
-    case 'delete-all-worklogs':
-      await client.issues.deleteAllWorklogs(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'));
+    case 'delete-all-worklogs': {
+      const worklogIds = splitCsvIds(requireOpt(opts['ids'], '--ids')).map((s) =>
+        parsePositiveIntArg(s, '--ids'),
+      );
+      await client.issues.deleteAllWorklogs(
+        requireArg(cmd.positionalArgs[0], 'issueIdOrKey'),
+        worklogIds,
+      );
       return { deleted: true };
+    }
     case 'list-worklogs':
       return client.issues.listWorklogs(requireArg(cmd.positionalArgs[0], 'issueIdOrKey'), {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),

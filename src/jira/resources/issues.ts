@@ -188,9 +188,13 @@ export interface MultiIssueProperties {
 
 // ── Issue watching ────────────────────────────────────────────────────────────
 
+/**
+ * Result of a bulk-watch submission.
+ * Spec: POST /rest/api/3/bulk/issues/watch (operationId submitBulkWatch) responds 201
+ * with SubmittedBulkOperation { taskId } — not { watched, failed } (#207).
+ */
 export interface IssueBulkWatchResult {
-  readonly watched?: number;
-  readonly failed?: Record<string, unknown>;
+  readonly taskId: string;
 }
 
 // ── Archive export ────────────────────────────────────────────────────────────
@@ -815,13 +819,19 @@ export class IssuesResource {
   // ── Worklog (B505–B515) ───────────────────────────────────────────────────
 
   /**
-   * Delete all worklogs for an issue (B505).
+   * Bulk delete worklogs for an issue (B505).
    * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog
+   * Spec: operationId bulkDeleteWorklogs — requires WorklogIdsRequestBean { ids } body (#204).
+   * Returns void on success. Per the Jira v3 spec, bulkDeleteWorklogs can return 204 (full
+   * success) or 200 (partial success with a message body). This method does not surface the
+   * 200 partial-success payload — callers cannot distinguish partial from full success
+   * (known limitation; surfacing the payload would require a breaking return-type change).
    */
-  async deleteAllWorklogs(issueIdOrKey: string): Promise<void> {
+  async deleteAllWorklogs(issueIdOrKey: string, ids: number[]): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
       path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}/worklog`,
+      body: { ids },
     });
   }
 
@@ -1043,9 +1053,11 @@ export class IssuesResource {
   /**
    * Archive issues by JQL (async) (B517).
    * POST /rest/api/3/issue/archive
+   * Spec: operationId archiveIssuesAsync — responds 202 with a status-URL string, not IssueArchiveResult (#206).
+   * The returned string is the URL to poll the archival task's status.
    */
-  async archiveIssuesByJql(jql: string): Promise<IssueArchiveResult> {
-    const response = await this.transport.request<IssueArchiveResult>({
+  async archiveIssuesByJql(jql: string): Promise<string> {
+    const response = await this.transport.request<string>({
       method: 'POST',
       path: `${this.baseUrl}/issue/archive`,
       body: { jql },
@@ -1211,13 +1223,15 @@ export class IssuesResource {
 
   /**
    * Start watching issues in bulk (B529).
-   * POST /rest/api/3/issue/watching
+   * POST /rest/api/3/bulk/issues/watch
+   * Spec: operationId submitBulkWatch — write endpoint requiring { selectedIssueIdsOrKeys } body (#207).
+   * The old code targeted /issue/watching (getIsWatchingIssueBulk), a read-only endpoint that watches nothing.
    */
   async watchIssuesBulk(data: { issueIds: string[] }): Promise<IssueBulkWatchResult> {
     const response = await this.transport.request<IssueBulkWatchResult>({
       method: 'POST',
-      path: `${this.baseUrl}/issue/watching`,
-      body: { issueIds: data.issueIds },
+      path: `${this.baseUrl}/bulk/issues/watch`,
+      body: { selectedIssueIdsOrKeys: data.issueIds },
     });
     return response.data;
   }

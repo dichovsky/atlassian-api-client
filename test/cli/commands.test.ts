@@ -9031,20 +9031,26 @@ describe('executeJiraCommand', () => {
 
     // ── worklog ───────────────────────────────────────────────────────────────
 
-    it('issues delete-all-worklogs calls deleteAllWorklogs and returns { deleted: true }', async () => {
+    it('issues delete-all-worklogs calls deleteAllWorklogs with ids and returns { deleted: true }', async () => {
       jiraIssuesMock.deleteAllWorklogs.mockResolvedValue(undefined);
       const result = await executeJiraCommand(
-        cmd('issues', 'delete-all-worklogs', ['PROJ-1']),
+        cmd('issues', 'delete-all-worklogs', ['PROJ-1'], { ids: '10001,10002' }),
         GLOBALS,
       );
-      expect(jiraIssuesMock.deleteAllWorklogs).toHaveBeenCalledWith('PROJ-1');
+      expect(jiraIssuesMock.deleteAllWorklogs).toHaveBeenCalledWith('PROJ-1', [10001, 10002]);
       expect(result).toEqual({ deleted: true });
     });
 
     it('issues delete-all-worklogs throws when issueIdOrKey is missing', async () => {
       await expect(
-        executeJiraCommand(cmd('issues', 'delete-all-worklogs', []), GLOBALS),
+        executeJiraCommand(cmd('issues', 'delete-all-worklogs', [], { ids: '10001' }), GLOBALS),
       ).rejects.toThrow('issueIdOrKey');
+    });
+
+    it('issues delete-all-worklogs throws when --ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'delete-all-worklogs', ['PROJ-1']), GLOBALS),
+      ).rejects.toThrow('--ids');
     });
 
     it('issues list-worklogs calls listWorklogs', async () => {
@@ -9383,8 +9389,10 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--ids');
     });
 
-    it('issues archive-issues-jql calls archiveIssuesByJql with jql (POST)', async () => {
-      jiraIssuesMock.archiveIssuesByJql.mockResolvedValue({ archived: 5, failed: 0 });
+    it('issues archive-issues-jql calls archiveIssuesByJql with jql (POST) and returns task URL (#206)', async () => {
+      // Spec: POST /issue/archive (archiveIssuesAsync) responds 202 with a status-URL string.
+      const taskUrl = 'https://your-domain.atlassian.net/rest/api/3/task/10010';
+      jiraIssuesMock.archiveIssuesByJql.mockResolvedValue(taskUrl);
       const result = await executeJiraCommand(
         cmd('issues', 'archive-issues-jql', [], { jql: 'project = PROJ AND status = Done' }),
         GLOBALS,
@@ -9392,7 +9400,7 @@ describe('executeJiraCommand', () => {
       expect(jiraIssuesMock.archiveIssuesByJql).toHaveBeenCalledWith(
         'project = PROJ AND status = Done',
       );
-      expect(result).toMatchObject({ archived: 5 });
+      expect(result).toBe(taskUrl);
     });
 
     it('issues archive-issues-jql throws when --jql is missing', async () => {
@@ -9567,8 +9575,9 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--ids');
     });
 
-    it('issues watch-issues-bulk calls watchIssuesBulk with issueIds', async () => {
-      jiraIssuesMock.watchIssuesBulk.mockResolvedValue({ watched: 2, failed: {} });
+    it('issues watch-issues-bulk calls watchIssuesBulk with issueIds and returns taskId (#207)', async () => {
+      // Spec: POST /bulk/issues/watch (submitBulkWatch) responds 201 with { taskId }.
+      jiraIssuesMock.watchIssuesBulk.mockResolvedValue({ taskId: 'task-123' });
       const result = await executeJiraCommand(
         cmd('issues', 'watch-issues-bulk', [], { 'issue-ids': 'PROJ-1,PROJ-2' }),
         GLOBALS,
@@ -9576,7 +9585,7 @@ describe('executeJiraCommand', () => {
       expect(jiraIssuesMock.watchIssuesBulk).toHaveBeenCalledWith({
         issueIds: ['PROJ-1', 'PROJ-2'],
       });
-      expect(result).toMatchObject({ watched: 2 });
+      expect(result).toMatchObject({ taskId: 'task-123' });
     });
 
     it('issues watch-issues-bulk throws when --issue-ids is missing', async () => {
