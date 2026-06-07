@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "d9a9c8c66f4d8427e4e610626608a0d4a45ebee80ed2733f67e0fdf70bbf3f15",
+  "sourceHash": "4174cf3426f207f5ea40abbd2ab692153664a7cc153847c69d056b79997c8703",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -4306,758 +4306,758 @@
         {
           "name": "executeSecurityLevel",
           "kind": "function",
-          "line": 2406,
+          "line": 2413,
           "signature": "async function executeSecurityLevel(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLicense",
           "kind": "function",
-          "line": 2415,
+          "line": 2422,
           "signature": "async function executeLicense(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeSettings",
           "kind": "function",
-          "line": 2430,
+          "line": 2437,
           "signature": "async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRedact",
           "kind": "function",
-          "line": 2452,
+          "line": 2459,
           "signature": "async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFlag",
           "kind": "function",
-          "line": 2476,
+          "line": 2483,
           "signature": "async function executeFlag(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeTask",
           "kind": "function",
-          "line": 2488,
+          "line": 2495,
           "signature": "async function executeTask(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAvatar",
           "kind": "function",
-          "line": 2500,
+          "line": 2507,
           "signature": "async function executeAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeCustomFieldOption",
           "kind": "function",
-          "line": 2509,
+          "line": 2516,
           "signature": "async function executeCustomFieldOption(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 2518,
+          "line": 2525,
           "signature": "async function executeClassificationLevels( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeLatest",
           "kind": "function",
-          "line": 2530,
+          "line": 2537,
           "signature": "async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRemoteLink",
           "kind": "function",
-          "line": 2555,
+          "line": 2562,
           "signature": "async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeServiceRegistry",
           "kind": "function",
-          "line": 2567,
+          "line": 2574,
           "signature": "async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAddons",
           "kind": "function",
-          "line": 2576,
+          "line": 2583,
           "signature": "async function executeAddons(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeExistsByProperties",
           "kind": "function",
-          "line": 2606,
+          "line": 2613,
           "signature": "async function executeExistsByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueType",
           "kind": "function",
-          "line": 2620,
+          "line": 2627,
           "signature": "async function executeIssueType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asIssueTypeKind",
           "kind": "function",
-          "line": 2729,
+          "line": 2736,
           "signature": "function asIssueTypeKind(value: string | boolean | undefined): 'subtask' | 'standard' | undefined"
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 2736,
+          "line": 2743,
           "signature": "async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsv",
           "kind": "function",
-          "line": 2851,
+          "line": 2858,
           "signature": "function parseCsv(value: string | boolean | undefined): string[] | undefined"
         },
         {
           "name": "parseIntArg",
           "kind": "function",
-          "line": 2861,
+          "line": 2868,
           "signature": "function parseIntArg(value: string, name: string): number"
         },
         {
           "name": "parseNonNegativeIntArg",
           "kind": "function",
-          "line": 2869,
+          "line": 2876,
           "signature": "function parseNonNegativeIntArg(value: string, name: string): number"
         },
         {
           "name": "BULK_ACTIONS",
           "kind": "variable",
-          "line": 2877,
+          "line": 2884,
           "signature": "const BULK_ACTIONS = [ 'create-issues', 'delete-issues', 'get-fields', 'edit-fields', 'move-issues', 'get-transitions', …"
         },
         {
           "name": "splitCsvIds",
           "kind": "function",
-          "line": 2900,
+          "line": 2907,
           "signature": "function splitCsvIds(raw: string): string[]"
         },
         {
           "name": "csvFlag",
           "kind": "function",
-          "line": 2916,
+          "line": 2923,
           "signature": "function csvFlag(value: string | boolean | undefined): string[] | undefined",
           "jsdoc": "Split a `--fields`/`--expand`-style CSV flag into trimmed, non-empty tokens. Returns `undefined` when the flag was not supplied, or when it contains no non-empty tokens (e.g. `--fields ,`), so callers can omit it rather than sending an empty `fields=` query param (which Jira reads as a filter, not as \"all fields\"). Trimming matters: an untrimmed ` status` token is sent verbatim as a leading-space field name (`fields=summary,%20status`) that Jira does not recognise and silently drops from the response."
         },
         {
           "name": "parseJsonValueFlag",
           "kind": "function",
-          "line": 2923,
+          "line": 2930,
           "signature": "function parseJsonValueFlag(raw: string, flag: string): unknown"
         },
         {
           "name": "parseJsonObjectFlag",
           "kind": "function",
-          "line": 2931,
+          "line": 2938,
           "signature": "function parseJsonObjectFlag(raw: string, flag: string): Record<string, unknown>"
         },
         {
           "name": "parseJsonArrayFlag",
           "kind": "function",
-          "line": 2939,
+          "line": 2946,
           "signature": "function parseJsonArrayFlag(raw: string, flag: string): unknown[]"
         },
         {
           "name": "executeBulk",
           "kind": "function",
-          "line": 2947,
+          "line": 2954,
           "signature": "async function executeBulk(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueAttachments",
           "kind": "function",
-          "line": 3106,
+          "line": 3113,
           "signature": "async function executeIssueAttachments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeUniversalAvatar",
           "kind": "function",
-          "line": 3170,
+          "line": 3177,
           "signature": "async function executeUniversalAvatar(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeComponent",
           "kind": "function",
-          "line": 3250,
+          "line": 3257,
           "signature": "async function executeComponent(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "COMPONENT_ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 3339,
+          "line": 3346,
           "signature": "const COMPONENT_ASSIGNEE_TYPES = [ 'PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED', ] as const;"
         },
         {
           "name": "asComponentAssigneeType",
           "kind": "function",
-          "line": 3346,
+          "line": 3353,
           "signature": "function asComponentAssigneeType( value: string | boolean | undefined, ): 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJEC…"
         },
         {
           "name": "TIME_FORMATS",
           "kind": "variable",
-          "line": 3359,
+          "line": 3366,
           "signature": "const TIME_FORMATS = ['pretty', 'days', 'hours'] as const;"
         },
         {
           "name": "DEFAULT_UNITS",
           "kind": "variable",
-          "line": 3360,
+          "line": 3367,
           "signature": "const DEFAULT_UNITS = ['minute', 'hour', 'day', 'week'] as const;"
         },
         {
           "name": "TimeFormat",
           "kind": "type",
-          "line": 3361,
+          "line": 3368,
           "signature": "type TimeFormat = (typeof TIME_FORMATS)[number];"
         },
         {
           "name": "DefaultUnit",
           "kind": "type",
-          "line": 3362,
+          "line": 3369,
           "signature": "type DefaultUnit = (typeof DEFAULT_UNITS)[number];"
         },
         {
           "name": "asTimeFormat",
           "kind": "function",
-          "line": 3364,
+          "line": 3371,
           "signature": "function asTimeFormat(value: string | boolean | undefined): TimeFormat | undefined"
         },
         {
           "name": "asDefaultUnit",
           "kind": "function",
-          "line": 3371,
+          "line": 3378,
           "signature": "function asDefaultUnit(value: string | boolean | undefined): DefaultUnit | undefined"
         },
         {
           "name": "asPositiveNumber",
           "kind": "function",
-          "line": 3378,
+          "line": 3385,
           "signature": "function asPositiveNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executeApplicationProperties",
           "kind": "function",
-          "line": 3387,
+          "line": 3394,
           "signature": "async function executeApplicationProperties( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeConfiguration",
           "kind": "function",
-          "line": 3421,
+          "line": 3428,
           "signature": "async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asStatusCategory",
           "kind": "function",
-          "line": 3483,
+          "line": 3490,
           "signature": "function asStatusCategory( value: string | boolean | undefined, ): 'TODO' | 'IN_PROGRESS' | 'DONE' | undefined"
         },
         {
           "name": "executeResolutions",
           "kind": "function",
-          "line": 3494,
+          "line": 3501,
           "signature": "async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FILTERS_ACTIONS",
           "kind": "variable",
-          "line": 3568,
+          "line": 3575,
           "signature": "const FILTERS_ACTIONS = [ 'search', 'get', 'create', 'update', 'delete', 'list-favourites', 'list-my', 'add-favourite', …"
         },
         {
           "name": "asFilterShareScope",
           "kind": "function",
-          "line": 3590,
+          "line": 3597,
           "signature": "function asFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE' | undefined"
         },
         {
           "name": "requireFilterShareScope",
           "kind": "function",
-          "line": 3599,
+          "line": 3606,
           "signature": "function requireFilterShareScope( value: string | boolean | undefined, ): 'GLOBAL' | 'AUTHENTICATED' | 'PRIVATE'"
         },
         {
           "name": "asFilterShareType",
           "kind": "function",
-          "line": 3607,
+          "line": 3614,
           "signature": "function asFilterShareType( value: string | boolean | undefined, ): | 'user' | 'group' | 'project' | 'projectRole' | 'gl…"
         },
         {
           "name": "requireFilterShareType",
           "kind": "function",
-          "line": 3636,
+          "line": 3643,
           "signature": "function requireFilterShareType( value: string | boolean | undefined, ): 'user' | 'group' | 'project' | 'projectRole' | …"
         },
         {
           "name": "executeFilters",
           "kind": "function",
-          "line": 3644,
+          "line": 3651,
           "signature": "async function executeFilters(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 3849,
+          "line": 3856,
           "signature": "const ISSUE_TYPE_SCREEN_SCHEMES_ACTIONS = [ 'list', 'create', 'update', 'delete', 'update-mapping', 'update-default-mapp…"
         },
         {
           "name": "executeIssueTypeScreenSchemes",
           "kind": "function",
-          "line": 3863,
+          "line": 3870,
           "signature": "async function executeIssueTypeScreenSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PERMISSION_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 3990,
+          "line": 3997,
           "signature": "const PERMISSION_SCHEMES_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-permissions', 'create-permission…"
         },
         {
           "name": "executePermissionSchemes",
           "kind": "function",
-          "line": 4002,
+          "line": 4009,
           "signature": "async function executePermissionSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_TYPE_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 4151,
+          "line": 4158,
           "signature": "const ISSUE_TYPE_SCHEMES_ACTIONS = [ 'list', 'list-mapping', 'list-project', 'create', 'update', 'delete', 'add-issue-ty…"
         },
         {
           "name": "executeIssueTypeSchemes",
           "kind": "function",
-          "line": 4164,
+          "line": 4171,
           "signature": "async function executeIssueTypeSchemes(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asMovePosition",
           "kind": "function",
-          "line": 4275,
+          "line": 4282,
           "signature": "function asMovePosition(value: string): 'First' | 'Last'"
         },
         {
           "name": "asVersionMovePosition",
           "kind": "function",
-          "line": 4280,
+          "line": 4287,
           "signature": "function asVersionMovePosition(value: string): 'Earlier' | 'Later' | 'First' | 'Last'"
         },
         {
           "name": "ROLES_ACTIONS",
           "kind": "variable",
-          "line": 4289,
+          "line": 4296,
           "signature": "const ROLES_ACTIONS = [ 'list', 'get', 'create', 'update', 'partial-update', 'delete', 'get-actors', 'add-actors', 'dele…"
         },
         {
           "name": "executeRoles",
           "kind": "function",
-          "line": 4301,
+          "line": 4308,
           "signature": "async function executeRoles(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "EXPRESSION_ACTIONS",
           "kind": "variable",
-          "line": 4397,
+          "line": 4404,
           "signature": "const EXPRESSION_ACTIONS = ['analyse', 'eval', 'evaluate'] as const;"
         },
         {
           "name": "executeExpression",
           "kind": "function",
-          "line": 4399,
+          "line": 4406,
           "signature": "async function executeExpression(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_COMMENTS_ACTIONS",
           "kind": "variable",
-          "line": 4467,
+          "line": 4474,
           "signature": "const ISSUE_COMMENTS_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-properties', 'get-property', 'set-pr…"
         },
         {
           "name": "executeIssueComments",
           "kind": "function",
-          "line": 4480,
+          "line": 4487,
           "signature": "async function executeIssueComments(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 4565,
+          "line": 4572,
           "signature": "async function executeLabels(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELD_CONFIGURATION_ACTIONS",
           "kind": "variable",
-          "line": 4582,
+          "line": 4589,
           "signature": "const FIELD_CONFIGURATION_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-fields', 'update-fields', ] as const;"
         },
         {
           "name": "executeFieldConfiguration",
           "kind": "function",
-          "line": 4591,
+          "line": 4598,
           "signature": "async function executeFieldConfiguration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "NOTIFICATION_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 4658,
+          "line": 4665,
           "signature": "const NOTIFICATION_SCHEMES_ACTIONS = [ 'list', 'create', 'get', 'update', 'add-notifications', 'delete', 'remove-notific…"
         },
         {
           "name": "executeNotificationSchemes",
           "kind": "function",
-          "line": 4669,
+          "line": 4676,
           "signature": "async function executeNotificationSchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "PRIORITYSCHEME_ACTIONS",
           "kind": "variable",
-          "line": 4767,
+          "line": 4774,
           "signature": "const PRIORITYSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-priorities', 'list-projects', 'suggested-ma…"
         },
         {
           "name": "asOrderBy",
           "kind": "function",
-          "line": 4778,
+          "line": 4785,
           "signature": "function asOrderBy(value: string | boolean | undefined): 'name' | '+name' | '-name' | undefined"
         },
         {
           "name": "asScreensOrderBy",
           "kind": "function",
-          "line": 4785,
+          "line": 4792,
           "signature": "function asScreensOrderBy( value: string | boolean | undefined, ): 'name' | '-name' | '+name' | 'id' | '-id' | '+id' | u…"
         },
         {
           "name": "parseIntCsv",
           "kind": "function",
-          "line": 4796,
+          "line": 4803,
           "signature": "function parseIntCsv(value: string | boolean | undefined, flag: string): number[] | undefined"
         },
         {
           "name": "executePrioritySchemeResource",
           "kind": "function",
-          "line": 4808,
+          "line": 4815,
           "signature": "async function executePrioritySchemeResource( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "asExportType",
           "kind": "function",
-          "line": 4986,
+          "line": 4993,
           "signature": "function asExportType(raw: string | undefined): 'CSV' | 'XLSX' | undefined"
         },
         {
           "name": "VERSION_ACTIONS",
           "kind": "variable",
-          "line": 4994,
+          "line": 5001,
           "signature": "const VERSION_ACTIONS = [ 'create', 'get', 'update', 'delete', 'merge', 'move', 'related-issue-counts', 'list-related-wo…"
         },
         {
           "name": "executeVersionResource",
           "kind": "function",
-          "line": 5010,
+          "line": 5017,
           "signature": "async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "CONFIG_ACTIONS",
           "kind": "variable",
-          "line": 5181,
+          "line": 5188,
           "signature": "const CONFIG_ACTIONS = [ 'list', 'create', 'delete', 'get', 'update', 'clone', 'list-fields', 'get-field-parameters', 'l…"
         },
         {
           "name": "executeConfig",
           "kind": "function",
-          "line": 5199,
+          "line": 5206,
           "signature": "async function executeConfig(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_SECURITY_SCHEMES_ACTIONS",
           "kind": "variable",
-          "line": 5323,
+          "line": 5330,
           "signature": "const ISSUE_SECURITY_SCHEMES_ACTIONS = [ 'get-all', 'create', 'get', 'update', 'list-members', 'delete', 'add-levels', '…"
         },
         {
           "name": "executeIssueSecuritySchemes",
           "kind": "function",
-          "line": 5343,
+          "line": 5350,
           "signature": "async function executeIssueSecuritySchemes( client: JiraClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "MOVE_FIELD_POSITIONS",
           "kind": "variable",
-          "line": 5534,
+          "line": 5541,
           "signature": "const MOVE_FIELD_POSITIONS = ['Earlier', 'Later', 'First', 'Last'] as const;"
         },
         {
           "name": "asMoveFieldPosition",
           "kind": "function",
-          "line": 5536,
+          "line": 5543,
           "signature": "function asMoveFieldPosition( value: string | boolean | undefined, ): 'Earlier' | 'Later' | 'First' | 'Last' | undefined"
         },
         {
           "name": "SCREENS_ACTIONS",
           "kind": "variable",
-          "line": 5547,
+          "line": 5554,
           "signature": "const SCREENS_ACTIONS = [ 'list', 'create', 'delete', 'update', 'list-available-fields', 'list-tabs', 'create-tab', 'del…"
         },
         {
           "name": "executeScreens",
           "kind": "function",
-          "line": 5566,
+          "line": 5573,
           "signature": "async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SCREENSCHEME_ACTIONS",
           "kind": "variable",
-          "line": 5745,
+          "line": 5752,
           "signature": "const SCREENSCHEME_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];"
         },
         {
           "name": "executeScreenScheme",
           "kind": "function",
-          "line": 5747,
+          "line": 5754,
           "signature": "async function executeScreenScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "asScreenSchemeOrderBy",
           "kind": "function",
-          "line": 5849,
+          "line": 5856,
           "signature": "function asScreenSchemeOrderBy( value: string | boolean | undefined, ): 'name' | '-name' | '+name' | 'id' | '-id' | '+id…"
         },
         {
           "name": "requireIntOpt",
           "kind": "function",
-          "line": 5860,
+          "line": 5867,
           "signature": "function requireIntOpt(value: string | boolean | undefined, name: string): number"
         },
         {
           "name": "PLANS_ACTIONS",
           "kind": "variable",
-          "line": 5872,
+          "line": 5879,
           "signature": "const PLANS_ACTIONS = [ 'list', 'create', 'get', 'update', 'archive', 'duplicate', 'list-teams', 'add-atlassian-team', '…"
         },
         {
           "name": "PLANNING_STYLES",
           "kind": "variable",
-          "line": 5891,
+          "line": 5898,
           "signature": "const PLANNING_STYLES: readonly PlanningStyle[] = ['Scrum', 'Kanban'];"
         },
         {
           "name": "asEnumPlans",
           "kind": "function",
-          "line": 5893,
+          "line": 5900,
           "signature": "function asEnumPlans<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…"
         },
         {
           "name": "asFiniteNumber",
           "kind": "function",
-          "line": 5905,
+          "line": 5912,
           "signature": "function asFiniteNumber(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "executePlans",
           "kind": "function",
-          "line": 5912,
+          "line": 5919,
           "signature": "async function executePlans(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKFLOWS_ACTIONS",
           "kind": "variable",
-          "line": 6099,
+          "line": 6106,
           "signature": "const WORKFLOWS_ACTIONS = [ 'list', 'get', 'delete', 'issue-type-usages', 'project-usages', 'workflow-scheme-usages', 'b…"
         },
         {
           "name": "executeWorkflows",
           "kind": "function",
-          "line": 6126,
+          "line": 6133,
           "signature": "async function executeWorkflows(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKFLOWSCHEME_ACTIONS",
           "kind": "variable",
-          "line": 6389,
+          "line": 6396,
           "signature": "const WORKFLOWSCHEME_ACTIONS = [ 'list', 'create', 'delete', 'get', 'update', 'delete-default', 'get-default', 'set-defa…"
         },
         {
           "name": "drainWorkflowSchemes",
           "kind": "function",
-          "line": 6427,
+          "line": 6434,
           "signature": "async function drainWorkflowSchemes(iter: AsyncGenerator<unknown>): Promise<unknown[]>"
         },
         {
           "name": "executeWorkflowScheme",
           "kind": "function",
-          "line": 6433,
+          "line": 6440,
           "signature": "async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "FIELDS_ACTIONS",
           "kind": "variable",
-          "line": 6707,
+          "line": 6714,
           "signature": "const FIELDS_ACTIONS = [ 'field-list', 'field-list-all', 'field-create', 'field-update', 'field-delete', 'context-list',…"
         },
         {
           "name": "executeFields",
           "kind": "function",
-          "line": 6749,
+          "line": 6756,
           "signature": "async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "JQL_ACTIONS",
           "kind": "variable",
-          "line": 7218,
+          "line": 7225,
           "signature": "const JQL_ACTIONS = [ 'autocomplete-data', 'autocomplete-data-post', 'autocomplete-suggestions', 'get-precomputations', …"
         },
         {
           "name": "executeJql",
           "kind": "function",
-          "line": 7231,
+          "line": 7238,
           "signature": "async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeIssueLinkType",
           "kind": "function",
-          "line": 7366,
+          "line": 7373,
           "signature": "async function executeIssueLinkType(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ACCESS_LEVELS",
           "kind": "variable",
-          "line": 7408,
+          "line": 7415,
           "signature": "const ACCESS_LEVELS = ['open', 'limited', 'private', 'free'] as const;"
         },
         {
           "name": "ASSIGNEE_TYPES",
           "kind": "variable",
-          "line": 7409,
+          "line": 7416,
           "signature": "const ASSIGNEE_TYPES = ['PROJECT_DEFAULT', 'COMPONENT_LEAD', 'PROJECT_LEAD', 'UNASSIGNED'] as const;"
         },
         {
           "name": "SAVE_TEMPLATE_TYPES",
           "kind": "variable",
-          "line": 7410,
+          "line": 7417,
           "signature": "const SAVE_TEMPLATE_TYPES = ['LIVE', 'SNAPSHOT'] as const;"
         },
         {
           "name": "PROJECT_TEMPLATE_ACTIONS",
           "kind": "variable",
-          "line": 7412,
+          "line": 7419,
           "signature": "const PROJECT_TEMPLATE_ACTIONS = [ 'create', 'edit-template', 'live-template', 'remove-template', 'save-template', ] as …"
         },
         {
           "name": "executeProjectTemplate",
           "kind": "function",
-          "line": 7420,
+          "line": 7427,
           "signature": "async function executeProjectTemplate(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "WORKLOG_ACTIONS",
           "kind": "variable",
-          "line": 7625,
+          "line": 7632,
           "signature": "const WORKLOG_ACTIONS = ['deleted', 'list', 'updated'] as const;"
         },
         {
           "name": "executeWorklog",
           "kind": "function",
-          "line": 7627,
+          "line": 7634,
           "signature": "async function executeWorklog(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "UI_MODIFICATIONS_ACTIONS",
           "kind": "variable",
-          "line": 7669,
+          "line": 7676,
           "signature": "const UI_MODIFICATIONS_ACTIONS = ['list', 'list-all', 'create', 'update', 'delete'];"
         },
         {
           "name": "executeUiModifications",
           "kind": "function",
-          "line": 7671,
+          "line": 7678,
           "signature": "async function executeUiModifications(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executePermissions",
           "kind": "function",
-          "line": 7750,
+          "line": 7757,
           "signature": "async function executePermissions(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeRepository",
           "kind": "function",
-          "line": 7793,
+          "line": 7800,
           "signature": "async function executeRepository(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "ISSUE_LINK_ACTIONS",
           "kind": "variable",
-          "line": 7834,
+          "line": 7841,
           "signature": "const ISSUE_LINK_ACTIONS = ['create', 'get', 'delete'] as const;"
         },
         {
           "name": "executeIssueLink",
           "kind": "function",
-          "line": 7836,
+          "line": 7843,
           "signature": "async function executeIssueLink(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "PIPELINES_ACTIONS",
           "kind": "variable",
-          "line": 7867,
+          "line": 7874,
           "signature": "const PIPELINES_ACTIONS = [ 'get-build', 'delete-build', 'get-deployment', 'delete-deployment', 'get-deployment-gating-s…"
         },
         {
           "name": "executePipelines",
           "kind": "function",
-          "line": 7875,
+          "line": 7882,
           "signature": "async function executePipelines(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "LINKED_WORKSPACES_ACTIONS",
           "kind": "variable",
-          "line": 7923,
+          "line": 7930,
           "signature": "const LINKED_WORKSPACES_ACTIONS = [ 'list-operations', 'bulk-delete-operations', 'bulk-create-operations', 'list-securit…"
         },
         {
           "name": "executeLinkedWorkspaces",
           "kind": "function",
-          "line": 7933,
+          "line": 7940,
           "signature": "async function executeLinkedWorkspaces(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "BULK_BY_PROPERTIES_ACTIONS",
           "kind": "variable",
-          "line": 7971,
+          "line": 7978,
           "signature": "const BULK_BY_PROPERTIES_ACTIONS = [ 'delete-builds', 'delete-deployments', 'delete-devinfo', 'delete-devops-components'…"
         },
         {
           "name": "executeBulkByProperties",
           "kind": "function",
-          "line": 7982,
+          "line": 7989,
           "signature": "async function executeBulkByProperties(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "DASHBOARDS_ACTIONS",
           "kind": "variable",
-          "line": 8057,
+          "line": 8064,
           "signature": "const DASHBOARDS_ACTIONS = [ 'list', 'get', 'create', 'update', 'delete', 'list-gadgets', 'add-gadget', 'update-gadget',…"
         },
         {
           "name": "executeDashboards",
           "kind": "function",
-          "line": 8078,
+          "line": 8085,
           "signature": "async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 8346,
+          "line": 8366,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 8354,
+          "line": 8374,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -5351,7 +5351,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 495,
+          "line": 498,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -22944,7 +22944,7 @@
         {
           "name": "ComponentAssigneeType",
           "kind": "type",
-          "line": 9,
+          "line": 8,
           "exported": true,
           "signature": "export type ComponentAssigneeType = | 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJECT_LEAD' | 'UNASSIGNED';",
           "jsdoc": "Assignment policy for the component."
@@ -22952,7 +22952,7 @@
         {
           "name": "ComponentUserRef",
           "kind": "interface",
-          "line": 16,
+          "line": 15,
           "exported": true,
           "signature": "export interface ComponentUserRef { readonly accountId: string; readonly displayName?: string; readonly active?: boolean…",
           "jsdoc": "Minimal user reference returned in component payloads."
@@ -22960,7 +22960,7 @@
         {
           "name": "Component",
           "kind": "interface",
-          "line": 24,
+          "line": 23,
           "exported": true,
           "signature": "export interface Component { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
           "jsdoc": "A Jira project component."
@@ -22968,7 +22968,7 @@
         {
           "name": "ListComponentsParams",
           "kind": "interface",
-          "line": 44,
+          "line": 43,
           "exported": true,
           "signature": "export interface ListComponentsParams { readonly projectIdsOrKeys?: readonly string[]; readonly startAt?: number; readon…",
           "jsdoc": "Query parameters for `GET /rest/api/3/component`."
@@ -22976,7 +22976,7 @@
         {
           "name": "CreateComponentData",
           "kind": "interface",
-          "line": 53,
+          "line": 52,
           "exported": true,
           "signature": "export interface CreateComponentData { readonly name: string; readonly description?: string; readonly leadAccountId?: st…",
           "jsdoc": "Request body for `POST /rest/api/3/component`."
@@ -22984,7 +22984,7 @@
         {
           "name": "UpdateComponentData",
           "kind": "interface",
-          "line": 65,
+          "line": 64,
           "exported": true,
           "signature": "export interface UpdateComponentData { readonly name?: string; readonly description?: string; readonly leadAccountId?: s…",
           "jsdoc": "Request body for `PUT /rest/api/3/component/{id}`."
@@ -22992,7 +22992,7 @@
         {
           "name": "DeleteComponentParams",
           "kind": "interface",
-          "line": 74,
+          "line": 73,
           "exported": true,
           "signature": "export interface DeleteComponentParams { readonly moveIssuesTo?: string; }",
           "jsdoc": "Query parameters for `DELETE /rest/api/3/component/{id}`."
@@ -23000,7 +23000,7 @@
         {
           "name": "ComponentRelatedIssueCounts",
           "kind": "interface",
-          "line": 80,
+          "line": 79,
           "exported": true,
           "signature": "export interface ComponentRelatedIssueCounts { readonly self?: string; readonly issueCount: number; }",
           "jsdoc": "Response shape for `GET /rest/api/3/component/{id}/relatedIssueCounts`."
@@ -23008,7 +23008,7 @@
         {
           "name": "ComponentResource",
           "kind": "class",
-          "line": 93,
+          "line": 92,
           "exported": true,
           "signature": "export class ComponentResource",
           "jsdoc": "Jira Project Components resource — flat `/rest/api/3/component` surface (paginated list, create, get, update, delete, relatedIssueCounts).",
@@ -23016,49 +23016,49 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 94
+              "line": 93
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 100
+              "line": 99
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 127
+              "line": 121
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 150
+              "line": 145
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 172
+              "line": 167
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 181
+              "line": 176
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 197
+              "line": 192
             },
             {
               "name": "getRelatedIssueCounts",
               "kind": "method",
-              "line": 208
+              "line": 203
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 217,
+          "line": 212,
           "signature": "function buildListQuery( params?: ListComponentsParams, ): Record<string, string | number | boolean | undefined>"
         }
       ],
@@ -23066,7 +23066,6 @@
         "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -23076,7 +23075,7 @@
         {
           "name": "FieldAssociationSchemeLinks",
           "kind": "interface",
-          "line": 11,
+          "line": 10,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeLinks { readonly associations?: string; readonly projects?: string; }",
           "jsdoc": "Links returned as part of a field association scheme response."
@@ -23084,7 +23083,7 @@
         {
           "name": "FieldAssociationSchemeMatchedFilters",
           "kind": "interface",
-          "line": 17,
+          "line": 16,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeMatchedFilters { readonly projectIds?: number[]; readonly query?: string; }",
           "jsdoc": "Matched filter details on a list response item."
@@ -23092,7 +23091,7 @@
         {
           "name": "FieldAssociationSchemeResponse",
           "kind": "interface",
-          "line": 23,
+          "line": 22,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeResponse { readonly description?: string; readonly fieldsCount?: number; readonly…",
           "jsdoc": "A field association scheme summary as returned by the list endpoint."
@@ -23100,7 +23099,7 @@
         {
           "name": "FieldAssociationSchemeById",
           "kind": "interface",
-          "line": 34,
+          "line": 33,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeById { readonly description?: string; readonly fieldsCount?: number; readonly id?…",
           "jsdoc": "Response from GET /rest/api/3/config/fieldschemes/{id}."
@@ -23108,7 +23107,7 @@
         {
           "name": "CreatedFieldAssociationScheme",
           "kind": "interface",
-          "line": 44,
+          "line": 43,
           "exported": true,
           "signature": "export interface CreatedFieldAssociationScheme { readonly description?: string; readonly id?: number; readonly links?: F…",
           "jsdoc": "Response from POST /rest/api/3/config/fieldschemes (create / clone)."
@@ -23116,7 +23115,7 @@
         {
           "name": "UpdatedFieldAssociationScheme",
           "kind": "interface",
-          "line": 52,
+          "line": 51,
           "exported": true,
           "signature": "export interface UpdatedFieldAssociationScheme { readonly description?: string; readonly id?: number; readonly links?: F…",
           "jsdoc": "Response from PUT /rest/api/3/config/fieldschemes/{id}."
@@ -23124,7 +23123,7 @@
         {
           "name": "DeletedFieldAssociationScheme",
           "kind": "interface",
-          "line": 60,
+          "line": 59,
           "exported": true,
           "signature": "export interface DeletedFieldAssociationScheme { readonly deleted?: boolean; readonly id?: string; }",
           "jsdoc": "Response from DELETE /rest/api/3/config/fieldschemes/{id}."
@@ -23132,7 +23131,7 @@
         {
           "name": "FieldAssociationParameters",
           "kind": "interface",
-          "line": 66,
+          "line": 65,
           "exported": true,
           "signature": "export interface FieldAssociationParameters { readonly description?: string; readonly isRequired: boolean; }",
           "jsdoc": "Field association parameters returned by GET …/{id}/fields/{fieldId}/parameters."
@@ -23140,7 +23139,7 @@
         {
           "name": "WorkTypeParameters",
           "kind": "interface",
-          "line": 72,
+          "line": 71,
           "exported": true,
           "signature": "export interface WorkTypeParameters { readonly description?: string; readonly isRequired: boolean; readonly workTypeId: …",
           "jsdoc": "Per-work-type parameter override."
@@ -23148,7 +23147,7 @@
         {
           "name": "FieldAssociationSchemeItemParameters",
           "kind": "interface",
-          "line": 79,
+          "line": 78,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeItemParameters { readonly fieldId: string; readonly parameters?: FieldAssociation…",
           "jsdoc": "Response from GET /rest/api/3/config/fieldschemes/{id}/fields/{fieldId}/parameters."
@@ -23156,7 +23155,7 @@
         {
           "name": "FieldAssociationSchemeFieldResult",
           "kind": "interface",
-          "line": 86,
+          "line": 85,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeFieldResult { readonly allowedOperations?: string[]; readonly fieldId?: string; r…",
           "jsdoc": "A single field search result within a scheme."
@@ -23164,7 +23163,7 @@
         {
           "name": "FieldAssociationSchemeProjectResult",
           "kind": "interface",
-          "line": 95,
+          "line": 94,
           "exported": true,
           "signature": "export interface FieldAssociationSchemeProjectResult { readonly avatarUrls?: Record<string, string>; readonly deleted?: …",
           "jsdoc": "A single project associated with a field association scheme."
@@ -23172,7 +23171,7 @@
         {
           "name": "ProjectFieldSchemeMapping",
           "kind": "interface",
-          "line": 104,
+          "line": 103,
           "exported": true,
           "signature": "export interface ProjectFieldSchemeMapping { readonly projectId?: number; readonly schemeId?: number; }",
           "jsdoc": "A project-to-scheme mapping returned by GET /rest/api/3/config/fieldschemes/projects."
@@ -23180,7 +23179,7 @@
         {
           "name": "CreateFieldAssociationSchemeData",
           "kind": "interface",
-          "line": 112,
+          "line": 111,
           "exported": true,
           "signature": "export interface CreateFieldAssociationSchemeData { readonly name: string; readonly description?: string; }",
           "jsdoc": "Request body for POST /rest/api/3/config/fieldschemes and clone."
@@ -23188,7 +23187,7 @@
         {
           "name": "UpdateFieldAssociationSchemeData",
           "kind": "interface",
-          "line": 119,
+          "line": 118,
           "exported": true,
           "signature": "export interface UpdateFieldAssociationSchemeData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/{id}."
@@ -23196,7 +23195,7 @@
         {
           "name": "RemoveFieldAssociationsBody",
           "kind": "type",
-          "line": 128,
+          "line": 127,
           "exported": true,
           "signature": "export type RemoveFieldAssociationsBody = Record<string, { schemeIds: number[] }>;",
           "jsdoc": "Request body for DELETE /rest/api/3/config/fieldschemes/fields. Map of fieldId → { schemeIds: number[] }."
@@ -23204,7 +23203,7 @@
         {
           "name": "UpdateFieldAssociationsBody",
           "kind": "type",
-          "line": 134,
+          "line": 133,
           "exported": true,
           "signature": "export type UpdateFieldAssociationsBody = Record< string, { schemeIds: number[]; restrictedToWorkTypes?: number[] }[] >;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/fields. Map of fieldId → [{ schemeIds: number[], restrictedToWorkTypes?: number[] }]."
@@ -23212,7 +23211,7 @@
         {
           "name": "ParameterRemovalDetails",
           "kind": "interface",
-          "line": 140,
+          "line": 139,
           "exported": true,
           "signature": "export interface ParameterRemovalDetails { readonly parameters?: string[]; readonly schemeId?: number; readonly workType…",
           "jsdoc": "A single parameter removal detail."
@@ -23220,7 +23219,7 @@
         {
           "name": "RemoveFieldParametersBody",
           "kind": "type",
-          "line": 150,
+          "line": 149,
           "exported": true,
           "signature": "export type RemoveFieldParametersBody = Record<string, ParameterRemovalDetails[]>;",
           "jsdoc": "Request body for DELETE /rest/api/3/config/fieldschemes/fields/parameters. Map of fieldId → [ParameterRemovalDetails]."
@@ -23228,7 +23227,7 @@
         {
           "name": "FieldSchemeParametersUpdate",
           "kind": "interface",
-          "line": 153,
+          "line": 152,
           "exported": true,
           "signature": "export interface FieldSchemeParametersUpdate { readonly parameters?: { description?: string; isRequired?: boolean }; rea…",
           "jsdoc": "Parameters update payload for a single scheme entry."
@@ -23236,7 +23235,7 @@
         {
           "name": "UpdateFieldParametersBody",
           "kind": "type",
-          "line": 167,
+          "line": 166,
           "exported": true,
           "signature": "export type UpdateFieldParametersBody = Record<string, FieldSchemeParametersUpdate[]>;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/fields/parameters. Map of fieldId → [FieldSchemeParametersUpdate]."
@@ -23244,7 +23243,7 @@
         {
           "name": "AssociateProjectsBody",
           "kind": "type",
-          "line": 173,
+          "line": 172,
           "exported": true,
           "signature": "export type AssociateProjectsBody = Record<string, { projectIds: number[] }>;",
           "jsdoc": "Request body for PUT /rest/api/3/config/fieldschemes/projects. Map of schemeId → { projectIds: number[] }."
@@ -23252,7 +23251,7 @@
         {
           "name": "ListFieldAssociationSchemesParams",
           "kind": "interface",
-          "line": 178,
+          "line": 177,
           "exported": true,
           "signature": "export interface ListFieldAssociationSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly p…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes."
@@ -23260,7 +23259,7 @@
         {
           "name": "ListSchemeFieldsParams",
           "kind": "interface",
-          "line": 188,
+          "line": 187,
           "exported": true,
           "signature": "export interface ListSchemeFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly fieldId?: st…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/{id}/fields."
@@ -23268,7 +23267,7 @@
         {
           "name": "ListSchemeProjectsParams",
           "kind": "interface",
-          "line": 196,
+          "line": 195,
           "exported": true,
           "signature": "export interface ListSchemeProjectsParams { readonly startAt?: number; readonly maxResults?: number; readonly projectId?…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/{id}/projects."
@@ -23276,7 +23275,7 @@
         {
           "name": "GetProjectsWithFieldSchemesParams",
           "kind": "interface",
-          "line": 204,
+          "line": 203,
           "exported": true,
           "signature": "export interface GetProjectsWithFieldSchemesParams { readonly startAt?: number; readonly maxResults?: number; readonly p…",
           "jsdoc": "Query parameters for GET /rest/api/3/config/fieldschemes/projects."
@@ -23284,7 +23283,7 @@
         {
           "name": "ConfigResource",
           "kind": "class",
-          "line": 220,
+          "line": 219,
           "exported": true,
           "signature": "export class ConfigResource",
           "jsdoc": "Jira Config Field Association Schemes resource — B367-B381.",
@@ -23292,163 +23291,134 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 221
+              "line": 220
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 230
+              "line": 229
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 250
+              "line": 247
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 269
+              "line": 264
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 284
+              "line": 279
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 296
+              "line": 291
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 308
+              "line": 303
             },
             {
               "name": "clone",
               "kind": "method",
-              "line": 327
+              "line": 322
             },
             {
               "name": "listFields",
               "kind": "method",
-              "line": 345
+              "line": 340
             },
             {
               "name": "listFieldsAll",
               "kind": "method",
-              "line": 367
+              "line": 359
             },
             {
               "name": "getFieldParameters",
               "kind": "method",
-              "line": 388
+              "line": 377
             },
             {
               "name": "listProjects",
               "kind": "method",
-              "line": 403
+              "line": 392
             },
             {
               "name": "listProjectsAll",
               "kind": "method",
-              "line": 425
+              "line": 411
             },
             {
               "name": "removeFieldAssociations",
               "kind": "method",
-              "line": 451
+              "line": 434
             },
             {
               "name": "updateFieldAssociations",
               "kind": "method",
-              "line": 464
+              "line": 447
             },
             {
               "name": "removeFieldParameters",
               "kind": "method",
-              "line": 477
+              "line": 460
             },
             {
               "name": "updateFieldParameters",
               "kind": "method",
-              "line": 490
+              "line": 473
             },
             {
               "name": "getProjectsWithSchemes",
               "kind": "method",
-              "line": 503
+              "line": 486
             },
             {
               "name": "getProjectsWithSchemesAll",
               "kind": "method",
-              "line": 523
+              "line": 504
             },
             {
               "name": "associateProjects",
               "kind": "method",
-              "line": 543
+              "line": 522
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 554,
+          "line": 533,
           "signature": "function buildListQuery( params: ListFieldAssociationSchemesParams | undefined, ): Record<string, string | number | bool…"
-        },
-        {
-          "name": "buildListPath",
-          "kind": "function",
-          "line": 567,
-          "signature": "function buildListPath( basePath: string, params: ListFieldAssociationSchemesParams | undefined, ): string",
-          "jsdoc": "Append the repeated `projectId` (`type: array`) params to the list path."
         },
         {
           "name": "buildSchemeFieldsQuery",
           "kind": "function",
-          "line": 574,
+          "line": 546,
           "signature": "function buildSchemeFieldsQuery( params: ListSchemeFieldsParams | undefined, ): Record<string, string | number | boolean…"
-        },
-        {
-          "name": "buildSchemeFieldsPath",
-          "kind": "function",
-          "line": 586,
-          "signature": "function buildSchemeFieldsPath( basePath: string, params: ListSchemeFieldsParams | undefined, ): string",
-          "jsdoc": "Append the repeated `fieldId` (`type: array`) params to the scheme fields path."
         },
         {
           "name": "buildSchemeProjectsQuery",
           "kind": "function",
-          "line": 593,
+          "line": 558,
           "signature": "function buildSchemeProjectsQuery( params: ListSchemeProjectsParams | undefined, ): Record<string, string | number | boo…"
-        },
-        {
-          "name": "buildSchemeProjectsPath",
-          "kind": "function",
-          "line": 605,
-          "signature": "function buildSchemeProjectsPath( basePath: string, params: ListSchemeProjectsParams | undefined, ): string",
-          "jsdoc": "Append the repeated `projectId` (`type: array`) params to the scheme projects path."
         },
         {
           "name": "buildProjectsQuery",
           "kind": "function",
-          "line": 612,
+          "line": 570,
           "signature": "function buildProjectsQuery( params: GetProjectsWithFieldSchemesParams, ): Record<string, string | number | boolean | un…"
-        },
-        {
-          "name": "buildProjectsPath",
-          "kind": "function",
-          "line": 627,
-          "signature": "function buildProjectsPath( basePath: string, params: Pick<GetProjectsWithFieldSchemesParams, 'projectId'>, ): string",
-          "jsdoc": "Append the repeated `projectId` (`type: array`, required) params to the projects path."
         }
       ],
       "imports": [
         "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
-        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -23729,15 +23699,14 @@
         {
           "name": "ListAvailableGadgetsParams",
           "kind": "interface",
-          "line": 158,
+          "line": 150,
           "exported": true,
-          "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: string[]; readonly uri?: string[]; readonly gadgetId?…",
-          "jsdoc": "@deprecated `GET /dashboard/gadgets` (`getAllAvailableDashboardGadgets`) accepts NO query parameters — the server-side catalogue endpoint does not filter by moduleKey, uri, gadgetId, or dashboardId. These fields are retained only for backward compatibility with callers that passed them before this was discovered. Passing params has no effect on the response. For per-dashboard gadget filtering use {@link DashboardsResource.listGadgets} instead."
+          "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: readonly string[]; readonly uri?: readonly string[]; …"
         },
         {
           "name": "SearchDashboardsOrderBy",
           "kind": "type",
-          "line": 166,
+          "line": 158,
           "exported": true,
           "signature": "export type SearchDashboardsOrderBy = | 'description' | '-description' | '+description' | 'favorite_count' | '-favorite_…",
           "jsdoc": "Sort orders accepted by `GET /dashboard/search`."
@@ -23745,7 +23714,7 @@
         {
           "name": "SearchDashboardsStatus",
           "kind": "type",
-          "line": 187,
+          "line": 179,
           "exported": true,
           "signature": "export type SearchDashboardsStatus = 'active' | 'archived' | 'deleted';",
           "jsdoc": "Status filter for `GET /dashboard/search`."
@@ -23753,123 +23722,123 @@
         {
           "name": "SearchDashboardsParams",
           "kind": "interface",
-          "line": 189,
+          "line": 181,
           "exported": true,
           "signature": "export interface SearchDashboardsParams { readonly dashboardName?: string; readonly accountId?: string; readonly owner?:…"
         },
         {
           "name": "DashboardsResource",
           "kind": "class",
-          "line": 203,
+          "line": 195,
           "exported": true,
           "signature": "export class DashboardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 204
+              "line": 196
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 210
+              "line": 202
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 241
+              "line": 233
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 250
+              "line": 242
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 260
+              "line": 252
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 270
+              "line": 262
             },
             {
               "name": "listGadgets",
               "kind": "method",
-              "line": 278
+              "line": 270
             },
             {
               "name": "addGadget",
               "kind": "method",
-              "line": 287
+              "line": 279
             },
             {
               "name": "updateGadget",
               "kind": "method",
-              "line": 306
+              "line": 298
             },
             {
               "name": "removeGadget",
               "kind": "method",
-              "line": 326
+              "line": 318
             },
             {
               "name": "listItemProperties",
               "kind": "method",
-              "line": 337
+              "line": 329
             },
             {
               "name": "getItemProperty",
               "kind": "method",
-              "line": 351
+              "line": 343
             },
             {
               "name": "setItemProperty",
               "kind": "method",
-              "line": 369
+              "line": 361
             },
             {
               "name": "deleteItemProperty",
               "kind": "method",
-              "line": 388
+              "line": 380
             },
             {
               "name": "copy",
               "kind": "method",
-              "line": 405
+              "line": 397
             },
             {
               "name": "bulkEdit",
               "kind": "method",
-              "line": 420
+              "line": 412
             },
             {
               "name": "listAvailableGadgets",
               "kind": "method",
-              "line": 454
+              "line": 439
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 467
+              "line": 460
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 507
+              "line": 500
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 550
+              "line": 543
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 602,
+          "line": 595,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
@@ -25672,7 +25641,7 @@
         {
           "name": "GroupSuggestion",
           "kind": "interface",
-          "line": 5,
+          "line": 4,
           "exported": true,
           "signature": "export interface GroupSuggestion { readonly groupId: string; readonly name: string; readonly html?: string; }",
           "jsdoc": "A single group suggestion from the combined picker."
@@ -25680,7 +25649,7 @@
         {
           "name": "UserSuggestion",
           "kind": "interface",
-          "line": 12,
+          "line": 11,
           "exported": true,
           "signature": "export interface UserSuggestion { readonly accountId: string; readonly displayName: string; readonly avatarUrl?: string;…",
           "jsdoc": "A single user suggestion from the combined picker."
@@ -25688,7 +25657,7 @@
         {
           "name": "GroupSuggestionsSection",
           "kind": "interface",
-          "line": 20,
+          "line": 19,
           "exported": true,
           "signature": "export interface GroupSuggestionsSection { readonly label: string; readonly sub: string; readonly id: string; readonly m…",
           "jsdoc": "Group suggestions section returned by the combined picker."
@@ -25696,7 +25665,7 @@
         {
           "name": "UserSuggestionsSection",
           "kind": "interface",
-          "line": 29,
+          "line": 28,
           "exported": true,
           "signature": "export interface UserSuggestionsSection { readonly label: string; readonly sub: string; readonly id: string; readonly ms…",
           "jsdoc": "User suggestions section returned by the combined picker."
@@ -25704,7 +25673,7 @@
         {
           "name": "GroupUserPickerResponse",
           "kind": "interface",
-          "line": 38,
+          "line": 37,
           "exported": true,
           "signature": "export interface GroupUserPickerResponse { readonly groups: GroupSuggestionsSection; readonly users: UserSuggestionsSect…",
           "jsdoc": "Response envelope for GET /rest/api/3/groupuserpicker."
@@ -25712,7 +25681,7 @@
         {
           "name": "GroupUserPickerParams",
           "kind": "interface",
-          "line": 46,
+          "line": 45,
           "exported": true,
           "signature": "export interface GroupUserPickerParams { readonly query?: string; readonly maxResults?: number; readonly showAvatar?: bo…",
           "jsdoc": "Query parameters for the combined group+user picker."
@@ -25720,7 +25689,7 @@
         {
           "name": "GroupUserPickerResource",
           "kind": "class",
-          "line": 88,
+          "line": 70,
           "exported": true,
           "signature": "export class GroupUserPickerResource",
           "jsdoc": "Jira Group+User Picker resource — GET /rest/api/3/groupuserpicker.",
@@ -25728,18 +25697,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 89
+              "line": 71
             },
             {
               "name": "pick",
               "kind": "method",
-              "line": 98
+              "line": 80
             }
           ]
         }
       ],
       "imports": [
-        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -25773,7 +25741,7 @@
         {
           "name": "GroupMember",
           "kind": "interface",
-          "line": 44,
+          "line": 39,
           "exported": true,
           "signature": "export interface GroupMember { readonly self?: string; readonly accountId: string; readonly accountType?: 'atlassian' | …",
           "jsdoc": "A Jira user as returned in group member listings."
@@ -25781,7 +25749,7 @@
         {
           "name": "Group",
           "kind": "interface",
-          "line": 66,
+          "line": 61,
           "exported": true,
           "signature": "export interface Group { readonly name: string; readonly groupId?: string; readonly self?: string; readonly users?: { re…",
           "jsdoc": "A Jira group with optional inlined member list when `expand=users` is requested. The expanded `users` block contains the first N members plus a paginated envelope; full enumeration should go through `listMembers` / `listAllMembers`."
@@ -25789,7 +25757,7 @@
         {
           "name": "BulkGroupDetails",
           "kind": "interface",
-          "line": 81,
+          "line": 76,
           "exported": true,
           "signature": "export interface BulkGroupDetails { readonly groupId: string; readonly name: string; }",
           "jsdoc": "A bulk-listing entry returned by GET /rest/api/3/group/bulk."
@@ -25797,7 +25765,7 @@
         {
           "name": "DeleteGroupParams",
           "kind": "interface",
-          "line": 87,
+          "line": 82,
           "exported": true,
           "signature": "export interface DeleteGroupParams { readonly groupname?: string; readonly groupId?: string; readonly swapGroup?: string…",
           "jsdoc": "Query parameters for DELETE /rest/api/3/group."
@@ -25805,7 +25773,7 @@
         {
           "name": "GetGroupParams",
           "kind": "interface",
-          "line": 99,
+          "line": 94,
           "exported": true,
           "signature": "export interface GetGroupParams { readonly groupname?: string; readonly groupId?: string; readonly expand?: string; }",
           "jsdoc": "Query parameters for GET /rest/api/3/group."
@@ -25813,7 +25781,7 @@
         {
           "name": "CreateGroupData",
           "kind": "interface",
-          "line": 109,
+          "line": 104,
           "exported": true,
           "signature": "export interface CreateGroupData { readonly name: string; }",
           "jsdoc": "Request body for POST /rest/api/3/group."
@@ -25821,7 +25789,7 @@
         {
           "name": "GroupAccessType",
           "kind": "type",
-          "line": 120,
+          "line": 115,
           "exported": true,
           "signature": "export type GroupAccessType = 'site-admin' | 'admin' | 'user';",
           "jsdoc": "Group access type per Atlassian Jira Cloud REST v3 spec (`GET /rest/api/3/group/bulk`)."
@@ -25829,7 +25797,7 @@
         {
           "name": "ListBulkGroupsParams",
           "kind": "interface",
-          "line": 123,
+          "line": 118,
           "exported": true,
           "signature": "export interface ListBulkGroupsParams { readonly startAt?: number; readonly maxResults?: number; readonly groupId?: stri…",
           "jsdoc": "Query parameters for GET /rest/api/3/group/bulk."
@@ -25837,7 +25805,7 @@
         {
           "name": "ListGroupMembersParams",
           "kind": "interface",
-          "line": 139,
+          "line": 134,
           "exported": true,
           "signature": "export interface ListGroupMembersParams { readonly groupname?: string; readonly groupId?: string; readonly includeInacti…",
           "jsdoc": "Query parameters for GET /rest/api/3/group/member."
@@ -25845,7 +25813,7 @@
         {
           "name": "RemoveGroupUserParams",
           "kind": "interface",
-          "line": 153,
+          "line": 148,
           "exported": true,
           "signature": "export interface RemoveGroupUserParams { readonly accountId: string; readonly groupname?: string; readonly groupId?: str…",
           "jsdoc": "Query parameters for DELETE /rest/api/3/group/user."
@@ -25853,7 +25821,7 @@
         {
           "name": "AddGroupUserParams",
           "kind": "interface",
-          "line": 163,
+          "line": 158,
           "exported": true,
           "signature": "export interface AddGroupUserParams { readonly accountId: string; readonly groupname?: string; readonly groupId?: string…",
           "jsdoc": "Parameters for POST /rest/api/3/group/user."
@@ -25861,7 +25829,7 @@
         {
           "name": "GroupsResource",
           "kind": "class",
-          "line": 181,
+          "line": 176,
           "exported": true,
           "signature": "export class GroupsResource",
           "jsdoc": "Jira Groups resource — group picker (legacy) plus CRUD-style group management endpoints under `/rest/api/3/group{,/bulk,/member,/user}`.",
@@ -25869,77 +25837,77 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 182
+              "line": 177
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 191
+              "line": 186
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 214
+              "line": 206
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 232
+              "line": 224
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 247
+              "line": 239
             },
             {
               "name": "listBulk",
               "kind": "method",
-              "line": 267
+              "line": 259
             },
             {
               "name": "listAllBulk",
               "kind": "method",
-              "line": 285
+              "line": 277
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 305
+              "line": 297
             },
             {
               "name": "listAllMembers",
               "kind": "method",
-              "line": 322
+              "line": 314
             },
             {
               "name": "removeUser",
               "kind": "method",
-              "line": 342
+              "line": 334
             },
             {
               "name": "addUser",
               "kind": "method",
-              "line": 361
+              "line": 353
             }
           ]
         },
         {
           "name": "buildBulkQuery",
           "kind": "function",
-          "line": 378,
+          "line": 370,
           "signature": "function buildBulkQuery( params: ListBulkGroupsParams | undefined, ): Record<string, string | number | boolean | undefin…"
         },
         {
           "name": "buildBulkPath",
           "kind": "function",
-          "line": 392,
+          "line": 384,
           "signature": "function buildBulkPath(basePath: string, params: ListBulkGroupsParams | undefined): string",
           "jsdoc": "Append the repeated `groupId` and `groupName` (`type: array`) params to the bulk path."
         },
         {
           "name": "buildMemberQuery",
           "kind": "function",
-          "line": 398,
+          "line": 390,
           "signature": "function buildMemberQuery( params: ListGroupMembersParams | undefined, ): Record<string, string | number | boolean | und…"
         }
       ],
@@ -26737,175 +26705,175 @@
         {
           "name": "IssueWorklog",
           "kind": "interface",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export interface IssueWorklog { readonly id?: string; readonly self?: string; readonly author?: Record<string, unknown>;…"
         },
         {
           "name": "WorklogList",
           "kind": "interface",
-          "line": 31,
+          "line": 32,
           "exported": true,
           "signature": "export interface WorklogList { readonly startAt: number; readonly maxResults: number; readonly total: number; readonly w…"
         },
         {
           "name": "ListWorklogsParams",
           "kind": "interface",
-          "line": 38,
+          "line": 39,
           "exported": true,
           "signature": "export interface ListWorklogsParams { readonly startAt?: number; readonly maxResults?: number; readonly startedAfter?: n…"
         },
         {
           "name": "AddWorklogData",
           "kind": "interface",
-          "line": 46,
+          "line": 47,
           "exported": true,
           "signature": "export interface AddWorklogData { readonly comment?: Record<string, unknown>; readonly visibility?: Record<string, unkno…"
         },
         {
           "name": "UpdateWorklogData",
           "kind": "type",
-          "line": 54,
+          "line": 55,
           "exported": true,
           "signature": "export type UpdateWorklogData = AddWorklogData;"
         },
         {
           "name": "AddWorklogParams",
           "kind": "interface",
-          "line": 56,
+          "line": 57,
           "exported": true,
           "signature": "export interface AddWorklogParams { readonly notifyUsers?: boolean; readonly adjustEstimate?: string; readonly newEstima…"
         },
         {
           "name": "DeleteWorklogParams",
           "kind": "interface",
-          "line": 65,
+          "line": 66,
           "exported": true,
           "signature": "export interface DeleteWorklogParams { readonly notifyUsers?: boolean; readonly adjustEstimate?: string; readonly newEst…"
         },
         {
           "name": "GetWorklogParams",
           "kind": "interface",
-          "line": 73,
+          "line": 74,
           "exported": true,
           "signature": "export interface GetWorklogParams { readonly expand?: string; }"
         },
         {
           "name": "UpdateWorklogParams",
           "kind": "interface",
-          "line": 77,
+          "line": 78,
           "exported": true,
           "signature": "export interface UpdateWorklogParams { readonly notifyUsers?: boolean; readonly adjustEstimate?: string; readonly newEst…"
         },
         {
           "name": "WorklogMoveData",
           "kind": "interface",
-          "line": 85,
+          "line": 86,
           "exported": true,
           "signature": "export interface WorklogMoveData { readonly ids: number[]; readonly issueIdOrKey?: string; }"
         },
         {
           "name": "MoveWorklogParams",
           "kind": "interface",
-          "line": 92,
+          "line": 93,
           "exported": true,
           "signature": "export interface MoveWorklogParams { readonly adjustEstimate?: string; readonly overrideEditableFlag?: boolean; }"
         },
         {
           "name": "WorklogPropertyKey",
           "kind": "interface",
-          "line": 99,
+          "line": 100,
           "exported": true,
           "signature": "export interface WorklogPropertyKey { readonly self?: string; readonly key?: string; }"
         },
         {
           "name": "WorklogPropertyKeys",
           "kind": "interface",
-          "line": 104,
+          "line": 105,
           "exported": true,
           "signature": "export interface WorklogPropertyKeys { readonly keys: WorklogPropertyKey[]; }"
         },
         {
           "name": "WorklogProperty",
           "kind": "interface",
-          "line": 108,
+          "line": 109,
           "exported": true,
           "signature": "export interface WorklogProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "IssueArchiveResult",
           "kind": "interface",
-          "line": 115,
+          "line": 116,
           "exported": true,
           "signature": "export interface IssueArchiveResult { readonly archived?: number; readonly errors?: Record<string, unknown>; readonly fa…"
         },
         {
           "name": "BulkFetchData",
           "kind": "interface",
-          "line": 123,
+          "line": 124,
           "exported": true,
           "signature": "export interface BulkFetchData { readonly issueIdsOrKeys: string[]; readonly fieldsByKeys?: boolean; readonly fields?: s…"
         },
         {
           "name": "BulkFetchResult",
           "kind": "interface",
-          "line": 131,
+          "line": 132,
           "exported": true,
           "signature": "export interface BulkFetchResult { readonly issues?: Record<string, unknown>[]; readonly errors?: Record<string, unknown…"
         },
         {
           "name": "CreateMetaParams",
           "kind": "interface",
-          "line": 138,
+          "line": 139,
           "exported": true,
           "signature": "export interface CreateMetaParams { readonly projectIds?: string[]; readonly projectKeys?: string[]; readonly issuetypeI…"
         },
         {
           "name": "CreateMetaIssueTypesParams",
           "kind": "interface",
-          "line": 146,
+          "line": 147,
           "exported": true,
           "signature": "export interface CreateMetaIssueTypesParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "IssueLimitReport",
           "kind": "interface",
-          "line": 153,
+          "line": 154,
           "exported": true,
           "signature": "export interface IssueLimitReport { readonly issueIds?: number[]; }"
         },
         {
           "name": "IssuePickerResult",
           "kind": "interface",
-          "line": 159,
+          "line": 160,
           "exported": true,
           "signature": "export interface IssuePickerResult { readonly sections?: { id?: string; label?: string; sub?: string; issues?: unknown[]…"
         },
         {
           "name": "IssuePickerParams",
           "kind": "interface",
-          "line": 169,
+          "line": 170,
           "exported": true,
           "signature": "export interface IssuePickerParams { readonly query?: string; readonly currentJQL?: string; readonly currentIssueKey?: s…"
         },
         {
           "name": "SetIssuePropertiesData",
           "kind": "interface",
-          "line": 180,
+          "line": 181,
           "exported": true,
           "signature": "export interface SetIssuePropertiesData { readonly entitiesIds?: number[]; readonly properties?: Record<string, unknown>…"
         },
         {
           "name": "MultiIssueProperties",
           "kind": "interface",
-          "line": 185,
+          "line": 186,
           "exported": true,
           "signature": "export interface MultiIssueProperties { readonly issues: { issueID?: number; properties?: Record<string, unknown> }[]; }"
         },
         {
           "name": "IssueBulkWatchResult",
           "kind": "interface",
-          "line": 196,
+          "line": 197,
           "exported": true,
           "signature": "export interface IssueBulkWatchResult { readonly taskId: string; }",
           "jsdoc": "Result of a bulk-watch submission. Spec: POST /rest/api/3/bulk/issues/watch (operationId submitBulkWatch) responds 201 with SubmittedBulkOperation { taskId } — not { watched, failed } (#207)."
@@ -26913,14 +26881,14 @@
         {
           "name": "IssueArchiveExportData",
           "kind": "interface",
-          "line": 202,
+          "line": 203,
           "exported": true,
           "signature": "export interface IssueArchiveExportData { readonly jql?: string; readonly exportType?: 'CSV' | 'XLSX'; }"
         },
         {
           "name": "AgileIssue",
           "kind": "interface",
-          "line": 213,
+          "line": 214,
           "exported": true,
           "signature": "export interface AgileIssue { readonly id: string; readonly key: string; readonly self: string; readonly fields: Record<…",
           "jsdoc": "Agile view of a Jira issue as returned by /rest/agile/1.0/issue/{key}."
@@ -26928,7 +26896,7 @@
         {
           "name": "IssueEstimation",
           "kind": "interface",
-          "line": 228,
+          "line": 229,
           "exported": true,
           "signature": "export interface IssueEstimation { readonly fieldId: string; readonly value: string | null; }",
           "jsdoc": "Estimation value returned by GET /rest/agile/1.0/issue/{key}/estimation."
@@ -26936,7 +26904,7 @@
         {
           "name": "GetEstimationParams",
           "kind": "interface",
-          "line": 234,
+          "line": 235,
           "exported": true,
           "signature": "export interface GetEstimationParams { readonly boardId?: number; }",
           "jsdoc": "Params for GET /rest/agile/1.0/issue/{key}/estimation."
@@ -26944,7 +26912,7 @@
         {
           "name": "SetEstimationData",
           "kind": "interface",
-          "line": 240,
+          "line": 241,
           "exported": true,
           "signature": "export interface SetEstimationData { readonly value: string | null; }",
           "jsdoc": "Request body for PUT /rest/agile/1.0/issue/{key}/estimation."
@@ -26952,7 +26920,7 @@
         {
           "name": "RankIssuesData",
           "kind": "interface",
-          "line": 246,
+          "line": 247,
           "exported": true,
           "signature": "export interface RankIssuesData { readonly issues: readonly string[]; readonly rankBeforeIssue?: string; readonly rankAf…",
           "jsdoc": "Request body for PUT /rest/agile/1.0/issue/rank."
@@ -26960,397 +26928,397 @@
         {
           "name": "IssueChangelogEntry",
           "kind": "interface",
-          "line": 259,
+          "line": 260,
           "exported": true,
           "signature": "export interface IssueChangelogEntry { readonly id?: string; readonly author?: Record<string, unknown>; readonly created…"
         },
         {
           "name": "IssueChangelog",
           "kind": "interface",
-          "line": 274,
+          "line": 275,
           "exported": true,
           "signature": "export interface IssueChangelog { readonly startAt: number; readonly maxResults: number; readonly total: number; readonl…"
         },
         {
           "name": "ListChangelogParams",
           "kind": "interface",
-          "line": 281,
+          "line": 282,
           "exported": true,
           "signature": "export interface ListChangelogParams { readonly startAt?: number; readonly maxResults?: number; }"
         },
         {
           "name": "IssuePropertyKey",
           "kind": "interface",
-          "line": 288,
+          "line": 289,
           "exported": true,
           "signature": "export interface IssuePropertyKey { readonly self?: string; readonly key?: string; }"
         },
         {
           "name": "IssuePropertyKeys",
           "kind": "interface",
-          "line": 293,
+          "line": 294,
           "exported": true,
           "signature": "export interface IssuePropertyKeys { readonly keys: IssuePropertyKey[]; }"
         },
         {
           "name": "IssueProperty",
           "kind": "interface",
-          "line": 297,
+          "line": 298,
           "exported": true,
           "signature": "export interface IssueProperty { readonly key: string; readonly value: unknown; }"
         },
         {
           "name": "RemoteIssueLinkObject",
           "kind": "interface",
-          "line": 304,
+          "line": 305,
           "exported": true,
           "signature": "export interface RemoteIssueLinkObject { readonly url?: string; readonly title?: string; readonly summary?: string; read…"
         },
         {
           "name": "RemoteIssueLink",
           "kind": "interface",
-          "line": 315,
+          "line": 316,
           "exported": true,
           "signature": "export interface RemoteIssueLink { readonly id?: number; readonly self?: string; readonly globalId?: string; readonly ap…"
         },
         {
           "name": "CreateRemoteLinkData",
           "kind": "interface",
-          "line": 324,
+          "line": 325,
           "exported": true,
           "signature": "export interface CreateRemoteLinkData { readonly globalId?: string; readonly application?: { type?: string; name?: strin…"
         },
         {
           "name": "CreateRemoteLinkResult",
           "kind": "interface",
-          "line": 331,
+          "line": 332,
           "exported": true,
           "signature": "export interface CreateRemoteLinkResult { readonly id?: number; readonly self?: string; }"
         },
         {
           "name": "IssueVotes",
           "kind": "interface",
-          "line": 338,
+          "line": 339,
           "exported": true,
           "signature": "export interface IssueVotes { readonly self?: string; readonly votes?: number; readonly hasVoted?: boolean; readonly vot…"
         },
         {
           "name": "IssueWatchers",
           "kind": "interface",
-          "line": 347,
+          "line": 348,
           "exported": true,
           "signature": "export interface IssueWatchers { readonly self?: string; readonly isWatching?: boolean; readonly watchCount?: number; re…"
         },
         {
           "name": "IssueNotifyData",
           "kind": "interface",
-          "line": 356,
+          "line": 357,
           "exported": true,
           "signature": "export interface IssueNotifyData { readonly htmlBody?: string; readonly subject?: string; readonly textBody?: string; re…"
         },
         {
           "name": "AssignIssueData",
           "kind": "interface",
-          "line": 366,
+          "line": 367,
           "exported": true,
           "signature": "export interface AssignIssueData { readonly accountId?: string | null; }"
         },
         {
           "name": "IssuesResource",
           "kind": "class",
-          "line": 370,
+          "line": 371,
           "exported": true,
           "signature": "export class IssuesResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 371
+              "line": 372
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 378
+              "line": 379
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 393
+              "line": 394
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 403
+              "line": 404
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 412
+              "line": 413
             },
             {
               "name": "getTransitions",
               "kind": "method",
-              "line": 420
+              "line": 421
             },
             {
               "name": "transition",
               "kind": "method",
-              "line": 429
+              "line": 430
             },
             {
               "name": "requireAgileBaseUrl",
               "kind": "method",
-              "line": 439
+              "line": 440
             },
             {
               "name": "buildBoardIdQuery",
               "kind": "method",
-              "line": 446
+              "line": 447
             },
             {
               "name": "getAgile",
               "kind": "method",
-              "line": 463
+              "line": 464
             },
             {
               "name": "getEstimation",
               "kind": "method",
-              "line": 476
+              "line": 477
             },
             {
               "name": "setEstimation",
               "kind": "method",
-              "line": 494
+              "line": 495
             },
             {
               "name": "rank",
               "kind": "method",
-              "line": 514
+              "line": 515
             },
             {
               "name": "assign",
               "kind": "method",
-              "line": 541
+              "line": 542
             },
             {
               "name": "getChangelog",
               "kind": "method",
-              "line": 553
+              "line": 554
             },
             {
               "name": "filterChangelog",
               "kind": "method",
-              "line": 569
+              "line": 570
             },
             {
               "name": "getEditMeta",
               "kind": "method",
-              "line": 582
+              "line": 583
             },
             {
               "name": "notify",
               "kind": "method",
-              "line": 594
+              "line": 595
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 606
+              "line": 607
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 618
+              "line": 619
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 632
+              "line": 633
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 647
+              "line": 648
             },
             {
               "name": "deleteAllRemoteLinks",
               "kind": "method",
-              "line": 662
+              "line": 663
             },
             {
               "name": "listRemoteLinks",
               "kind": "method",
-              "line": 676
+              "line": 677
             },
             {
               "name": "createRemoteLink",
               "kind": "method",
-              "line": 694
+              "line": 695
             },
             {
               "name": "deleteRemoteLink",
               "kind": "method",
-              "line": 710
+              "line": 711
             },
             {
               "name": "getRemoteLink",
               "kind": "method",
-              "line": 721
+              "line": 722
             },
             {
               "name": "updateRemoteLink",
               "kind": "method",
-              "line": 733
+              "line": 734
             },
             {
               "name": "removeVote",
               "kind": "method",
-              "line": 749
+              "line": 750
             },
             {
               "name": "getVotes",
               "kind": "method",
-              "line": 760
+              "line": 761
             },
             {
               "name": "addVote",
               "kind": "method",
-              "line": 772
+              "line": 773
             },
             {
               "name": "removeWatcher",
               "kind": "method",
-              "line": 784
+              "line": 785
             },
             {
               "name": "getWatchers",
               "kind": "method",
-              "line": 798
+              "line": 799
             },
             {
               "name": "addWatcher",
               "kind": "method",
-              "line": 811
+              "line": 812
             },
             {
               "name": "deleteAllWorklogs",
               "kind": "method",
-              "line": 830
+              "line": 831
             },
             {
               "name": "listWorklogs",
               "kind": "method",
-              "line": 842
+              "line": 843
             },
             {
               "name": "addWorklog",
               "kind": "method",
-              "line": 861
+              "line": 862
             },
             {
               "name": "deleteWorklog",
               "kind": "method",
-              "line": 887
+              "line": 888
             },
             {
               "name": "getWorklog",
               "kind": "method",
-              "line": 910
+              "line": 911
             },
             {
               "name": "updateWorklog",
               "kind": "method",
-              "line": 929
+              "line": 930
             },
             {
               "name": "listWorklogProperties",
               "kind": "method",
-              "line": 955
+              "line": 956
             },
             {
               "name": "deleteWorklogProperty",
               "kind": "method",
-              "line": 970
+              "line": 971
             },
             {
               "name": "getWorklogProperty",
               "kind": "method",
-              "line": 985
+              "line": 986
             },
             {
               "name": "setWorklogProperty",
               "kind": "method",
-              "line": 1001
+              "line": 1002
             },
             {
               "name": "moveWorklog",
               "kind": "method",
-              "line": 1019
+              "line": 1020
             },
             {
               "name": "archiveIssues",
               "kind": "method",
-              "line": 1044
+              "line": 1045
             },
             {
               "name": "archiveIssuesByJql",
               "kind": "method",
-              "line": 1059
+              "line": 1060
             },
             {
               "name": "unarchiveIssues",
               "kind": "method",
-              "line": 1072
+              "line": 1073
             },
             {
               "name": "bulkFetch",
               "kind": "method",
-              "line": 1087
+              "line": 1088
             },
             {
               "name": "getCreateMeta",
               "kind": "method",
-              "line": 1102
+              "line": 1103
             },
             {
               "name": "getCreateMetaIssueTypes",
               "kind": "method",
-              "line": 1121
+              "line": 1122
             },
             {
               "name": "getCreateMetaIssueType",
               "kind": "method",
-              "line": 1140
+              "line": 1141
             },
             {
               "name": "getLimitReport",
               "kind": "method",
-              "line": 1162
+              "line": 1163
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 1176
+              "line": 1177
             },
             {
               "name": "setPropertiesByEntityIds",
               "kind": "method",
-              "line": 1199
+              "line": 1200
             },
             {
               "name": "setPropertiesMulti",
               "kind": "method",
-              "line": 1214
+              "line": 1215
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 1230
+              "line": 1231
             },
             {
               "name": "exportArchivedIssues",
               "kind": "method",
-              "line": 1245
+              "line": 1246
             }
           ]
         }
@@ -27358,6 +27326,7 @@
       "imports": [
         "../../core/errors.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
@@ -33003,151 +32972,150 @@
         {
           "name": "UsersResource",
           "kind": "class",
-          "line": 33,
+          "line": 32,
           "exported": true,
           "signature": "export class UsersResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 34
+              "line": 33
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 40
+              "line": 39
             },
             {
               "name": "getCurrentUser",
               "kind": "method",
-              "line": 50
+              "line": 49
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 59
+              "line": 58
             },
             {
               "name": "deleteUser",
               "kind": "method",
-              "line": 73
+              "line": 72
             },
             {
               "name": "createUser",
               "kind": "method",
-              "line": 82
+              "line": 81
             },
             {
               "name": "assignableMultiProjectSearch",
               "kind": "method",
-              "line": 92
+              "line": 91
             },
             {
               "name": "assignableSearch",
               "kind": "method",
-              "line": 109
+              "line": 108
             },
             {
               "name": "bulkGet",
               "kind": "method",
-              "line": 127
+              "line": 126
             },
             {
               "name": "bulkMigration",
               "kind": "method",
-              "line": 146
+              "line": 145
             },
             {
               "name": "resetColumns",
               "kind": "method",
-              "line": 172
+              "line": 171
             },
             {
               "name": "getColumns",
               "kind": "method",
-              "line": 183
+              "line": 182
             },
             {
               "name": "setColumns",
               "kind": "method",
-              "line": 195
+              "line": 194
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 207
+              "line": 206
             },
             {
               "name": "bulkGetEmails",
               "kind": "method",
-              "line": 217
+              "line": 216
             },
             {
               "name": "getGroups",
               "kind": "method",
-              "line": 227
+              "line": 226
             },
             {
               "name": "getPermissionUsers",
               "kind": "method",
-              "line": 242
+              "line": 241
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 262
+              "line": 261
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 281
+              "line": 280
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 294
+              "line": 293
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 306
+              "line": 305
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 319
+              "line": 318
             },
             {
               "name": "searchQuery",
               "kind": "method",
-              "line": 336
+              "line": 335
             },
             {
               "name": "searchQueryKey",
               "kind": "method",
-              "line": 350
+              "line": 349
             },
             {
               "name": "viewIssueSearch",
               "kind": "method",
-              "line": 364
+              "line": 363
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 381
+              "line": 380
             },
             {
               "name": "listSearch",
               "kind": "method",
-              "line": 394
+              "line": 393
             }
           ]
         }
       ],
       "imports": [
         "../../core/path.js",
-        "../../core/query.js",
         "../../core/types.js",
         "../types.js"
       ]
