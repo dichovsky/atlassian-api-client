@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "5e884b9e9aa997c2ee2a586421c4fec72d9532ceb36959385f5024da80df1d80",
+  "sourceHash": "b69e936281669510bc8b30c7b94ecfa62a0f70dbac300cdd95708944b03ca006",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3518,463 +3518,463 @@
         {
           "name": "executeComments",
           "kind": "function",
-          "line": 823,
+          "line": 824,
           "signature": "async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeAttachments",
           "kind": "function",
-          "line": 916,
+          "line": 923,
           "signature": "async function executeAttachments(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseAttachmentStatuses",
           "kind": "function",
-          "line": 1060,
+          "line": 1067,
           "signature": "function parseAttachmentStatuses(raw: string | undefined): readonly AttachmentStatus[] | undefined",
           "jsdoc": "Parse the `--status` CLI flag into a non-empty list of {@link AttachmentStatus} values. Accepts a single value (`current`) or comma-separated (`current,archived`); rejects unknown tokens with the standard `must be one of` error to match other enum flags. Duplicate tokens are collapsed so the wire format never carries `status=a,a`."
         },
         {
           "name": "executeAdminKey",
           "kind": "function",
-          "line": 1076,
+          "line": 1083,
           "signature": "async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeLabels",
           "kind": "function",
-          "line": 1097,
+          "line": 1104,
           "signature": "async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "normalizeOptionalString",
           "kind": "function",
-          "line": 1182,
+          "line": 1189,
           "signature": "function normalizeOptionalString(value: string | undefined): string | undefined",
           "jsdoc": "Normalize an optional CLI string flag: trim whitespace and collapse the empty case to `undefined`. The resource layer accepts the raw (possibly comma-separated) string and forwards it as a single query value, so we deliberately do not split — we only drop empties so callers can treat \"unset\" and \"blank\" identically."
         },
         {
           "name": "executeApp",
           "kind": "function",
-          "line": 1188,
+          "line": 1195,
           "signature": "async function executeApp(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseJsonValue",
           "kind": "function",
-          "line": 1220,
+          "line": 1227,
           "signature": "function parseJsonValue(raw: string): unknown",
           "jsdoc": "Parse `--value` from the CLI as JSON when possible, falling back to the raw string. Confluence app properties accept arbitrary JSON values, so callers should typically pass JSON (e.g. `--value '{\"enabled\":true}'`); a bare unquoted string like `--value hello` is preserved as the string `\"hello\"`."
         },
         {
           "name": "executeClassificationLevels",
           "kind": "function",
-          "line": 1228,
+          "line": 1235,
           "signature": "async function executeClassificationLevels( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeContent",
           "kind": "function",
-          "line": 1240,
+          "line": 1247,
           "signature": "async function executeContent(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseContentIds",
           "kind": "function",
-          "line": 1259,
+          "line": 1266,
           "signature": "function parseContentIds(raw: string): readonly (string | number)[]",
           "jsdoc": "Parse the `--ids` flag into a non-empty array of content ids. Accepts either a JSON array (`'[\"1\",\"2\",3]'`) or a comma-separated string (`\"1,2,3\"`). JSON wins when the raw value parses successfully; otherwise we fall back to splitting on commas. Numeric strings stay strings — the server accepts both forms and we don't want to silently coerce ids that happen to be all-digit."
         },
         {
           "name": "executeCustomContent",
           "kind": "function",
-          "line": 1288,
+          "line": 1295,
           "signature": "async function executeCustomContent( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "makeCustomContentBody",
           "kind": "function",
-          "line": 1504,
+          "line": 1511,
           "signature": "function makeCustomContentBody(value: string)",
           "jsdoc": "Build a custom-content body envelope from a raw storage-format string."
         },
         {
           "name": "executeDataPolicies",
           "kind": "function",
-          "line": 1508,
+          "line": 1515,
           "signature": "async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseCsvList",
           "kind": "function",
-          "line": 1536,
+          "line": 1543,
           "signature": "function parseCsvList(raw: string | undefined): readonly string[] | undefined",
           "jsdoc": "Split a comma-separated CLI flag into a trimmed, non-empty array. Returns `undefined` when the input is unset so optional query params drop out cleanly via spread-omit on the call site."
         },
         {
           "name": "executeSpacePermissions",
           "kind": "function",
-          "line": 1545,
+          "line": 1552,
           "signature": "async function executeSpacePermissions( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1562,
+          "line": 1569,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1574,
+          "line": 1581,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 1626,
+          "line": 1633,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 1628,
+          "line": 1635,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 1643,
+          "line": 1650,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1645,
+          "line": 1652,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 1647,
+          "line": 1654,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 1649,
+          "line": 1656,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 1658,
+          "line": 1665,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 1669,
+          "line": 1676,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1705,
+          "line": 1712,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1707,
+          "line": 1714,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 1732,
+          "line": 1739,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1749,
+          "line": 1756,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1753,
+          "line": 1760,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1768,
+          "line": 1775,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 1870,
+          "line": 1877,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 1953,
+          "line": 1960,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2035,
+          "line": 2042,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2118,
+          "line": 2125,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2176,
+          "line": 2183,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2288,
+          "line": 2295,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2293,
+          "line": 2300,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2298,
+          "line": 2305,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2302,
+          "line": 2309,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2317,
+          "line": 2324,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2330,
+          "line": 2337,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2344,
+          "line": 2351,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2362,
+          "line": 2369,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2386,
+          "line": 2393,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2400,
+          "line": 2407,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 2413,
+          "line": 2420,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2415,
+          "line": 2422,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 2422,
+          "line": 2429,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2424,
+          "line": 2431,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 2433,
+          "line": 2440,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2442,
+          "line": 2449,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 2449,
+          "line": 2456,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2451,
+          "line": 2458,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 2453,
+          "line": 2460,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2462,
+          "line": 2469,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2473,
+          "line": 2480,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 2475,
+          "line": 2482,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 2531,
+          "line": 2538,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2555,
+          "line": 2562,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 2562,
+          "line": 2569,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2571,
+          "line": 2578,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2582,
+          "line": 2589,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 2591,
+          "line": 2598,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 2599,
+          "line": 2606,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 2606,
+          "line": 2613,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 2613,
+          "line": 2620,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 2619,
+          "line": 2626,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2626,
+          "line": 2633,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2637,
+          "line": 2644,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2645,
+          "line": 2652,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 2655,
+          "line": 2662,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 2671,
+          "line": 2678,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         }
@@ -5351,7 +5351,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 497,
+          "line": 498,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -12888,13 +12888,13 @@
         {
           "name": "capLength",
           "kind": "function",
-          "line": 474,
+          "line": 477,
           "signature": "function capLength(value: string): CappedString"
         },
         {
           "name": "isPlainObject",
           "kind": "function",
-          "line": 481,
+          "line": 484,
           "signature": "function isPlainObject(value: unknown): value is Record<string, unknown>"
         }
       ]
@@ -19950,6 +19950,10 @@
             {
               "exported": "RecentProjectsParams",
               "original": "RecentProjectsParams"
+            },
+            {
+              "exported": "ActorsMap",
+              "original": "ActorsMap"
             }
           ]
         },
@@ -22222,7 +22226,7 @@
           "kind": "interface",
           "line": 131,
           "exported": true,
-          "signature": "export interface ToggleFeatureData { readonly feature: string; readonly state: 'ENABLED' | 'DISABLED'; }"
+          "signature": "export interface ToggleFeatureData { readonly feature: string; readonly enabling: boolean; }"
         },
         {
           "name": "BoardProject",
@@ -28518,37 +28522,37 @@
             {
               "name": "sanitize",
               "kind": "method",
-              "line": 241
+              "line": 247
             },
             {
               "name": "getAutocompleteDataPost",
               "kind": "method",
-              "line": 251
+              "line": 257
             },
             {
               "name": "getPrecomputations",
               "kind": "method",
-              "line": 261
+              "line": 267
             },
             {
               "name": "updatePrecomputations",
               "kind": "method",
-              "line": 289
+              "line": 295
             },
             {
               "name": "getPrecomputationsById",
               "kind": "method",
-              "line": 307
+              "line": 313
             },
             {
               "name": "matchIssues",
               "kind": "method",
-              "line": 324
+              "line": 330
             },
             {
               "name": "migrateQueries",
               "kind": "method",
-              "line": 334
+              "line": 340
             }
           ]
         }
@@ -30726,420 +30730,414 @@
           "signature": "export interface UpdateProjectRoleData { readonly categorisedActors?: Record<string, string[]>; }"
         },
         {
-          "name": "ProjectRoleActorInput",
+          "name": "ActorsMap",
           "kind": "interface",
-          "line": 142,
+          "line": 143,
           "exported": true,
-          "signature": "export interface ProjectRoleActorInput { readonly id?: number; readonly user?: readonly string[]; readonly group?: reado…"
-        },
-        {
-          "name": "SetProjectRoleData",
-          "kind": "interface",
-          "line": 149,
-          "exported": true,
-          "signature": "export interface SetProjectRoleData { readonly actors?: ProjectRoleActorInput[]; }"
+          "signature": "export interface ActorsMap { readonly user?: readonly string[]; readonly group?: readonly string[]; readonly groupId?: r…",
+          "jsdoc": "Request body for `POST /rest/api/3/project/{projectIdOrKey}/role/{id}` (addActorUsers). Spec: ActorsMap, additionalProperties:false."
         },
         {
           "name": "ProjectIssueTypeStatus",
           "kind": "interface",
-          "line": 155,
+          "line": 154,
           "exported": true,
           "signature": "export interface ProjectIssueTypeStatus { readonly id?: string; readonly name?: string; readonly self?: string; readonly…"
         },
         {
           "name": "ProjectIssueTypeWithStatuses",
           "kind": "interface",
-          "line": 163,
+          "line": 162,
           "exported": true,
           "signature": "export interface ProjectIssueTypeWithStatuses { readonly id?: string; readonly name?: string; readonly statuses?: Projec…"
         },
         {
           "name": "ProjectVersion",
           "kind": "interface",
-          "line": 171,
+          "line": 170,
           "exported": true,
           "signature": "export interface ProjectVersion { readonly id?: string; readonly name?: string; readonly description?: string; readonly …"
         },
         {
           "name": "ListProjectVersionsParams",
           "kind": "interface",
-          "line": 183,
+          "line": 182,
           "exported": true,
           "signature": "export interface ListProjectVersionsParams { readonly startAt?: number; readonly maxResults?: number; readonly orderBy?:…"
         },
         {
           "name": "ProjectSecurityLevel",
           "kind": "interface",
-          "line": 194,
+          "line": 193,
           "exported": true,
           "signature": "export interface ProjectSecurityLevel { readonly self?: string; readonly id?: string; readonly description?: string; rea…"
         },
         {
           "name": "ProjectCategory",
           "kind": "interface",
-          "line": 203,
+          "line": 202,
           "exported": true,
           "signature": "export interface ProjectCategory { readonly id?: string; readonly name?: string; readonly description?: string; readonly…"
         },
         {
           "name": "CreateProjectCategoryData",
           "kind": "interface",
-          "line": 210,
+          "line": 209,
           "exported": true,
           "signature": "export interface CreateProjectCategoryData { readonly name: string; readonly description?: string; }"
         },
         {
           "name": "UpdateProjectCategoryData",
           "kind": "interface",
-          "line": 215,
+          "line": 214,
           "exported": true,
           "signature": "export interface UpdateProjectCategoryData { readonly name?: string; readonly description?: string; }"
         },
         {
           "name": "ProjectKeyValidation",
           "kind": "interface",
-          "line": 222,
+          "line": 221,
           "exported": true,
           "signature": "export interface ProjectKeyValidation { readonly valid: boolean; readonly errors?: string[]; }"
         },
         {
           "name": "ProjectType",
           "kind": "interface",
-          "line": 227,
+          "line": 226,
           "exported": true,
           "signature": "export interface ProjectType { readonly key: string; readonly color: string; readonly descriptionI18nKey: string; readon…"
         },
         {
           "name": "ListLegacyProjectsParams",
           "kind": "interface",
-          "line": 235,
+          "line": 234,
           "exported": true,
           "signature": "export interface ListLegacyProjectsParams { readonly maxResults?: number; readonly orderBy?: string; readonly startAt?: …"
         },
         {
           "name": "CreateProjectData",
           "kind": "interface",
-          "line": 246,
+          "line": 245,
           "exported": true,
           "signature": "export interface CreateProjectData { readonly key: string; readonly name: string; readonly projectTypeKey: string; reado…"
         },
         {
           "name": "UpdateProjectData",
           "kind": "interface",
-          "line": 266,
+          "line": 265,
           "exported": true,
           "signature": "export interface UpdateProjectData { readonly key?: string; readonly name?: string; readonly description?: string; reado…"
         },
         {
           "name": "DeleteProjectParams",
           "kind": "interface",
-          "line": 280,
+          "line": 279,
           "exported": true,
           "signature": "export interface DeleteProjectParams { readonly enableUndo?: boolean; }"
         },
         {
           "name": "RecentProjectsParams",
           "kind": "interface",
-          "line": 284,
+          "line": 283,
           "exported": true,
           "signature": "export interface RecentProjectsParams { readonly maxResults?: number; readonly expand?: string[]; }"
         },
         {
           "name": "ProjectsResource",
           "kind": "class",
-          "line": 289,
+          "line": 288,
           "exported": true,
           "signature": "export class ProjectsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 290
+              "line": 289
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 296
+              "line": 295
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 317
+              "line": 316
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 330
+              "line": 329
             },
             {
               "name": "listLegacy",
               "kind": "method",
-              "line": 349
+              "line": 348
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 369
+              "line": 368
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 402
+              "line": 401
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 414
+              "line": 413
             },
             {
               "name": "recent",
               "kind": "method",
-              "line": 438
+              "line": 437
             },
             {
               "name": "listTypes",
               "kind": "method",
-              "line": 452
+              "line": 451
             },
             {
               "name": "getType",
               "kind": "method",
-              "line": 461
+              "line": 460
             },
             {
               "name": "getAccessibleType",
               "kind": "method",
-              "line": 470
+              "line": 469
             },
             {
               "name": "listAccessibleTypes",
               "kind": "method",
-              "line": 479
+              "line": 478
             },
             {
               "name": "getEmail",
               "kind": "method",
-              "line": 488
+              "line": 487
             },
             {
               "name": "setEmail",
               "kind": "method",
-              "line": 497
+              "line": 496
             },
             {
               "name": "getHierarchy",
               "kind": "method",
-              "line": 508
+              "line": 507
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 517
+              "line": 516
             },
             {
               "name": "setAvatar",
               "kind": "method",
-              "line": 525
+              "line": 524
             },
             {
               "name": "deleteAvatar",
               "kind": "method",
-              "line": 534
+              "line": 533
             },
             {
               "name": "loadAvatar",
               "kind": "method",
-              "line": 542
+              "line": 541
             },
             {
               "name": "getAvatars",
               "kind": "method",
-              "line": 552
+              "line": 551
             },
             {
               "name": "restore",
               "kind": "method",
-              "line": 563
+              "line": 562
             },
             {
               "name": "listRoles",
               "kind": "method",
-              "line": 571
+              "line": 570
             },
             {
               "name": "getClassificationConfig",
               "kind": "method",
-              "line": 580
+              "line": 579
             },
             {
               "name": "deleteClassificationLevel",
               "kind": "method",
-              "line": 589
+              "line": 588
             },
             {
               "name": "getClassificationLevel",
               "kind": "method",
-              "line": 597
+              "line": 596
             },
             {
               "name": "setClassificationLevel",
               "kind": "method",
-              "line": 606
+              "line": 605
             },
             {
               "name": "listComponents",
               "kind": "method",
-              "line": 617
+              "line": 616
             },
             {
               "name": "deleteRoleActors",
               "kind": "method",
-              "line": 637
+              "line": 636
             },
             {
               "name": "getRole",
               "kind": "method",
-              "line": 655
+              "line": 654
             },
             {
               "name": "listAllComponents",
               "kind": "method",
-              "line": 673
+              "line": 672
             },
             {
               "name": "deleteAsync",
               "kind": "method",
-              "line": 682
+              "line": 681
             },
             {
               "name": "getFeatures",
               "kind": "method",
-              "line": 691
+              "line": 690
             },
             {
               "name": "setFeatureState",
               "kind": "method",
-              "line": 700
+              "line": 699
             },
             {
               "name": "addRoleActors",
               "kind": "method",
-              "line": 714
+              "line": 713
             },
             {
               "name": "setRoleActors",
               "kind": "method",
-              "line": 728
+              "line": 731
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 742
+              "line": 745
             },
             {
               "name": "getRoleDetails",
               "kind": "method",
-              "line": 751
+              "line": 754
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 769
+              "line": 772
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 777
+              "line": 780
             },
             {
               "name": "getStatuses",
               "kind": "method",
-              "line": 789
+              "line": 792
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 798
+              "line": 801
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 819
+              "line": 822
             },
             {
               "name": "getIssueSecurityScheme",
               "kind": "method",
-              "line": 839
+              "line": 842
             },
             {
               "name": "getNotificationScheme",
               "kind": "method",
-              "line": 848
+              "line": 851
             },
             {
               "name": "getPermissionScheme",
               "kind": "method",
-              "line": 864
+              "line": 867
             },
             {
               "name": "setPermissionScheme",
               "kind": "method",
-              "line": 880
+              "line": 883
             },
             {
               "name": "getSecurityLevels",
               "kind": "method",
-              "line": 893
+              "line": 896
             },
             {
               "name": "listCategories",
               "kind": "method",
-              "line": 904
+              "line": 907
             },
             {
               "name": "createCategory",
               "kind": "method",
-              "line": 913
+              "line": 916
             },
             {
               "name": "deleteCategory",
               "kind": "method",
-              "line": 926
+              "line": 929
             },
             {
               "name": "getCategory",
               "kind": "method",
-              "line": 934
+              "line": 937
             },
             {
               "name": "setProperty",
               "kind": "method",
-              "line": 943
+              "line": 946
             },
             {
               "name": "updateCategory",
               "kind": "method",
-              "line": 952
+              "line": 955
             },
             {
               "name": "getProjectsFields",
               "kind": "method",
-              "line": 971
+              "line": 974
             },
             {
               "name": "validateProjectKey",
               "kind": "method",
-              "line": 982
+              "line": 985
             },
             {
               "name": "getValidProjectKey",
               "kind": "method",
-              "line": 992
+              "line": 995
             },
             {
               "name": "getValidProjectName",
               "kind": "method",
-              "line": 1002
+              "line": 1005
             }
           ]
         }

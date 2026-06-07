@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GroupsResource } from '../../src/jira/resources/groups.js';
+import type { GroupPickerParams } from '../../src/jira/resources/groups.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -69,7 +70,15 @@ describe('GroupsResource', () => {
       // There is no excludeInactive — groups have no active/inactive state.
       transport.respondWith(makeGroupPickerResponse());
 
-      await groups.picker({ query: 'dev', maxResults: 5, userName: 'acc-1' });
+      // Cast simulates a stale caller from before the excludeInactive removal (issue #212).
+      // The public type now correctly rejects the field; this cast lets us exercise the
+      // runtime query builder to prove excludeInactive is never forwarded.
+      await groups.picker({
+        query: 'dev',
+        maxResults: 5,
+        userName: 'acc-1',
+        excludeInactive: true,
+      } as unknown as GroupPickerParams);
 
       const VALID = [
         'accountId',
@@ -84,6 +93,8 @@ describe('GroupsResource', () => {
       const sent = Object.keys(query).filter((k) => query[k] !== undefined);
       const invalid = sent.filter((k) => !VALID.includes(k));
       expect(invalid).toEqual([]);
+      // Explicit negative assertion: the stale key must not appear in the emitted query.
+      expect(query).not.toHaveProperty('excludeInactive');
     });
 
     it('forwards exclude array param as comma-joined string', async () => {
