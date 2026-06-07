@@ -4,6 +4,7 @@ import { MockTransport } from '../helpers/mock-transport.js';
 import type { Sprint } from '../../src/jira/resources/sprints.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
+const SOFTWARE_BASE_URL = 'https://test.atlassian.net/rest/software/1.0';
 
 const makeBoard = (id: number, name: string) => ({
   id,
@@ -34,13 +35,19 @@ const makeSprint = (id: number, name: string): Sprint => ({
   originBoardId: 1,
 });
 
+const makeSoftwareIssueResults = (keys: string[]) => ({
+  issues: keys.map((key, i) => makeBoardIssue(String(i + 1), key)),
+  nextPageToken: 'TOKEN-2',
+  isLast: false,
+});
+
 describe('BoardsResource', () => {
   let transport: MockTransport;
   let boards: BoardsResource;
 
   beforeEach(() => {
     transport = new MockTransport();
-    boards = new BoardsResource(transport, BASE_URL);
+    boards = new BoardsResource(transport, BASE_URL, SOFTWARE_BASE_URL);
   });
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -1779,6 +1786,265 @@ describe('BoardsResource', () => {
 
     it('throws ValidationError for boardId < 0', async () => {
       await expect(boards.getReports(-1)).rejects.toThrow('boardId must be a positive integer');
+    });
+  });
+
+  // ── Enhanced (JSIS) board issue endpoints (B1023-B1027) ─────────────────────
+
+  describe('getBacklogEnhanced()', () => {
+    it('calls GET software /board/{boardId}/backlog and passes the page through', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-1', 'PROJ-2']);
+      transport.respondWith(payload);
+
+      const result = await boards.getBacklogEnhanced(42);
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/backlog`,
+      });
+    });
+
+    it('threads nextPageToken, maxResults, jql, fields (CSV), and expand into query', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await boards.getBacklogEnhanced(42, {
+        nextPageToken: 'TOK',
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: ['summary', 'status'],
+        expand: 'names',
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        nextPageToken: 'TOK',
+        maxResults: 20,
+        jql: 'status = Done',
+        fields: 'summary,status',
+        expand: 'names',
+      });
+    });
+
+    it('serializes reconcileIssues as repeated params in the path (not CSV)', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await boards.getBacklogEnhanced(42, { reconcileIssues: [10001, 10002] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/backlog?reconcileIssues=10001&reconcileIssues=10002`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('reconcileIssues');
+    });
+
+    it('omits the reconcileIssues query string when not provided', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+      await boards.getBacklogEnhanced(42, { jql: 'x' });
+      expect(transport.lastCall?.options.path).toBe(`${SOFTWARE_BASE_URL}/board/42/backlog`);
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getBacklogEnhanced(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for negative boardId', async () => {
+      await expect(boards.getBacklogEnhanced(-1)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getBacklogEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  describe('getIssuesEnhanced()', () => {
+    it('calls GET software /board/{boardId}/issue and passes the page through', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-1']);
+      transport.respondWith(payload);
+
+      const result = await boards.getIssuesEnhanced(42);
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/issue`,
+      });
+    });
+
+    it('threads params and repeated reconcileIssues', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await boards.getIssuesEnhanced(42, {
+        nextPageToken: 'TOK',
+        maxResults: 10,
+        jql: 'project = X',
+        fields: ['id'],
+        expand: 'schema',
+        reconcileIssues: [5],
+      });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        nextPageToken: 'TOK',
+        maxResults: 10,
+        jql: 'project = X',
+        fields: 'id',
+        expand: 'schema',
+      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/issue?reconcileIssues=5`,
+      );
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getIssuesEnhanced(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    });
+  });
+
+  describe('getIssuesWithoutEpicEnhanced()', () => {
+    it('calls GET software /board/{boardId}/epic/none/issue', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-9']);
+      transport.respondWith(payload);
+
+      const result = await boards.getIssuesWithoutEpicEnhanced(42);
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/epic/none/issue`,
+      });
+    });
+
+    it('threads jql and fields', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+      await boards.getIssuesWithoutEpicEnhanced(42, { jql: 'a', fields: ['summary'] });
+      expect(transport.lastCall?.options.query).toMatchObject({ jql: 'a', fields: 'summary' });
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getIssuesWithoutEpicEnhanced(0)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getIssuesWithoutEpicEnhanced(42, { maxResults: 0 })).rejects.toThrow(
+        RangeError,
+      );
+    });
+  });
+
+  describe('getEpicIssuesEnhanced()', () => {
+    it('calls GET software /board/{boardId}/epic/{epicId}/issue', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-3']);
+      transport.respondWith(payload);
+
+      const result = await boards.getEpicIssuesEnhanced(42, 7);
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/epic/7/issue`,
+      });
+    });
+
+    it('threads params and repeated reconcileIssues', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+      await boards.getEpicIssuesEnhanced(42, 7, {
+        maxResults: 25,
+        reconcileIssues: [1, 2],
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 25 });
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/epic/7/issue?reconcileIssues=1&reconcileIssues=2`,
+      );
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getEpicIssuesEnhanced(0, 7)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for epicId = 0', async () => {
+      await expect(boards.getEpicIssuesEnhanced(42, 0)).rejects.toThrow(
+        'epicId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getEpicIssuesEnhanced(42, 7, { maxResults: 0 })).rejects.toThrow(
+        RangeError,
+      );
+    });
+  });
+
+  describe('getSprintIssuesEnhanced()', () => {
+    it('calls GET software /board/{boardId}/sprint/{sprintId}/issue', async () => {
+      const payload = makeSoftwareIssueResults(['PROJ-4']);
+      transport.respondWith(payload);
+
+      const result = await boards.getSprintIssuesEnhanced(42, 10);
+
+      expect(result).toEqual(payload);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${SOFTWARE_BASE_URL}/board/42/sprint/10/issue`,
+      });
+    });
+
+    it('threads jql, fields, and repeated reconcileIssues', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+      await boards.getSprintIssuesEnhanced(42, 10, {
+        jql: 'status = "In Progress"',
+        fields: ['summary', 'status'],
+        reconcileIssues: [99],
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        jql: 'status = "In Progress"',
+        fields: 'summary,status',
+      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/sprint/10/issue?reconcileIssues=99`,
+      );
+    });
+
+    it('throws ValidationError for boardId = 0', async () => {
+      await expect(boards.getSprintIssuesEnhanced(0, 10)).rejects.toThrow(
+        'boardId must be a positive integer',
+      );
+    });
+
+    it('throws ValidationError for sprintId = 0', async () => {
+      await expect(boards.getSprintIssuesEnhanced(42, 0)).rejects.toThrow(
+        'sprintId must be a positive integer',
+      );
+    });
+
+    it('throws RangeError for maxResults: 0', async () => {
+      await expect(boards.getSprintIssuesEnhanced(42, 10, { maxResults: 0 })).rejects.toThrow(
+        RangeError,
+      );
+    });
+  });
+
+  // ── softwareBaseUrl derivation (optional 3rd constructor param) ─────────────
+
+  describe('softwareBaseUrl fallback', () => {
+    it('derives the software base from the agile base when omitted', async () => {
+      const derived = new BoardsResource(transport, BASE_URL);
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await derived.getBacklogEnhanced(42);
+
+      expect(transport.lastCall?.options.path).toBe(`${SOFTWARE_BASE_URL}/board/42/backlog`);
     });
   });
 });

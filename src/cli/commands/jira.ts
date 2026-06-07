@@ -42,6 +42,7 @@ import type {
   WorkflowTransitionRulesDeleteEntry,
   BulkEditDashboardsData,
   SearchDashboardsOrderBy,
+  ListSoftwareIssuesParams,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -1574,11 +1575,57 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
     }
+    case 'backlog-enhanced': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getBacklogEnhanced(boardId, enhancedBoardParams(opts));
+    }
+    case 'get-issues-enhanced': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getIssuesEnhanced(boardId, enhancedBoardParams(opts));
+    }
+    case 'issues-without-epic-enhanced': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      return client.boards.getIssuesWithoutEpicEnhanced(boardId, enhancedBoardParams(opts));
+    }
+    case 'epic-issues-enhanced': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const epicId = parsePositiveIntArg(requireArg(cmd.positionalArgs[1], 'epicId'), 'epicId');
+      return client.boards.getEpicIssuesEnhanced(boardId, epicId, enhancedBoardParams(opts));
+    }
+    case 'sprint-issues-enhanced': {
+      const boardId = parsePositiveIntArg(requireArg(cmd.positionalArgs[0], 'boardId'), 'boardId');
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[1], 'sprintId'),
+        'sprintId',
+      );
+      return client.boards.getSprintIssuesEnhanced(boardId, sprintId, enhancedBoardParams(opts));
+    }
     default:
       throw new Error(
-        `Unknown boards action: ${cmd.action}. Actions: list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports`,
+        `Unknown boards action: ${cmd.action}. Actions: list, get, create, delete, backlog, configuration, list-epics, epic-issues, issues-without-epic, get-features, toggle-feature, get-issues, move-issues, list-projects, list-projects-full, list-sprints, list-versions, sprint-issues, list-by-filter, list-properties, delete-property, get-property, set-property, list-quickfilters, get-quickfilter, get-reports, backlog-enhanced, get-issues-enhanced, issues-without-epic-enhanced, epic-issues-enhanced, sprint-issues-enhanced`,
       );
   }
+}
+
+/**
+ * Build the shared param object for the enhanced (JSIS) board issue actions
+ * (`backlog-enhanced`, `get-issues-enhanced`, etc.). These use token
+ * pagination (`--next-page-token`), so there is no `--start-at`.
+ * `--reconcile-issues` is a CSV of positive integer issue IDs.
+ */
+function enhancedBoardParams(opts: ParsedCommand['options']): ListSoftwareIssuesParams {
+  const reconcileRaw = asString(opts['reconcile-issues']);
+  return {
+    jql: asString(opts['jql']),
+    fields: csvFlag(opts['fields']),
+    maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+    nextPageToken: asString(opts['next-page-token']),
+    expand: asString(opts['expand']),
+    reconcileIssues:
+      reconcileRaw === undefined
+        ? undefined
+        : splitCsvIds(reconcileRaw).map((s) => parsePositiveIntArg(s, '--reconcile-issues')),
+  };
 }
 
 async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {

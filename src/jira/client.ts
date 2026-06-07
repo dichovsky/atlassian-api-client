@@ -293,6 +293,9 @@ export class JiraClient {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/rest/api/3`;
     const agileBaseUrl = `${resolved.baseUrl}/rest/agile/1.0`;
+    // Base for the non-deprecated Jira Software "enhanced" (JSIS) endpoints.
+    // Consumed here by boards (B1023-B1027); reused by epic/sprints in a follow-up PR.
+    const softwareBaseUrl = `${resolved.baseUrl}/rest/software/1.0`;
     const operationsBaseUrl = `${resolved.baseUrl}/rest/operations/1.0`;
     const securityBaseUrl = `${resolved.baseUrl}/rest/security/1.0`;
     const devopscomponentsBaseUrl = `${resolved.baseUrl}/rest/devopscomponents/1.0`;
@@ -317,7 +320,7 @@ export class JiraClient {
     this.issueComments = new IssueCommentsResource(transport, baseUrl);
     this.issueAttachments = new IssueAttachmentsResource(transport, baseUrl);
     this.labels = new LabelsResource(transport, baseUrl);
-    this.boards = new BoardsResource(transport, agileBaseUrl);
+    this.boards = new BoardsResource(transport, agileBaseUrl, softwareBaseUrl);
     this.sprints = new SprintsResource(transport, agileBaseUrl);
     this.workflows = new WorkflowsResource(transport, baseUrl);
     this.dashboards = new DashboardsResource(transport, baseUrl);

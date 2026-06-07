@@ -3,7 +3,9 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { Sprint } from './sprints.js';
+import type { ListSoftwareIssuesParams, SoftwareIssueResults } from './software-issues.js';
 
 /** An agile board (Scrum, Kanban, or Simple) in Jira Software. */
 export interface Board {
@@ -160,10 +162,22 @@ export interface ListBoardVersionsParams {
 }
 
 export class BoardsResource {
+  private readonly softwareBaseUrl: string;
+
   constructor(
     private readonly transport: Transport,
     private readonly baseUrl: string,
-  ) {}
+    /**
+     * Base URL for the Jira Software "enhanced" (JSIS) endpoints
+     * (`/rest/software/1.0`). Optional for backwards compatibility with direct
+     * constructor callers: when omitted it is derived from `baseUrl` by
+     * swapping the agile segment (`/rest/agile/1.0` → `/rest/software/1.0`).
+     */
+    softwareBaseUrl?: string,
+  ) {
+    this.softwareBaseUrl =
+      softwareBaseUrl ?? baseUrl.replace('/rest/agile/1.0', '/rest/software/1.0');
+  }
 
   /** List boards with optional filtering. */
   async list(params?: ListBoardsParams): Promise<OffsetPaginatedResponse<Board>> {
@@ -549,6 +563,130 @@ export class BoardsResource {
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
       path: `${this.baseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
+      query,
+    });
+    return response.data;
+  }
+
+  // ── Enhanced (JSIS) board issue endpoints (B1023-B1027) ─────────────────────
+  // Non-deprecated token-paginated replacements for the agile board listings
+  // above. Each returns a single page; pass the returned `nextPageToken` back
+  // to fetch the next page. See `software-issues.ts` for the response shape.
+
+  /**
+   * Get backlog issues for a board via the enhanced (token-paginated) software
+   * endpoint (B1023). Non-deprecated replacement for {@link getBacklog}.
+   */
+  async getBacklogEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(`${this.softwareBaseUrl}/board/${boardId}/backlog`, params);
+  }
+
+  /**
+   * Get issues for a board via the enhanced (token-paginated) software
+   * endpoint (B1024). Non-deprecated replacement for {@link getIssues}.
+   */
+  async getIssuesEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(`${this.softwareBaseUrl}/board/${boardId}/issue`, params);
+  }
+
+  /**
+   * Get issues without an epic for a board via the enhanced (token-paginated)
+   * software endpoint (B1025). Non-deprecated replacement for
+   * {@link getIssuesWithoutEpic}.
+   */
+  async getIssuesWithoutEpicEnhanced(
+    boardId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(
+      `${this.softwareBaseUrl}/board/${boardId}/epic/none/issue`,
+      params,
+    );
+  }
+
+  /**
+   * Get issues in a specific epic on a board via the enhanced (token-paginated)
+   * software endpoint (B1026). Non-deprecated replacement for
+   * {@link getEpicIssues}.
+   */
+  async getEpicIssuesEnhanced(
+    boardId: number,
+    epicId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (!Number.isInteger(epicId) || epicId <= 0) {
+      throw new ValidationError('epicId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(
+      `${this.softwareBaseUrl}/board/${boardId}/epic/${epicId}/issue`,
+      params,
+    );
+  }
+
+  /**
+   * Get issues for a sprint within a board via the enhanced (token-paginated)
+   * software endpoint (B1027). Non-deprecated replacement for
+   * {@link getSprintIssues}.
+   */
+  async getSprintIssuesEnhanced(
+    boardId: number,
+    sprintId: number,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (!Number.isInteger(boardId) || boardId <= 0) {
+      throw new ValidationError('boardId must be a positive integer');
+    }
+    if (!Number.isInteger(sprintId) || sprintId <= 0) {
+      throw new ValidationError('sprintId must be a positive integer');
+    }
+    return this.requestSoftwareIssues(
+      `${this.softwareBaseUrl}/board/${boardId}/sprint/${sprintId}/issue`,
+      params,
+    );
+  }
+
+  /**
+   * Shared request builder for the enhanced (JSIS) board issue endpoints.
+   * `reconcileIssues` is a `type: array` query param → emit repeated
+   * `reconcileIssues=a&reconcileIssues=b` pairs built into the path (the scalar
+   * `query` bag would collapse them to a single CSV value the server rejects),
+   * while `fields` stays the comma-joined `fields` value the boards endpoints use.
+   */
+  private async requestSoftwareIssues(
+    path: string,
+    params?: ListSoftwareIssuesParams,
+  ): Promise<SoftwareIssueResults> {
+    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params) {
+      if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
+      if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+      if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
+      if (params.expand !== undefined) query['expand'] = params.expand;
+    }
+    const finalPath = appendRepeatedParams(path, 'reconcileIssues', params?.reconcileIssues);
+    const response = await this.transport.request<SoftwareIssueResults>({
+      method: 'GET',
+      path: finalPath,
       query,
     });
     return response.data;

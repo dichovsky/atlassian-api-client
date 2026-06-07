@@ -135,6 +135,10 @@ export type {
   ListBoardsParams,
   ListBoardIssuesParams,
 } from './resources/boards.js';
+export type {
+  SoftwareIssueResults,
+  ListSoftwareIssuesParams,
+} from './resources/software-issues.js';
 export { SprintsResource } from './resources/sprints.js';
 export type {
   Sprint,

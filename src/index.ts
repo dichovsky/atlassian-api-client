@@ -396,6 +396,8 @@ export type {
   BoardIssue,
   ListBoardsParams,
   ListBoardIssuesParams,
+  SoftwareIssueResults,
+  ListSoftwareIssuesParams,
   Sprint,
   CreateSprintData,
   UpdateSprintData,
