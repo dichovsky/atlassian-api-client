@@ -3729,6 +3729,19 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('comments update inline throws when both --resolved and --no-resolved are supplied', async () => {
+      const parsed = cmd('comments', 'update', ['ic-1'], {
+        body: 'text',
+        'version-number': '2',
+        'comment-type': 'inline',
+        resolved: true,
+        'no-resolved': true,
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Cannot specify both --resolved and --no-resolved',
+      );
+    });
+
     it('comments update (inline) does not call updateFooter', async () => {
       confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'c-1' });
       const parsed = cmd('comments', 'update', ['c-1'], {

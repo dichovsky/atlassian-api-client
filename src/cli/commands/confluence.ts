@@ -862,6 +862,9 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         value: requireOpt(opts['body'], '--body'),
       };
       if (commentType === 'inline') {
+        if (opts['resolved'] === true && opts['no-resolved'] === true) {
+          throw new Error('Cannot specify both --resolved and --no-resolved');
+        }
         const resolved =
           opts['resolved'] === true ? true : opts['no-resolved'] === true ? false : undefined;
         return client.comments.updateInline(requireArg(cmd.positionalArgs[0], 'comment ID'), {
