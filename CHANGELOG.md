@@ -1,12 +1,15 @@
 # Changelog
 
-## [1.1.0](https://github.com/dichovsky/atlassian-api-client/compare/v1.0.1...v1.1.0) (2026-06-05)
+## [2.0.0](https://github.com/dichovsky/atlassian-api-client/compare/v1.0.1...v2.0.0) (2026-06-07)
 
-This release builds the library out from the 1.0.x core into near-complete API
-coverage for **Jira Cloud platform v3** and **Confluence Cloud v2**, adds opt-in
-resilience and security middleware, and hardens the transport and pagination
-layers. All changes are backward compatible — existing imports and public method
-signatures are unchanged.
+This major release builds the library out from the 1.0.x core into near-complete
+API coverage for **Jira Cloud platform v3** and **Confluence Cloud v2**, adds
+opt-in resilience and security middleware, hardens the transport and pagination
+layers, completes the `atlas` CLI surface, and corrects a class of Jira
+query-serialization bugs. It supersedes the never-published 1.1.0 — all of that
+work is included here. Relative to the last published release (1.0.1) it
+**contains breaking changes** to a few Confluence types and one Jira method; see
+**BREAKING CHANGES** below for migration steps.
 
 ### Highlights
 
@@ -14,14 +17,27 @@ signatures are unchanged.
 - **Atlassian Connect security:** inbound asymmetric **RS256** JWT verification (`verifyConnectAsymmetricJwt`, B015) with strict algorithm pinning (`none`/`HS256` rejected).
 - **Observability:** `X-Request-Id` propagation — captured from inbound responses and optionally generated for outbound requests.
 - **Transport:** new `RequestOptions.binaryBody?: Blob` (B792) sends a raw binary request body with the `Blob`'s MIME type as `Content-Type` for endpoints that accept `*/*` (used by `JiraClient.universalAvatar.storeAvatar`); mutually exclusive with `body`/`formData`, strictly additive.
-- **CLI:** new `atlas scopes validate` command (B019).
-- **Tooling:** OpenAPI spec drift-guard script + weekly CI (B018); Confluence `types.ts` split into per-domain modules (B007 — public types unchanged).
+- **CLI:** completed `atlas` coverage — Jira dashboards + issue-comments/labels/webhook-delete, Confluence inline-comments + comment update, and Confluence space/blogpost labels + page comment/version listing (B1011–B1020) — plus the new `atlas scopes validate` command (B019).
+- **Correctness:** Jira `type:array` query parameters are now sent as repeated params (`?id=1&id=2`) per the v3 spec instead of CSV, fixing silent filter failures across roughly ten resources.
+- **Tooling:** OpenAPI spec drift-guard script + weekly CI (B018); Confluence `types.ts` split into per-domain modules (B007).
+
+### ⚠ BREAKING CHANGES
+
+These are the only changes that affect code written against the **last published release, 1.0.1**. Everything else added since 1.0.1 (the bulk of this release) is new API — see Features — and needs no migration.
+
+- **confluence (custom-content types):** the custom-content read/write types — public and exported since 1.0.x — were corrected to match the Confluence v2 API. `CreateCustomContentData` and `UpdateCustomContentData` now require `title` and `body` (were optional), `body` changes from an inline `{ representation, value }` object to the `CustomContentBodyWrite | CustomContentNestedBodyWrite` union, and `UpdateCustomContentData.status` narrows from `'current' | 'draft'` to `'current'`. `ListCustomContentParams` renames `spaceId` → `'space-id'`, drops `pageId` / `blogPostId` / `status`, and adds `sort`. _Migration:_ pass `title` + a `body` union value on create/update, rename `spaceId` → `'space-id'` on list, and drop the removed list filters. ([#60](https://github.com/dichovsky/atlassian-api-client/issues/60), [#178](https://github.com/dichovsky/atlassian-api-client/issues/178)) ([cc11045](https://github.com/dichovsky/atlassian-api-client/commit/cc11045), [ef94674](https://github.com/dichovsky/atlassian-api-client/commit/ef94674))
+- **confluence (`attachments` list filters):** `ListAttachmentsParams` (used by `attachments.listForPage` / `listForBlogPost`) drops the `sort` and `status` fields — the underlying list endpoints do not accept them. _Migration:_ remove `sort` / `status` from those calls; the `listAll*` generator variants still accept them. ([#54](https://github.com/dichovsky/atlassian-api-client/issues/54), [#178](https://github.com/dichovsky/atlassian-api-client/issues/178)) ([ef94674](https://github.com/dichovsky/atlassian-api-client/commit/ef94674))
+- **jira (`boards.toggleFeature`):** `ToggleFeatureData.state: 'ENABLED' | 'DISABLED'` is replaced by `enabling: boolean`, and the CLI flag `--state` becomes `--enabling`. The previous string field was never serialized to the shape Jira expects. _Migration:_ `toggleFeature(boardId, { feature, state: 'ENABLED' })` → `toggleFeature(boardId, { feature, enabling: true })`; CLI `--state ENABLED` → `--enabling`, `--state DISABLED` → omit `--enabling`. ([#209](https://github.com/dichovsky/atlassian-api-client/issues/209)) ([31f89af](https://github.com/dichovsky/atlassian-api-client/commit/31f89af))
 
 ### Features
 
 - add opt-in circuit breaker middleware (B010) ([#173](https://github.com/dichovsky/atlassian-api-client/issues/173)) ([3f8b699](https://github.com/dichovsky/atlassian-api-client/commit/3f8b699bb41ee5cce7f339ca521946e11be65071))
 - add opt-in token-bucket rate limiter middleware (B017) ([#174](https://github.com/dichovsky/atlassian-api-client/issues/174)) ([b1bec2a](https://github.com/dichovsky/atlassian-api-client/commit/b1bec2acea3777e9fcbe7d9b0bffdc572b3edcdb))
 - **cli:** add 'atlas scopes validate' command (B019) ([#147](https://github.com/dichovsky/atlassian-api-client/issues/147)) ([cb90b9c](https://github.com/dichovsky/atlassian-api-client/commit/cb90b9c9ef5bca7a77e4166ec55483084d633f30))
+- **cli:** wire jira dashboards resource into CLI (B1011) ([#192](https://github.com/dichovsky/atlassian-api-client/issues/192)) ([1969fb6](https://github.com/dichovsky/atlassian-api-client/commit/1969fb6))
+- **cli:** wire jira issue-comments CRUD, labels, webhooks delete (B1012, B1013, B1014) ([#193](https://github.com/dichovsky/atlassian-api-client/issues/193)) ([450958e](https://github.com/dichovsky/atlassian-api-client/commit/450958e))
+- **cli:** wire confluence inline-comments + comments update (B1016, B1017) ([#194](https://github.com/dichovsky/atlassian-api-client/issues/194)) ([08fa00e](https://github.com/dichovsky/atlassian-api-client/commit/08fa00e))
+- **cli:** wire confluence labels space/blogpost + pages comment/version listing (B1018, B1019, B1020) ([#195](https://github.com/dichovsky/atlassian-api-client/issues/195)) ([a27bb26](https://github.com/dichovsky/atlassian-api-client/commit/a27bb26))
 - **confluence:** blog-posts API coverage (B066-B084) ([#57](https://github.com/dichovsky/atlassian-api-client/issues/57)) ([01f805e](https://github.com/dichovsky/atlassian-api-client/commit/01f805e113bc9a5717fa5d70b254e32e34c013c9))
 - **confluence:** custom-content API coverage (B094-B108) ([#60](https://github.com/dichovsky/atlassian-api-client/issues/60)) ([cc11045](https://github.com/dichovsky/atlassian-api-client/commit/cc11045a7bbf1076977406397a80037487a9d9d7))
 - **confluence:** embeds API coverage (B126-B137) ([#59](https://github.com/dichovsky/atlassian-api-client/issues/59)) ([90a86ee](https://github.com/dichovsky/atlassian-api-client/commit/90a86ee301c02242501b5f42017e0d9f6bdda08a))
@@ -112,6 +128,17 @@ signatures are unchanged.
 
 ### Bug Fixes
 
+> The following correct Jira endpoints added during this release cycle (new in 2.0.0), so they require no migration from 1.0.1.
+
+- **jira:** send `type:array` query parameters as repeated params (`?id=1&id=2`) instead of CSV, per the Jira v3 spec — across component `projectIdsOrKeys`, config/field-schemes ids, workflowscheme/project `projectId`, jql `functionKey`, `getCreateMeta` ids, and the group/user pickers ([#198](https://github.com/dichovsky/atlassian-api-client/issues/198), [#200](https://github.com/dichovsky/atlassian-api-client/issues/200), [#201](https://github.com/dichovsky/atlassian-api-client/issues/201), [#222](https://github.com/dichovsky/atlassian-api-client/issues/222), [#223](https://github.com/dichovsky/atlassian-api-client/issues/223), [#226](https://github.com/dichovsky/atlassian-api-client/issues/226), [#227](https://github.com/dichovsky/atlassian-api-client/issues/227), [#228](https://github.com/dichovsky/atlassian-api-client/issues/228), [#229](https://github.com/dichovsky/atlassian-api-client/issues/229))
+- **jira:** `issues.archiveIssuesByJql` returns the `202` task-status URL (`Promise<string>`); `issues.watchIssuesBulk` targets `/bulk/issues/watch` with `selectedIssueIdsOrKeys` and returns `{ taskId }`; `issues.deleteAllWorklogs` takes the required `ids` body (`WorklogIdsRequestBean`) ([#204](https://github.com/dichovsky/atlassian-api-client/issues/204), [#206](https://github.com/dichovsky/atlassian-api-client/issues/206), [#207](https://github.com/dichovsky/atlassian-api-client/issues/207)) ([69c36c1](https://github.com/dichovsky/atlassian-api-client/commit/69c36c1))
+- **jira:** `projects.addRoleActors` sends the flat `ActorsMap` body ([#208](https://github.com/dichovsky/atlassian-api-client/issues/208)) ([eff78c7](https://github.com/dichovsky/atlassian-api-client/commit/eff78c7))
+- **jira:** drop the non-existent `excludeInactive` filter from `groups.picker` ([#212](https://github.com/dichovsky/atlassian-api-client/issues/212)) ([2c22517](https://github.com/dichovsky/atlassian-api-client/commit/2c22517)); `groupUserPicker` stops serializing `excludeAccountIds` and forwards `fieldId` ([#224](https://github.com/dichovsky/atlassian-api-client/issues/224)) ([86ae877](https://github.com/dichovsky/atlassian-api-client/commit/86ae877)); `issues.listAvailableGadgets` calls the no-parameter catalogue endpoint ([#225](https://github.com/dichovsky/atlassian-api-client/issues/225)) ([66333ce](https://github.com/dichovsky/atlassian-api-client/commit/66333ce))
+- **cli:** register jira handler flags missing from the CLI parser ([#199](https://github.com/dichovsky/atlassian-api-client/issues/199)) ([2bf25e5](https://github.com/dichovsky/atlassian-api-client/commit/2bf25e5))
+- **confluence:** CLI update forwards `--body` (blog-posts) and `--resolved` (comments) ([#202](https://github.com/dichovsky/atlassian-api-client/issues/202), [#203](https://github.com/dichovsky/atlassian-api-client/issues/203)) ([66c2bbd](https://github.com/dichovsky/atlassian-api-client/commit/66c2bbd))
+- **core:** `joinWithCap` off-by-one corrupted the max-length first error message ([#205](https://github.com/dichovsky/atlassian-api-client/issues/205)) ([c3e5108](https://github.com/dichovsky/atlassian-api-client/commit/c3e5108))
+- **jira:** `jql.parse` sends `validation` as a query param with body `{ queries }` only ([#210](https://github.com/dichovsky/atlassian-api-client/issues/210)) ([b4b4b60](https://github.com/dichovsky/atlassian-api-client/commit/b4b4b60))
+- **jira:** `users.setColumns` wraps the body in `UserColumnRequestBody { columns }` ([#211](https://github.com/dichovsky/atlassian-api-client/issues/211)) ([639c3e7](https://github.com/dichovsky/atlassian-api-client/commit/639c3e7))
 - **ci:** drop npm-only semver cooldown keys from github-actions ecosystem (B031) ([#185](https://github.com/dichovsky/atlassian-api-client/issues/185)) ([e71c440](https://github.com/dichovsky/atlassian-api-client/commit/e71c4405f725556ef75a6513a553772b40a7ce71)), closes [#180](https://github.com/dichovsky/atlassian-api-client/issues/180)
 - **cli:** accept --start-at 0 for 0-based Jira pagination offset ([#159](https://github.com/dichovsky/atlassian-api-client/issues/159)) ([b37ff00](https://github.com/dichovsky/atlassian-api-client/commit/b37ff006cbcb0bed94252411deadfa91a734cfbe))
 - **cli:** trim whitespace in Jira --fields/--expand CSV flags ([#169](https://github.com/dichovsky/atlassian-api-client/issues/169)) ([82ea6d5](https://github.com/dichovsky/atlassian-api-client/commit/82ea6d5b583f08cfaa444f8eac49c655ec4cb3f0))
@@ -130,6 +157,10 @@ signatures are unchanged.
 - **transport:** drop caller header case-collisions so fetch keeps canonical values ([#163](https://github.com/dichovsky/atlassian-api-client/issues/163)) ([4b37099](https://github.com/dichovsky/atlassian-api-client/commit/4b3709963393723c547e30faa7c74c4b44abc776))
 - **transport:** keep timeout active through body reads ([#168](https://github.com/dichovsky/atlassian-api-client/issues/168)) ([35779dc](https://github.com/dichovsky/atlassian-api-client/commit/35779dcba4ae8ec711f36aa1734adecbd3da96ca))
 - update funding metadata structure in package.json and correspond… ([#170](https://github.com/dichovsky/atlassian-api-client/issues/170)) ([bd217f2](https://github.com/dichovsky/atlassian-api-client/commit/bd217f23ea11d8ad1abaac497f9881d235b1a18e))
+
+### Documentation
+
+- **skill:** the bundled `atlassian-api-client-cli` skill reference is brought to full CLI/skill parity — all Jira `issues` sub-resource actions are documented, the Confluence attachments upload note is corrected, and the parity matrix test is hardened. ([#197](https://github.com/dichovsky/atlassian-api-client/issues/197), [#213](https://github.com/dichovsky/atlassian-api-client/issues/213), [#230](https://github.com/dichovsky/atlassian-api-client/issues/230), [#231](https://github.com/dichovsky/atlassian-api-client/issues/231))
 
 ## 1.0.1 (2026-05-21)
 
