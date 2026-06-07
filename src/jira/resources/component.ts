@@ -143,13 +143,7 @@ export class ComponentResource {
       'projectIdsOrKeys',
       params?.projectIdsOrKeys,
     );
-    yield* paginateOffset<Component>(
-      this.transport,
-      basePath,
-      query,
-      maxResults,
-      paginateOptions,
-    );
+    yield* paginateOffset<Component>(this.transport, basePath, query, maxResults, paginateOptions);
   }
 
   /** B362: Create a component. */
