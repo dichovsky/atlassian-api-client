@@ -84,15 +84,21 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ showAvatar: true });
     });
 
-    it('forwards projectId array param as comma-joined string', async () => {
-      // Arrange
+    it('forwards projectId array as repeated query params in path, not CSV', async () => {
+      // Arrange — spec declares projectId as type:array, style:form, explode:true
+      // which requires ?projectId=10001&projectId=10002, NOT ?projectId=10001,10002
       transport.respondWith(makePickerResponse());
 
       // Act
       await picker.pick({ projectId: ['10001', '10002'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10001,10002' });
+      // Assert: repeated params are baked into the path string
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('projectId=10001');
+      expect(path).toContain('projectId=10002');
+      // Must NOT be CSV in the scalar query bag
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('projectId');
     });
 
     it('forwards projectRole param', async () => {
@@ -106,17 +112,21 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ projectRole: 'Developer' });
     });
 
-    it('forwards excludeAccountIds param as comma-joined string', async () => {
-      // Arrange
+    it('does NOT emit excludeAccountIds — param does not exist on GET /groupuserpicker', async () => {
+      // The /groupuserpicker spec has no excludeAccountIds param; sending it is
+      // silently ignored by Jira. The field has been removed from GroupUserPickerParams.
+      // This test asserts the type-level removal: the method no longer accepts
+      // excludeAccountIds, and calling pick() never emits it on the wire.
       transport.respondWith(makePickerResponse());
 
-      // Act
-      await picker.pick({ excludeAccountIds: ['acc-99', 'acc-100'] });
+      // Act — pick() with only valid params
+      await picker.pick({ query: 'alice' });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        excludeAccountIds: 'acc-99,acc-100',
-      });
+      // Assert: excludeAccountIds is never emitted
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('excludeAccountIds');
+      const path = transport.lastCall?.options.path as string;
+      expect(path).not.toContain('excludeAccountIds');
     });
 
     it('maps excludeConnectUsers to the excludeConnectAddons wire param', async () => {

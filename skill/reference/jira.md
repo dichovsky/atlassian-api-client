@@ -1749,16 +1749,15 @@ atlas jira groups remove-user --group-id grp-1 --account-id 5b10ac8d82e05b22cc7d
 
 ## `group-user-picker`
 
-| Action | Positional | Required flags | Optional flags                                                                                                                    |
-| ------ | ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `pick` | —          | —              | `--query`, `--max-results`, `--show-avatar`, `--project-id`, `--project-role`, `--exclude-account-ids`, `--exclude-connect-users` |
+| Action | Positional | Required flags | Optional flags                                                                                           |
+| ------ | ---------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `pick` | —          | —              | `--query`, `--max-results`, `--show-avatar`, `--project-id`, `--project-role`, `--exclude-connect-users` |
 
 - `--query` — string to match against both group names and user display names.
 - `--max-results` — maximum results per section (default 50).
 - `--show-avatar` — when `true`, avatar URLs are included in user results.
-- `--project-id` — **comma-separated** project IDs to scope user results to project members.
+- `--project-id` — **comma-separated** project IDs to scope user results to project members (sent as repeated params on the wire: `?projectId=a&projectId=b`).
 - `--project-role` — case-sensitive project role name to filter user results.
-- `--exclude-account-ids` — **comma-separated** account IDs to exclude from user suggestions.
 - `--exclude-connect-users` — when `true`, Atlassian Connect users are excluded.
 - Endpoint: `GET /rest/api/3/groupuserpicker`.
 

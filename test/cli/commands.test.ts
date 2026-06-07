@@ -15001,19 +15001,19 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('group-user-picker pick forwards exclude-account-ids as split array', async () => {
-      // Arrange
+    it('group-user-picker pick does NOT pass excludeAccountIds — param removed (bogus on this endpoint)', async () => {
+      // excludeAccountIds does not exist on GET /groupuserpicker; the --exclude-account-ids
+      // flag is still accepted by the router (shared with users.picker) but silently ignored
+      // for this resource. The CLI handler must NOT forward it to pick().
       jiraGroupUserPickerMock.pick.mockResolvedValue({});
 
       // Act
-      await executeJiraCommand(
-        cmd('group-user-picker', 'pick', [], { 'exclude-account-ids': 'acc-1,acc-2' }),
-        GLOBALS,
-      );
+      await executeJiraCommand(cmd('group-user-picker', 'pick', [], { query: 'alice' }), GLOBALS);
 
-      // Assert
-      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
-        expect.objectContaining({ excludeAccountIds: ['acc-1', 'acc-2'] }),
+      // Assert: pick() is called without excludeAccountIds
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledOnce();
+      expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalledWith(
+        expect.objectContaining({ excludeAccountIds: expect.anything() }),
       );
     });
 

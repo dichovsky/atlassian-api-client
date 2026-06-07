@@ -1,3 +1,4 @@
+import { appendRepeatedParams } from '../../core/query.js';
 import type { Transport } from '../../core/types.js';
 
 /** A single group suggestion from the combined picker. */
@@ -53,8 +54,6 @@ export interface GroupUserPickerParams {
   readonly projectId?: string[];
   /** Case-sensitive name of the project role to filter user results. */
   readonly projectRole?: string;
-  /** Account IDs to exclude from user suggestions. */
-  readonly excludeAccountIds?: string[];
   /** Whether to exclude users without Jira access. */
   readonly excludeConnectUsers?: boolean;
 }
@@ -82,19 +81,23 @@ export class GroupUserPickerResource {
     if (params?.query !== undefined) query['query'] = params.query;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params?.showAvatar !== undefined) query['showAvatar'] = params.showAvatar;
-    if (params?.projectId !== undefined) query['projectId'] = params.projectId.join(',');
     if (params?.projectRole !== undefined) query['projectRole'] = params.projectRole;
-    if (params?.excludeAccountIds !== undefined)
-      query['excludeAccountIds'] = params.excludeAccountIds.join(',');
     // The groupuserpicker endpoint's documented filter is `excludeConnectAddons`
     // (the `excludeConnectUsers` spelling belongs to GET /user/picker). Keep the
     // public param name but send the correct wire param so the filter is applied.
     if (params?.excludeConnectUsers !== undefined)
       query['excludeConnectAddons'] = params.excludeConnectUsers;
 
+    // projectId is type:array in the spec — must be repeated params, not CSV.
+    const path = appendRepeatedParams(
+      `${this.baseUrl}/groupuserpicker`,
+      'projectId',
+      params?.projectId,
+    );
+
     const response = await this.transport.request<GroupUserPickerResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/groupuserpicker`,
+      path,
       query,
     });
     return response.data;

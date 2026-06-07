@@ -2388,20 +2388,12 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
             .map((s) => s.trim())
             .filter((s) => s.length > 0)
         : undefined;
-      const excludeAccountIdsRaw = asString(opts['exclude-account-ids']);
-      const excludeAccountIds = excludeAccountIdsRaw
-        ? excludeAccountIdsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
       return client.groupUserPicker.pick({
         query: asString(opts['query']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: asBoolFlag(opts['show-avatar']),
         projectId,
         projectRole: asString(opts['project-role']),
-        excludeAccountIds,
         excludeConnectUsers: asBoolFlag(opts['exclude-connect-users']),
       });
     }
