@@ -2755,3 +2755,68 @@
   - deps: none
   - **Impl:** PR #180 + hotfix PR #185. Dependabot v2 for `npm` + `github-actions`, weekly, `open-pull-requests-limit: 5`, dev-dep minor+patch grouping, and a security `cooldown` (npm: default 7 / patch 3 / minor 7 / major 30 days; github-actions: `default-days: 7` only). #185 hotfix: `cooldown` `semver-{patch,minor,major}-days` keys are npm-ecosystem-only — GitHub's live validator rejected them under `github-actions` after #180 merged. Test asserts directives + cooldown ordering (major ≥ minor ≥ patch).
   - **Rat:** Cooldown blunts compromised-fresh-release supply-chain windows by aging new versions before upgrade PRs. Per-ecosystem schema means github-actions supports only `default-days`.
+
+## 🗺️ Gap-analysis additions — B1022–B1036 (2026-06-08)
+
+> 14 verified coverage gaps + 1 wire-correctness bug from `docs/API-GAP-ANALYSIS-2026-06-07.md`, shipped as 5 PRs (#234–#238). Each spec-verified against the live Atlassian specs, 100% covered, independently reviewed (fresh-lineage Opus), CLI + skill parity enforced.
+
+- [x] 🔴 🐛 QA: B1036 Jira: `WorkflowsResource.get()` dead path `/workflow` → `/workflow/search`
+  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`
+  - **Impl:** PR #234. Routed `get(workflowName)` to `GET /rest/api/3/workflow/search` (`getWorkflowsPaginated`) — same `workflowName` query param + `{ values: [...] }` shape already parsed; bare `/rest/api/3/workflow` is absent from the live v3 spec. RED→GREEN regression test re-pins the path. No CLI/skill change (existing action).
+  - **Rat:** Bare path would 404/405 on a live tenant; `/workflow/search` is the documented replacement (already used by `list()`).
+- [x] 🔴 🧩 API: B1022 Jira: expose POST /rest/api/3/issue/watching (getIsWatchingIssueBulk)
+  - files: `src/jira/resources/issues.ts`, `src/jira/index.ts`, `src/index.ts`, `src/cli/commands/jira.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/jira/issues.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #236. `isWatchingIssuesBulk({ issueIds })` → POST `/issue/watching`; returns `BulkIssueIsWatchingResult { issuesIsWatching?: Record<string, boolean> }` (spec `IssueList`→`BulkIssueIsWatching`). CLI `issues is-watching-bulk --issue-ids a,b`.
+  - **Rat:** Read-only watch-check, distinct from the write `watchIssuesBulk` (`/bulk/issues/watch`). Archived B529 mislabeled this read endpoint but shipped only the write path (removed in #207); re-added as a proper read.
+- [x] 🔴 🧩 API: B1023 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog (getIssuesForBacklogJSIS) — reverses B1001
+  - files: `src/jira/resources/software-issues.ts` (new), `src/jira/resources/boards.ts`, `src/jira/client.ts`, `src/jira/index.ts`, `src/index.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/jira/boards.test.ts`, `test/cli/commands.test.ts`, `test/cli/router.test.ts`
+  - **Impl:** PR #235. Foundation for the enhanced (JSIS) surface: new `softwareBaseUrl` (`/rest/software/1.0`) wiring + shared token-paginated `SoftwareIssueResults` / `ListSoftwareIssuesParams` (`nextPageToken`, `maxResults`, `jql`, `fields`, `reconcileIssues`, `expand`, `validateQuery`). `BoardsResource.getBacklogEnhanced` + CLI `boards backlog-enhanced`.
+  - **Rat:** B1001 was wrongly closed as a "spec-snapshot alias"; the spec falsifies that (non-deprecated, token pagination, `reconcileIssues`, distinct schema). Surface-token pattern (mirrors `statuses.ts`); `reconcileIssues` serialized as repeated query params via `appendRepeatedParams`; optional-derive `softwareBaseUrl` constructor param keeps direct construction non-breaking.
+- [x] 🔴 🧩 API: B1024 Jira: expose GET /rest/software/1.0/board/{boardId}/issue (getIssuesForBoardJSIS) — reverses B1005
+  - files: `src/jira/resources/boards.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`, `test/jira/boards.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #235. `BoardsResource.getIssuesEnhanced` + CLI `boards get-issues-enhanced` (reuses the B1023 foundation).
+  - **Rat:** Non-deprecated token-paginated replacement for the deprecated agile board issue listing (B1005 reversed).
+- [x] 🔴 🧩 API: B1025 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/none/issue (getIssuesWithoutEpicForBoardJSIS) — reverses B1004
+  - files: `src/jira/resources/boards.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`, `test/jira/boards.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #235. `BoardsResource.getIssuesWithoutEpicEnhanced` + CLI `boards issues-without-epic-enhanced`.
+  - **Rat:** Reverses B1004; same enhanced-surface rationale as B1023.
+- [x] 🔴 🧩 API: B1026 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/{epicId}/issue (getBoardIssuesForEpicJSIS) — reverses B1003
+  - files: `src/jira/resources/boards.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`, `test/jira/boards.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #235. `BoardsResource.getEpicIssuesEnhanced` + CLI `boards epic-issues-enhanced`.
+  - **Rat:** Reverses B1003; same enhanced-surface rationale as B1023.
+- [x] 🔴 🧩 API: B1027 Jira: expose GET /rest/software/1.0/board/{boardId}/sprint/{sprintId}/issue (getBoardIssuesForSprintJSIS) — reverses B1007
+  - files: `src/jira/resources/boards.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`, `test/jira/boards.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #235. `BoardsResource.getSprintIssuesEnhanced` + CLI `boards sprint-issues-enhanced`.
+  - **Rat:** Reverses B1007; same enhanced-surface rationale as B1023.
+- [x] 🔴 🧩 API: B1028 Jira: expose GET /rest/software/1.0/epic/{epicIdOrKey}/issue (getIssuesForEpicJSIS) — reverses B1008
+  - files: `src/jira/resources/epic.ts`, `src/jira/client.ts`, `src/cli/commands/jira.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/jira/epic.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #238 (stacked on #235). `EpicResource.getIssuesEnhanced(epicIdOrKey)` → `/rest/software/1.0/epic/{epicIdOrKey}/issue` (`encodePathSegment`) + CLI `epic issues-enhanced`. Reuses the #235 foundation (`software-issues.ts`, `softwareBaseUrl`).
+  - **Rat:** Reverses B1008; non-deprecated token-paginated replacement for the deprecated agile epic issue listing.
+- [x] 🔴 🧩 API: B1029 Jira: expose GET /rest/software/1.0/epic/none/issue (getIssuesWithoutEpicJSIS) — reverses B1009
+  - files: `src/jira/resources/epic.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`, `test/jira/epic.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #238. `EpicResource.getIssuesWithoutEpicEnhanced` + CLI `epic issues-none-enhanced`.
+  - **Rat:** Reverses B1009; same enhanced-surface rationale.
+- [x] 🔴 🧩 API: B1030 Jira: expose GET /rest/software/1.0/sprint/{sprintId}/issue (getIssuesForSprintJSIS) — reverses B1010
+  - files: `src/jira/resources/sprints.ts`, `src/jira/client.ts`, `src/cli/commands/jira.ts`, `src/cli/help.ts`, `skill/reference/jira.md`, `test/jira/sprints.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #238. `SprintsResource.getIssuesEnhanced(sprintId)` + CLI `sprints get-issues-enhanced`.
+  - **Rat:** Reverses B1010; same enhanced-surface rationale.
+- [x] 🟡 🧩 API: B1031 Confluence: expose POST /space-permissions/transition/access-removals (bulkRemoveSpacePermissionAccess)
+  - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/confluence/index.ts`, `src/index.ts`, `src/cli/commands/confluence.ts`, `src/cli/help.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #237. `bulkRemoveAccess({ permissionCombinationIds, spaceSelection })` → POST, returns the async `BulkTransitionTaskResponse` (with `statusUrl`). CLI `space-permissions transition-remove-access --body '{...}'`.
+  - **Rat:** First of the async bulk-RBAC Space Permission Transition tag (previously only `list`/`listAll`, B189). Submit → poll via B1035.
+- [x] 🟢 🧩 API: B1032 Confluence: expose GET /space-permissions/transition/combinations (listSpacePermissionCombinations)
+  - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #237. `listCombinations` (single page) + `listAllCombinations` (async generator). Cursor lives in the response **body** `cursor` field (no `_links`); the generator guards against empty pages and non-advancing cursors (matches `plans.ts`). CLI `space-permissions transition-list-combinations`.
+  - **Rat:** Lists the generated permission combinations for a transition. Body-cursor pagination ≠ the `_links`-based `paginateCursor`.
+- [x] 🟢 🧩 API: B1033 Confluence: expose POST /space-permissions/transition/combinations (generateSpacePermissionCombinations)
+  - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #237. `generateCombinations()` → POST, **no request body** (spec has none), returns `BulkTransitionTaskResponse`. CLI `space-permissions transition-generate-combinations`.
+  - **Rat:** Kicks off async generation of the combinations table consumed by B1032.
+- [x] 🟡 🧩 API: B1034 Confluence: expose POST /space-permissions/transition/role-assignments (bulkAssignSpacePermissionRoles)
+  - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #237. `bulkAssignRoles({ assignments, spaceSelection })` → POST, returns `BulkTransitionTaskResponse`. Faithfully models the spec's request-vs-response `principalType(s)` enum asymmetry. CLI `space-permissions transition-assign-roles --body '{...}'`.
+  - **Rat:** Async bulk role assignment during a permission transition.
+- [x] 🟡 🧩 API: B1035 Confluence: expose GET /space-permissions/transition/tasks/{taskId} (getSpacePermissionTransitionTaskStatus)
+  - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
+  - **Impl:** PR #237. `getTransitionTaskStatus(taskId)` → GET (`encodePathSegment` on taskId), returns `{ taskId, status, errorMessage? }`. CLI `space-permissions transition-task-status <taskId>`.
+  - **Rat:** Async-poll companion completing the submit→poll flow for B1031/B1033/B1034.
