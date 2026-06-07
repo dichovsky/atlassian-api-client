@@ -492,17 +492,23 @@ describe('Resource coverage drift check', () => {
 
   it('every Confluence dispatcher resource appears in the reference matrix', () => {
     for (const resource of confluenceResources) {
-      expect(CONFLUENCE_REF, `resource '${resource}' missing from confluence reference`).toContain(
-        `\`${resource}\``,
-      );
+      // Require a real matrix row: resource in backticks as the first table cell.
+      const rowPattern = new RegExp(`^\\|\\s*\`${resource}\`\\s*\\|`, 'm');
+      expect(
+        rowPattern.test(CONFLUENCE_REF),
+        `resource '${resource}' missing as a matrix row in confluence reference`,
+      ).toBe(true);
     }
   });
 
   it('every Jira dispatcher resource appears in the reference matrix', () => {
     for (const resource of jiraResources) {
-      expect(JIRA_REF, `resource '${resource}' missing from jira reference`).toContain(
-        `\`${resource}\``,
-      );
+      // Require a real matrix row: resource in backticks as the first table cell.
+      const rowPattern = new RegExp(`^\\|\\s*\`${resource}\`\\s*\\|`, 'm');
+      expect(
+        rowPattern.test(JIRA_REF),
+        `resource '${resource}' missing as a matrix row in jira reference`,
+      ).toBe(true);
     }
   });
 });
