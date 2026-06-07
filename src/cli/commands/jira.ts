@@ -2392,6 +2392,7 @@ async function executeGroupUserPicker(client: JiraClient, cmd: ParsedCommand): P
         query: asString(opts['query']),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         showAvatar: asBoolFlag(opts['show-avatar']),
+        fieldId: asString(opts['field-id']),
         projectId,
         projectRole: asString(opts['project-role']),
         excludeConnectUsers: asBoolFlag(opts['exclude-connect-users']),

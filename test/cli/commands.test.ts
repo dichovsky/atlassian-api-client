@@ -15001,16 +15001,38 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('group-user-picker pick does NOT pass excludeAccountIds — param removed (bogus on this endpoint)', async () => {
-      // excludeAccountIds does not exist on GET /groupuserpicker; the --exclude-account-ids
-      // flag is still accepted by the router (shared with users.picker) but silently ignored
-      // for this resource. The CLI handler must NOT forward it to pick().
+    it('group-user-picker pick forwards field-id', async () => {
+      // Arrange
       jiraGroupUserPickerMock.pick.mockResolvedValue({});
 
       // Act
-      await executeJiraCommand(cmd('group-user-picker', 'pick', [], { query: 'alice' }), GLOBALS);
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], { 'field-id': 'customfield_10050' }),
+        GLOBALS,
+      );
 
-      // Assert: pick() is called without excludeAccountIds
+      // Assert
+      expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledWith(
+        expect.objectContaining({ fieldId: 'customfield_10050' }),
+      );
+    });
+
+    it('group-user-picker pick does NOT pass excludeAccountIds — deprecated/bogus on this endpoint', async () => {
+      // excludeAccountIds does not exist on GET /groupuserpicker; the --exclude-account-ids
+      // flag is still accepted by the router (shared with users.picker) but must never be
+      // forwarded to pick() — the param is @deprecated and not sent on the wire.
+      jiraGroupUserPickerMock.pick.mockResolvedValue({});
+
+      // Act — supply --exclude-account-ids to exercise the flag-path and confirm it is dropped
+      await executeJiraCommand(
+        cmd('group-user-picker', 'pick', [], {
+          query: 'alice',
+          'exclude-account-ids': 'acc-1,acc-2',
+        }),
+        GLOBALS,
+      );
+
+      // Assert: pick() is called without excludeAccountIds reaching the SDK
       expect(jiraGroupUserPickerMock.pick).toHaveBeenCalledOnce();
       expect(jiraGroupUserPickerMock.pick).not.toHaveBeenCalledWith(
         expect.objectContaining({ excludeAccountIds: expect.anything() }),

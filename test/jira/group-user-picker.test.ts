@@ -112,15 +112,25 @@ describe('GroupUserPickerResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ projectRole: 'Developer' });
     });
 
-    it('does NOT emit excludeAccountIds — param does not exist on GET /groupuserpicker', async () => {
-      // The /groupuserpicker spec has no excludeAccountIds param; sending it is
-      // silently ignored by Jira. The field has been removed from GroupUserPickerParams.
-      // This test asserts the type-level removal: the method no longer accepts
-      // excludeAccountIds, and calling pick() never emits it on the wire.
+    it('forwards fieldId as scalar query param', async () => {
+      // Arrange
       transport.respondWith(makePickerResponse());
 
-      // Act — pick() with only valid params
-      await picker.pick({ query: 'alice' });
+      // Act
+      await picker.pick({ fieldId: 'customfield_10050' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({ fieldId: 'customfield_10050' });
+    });
+
+    it('does NOT emit excludeAccountIds — deprecated, not a valid param on GET /groupuserpicker', async () => {
+      // The /groupuserpicker spec has no excludeAccountIds param. The property is
+      // retained in GroupUserPickerParams as @deprecated for backward compatibility,
+      // but must never be serialized onto the wire.
+      transport.respondWith(makePickerResponse());
+
+      // Act — pass deprecated excludeAccountIds; it must be silently dropped
+      await picker.pick({ query: 'alice', excludeAccountIds: ['acc-1', 'acc-2'] });
 
       // Assert: excludeAccountIds is never emitted
       const query = transport.lastCall?.options.query as Record<string, unknown>;
