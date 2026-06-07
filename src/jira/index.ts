@@ -73,6 +73,7 @@ export type {
   IssueWatchers,
   IssueNotifyData,
   AssignIssueData,
+  BulkIssueIsWatchingResult,
 } from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';
 export type {

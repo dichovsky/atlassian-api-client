@@ -198,6 +198,16 @@ export interface IssueBulkWatchResult {
   readonly taskId: string;
 }
 
+/**
+ * Result of the bulk "is watching" read-check.
+ * Spec: POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk).
+ * Maps each issue ID to `true` if the current user is watching it, `false` otherwise.
+ */
+export interface BulkIssueIsWatchingResult {
+  /** Map of issue ID → whether the current user is watching that issue. */
+  readonly issuesIsWatching?: Record<string, boolean>;
+}
+
 // ── Archive export ────────────────────────────────────────────────────────────
 
 export interface IssueArchiveExportData {
@@ -1237,6 +1247,23 @@ export class IssuesResource {
       method: 'POST',
       path: `${this.baseUrl}/bulk/issues/watch`,
       body: { selectedIssueIdsOrKeys: data.issueIds },
+    });
+    return response.data;
+  }
+
+  // ── Bulk watching read-check (B1022) ──────────────────────────────────────
+
+  /**
+   * Check whether the current user is watching each of the specified issues (B1022).
+   * POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk).
+   * READ-ONLY despite the POST method — it returns watch state and watches nothing.
+   * Distinct from `watchIssuesBulk`, which is the WRITE endpoint at /rest/api/3/bulk/issues/watch.
+   */
+  async isWatchingIssuesBulk(data: { issueIds: string[] }): Promise<BulkIssueIsWatchingResult> {
+    const response = await this.transport.request<BulkIssueIsWatchingResult>({
+      method: 'POST',
+      path: `${this.baseUrl}/issue/watching`,
+      body: { issueIds: data.issueIds },
     });
     return response.data;
   }
