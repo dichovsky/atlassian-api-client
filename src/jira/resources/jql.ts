@@ -229,10 +229,16 @@ export class JqlResource {
 
   /** Parse JQL queries. */
   async parse(data: ParseJqlQueriesData): Promise<ParsedJqlQueries> {
+    // `validation` is a required query param (in:query, enum strict/warn/none,
+    // default strict) per the Jira v3 spec. The request body schema
+    // JqlQueriesToParse contains only { queries } with additionalProperties:false,
+    // so `validation` must NOT appear in the body.
+    const { validation = 'strict', queries } = data;
     const response = await this.transport.request<ParsedJqlQueries>({
       method: 'POST',
       path: `${this.baseUrl}/jql/parse`,
-      body: data,
+      query: { validation },
+      body: { queries },
     });
     return response.data;
   }

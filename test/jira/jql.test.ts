@@ -145,15 +145,33 @@ describe('JqlResource', () => {
       });
     });
 
-    it('includes optional validation setting in body', async () => {
+    it('sends validation as the required query param, not in the body', async () => {
       // Arrange
       transport.respondWith({ queries: [] });
 
-      // Act
-      await jql.parse({ queries: ['project = TEST'], validation: 'strict' });
+      // Act — spec: parseJqlQueries has `validation` as a required query param
+      // (in:query, enum strict/warn/none) and body schema JqlQueriesToParse
+      // contains only { queries } with additionalProperties:false.
+      await jql.parse({ queries: ['project = TEST'], validation: 'warn' });
+
+      // Assert — validation must be in the query map, not in the body
+      const opts = transport.lastCall?.options;
+      expect((opts?.query as Record<string, unknown>)?.['validation']).toBe('warn');
+      expect('validation' in ((opts?.body as Record<string, unknown>) ?? {})).toBe(false);
+    });
+
+    it('sends strict as the default validation query param when not specified', async () => {
+      // Arrange
+      transport.respondWith({ queries: [] });
+
+      // Act — when omitted, the spec default is 'strict'; we send it explicitly
+      // so the caller gets predictable behaviour regardless of server-side defaults
+      await jql.parse({ queries: ['project = TEST'] });
 
       // Assert
-      expect(transport.lastCall?.options.body).toMatchObject({ validation: 'strict' });
+      const opts = transport.lastCall?.options;
+      expect((opts?.query as Record<string, unknown>)?.['validation']).toBe('strict');
+      expect('validation' in ((opts?.body as Record<string, unknown>) ?? {})).toBe(false);
     });
 
     it('returns query errors in the result', async () => {
