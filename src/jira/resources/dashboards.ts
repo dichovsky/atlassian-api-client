@@ -147,13 +147,6 @@ export interface AvailableDashboardGadgetsResponse {
   readonly gadgets: AvailableDashboardGadget[];
 }
 
-export interface ListAvailableGadgetsParams {
-  readonly moduleKey?: readonly string[];
-  readonly uri?: readonly string[];
-  readonly gadgetId?: readonly number[];
-  readonly dashboardId?: readonly number[];
-}
-
 /** Sort orders accepted by `GET /dashboard/search`. */
 export type SearchDashboardsOrderBy =
   | 'description'
@@ -435,23 +428,11 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** B404: List gadgets available to add to a dashboard. */
-  async listAvailableGadgets(
-    params?: ListAvailableGadgetsParams,
-  ): Promise<AvailableDashboardGadgetsResponse> {
-    const query: Record<string, string | number | boolean | undefined> = {};
-    if (params?.moduleKey !== undefined) query['moduleKey'] = params.moduleKey.join(',');
-    if (params?.uri !== undefined) query['uri'] = params.uri.join(',');
-    if (params?.gadgetId !== undefined) {
-      query['gadgetId'] = params.gadgetId.map((n) => String(n)).join(',');
-    }
-    if (params?.dashboardId !== undefined) {
-      query['dashboardId'] = params.dashboardId.map((n) => String(n)).join(',');
-    }
+  /** B404: List gadgets available to add to a dashboard (`GET /dashboard/gadgets`). No query parameters — this is the global catalogue endpoint. */
+  async listAvailableGadgets(): Promise<AvailableDashboardGadgetsResponse> {
     const response = await this.transport.request<AvailableDashboardGadgetsResponse>({
       method: 'GET',
       path: `${this.baseUrl}/dashboard/gadgets`,
-      query,
     });
     return response.data;
   }

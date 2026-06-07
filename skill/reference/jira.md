@@ -2072,7 +2072,7 @@ atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequen
 | `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                | —                                                                                                                                                                |
 | `copy`                   | `<dashboardId>`                        | —                                | `--name`, `--description`, `--share-permissions` (JSON), `--edit-permissions` (JSON)                                                                             |
 | `bulk-edit`              | —                                      | `--entity-ids` (csv), `--action` | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                       |
-| `list-available-gadgets` | —                                      | —                                | `--module-keys` (csv), `--uris` (csv), `--gadget-ids` (csv), `--dashboard-ids` (csv)                                                                             |
+| `list-available-gadgets` | —                                      | —                                | —                                                                                                                                                                |
 | `search`                 | —                                      | —                                | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
 | `search-all`             | —                                      | —                                | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
 
@@ -2115,8 +2115,8 @@ atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
 # Bulk transfer ownership
 atlas jira dashboards bulk-edit --entity-ids 10001 --action changeOwner --new-owner acc-1 --autofix-name
 
-# List gadget catalogue
-atlas jira dashboards list-available-gadgets --module-keys com.x:a,com.x:b
+# List gadget catalogue (no filters — returns all available gadgets)
+atlas jira dashboards list-available-gadgets
 ```
 
 ## `bulk`

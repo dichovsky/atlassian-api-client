@@ -767,31 +767,30 @@ describe('DashboardsResource', () => {
   });
 
   // ── B404: listAvailableGadgets ───────────────────────────────────────────
+  // Covers GET /rest/api/3/dashboard/gadgets (operationId: getAllAvailableDashboardGadgets).
+  // The spec defines NO query parameters for this catalogue endpoint — all filters
+  // (moduleKey, uri, gadgetId, dashboardId) belong to the per-dashboard endpoint
+  // GET /dashboard/{dashboardId}/gadget (getAllGadgets), already covered by listGadgets().
 
   describe('listAvailableGadgets()', () => {
-    it('calls GET /dashboard/gadgets without params', async () => {
+    it('calls GET /dashboard/gadgets with no query params', async () => {
       transport.respondWith({ gadgets: [] });
       await dashboards.listAvailableGadgets();
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/dashboard/gadgets`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('joins multi-value filters as comma-separated query strings', async () => {
-      transport.respondWith({ gadgets: [] });
-      await dashboards.listAvailableGadgets({
-        moduleKey: ['a', 'b'],
-        uri: ['u1', 'u2'],
-        gadgetId: [1, 2],
-        dashboardId: [10, 20],
-      });
-      expect(transport.lastCall?.options.query).toEqual({
-        moduleKey: 'a,b',
-        uri: 'u1,u2',
-        gadgetId: '1,2',
-        dashboardId: '10,20',
-      });
+    it('returns the gadgets catalogue array', async () => {
+      const catalogue = [
+        { moduleKey: 'com.x:gadget-a', title: 'Gadget A' },
+        { uri: 'rest/gadgets/1.0/g/gadget-b.xml', title: 'Gadget B' },
+      ];
+      transport.respondWith({ gadgets: catalogue });
+      const result = await dashboards.listAvailableGadgets();
+      expect(result.gadgets).toEqual(catalogue);
     });
   });
 

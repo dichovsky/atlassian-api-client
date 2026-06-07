@@ -8293,22 +8293,9 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
     }
 
     // ── list-available-gadgets ───────────────────────────────────────────────
-    case 'list-available-gadgets': {
-      const moduleKeys = csvFlag(opts['module-keys']);
-      const uris = csvFlag(opts['uris']);
-      const gadgetIdsTokens = csvFlag(opts['gadget-ids']);
-      const dashboardIdsTokens = csvFlag(opts['dashboard-ids']);
-      return client.dashboards.listAvailableGadgets({
-        ...(moduleKeys !== undefined && { moduleKey: moduleKeys }),
-        ...(uris !== undefined && { uri: uris }),
-        ...(gadgetIdsTokens !== undefined && {
-          gadgetId: gadgetIdsTokens.map((s) => parsePositiveIntArg(s, '--gadget-ids')),
-        }),
-        ...(dashboardIdsTokens !== undefined && {
-          dashboardId: dashboardIdsTokens.map((s) => parsePositiveIntArg(s, '--dashboard-ids')),
-        }),
-      });
-    }
+    // GET /dashboard/gadgets takes no query params — it is the global catalogue.
+    case 'list-available-gadgets':
+      return client.dashboards.listAvailableGadgets();
 
     // ── search / search-all ──────────────────────────────────────────────────
     case 'search':

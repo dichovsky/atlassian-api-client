@@ -27916,41 +27916,11 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--action');
     });
 
-    it('list-available-gadgets calls client.dashboards.listAvailableGadgets with csv-split params', async () => {
-      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
-      await executeJiraCommand(
-        cmd('dashboards', 'list-available-gadgets', [], {
-          'module-keys': 'com.x:a,com.x:b',
-          uris: 'https://a.com,https://b.com',
-          'gadget-ids': '1,2',
-          'dashboard-ids': '10001,10002',
-        }),
-        GLOBALS,
-      );
-      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({
-        moduleKey: ['com.x:a', 'com.x:b'],
-        uri: ['https://a.com', 'https://b.com'],
-        gadgetId: [1, 2],
-        dashboardId: [10001, 10002],
-      });
-    });
-
-    it('list-available-gadgets with no flags calls with empty object', async () => {
+    it('list-available-gadgets calls client.dashboards.listAvailableGadgets with no args', async () => {
+      // GET /dashboard/gadgets takes NO query parameters per the Jira v3 spec.
       jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
       await executeJiraCommand(cmd('dashboards', 'list-available-gadgets'), GLOBALS);
-      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
-    });
-
-    it('list-available-gadgets omits params when csv flags contain only whitespace/empty tokens', async () => {
-      jiraDashboardsMock.listAvailableGadgets.mockResolvedValue({ gadgets: [] });
-      await executeJiraCommand(
-        cmd('dashboards', 'list-available-gadgets', [], {
-          'module-keys': ' , ',
-          uris: ',',
-        }),
-        GLOBALS,
-      );
-      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith({});
+      expect(jiraDashboardsMock.listAvailableGadgets).toHaveBeenCalledWith();
     });
 
     it('search calls client.dashboards.search with all search params', async () => {
