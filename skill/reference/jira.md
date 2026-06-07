@@ -822,7 +822,7 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 | `watch-issues-bulk` | —          | `--issue-ids`  | —              |
 
 - `--issue-ids` is comma-separated issue IDs or keys.
-- Returns `{ taskId }` — poll the task with `atlas jira bulk get-operation-status <taskId>`.
+- Returns `{ taskId }` — poll the task with `atlas jira bulk get-status <taskId>`.
 
 ### Archive Export (B538)
 
