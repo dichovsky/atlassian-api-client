@@ -24,12 +24,6 @@
 
 ## 🧪 QA
 
-- [ ] 🔴 🐛 QA: B1036 Jira: `WorkflowsResource.get()` calls dead path `GET /rest/api/3/workflow`
-  - problem: `workflows.ts:176` issues `GET ${baseUrl}/workflow?workflowName=…`; the bare `/rest/api/3/workflow` path is absent from the current v3 spec (surfaced by the 2026-06-07 gap analysis). Documented form is `GET /rest/api/3/workflow/search` (`getWorkflowsPaginated`), which accepts the same `workflowName` param and returns the `{ values: [...] }` shape the code already reads. `test/jira/workflows.test.ts:129` pins the dead path, so it ships on the wire and likely 404/405s on a live tenant.
-  - solution: change path to `/workflow/search`; update the test; verify against a live tenant. Confirm `getWorkflowsPaginated` deprecation status is acceptable (only documented option).
-  - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`
-  - deps: none
-
 ## 🤖 Infra
 
 ## 🏛️ Architecture
@@ -90,7 +84,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 9 as of 2026-06-07 (1 platform `getIsWatchingIssueBulk` + 8 software `*JSIS`), excluding 2 BLOCKED approximate-count and deprecated-superseded aliases. Verified against live specs in `docs/API-GAP-ANALYSIS-2026-06-07.md`. (Prior "447 as of 2026-05-30" was stale — pre-dated the coverage wave.)
+> **Truly-missing Jira endpoints:** 0 non-blocked as of 2026-06-08. The 9 previously-open gaps (1 platform `getIsWatchingIssueBulk` + 8 software `*JSIS`) shipped as B1022–B1030 (PRs #235/#236/#238). Only 2 remain — both **BLOCKED** (B1002/B1006 approximate-count, software/1.0-only with no agile equivalent). Verified against live specs in `docs/API-GAP-ANALYSIS-2026-06-07.md`. (Prior "447 as of 2026-05-30" was stale — pre-dated the coverage wave.)
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
@@ -108,54 +102,5 @@
   - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
   - deps: none
   - **BLOCKED:** endpoint exists only under /rest/software/1.0/, no /rest/agile/1.0/ equivalent. Needs orchestrator decision before implementing.
-
-> **Gap-analysis additions (2026-06-07).** Verified vs live specs; see `docs/API-GAP-ANALYSIS-2026-06-07.md`. Each task wires resource method + tests + CLI dispatch/router/help + skill docs.
-
-- [ ] 🔴 🧩 API: B1022 Jira: expose POST /rest/api/3/issue/watching (getIsWatchingIssueBulk)
-  - problem: read-only bulk "is current user watching these issues?" check is unimplemented. Distinct from `watchIssuesBulk` (`issues.ts:1235`), which targets the write endpoint POST /bulk/issues/watch. Archived B529 is mislabeled and shipped the write path only.
-  - files: `src/jira/resources/issues.ts`, `test/jira/issues.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🔴 🧩 API: B1023 Jira: expose GET /rest/software/1.0/board/{boardId}/backlog (getIssuesForBacklogJSIS) — reverses B1001
-  - problem: SDK implements only the DEPRECATED agile variant (`boards.ts:getBacklog`). The non-deprecated enhanced (JSIS) endpoint uses token pagination (`nextPageToken`) + `reconcileIssues` + `SoftwareIssueResults` and is unimplemented. B1001 was wrongly closed as "spec-snapshot alias" — falsified by spec.
-  - files: `src/jira/resources/boards.ts`, `src/jira/client.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: shared `SoftwareIssueResults` token-paginated type + `/rest/software/1.0` base wiring (do once, reuse across B1023–B1030)
-- [ ] 🔴 🧩 API: B1024 Jira: expose GET /rest/software/1.0/board/{boardId}/issue (getIssuesForBoardJSIS) — reverses B1005
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023 (shared type + base wiring)
-- [ ] 🔴 🧩 API: B1025 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/none/issue (getIssuesWithoutEpicForBoardJSIS) — reverses B1004
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🔴 🧩 API: B1026 Jira: expose GET /rest/software/1.0/board/{boardId}/epic/{epicId}/issue (getBoardIssuesForEpicJSIS) — reverses B1003
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🔴 🧩 API: B1027 Jira: expose GET /rest/software/1.0/board/{boardId}/sprint/{sprintId}/issue (getBoardIssuesForSprintJSIS) — reverses B1007
-  - files: `src/jira/resources/boards.ts`, `test/jira/boards.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🔴 🧩 API: B1028 Jira: expose GET /rest/software/1.0/epic/{epicIdOrKey}/issue (getIssuesForEpicJSIS) — reverses B1008
-  - files: `src/jira/resources/epic.ts`, `test/jira/epic.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🔴 🧩 API: B1029 Jira: expose GET /rest/software/1.0/epic/none/issue (getIssuesWithoutEpicJSIS) — reverses B1009
-  - files: `src/jira/resources/epic.ts`, `test/jira/epic.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🔴 🧩 API: B1030 Jira: expose GET /rest/software/1.0/sprint/{sprintId}/issue (getIssuesForSprintJSIS) — reverses B1010
-  - files: `src/jira/resources/sprints.ts`, `test/jira/sprints.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: B1023
-- [ ] 🟡 🧩 API: B1031 Confluence: expose POST /space-permissions/transition/access-removals (bulkRemoveSpacePermissionAccess)
-  - problem: Space Permission Transition (async bulk RBAC) is fully unimplemented; `space-permissions.ts` has only `list`/`listAll` (B189). Bulk write — submits an async transition task.
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🧩 API: B1032 Confluence: expose GET /space-permissions/transition/combinations (listSpacePermissionCombinations)
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟢 🧩 API: B1033 Confluence: expose POST /space-permissions/transition/combinations (generateSpacePermissionCombinations)
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🧩 API: B1034 Confluence: expose POST /space-permissions/transition/role-assignments (bulkAssignSpacePermissionRoles)
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
-- [ ] 🟡 🧩 API: B1035 Confluence: expose GET /space-permissions/transition/tasks/{taskId} (getSpacePermissionTransitionTaskStatus)
-  - problem: async-poll companion to B1031/B1033/B1034.
-  - files: `src/confluence/resources/space-permissions.ts`, `test/confluence/space-permissions.test.ts`, `src/cli/commands/confluence.ts`, `src/cli/router.ts`, `skill/reference/confluence.md`, `test/cli/commands.test.ts`, `test/cli/skill-content.test.ts`
-  - deps: none
 
 <!-- api-mapping:generated:end -->
