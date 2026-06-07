@@ -173,7 +173,7 @@ export class WorkflowsResource {
   async get(workflowName: string): Promise<Workflow> {
     const resp = await this.transport.request<{ values: Workflow[] }>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow`,
+      path: `${this.baseUrl}/workflow/search`,
       query: { workflowName },
     });
     if (!resp.data.values[0]) {
