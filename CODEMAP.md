@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "d6d9dc169be22dd315a555dadd71ec5faccc7b35a00f7e6d815f6b07aad33fea",
+  "sourceHash": "4af2cbcc39581647718fb9fc90f2ce5d28c75e4791148145f8b267a367da9f9d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22944,7 +22944,7 @@
         {
           "name": "ComponentAssigneeType",
           "kind": "type",
-          "line": 8,
+          "line": 9,
           "exported": true,
           "signature": "export type ComponentAssigneeType = | 'PROJECT_DEFAULT' | 'COMPONENT_LEAD' | 'PROJECT_LEAD' | 'UNASSIGNED';",
           "jsdoc": "Assignment policy for the component."
@@ -22952,7 +22952,7 @@
         {
           "name": "ComponentUserRef",
           "kind": "interface",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export interface ComponentUserRef { readonly accountId: string; readonly displayName?: string; readonly active?: boolean…",
           "jsdoc": "Minimal user reference returned in component payloads."
@@ -22960,7 +22960,7 @@
         {
           "name": "Component",
           "kind": "interface",
-          "line": 23,
+          "line": 24,
           "exported": true,
           "signature": "export interface Component { readonly id: string; readonly self?: string; readonly name: string; readonly description?: …",
           "jsdoc": "A Jira project component."
@@ -22968,7 +22968,7 @@
         {
           "name": "ListComponentsParams",
           "kind": "interface",
-          "line": 43,
+          "line": 44,
           "exported": true,
           "signature": "export interface ListComponentsParams { readonly projectIdsOrKeys?: readonly string[]; readonly startAt?: number; readon…",
           "jsdoc": "Query parameters for `GET /rest/api/3/component`."
@@ -22976,7 +22976,7 @@
         {
           "name": "CreateComponentData",
           "kind": "interface",
-          "line": 52,
+          "line": 53,
           "exported": true,
           "signature": "export interface CreateComponentData { readonly name: string; readonly description?: string; readonly leadAccountId?: st…",
           "jsdoc": "Request body for `POST /rest/api/3/component`."
@@ -22984,7 +22984,7 @@
         {
           "name": "UpdateComponentData",
           "kind": "interface",
-          "line": 64,
+          "line": 65,
           "exported": true,
           "signature": "export interface UpdateComponentData { readonly name?: string; readonly description?: string; readonly leadAccountId?: s…",
           "jsdoc": "Request body for `PUT /rest/api/3/component/{id}`."
@@ -22992,7 +22992,7 @@
         {
           "name": "DeleteComponentParams",
           "kind": "interface",
-          "line": 73,
+          "line": 74,
           "exported": true,
           "signature": "export interface DeleteComponentParams { readonly moveIssuesTo?: string; }",
           "jsdoc": "Query parameters for `DELETE /rest/api/3/component/{id}`."
@@ -23000,7 +23000,7 @@
         {
           "name": "ComponentRelatedIssueCounts",
           "kind": "interface",
-          "line": 79,
+          "line": 80,
           "exported": true,
           "signature": "export interface ComponentRelatedIssueCounts { readonly self?: string; readonly issueCount: number; }",
           "jsdoc": "Response shape for `GET /rest/api/3/component/{id}/relatedIssueCounts`."
@@ -23008,7 +23008,7 @@
         {
           "name": "ComponentResource",
           "kind": "class",
-          "line": 92,
+          "line": 93,
           "exported": true,
           "signature": "export class ComponentResource",
           "jsdoc": "Jira Project Components resource — flat `/rest/api/3/component` surface (paginated list, create, get, update, delete, relatedIssueCounts).",
@@ -23016,49 +23016,49 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 93
+              "line": 94
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 99
+              "line": 100
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 121
+              "line": 127
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 145
+              "line": 150
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 167
+              "line": 172
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 176
+              "line": 181
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 192
+              "line": 197
             },
             {
               "name": "getRelatedIssueCounts",
               "kind": "method",
-              "line": 203
+              "line": 208
             }
           ]
         },
         {
           "name": "buildListQuery",
           "kind": "function",
-          "line": 212,
+          "line": 217,
           "signature": "function buildListQuery( params?: ListComponentsParams, ): Record<string, string | number | boolean | undefined>"
         }
       ],
@@ -23066,6 +23066,7 @@
         "../../core/errors.js",
         "../../core/pagination.js",
         "../../core/path.js",
+        "../../core/query.js",
         "../../core/types.js"
       ]
     },

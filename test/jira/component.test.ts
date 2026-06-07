@@ -59,8 +59,10 @@ describe('ComponentResource', () => {
         orderBy: 'name',
         query: 'auth',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/component?projectIdsOrKeys=HSP&projectIdsOrKeys=PROJ`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
-        projectIdsOrKeys: 'HSP,PROJ',
         startAt: 10,
         maxResults: 25,
         orderBy: 'name',
@@ -126,8 +128,9 @@ describe('ComponentResource', () => {
         items.push(c);
       }
       expect(items).toHaveLength(1);
+      expect(transport.lastCall?.options.path).toContain('?projectIdsOrKeys=HSP');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('projectIdsOrKeys');
       expect(transport.lastCall?.options.query).toMatchObject({
-        projectIdsOrKeys: 'HSP',
         orderBy: 'name',
         query: 'q',
       });
