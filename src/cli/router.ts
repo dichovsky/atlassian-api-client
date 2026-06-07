@@ -176,7 +176,6 @@ const GLOBAL_OPTIONS = {
   exclude: { type: 'string' as const },
   'exclude-account-ids': { type: 'string' as const },
   'exclude-connect-users': { type: 'boolean' as const },
-  'exclude-inactive': { type: 'boolean' as const },
   'project-role': { type: 'string' as const },
   'show-avatar': { type: 'boolean' as const },
   'user-name': { type: 'string' as const },

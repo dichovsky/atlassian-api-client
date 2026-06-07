@@ -2293,7 +2293,6 @@ async function executeGroups(client: JiraClient, cmd: ParsedCommand): Promise<un
         query: asString(opts['query']),
         exclude,
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        excludeInactive: asBoolFlag(opts['exclude-inactive']),
         userName: asString(opts['user-name']),
       });
     }

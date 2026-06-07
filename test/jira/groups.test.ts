@@ -63,15 +63,27 @@ describe('GroupsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 10 });
     });
 
-    it('forwards excludeInactive param', async () => {
-      // Arrange
+    it('does not emit out-of-spec query params (findGroups has no excludeInactive)', async () => {
+      // Jira v3 findGroups (GET /groups/picker) exhaustive param list:
+      // accountId, query, exclude, excludeId, maxResults, caseInsensitive, userName
+      // There is no excludeInactive — groups have no active/inactive state.
       transport.respondWith(makeGroupPickerResponse());
 
-      // Act
-      await groups.picker({ excludeInactive: true });
+      await groups.picker({ query: 'dev', maxResults: 5, userName: 'acc-1' });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ excludeInactive: true });
+      const VALID = [
+        'accountId',
+        'query',
+        'exclude',
+        'excludeId',
+        'maxResults',
+        'caseInsensitive',
+        'userName',
+      ];
+      const query = (transport.lastCall?.options.query ?? {}) as Record<string, unknown>;
+      const sent = Object.keys(query).filter((k) => query[k] !== undefined);
+      const invalid = sent.filter((k) => !VALID.includes(k));
+      expect(invalid).toEqual([]);
     });
 
     it('forwards exclude array param as comma-joined string', async () => {
