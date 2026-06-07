@@ -3,6 +3,7 @@ import { ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -231,11 +232,13 @@ export class ConfigResource {
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeResponse>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildListQuery(params);
+    // `projectId` is `type:array` — emitted as repeated params in the path
+    const path = buildListPath(`${this.baseUrl}/config/fieldschemes`, params);
     const response = await this.transport.request<
       OffsetPaginatedResponse<FieldAssociationSchemeResponse>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/config/fieldschemes`,
+      path,
       query,
     });
     return response.data;
@@ -249,9 +252,11 @@ export class ConfigResource {
   ): AsyncGenerator<FieldAssociationSchemeResponse> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
+    // `projectId` is `type:array` — emitted as repeated params in the path
+    const path = buildListPath(`${this.baseUrl}/config/fieldschemes`, params);
     yield* paginateOffset<FieldAssociationSchemeResponse>(
       this.transport,
-      `${this.baseUrl}/config/fieldschemes`,
+      path,
       query,
       params?.maxResults,
     );
@@ -343,11 +348,14 @@ export class ConfigResource {
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeFieldResult>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildSchemeFieldsQuery(params);
+    // `fieldId` is `type:array` — emitted as repeated params in the path
+    const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`;
+    const path = buildSchemeFieldsPath(basePath, params);
     const response = await this.transport.request<
       OffsetPaginatedResponse<FieldAssociationSchemeFieldResult>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`,
+      path,
       query,
     });
     return response.data;
@@ -362,9 +370,12 @@ export class ConfigResource {
   ): AsyncGenerator<FieldAssociationSchemeFieldResult> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildSchemeFieldsQuery({ ...params, startAt: undefined, maxResults: undefined });
+    // `fieldId` is `type:array` — emitted as repeated params in the path
+    const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`;
+    const path = buildSchemeFieldsPath(basePath, params);
     yield* paginateOffset<FieldAssociationSchemeFieldResult>(
       this.transport,
-      `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`,
+      path,
       query,
       params?.maxResults,
     );
@@ -395,11 +406,14 @@ export class ConfigResource {
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeProjectResult>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildSchemeProjectsQuery(params);
+    // `projectId` is `type:array` — emitted as repeated params in the path
+    const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/projects`;
+    const path = buildSchemeProjectsPath(basePath, params);
     const response = await this.transport.request<
       OffsetPaginatedResponse<FieldAssociationSchemeProjectResult>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/projects`,
+      path,
       query,
     });
     return response.data;
@@ -418,9 +432,12 @@ export class ConfigResource {
       startAt: undefined,
       maxResults: undefined,
     });
+    // `projectId` is `type:array` — emitted as repeated params in the path
+    const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/projects`;
+    const path = buildSchemeProjectsPath(basePath, params);
     yield* paginateOffset<FieldAssociationSchemeProjectResult>(
       this.transport,
-      `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/projects`,
+      path,
       query,
       params?.maxResults,
     );
@@ -488,11 +505,13 @@ export class ConfigResource {
   ): Promise<OffsetPaginatedResponse<ProjectFieldSchemeMapping>> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery(params);
+    // `projectId` is `type:array` (required) — emitted as repeated params in the path
+    const path = buildProjectsPath(`${this.baseUrl}/config/fieldschemes/projects`, params);
     const response = await this.transport.request<
       OffsetPaginatedResponse<ProjectFieldSchemeMapping>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/config/fieldschemes/projects`,
+      path,
       query,
     });
     return response.data;
@@ -506,9 +525,11 @@ export class ConfigResource {
   ): AsyncGenerator<ProjectFieldSchemeMapping> {
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery({ ...params, startAt: undefined, maxResults: undefined });
+    // `projectId` is `type:array` (required) — emitted as repeated params in the path
+    const path = buildProjectsPath(`${this.baseUrl}/config/fieldschemes/projects`, params);
     yield* paginateOffset<ProjectFieldSchemeMapping>(
       this.transport,
-      `${this.baseUrl}/config/fieldschemes/projects`,
+      path,
       query,
       params.maxResults,
     );
@@ -536,11 +557,18 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is `type:array` — emitted as repeated params via `buildListPath`,
+  // not CSV-joined into the scalar query bag.
   if (params?.query !== undefined) query['query'] = params.query;
   return query;
+}
+
+/** Append the repeated `projectId` (`type: array`) params to the list path. */
+function buildListPath(
+  basePath: string,
+  params: ListFieldAssociationSchemesParams | undefined,
+): string {
+  return appendRepeatedParams(basePath, 'projectId', params?.projectId);
 }
 
 function buildSchemeFieldsQuery(
@@ -549,10 +577,17 @@ function buildSchemeFieldsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.fieldId !== undefined && params.fieldId.length > 0) {
-    query['fieldId'] = params.fieldId.join(',');
-  }
+  // `fieldId` is `type:array` — emitted as repeated params via `buildSchemeFieldsPath`,
+  // not CSV-joined into the scalar query bag.
   return query;
+}
+
+/** Append the repeated `fieldId` (`type: array`) params to the scheme fields path. */
+function buildSchemeFieldsPath(
+  basePath: string,
+  params: ListSchemeFieldsParams | undefined,
+): string {
+  return appendRepeatedParams(basePath, 'fieldId', params?.fieldId);
 }
 
 function buildSchemeProjectsQuery(
@@ -561,10 +596,17 @@ function buildSchemeProjectsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is `type:array` — emitted as repeated params via `buildSchemeProjectsPath`,
+  // not CSV-joined into the scalar query bag.
   return query;
+}
+
+/** Append the repeated `projectId` (`type: array`) params to the scheme projects path. */
+function buildSchemeProjectsPath(
+  basePath: string,
+  params: ListSchemeProjectsParams | undefined,
+): string {
+  return appendRepeatedParams(basePath, 'projectId', params?.projectId);
 }
 
 function buildProjectsQuery(
@@ -576,6 +618,15 @@ function buildProjectsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params.startAt !== undefined) query['startAt'] = params.startAt;
   if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  query['projectId'] = params.projectId.join(',');
+  // `projectId` is `type:array` — emitted as repeated params via `buildProjectsPath`,
+  // not CSV-joined into the scalar query bag.
   return query;
+}
+
+/** Append the repeated `projectId` (`type: array`, required) params to the projects path. */
+function buildProjectsPath(
+  basePath: string,
+  params: Pick<GetProjectsWithFieldSchemesParams, 'projectId'>,
+): string {
+  return appendRepeatedParams(basePath, 'projectId', params.projectId);
 }
