@@ -126,7 +126,7 @@ describe('WorkflowsResource', () => {
   // ── get ───────────────────────────────────────────────────────────────────
 
   describe('get()', () => {
-    it('calls GET /workflow with workflowName query param and returns first result', async () => {
+    it('calls GET /workflow/search with workflowName query param and returns first result', async () => {
       // Arrange
       const workflow = makeWorkflow('Default Workflow');
       transport.respondWith({ values: [workflow] });
@@ -138,7 +138,7 @@ describe('WorkflowsResource', () => {
       expect(result).toEqual(workflow);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/workflow`,
+        path: `${BASE_URL}/workflow/search`,
         query: { workflowName: 'Default Workflow' },
       });
     });
