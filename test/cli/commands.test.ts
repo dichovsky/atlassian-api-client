@@ -400,6 +400,7 @@ const jiraIssuesMock = {
   setPropertiesMulti: vi.fn(),
   unarchiveIssues: vi.fn(),
   watchIssuesBulk: vi.fn(),
+  isWatchingIssuesBulk: vi.fn(),
   exportArchivedIssues: vi.fn(),
 };
 const jiraProjectsMock = {
@@ -9591,6 +9592,27 @@ describe('executeJiraCommand', () => {
     it('issues watch-issues-bulk throws when --issue-ids is missing', async () => {
       await expect(
         executeJiraCommand(cmd('issues', 'watch-issues-bulk', []), GLOBALS),
+      ).rejects.toThrow('--issue-ids');
+    });
+
+    it('issues is-watching-bulk calls isWatchingIssuesBulk with issueIds and returns map (B1022)', async () => {
+      // READ-ONLY check — distinct from watch-issues-bulk (the write endpoint).
+      jiraIssuesMock.isWatchingIssuesBulk.mockResolvedValue({
+        issuesIsWatching: { 'PROJ-1': true, 'PROJ-2': false },
+      });
+      const result = await executeJiraCommand(
+        cmd('issues', 'is-watching-bulk', [], { 'issue-ids': 'PROJ-1,PROJ-2' }),
+        GLOBALS,
+      );
+      expect(jiraIssuesMock.isWatchingIssuesBulk).toHaveBeenCalledWith({
+        issueIds: ['PROJ-1', 'PROJ-2'],
+      });
+      expect(result).toMatchObject({ issuesIsWatching: { 'PROJ-1': true, 'PROJ-2': false } });
+    });
+
+    it('issues is-watching-bulk throws when --issue-ids is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('issues', 'is-watching-bulk', []), GLOBALS),
       ).rejects.toThrow('--issue-ids');
     });
 

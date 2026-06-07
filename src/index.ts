@@ -421,4 +421,5 @@ export type {
   BulkCreatedIssues,
   BulkSetIssuePropertyData,
   BulkDeleteIssuePropertyData,
+  BulkIssueIsWatchingResult,
 } from './jira/index.js';

@@ -635,6 +635,10 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.issues.watchIssuesBulk({
         issueIds: splitCsvIds(requireOpt(opts['issue-ids'], '--issue-ids')),
       });
+    case 'is-watching-bulk':
+      return client.issues.isWatchingIssuesBulk({
+        issueIds: splitCsvIds(requireOpt(opts['issue-ids'], '--issue-ids')),
+      });
     case 'export-archived':
       await client.issues.exportArchivedIssues({
         jql: asString(opts['jql']),
@@ -643,7 +647,7 @@ async function executeIssues(client: JiraClient, cmd: ParsedCommand): Promise<un
       return { submitted: true };
     default:
       throw new Error(
-        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, export-archived`,
+        `Unknown issues action: ${cmd.action}. Actions: get, create, update, delete, transition, transitions, get-agile, get-estimation, set-estimation, rank, assign, get-changelog, filter-changelog, get-editmeta, notify, list-properties, delete-property, get-property, set-property, delete-all-remotelinks, list-remotelinks, create-remotelink, delete-remotelink, get-remotelink, update-remotelink, remove-vote, get-votes, add-vote, remove-watcher, get-watchers, add-watcher, delete-all-worklogs, list-worklogs, add-worklog, delete-worklog, get-worklog, update-worklog, list-worklog-properties, delete-worklog-property, get-worklog-property, set-worklog-property, move-worklog, archive-issues, archive-issues-jql, bulk-fetch, get-create-meta, get-create-meta-issuetypes, get-create-meta-issuetype, get-limit-report, picker, set-properties-by-entity-ids, set-properties-multi, unarchive-issues, watch-issues-bulk, is-watching-bulk, export-archived`,
       );
   }
 }

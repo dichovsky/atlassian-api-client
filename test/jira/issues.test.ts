@@ -1357,6 +1357,29 @@ describe('IssuesResource', () => {
     });
   });
 
+  // ── Bulk watching read-check (B1022) ──────────────────────────────────────
+
+  describe('isWatchingIssuesBulk() — B1022', () => {
+    it('sends POST /issue/watching with issueIds body and returns issuesIsWatching map', async () => {
+      // Spec: POST /rest/api/3/issue/watching (operationId getIsWatchingIssueBulk) — READ-ONLY.
+      // Distinct from watchIssuesBulk which POSTs to /bulk/issues/watch (the write endpoint).
+      transport.respondWith({ issuesIsWatching: { '10001': true, '10002': false } }, 200);
+      const result = await issues.isWatchingIssuesBulk({ issueIds: ['10001', '10002'] });
+      const opts = transport.lastCall?.options;
+      expect(opts?.method).toBe('POST');
+      expect(opts?.path).toBe(`${BASE_URL}/issue/watching`);
+      expect(opts?.body).toEqual({ issueIds: ['10001', '10002'] });
+      expect(result).toEqual({ issuesIsWatching: { '10001': true, '10002': false } });
+    });
+
+    it('passes issue keys as issueIds (spec accepts string IDs or keys)', async () => {
+      transport.respondWith({ issuesIsWatching: { 'PROJ-1': true } }, 200);
+      const result = await issues.isWatchingIssuesBulk({ issueIds: ['PROJ-1'] });
+      expect(transport.lastCall?.options.body).toEqual({ issueIds: ['PROJ-1'] });
+      expect(result).toMatchObject({ issuesIsWatching: { 'PROJ-1': true } });
+    });
+  });
+
   // ── Archive export (B538) ─────────────────────────────────────────────────
 
   describe('exportArchivedIssues() — B538', () => {
