@@ -1667,7 +1667,7 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 
 | Action         | Positional | Required flags | Optional flags                                                                                      |
 | -------------- | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| `picker`       | —          | —              | `--query`, `--exclude`, `--max-results`, `--exclude-inactive`, `--user-name`                        |
+| `picker`       | —          | —              | `--query`, `--exclude`, `--max-results`, `--user-name`                                              |
 | `get`          | —          | —              | `--group-name`, `--group-id`, `--expand`                                                            |
 | `create`       | —          | `--name`       | —                                                                                                   |
 | `delete`       | —          | —              | `--group-name`, `--group-id`, `--swap-group`, `--swap-group-id`                                     |
@@ -1681,7 +1681,6 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 - `--query` — fuzzy string to match against group names.
 - `--exclude` — **comma-separated** list of group IDs to exclude from results.
 - `--max-results` — maximum number of groups returned (default 20).
-- `--exclude-inactive` — when `true`, inactive groups are omitted.
 - `--user-name` — account ID of a user whose groups should be excluded.
 - Endpoint: `GET /rest/api/3/groups/picker`.
 
@@ -1722,9 +1721,6 @@ atlas jira groups picker --query dev
 
 # Find up to 10 groups excluding a specific group
 atlas jira groups picker --query dev --max-results 10 --exclude grp-99
-
-# Exclude inactive groups
-atlas jira groups picker --exclude-inactive
 
 # Fetch a group and inline its first page of users
 atlas jira groups get --group-id grp-1 --expand users

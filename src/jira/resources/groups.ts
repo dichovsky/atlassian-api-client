@@ -24,8 +24,6 @@ export interface GroupPickerParams {
   readonly exclude?: string[];
   /** Maximum number of groups to return (default 20). */
   readonly maxResults?: number;
-  /** Whether to exclude inactive groups. */
-  readonly excludeInactive?: boolean;
   /** Account ID of the user whose groups are excluded. */
   readonly userName?: string;
 }
@@ -189,7 +187,6 @@ export class GroupsResource {
     if (params?.query !== undefined) query['query'] = params.query;
     if (params?.exclude !== undefined) query['exclude'] = params.exclude.join(',');
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params?.excludeInactive !== undefined) query['excludeInactive'] = params.excludeInactive;
     if (params?.userName !== undefined) query['userName'] = params.userName;
 
     const response = await this.transport.request<GroupPickerResponse>({

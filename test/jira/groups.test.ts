@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GroupsResource } from '../../src/jira/resources/groups.js';
+import type { GroupPickerParams } from '../../src/jira/resources/groups.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -63,15 +64,37 @@ describe('GroupsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ maxResults: 10 });
     });
 
-    it('forwards excludeInactive param', async () => {
-      // Arrange
+    it('does not emit out-of-spec query params (findGroups has no excludeInactive)', async () => {
+      // Jira v3 findGroups (GET /groups/picker) exhaustive param list:
+      // accountId, query, exclude, excludeId, maxResults, caseInsensitive, userName
+      // There is no excludeInactive — groups have no active/inactive state.
       transport.respondWith(makeGroupPickerResponse());
 
-      // Act
-      await groups.picker({ excludeInactive: true });
+      // Cast simulates a stale caller from before the excludeInactive removal (issue #212).
+      // The public type now correctly rejects the field; this cast lets us exercise the
+      // runtime query builder to prove excludeInactive is never forwarded.
+      await groups.picker({
+        query: 'dev',
+        maxResults: 5,
+        userName: 'acc-1',
+        excludeInactive: true,
+      } as unknown as GroupPickerParams);
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ excludeInactive: true });
+      const VALID = [
+        'accountId',
+        'query',
+        'exclude',
+        'excludeId',
+        'maxResults',
+        'caseInsensitive',
+        'userName',
+      ];
+      const query = (transport.lastCall?.options.query ?? {}) as Record<string, unknown>;
+      const sent = Object.keys(query).filter((k) => query[k] !== undefined);
+      const invalid = sent.filter((k) => !VALID.includes(k));
+      expect(invalid).toEqual([]);
+      // Explicit negative assertion: the stale key must not appear in the emitted query.
+      expect(query).not.toHaveProperty('excludeInactive');
     });
 
     it('forwards exclude array param as comma-joined string', async () => {

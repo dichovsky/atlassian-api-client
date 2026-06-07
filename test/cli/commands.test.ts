@@ -14648,16 +14648,22 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('groups picker forwards exclude-inactive flag', async () => {
-      // Arrange
+    it('groups picker does not forward exclude-inactive (not a real findGroups param)', async () => {
+      // excludeInactive is not in the Jira v3 findGroups spec; the CLI flag is removed.
+      // Supplying 'exclude-inactive': true via opts exercises the removed-flag path:
+      // pre-fix: handler did `excludeInactive: asBoolFlag(opts['exclude-inactive'])` →
+      //   picker() received { excludeInactive: true } → assertion FAILS (red).
+      // post-fix: handler ignores the flag → picker() receives no excludeInactive key →
+      //   assertion PASSES (green).
       jiraGroupsMock.picker.mockResolvedValue({ header: '', total: 0, groups: [] });
 
-      // Act
-      await executeJiraCommand(cmd('groups', 'picker', [], { 'exclude-inactive': true }), GLOBALS);
+      await executeJiraCommand(
+        cmd('groups', 'picker', [], { query: 'dev', 'exclude-inactive': true }),
+        GLOBALS,
+      );
 
-      // Assert
       expect(jiraGroupsMock.picker).toHaveBeenCalledWith(
-        expect.objectContaining({ excludeInactive: true }),
+        expect.not.objectContaining({ excludeInactive: expect.anything() }),
       );
     });
 
