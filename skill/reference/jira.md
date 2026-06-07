@@ -922,7 +922,8 @@ atlas jira issues export-archived --jql "project = PROJ AND isArchived = true" -
 - `list-legacy` calls the deprecated `GET /project` endpoint (returns a flat array, not paginated).
 - `list` uses `GET /project/search` (paginated, preferred).
 - `list-versions` returns a paginated response; `list-all-versions` returns a flat array.
-- `add-role-actors` / `set-role-actors` accept `--body` as a JSON object.
+- `add-role-actors` accepts `--body` as a flat `ActorsMap` JSON object with `user`, `group`, and/or `groupId` string arrays (e.g. `{"user":["acc-1"]}`).
+- `set-role-actors` accepts `--body` as a JSON object.
 - `delete-role-actors` removes actors by `--user` (accountId), `--group-id`, or `--group` (name).
 
 ```sh
@@ -965,8 +966,8 @@ atlas jira projects get-role PROJ 10001
 # Delete a user actor from a project role
 atlas jira projects delete-role-actors PROJ 10001 --user acc-1
 
-# Add actors to a project role
-atlas jira projects add-role-actors PROJ 10001 --body '{"actors":[{"user":["acc-1"]}]}'
+# Add actors to a project role (flat ActorsMap: user, group, groupId)
+atlas jira projects add-role-actors PROJ 10001 --body '{"user":["acc-1"]}'
 
 # Replace all actors for a project role
 atlas jira projects set-role-actors PROJ 10001 --body '{"categorisedActors":{"atlassian-user-role-actor":["acc-1"]}}'

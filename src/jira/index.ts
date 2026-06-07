@@ -82,6 +82,7 @@ export type {
   UpdateProjectData,
   DeleteProjectParams,
   RecentProjectsParams,
+  ActorsMap,
 } from './resources/projects.js';
 export { SearchResource } from './resources/search.js';
 export type {
