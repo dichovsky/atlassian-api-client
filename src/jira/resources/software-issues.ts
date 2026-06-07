@@ -56,4 +56,6 @@ export interface ListSoftwareIssuesParams {
   readonly reconcileIssues?: readonly number[];
   /** Expand options for additional issue detail. */
   readonly expand?: string;
+  /** When false, disables server-side JQL query validation. */
+  readonly validateQuery?: boolean;
 }

@@ -1320,16 +1320,17 @@ Full Agile board management: list, create, delete, and query board details, issu
 
 Non-deprecated, **token-paginated** replacements for the agile board issue listings (`backlog`, `get-issues`, `issues-without-epic`, `epic-issues`, `sprint-issues`). They hit Jira Software's `/rest/software/1.0` endpoints and return a single page shaped `{ issues, nextPageToken?, isLast?, ... }`. There is **no `--start-at`**: pass the previous response's `nextPageToken` back via `--next-page-token` to fetch the next page; stop when `isLast` is `true` (or `nextPageToken` is absent).
 
-| Action                         | Positionals            | Required flags | Optional flags                                                                              |
-| ------------------------------ | ---------------------- | -------------- | ------------------------------------------------------------------------------------------- |
-| `backlog-enhanced`             | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand` |
-| `get-issues-enhanced`          | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand` |
-| `issues-without-epic-enhanced` | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand` |
-| `epic-issues-enhanced`         | `<boardId> <epicId>`   | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand` |
-| `sprint-issues-enhanced`       | `<boardId> <sprintId>` | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand` |
+| Action                         | Positionals            | Required flags | Optional flags                                                                                                  |
+| ------------------------------ | ---------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `backlog-enhanced`             | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `get-issues-enhanced`          | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `issues-without-epic-enhanced` | `<boardId>`            | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `epic-issues-enhanced`         | `<boardId> <epicId>`   | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
+| `sprint-issues-enhanced`       | `<boardId> <sprintId>` | —              | `--jql`, `--fields`, `--max-results`, `--next-page-token`, `--reconcile-issues`, `--expand`, `--validate-query` |
 
 - `--next-page-token` is the opaque cursor echoed by the previous page's `nextPageToken`; omit it for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to strongly reconcile (force-index) before searching, e.g. `--reconcile-issues 10001,10002`.
+- `--validate-query` (boolean flag) controls server-side JQL validation; when omitted the server defaults to `true`. Pass `--validate-query false` (or omit) for looser validation.
 - `--fields` is comma-separated field names (same as the non-enhanced actions); `--expand` is a single expand string.
 - `--max-results` caps the page size; the server still controls the actual page boundary via `isLast`/`nextPageToken`.
 

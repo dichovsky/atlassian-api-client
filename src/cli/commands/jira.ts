@@ -1621,6 +1621,7 @@ function enhancedBoardParams(opts: ParsedCommand['options']): ListSoftwareIssues
     maxResults: asPositiveInt(opts['max-results'], '--max-results'),
     nextPageToken: asString(opts['next-page-token']),
     expand: asString(opts['expand']),
+    validateQuery: asBoolFlag(opts['validate-query']),
     reconcileIssues:
       reconcileRaw === undefined
         ? undefined

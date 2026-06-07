@@ -1825,6 +1825,14 @@ describe('BoardsResource', () => {
       });
     });
 
+    it('threads validateQuery into query when provided', async () => {
+      transport.respondWith(makeSoftwareIssueResults([]));
+
+      await boards.getBacklogEnhanced(42, { validateQuery: false });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ validateQuery: false });
+    });
+
     it('serializes reconcileIssues as repeated params in the path (not CSV)', async () => {
       transport.respondWith(makeSoftwareIssueResults([]));
 

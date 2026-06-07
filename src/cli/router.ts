@@ -116,6 +116,7 @@ const GLOBAL_OPTIONS = {
   released: { type: 'boolean' as const },
   // enhanced (JSIS) board issue options (B1023-B1027)
   'reconcile-issues': { type: 'string' as const },
+  'validate-query': { type: 'boolean' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },
   // `redact` convenience overrides — when set, these merge into the

@@ -682,6 +682,7 @@ export class BoardsResource {
       if (params.jql !== undefined) query['jql'] = params.jql;
       if (params.fields !== undefined) query['fields'] = params.fields.join(',');
       if (params.expand !== undefined) query['expand'] = params.expand;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
     }
     const finalPath = appendRepeatedParams(path, 'reconcileIssues', params?.reconcileIssues);
     const response = await this.transport.request<SoftwareIssueResults>({

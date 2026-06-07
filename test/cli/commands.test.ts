@@ -12870,6 +12870,19 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(payload);
     });
 
+    it('boards backlog-enhanced threads validate-query as validateQuery boolean', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getBacklogEnhanced.mockResolvedValue(payload);
+      await executeJiraCommand(
+        cmd('boards', 'backlog-enhanced', ['42'], { 'validate-query': true }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getBacklogEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ validateQuery: true }),
+      );
+    });
+
     it('boards backlog-enhanced throws when boardId is missing', async () => {
       await expect(
         executeJiraCommand(cmd('boards', 'backlog-enhanced', []), GLOBALS),
