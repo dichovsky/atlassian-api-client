@@ -1561,8 +1561,49 @@ async function executeSpacePermissions(
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
       });
+
+    // ── Transition API (B1031–B1035) ─────────────────────────────────────────
+
+    case 'transition-remove-access': {
+      const raw = requireOpt(opts['body'], '--body');
+      const parsed = parseJsonValue(raw);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('--body must be a JSON object (BulkRemoveAccessRequest)');
+      }
+      return client.spacePermissions.bulkRemoveAccess(
+        parsed as Parameters<typeof client.spacePermissions.bulkRemoveAccess>[0],
+      );
+    }
+
+    case 'transition-list-combinations':
+      return client.spacePermissions.listCombinations({
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+      });
+
+    case 'transition-generate-combinations':
+      return client.spacePermissions.generateCombinations();
+
+    case 'transition-assign-roles': {
+      const raw = requireOpt(opts['body'], '--body');
+      const parsed = parseJsonValue(raw);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('--body must be a JSON object (BulkAssignRolesRequest)');
+      }
+      return client.spacePermissions.bulkAssignRoles(
+        parsed as Parameters<typeof client.spacePermissions.bulkAssignRoles>[0],
+      );
+    }
+
+    case 'transition-task-status':
+      return client.spacePermissions.getTransitionTaskStatus(
+        requireArg(cmd.positionalArgs[0], 'taskId'),
+      );
+
     default:
-      throw new Error(`Unknown space-permissions action: ${cmd.action}. Actions: list`);
+      throw new Error(
+        `Unknown space-permissions action: ${cmd.action}. Actions: list, transition-remove-access, transition-list-combinations, transition-generate-combinations, transition-assign-roles, transition-task-status`,
+      );
   }
 }
 

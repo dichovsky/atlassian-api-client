@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "e24b31b446240db9b733f512ce7b56b44bfa154df0c6a162b9311e464457279b",
+  "sourceHash": "fa5667ea8004f5c8d492da5e9ce6a328575700296d91db7ea98074c6f3730149",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -248,6 +248,15 @@
       "typeOnly": true
     },
     {
+      "name": "BulkAssignRolesRequest",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 106,
+      "signature": "export interface BulkAssignRolesRequest { readonly assignments: readonly BulkTransitionRoleAssignment[]; readonly spaceS…",
+      "jsdoc": "Request body for `POST /space-permissions/transition/role-assignments` (B1034, `bulkAssignSpacePermissionRoles`). Submits an async task that assigns roles to principals across the selected spaces.",
+      "typeOnly": true
+    },
+    {
       "name": "BulkCreateIssueData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
@@ -284,12 +293,84 @@
       "typeOnly": true
     },
     {
+      "name": "BulkRemoveAccessRequest",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 63,
+      "signature": "export interface BulkRemoveAccessRequest { readonly permissionCombinationIds: readonly string[]; readonly spaceSelection…",
+      "jsdoc": "Request body for `POST /space-permissions/transition/access-removals` (B1031, `bulkRemoveSpacePermissionAccess`). Submits an async task that removes the specified permission combinations across the selected spaces.",
+      "typeOnly": true
+    },
+    {
       "name": "BulkSetIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
       "line": 34,
       "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …",
       "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionDecodedPermission",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 144,
+      "signature": "export interface BulkTransitionDecodedPermission { readonly id: string; readonly displayName: string; }",
+      "jsdoc": "A decoded space permission included in a `SpacePermissionCombinationEntry`. Identifies a single platform permission by its machine id and human display name.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionPrincipalTypeAssignment",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 75,
+      "signature": "export interface BulkTransitionPrincipalTypeAssignment { readonly principalType: | 'USER' | 'GROUP' | 'GUEST' | 'ANONYMO…",
+      "jsdoc": "A single principal-type assignment within a `BulkAssignRolesRequest`. Either assigns a role (`removeAccess: false`, `roleId` required) or removes access (`removeAccess: true`).",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionRoleAssignment",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 94,
+      "signature": "export interface BulkTransitionRoleAssignment { readonly permissionCombinationId: string; readonly principalTypeAssignme…",
+      "jsdoc": "A single role-assignment entry within a `BulkAssignRolesRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionSpaceSelection",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 31,
+      "signature": "export interface BulkTransitionSpaceSelection { readonly spaceType: | 'ALL' | 'ALL_EXCEPT_PERSONAL' | 'ALL_EXCEPT_SPECIF…",
+      "jsdoc": "Space selection scope for bulk transition operations. Used in `BulkRemoveAccessRequest` and `BulkAssignRolesRequest`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionSpaceTarget",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 51,
+      "signature": "export interface BulkTransitionSpaceTarget { readonly id: string; readonly key: string; }",
+      "jsdoc": "Identifies a single Confluence space by ID and key.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionTaskResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 117,
+      "signature": "export interface BulkTransitionTaskResponse { readonly taskId: string; readonly status: 'IN_PROGRESS' | 'COMPLETED' | 'F…",
+      "jsdoc": "Response body for async POST transition endpoints (B1031, B1033, B1034). The task runs asynchronously; poll `getTransitionTaskStatus` with `taskId`.",
+      "typeOnly": true
+    },
+    {
+      "name": "BulkTransitionTaskStatusResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 130,
+      "signature": "export interface BulkTransitionTaskStatusResponse { readonly taskId: string; readonly status: 'IN_PROGRESS' | 'COMPLETED…",
+      "jsdoc": "Response body for `GET /space-permissions/transition/tasks/{taskId}` (B1035, `getSpacePermissionTransitionTaskStatus`).",
       "typeOnly": true
     },
     {
@@ -2228,6 +2309,24 @@
       "typeOnly": true
     },
     {
+      "name": "ListSpacePermissionCombinationsParams",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 198,
+      "signature": "export interface ListSpacePermissionCombinationsParams { readonly limit?: number; readonly cursor?: string; }",
+      "jsdoc": "Query parameters for `GET /space-permissions/transition/combinations`.",
+      "typeOnly": true
+    },
+    {
+      "name": "ListSpacePermissionCombinationsResponse",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 185,
+      "signature": "export interface ListSpacePermissionCombinationsResponse { readonly results: readonly SpacePermissionCombinationEntry[];…",
+      "jsdoc": "Response body for `GET /space-permissions/transition/combinations` (B1032, `listSpacePermissionCombinations`). Cursor-paginated; use `cursor` for the next page and `listAllCombinations()` for full iteration.",
+      "typeOnly": true
+    },
+    {
       "name": "ListSpacePermissionsParams",
       "kind": "interface",
       "file": "src/confluence/types/space-permissions.ts",
@@ -2857,6 +2956,15 @@
       "line": 143,
       "signature": "export interface SpacePermissionAssignment { readonly id?: string; readonly principal?: { readonly type?: 'user' | 'grou…",
       "jsdoc": "A per-space permission assignment entry returned by `GET /spaces/{id}/permissions` (B206). Mirrors the spec's `SpacePermissionAssignment` schema — the `principal` block identifies the grantee (user / group / role) and `operation` carves out the `(key, targetType)` tuple the grant applies to.",
+      "typeOnly": true
+    },
+    {
+      "name": "SpacePermissionCombinationEntry",
+      "kind": "interface",
+      "file": "src/confluence/types/space-permissions.ts",
+      "line": 155,
+      "signature": "export interface SpacePermissionCombinationEntry { readonly combinationId: string; readonly spaceCount: number; readonly…",
+      "jsdoc": "A single entry in the combinations page returned by `listCombinations` (B1032).",
       "typeOnly": true
     },
     {
@@ -3629,361 +3737,361 @@
         {
           "name": "executeSpaceRoleMode",
           "kind": "function",
-          "line": 1569,
+          "line": 1610,
           "signature": "async function executeSpaceRoleMode( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeSpaceRoles",
           "kind": "function",
-          "line": 1581,
+          "line": 1622,
           "signature": "async function executeSpaceRoles(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "SPACE_ROLE_TYPES",
           "kind": "variable",
-          "line": 1633,
+          "line": 1674,
           "signature": "const SPACE_ROLE_TYPES: readonly SpaceRoleType[] = ['SYSTEM', 'CUSTOM'];"
         },
         {
           "name": "SPACE_ROLE_PRINCIPAL_TYPES",
           "kind": "variable",
-          "line": 1635,
+          "line": 1676,
           "signature": "const SPACE_ROLE_PRINCIPAL_TYPES: readonly SpaceRolePrincipalType[] = [ 'USER', 'GROUP', 'ACCESS_CLASS', ];"
         },
         {
           "name": "SPACE_BLOG_POST_STATUSES",
           "kind": "variable",
-          "line": 1650,
+          "line": 1691,
           "signature": "const SPACE_BLOG_POST_STATUSES = ['current', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "SPACE_CONTENT_LABEL_PREFIXES",
           "kind": "variable",
-          "line": 1652,
+          "line": 1693,
           "signature": "const SPACE_CONTENT_LABEL_PREFIXES = ['my', 'team'] as const;"
         },
         {
           "name": "SPACE_PAGE_DEPTHS",
           "kind": "variable",
-          "line": 1654,
+          "line": 1695,
           "signature": "const SPACE_PAGE_DEPTHS = ['all', 'root'] as const;"
         },
         {
           "name": "SPACE_PAGE_STATUSES",
           "kind": "variable",
-          "line": 1656,
+          "line": 1697,
           "signature": "const SPACE_PAGE_STATUSES = ['current', 'archived', 'deleted', 'trashed'] as const;"
         },
         {
           "name": "parseSpacePermissions",
           "kind": "function",
-          "line": 1665,
+          "line": 1706,
           "signature": "function parseSpacePermissions(raw: string): readonly string[]",
           "jsdoc": "Split `--space-permissions` from the CLI into a non-empty array. Accepts a comma-separated list of permission ids (e.g. `read/space,write/space`); surrounding whitespace per entry is trimmed and empty entries are dropped. Rejects an all-empty payload with a clear error so callers fail fast before the HTTP round trip."
         },
         {
           "name": "executeTasks",
           "kind": "function",
-          "line": 1676,
+          "line": 1717,
           "signature": "async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "TASK_STATUSES",
           "kind": "variable",
-          "line": 1712,
+          "line": 1753,
           "signature": "const TASK_STATUSES = ['incomplete', 'complete'] as const;"
         },
         {
           "name": "executeUsers",
           "kind": "function",
-          "line": 1714,
+          "line": 1755,
           "signature": "async function executeUsers(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "parseRequiredCsvList",
           "kind": "function",
-          "line": 1739,
+          "line": 1780,
           "signature": "function parseRequiredCsvList(raw: string, emptyError: string): readonly string[]",
           "jsdoc": "Split a required comma-separated CLI flag into a non-empty, trimmed list. Surrounding whitespace per entry is trimmed and empty entries are dropped; an all-empty payload throws `emptyError` so callers fail fast before the HTTP round trip. Shared by `--emails` (users) and `--account-ids` (users-bulk) so both get identical comma-separated batch semantics."
         },
         {
           "name": "parseEmailList",
           "kind": "function",
-          "line": 1756,
+          "line": 1797,
           "signature": "function parseEmailList(raw: string): readonly string[]",
           "jsdoc": "Parse `--emails` from the CLI into a non-empty list. Mirrors the `--account-ids` parsing used by `users-bulk` so callers get consistent comma-separated batch semantics across both user resources: surrounding whitespace per entry is trimmed and empty entries are dropped."
         },
         {
           "name": "executeUsersBulk",
           "kind": "function",
-          "line": 1760,
+          "line": 1801,
           "signature": "async function executeUsersBulk(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeDatabases",
           "kind": "function",
-          "line": 1775,
+          "line": 1816,
           "signature": "async function executeDatabases(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeEmbeds",
           "kind": "function",
-          "line": 1877,
+          "line": 1918,
           "signature": "async function executeEmbeds(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFolders",
           "kind": "function",
-          "line": 1960,
+          "line": 2001,
           "signature": "async function executeFolders(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "executeFooterComments",
           "kind": "function",
-          "line": 2042,
+          "line": 2083,
           "signature": "async function executeFooterComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeInlineComments",
           "kind": "function",
-          "line": 2125,
+          "line": 2166,
           "signature": "async function executeInlineComments( client: ConfluenceClient, cmd: ParsedCommand, ): Promise<unknown>"
         },
         {
           "name": "executeWhiteboards",
           "kind": "function",
-          "line": 2183,
+          "line": 2224,
           "signature": "async function executeWhiteboards(client: ConfluenceClient, cmd: ParsedCommand): Promise<unknown>"
         },
         {
           "name": "requireArg",
           "kind": "function",
-          "line": 2295,
+          "line": 2336,
           "signature": "function requireArg(value: string | undefined, name: string): string"
         },
         {
           "name": "requireOpt",
           "kind": "function",
-          "line": 2300,
+          "line": 2341,
           "signature": "function requireOpt(value: string | boolean | undefined, name: string): string"
         },
         {
           "name": "asString",
           "kind": "function",
-          "line": 2305,
+          "line": 2346,
           "signature": "function asString(value: string | boolean | undefined): string | undefined"
         },
         {
           "name": "asPositiveInt",
           "kind": "function",
-          "line": 2309,
+          "line": 2350,
           "signature": "function asPositiveInt(value: string | boolean | undefined, name: string): number | undefined"
         },
         {
           "name": "requirePositiveInt",
           "kind": "function",
-          "line": 2324,
+          "line": 2365,
           "signature": "function requirePositiveInt(value: string | boolean | undefined, name: string): number",
           "jsdoc": "Like {@link asPositiveInt} but rejects missing values: requires the flag, then validates it is a positive integer. Returns the parsed number. The thrown message matches the hand-rolled sites it replaces (`<name> must be a positive integer, got: <value>`)."
         },
         {
           "name": "asDepth",
           "kind": "function",
-          "line": 2337,
+          "line": 2378,
           "signature": "function asDepth(value: string | boolean | undefined): number | undefined",
           "jsdoc": "Validate depth parameter for descendant/child queries (must be 1–10 per spec). Returns `undefined` when unset, otherwise validates and returns the integer."
         },
         {
           "name": "asEnum",
           "kind": "function",
-          "line": 2351,
+          "line": 2392,
           "signature": "function asEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ): T | …",
           "jsdoc": "Narrow a free-form CLI string to a typed enum, rejecting anything outside the allowlist with a user-facing error. Returns `undefined` when the flag is unset so callers can use spread-omit on optional query keys."
         },
         {
           "name": "asEnumArray",
           "kind": "function",
-          "line": 2369,
+          "line": 2410,
           "signature": "function asEnumArray<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Parse a comma-separated CLI value into a typed enum array. Each comma-split token is validated against the allowlist; an empty or missing input returns `undefined` so callers can spread-omit the key. Use for query params that the spec models as `array<enum>` (e.g. attachment `status`)."
         },
         {
           "name": "requireEnum",
           "kind": "function",
-          "line": 2393,
+          "line": 2434,
           "signature": "function requireEnum<T extends string>( value: string | boolean | undefined, allowed: readonly T[], flagName: string, ):…",
           "jsdoc": "Like `asEnum` but rejects missing values. Use when the flag is required and must come from a fixed allowlist (e.g. `tasks update --status`)."
         },
         {
           "name": "CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2407,
+          "line": 2448,
           "signature": "const CONTENT_SORT_ORDERS: readonly ContentSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'modified-date'…"
         },
         {
           "name": "PROPERTY_SORT_ORDERS",
           "kind": "variable",
-          "line": 2420,
+          "line": 2461,
           "signature": "const PROPERTY_SORT_ORDERS = ['key', '-key'] as const;"
         },
         {
           "name": "COMMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2422,
+          "line": 2463,
           "signature": "const COMMENT_SORT_ORDERS: readonly CommentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-modified-…"
         },
         {
           "name": "VERSION_SORT_ORDERS",
           "kind": "variable",
-          "line": 2429,
+          "line": 2470,
           "signature": "const VERSION_SORT_ORDERS: readonly VersionSortOrder[] = ['modified-date', '-modified-date'];"
         },
         {
           "name": "DATA_POLICY_SPACE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2431,
+          "line": 2472,
           "signature": "const DATA_POLICY_SPACE_SORT_ORDERS: readonly DataPolicySpaceSortOrder[] = [ 'id', '-id', 'key', '-key', 'name', '-name'…"
         },
         {
           "name": "LABEL_SORT_ORDERS",
           "kind": "variable",
-          "line": 2440,
+          "line": 2481,
           "signature": "const LABEL_SORT_ORDERS: readonly LabelSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'name', '-name', ];"
         },
         {
           "name": "ATTACHMENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2449,
+          "line": 2490,
           "signature": "const ATTACHMENT_SORT_ORDERS: readonly AttachmentSortOrder[] = [ 'created-date', '-created-date', 'modified-date', '-mod…"
         },
         {
           "name": "ATTACHMENT_STATUSES",
           "kind": "variable",
-          "line": 2456,
+          "line": 2497,
           "signature": "const ATTACHMENT_STATUSES: readonly AttachmentStatus[] = ['current', 'archived', 'trashed'];"
         },
         {
           "name": "LABEL_PREFIXES",
           "kind": "variable",
-          "line": 2458,
+          "line": 2499,
           "signature": "const LABEL_PREFIXES: readonly LabelPrefix[] = ['my', 'team', 'global', 'system'];"
         },
         {
           "name": "BLOG_POST_SORT_ORDERS",
           "kind": "variable",
-          "line": 2460,
+          "line": 2501,
           "signature": "const BLOG_POST_SORT_ORDERS: readonly BlogPostSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-da…"
         },
         {
           "name": "PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2469,
+          "line": 2510,
           "signature": "const PAGE_SORT_ORDERS: readonly PageSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'modified-date', '-mo…"
         },
         {
           "name": "CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2480,
+          "line": 2521,
           "signature": "const CONTENT_BODY_FORMATS = ['storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "WHITEBOARD_TEMPLATE_KEYS",
           "kind": "variable",
-          "line": 2482,
+          "line": 2523,
           "signature": "const WHITEBOARD_TEMPLATE_KEYS: readonly WhiteboardTemplateKey[] = [ '2x2-prioritization', '4ls-retro', 'annual-calendar…"
         },
         {
           "name": "WHITEBOARD_LOCALES",
           "kind": "variable",
-          "line": 2538,
+          "line": 2579,
           "signature": "const WHITEBOARD_LOCALES: readonly WhiteboardLocale[] = [ 'de-DE', 'cs-CZ', 'ko-KR', 'fr-FR', 'it-IT', 'ja-JP', 'nl-NL',…"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS",
           "kind": "variable",
-          "line": 2562,
+          "line": 2603,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS = ['raw', 'storage', 'atlas_doc_format'] as const;"
         },
         {
           "name": "CUSTOM_CONTENT_BODY_FORMATS_SINGLE",
           "kind": "variable",
-          "line": 2569,
+          "line": 2610,
           "signature": "const CUSTOM_CONTENT_BODY_FORMATS_SINGLE = [ 'raw', 'storage', 'atlas_doc_format', 'view', 'export_view', 'anonymous_exp…",
           "jsdoc": "Extended body-format vocabulary accepted only by `GET /custom-content/{id}` — adds the read-only `view`, `export_view`, and `anonymous_export_view` projections from the spec's `CustomContentBodyRepresentationSingle` enum."
         },
         {
           "name": "CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2578,
+          "line": 2619,
           "signature": "const CUSTOM_CONTENT_SORT_ORDERS: readonly CustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-created-date', 'm…"
         },
         {
           "name": "CHILD_CUSTOM_CONTENT_SORT_ORDERS",
           "kind": "variable",
-          "line": 2589,
+          "line": 2630,
           "signature": "const CHILD_CUSTOM_CONTENT_SORT_ORDERS: readonly ChildCustomContentSortOrder[] = [ 'id', '-id', 'created-date', '-create…"
         },
         {
           "name": "COMMENT_STATUSES",
           "kind": "variable",
-          "line": 2598,
+          "line": 2639,
           "signature": "const COMMENT_STATUSES: readonly CommentStatus[] = [ 'current', 'deleted', 'trashed', 'historical', 'draft', ];"
         },
         {
           "name": "INLINE_COMMENT_RESOLUTION_STATUSES",
           "kind": "variable",
-          "line": 2606,
+          "line": 2647,
           "signature": "const INLINE_COMMENT_RESOLUTION_STATUSES: readonly InlineCommentResolutionStatus[] = [ 'resolved', 'open', 'dangling', '…"
         },
         {
           "name": "CLASSIFICATION_STATUS",
           "kind": "variable",
-          "line": 2613,
+          "line": 2654,
           "signature": "const CLASSIFICATION_STATUS = ['current', 'draft', 'archived'] as const;"
         },
         {
           "name": "PAGE_CLASSIFICATION_STATUSES",
           "kind": "variable",
-          "line": 2620,
+          "line": 2661,
           "signature": "const PAGE_CLASSIFICATION_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/classification-level` and the matching reset endpoint — page allows both `current` and `draft` (unlike the blog-post variant which is locked to `current`)."
         },
         {
           "name": "PAGE_TITLE_STATUSES",
           "kind": "variable",
-          "line": 2626,
+          "line": 2667,
           "signature": "const PAGE_TITLE_STATUSES = ['current', 'draft'] as const;",
           "jsdoc": "Status enum accepted by `PUT /pages/{id}/title`. The endpoint targets either the published (`current`) revision or the in-flight `draft`."
         },
         {
           "name": "CHILD_PAGE_SORT_ORDERS",
           "kind": "variable",
-          "line": 2633,
+          "line": 2674,
           "signature": "const CHILD_PAGE_SORT_ORDERS: readonly ChildPageSortOrder[] = [ 'created-date', '-created-date', 'id', '-id', 'child-pos…",
           "jsdoc": "Sort tokens accepted by `GET /pages/{id}/children`. Mirrors the OpenAPI `ChildPageSortOrder` enum — narrower than `ContentSortOrder` (no `title` sort because child-page rows don't reliably carry a title field)."
         },
         {
           "name": "BLOG_POST_LOOKUP_STATUSES",
           "kind": "variable",
-          "line": 2644,
+          "line": 2685,
           "signature": "const BLOG_POST_LOOKUP_STATUSES: readonly BlogPostLookupStatus[] = [ 'current', 'trashed', 'deleted', 'historical', 'dra…"
         },
         {
           "name": "BLOG_POST_BODY_REPRESENTATIONS",
           "kind": "variable",
-          "line": 2652,
+          "line": 2693,
           "signature": "const BLOG_POST_BODY_REPRESENTATIONS: readonly BlogPostBodyRepresentation[] = [ 'storage', 'atlas_doc_format', 'view', '…"
         },
         {
           "name": "makeBody",
           "kind": "function",
-          "line": 2662,
+          "line": 2703,
           "signature": "function makeBody(value: string | undefined)"
         },
         {
           "name": "buildGetBlogPostParams",
           "kind": "function",
-          "line": 2678,
+          "line": 2719,
           "signature": "function buildGetBlogPostParams( opts: Record<string, string | boolean | undefined>, ): GetBlogPostParams | undefined",
           "jsdoc": "Project the CLI flag bag onto a `GetBlogPostParams` query bag. Returns `undefined` when no spec-mapped flag is present so the caller can short-circuit to the no-arg `blogPosts.get(id)` overload (avoids sending an empty `query={}` object to the transport)."
         }
@@ -6898,12 +7006,60 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "BulkAssignRolesRequest",
+              "original": "BulkAssignRolesRequest"
+            },
+            {
+              "exported": "BulkRemoveAccessRequest",
+              "original": "BulkRemoveAccessRequest"
+            },
+            {
+              "exported": "BulkTransitionDecodedPermission",
+              "original": "BulkTransitionDecodedPermission"
+            },
+            {
+              "exported": "BulkTransitionPrincipalTypeAssignment",
+              "original": "BulkTransitionPrincipalTypeAssignment"
+            },
+            {
+              "exported": "BulkTransitionRoleAssignment",
+              "original": "BulkTransitionRoleAssignment"
+            },
+            {
+              "exported": "BulkTransitionSpaceSelection",
+              "original": "BulkTransitionSpaceSelection"
+            },
+            {
+              "exported": "BulkTransitionSpaceTarget",
+              "original": "BulkTransitionSpaceTarget"
+            },
+            {
+              "exported": "BulkTransitionTaskResponse",
+              "original": "BulkTransitionTaskResponse"
+            },
+            {
+              "exported": "BulkTransitionTaskStatusResponse",
+              "original": "BulkTransitionTaskStatusResponse"
+            },
+            {
+              "exported": "ListSpacePermissionCombinationsParams",
+              "original": "ListSpacePermissionCombinationsParams"
+            },
+            {
+              "exported": "ListSpacePermissionCombinationsResponse",
+              "original": "ListSpacePermissionCombinationsResponse"
+            },
+            {
               "exported": "ListSpacePermissionsParams",
               "original": "ListSpacePermissionsParams"
             },
             {
               "exported": "SpacePermission",
               "original": "SpacePermission"
+            },
+            {
+              "exported": "SpacePermissionCombinationEntry",
+              "original": "SpacePermissionCombinationEntry"
             }
           ]
         },
@@ -9160,7 +9316,7 @@
         {
           "name": "SpacePermissionsResource",
           "kind": "class",
-          "line": 21,
+          "line": 38,
           "exported": true,
           "signature": "export class SpacePermissionsResource",
           "jsdoc": "Resource for the Confluence v2 `space-permissions` API.",
@@ -9168,23 +9324,54 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 22
+              "line": 39
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 28
+              "line": 45
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 45
+              "line": 62
+            },
+            {
+              "name": "bulkRemoveAccess",
+              "kind": "method",
+              "line": 86
+            },
+            {
+              "name": "listCombinations",
+              "kind": "method",
+              "line": 106
+            },
+            {
+              "name": "listAllCombinations",
+              "kind": "method",
+              "line": 128
+            },
+            {
+              "name": "generateCombinations",
+              "kind": "method",
+              "line": 160
+            },
+            {
+              "name": "bulkAssignRoles",
+              "kind": "method",
+              "line": 177
+            },
+            {
+              "name": "getTransitionTaskStatus",
+              "kind": "method",
+              "line": 195
             }
           ]
         }
       ],
       "imports": [
         "../../core/pagination.js",
+        "../../core/path.js",
         "../../core/types.js",
         "../types/space-permissions.js"
       ]
@@ -11573,6 +11760,102 @@
           "exported": true,
           "signature": "export interface ListSpacePermissionsParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Query parameters for `GET /space-permissions`."
+        },
+        {
+          "name": "BulkTransitionSpaceSelection",
+          "kind": "interface",
+          "line": 31,
+          "exported": true,
+          "signature": "export interface BulkTransitionSpaceSelection { readonly spaceType: | 'ALL' | 'ALL_EXCEPT_PERSONAL' | 'ALL_EXCEPT_SPECIF…",
+          "jsdoc": "Space selection scope for bulk transition operations. Used in `BulkRemoveAccessRequest` and `BulkAssignRolesRequest`."
+        },
+        {
+          "name": "BulkTransitionSpaceTarget",
+          "kind": "interface",
+          "line": 51,
+          "exported": true,
+          "signature": "export interface BulkTransitionSpaceTarget { readonly id: string; readonly key: string; }",
+          "jsdoc": "Identifies a single Confluence space by ID and key."
+        },
+        {
+          "name": "BulkRemoveAccessRequest",
+          "kind": "interface",
+          "line": 63,
+          "exported": true,
+          "signature": "export interface BulkRemoveAccessRequest { readonly permissionCombinationIds: readonly string[]; readonly spaceSelection…",
+          "jsdoc": "Request body for `POST /space-permissions/transition/access-removals` (B1031, `bulkRemoveSpacePermissionAccess`). Submits an async task that removes the specified permission combinations across the selected spaces."
+        },
+        {
+          "name": "BulkTransitionPrincipalTypeAssignment",
+          "kind": "interface",
+          "line": 75,
+          "exported": true,
+          "signature": "export interface BulkTransitionPrincipalTypeAssignment { readonly principalType: | 'USER' | 'GROUP' | 'GUEST' | 'ANONYMO…",
+          "jsdoc": "A single principal-type assignment within a `BulkAssignRolesRequest`. Either assigns a role (`removeAccess: false`, `roleId` required) or removes access (`removeAccess: true`)."
+        },
+        {
+          "name": "BulkTransitionRoleAssignment",
+          "kind": "interface",
+          "line": 94,
+          "exported": true,
+          "signature": "export interface BulkTransitionRoleAssignment { readonly permissionCombinationId: string; readonly principalTypeAssignme…",
+          "jsdoc": "A single role-assignment entry within a `BulkAssignRolesRequest`."
+        },
+        {
+          "name": "BulkAssignRolesRequest",
+          "kind": "interface",
+          "line": 106,
+          "exported": true,
+          "signature": "export interface BulkAssignRolesRequest { readonly assignments: readonly BulkTransitionRoleAssignment[]; readonly spaceS…",
+          "jsdoc": "Request body for `POST /space-permissions/transition/role-assignments` (B1034, `bulkAssignSpacePermissionRoles`). Submits an async task that assigns roles to principals across the selected spaces."
+        },
+        {
+          "name": "BulkTransitionTaskResponse",
+          "kind": "interface",
+          "line": 117,
+          "exported": true,
+          "signature": "export interface BulkTransitionTaskResponse { readonly taskId: string; readonly status: 'IN_PROGRESS' | 'COMPLETED' | 'F…",
+          "jsdoc": "Response body for async POST transition endpoints (B1031, B1033, B1034). The task runs asynchronously; poll `getTransitionTaskStatus` with `taskId`."
+        },
+        {
+          "name": "BulkTransitionTaskStatusResponse",
+          "kind": "interface",
+          "line": 130,
+          "exported": true,
+          "signature": "export interface BulkTransitionTaskStatusResponse { readonly taskId: string; readonly status: 'IN_PROGRESS' | 'COMPLETED…",
+          "jsdoc": "Response body for `GET /space-permissions/transition/tasks/{taskId}` (B1035, `getSpacePermissionTransitionTaskStatus`)."
+        },
+        {
+          "name": "BulkTransitionDecodedPermission",
+          "kind": "interface",
+          "line": 144,
+          "exported": true,
+          "signature": "export interface BulkTransitionDecodedPermission { readonly id: string; readonly displayName: string; }",
+          "jsdoc": "A decoded space permission included in a `SpacePermissionCombinationEntry`. Identifies a single platform permission by its machine id and human display name."
+        },
+        {
+          "name": "SpacePermissionCombinationEntry",
+          "kind": "interface",
+          "line": 155,
+          "exported": true,
+          "signature": "export interface SpacePermissionCombinationEntry { readonly combinationId: string; readonly spaceCount: number; readonly…",
+          "jsdoc": "A single entry in the combinations page returned by `listCombinations` (B1032)."
+        },
+        {
+          "name": "ListSpacePermissionCombinationsResponse",
+          "kind": "interface",
+          "line": 185,
+          "exported": true,
+          "signature": "export interface ListSpacePermissionCombinationsResponse { readonly results: readonly SpacePermissionCombinationEntry[];…",
+          "jsdoc": "Response body for `GET /space-permissions/transition/combinations` (B1032, `listSpacePermissionCombinations`). Cursor-paginated; use `cursor` for the next page and `listAllCombinations()` for full iteration."
+        },
+        {
+          "name": "ListSpacePermissionCombinationsParams",
+          "kind": "interface",
+          "line": 198,
+          "exported": true,
+          "signature": "export interface ListSpacePermissionCombinationsParams { readonly limit?: number; readonly cursor?: string; }",
+          "jsdoc": "Query parameters for `GET /space-permissions/transition/combinations`."
         }
       ]
     },
@@ -15211,6 +15494,54 @@
             {
               "exported": "ListSpacePermissionsParams",
               "original": "ListSpacePermissionsParams"
+            },
+            {
+              "exported": "BulkRemoveAccessRequest",
+              "original": "BulkRemoveAccessRequest"
+            },
+            {
+              "exported": "BulkAssignRolesRequest",
+              "original": "BulkAssignRolesRequest"
+            },
+            {
+              "exported": "BulkTransitionDecodedPermission",
+              "original": "BulkTransitionDecodedPermission"
+            },
+            {
+              "exported": "BulkTransitionPrincipalTypeAssignment",
+              "original": "BulkTransitionPrincipalTypeAssignment"
+            },
+            {
+              "exported": "BulkTransitionRoleAssignment",
+              "original": "BulkTransitionRoleAssignment"
+            },
+            {
+              "exported": "BulkTransitionSpaceSelection",
+              "original": "BulkTransitionSpaceSelection"
+            },
+            {
+              "exported": "BulkTransitionSpaceTarget",
+              "original": "BulkTransitionSpaceTarget"
+            },
+            {
+              "exported": "BulkTransitionTaskResponse",
+              "original": "BulkTransitionTaskResponse"
+            },
+            {
+              "exported": "BulkTransitionTaskStatusResponse",
+              "original": "BulkTransitionTaskStatusResponse"
+            },
+            {
+              "exported": "ListSpacePermissionCombinationsParams",
+              "original": "ListSpacePermissionCombinationsParams"
+            },
+            {
+              "exported": "ListSpacePermissionCombinationsResponse",
+              "original": "ListSpacePermissionCombinationsResponse"
+            },
+            {
+              "exported": "SpacePermissionCombinationEntry",
+              "original": "SpacePermissionCombinationEntry"
             },
             {
               "exported": "SpaceRoleMode",

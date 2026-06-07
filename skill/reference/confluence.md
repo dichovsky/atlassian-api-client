@@ -23,7 +23,7 @@ Confluence Cloud REST API v2 surface. Load this file when you need a flag or act
 | `folders`               | `create`, `get`, `delete`, `ancestors`, `descendants`, `direct-children`, `operations`, `list-properties`, `create-property`, `get-property`, `update-property`, `delete-property`                                                                                                                                                                                                                                                                                    |
 | `footer-comments`       | `list`, `get`, `update`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                                                                                                |
 | `inline-comments`       | `list`, `children`, `likes-count`, `likes-users`, `operations`, `versions`, `version`                                                                                                                                                                                                                                                                                                                                                                                 |
-| `space-permissions`     | `list`                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `space-permissions`     | `list`, `transition-remove-access`, `transition-list-combinations`, `transition-generate-combinations`, `transition-assign-roles`, `transition-task-status`                                                                                                                                                                                                                                                                                                           |
 | `space-role-mode`       | `get`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `space-roles`           | `list`, `get`, `create`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `tasks`                 | `list`, `get`, `update`                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -594,11 +594,27 @@ atlas confluence data-policies list-spaces --ids 100,200,300
 
 ## `space-permissions`
 
-| Action | Positional | Required flags | Optional flags        |
-| ------ | ---------- | -------------- | --------------------- |
-| `list` | —          | —              | `--limit`, `--cursor` |
+| Action                             | Positional | Required flags | Optional flags        |
+| ---------------------------------- | ---------- | -------------- | --------------------- |
+| `list`                             | —          | —              | `--limit`, `--cursor` |
+| `transition-remove-access`         | —          | `--body`       | —                     |
+| `transition-list-combinations`     | —          | —              | `--limit`, `--cursor` |
+| `transition-generate-combinations` | —          | —              | —                     |
+| `transition-assign-roles`          | —          | `--body`       | —                     |
+| `transition-task-status`           | `<taskId>` | —              | —                     |
 
 Lists the _available_ space-permission definitions for the Confluence Cloud organization (`GET /wiki/api/v2/space-permissions`). These describe the permissions the platform supports (`id`, `displayName`, `description`, `requiredPermissionIds`) — they are **not** per-space grants. Per-space assignments are exposed by the separate `/spaces/{id}/permissions` endpoint (not covered here). Requires the `read:space.permission:confluence` OAuth scope (or `READ` Connect app scope); available on tenants with Role-Based Access Control. Returns the standard `{ results, _links }` cursor-paginated wrapper; `--limit` accepts 1-250 (server default 25).
+
+The **transition sub-commands** (`transition-*`) implement the async bulk RBAC migration API (`/wiki/api/v2/space-permissions/transition/*`). The async flow is:
+
+1. Generate the combinations table (once): `transition-generate-combinations`
+2. Inspect the result: `transition-list-combinations`
+3. Submit a bulk operation: `transition-remove-access` or `transition-assign-roles`
+4. Poll until done: `transition-task-status <taskId>`
+
+All three POST operations return a `BulkTransitionTaskResponse` with `taskId`, `status`, and `statusUrl`. Poll `transition-task-status` until `status` is `COMPLETED` or `FAILED`.
+
+### `list` — list available permission definitions
 
 ```sh
 # First page (server default 25 per page)
@@ -609,6 +625,108 @@ atlas confluence space-permissions list --limit 100
 
 # Next page using the cursor from _links.next
 atlas confluence space-permissions list --cursor "<value-from-response>"
+```
+
+### `transition-generate-combinations` — generate the combinations table
+
+No body required. Kicks off the audit that populates the combinations table.
+
+```sh
+atlas confluence space-permissions transition-generate-combinations
+# Returns: { taskId, status, statusUrl }
+```
+
+### `transition-list-combinations` — list permission combinations
+
+Lists the unique combinations of space permissions that exist across all spaces, sorted by `principalCount` descending. Cursor-paginated (1-250 per page).
+
+| Action                         | Positional | Required flags | Optional flags        |
+| ------------------------------ | ---------- | -------------- | --------------------- |
+| `transition-list-combinations` | —          | —              | `--limit`, `--cursor` |
+
+```sh
+# First page of combinations
+atlas confluence space-permissions transition-list-combinations
+
+# With pagination
+atlas confluence space-permissions transition-list-combinations --limit 50
+atlas confluence space-permissions transition-list-combinations --cursor "<cursor>"
+```
+
+Response shape (one entry in `results`):
+
+```json
+{
+  "combinationId": "combo-abc",
+  "spaceCount": 42,
+  "principalCount": 128,
+  "permissions": [{ "id": "VIEW_CONTENT", "displayName": "View" }],
+  "principalTypes": ["USER", "GROUP"]
+}
+```
+
+### `transition-remove-access` — bulk remove access
+
+`--body` is a JSON object matching `BulkRemoveAccessRequest`:
+
+| Field                           | Type                                                                          | Required                              | Description                             |
+| ------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------- |
+| `permissionCombinationIds`      | `string[]`                                                                    | yes                                   | IDs from `transition-list-combinations` |
+| `spaceSelection.spaceType`      | `"ALL"\|"ALL_EXCEPT_PERSONAL"\|"ALL_EXCEPT_SPECIFIC"\|"PERSONAL"\|"SPECIFIC"` | yes                                   | Space scope                             |
+| `spaceSelection.selectedSpaces` | `{id,key}[]`                                                                  | when `SPECIFIC`/`ALL_EXCEPT_SPECIFIC` | Target spaces                           |
+
+```sh
+# Remove a combination from all spaces
+atlas confluence space-permissions transition-remove-access \
+  --body '{"permissionCombinationIds":["combo-abc"],"spaceSelection":{"spaceType":"ALL"}}'
+
+# Returns: { taskId, status, statusUrl }
+# Poll the task:
+atlas confluence space-permissions transition-task-status <taskId>
+```
+
+### `transition-assign-roles` — bulk assign roles
+
+`--body` is a JSON object matching `BulkAssignRolesRequest`:
+
+| Field                                                    | Type                                                                                                             | Required                   | Description                                |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------ |
+| `assignments`                                            | `BulkTransitionRoleAssignment[]`                                                                                 | yes                        | Role assignments per combination           |
+| `assignments[].permissionCombinationId`                  | `string`                                                                                                         | yes                        | Combination ID                             |
+| `assignments[].principalTypeAssignments`                 | `BulkTransitionPrincipalTypeAssignment[]`                                                                        | yes                        | Per-principal-type targets                 |
+| `assignments[].principalTypeAssignments[].principalType` | `"USER"\|"GROUP"\|"GUEST"\|"ANONYMOUS"\|"ALL_LICENSED_USERS_USER_CLASS"\|"ALL_PRODUCT_ADMINS_USER_CLASS"\|"APP"` | yes                        | Principal type                             |
+| `assignments[].principalTypeAssignments[].removeAccess`  | `boolean`                                                                                                        | yes                        | `true` = remove, `false` = assign `roleId` |
+| `assignments[].principalTypeAssignments[].roleId`        | `string`                                                                                                         | when `removeAccess: false` | Role UUID to assign                        |
+| `spaceSelection`                                         | `BulkTransitionSpaceSelection`                                                                                   | yes                        | Same as remove-access                      |
+
+```sh
+# Assign a role to USER principals for a combination, across all spaces
+atlas confluence space-permissions transition-assign-roles \
+  --body '{
+    "assignments": [{
+      "permissionCombinationId": "combo-abc",
+      "principalTypeAssignments": [{
+        "principalType": "USER",
+        "removeAccess": false,
+        "roleId": "role-uuid-here"
+      }]
+    }],
+    "spaceSelection": { "spaceType": "ALL" }
+  }'
+
+# Returns: { taskId, status, statusUrl }
+```
+
+### `transition-task-status` — poll task status
+
+| Action                   | Positional | Required | Description                      |
+| ------------------------ | ---------- | -------- | -------------------------------- |
+| `transition-task-status` | `<taskId>` | yes      | Task ID from any transition POST |
+
+```sh
+atlas confluence space-permissions transition-task-status task-123
+
+# Response: { taskId, status: "IN_PROGRESS"|"COMPLETED"|"FAILED", errorMessage? }
 ```
 
 ## `space-role-mode`

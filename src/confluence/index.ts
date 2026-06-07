@@ -230,7 +230,22 @@ export type {
   UpdatePageData,
   UpdatePageTitleData,
 } from './types/pages.js';
-export type { ListSpacePermissionsParams, SpacePermission } from './types/space-permissions.js';
+export type {
+  BulkAssignRolesRequest,
+  BulkRemoveAccessRequest,
+  BulkTransitionDecodedPermission,
+  BulkTransitionPrincipalTypeAssignment,
+  BulkTransitionRoleAssignment,
+  BulkTransitionSpaceSelection,
+  BulkTransitionSpaceTarget,
+  BulkTransitionTaskResponse,
+  BulkTransitionTaskStatusResponse,
+  ListSpacePermissionCombinationsParams,
+  ListSpacePermissionCombinationsResponse,
+  ListSpacePermissionsParams,
+  SpacePermission,
+  SpacePermissionCombinationEntry,
+} from './types/space-permissions.js';
 export type {
   CreateSpaceRoleData,
   DeleteSpaceRoleResponse,

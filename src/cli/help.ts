@@ -106,7 +106,7 @@ RESOURCES:
   folders                create, get, delete, ancestors, descendants, direct-children, operations, list-properties, create-property, get-property, update-property, delete-property
   footer-comments        list, get, update, children, likes-count, likes-users, operations, versions, version
   inline-comments        list, children, likes-count, likes-users, operations, versions, version
-  space-permissions      list
+  space-permissions      list, transition-remove-access, transition-list-combinations, transition-generate-combinations, transition-assign-roles, transition-task-status
   space-role-mode        get
   space-roles            list, get, create, update, delete
   tasks                  list, get, update

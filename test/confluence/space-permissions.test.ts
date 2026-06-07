@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SpacePermissionsResource } from '../../src/confluence/resources/space-permissions.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import type {
+  BulkAssignRolesRequest,
+  BulkRemoveAccessRequest,
+} from '../../src/confluence/types/space-permissions.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -9,6 +13,14 @@ const makePermission = (id: string, displayName: string) => ({
   displayName,
   description: `${displayName} permission`,
   requiredPermissionIds: [],
+});
+
+const makeCombination = (combinationId: string) => ({
+  combinationId,
+  spaceCount: 1,
+  principalCount: 2,
+  permissions: [{ id: 'VIEW_CONTENT', displayName: 'View' }],
+  principalTypes: ['USER' as const],
 });
 
 describe('SpacePermissionsResource', () => {
@@ -134,6 +146,266 @@ describe('SpacePermissionsResource', () => {
       const iter = resource.listAll({ limit: 0 });
       await expect(iter.next()).rejects.toThrow(RangeError);
       expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── bulkRemoveAccess (B1031) ───────────────────────────────────────────────
+
+  describe('bulkRemoveAccess()', () => {
+    const taskResponse = {
+      taskId: 'task-1',
+      status: 'IN_PROGRESS' as const,
+      statusUrl: 'https://example.atlassian.net/status/task-1',
+    };
+
+    const requestBody: BulkRemoveAccessRequest = {
+      permissionCombinationIds: ['combo-abc', 'combo-def'],
+      spaceSelection: { spaceType: 'ALL' },
+    };
+
+    it('calls POST /space-permissions/transition/access-removals with body', async () => {
+      // Arrange
+      transport.respondWith(taskResponse);
+
+      // Act
+      const result = await resource.bulkRemoveAccess(requestBody);
+
+      // Assert
+      expect(result).toEqual(taskResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/space-permissions/transition/access-removals`,
+        body: requestBody,
+      });
+    });
+
+    it('passes selectedSpaces when spaceType is SPECIFIC', async () => {
+      transport.respondWith(taskResponse);
+      const data: BulkRemoveAccessRequest = {
+        permissionCombinationIds: ['combo-1'],
+        spaceSelection: {
+          spaceType: 'SPECIFIC',
+          selectedSpaces: [{ id: 's1', key: 'KEY1' }],
+        },
+      };
+      await resource.bulkRemoveAccess(data);
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('net-err'));
+      await expect(resource.bulkRemoveAccess(requestBody)).rejects.toThrow('net-err');
+    });
+  });
+
+  // ── listCombinations (B1032) ───────────────────────────────────────────────
+
+  describe('listCombinations()', () => {
+    const combinationsPage = {
+      results: [makeCombination('combo-1')],
+      generatedAt: '2026-06-07T10:00:00Z',
+      cursor: null,
+    };
+
+    it('calls GET /space-permissions/transition/combinations with no params', async () => {
+      transport.respondWith(combinationsPage);
+
+      const result = await resource.listCombinations();
+
+      expect(result).toEqual(combinationsPage);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/space-permissions/transition/combinations`,
+      });
+      expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('passes limit and cursor', async () => {
+      transport.respondWith(combinationsPage);
+      await resource.listCombinations({ limit: 50, cursor: 'curs1' });
+      expect(transport.lastCall?.options.query).toEqual({ limit: 50, cursor: 'curs1' });
+    });
+
+    it('throws RangeError when limit is zero', async () => {
+      await expect(resource.listCombinations({ limit: 0 })).rejects.toThrow(RangeError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws RangeError when limit is negative', async () => {
+      await expect(resource.listCombinations({ limit: -5 })).rejects.toThrow(RangeError);
+      expect(transport.calls).toHaveLength(0);
+    });
+  });
+
+  // ── listAllCombinations (B1032) ────────────────────────────────────────────
+
+  describe('listAllCombinations()', () => {
+    it('yields items across pages until cursor is absent', async () => {
+      transport
+        .respondWith({
+          results: [makeCombination('c1'), makeCombination('c2')],
+          cursor: 'cursor-p2',
+        })
+        .respondWith({
+          results: [makeCombination('c3')],
+          cursor: null,
+        });
+
+      const items: { combinationId: string }[] = [];
+      for await (const item of resource.listAllCombinations()) {
+        items.push(item);
+      }
+
+      expect(items.map((i) => i.combinationId)).toEqual(['c1', 'c2', 'c3']);
+      expect(transport.calls).toHaveLength(2);
+      expect(transport.calls[0]?.options.query).toEqual({});
+      expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'cursor-p2' });
+    });
+
+    it('passes limit through to requests', async () => {
+      transport.respondWith({ results: [], cursor: null });
+      const iter = resource.listAllCombinations({ limit: 100 });
+      await iter.next();
+      expect(transport.lastCall?.options.query).toMatchObject({ limit: 100 });
+    });
+
+    it('throws RangeError when limit is invalid before any request', async () => {
+      const iter = resource.listAllCombinations({ limit: 0 });
+      await expect(iter.next()).rejects.toThrow(RangeError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('yields nothing when first page has empty results and no cursor', async () => {
+      transport.respondWith({ results: [], cursor: null });
+      const items = [];
+      for await (const item of resource.listAllCombinations()) {
+        items.push(item);
+      }
+      expect(items).toHaveLength(0);
+    });
+  });
+
+  // ── generateCombinations (B1033) ──────────────────────────────────────────
+
+  describe('generateCombinations()', () => {
+    const taskResponse = {
+      taskId: 'task-gen',
+      status: 'IN_PROGRESS' as const,
+      statusUrl: 'https://example.atlassian.net/status/task-gen',
+    };
+
+    it('calls POST /space-permissions/transition/combinations with no body', async () => {
+      transport.respondWith(taskResponse);
+
+      const result = await resource.generateCombinations();
+
+      expect(result).toEqual(taskResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/space-permissions/transition/combinations`,
+      });
+      expect(transport.lastCall?.options.body).toBeUndefined();
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('server-err'));
+      await expect(resource.generateCombinations()).rejects.toThrow('server-err');
+    });
+  });
+
+  // ── bulkAssignRoles (B1034) ────────────────────────────────────────────────
+
+  describe('bulkAssignRoles()', () => {
+    const taskResponse = {
+      taskId: 'task-assign',
+      status: 'IN_PROGRESS' as const,
+      statusUrl: 'https://example.atlassian.net/status/task-assign',
+    };
+
+    const requestBody: BulkAssignRolesRequest = {
+      assignments: [
+        {
+          permissionCombinationId: 'combo-abc',
+          principalTypeAssignments: [
+            { principalType: 'USER', removeAccess: false, roleId: 'role-uuid' },
+          ],
+        },
+      ],
+      spaceSelection: { spaceType: 'ALL_EXCEPT_PERSONAL' },
+    };
+
+    it('calls POST /space-permissions/transition/role-assignments with body', async () => {
+      transport.respondWith(taskResponse);
+
+      const result = await resource.bulkAssignRoles(requestBody);
+
+      expect(result).toEqual(taskResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${BASE_URL}/space-permissions/transition/role-assignments`,
+        body: requestBody,
+      });
+    });
+
+    it('handles removeAccess: true case', async () => {
+      transport.respondWith(taskResponse);
+      const data: BulkAssignRolesRequest = {
+        assignments: [
+          {
+            permissionCombinationId: 'combo-xyz',
+            principalTypeAssignments: [{ principalType: 'GROUP', removeAccess: true }],
+          },
+        ],
+        spaceSelection: { spaceType: 'PERSONAL' },
+      };
+      await resource.bulkAssignRoles(data);
+      expect(transport.lastCall?.options.body).toEqual(data);
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('assign-err'));
+      await expect(resource.bulkAssignRoles(requestBody)).rejects.toThrow('assign-err');
+    });
+  });
+
+  // ── getTransitionTaskStatus (B1035) ───────────────────────────────────────
+
+  describe('getTransitionTaskStatus()', () => {
+    it('calls GET /space-permissions/transition/tasks/{taskId}', async () => {
+      const statusResponse = { taskId: 'task-123', status: 'COMPLETED' as const };
+      transport.respondWith(statusResponse);
+
+      const result = await resource.getTransitionTaskStatus('task-123');
+
+      expect(result).toEqual(statusResponse);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/space-permissions/transition/tasks/task-123`,
+      });
+    });
+
+    it('URL-encodes the taskId path segment', async () => {
+      transport.respondWith({ taskId: 'task/special', status: 'FAILED' as const });
+      await resource.getTransitionTaskStatus('task/special');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/space-permissions/transition/tasks/task%2Fspecial`,
+      );
+    });
+
+    it('returns FAILED status with errorMessage', async () => {
+      const failedResponse = {
+        taskId: 'task-fail',
+        status: 'FAILED' as const,
+        errorMessage: 'Something went wrong',
+      };
+      transport.respondWith(failedResponse);
+      const result = await resource.getTransitionTaskStatus('task-fail');
+      expect(result).toEqual(failedResponse);
+    });
+
+    it('propagates transport errors', async () => {
+      transport.respondWithError(new Error('not-found'));
+      await expect(resource.getTransitionTaskStatus('missing')).rejects.toThrow('not-found');
     });
   });
 });
