@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "737f1e1278d665663500d8ff3a94f969c9adf185c4c186d05ab1d2b56c74dad1",
+  "sourceHash": "abb85c1b474668abe8421269a52d119b08f515ad6799856c2e00f9a9d174cd1d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -28522,37 +28522,37 @@
             {
               "name": "sanitize",
               "kind": "method",
-              "line": 241
+              "line": 247
             },
             {
               "name": "getAutocompleteDataPost",
               "kind": "method",
-              "line": 251
+              "line": 257
             },
             {
               "name": "getPrecomputations",
               "kind": "method",
-              "line": 261
+              "line": 267
             },
             {
               "name": "updatePrecomputations",
               "kind": "method",
-              "line": 289
+              "line": 295
             },
             {
               "name": "getPrecomputationsById",
               "kind": "method",
-              "line": 307
+              "line": 313
             },
             {
               "name": "matchIssues",
               "kind": "method",
-              "line": 324
+              "line": 330
             },
             {
               "name": "migrateQueries",
               "kind": "method",
-              "line": 334
+              "line": 340
             }
           ]
         }
