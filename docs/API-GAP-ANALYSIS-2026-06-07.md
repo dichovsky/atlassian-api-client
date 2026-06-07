@@ -30,7 +30,7 @@ Coverage of the three specs is **strong but not complete**. Of 942 operations, *
 | Jira Platform v3 | 619 | 608 | **1** | 10 (B907, B914–B922) | 0 |
 | Jira Software (Agile) | 105 | 95 | **8** | 0 | 2 (B1002, B1006 — BLOCKED) |
 | Confluence v2 | 218 | 213 | **5** | 0 | 0 |
-| **Total** | **942** | **916** | **14** | **11** | **2** |
+| **Total** | **942** | **916** | **14** | **10** | **2** |
 
 The most significant finding: **8 of the 14 gaps were previously marked done** (B1001/B1003/B1004/B1005/B1007/B1008/B1009/B1010) under a rationale that spec evidence falsifies.
 
@@ -81,15 +81,17 @@ The entire `Space Permission Transition` tag (async bulk RBAC migration) is unim
 
 | B# | Verb | Path | Sev | Detail |
 | --- | --- | --- | --- | --- |
-| B1036 | GET | `/rest/api/3/workflow` | **high** | `WorkflowsResource.get(workflowName)` (`workflows.ts:176`) issues `GET ${baseUrl}/workflow?workflowName=…`. The bare `/rest/api/3/workflow` path is **absent from the current v3 spec** (the documented form is `GET /rest/api/3/workflow/search`, `getWorkflowsPaginated`, which accepts the same `workflowName` query param and returns the `{ values: [...] }` shape the code already reads). `test/jira/workflows.test.ts:129` asserts the bare path, so the dead path ships on the wire. Likely the removed legacy "Get all workflows" endpoint. Fix is a one-token path change; verify against a live tenant. |
+| B1036 | GET | `/rest/api/3/workflow` | **high**¹ | `WorkflowsResource.get(workflowName)` (`workflows.ts:176`) issues `GET ${baseUrl}/workflow?workflowName=…`. The bare `/rest/api/3/workflow` path is **absent from the current v3 spec** (the documented form is `GET /rest/api/3/workflow/search`, `getWorkflowsPaginated`, which accepts the same `workflowName` query param and returns the `{ values: [...] }` shape the code already reads). `test/jira/workflows.test.ts:129` asserts the bare path, so the dead path ships on the wire. Likely the removed legacy "Get all workflows" endpoint. Fix is a one-token path change; verify against a live tenant. |
 
 > This is a **bug**, not a coverage gap — flagged here because the diff surfaced it. Separate fix PR.
+>
+> ¹ Severity is conditional on live-tenant confirmation: spec-absence is fact, but the bare endpoint may still resolve on live Jira (spec drift). High if the 404/405 is confirmed — a silently-dead `get()` is high-impact; verify before fixing.
 
 ---
 
 ## 3. Not queued
 
-### 3a. Deprecated & superseded (11) — prior decisions stand
+### 3a. Deprecated & superseded (10) — prior decisions stand
 
 | Verb | Path | Superseded by | Decision |
 | --- | --- | --- | --- |
