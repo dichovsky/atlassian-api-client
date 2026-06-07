@@ -195,6 +195,11 @@ const confluenceDataPoliciesMock = {
 };
 const confluenceSpacePermissionsMock = {
   list: vi.fn(),
+  bulkRemoveAccess: vi.fn(),
+  listCombinations: vi.fn(),
+  generateCombinations: vi.fn(),
+  bulkAssignRoles: vi.fn(),
+  getTransitionTaskStatus: vi.fn(),
 };
 const confluenceSpaceRoleModeMock = {
   get: vi.fn(),
@@ -5731,6 +5736,156 @@ describe('executeConfluenceCommand', () => {
       await expect(
         executeConfluenceCommand(cmd('space-permissions', 'unknown'), GLOBALS),
       ).rejects.toThrow('Unknown space-permissions action');
+    });
+
+    // ── transition-remove-access (B1031) ──────────────────────────────────
+
+    it('transition-remove-access calls bulkRemoveAccess with parsed body', async () => {
+      const taskResp = { taskId: 'task-1', status: 'IN_PROGRESS', statusUrl: 'https://x/s' };
+      confluenceSpacePermissionsMock.bulkRemoveAccess.mockResolvedValue(taskResp);
+      const body = JSON.stringify({
+        permissionCombinationIds: ['c1'],
+        spaceSelection: { spaceType: 'ALL' },
+      });
+      const result = await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-remove-access', [], { body }),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.bulkRemoveAccess).toHaveBeenCalledWith({
+        permissionCombinationIds: ['c1'],
+        spaceSelection: { spaceType: 'ALL' },
+      });
+      expect(result).toEqual(taskResp);
+    });
+
+    it('transition-remove-access throws when --body is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('space-permissions', 'transition-remove-access'), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    it('transition-remove-access throws when --body is not an object', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('space-permissions', 'transition-remove-access', [], { body: '"string"' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('JSON object');
+    });
+
+    // ── transition-list-combinations (B1032) ──────────────────────────────
+
+    it('transition-list-combinations calls listCombinations with empty params', async () => {
+      const page = { results: [], cursor: null };
+      confluenceSpacePermissionsMock.listCombinations.mockResolvedValue(page);
+      const result = await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-list-combinations'),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.listCombinations).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: undefined, cursor: undefined }),
+      );
+      expect(result).toEqual(page);
+    });
+
+    it('transition-list-combinations passes limit and cursor', async () => {
+      confluenceSpacePermissionsMock.listCombinations.mockResolvedValue({
+        results: [],
+        cursor: null,
+      });
+      await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-list-combinations', [], {
+          limit: '25',
+          cursor: 'tok',
+        }),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.listCombinations).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: 25, cursor: 'tok' }),
+      );
+    });
+
+    // ── transition-generate-combinations (B1033) ───────────────────────────
+
+    it('transition-generate-combinations calls generateCombinations', async () => {
+      const taskResp = { taskId: 'gen-1', status: 'IN_PROGRESS', statusUrl: 'https://x/s' };
+      confluenceSpacePermissionsMock.generateCombinations.mockResolvedValue(taskResp);
+      const result = await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-generate-combinations'),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.generateCombinations).toHaveBeenCalled();
+      expect(result).toEqual(taskResp);
+    });
+
+    // ── transition-assign-roles (B1034) ───────────────────────────────────
+
+    it('transition-assign-roles calls bulkAssignRoles with parsed body', async () => {
+      const taskResp = { taskId: 'task-2', status: 'IN_PROGRESS', statusUrl: 'https://x/s' };
+      confluenceSpacePermissionsMock.bulkAssignRoles.mockResolvedValue(taskResp);
+      const body = JSON.stringify({
+        assignments: [
+          {
+            permissionCombinationId: 'c1',
+            principalTypeAssignments: [
+              { principalType: 'USER', removeAccess: false, roleId: 'r1' },
+            ],
+          },
+        ],
+        spaceSelection: { spaceType: 'ALL' },
+      });
+      const result = await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-assign-roles', [], { body }),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.bulkAssignRoles).toHaveBeenCalledWith({
+        assignments: [
+          {
+            permissionCombinationId: 'c1',
+            principalTypeAssignments: [
+              { principalType: 'USER', removeAccess: false, roleId: 'r1' },
+            ],
+          },
+        ],
+        spaceSelection: { spaceType: 'ALL' },
+      });
+      expect(result).toEqual(taskResp);
+    });
+
+    it('transition-assign-roles throws when --body is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('space-permissions', 'transition-assign-roles'), GLOBALS),
+      ).rejects.toThrow('--body');
+    });
+
+    it('transition-assign-roles throws when --body is an array', async () => {
+      await expect(
+        executeConfluenceCommand(
+          cmd('space-permissions', 'transition-assign-roles', [], { body: '[]' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('JSON object');
+    });
+
+    // ── transition-task-status (B1035) ────────────────────────────────────
+
+    it('transition-task-status calls getTransitionTaskStatus with positional taskId', async () => {
+      const statusResp = { taskId: 'task-123', status: 'COMPLETED' };
+      confluenceSpacePermissionsMock.getTransitionTaskStatus.mockResolvedValue(statusResp);
+      const result = await executeConfluenceCommand(
+        cmd('space-permissions', 'transition-task-status', ['task-123']),
+        GLOBALS,
+      );
+      expect(confluenceSpacePermissionsMock.getTransitionTaskStatus).toHaveBeenCalledWith(
+        'task-123',
+      );
+      expect(result).toEqual(statusResp);
+    });
+
+    it('transition-task-status throws when taskId is missing', async () => {
+      await expect(
+        executeConfluenceCommand(cmd('space-permissions', 'transition-task-status'), GLOBALS),
+      ).rejects.toThrow('taskId');
     });
   });
 
