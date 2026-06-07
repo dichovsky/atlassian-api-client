@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { ValidationError } from '../../core/errors.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** Assignment policy for the component. */
 export type ComponentAssigneeType =
@@ -99,9 +100,14 @@ export class ComponentResource {
   async list(params?: ListComponentsParams): Promise<OffsetPaginatedResponse<Component>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildListQuery(params);
+    const path = appendRepeatedParams(
+      `${this.baseUrl}/component`,
+      'projectIdsOrKeys',
+      params?.projectIdsOrKeys,
+    );
     const response = await this.transport.request<OffsetPaginatedResponse<Component>>({
       method: 'GET',
-      path: `${this.baseUrl}/component`,
+      path,
       query,
     });
     return {
@@ -132,9 +138,14 @@ export class ComponentResource {
     if (options?.maxPages !== undefined) paginateOptions.maxPages = options.maxPages;
     if (options?.logger !== undefined) paginateOptions.logger = options.logger;
 
+    const basePath = appendRepeatedParams(
+      `${this.baseUrl}/component`,
+      'projectIdsOrKeys',
+      params?.projectIdsOrKeys,
+    );
     yield* paginateOffset<Component>(
       this.transport,
-      `${this.baseUrl}/component`,
+      basePath,
       query,
       maxResults,
       paginateOptions,
@@ -214,9 +225,6 @@ function buildListQuery(
 ): Record<string, string | number | boolean | undefined> {
   const query: Record<string, string | number | boolean | undefined> = {};
   if (!params) return query;
-  if (params.projectIdsOrKeys !== undefined && params.projectIdsOrKeys.length > 0) {
-    query['projectIdsOrKeys'] = params.projectIdsOrKeys.join(',');
-  }
   if (params.startAt !== undefined) query['startAt'] = params.startAt;
   if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
   if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
