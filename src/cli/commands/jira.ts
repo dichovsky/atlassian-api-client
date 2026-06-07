@@ -1760,9 +1760,16 @@ async function executeSprints(client: JiraClient, cmd: ParsedCommand): Promise<u
       await client.sprints.swap(sprintId, sprintToSwapWith);
       return { swapped: true };
     }
+    case 'get-issues-enhanced': {
+      const sprintId = parsePositiveIntArg(
+        requireArg(cmd.positionalArgs[0], 'sprintId'),
+        'sprintId',
+      );
+      return client.sprints.getIssuesEnhanced(sprintId, enhancedBoardParams(opts));
+    }
     default:
       throw new Error(
-        `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap`,
+        `Unknown sprints action: ${cmd.action}. Actions: get, create, update, delete, get-issues, get-issues-enhanced, partial-update, move-issues, list-properties, get-property, set-property, delete-property, swap`,
       );
   }
 }
@@ -1823,6 +1830,12 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
       });
+    case 'issues-enhanced': {
+      const epicIdOrKey = requireArg(cmd.positionalArgs[0], 'epicIdOrKey');
+      return client.epic.getIssuesEnhanced(epicIdOrKey, enhancedBoardParams(opts));
+    }
+    case 'issues-none-enhanced':
+      return client.epic.getIssuesWithoutEpicEnhanced(enhancedBoardParams(opts));
     case 'remove-issues': {
       const issuesRaw = requireOpt(opts['issues'], '--issues');
       const issues = issuesRaw
@@ -1834,7 +1847,7 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
     }
     default:
       throw new Error(
-        `Unknown epic action: ${cmd.action}. Actions: get, update, issues, move-issues, rank, issues-none, remove-issues`,
+        `Unknown epic action: ${cmd.action}. Actions: get, update, issues, move-issues, rank, issues-none, issues-enhanced, issues-none-enhanced, remove-issues`,
       );
   }
 }

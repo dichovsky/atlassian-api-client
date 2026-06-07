@@ -321,7 +321,7 @@ export class JiraClient {
     this.issueAttachments = new IssueAttachmentsResource(transport, baseUrl);
     this.labels = new LabelsResource(transport, baseUrl);
     this.boards = new BoardsResource(transport, agileBaseUrl, softwareBaseUrl);
-    this.sprints = new SprintsResource(transport, agileBaseUrl);
+    this.sprints = new SprintsResource(transport, agileBaseUrl, softwareBaseUrl);
     this.workflows = new WorkflowsResource(transport, baseUrl);
     this.dashboards = new DashboardsResource(transport, baseUrl);
     this.filters = new FiltersResource(transport, baseUrl);
@@ -338,7 +338,7 @@ export class JiraClient {
       remoteLinks: remoteLinkBaseUrl,
       security: securityBaseUrl,
     });
-    this.epic = new EpicResource(transport, agileBaseUrl);
+    this.epic = new EpicResource(transport, agileBaseUrl, softwareBaseUrl);
     this.backlog = new BacklogResource(transport, agileBaseUrl);
     this.announcementBanner = new AnnouncementBannerResource(transport, baseUrl);
     this.applicationRole = new ApplicationRoleResource(transport, baseUrl);

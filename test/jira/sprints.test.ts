@@ -3,6 +3,7 @@ import { SprintsResource } from '../../src/jira/resources/sprints.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
+const SOFTWARE_BASE_URL = 'https://test.atlassian.net/rest/software/1.0';
 
 const makeSprint = (id: number, name: string) => ({
   id,
@@ -32,7 +33,7 @@ describe('SprintsResource', () => {
 
   beforeEach(() => {
     transport = new MockTransport();
-    sprints = new SprintsResource(transport, BASE_URL);
+    sprints = new SprintsResource(transport, BASE_URL, SOFTWARE_BASE_URL);
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -617,7 +618,7 @@ describe('SprintsResource sprintId validation', () => {
 
   beforeEach(() => {
     transport = new MockTransport();
-    sprints = new SprintsResource(transport, BASE_URL);
+    sprints = new SprintsResource(transport, BASE_URL, SOFTWARE_BASE_URL);
   });
 
   it('get() throws ValidationError for sprintId <= 0', async () => {
@@ -645,6 +646,104 @@ describe('SprintsResource sprintId validation', () => {
   it('moveIssues() throws ValidationError for sprintId <= 0', async () => {
     await expect(sprints.moveIssues(0, ['PROJ-1'])).rejects.toThrow(
       'sprintId must be a positive integer',
+    );
+  });
+});
+
+// ── Enhanced (JSIS) sprint issue endpoint (B1030) ─────────────────────────
+
+const makeSoftwareIssueResults = (keys: string[]) => ({
+  issues: keys.map((key, i) => ({
+    id: String(i + 1),
+    key,
+    self: `${BASE_URL}/issue/${key}`,
+    fields: {},
+  })),
+  nextPageToken: 'TOKEN-2',
+  isLast: false,
+});
+
+describe('SprintsResource.getIssuesEnhanced()', () => {
+  let transport: MockTransport;
+  let sprints: SprintsResource;
+
+  beforeEach(() => {
+    transport = new MockTransport();
+    sprints = new SprintsResource(transport, BASE_URL, SOFTWARE_BASE_URL);
+  });
+
+  it('calls GET software /sprint/{sprintId}/issue and passes the page through', async () => {
+    const payload = makeSoftwareIssueResults(['PROJ-1', 'PROJ-2']);
+    transport.respondWith(payload);
+
+    const result = await sprints.getIssuesEnhanced(42);
+
+    expect(result).toEqual(payload);
+    expect(transport.lastCall?.options).toMatchObject({
+      method: 'GET',
+      path: `${SOFTWARE_BASE_URL}/sprint/42/issue`,
+    });
+  });
+
+  it('threads params and repeated reconcileIssues', async () => {
+    transport.respondWith(makeSoftwareIssueResults([]));
+
+    await sprints.getIssuesEnhanced(42, {
+      nextPageToken: 'TOK',
+      maxResults: 10,
+      jql: 'project = X',
+      fields: ['id', 'summary'],
+      expand: 'schema',
+      reconcileIssues: [10001, 10002],
+      validateQuery: false,
+    });
+
+    expect(transport.lastCall?.options.query).toMatchObject({
+      nextPageToken: 'TOK',
+      maxResults: 10,
+      jql: 'project = X',
+      fields: 'id,summary',
+      expand: 'schema',
+      validateQuery: false,
+    });
+    expect(transport.lastCall?.options.path).toBe(
+      `${SOFTWARE_BASE_URL}/sprint/42/issue?reconcileIssues=10001&reconcileIssues=10002`,
+    );
+  });
+
+  it('threads single reconcileIssues entry', async () => {
+    transport.respondWith(makeSoftwareIssueResults([]));
+
+    await sprints.getIssuesEnhanced(42, { reconcileIssues: [5] });
+
+    expect(transport.lastCall?.options.path).toBe(
+      `${SOFTWARE_BASE_URL}/sprint/42/issue?reconcileIssues=5`,
+    );
+  });
+
+  it('throws ValidationError for sprintId = 0', async () => {
+    await expect(sprints.getIssuesEnhanced(0)).rejects.toThrow(
+      'sprintId must be a positive integer',
+    );
+  });
+
+  it('throws ValidationError for sprintId = -1', async () => {
+    await expect(sprints.getIssuesEnhanced(-1)).rejects.toThrow(
+      'sprintId must be a positive integer',
+    );
+  });
+
+  it('throws RangeError for maxResults: 0', async () => {
+    await expect(sprints.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+  });
+
+  it('derives softwareBaseUrl from agile baseUrl when not provided', async () => {
+    const t = new MockTransport();
+    t.respondWith(makeSoftwareIssueResults([]));
+    const resource = new SprintsResource(t, BASE_URL);
+    await resource.getIssuesEnhanced(1);
+    expect(t.lastCall?.options.path).toBe(
+      'https://test.atlassian.net/rest/software/1.0/sprint/1/issue',
     );
   });
 });
