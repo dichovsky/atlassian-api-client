@@ -211,7 +211,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 | `list`                        | —              | —                                                            | `--space-id`, `--limit`, `--cursor`                                                                                                                                                                                                                                                                     |
 | `get`                         | `<blogPostId>` | —                                                            | `--body-format`, `--get-draft`, `--status`, `--historical-version`, `--include-labels`, `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions`, `--include-version`, `--include-favorited-by-current-user-status`, `--include-webresources`, `--include-collaborators` |
 | `create`                      | —              | `--space-id`, `--title`                                      | `--body`                                                                                                                                                                                                                                                                                                |
-| `update`                      | `<blogPostId>` | `--version-number`, `--title`                                | —                                                                                                                                                                                                                                                                                                       |
+| `update`                      | `<blogPostId>` | `--version-number`, `--title`                                | `--body`                                                                                                                                                                                                                                                                                                |
 | `delete`                      | `<blogPostId>` | —                                                            | —                                                                                                                                                                                                                                                                                                       |
 | `list-properties`             | `<blogPostId>` | —                                                            | `--key`, `--sort`, `--cursor`, `--limit`                                                                                                                                                                                                                                                                |
 | `create-property`             | `<blogPostId>` | `--key`, `--value`                                           | —                                                                                                                                                                                                                                                                                                       |
@@ -281,21 +281,21 @@ atlas confluence blog-posts version 99999 --version-number 2
 
 ## `comments`
 
-| Action            | Positional    | Required flags                                          | Optional flags                           |
-| ----------------- | ------------- | ------------------------------------------------------- | ---------------------------------------- |
-| `list`            | —             | one of `--page-id` or `--blog-post-id`                  | `--limit`, `--cursor`, `--comment-type`  |
-| `get`             | `<commentId>` | —                                                       | `--comment-type`                         |
-| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | `--comment-type`                         |
-| `update`          | `<commentId>` | `--body`, `--version-number`                            | `--comment-type`                         |
-| `delete`          | `<commentId>` | —                                                       | `--comment-type`                         |
-| `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit` |
-| `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                        |
-| `get-property`    | `<commentId>` | `--property-id`                                         | —                                        |
-| `update-property` | `<commentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                        |
-| `delete-property` | `<commentId>` | `--property-id`                                         | —                                        |
+| Action            | Positional    | Required flags                                          | Optional flags                                  |
+| ----------------- | ------------- | ------------------------------------------------------- | ----------------------------------------------- |
+| `list`            | —             | one of `--page-id` or `--blog-post-id`                  | `--limit`, `--cursor`, `--comment-type`         |
+| `get`             | `<commentId>` | —                                                       | `--comment-type`                                |
+| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | `--comment-type`                                |
+| `update`          | `<commentId>` | `--body`, `--version-number`                            | `--comment-type`, `--resolved`, `--no-resolved` |
+| `delete`          | `<commentId>` | —                                                       | `--comment-type`                                |
+| `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`        |
+| `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                               |
+| `get-property`    | `<commentId>` | `--property-id`                                         | —                                               |
+| `update-property` | `<commentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                               |
+| `delete-property` | `<commentId>` | `--property-id`                                         | —                                               |
 
 - `--comment-type` accepts `footer` (top-level) or `inline`. Default is `footer`.
-- `update` issues `PUT /footer-comments/{id}` (footer) or `PUT /inline-comments/{id}` (inline). `--body` is sent with `representation: "storage"`. `--version-number` must be exactly one greater than the comment's current version (Confluence enforces optimistic concurrency; mismatches return 409). For inline comments the underlying `UpdateInlineCommentData` type extends the footer shape with an optional `resolved` boolean — the CLI wires body+version, and SDK callers can pass `resolved` directly.
+- `update` issues `PUT /footer-comments/{id}` (footer) or `PUT /inline-comments/{id}` (inline). `--body` is sent with `representation: "storage"`. `--version-number` must be exactly one greater than the comment's current version (Confluence enforces optimistic concurrency; mismatches return 409). For inline comments, `--resolved` marks the thread resolved (`resolved: true`) and `--no-resolved` reopens it (`resolved: false`); omitting both flags leaves the server-side resolution state untouched.
 - The `*-property` actions hit `/comments/{comment-id}/properties[/{property-id}]` and work for both footer and inline comments — Confluence resolves the comment by id regardless of type, so no `--comment-type` flag is needed.
 - `--sort` on `list-properties` accepts `key` or `-key`.
 - `--value` on `create-property` / `update-property` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`).

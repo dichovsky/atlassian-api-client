@@ -605,6 +605,7 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
         version: {
           number: blogVersionNum,
         },
+        body: makeBody(asString(opts['body'])),
       });
     }
     case 'delete':
@@ -861,9 +862,12 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
         value: requireOpt(opts['body'], '--body'),
       };
       if (commentType === 'inline') {
+        const resolved =
+          opts['resolved'] === true ? true : opts['no-resolved'] === true ? false : undefined;
         return client.comments.updateInline(requireArg(cmd.positionalArgs[0], 'comment ID'), {
           version: { number: versionNum },
           body,
+          ...(resolved !== undefined && { resolved }),
         });
       }
       return client.comments.updateFooter(requireArg(cmd.positionalArgs[0], 'comment ID'), {
