@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "5a3f4faddf9298e7c026a938a5a50d002aea3d721538db3bbf5a2e2c098adac8",
+  "sourceHash": "490eceb60146c5ab078a42b973a248a043aa3768bac45917032c677262bd6fc6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -25741,7 +25741,7 @@
         {
           "name": "GroupMember",
           "kind": "interface",
-          "line": 39,
+          "line": 44,
           "exported": true,
           "signature": "export interface GroupMember { readonly self?: string; readonly accountId: string; readonly accountType?: 'atlassian' | …",
           "jsdoc": "A Jira user as returned in group member listings."
@@ -25749,7 +25749,7 @@
         {
           "name": "Group",
           "kind": "interface",
-          "line": 61,
+          "line": 66,
           "exported": true,
           "signature": "export interface Group { readonly name: string; readonly groupId?: string; readonly self?: string; readonly users?: { re…",
           "jsdoc": "A Jira group with optional inlined member list when `expand=users` is requested. The expanded `users` block contains the first N members plus a paginated envelope; full enumeration should go through `listMembers` / `listAllMembers`."
@@ -25757,7 +25757,7 @@
         {
           "name": "BulkGroupDetails",
           "kind": "interface",
-          "line": 76,
+          "line": 81,
           "exported": true,
           "signature": "export interface BulkGroupDetails { readonly groupId: string; readonly name: string; }",
           "jsdoc": "A bulk-listing entry returned by GET /rest/api/3/group/bulk."
@@ -25765,7 +25765,7 @@
         {
           "name": "DeleteGroupParams",
           "kind": "interface",
-          "line": 82,
+          "line": 87,
           "exported": true,
           "signature": "export interface DeleteGroupParams { readonly groupname?: string; readonly groupId?: string; readonly swapGroup?: string…",
           "jsdoc": "Query parameters for DELETE /rest/api/3/group."
@@ -25773,7 +25773,7 @@
         {
           "name": "GetGroupParams",
           "kind": "interface",
-          "line": 94,
+          "line": 99,
           "exported": true,
           "signature": "export interface GetGroupParams { readonly groupname?: string; readonly groupId?: string; readonly expand?: string; }",
           "jsdoc": "Query parameters for GET /rest/api/3/group."
@@ -25781,7 +25781,7 @@
         {
           "name": "CreateGroupData",
           "kind": "interface",
-          "line": 104,
+          "line": 109,
           "exported": true,
           "signature": "export interface CreateGroupData { readonly name: string; }",
           "jsdoc": "Request body for POST /rest/api/3/group."
@@ -25789,7 +25789,7 @@
         {
           "name": "GroupAccessType",
           "kind": "type",
-          "line": 115,
+          "line": 120,
           "exported": true,
           "signature": "export type GroupAccessType = 'site-admin' | 'admin' | 'user';",
           "jsdoc": "Group access type per Atlassian Jira Cloud REST v3 spec (`GET /rest/api/3/group/bulk`)."
@@ -25797,7 +25797,7 @@
         {
           "name": "ListBulkGroupsParams",
           "kind": "interface",
-          "line": 118,
+          "line": 123,
           "exported": true,
           "signature": "export interface ListBulkGroupsParams { readonly startAt?: number; readonly maxResults?: number; readonly groupId?: stri…",
           "jsdoc": "Query parameters for GET /rest/api/3/group/bulk."
@@ -25805,7 +25805,7 @@
         {
           "name": "ListGroupMembersParams",
           "kind": "interface",
-          "line": 134,
+          "line": 139,
           "exported": true,
           "signature": "export interface ListGroupMembersParams { readonly groupname?: string; readonly groupId?: string; readonly includeInacti…",
           "jsdoc": "Query parameters for GET /rest/api/3/group/member."
@@ -25813,7 +25813,7 @@
         {
           "name": "RemoveGroupUserParams",
           "kind": "interface",
-          "line": 148,
+          "line": 153,
           "exported": true,
           "signature": "export interface RemoveGroupUserParams { readonly accountId: string; readonly groupname?: string; readonly groupId?: str…",
           "jsdoc": "Query parameters for DELETE /rest/api/3/group/user."
@@ -25821,7 +25821,7 @@
         {
           "name": "AddGroupUserParams",
           "kind": "interface",
-          "line": 158,
+          "line": 163,
           "exported": true,
           "signature": "export interface AddGroupUserParams { readonly accountId: string; readonly groupname?: string; readonly groupId?: string…",
           "jsdoc": "Parameters for POST /rest/api/3/group/user."
@@ -25829,7 +25829,7 @@
         {
           "name": "GroupsResource",
           "kind": "class",
-          "line": 176,
+          "line": 181,
           "exported": true,
           "signature": "export class GroupsResource",
           "jsdoc": "Jira Groups resource — group picker (legacy) plus CRUD-style group management endpoints under `/rest/api/3/group{,/bulk,/member,/user}`.",
@@ -25837,77 +25837,77 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 177
+              "line": 182
             },
             {
               "name": "picker",
               "kind": "method",
-              "line": 186
+              "line": 191
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 206
+              "line": 214
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 224
+              "line": 232
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 239
+              "line": 247
             },
             {
               "name": "listBulk",
               "kind": "method",
-              "line": 259
+              "line": 267
             },
             {
               "name": "listAllBulk",
               "kind": "method",
-              "line": 277
+              "line": 285
             },
             {
               "name": "listMembers",
               "kind": "method",
-              "line": 297
+              "line": 305
             },
             {
               "name": "listAllMembers",
               "kind": "method",
-              "line": 314
+              "line": 322
             },
             {
               "name": "removeUser",
               "kind": "method",
-              "line": 334
+              "line": 342
             },
             {
               "name": "addUser",
               "kind": "method",
-              "line": 353
+              "line": 361
             }
           ]
         },
         {
           "name": "buildBulkQuery",
           "kind": "function",
-          "line": 370,
+          "line": 378,
           "signature": "function buildBulkQuery( params: ListBulkGroupsParams | undefined, ): Record<string, string | number | boolean | undefin…"
         },
         {
           "name": "buildBulkPath",
           "kind": "function",
-          "line": 384,
+          "line": 392,
           "signature": "function buildBulkPath(basePath: string, params: ListBulkGroupsParams | undefined): string",
           "jsdoc": "Append the repeated `groupId` and `groupName` (`type: array`) params to the bulk path."
         },
         {
           "name": "buildMemberQuery",
           "kind": "function",
-          "line": 390,
+          "line": 398,
           "signature": "function buildMemberQuery( params: ListGroupMembersParams | undefined, ): Record<string, string | number | boolean | und…"
         }
       ],

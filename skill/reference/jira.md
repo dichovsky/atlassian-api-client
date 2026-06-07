@@ -1682,7 +1682,7 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 ### `picker`
 
 - `--query` — fuzzy string to match against group names.
-- `--exclude` — **comma-separated** list of group IDs to exclude from results.
+- `--exclude` — **comma-separated** list of group **names** to exclude from results (sent as repeated `exclude=` params). Note: to exclude by group ID, use the spec's `excludeId` parameter (not yet exposed by this client).
 - `--max-results` — maximum number of groups returned (default 20).
 - `--user-name` — account ID of a user whose groups should be excluded.
 - Endpoint: `GET /rest/api/3/groups/picker`.
@@ -1722,8 +1722,8 @@ atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-
 # Find groups matching "dev"
 atlas jira groups picker --query dev
 
-# Find up to 10 groups excluding a specific group
-atlas jira groups picker --query dev --max-results 10 --exclude grp-99
+# Find up to 10 groups excluding a group by name
+atlas jira groups picker --query dev --max-results 10 --exclude developers
 
 # Fetch a group and inline its first page of users
 atlas jira groups get --group-id grp-1 --expand users

@@ -97,15 +97,20 @@ describe('GroupsResource', () => {
       expect(query).not.toHaveProperty('excludeInactive');
     });
 
-    it('forwards exclude array param as comma-joined string', async () => {
+    it('forwards exclude array as repeated params built into path (not CSV)', async () => {
+      // Jira v3 spec: `exclude` is `type:array` — must be emitted as repeated params
+      // (?exclude=g1&exclude=g2), not CSV (?exclude=g1%2Cg2 / ?exclude=g1,g2).
       // Arrange
       transport.respondWith(makeGroupPickerResponse());
 
       // Act
-      await groups.picker({ exclude: ['grp-99', 'grp-100'] });
+      await groups.picker({ exclude: ['g1', 'g2'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ exclude: 'grp-99,grp-100' });
+      // Assert: repeated params are built into the path, not the scalar query bag
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/groups/picker?exclude=g1&exclude=g2`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('exclude');
     });
 
     it('forwards userName param', async () => {
