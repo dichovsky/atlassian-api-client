@@ -29,9 +29,10 @@ import type {
  *  - `POST /space-permissions/transition/role-assignments` — bulk-assign roles.
  *  - `GET  /space-permissions/transition/tasks/{taskId}` — poll task status.
  *
- * Available on tenants with Role-Based Access Control. Returns the wrapped
- * `{ results, _links }` cursor-paginated shape consistent with other v2
- * collections.
+ * Available on tenants with Role-Based Access Control. `list`/`listAll` return
+ * the standard `{ results, _links }` cursor shape. The combinations endpoints
+ * use a body `cursor` field (no `_links`) — `paginateCursor` does NOT apply
+ * there; `listAllCombinations` uses its own hand-rolled body-cursor loop.
  *
  * @see https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/
  */
@@ -133,7 +134,7 @@ export class SpacePermissionsResource {
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
     let cursor: string | null | undefined;
-    do {
+    for (;;) {
       if (cursor) query['cursor'] = cursor;
       const response = await this.transport.request<ListSpacePermissionCombinationsResponse>({
         method: 'GET',
@@ -144,8 +145,11 @@ export class SpacePermissionsResource {
       for (const item of page.results) {
         yield item;
       }
-      cursor = page.cursor;
-    } while (cursor);
+      if (!page.cursor || page.results.length === 0) break;
+      const nextCursor = page.cursor;
+      if (nextCursor === cursor) break;
+      cursor = nextCursor;
+    }
   }
 
   /**

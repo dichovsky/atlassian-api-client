@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "fa5667ea8004f5c8d492da5e9ce6a328575700296d91db7ea98074c6f3730149",
+  "sourceHash": "a0245457622bca5100bc7d535b087581280b66bc930dc236d5976219deebcc46",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -9316,7 +9316,7 @@
         {
           "name": "SpacePermissionsResource",
           "kind": "class",
-          "line": 38,
+          "line": 39,
           "exported": true,
           "signature": "export class SpacePermissionsResource",
           "jsdoc": "Resource for the Confluence v2 `space-permissions` API.",
@@ -9324,47 +9324,47 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 39
+              "line": 40
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 45
+              "line": 46
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 62
+              "line": 63
             },
             {
               "name": "bulkRemoveAccess",
               "kind": "method",
-              "line": 86
+              "line": 87
             },
             {
               "name": "listCombinations",
               "kind": "method",
-              "line": 106
+              "line": 107
             },
             {
               "name": "listAllCombinations",
               "kind": "method",
-              "line": 128
+              "line": 129
             },
             {
               "name": "generateCombinations",
               "kind": "method",
-              "line": 160
+              "line": 164
             },
             {
               "name": "bulkAssignRoles",
               "kind": "method",
-              "line": 177
+              "line": 181
             },
             {
               "name": "getTransitionTaskStatus",
               "kind": "method",
-              "line": 195
+              "line": 199
             }
           ]
         }

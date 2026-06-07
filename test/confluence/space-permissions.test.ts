@@ -283,6 +283,38 @@ describe('SpacePermissionsResource', () => {
       }
       expect(items).toHaveLength(0);
     });
+
+    it('terminates when a misbehaving tenant returns the same non-null cursor (stuck-cursor guard)', async () => {
+      // Page 1: cursor 'stuck'
+      transport
+        .respondWith({ results: [makeCombination('c1')], cursor: 'stuck' })
+        // Page 2: same cursor 'stuck' — should trigger break, not loop again
+        .respondWith({ results: [makeCombination('c2')], cursor: 'stuck' });
+
+      const items: { combinationId: string }[] = [];
+      for await (const item of resource.listAllCombinations()) {
+        items.push(item);
+      }
+
+      // Must terminate (not hang) and stop after exactly 2 requests
+      expect(transport.calls).toHaveLength(2);
+      expect(items.map((i) => i.combinationId)).toEqual(['c1', 'c2']);
+    });
+
+    it('terminates when a page returns zero results even if cursor is non-null (empty-page guard)', async () => {
+      // Page 1: has items + non-null cursor; page 2: empty results with a cursor
+      transport
+        .respondWith({ results: [makeCombination('c1')], cursor: 'next' })
+        .respondWith({ results: [], cursor: 'next' });
+
+      const items: { combinationId: string }[] = [];
+      for await (const item of resource.listAllCombinations()) {
+        items.push(item);
+      }
+
+      expect(transport.calls).toHaveLength(2);
+      expect(items.map((i) => i.combinationId)).toEqual(['c1']);
+    });
   });
 
   // ── generateCombinations (B1033) ──────────────────────────────────────────
