@@ -800,6 +800,14 @@ describe('IssuesResource', () => {
       expect(Array.isArray(body?.ids), 'body.ids must be an array').toBe(true);
       expect(body?.ids).toEqual([10001, 10002]);
     });
+
+    it('resolves to void on 200 partial-success (known limitation: 200 payload not surfaced)', async () => {
+      // bulkDeleteWorklogs can return 200 (partial success) or 204 (full success).
+      // This method returns void for both — callers cannot distinguish partial from full success.
+      transport.respondWith(undefined, 200);
+      const result = await issues.deleteAllWorklogs('PROJ-1', [10001]);
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('listWorklogs() — B506', () => {

@@ -822,6 +822,10 @@ export class IssuesResource {
    * Bulk delete worklogs for an issue (B505).
    * DELETE /rest/api/3/issue/{issueIdOrKey}/worklog
    * Spec: operationId bulkDeleteWorklogs — requires WorklogIdsRequestBean { ids } body (#204).
+   * Returns void on success. Per the Jira v3 spec, bulkDeleteWorklogs can return 204 (full
+   * success) or 200 (partial success with a message body). This method does not surface the
+   * 200 partial-success payload — callers cannot distinguish partial from full success
+   * (known limitation; surfacing the payload would require a breaking return-type change).
    */
   async deleteAllWorklogs(issueIdOrKey: string, ids: number[]): Promise<void> {
     await this.transport.request<undefined>({
