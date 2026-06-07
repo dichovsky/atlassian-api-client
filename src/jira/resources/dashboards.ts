@@ -147,6 +147,21 @@ export interface AvailableDashboardGadgetsResponse {
   readonly gadgets: AvailableDashboardGadget[];
 }
 
+/**
+ * @deprecated `GET /dashboard/gadgets` (`getAllAvailableDashboardGadgets`) accepts NO query
+ * parameters — the server-side catalogue endpoint does not filter by moduleKey, uri, gadgetId,
+ * or dashboardId. These fields are retained only for backward compatibility with callers that
+ * passed them before this was discovered. Passing params has no effect on the response.
+ *
+ * For per-dashboard gadget filtering use {@link DashboardsResource.listGadgets} instead.
+ */
+export interface ListAvailableGadgetsParams {
+  readonly moduleKey?: string[];
+  readonly uri?: string[];
+  readonly gadgetId?: number[];
+  readonly dashboardId?: string[];
+}
+
 /** Sort orders accepted by `GET /dashboard/search`. */
 export type SearchDashboardsOrderBy =
   | 'description'
@@ -428,8 +443,19 @@ export class DashboardsResource {
     return response.data;
   }
 
-  /** B404: List gadgets available to add to a dashboard (`GET /dashboard/gadgets`). No query parameters — this is the global catalogue endpoint. */
-  async listAvailableGadgets(): Promise<AvailableDashboardGadgetsResponse> {
+  /**
+   * B404: List gadgets available to add to a dashboard (`GET /dashboard/gadgets`).
+   * This is the global catalogue endpoint and accepts NO query parameters.
+   *
+   * @param params - @deprecated Ignored. `GET /dashboard/gadgets` accepts no query parameters.
+   *   Retained only for backward compatibility — passing params has no effect on the wire call.
+   *   For per-dashboard gadget filtering use {@link listGadgets} instead.
+   */
+  async listAvailableGadgets(
+    // params is @deprecated and intentionally ignored — endpoint takes no query params
+    params?: ListAvailableGadgetsParams,
+  ): Promise<AvailableDashboardGadgetsResponse> {
+    void params; // @deprecated — intentionally ignored; endpoint accepts no query params
     const response = await this.transport.request<AvailableDashboardGadgetsResponse>({
       method: 'GET',
       path: `${this.baseUrl}/dashboard/gadgets`,

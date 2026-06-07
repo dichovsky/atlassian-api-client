@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DashboardsResource } from '../../src/jira/resources/dashboards.js';
+import {
+  DashboardsResource,
+  type ListAvailableGadgetsParams,
+} from '../../src/jira/resources/dashboards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -791,6 +794,24 @@ describe('DashboardsResource', () => {
       transport.respondWith({ gadgets: catalogue });
       const result = await dashboards.listAvailableGadgets();
       expect(result.gadgets).toEqual(catalogue);
+    });
+
+    it('ignores deprecated params — still sends no query params to the wire', async () => {
+      // ListAvailableGadgetsParams is retained for backward compatibility only;
+      // the endpoint accepts no query parameters so params must not reach the wire.
+      transport.respondWith({ gadgets: [] });
+      const ignoredParams: ListAvailableGadgetsParams = {
+        moduleKey: ['com.x:gadget-a'],
+        uri: ['rest/gadgets/1.0/g/gadget-b.xml'],
+        gadgetId: [42],
+        dashboardId: ['10001'],
+      };
+      await dashboards.listAvailableGadgets(ignoredParams);
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'GET',
+        path: `${BASE_URL}/dashboard/gadgets`,
+      });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
 

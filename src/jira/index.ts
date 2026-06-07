@@ -250,6 +250,7 @@ export type {
   BulkEditDashboardsResponse,
   AvailableDashboardGadget,
   AvailableDashboardGadgetsResponse,
+  ListAvailableGadgetsParams,
   SearchDashboardsOrderBy,
   SearchDashboardsStatus,
   SearchDashboardsParams,
