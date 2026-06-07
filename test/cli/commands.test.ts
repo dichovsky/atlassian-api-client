@@ -2929,6 +2929,27 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    it('blog-posts update passes body when provided', async () => {
+      // Arrange
+      confluenceBlogPostsMock.update.mockResolvedValue({ id: 'bp-1', title: 'Updated Post' });
+      const parsed = cmd('blog-posts', 'update', ['bp-1'], {
+        title: 'Updated Post',
+        'version-number': '2',
+        body: '<p>New body</p>',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert — mirrors pages update passes body when provided (line 1565)
+      expect(confluenceBlogPostsMock.update).toHaveBeenCalledWith(
+        'bp-1',
+        expect.objectContaining({
+          body: { representation: 'storage', value: '<p>New body</p>' },
+        }),
+      );
+    });
+
     it('blog-posts update throws when ID is missing', async () => {
       const parsed = cmd('blog-posts', 'update', [], { title: 'T', 'version-number': '1' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
@@ -3639,6 +3660,51 @@ describe('executeConfluenceCommand', () => {
       expect(result).toEqual({ id: 'c-1' });
     });
 
+    it('comments update inline forwards --resolved to updateInline', async () => {
+      confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'ic-1' });
+      const parsed = cmd('comments', 'update', ['ic-1'], {
+        body: 'text',
+        'version-number': '2',
+        'comment-type': 'inline',
+        resolved: true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      // Documented contract (src/cli/router.ts:70-72): --resolved marks the thread resolved.
+      expect(confluenceCommentsMock.updateInline).toHaveBeenCalledWith(
+        'ic-1',
+        expect.objectContaining({ resolved: true }),
+      );
+    });
+
+    it('comments update inline forwards --no-resolved to updateInline', async () => {
+      confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'ic-1' });
+      const parsed = cmd('comments', 'update', ['ic-1'], {
+        body: 'text',
+        'version-number': '2',
+        'comment-type': 'inline',
+        'no-resolved': true,
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateInline).toHaveBeenCalledWith(
+        'ic-1',
+        expect.objectContaining({ resolved: false }),
+      );
+    });
+
+    it('comments update inline omits resolved when neither flag supplied', async () => {
+      confluenceCommentsMock.updateInline.mockResolvedValue({ id: 'ic-1' });
+      const parsed = cmd('comments', 'update', ['ic-1'], {
+        body: 'text',
+        'version-number': '2',
+        'comment-type': 'inline',
+      });
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceCommentsMock.updateInline).toHaveBeenCalledWith('ic-1', {
+        version: { number: 2 },
+        body: { representation: 'storage', value: 'text' },
+      });
+    });
+
     it('comments update throws when --body is missing', async () => {
       const parsed = cmd('comments', 'update', ['c-1'], { 'version-number': '2' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
@@ -3660,6 +3726,19 @@ describe('executeConfluenceCommand', () => {
       const parsed = cmd('comments', 'update', [], { body: 'x', 'version-number': '2' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
         'Missing required argument: comment ID',
+      );
+    });
+
+    it('comments update inline throws when both --resolved and --no-resolved are supplied', async () => {
+      const parsed = cmd('comments', 'update', ['ic-1'], {
+        body: 'text',
+        'version-number': '2',
+        'comment-type': 'inline',
+        resolved: true,
+        'no-resolved': true,
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        'Cannot specify both --resolved and --no-resolved',
       );
     });
 
