@@ -174,14 +174,14 @@ describe('IssueSecuritySchemesResource', () => {
       });
     });
 
-    it('forwards issueSecurityLevelId filter', async () => {
+    it('forwards issueSecurityLevelId filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listMembers('10001', { issueSecurityLevelId: ['10100', '10101'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        issueSecurityLevelId: '10100,10101',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuesecurityschemes/10001/members?issueSecurityLevelId=10100&issueSecurityLevelId=10101`,
+      );
     });
 
     it('forwards expand param', async () => {
@@ -428,15 +428,14 @@ describe('IssueSecuritySchemesResource', () => {
       });
     });
 
-    it('forwards id and schemeId filters', async () => {
+    it('forwards id and schemeId filters as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listLevels({ id: ['10100'], schemeId: ['10001', '10002'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10100',
-        schemeId: '10001,10002',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuesecurityschemes/level?id=10100&schemeId=10001&schemeId=10002`,
+      );
     });
 
     it('forwards onlyDefault flag', async () => {
@@ -550,11 +549,9 @@ describe('IssueSecuritySchemesResource', () => {
         levelId: ['10100'],
       });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10200',
-        schemeId: '10001',
-        levelId: '10100',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuesecurityschemes/level/member?id=10200&schemeId=10001&levelId=10100`,
+      );
     });
 
     it('forwards expand param', async () => {
@@ -631,7 +628,7 @@ describe('IssueSecuritySchemesResource', () => {
       });
     });
 
-    it('forwards issueSecuritySchemeId and projectId filters', async () => {
+    it('forwards issueSecuritySchemeId and projectId filters as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listProjects({
@@ -639,10 +636,9 @@ describe('IssueSecuritySchemesResource', () => {
         projectId: ['10100', '10101'],
       });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        issueSecuritySchemeId: '10001',
-        projectId: '10100,10101',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuesecurityschemes/project?issueSecuritySchemeId=10001&projectId=10100&projectId=10101`,
+      );
     });
 
     it('forwards pagination params', async () => {
@@ -750,15 +746,14 @@ describe('IssueSecuritySchemesResource', () => {
       });
     });
 
-    it('forwards id and projectId filters', async () => {
+    it('forwards id and projectId filters as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.search({ id: ['10001'], projectId: ['10100'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10001',
-        projectId: '10100',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuesecurityschemes/search?id=10001&projectId=10100`,
+      );
     });
 
     it('forwards pagination params', async () => {

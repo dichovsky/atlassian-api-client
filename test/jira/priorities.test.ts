@@ -330,10 +330,12 @@ describe('PrioritiesResource', () => {
         expand: 'schemes',
       });
 
+      // `id` is a `type: array` query param emitted as repeated params built
+      // into the path; the scalar bag carries only the genuine scalar params.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/priority/search?id=1&id=2`);
       expect(transport.lastCall?.options.query).toEqual({
         startAt: 0,
         maxResults: 10,
-        id: '1,2',
         onlyDefault: true,
         priorityName: 'High',
         expand: 'schemes',

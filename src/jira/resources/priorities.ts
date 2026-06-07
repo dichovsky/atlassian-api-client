@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { ValidationError } from '../../core/errors.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { Priority } from '../types.js';
 
 /** Request body for POST /rest/api/3/priority. */
@@ -194,7 +195,7 @@ export class PrioritiesResource {
     const query = buildSearchQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<Priority>>({
       method: 'GET',
-      path: `${this.baseUrl}/priority/search`,
+      path: appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -209,7 +210,7 @@ export class PrioritiesResource {
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<Priority>(
       this.transport,
-      `${this.baseUrl}/priority/search`,
+      appendRepeatedParams(`${this.baseUrl}/priority/search`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -224,9 +225,8 @@ function buildSearchQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built into
+  // the path via `appendRepeatedParams` at each call site — not CSV-joined.
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   if (params?.priorityName !== undefined) query['priorityName'] = params.priorityName;
   if (params?.expand !== undefined) query['expand'] = params.expand;

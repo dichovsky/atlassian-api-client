@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** A reference to a Jira issue event triggering a notification. */
 export interface NotificationEventRef {
@@ -135,7 +136,7 @@ export class NotificationSchemeResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<NotificationScheme>>({
       method: 'GET',
-      path: `${this.baseUrl}/notificationscheme`,
+      path: buildListPath(`${this.baseUrl}/notificationscheme`, params),
       query,
     });
     return response.data;
@@ -151,7 +152,7 @@ export class NotificationSchemeResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<NotificationScheme>(
       this.transport,
-      `${this.baseUrl}/notificationscheme`,
+      buildListPath(`${this.baseUrl}/notificationscheme`, params),
       query,
       params?.maxResults,
     );
@@ -252,7 +253,11 @@ export class NotificationSchemeResource {
       OffsetPaginatedResponse<NotificationSchemeProjectAssociation>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/notificationscheme/project`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/notificationscheme/project`,
+        'projectId',
+        params?.projectId,
+      ),
       query,
     });
     return response.data;
@@ -268,7 +273,11 @@ export class NotificationSchemeResource {
     const query = buildProjectQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<NotificationSchemeProjectAssociation>(
       this.transport,
-      `${this.baseUrl}/notificationscheme/project`,
+      appendRepeatedParams(
+        `${this.baseUrl}/notificationscheme/project`,
+        'projectId',
+        params?.projectId,
+      ),
       query,
       params?.maxResults,
     );
@@ -283,15 +292,21 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `id` and `projectId` are `type: array` query params, emitted as repeated
+  // params via `buildListPath` (not CSV-joined into the scalar query bag).
   if (params?.expand !== undefined) query['expand'] = params.expand;
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   return query;
+}
+
+/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-list path. */
+function buildListPath(
+  basePath: string,
+  params: ListNotificationSchemesParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'id', params?.id);
+  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path;
 }
 
 function buildProjectQuery(
@@ -300,8 +315,7 @@ function buildProjectQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is a `type: array` query param, emitted as repeated params
+  // built into the path at each call site (not CSV-joined here).
   return query;
 }

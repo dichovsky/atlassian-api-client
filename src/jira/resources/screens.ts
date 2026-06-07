@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -123,7 +124,7 @@ export class ScreensResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<Screen>>({
       method: 'GET',
-      path: `${this.baseUrl}/screens`,
+      path: buildScreensPath(`${this.baseUrl}/screens`, params),
       query,
     });
     return response.data;
@@ -137,7 +138,7 @@ export class ScreensResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<Screen>(
       this.transport,
-      `${this.baseUrl}/screens`,
+      buildScreensPath(`${this.baseUrl}/screens`, params),
       query,
       params?.maxResults,
     );
@@ -351,7 +352,7 @@ export class ScreensResource {
     const query = buildListAllTabsQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<ScreenTabRef>>({
       method: 'GET',
-      path: `${this.baseUrl}/screens/tabs`,
+      path: buildScreenTabsPath(`${this.baseUrl}/screens/tabs`, params),
       query,
     });
     return response.data;
@@ -367,7 +368,7 @@ export class ScreensResource {
     const query = buildListAllTabsQuery({ ...params, startAt: undefined, maxResult: undefined });
     yield* paginateOffset<ScreenTabRef>(
       this.transport,
-      `${this.baseUrl}/screens/tabs`,
+      buildScreenTabsPath(`${this.baseUrl}/screens/tabs`, params),
       query,
       params?.maxResult,
     );
@@ -382,28 +383,34 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` and `scope` are `type: array` query params, emitted as repeated
+  // params via `buildScreensPath` (not CSV-joined into the scalar bag).
   if (params?.queryString !== undefined) query['queryString'] = params.queryString;
-  if (params?.scope !== undefined && params.scope.length > 0) {
-    query['scope'] = params.scope.join(',');
-  }
   if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
   return query;
+}
+
+/** Append the repeated `id` and `scope` (`type: array`) params to a screens path. */
+function buildScreensPath(basePath: string, params: ListScreensParams | undefined): string {
+  let path = appendRepeatedParams(basePath, 'id', params?.id);
+  path = appendRepeatedParams(path, 'scope', params?.scope);
+  return path;
 }
 
 function buildListAllTabsQuery(
   params: ListAllTabsParams | undefined,
 ): Record<string, string | number | boolean | undefined> {
   const query: Record<string, string | number | boolean | undefined> = {};
-  if (params?.screenId !== undefined && params.screenId.length > 0) {
-    query['screenId'] = params.screenId.join(',');
-  }
-  if (params?.tabId !== undefined && params.tabId.length > 0) {
-    query['tabId'] = params.tabId.join(',');
-  }
+  // `screenId` and `tabId` are `type: array` query params, emitted as repeated
+  // params via `buildScreenTabsPath` (not CSV-joined into the scalar bag).
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResult !== undefined) query['maxResult'] = params.maxResult;
   return query;
+}
+
+/** Append the repeated `screenId` and `tabId` (`type: array`) params to a tabs path. */
+function buildScreenTabsPath(basePath: string, params: ListAllTabsParams | undefined): string {
+  let path = appendRepeatedParams(basePath, 'screenId', params?.screenId);
+  path = appendRepeatedParams(path, 'tabId', params?.tabId);
+  return path;
 }

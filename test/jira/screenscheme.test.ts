@@ -57,12 +57,12 @@ describe('ScreenSchemeResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
     });
 
-    it('forwards id as comma-joined string', async () => {
+    it('forwards id as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ id: [1, 2] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '1,2' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/screenscheme?id=1&id=2`);
     });
 
     it('omits empty id array', async () => {

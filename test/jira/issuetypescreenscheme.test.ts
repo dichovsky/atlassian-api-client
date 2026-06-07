@@ -43,15 +43,17 @@ describe('IssueTypeScreenSchemeResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('forwards startAt, maxResults, id, and queryString', async () => {
+    it('forwards startAt, maxResults, repeated id, and queryString', async () => {
       transport.respondWith(makePageResponse([]));
 
       await resource.list({ startAt: 10, maxResults: 25, id: [1, 2], queryString: 'Default' });
 
+      // `id` is a `type: array` query param emitted as repeated params built
+      // into the path; the scalar bag holds only the scalar params.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issuetypescreenscheme?id=1&id=2`);
       expect(transport.lastCall?.options.query).toEqual({
         startAt: 10,
         maxResults: 25,
-        id: '1,2',
         queryString: 'Default',
       });
     });
@@ -412,15 +414,17 @@ describe('IssueTypeScreenSchemeResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('forwards startAt, maxResults, and issueTypeScreenSchemeId', async () => {
+    it('forwards startAt, maxResults, and repeated issueTypeScreenSchemeId', async () => {
       transport.respondWith(makePageResponse([]));
 
       await resource.listMapping({ startAt: 0, maxResults: 10, issueTypeScreenSchemeId: [1, 2] });
 
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescreenscheme/mapping?issueTypeScreenSchemeId=1&issueTypeScreenSchemeId=2`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
         startAt: 0,
         maxResults: 10,
-        issueTypeScreenSchemeId: '1,2',
       });
     });
 
@@ -461,9 +465,9 @@ describe('IssueTypeScreenSchemeResource', () => {
         results.push(m);
       }
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        issueTypeScreenSchemeId: '5',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescreenscheme/mapping?issueTypeScreenSchemeId=5`,
+      );
     });
 
     it('rejects non-positive maxResults', async () => {
@@ -493,14 +497,13 @@ describe('IssueTypeScreenSchemeResource', () => {
         issueTypeScreenScheme: { id: '10001' },
         projectIds: ['proj-1'],
       });
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/issuetypescreenscheme/project`,
-      });
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10001' });
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescreenscheme/project?projectId=10001`,
+      );
     });
 
-    it('forwards startAt, maxResults, and projectId', async () => {
+    it('forwards startAt, maxResults, and repeated projectId', async () => {
       transport.respondWith(makePageResponse([]));
 
       await resource.listProjectMappings({
@@ -509,10 +512,12 @@ describe('IssueTypeScreenSchemeResource', () => {
         projectId: ['p1', 'p2'],
       });
 
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescreenscheme/project?projectId=p1&projectId=p2`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
         startAt: 0,
         maxResults: 10,
-        projectId: 'p1,p2',
       });
     });
 

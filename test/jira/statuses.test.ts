@@ -73,24 +73,24 @@ describe('StatusesResource', () => {
   // ── bulkDelete (B777) ─────────────────────────────────────────────────────
 
   describe('bulkDelete()', () => {
-    it('calls DELETE /statuses with ids as CSV query param', async () => {
+    it('calls DELETE /statuses with ids as repeated query params', async () => {
       transport.respondWith(undefined, 204);
 
       await statuses.bulkDelete({ id: ['1', '2', '3'] });
 
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
-        path: `${BASE_URL}/statuses`,
+        path: `${BASE_URL}/statuses?id=1&id=2&id=3`,
       });
-      expect(transport.lastCall?.options.query).toEqual({ id: '1,2,3' });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('joins a single id', async () => {
+    it('emits a single repeated id', async () => {
       transport.respondWith(undefined, 204);
 
       await statuses.bulkDelete({ id: ['5'] });
 
-      expect(transport.lastCall?.options.query).toEqual({ id: '5' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/statuses?id=5`);
     });
 
     it('throws ValidationError when ids array is empty', async () => {
@@ -267,7 +267,7 @@ describe('StatusesResource', () => {
   // ── byNames (B783) ────────────────────────────────────────────────────────
 
   describe('byNames()', () => {
-    it('calls GET /statuses/byNames with CSV-joined names', async () => {
+    it('calls GET /statuses/byNames with repeated "name" params (spec param, not "statusName")', async () => {
       const statusList = [makeStatus('1'), makeStatus('2')];
       transport.respondWith(statusList);
 
@@ -276,19 +276,17 @@ describe('StatusesResource', () => {
       expect(result).toEqual(statusList);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/statuses/byNames`,
+        path: `${BASE_URL}/statuses/byNames?name=In%20Progress&name=Done`,
       });
-      expect(transport.lastCall?.options.query).toEqual({
-        statusName: 'In Progress,Done',
-      });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('joins a single name', async () => {
+    it('emits a single repeated name', async () => {
       transport.respondWith([makeStatus('1')]);
 
       await statuses.byNames({ names: ['Done'] });
 
-      expect(transport.lastCall?.options.query).toEqual({ statusName: 'Done' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/statuses/byNames?name=Done`);
     });
   });
 

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** A Jira issue type scheme. */
 export interface IssueTypeScheme {
@@ -119,7 +120,7 @@ export class IssueTypeSchemeResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<IssueTypeScheme>>({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescheme`,
+      path: appendRepeatedParams(`${this.baseUrl}/issuetypescheme`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -135,7 +136,7 @@ export class IssueTypeSchemeResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeScheme>(
       this.transport,
-      `${this.baseUrl}/issuetypescheme`,
+      appendRepeatedParams(`${this.baseUrl}/issuetypescheme`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -234,7 +235,11 @@ export class IssueTypeSchemeResource {
     const query = buildMappingQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<IssueTypeSchemeMapping>>({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescheme/mapping`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/issuetypescheme/mapping`,
+        'issueTypeSchemeId',
+        params?.issueTypeSchemeId,
+      ),
       query,
     });
     return response.data;
@@ -250,7 +255,11 @@ export class IssueTypeSchemeResource {
     const query = buildMappingQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeSchemeMapping>(
       this.transport,
-      `${this.baseUrl}/issuetypescheme/mapping`,
+      appendRepeatedParams(
+        `${this.baseUrl}/issuetypescheme/mapping`,
+        'issueTypeSchemeId',
+        params?.issueTypeSchemeId,
+      ),
       query,
       params?.maxResults,
     );
@@ -269,7 +278,11 @@ export class IssueTypeSchemeResource {
       OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescheme/project`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/issuetypescheme/project`,
+        'projectId',
+        params?.projectId,
+      ),
       query,
     });
     return response.data;
@@ -285,7 +298,11 @@ export class IssueTypeSchemeResource {
     const query = buildProjectQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeSchemeProjectAssociation>(
       this.transport,
-      `${this.baseUrl}/issuetypescheme/project`,
+      appendRepeatedParams(
+        `${this.baseUrl}/issuetypescheme/project`,
+        'projectId',
+        params?.projectId,
+      ),
       query,
       params?.maxResults,
     );
@@ -312,9 +329,8 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query param, emitted as repeated params built into
+  // the path at each call site (not CSV-joined into the scalar query bag).
   return query;
 }
 
@@ -324,9 +340,8 @@ function buildMappingQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.issueTypeSchemeId !== undefined && params.issueTypeSchemeId.length > 0) {
-    query['issueTypeSchemeId'] = params.issueTypeSchemeId.join(',');
-  }
+  // `issueTypeSchemeId` is a `type: array` query param, emitted as repeated
+  // params built into the path at each call site (not CSV-joined here).
   return query;
 }
 
@@ -336,8 +351,7 @@ function buildProjectQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is a `type: array` query param, emitted as repeated params
+  // built into the path at each call site (not CSV-joined here).
   return query;
 }

@@ -59,17 +59,18 @@ describe('FiltersResource', () => {
         orderBy: 'name',
       });
 
-      // Assert
+      // Assert — `id` is a `type: array` query param emitted as repeated params
+      // built into the path; the scalar bag carries only the scalar params.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/search?id=1&id=2&id=3`);
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 5,
         maxResults: 20,
         expand: 'sharePermissions',
-        id: '1,2,3',
         orderBy: 'name',
       });
     });
 
-    it('joins id array with commas', async () => {
+    it('emits id array as repeated query params', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
@@ -77,7 +78,7 @@ describe('FiltersResource', () => {
       await filters.list({ id: [10, 20] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '10,20' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/search?id=10&id=20`);
     });
 
     it('omits id param when not provided', async () => {
@@ -330,7 +331,7 @@ describe('FiltersResource', () => {
       expect(items).toHaveLength(0);
     });
 
-    it('passes id array as comma-joined string', async () => {
+    it('passes id array as repeated query params', async () => {
       // Arrange
       transport.respondWith({
         values: [],
@@ -344,8 +345,8 @@ describe('FiltersResource', () => {
         // consume
       }
 
-      // Assert
-      expect(transport.calls[0]?.options.query).toMatchObject({ id: '1,2,3' });
+      // Assert — repeated params are built into the basePath passed to paginateOffset.
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/filter/search?id=1&id=2&id=3`);
     });
 
     it('omits id param in listAll when not provided', async () => {

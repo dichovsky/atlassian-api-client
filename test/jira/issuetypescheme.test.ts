@@ -53,12 +53,14 @@ describe('IssueTypeSchemeResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0, maxResults: 25 });
     });
 
-    it('forwards id filter as comma-joined string', async () => {
+    it('forwards id filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ id: ['10001', '10002'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '10001,10002' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescheme?id=10001&id=10002`,
+      );
     });
 
     it('throws on invalid maxResults', async () => {
@@ -266,14 +268,14 @@ describe('IssueTypeSchemeResource', () => {
       });
     });
 
-    it('forwards issueTypeSchemeId filter', async () => {
+    it('forwards issueTypeSchemeId filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listMapping({ issueTypeSchemeId: ['10001', '10002'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        issueTypeSchemeId: '10001,10002',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescheme/mapping?issueTypeSchemeId=10001&issueTypeSchemeId=10002`,
+      );
     });
 
     it('forwards startAt and maxResults', async () => {
@@ -337,14 +339,14 @@ describe('IssueTypeSchemeResource', () => {
       });
     });
 
-    it('forwards projectId filter as comma-joined string', async () => {
+    it('forwards projectId filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listProject({ projectId: ['10100', '10101'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        projectId: '10100,10101',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issuetypescheme/project?projectId=10100&projectId=10101`,
+      );
     });
 
     it('forwards startAt and maxResults when listing by params', async () => {

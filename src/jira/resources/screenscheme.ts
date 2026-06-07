@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -108,7 +109,7 @@ export class ScreenSchemeResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<ScreenScheme>>({
       method: 'GET',
-      path: `${this.baseUrl}/screenscheme`,
+      path: appendRepeatedParams(`${this.baseUrl}/screenscheme`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -122,7 +123,7 @@ export class ScreenSchemeResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<ScreenScheme>(
       this.transport,
-      `${this.baseUrl}/screenscheme`,
+      appendRepeatedParams(`${this.baseUrl}/screenscheme`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -197,9 +198,8 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built into
+  // the path via `appendRepeatedParams` at each call site — not CSV-joined.
   if (params?.expand !== undefined) query['expand'] = params.expand;
   if (params?.queryString !== undefined) query['queryString'] = params.queryString;
   if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;

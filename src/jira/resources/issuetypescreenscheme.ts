@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,7 @@ export class IssueTypeScreenSchemeResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<IssueTypeScreenScheme>>({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescreenscheme`,
+      path: appendRepeatedParams(`${this.baseUrl}/issuetypescreenscheme`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -167,7 +168,7 @@ export class IssueTypeScreenSchemeResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeScreenScheme>(
       this.transport,
-      `${this.baseUrl}/issuetypescreenscheme`,
+      appendRepeatedParams(`${this.baseUrl}/issuetypescreenscheme`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -312,7 +313,11 @@ export class IssueTypeScreenSchemeResource {
       OffsetPaginatedResponse<IssueTypeScreenSchemeMappingDetails>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescreenscheme/mapping`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/issuetypescreenscheme/mapping`,
+        'issueTypeScreenSchemeId',
+        params?.issueTypeScreenSchemeId,
+      ),
       query,
     });
     return response.data;
@@ -328,7 +333,11 @@ export class IssueTypeScreenSchemeResource {
     const query = buildMappingQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeScreenSchemeMappingDetails>(
       this.transport,
-      `${this.baseUrl}/issuetypescreenscheme/mapping`,
+      appendRepeatedParams(
+        `${this.baseUrl}/issuetypescreenscheme/mapping`,
+        'issueTypeScreenSchemeId',
+        params?.issueTypeScreenSchemeId,
+      ),
       query,
       params?.maxResults,
     );
@@ -347,7 +356,11 @@ export class IssueTypeScreenSchemeResource {
       OffsetPaginatedResponse<IssueTypeScreenSchemesProjects>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuetypescreenscheme/project`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/issuetypescreenscheme/project`,
+        'projectId',
+        params?.projectId,
+      ),
       query,
     });
     return response.data;
@@ -367,7 +380,11 @@ export class IssueTypeScreenSchemeResource {
     });
     yield* paginateOffset<IssueTypeScreenSchemesProjects>(
       this.transport,
-      `${this.baseUrl}/issuetypescreenscheme/project`,
+      appendRepeatedParams(
+        `${this.baseUrl}/issuetypescreenscheme/project`,
+        'projectId',
+        params.projectId,
+      ),
       query,
       params.maxResults,
     );
@@ -397,9 +414,8 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query param, emitted as repeated params built into
+  // the path at each call site (not CSV-joined into the scalar query bag).
   if (params?.queryString !== undefined) query['queryString'] = params.queryString;
   if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
   if (params?.expand !== undefined) query['expand'] = params.expand;
@@ -412,9 +428,8 @@ function buildMappingQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.issueTypeScreenSchemeId !== undefined && params.issueTypeScreenSchemeId.length > 0) {
-    query['issueTypeScreenSchemeId'] = params.issueTypeScreenSchemeId.join(',');
-  }
+  // `issueTypeScreenSchemeId` is a `type: array` query param, emitted as
+  // repeated params built into the path at each call site (not CSV-joined).
   return query;
 }
 
@@ -426,8 +441,7 @@ function buildProjectMappingQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if ('startAt' in params && params.startAt !== undefined) query['startAt'] = params.startAt;
   if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is a `type: array` query param, emitted as repeated params
+  // built into the path at each call site (not CSV-joined here).
   return query;
 }
