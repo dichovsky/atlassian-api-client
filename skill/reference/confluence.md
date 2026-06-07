@@ -321,7 +321,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 | `operations`      | `<attachmentId>` | —                                                       | —                                                                         |
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`                                 |
 
-- Upload is not exposed via the CLI; use the SDK's `attachments.upload()` and pass the file content as a `Blob`. Node ESM callers can wrap a `Buffer`, `Uint8Array`, or `fs.ReadStream`-derived buffer in a `Blob` first; raw `ReadableStream` is not accepted by the current signature.
+- To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first.
 - `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - `--sort` enums per action:
   - `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
