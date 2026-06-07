@@ -53,12 +53,15 @@ describe('ConfigResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
     });
 
-    it('forwards projectId as comma-joined string', async () => {
+    it('forwards projectId as repeated params in path, not CSV (type:array)', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ projectId: [10100, 10101] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10100,10101' });
+      expect(transport.lastCall?.options.path).toContain('projectId=10100');
+      expect(transport.lastCall?.options.path).toContain('projectId=10101');
+      expect(transport.lastCall?.options.path).not.toContain('10100,10101');
+      expect(transport.lastCall?.options.query?.['projectId']).toBeUndefined();
     });
 
     it('forwards query param', async () => {
@@ -285,14 +288,15 @@ describe('ConfigResource', () => {
       });
     });
 
-    it('forwards fieldId filter as comma-joined string', async () => {
+    it('forwards fieldId as repeated params in path, not CSV (type:array)', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listFields(10001, { fieldId: ['customfield_10001', 'customfield_10002'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fieldId: 'customfield_10001,customfield_10002',
-      });
+      expect(transport.lastCall?.options.path).toContain('fieldId=customfield_10001');
+      expect(transport.lastCall?.options.path).toContain('fieldId=customfield_10002');
+      expect(transport.lastCall?.options.path).not.toContain('customfield_10001,customfield_10002');
+      expect(transport.lastCall?.options.query?.['fieldId']).toBeUndefined();
     });
 
     it('forwards pagination params', async () => {
@@ -378,12 +382,15 @@ describe('ConfigResource', () => {
       });
     });
 
-    it('forwards projectId filter', async () => {
+    it('forwards projectId as repeated params in path, not CSV (type:array)', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listProjects(10001, { projectId: [10100, 10101] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10100,10101' });
+      expect(transport.lastCall?.options.path).toContain('projectId=10100');
+      expect(transport.lastCall?.options.path).toContain('projectId=10101');
+      expect(transport.lastCall?.options.path).not.toContain('10100,10101');
+      expect(transport.lastCall?.options.query?.['projectId']).toBeUndefined();
     });
 
     it('throws on invalid maxResults', async () => {
@@ -511,18 +518,17 @@ describe('ConfigResource', () => {
   // ── B380: getProjectsWithSchemes ───────────────────────────────────────────
 
   describe('getProjectsWithSchemes()', () => {
-    it('calls GET /config/fieldschemes/projects with required projectId', async () => {
+    it('calls GET /config/fieldschemes/projects with required projectId as repeated params (type:array)', async () => {
       const page = makePageOf([{ projectId: 10100, schemeId: 10001 }]);
       transport.respondWith(page);
 
       const result = await resource.getProjectsWithSchemes({ projectId: [10100, 10101] });
 
       expect(result).toEqual(page);
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/config/fieldschemes/projects`,
-      });
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10100,10101' });
+      expect(transport.lastCall?.options.path).toContain('projectId=10100');
+      expect(transport.lastCall?.options.path).toContain('projectId=10101');
+      expect(transport.lastCall?.options.path).not.toContain('10100,10101');
+      expect(transport.lastCall?.options.query?.['projectId']).toBeUndefined();
     });
 
     it('forwards pagination params', async () => {
