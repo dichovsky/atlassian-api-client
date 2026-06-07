@@ -481,6 +481,34 @@ describe('createHttpError', () => {
       expect(err.message.endsWith('…')).toBe(true);
     });
 
+    it('#205 control: a lone 1024-char errorMessage is preserved verbatim', () => {
+      // A complete 1024-char message is within the cap and must not be sliced.
+      const A = 'x'.repeat(1024);
+      const err = createHttpError(400, { errorMessages: [A] });
+      expect(err.message).toBe(A);
+    });
+
+    it('#205 regression: a complete 1024-char first errorMessage is not corrupted when a second message follows', () => {
+      // Before the fix, the presence of a second errorMessage caused dropped=true
+      // to be OR-ed into truncated, which triggered extractErrorMessage to slice
+      // A to 1023 chars + '…', corrupting the complete first message.
+      const A = 'x'.repeat(1024);
+      const err = createHttpError(400, { errorMessages: [A, 'second error'] });
+      expect(err.message).toBe(A);
+      expect(err.message.length).toBe(1024);
+    });
+
+    it('#205 boundary: 1023-char first errorMessage + second message appends one separator char then truncates', () => {
+      // joinWithCap sees out.length=1023 (< 1024), so it enters the else branch and
+      // computes remaining=1.  It appends chunk.slice(0,1) = ';' -> out is A+';'
+      // (1024 chars, truncated=true).  extractErrorMessage then slices to 1023
+      // chars and appends '…', yielding A + '…'.  The second message is NOT simply
+      // dropped; the separator is partially consumed before the ellipsis is added.
+      const A = 'x'.repeat(1023);
+      const err = createHttpError(400, { errorMessages: [A, 'extra'] });
+      expect(err.message).toBe(A + '…');
+    });
+
     it('null body → uses default message for 401', () => {
       const err = createHttpError(401, null);
       expect(err.message).toBe('Authentication failed');

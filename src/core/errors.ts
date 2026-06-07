@@ -440,7 +440,6 @@ function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
   let out = '';
   let first = true;
   let truncated = false;
-  let dropped = false;
   for (const m of messages) {
     if (typeof m !== 'string') continue;
     if (first) {
@@ -452,9 +451,10 @@ function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
       }
       first = false;
     } else {
-      // Stop once the running total would exceed the cap.
+      // Stop once the running total would exceed the cap. When the assembled
+      // value is already full, subsequent messages are silently dropped but the
+      // value itself is complete — do not set `truncated` (#205).
       if (out.length >= MAX_ERROR_MESSAGE_LENGTH) {
-        dropped = true;
         break;
       }
       const remaining = MAX_ERROR_MESSAGE_LENGTH - out.length;
@@ -468,7 +468,10 @@ function joinWithCap(messages: readonly unknown[]): CappedString | undefined {
     }
   }
   if (first) return undefined;
-  return { value: out, truncated: truncated || dropped };
+  // `truncated` is true only when content characters were removed from the
+  // assembled value; dropping later messages leaves the value complete and
+  // must not trigger the ellipsis slice in extractErrorMessage (#205).
+  return { value: out, truncated };
 }
 
 function capLength(value: string): CappedString {
