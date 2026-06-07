@@ -1103,7 +1103,11 @@ export class IssuesResource {
   async getCreateMeta(params?: CreateMetaParams): Promise<Record<string, unknown>> {
     const query: Record<string, string | undefined> = {};
     if (params?.expand) query['expand'] = params.expand;
-    let path = appendRepeatedParams(`${this.baseUrl}/issue/createmeta`, 'projectIds', params?.projectIds);
+    let path = appendRepeatedParams(
+      `${this.baseUrl}/issue/createmeta`,
+      'projectIds',
+      params?.projectIds,
+    );
     path = appendRepeatedParams(path, 'projectKeys', params?.projectKeys);
     path = appendRepeatedParams(path, 'issuetypeIds', params?.issuetypeIds);
     path = appendRepeatedParams(path, 'issuetypeNames', params?.issuetypeNames);
