@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "1.1.0"
   },
-  "sourceHash": "c706cd5df62c6f100d8902e41783be2220c824b7e39172b64a4e1cfae8edbac9",
+  "sourceHash": "d9a9c8c66f4d8427e4e610626608a0d4a45ebee80ed2733f67e0fdf70bbf3f15",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5051,13 +5051,13 @@
         {
           "name": "MIGRATION_ACTIONS",
           "kind": "variable",
-          "line": 8359,
+          "line": 8346,
           "signature": "const MIGRATION_ACTIONS = [ 'get-task', 'submit-task', 'update-fields', 'update-properties', 'search-workflow-rules', ] …"
         },
         {
           "name": "executeMigration",
           "kind": "function",
-          "line": 8367,
+          "line": 8354,
           "signature": "async function executeMigration(client: JiraClient, cmd: ParsedCommand): Promise<unknown>"
         }
       ],
@@ -5351,7 +5351,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 498,
+          "line": 495,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
@@ -23729,14 +23729,15 @@
         {
           "name": "ListAvailableGadgetsParams",
           "kind": "interface",
-          "line": 150,
+          "line": 158,
           "exported": true,
-          "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: readonly string[]; readonly uri?: readonly string[]; …"
+          "signature": "export interface ListAvailableGadgetsParams { readonly moduleKey?: string[]; readonly uri?: string[]; readonly gadgetId?…",
+          "jsdoc": "@deprecated `GET /dashboard/gadgets` (`getAllAvailableDashboardGadgets`) accepts NO query parameters — the server-side catalogue endpoint does not filter by moduleKey, uri, gadgetId, or dashboardId. These fields are retained only for backward compatibility with callers that passed them before this was discovered. Passing params has no effect on the response. For per-dashboard gadget filtering use {@link DashboardsResource.listGadgets} instead."
         },
         {
           "name": "SearchDashboardsOrderBy",
           "kind": "type",
-          "line": 158,
+          "line": 166,
           "exported": true,
           "signature": "export type SearchDashboardsOrderBy = | 'description' | '-description' | '+description' | 'favorite_count' | '-favorite_…",
           "jsdoc": "Sort orders accepted by `GET /dashboard/search`."
@@ -23744,7 +23745,7 @@
         {
           "name": "SearchDashboardsStatus",
           "kind": "type",
-          "line": 179,
+          "line": 187,
           "exported": true,
           "signature": "export type SearchDashboardsStatus = 'active' | 'archived' | 'deleted';",
           "jsdoc": "Status filter for `GET /dashboard/search`."
@@ -23752,123 +23753,123 @@
         {
           "name": "SearchDashboardsParams",
           "kind": "interface",
-          "line": 181,
+          "line": 189,
           "exported": true,
           "signature": "export interface SearchDashboardsParams { readonly dashboardName?: string; readonly accountId?: string; readonly owner?:…"
         },
         {
           "name": "DashboardsResource",
           "kind": "class",
-          "line": 195,
+          "line": 203,
           "exported": true,
           "signature": "export class DashboardsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 196
+              "line": 204
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 202
+              "line": 210
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 233
+              "line": 241
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 242
+              "line": 250
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 252
+              "line": 260
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 262
+              "line": 270
             },
             {
               "name": "listGadgets",
               "kind": "method",
-              "line": 270
+              "line": 278
             },
             {
               "name": "addGadget",
               "kind": "method",
-              "line": 279
+              "line": 287
             },
             {
               "name": "updateGadget",
               "kind": "method",
-              "line": 298
+              "line": 306
             },
             {
               "name": "removeGadget",
               "kind": "method",
-              "line": 318
+              "line": 326
             },
             {
               "name": "listItemProperties",
               "kind": "method",
-              "line": 329
+              "line": 337
             },
             {
               "name": "getItemProperty",
               "kind": "method",
-              "line": 343
+              "line": 351
             },
             {
               "name": "setItemProperty",
               "kind": "method",
-              "line": 361
+              "line": 369
             },
             {
               "name": "deleteItemProperty",
               "kind": "method",
-              "line": 380
+              "line": 388
             },
             {
               "name": "copy",
               "kind": "method",
-              "line": 397
+              "line": 405
             },
             {
               "name": "bulkEdit",
               "kind": "method",
-              "line": 412
+              "line": 420
             },
             {
               "name": "listAvailableGadgets",
               "kind": "method",
-              "line": 439
+              "line": 454
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 460
+              "line": 467
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 500
+              "line": 507
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 543
+              "line": 550
             }
           ]
         },
         {
           "name": "DEFAULT_MAX_PAGES",
           "kind": "variable",
-          "line": 595,
+          "line": 602,
           "signature": "const DEFAULT_MAX_PAGES = 10_000;"
         }
       ],
