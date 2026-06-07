@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type {
   User,
   SearchUsersParams,
@@ -262,15 +263,15 @@ export class UsersResource {
     const query: Record<string, string | number | boolean | undefined> = { query: params.query };
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params.showAvatar !== undefined) query['showAvatar'] = params.showAvatar;
-    if (params.exclude !== undefined) query['exclude'] = params.exclude.join(',');
-    if (params.excludeAccountIds !== undefined)
-      query['excludeAccountIds'] = params.excludeAccountIds.join(',');
     if (params.avatarSize !== undefined) query['avatarSize'] = params.avatarSize;
     if (params.excludeConnectUsers !== undefined)
       query['excludeConnectUsers'] = params.excludeConnectUsers;
+    let path = `${this.baseUrl}/user/picker`;
+    path = appendRepeatedParams(path, 'exclude', params.exclude);
+    path = appendRepeatedParams(path, 'excludeAccountIds', params.excludeAccountIds);
     const response = await this.transport.request<UserPickerResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/user/picker`,
+      path,
       query,
     });
     return response.data;

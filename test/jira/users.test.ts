@@ -498,7 +498,23 @@ describe('UsersResource', () => {
       });
     });
 
-    it('includes optional params when provided', async () => {
+    it('sends exclude and excludeAccountIds as repeated params in path', async () => {
+      transport.respondWith({ users: [] });
+      await users.picker({
+        query: 'bob',
+        exclude: ['acc-x', 'acc-y'],
+        excludeAccountIds: ['acc-z', 'acc-w'],
+      });
+      const path = transport.lastCall?.options.path as string;
+      expect(path).toContain('exclude=acc-x');
+      expect(path).toContain('exclude=acc-y');
+      expect(path).toContain('excludeAccountIds=acc-z');
+      expect(path).toContain('excludeAccountIds=acc-w');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('exclude');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('excludeAccountIds');
+    });
+
+    it('includes optional scalar params when provided', async () => {
       transport.respondWith({ users: [] });
       await users.picker({
         query: 'bob',
@@ -513,11 +529,11 @@ describe('UsersResource', () => {
         query: 'bob',
         maxResults: 5,
         showAvatar: true,
-        exclude: 'acc-x,acc-y',
-        excludeAccountIds: 'acc-z',
         avatarSize: '16x16',
         excludeConnectUsers: true,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('exclude');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('excludeAccountIds');
     });
 
     it('omits undefined optional params', async () => {
