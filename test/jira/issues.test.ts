@@ -778,7 +778,7 @@ describe('IssuesResource', () => {
   describe('deleteAllWorklogs() — B505', () => {
     it('sends DELETE /issue/:key/worklog', async () => {
       transport.respondWith(undefined);
-      await issues.deleteAllWorklogs('PROJ-1');
+      await issues.deleteAllWorklogs('PROJ-1', [10001, 10002]);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
         path: `${BASE_URL}/issue/PROJ-1/worklog`,
@@ -787,8 +787,18 @@ describe('IssuesResource', () => {
 
     it('encodes issueIdOrKey', async () => {
       transport.respondWith(undefined);
-      await issues.deleteAllWorklogs('../admin');
+      await issues.deleteAllWorklogs('../admin', [10001]);
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin/worklog`);
+    });
+
+    it('sends the spec-required WorklogIdsRequestBean body { ids } for bulkDeleteWorklogs (#204)', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteAllWorklogs('PROJ-1', [10001, 10002]);
+      const opts = transport.lastCall?.options;
+      const body = opts?.body as { ids?: unknown } | undefined;
+      expect(body, 'request body must be present (spec: required)').toBeDefined();
+      expect(Array.isArray(body?.ids), 'body.ids must be an array').toBe(true);
+      expect(body?.ids).toEqual([10001, 10002]);
     });
   });
 
@@ -1087,15 +1097,19 @@ describe('IssuesResource', () => {
   });
 
   describe('archiveIssuesByJql() — B517', () => {
-    it('sends POST /issue/archive with jql body', async () => {
-      transport.respondWith({ archived: 3, failed: 0 });
+    it('sends POST /issue/archive with jql body and returns spec-accurate 202 task URL (#206)', async () => {
+      // Spec: POST /rest/api/3/issue/archive (operationId archiveIssuesAsync) responds 202
+      // with body = a string status-check URL, NOT IssueArchiveResult.
+      const statusUrl = 'https://your-domain.atlassian.net/rest/api/3/task/10010';
+      transport.respondWith(statusUrl, 202);
       const result = await issues.archiveIssuesByJql('project = PROJ AND status = Done');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/issue/archive`,
         body: { jql: 'project = PROJ AND status = Done' },
       });
-      expect(result).toMatchObject({ archived: 3 });
+      expect(typeof result).toBe('string');
+      expect(result).toBe(statusUrl);
     });
   });
 
@@ -1317,15 +1331,15 @@ describe('IssuesResource', () => {
   // ── Bulk watching (B529) ──────────────────────────────────────────────────
 
   describe('watchIssuesBulk() — B529', () => {
-    it('sends POST /issue/watching with issueIds body field', async () => {
-      transport.respondWith({ watched: 2, failed: {} });
+    it('sends POST /bulk/issues/watch with selectedIssueIdsOrKeys body and returns taskId (#207)', async () => {
+      // Spec: POST /rest/api/3/bulk/issues/watch (operationId submitBulkWatch) — write endpoint.
+      // The old code targeted /issue/watching (getIsWatchingIssueBulk), a READ that watches nothing.
+      transport.respondWith({ taskId: 'task-123' }, 201);
       const result = await issues.watchIssuesBulk({ issueIds: ['PROJ-1', 'PROJ-2'] });
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'POST',
-        path: `${BASE_URL}/issue/watching`,
-        body: { issueIds: ['PROJ-1', 'PROJ-2'] },
-      });
-      expect(result).toMatchObject({ watched: 2 });
+      const opts = transport.lastCall?.options;
+      expect(opts?.path).toContain('/bulk/issues/watch');
+      expect(opts?.body).toEqual({ selectedIssueIdsOrKeys: ['PROJ-1', 'PROJ-2'] });
+      expect(result).toMatchObject({ taskId: 'task-123' });
     });
   });
 

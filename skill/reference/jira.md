@@ -748,7 +748,7 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 
 | Action                    | Positional                                 | Required flags | Optional flags                                                                                                 |
 | ------------------------- | ------------------------------------------ | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `delete-all-worklogs`     | `<issueIdOrKey>`                           | —              | —                                                                                                              |
+| `delete-all-worklogs`     | `<issueIdOrKey>`                           | `--ids`        | —                                                                                                              |
 | `list-worklogs`           | `<issueIdOrKey>`                           | —              | `--start-at`, `--max-results`, `--started-after`, `--started-before`, `--expand`                               |
 | `add-worklog`             | `<issueIdOrKey>`                           | `--body`       | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--reduce-by`, `--expand`, `--override-editable-flag` |
 | `delete-worklog`          | `<issueIdOrKey>` `<worklogId>`             | —              | `--notify-users`, `--adjust-estimate`, `--new-estimate`, `--increase-by`, `--override-editable-flag`           |
@@ -760,6 +760,7 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 | `set-worklog-property`    | `<issueIdOrKey>` `<worklogId>` `<propKey>` | `--value`      | —                                                                                                              |
 | `move-worklog`            | `<issueIdOrKey>`                           | `--ids`        | `--target-issue`, `--adjust-estimate`, `--override-editable-flag`                                              |
 
+- `delete-all-worklogs`: `--ids` is a comma-separated list of worklog IDs (integers) to delete in bulk (spec: `bulkDeleteWorklogs` requires `WorklogIdsRequestBean { ids }`).
 - `--body` is a JSON object string, e.g. `--body '{"timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}'`.
 - `--adjust-estimate` accepts: `new`, `leave`, `manual`, `auto`.
 - `--notify-users`, `--override-editable-flag` are bare boolean flags.
@@ -774,6 +775,7 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 | `unarchive-issues`   | —          | `--ids`        | —              |
 
 - `archive-issues` uses PUT (synchronous, by ID list); `archive-issues-jql` uses POST (async, by JQL).
+- `archive-issues-jql` returns the task-status URL string (202 response) — poll it to track completion.
 - `--ids` is comma-separated issue IDs or keys for `archive-issues` and `unarchive-issues`.
 
 ### Bulk Fetch (B519)
@@ -820,6 +822,7 @@ atlas jira issues rank --issues PROJ-1 --after PROJ-5
 | `watch-issues-bulk` | —          | `--issue-ids`  | —              |
 
 - `--issue-ids` is comma-separated issue IDs or keys.
+- Returns `{ taskId }` — poll the task with `atlas jira bulk get-operation-status <taskId>`.
 
 ### Archive Export (B538)
 
