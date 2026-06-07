@@ -570,6 +570,142 @@ atlas jira configuration update-timetracking-options --working-days-per-week 5 -
 - `update` via the CLI is intentionally narrow — only `--summary` is wired. Use the SDK for description, assignee, custom fields, ADF body content.
 - Transition workflow: call `transitions` to list valid transitions for an issue's current status, then `transition` with the chosen `--transition-id`.
 
+### Assignee (B478)
+
+| Action   | Positional   | Required flags | Optional flags |
+| -------- | ------------ | -------------- | -------------- |
+| `assign` | `<issueKey>` | —              | `--account-id` |
+
+- `assign` sets the assignee to the user identified by `--account-id`.
+- **Omit `--account-id` to unassign** the issue (sends `accountId: null`).
+
+```sh
+# Assign an issue to a user
+atlas jira issues assign PROJ-42 --account-id 5b10ac8d82e05b22cc7d4ef5
+
+# Unassign an issue (omit --account-id)
+atlas jira issues assign PROJ-42
+```
+
+### Changelog & Edit Metadata (B480, B481, B487)
+
+| Action             | Positional   | Required flags | Optional flags                |
+| ------------------ | ------------ | -------------- | ----------------------------- |
+| `get-changelog`    | `<issueKey>` | —              | `--start-at`, `--max-results` |
+| `filter-changelog` | `<issueKey>` | `--ids`        | —                             |
+| `get-editmeta`     | `<issueKey>` | —              | —                             |
+
+- `get-changelog` is offset-paginated via `--start-at` / `--max-results`.
+- `filter-changelog` `--ids` is a **comma-separated** list of positive-integer changelog entry IDs.
+- `get-editmeta` returns the fields editable on the issue (with allowed values) — inspect before `update`.
+
+```sh
+atlas jira issues get-changelog PROJ-42 --start-at 0 --max-results 50
+atlas jira issues filter-changelog PROJ-42 --ids 10001,10002
+atlas jira issues get-editmeta PROJ-42
+```
+
+### Notifications (B488)
+
+| Action   | Positional   | Required flags  | Optional flags |
+| -------- | ------------ | --------------- | -------------- |
+| `notify` | `<issueKey>` | `--body` (JSON) | —              |
+
+- `--body` is a JSON object matching `IssueNotifyData`: `{ subject?, textBody?, htmlBody?, to?, restrict? }`. `to` selects recipients (e.g. `{ "reporter": true, "assignee": true, "users": [{ "accountId": "5b10..." }] }`); `restrict` limits delivery by group or permission.
+
+```sh
+atlas jira issues notify PROJ-42 --body '{"subject":"Heads up","textBody":"Please review","to":{"assignee":true,"reporter":true}}'
+```
+
+### Issue Properties (B489–B492)
+
+| Action            | Positional                   | Required flags   | Optional flags |
+| ----------------- | ---------------------------- | ---------------- | -------------- |
+| `list-properties` | `<issueKey>`                 | —                | —              |
+| `get-property`    | `<issueKey>` `<propertyKey>` | —                | —              |
+| `set-property`    | `<issueKey>` `<propertyKey>` | `--value` (JSON) | —              |
+| `delete-property` | `<issueKey>` `<propertyKey>` | —                | —              |
+
+- `--value` for `set-property` is arbitrary JSON (object, array, string, number, or boolean).
+
+```sh
+atlas jira issues list-properties PROJ-42
+atlas jira issues get-property PROJ-42 my-key
+atlas jira issues set-property PROJ-42 my-key --value '{"flagged":true}'
+atlas jira issues delete-property PROJ-42 my-key
+```
+
+### Remote Links (B493–B498)
+
+Issue-scoped remote links at `/rest/api/3/issue/{issueIdOrKey}/remotelink`. **Distinct** from the standalone `remote-link` resource (Remote Links integration API at `/rest/remotelinks/1.0`) documented later in this file.
+
+| Action                   | Positional              | Required flags  | Optional flags |
+| ------------------------ | ----------------------- | --------------- | -------------- |
+| `list-remotelinks`       | `<issueKey>`            | —               | `--global-id`  |
+| `get-remotelink`         | `<issueKey>` `<linkId>` | —               | —              |
+| `create-remotelink`      | `<issueKey>`            | `--body` (JSON) | —              |
+| `update-remotelink`      | `<issueKey>` `<linkId>` | `--body` (JSON) | —              |
+| `delete-remotelink`      | `<issueKey>` `<linkId>` | —               | —              |
+| `delete-all-remotelinks` | `<issueKey>`            | —               | `--global-id`  |
+
+- `list-remotelinks` returns **all remote links on the issue**; pass `--global-id` to fetch only the link with that global ID.
+- `--body` for `create-remotelink` / `update-remotelink` is a JSON object matching `CreateRemoteLinkData`: `{ object: { url, title, summary?, icon?, status? }, globalId?, relationship?, application? }`. `object.url` and `object.title` are the practical minimum.
+- `delete-all-remotelinks` deletes every remote link on the issue, or only the one matching `--global-id`.
+
+```sh
+# Get (list) all remote links on an issue
+atlas jira issues list-remotelinks PROJ-42
+
+# Get only the remote link with a given global ID
+atlas jira issues list-remotelinks PROJ-42 --global-id "system=https://example.com/123"
+
+# Get a single remote link by its numeric link ID
+atlas jira issues get-remotelink PROJ-42 10001
+
+# Create a remote link (object.url + object.title are the minimum)
+atlas jira issues create-remotelink PROJ-42 --body '{"object":{"url":"https://example.com/ticket/1","title":"Upstream ticket"}}'
+
+# Update a remote link
+atlas jira issues update-remotelink PROJ-42 10001 --body '{"object":{"url":"https://example.com/ticket/1","title":"Renamed"}}'
+
+# Delete one remote link, or all of them
+atlas jira issues delete-remotelink PROJ-42 10001
+atlas jira issues delete-all-remotelinks PROJ-42
+```
+
+### Votes (B499–B501)
+
+| Action        | Positional   | Required flags | Optional flags |
+| ------------- | ------------ | -------------- | -------------- |
+| `get-votes`   | `<issueKey>` | —              | —              |
+| `add-vote`    | `<issueKey>` | —              | —              |
+| `remove-vote` | `<issueKey>` | —              | —              |
+
+- `add-vote` / `remove-vote` act as the **current (authenticated) user** — there is no account selector.
+
+```sh
+atlas jira issues get-votes PROJ-42
+atlas jira issues add-vote PROJ-42
+atlas jira issues remove-vote PROJ-42
+```
+
+### Watchers (B502–B504)
+
+| Action           | Positional   | Required flags | Optional flags |
+| ---------------- | ------------ | -------------- | -------------- |
+| `get-watchers`   | `<issueKey>` | —              | —              |
+| `add-watcher`    | `<issueKey>` | `--account-id` | —              |
+| `remove-watcher` | `<issueKey>` | —              | `--account-id` |
+
+- `add-watcher` requires `--account-id` — the user to start watching the issue.
+- `remove-watcher` without `--account-id` removes the **current user**; pass `--account-id` to remove a specific watcher.
+
+```sh
+atlas jira issues get-watchers PROJ-42
+atlas jira issues add-watcher PROJ-42 --account-id 5b10ac8d82e05b22cc7d4ef5
+atlas jira issues remove-watcher PROJ-42 --account-id 5b10ac8d82e05b22cc7d4ef5
+```
+
 ### Agile (v1.0 API) — B265–B268
 
 These actions hit `/rest/agile/1.0/issue/…` and return agile-enriched shapes (sprint membership, estimation fields).

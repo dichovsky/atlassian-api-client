@@ -15,6 +15,13 @@ atlas jira search --jql "project = PROJ AND status = Open" --max-results 25
 atlas jira issues transitions PROJ-123
 atlas jira issues transition PROJ-123 --transition-id 31
 
+# Jira — add a comment to an issue (ADF body)
+atlas jira issue-comments create PROJ-123 --body '{"body":{"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"type":"text","text":"Looking into this."}]}]}}'
+
+# Jira — get an issue's remote (issue) links
+atlas jira issues list-remotelinks PROJ-123
+atlas jira issues get-remotelink PROJ-123 10001
+
 # Skill install
 atlas install-skill --local
 atlas install-skill --dry-run
