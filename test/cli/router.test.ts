@@ -757,4 +757,26 @@ describe('parseCommand', () => {
     expect(result.action).toBe('search');
     expect(result.options['priority-name']).toBe('High');
   });
+
+  // Regression guard: enhanced (JSIS) board flags must be registered in
+  // GLOBAL_OPTIONS so real parseCommand doesn't throw "Unknown option".
+  it('parses jira boards backlog-enhanced with --reconcile-issues and --validate-query', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'boards',
+      'backlog-enhanced',
+      '42',
+      '--reconcile-issues',
+      '10001,10002',
+      '--validate-query',
+    ];
+    const result = parseCommand(argv);
+    expect(result.resource).toBe('boards');
+    expect(result.action).toBe('backlog-enhanced');
+    expect(result.positionalArgs).toEqual(['42']);
+    expect(result.options['reconcile-issues']).toBe('10001,10002');
+    expect(result.options['validate-query']).toBe(true);
+  });
 });

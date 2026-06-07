@@ -565,6 +565,11 @@ const jiraBoardsMock = {
   getQuickFilter: vi.fn(),
   getReports: vi.fn(),
   listByFilter: vi.fn(),
+  getBacklogEnhanced: vi.fn(),
+  getIssuesEnhanced: vi.fn(),
+  getIssuesWithoutEpicEnhanced: vi.fn(),
+  getEpicIssuesEnhanced: vi.fn(),
+  getSprintIssuesEnhanced: vi.fn(),
 };
 const jiraSprintsMock = {
   get: vi.fn(),
@@ -12833,6 +12838,125 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(cmd('boards', 'get-reports', ['0']), GLOBALS),
       ).rejects.toThrow('boardId must be a positive integer');
+    });
+
+    // ── enhanced (JSIS) board issue actions (B1023-B1027) ──────────────────────
+
+    it('boards backlog-enhanced calls getBacklogEnhanced with converted params', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getBacklogEnhanced.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('boards', 'backlog-enhanced', ['42'], {
+          jql: 'status = Done',
+          fields: 'summary,status',
+          'max-results': '20',
+          'next-page-token': 'TOK',
+          'reconcile-issues': '10001,10002',
+          expand: 'names',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getBacklogEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({
+          jql: 'status = Done',
+          fields: ['summary', 'status'],
+          maxResults: 20,
+          nextPageToken: 'TOK',
+          reconcileIssues: [10001, 10002],
+          expand: 'names',
+        }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('boards backlog-enhanced threads validate-query as validateQuery boolean', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getBacklogEnhanced.mockResolvedValue(payload);
+      await executeJiraCommand(
+        cmd('boards', 'backlog-enhanced', ['42'], { 'validate-query': true }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getBacklogEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ validateQuery: true }),
+      );
+    });
+
+    it('boards backlog-enhanced throws when boardId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'backlog-enhanced', []), GLOBALS),
+      ).rejects.toThrow('Missing required argument: boardId');
+    });
+
+    it('boards backlog-enhanced rejects a non-positive reconcile-issues entry', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('boards', 'backlog-enhanced', ['42'], { 'reconcile-issues': '0' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--reconcile-issues must be a positive integer');
+    });
+
+    it('boards get-issues-enhanced calls getIssuesEnhanced with boardId', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getIssuesEnhanced.mockResolvedValue(payload);
+      const result = await executeJiraCommand(
+        cmd('boards', 'get-issues-enhanced', ['42'], { jql: 'project = X' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getIssuesEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ jql: 'project = X' }),
+      );
+      expect(result).toEqual(payload);
+    });
+
+    it('boards issues-without-epic-enhanced calls getIssuesWithoutEpicEnhanced with boardId', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getIssuesWithoutEpicEnhanced.mockResolvedValue(payload);
+      await executeJiraCommand(cmd('boards', 'issues-without-epic-enhanced', ['42']), GLOBALS);
+      expect(jiraBoardsMock.getIssuesWithoutEpicEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({}),
+      );
+    });
+
+    it('boards epic-issues-enhanced calls getEpicIssuesEnhanced with boardId and epicId', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getEpicIssuesEnhanced.mockResolvedValue(payload);
+      await executeJiraCommand(cmd('boards', 'epic-issues-enhanced', ['42', '7']), GLOBALS);
+      expect(jiraBoardsMock.getEpicIssuesEnhanced).toHaveBeenCalledWith(
+        42,
+        7,
+        expect.objectContaining({}),
+      );
+    });
+
+    it('boards epic-issues-enhanced throws when epicId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'epic-issues-enhanced', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: epicId');
+    });
+
+    it('boards sprint-issues-enhanced calls getSprintIssuesEnhanced with boardId and sprintId', async () => {
+      const payload = { issues: [], isLast: true };
+      jiraBoardsMock.getSprintIssuesEnhanced.mockResolvedValue(payload);
+      await executeJiraCommand(
+        cmd('boards', 'sprint-issues-enhanced', ['42', '10'], { jql: 'status = "In Progress"' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getSprintIssuesEnhanced).toHaveBeenCalledWith(
+        42,
+        10,
+        expect.objectContaining({ jql: 'status = "In Progress"' }),
+      );
+    });
+
+    it('boards sprint-issues-enhanced throws when sprintId is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('boards', 'sprint-issues-enhanced', ['42']), GLOBALS),
+      ).rejects.toThrow('Missing required argument: sprintId');
     });
   });
 
