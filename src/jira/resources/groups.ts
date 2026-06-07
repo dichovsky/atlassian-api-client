@@ -21,7 +21,12 @@ export interface GroupPickerResponse {
 export interface GroupPickerParams {
   /** Query string to filter groups by name. */
   readonly query?: string;
-  /** Group IDs to exclude from results. */
+  /**
+   * Group **names** to exclude from results (ampersand-separated on the wire:
+   * `exclude=group1&exclude=group2`). For stable ID-based exclusion use the
+   * separate `excludeId` parameter (not yet exposed in this client — see spec
+   * `GET /rest/api/3/groups/picker`).
+   */
   readonly exclude?: string[];
   /** Maximum number of groups to return (default 20). */
   readonly maxResults?: number;
