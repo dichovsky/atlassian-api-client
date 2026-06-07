@@ -494,15 +494,19 @@ describe('createHttpError', () => {
       // A to 1023 chars + '…', corrupting the complete first message.
       const A = 'x'.repeat(1024);
       const err = createHttpError(400, { errorMessages: [A, 'second error'] });
-      expect(err.message.startsWith(A)).toBe(true);
+      expect(err.message).toBe(A);
+      expect(err.message.length).toBe(1024);
     });
 
-    it('#205 boundary: complete 1023-char first errorMessage is not corrupted when a second message follows', () => {
-      // Below the cap: first message must survive intact even when a second
-      // message is dropped because the cap is already reached after appending.
+    it('#205 boundary: 1023-char first errorMessage + second message appends one separator char then truncates', () => {
+      // joinWithCap sees out.length=1023 (< 1024), so it enters the else branch and
+      // computes remaining=1.  It appends chunk.slice(0,1) = ';' -> out is A+';'
+      // (1024 chars, truncated=true).  extractErrorMessage then slices to 1023
+      // chars and appends '…', yielding A + '…'.  The second message is NOT simply
+      // dropped; the separator is partially consumed before the ellipsis is added.
       const A = 'x'.repeat(1023);
       const err = createHttpError(400, { errorMessages: [A, 'extra'] });
-      expect(err.message.startsWith(A)).toBe(true);
+      expect(err.message).toBe(A + '…');
     });
 
     it('null body → uses default message for 401', () => {
