@@ -343,13 +343,13 @@ describe('UsersResource', () => {
   // ── setColumns (B805) ─────────────────────────────────────────────────────
 
   describe('setColumns()', () => {
-    it('calls PUT /user/columns with column array body', async () => {
+    it('calls PUT /user/columns with UserColumnRequestBody { columns } object', async () => {
       transport.respondWith(undefined);
       await users.setColumns(['summary', 'status']);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/user/columns`,
-        body: ['summary', 'status'],
+        body: { columns: ['summary', 'status'] },
       });
     });
 
@@ -359,6 +359,16 @@ describe('UsersResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({
         accountId: 'acc-123',
       });
+    });
+
+    it('REPRO #211 sends UserColumnRequestBody { columns } object, not a bare array', async () => {
+      transport.respondWith(undefined);
+      await users.setColumns(['summary', 'status']);
+      const body = transport.lastCall?.options.body;
+      // Spec: PUT /user/columns (setUserColumns) body schema = UserColumnRequestBody
+      // = { columns: string[] } (type:object, additionalProperties:false). A bare array is invalid.
+      expect(Array.isArray(body)).toBe(false);
+      expect((body as { columns?: unknown })?.columns).toEqual(['summary', 'status']);
     });
   });
 
