@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** Details of a Jira field configuration. */
 export interface FieldConfiguration {
@@ -84,7 +85,7 @@ export class FieldConfigurationResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<FieldConfiguration>>({
       method: 'GET',
-      path: `${this.baseUrl}/fieldconfiguration`,
+      path: appendRepeatedParams(`${this.baseUrl}/fieldconfiguration`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -100,7 +101,7 @@ export class FieldConfigurationResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<FieldConfiguration>(
       this.transport,
-      `${this.baseUrl}/fieldconfiguration`,
+      appendRepeatedParams(`${this.baseUrl}/fieldconfiguration`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -202,9 +203,8 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built into
+  // the path via `appendRepeatedParams` at each call site — not CSV-joined.
   if (params?.isDefault !== undefined) query['isDefault'] = params.isDefault;
   if (params?.query !== undefined) query['query'] = params.query;
   return query;

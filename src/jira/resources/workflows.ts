@@ -3,6 +3,7 @@ import { NotFoundError, ValidationError } from '../../core/errors.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { WorkflowScope, DocumentVersion } from './workflowscheme.js';
 
 // ── B838 types ─────────────────────────────────────────────────────────────
@@ -409,19 +410,21 @@ export class WorkflowsResource {
       throw new ValidationError('types is required for getTransitionRuleConfigs');
     }
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    const query: Record<string, string | number | boolean | undefined> = {
-      types: params.types.join(','),
-    };
+    // `types`, `keys`, `workflowNames` and `withTags` are `type: array` query
+    // params (repeated `name=a&name=b` per the v3 spec), built into the path —
+    // not CSV-joined into the scalar query bag (which collapses duplicate keys).
+    const query: Record<string, string | number | boolean | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params.keys !== undefined) query['keys'] = params.keys.join(',');
-    if (params.workflowNames !== undefined) query['workflowNames'] = params.workflowNames.join(',');
-    if (params.withTags !== undefined) query['withTags'] = params.withTags.join(',');
     if (params.draft !== undefined) query['draft'] = params.draft;
     if (params.expand !== undefined) query['expand'] = params.expand;
+    let path = appendRepeatedParams(`${this.baseUrl}/workflow/rule/config`, 'types', params.types);
+    path = appendRepeatedParams(path, 'keys', params.keys);
+    path = appendRepeatedParams(path, 'workflowNames', params.workflowNames);
+    path = appendRepeatedParams(path, 'withTags', params.withTags);
     const resp = await this.transport.request<WorkflowTransitionRuleConfigPage>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow/rule/config`,
+      path,
       query,
     });
     return resp.data;

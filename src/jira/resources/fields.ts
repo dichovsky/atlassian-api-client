@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** A Jira issue field (system or custom). */
 export interface Field {
@@ -761,17 +762,20 @@ export class FieldsResource {
     if (params) {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-      if (params.type !== undefined) query['type'] = params.type.join(',');
-      if (params.id !== undefined) query['id'] = params.id.join(',');
       if (params.query !== undefined) query['query'] = params.query;
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
       if (params.expand !== undefined) query['expand'] = params.expand;
-      if (params.projectIds !== undefined) query['projectIds'] = params.projectIds.join(',');
     }
+    // `type`, `id` and `projectIds` are `type: array` query params (repeated
+    // `id=a&id=b` per the v3 spec), built into the path — not CSV-joined into
+    // the scalar query bag (which collapses duplicate keys).
+    let path = appendRepeatedParams(`${this.baseUrl}/field/search`, 'type', params?.type);
+    path = appendRepeatedParams(path, 'id', params?.id);
+    path = appendRepeatedParams(path, 'projectIds', params?.projectIds);
 
     const response = await this.transport.request<OffsetPaginatedResponse<Field>>({
       method: 'GET',
-      path: `${this.baseUrl}/field/search`,
+      path,
       query,
     });
     return response.data;
@@ -821,13 +825,17 @@ export class FieldsResource {
     if (params) {
       if (params.isAnyIssueType !== undefined) query['isAnyIssueType'] = params.isAnyIssueType;
       if (params.isGlobalContext !== undefined) query['isGlobalContext'] = params.isGlobalContext;
-      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      // `contextId` is a `type: array` query param, built into the path below.
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     }
     const response = await this.transport.request<FieldContextPage>({
       method: 'GET',
-      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context`,
+        'contextId',
+        params?.contextId,
+      ),
       query,
     });
     return response.data;
@@ -990,13 +998,17 @@ export class FieldsResource {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
-      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      // `contextId` is a `type: array` query param, built into the path below.
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     }
     const response = await this.transport.request<FieldContextIssueTypeMappingPage>({
       method: 'GET',
-      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/issuetypemapping`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/issuetypemapping`,
+        'contextId',
+        params?.contextId,
+      ),
       query,
     });
     return response.data;
@@ -1011,13 +1023,17 @@ export class FieldsResource {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
-      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      // `contextId` is a `type: array` query param, built into the path below.
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     }
     const response = await this.transport.request<FieldContextDefaultValuePage>({
       method: 'GET',
-      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/defaultValue`,
+        'contextId',
+        params?.contextId,
+      ),
       query,
     });
     return response.data;
@@ -1095,13 +1111,17 @@ export class FieldsResource {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
-      if (params.contextId !== undefined) query['contextId'] = params.contextId.join(',');
+      // `contextId` is a `type: array` query param, built into the path below.
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
     }
     const response = await this.transport.request<FieldContextProjectMappingPage>({
       method: 'GET',
-      path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/projectmapping`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/field/${encodePathSegment(fieldId)}/context/projectmapping`,
+        'contextId',
+        params?.contextId,
+      ),
       query,
     });
     return response.data;
@@ -1198,14 +1218,14 @@ export class FieldsResource {
     if (params) {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-      if (params.id !== undefined) query['id'] = params.id.join(',');
+      // `id` is a `type: array` query param, built into the path below.
       if (params.query !== undefined) query['query'] = params.query;
       if (params.expand !== undefined) query['expand'] = params.expand;
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
     }
     const response = await this.transport.request<OffsetPaginatedResponse<Field>>({
       method: 'GET',
-      path: `${this.baseUrl}/field/search/trashed`,
+      path: appendRepeatedParams(`${this.baseUrl}/field/search/trashed`, 'id', params?.id),
       query,
     });
     return response.data;

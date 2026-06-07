@@ -765,29 +765,30 @@ describe('WorkflowsResource', () => {
       ],
     };
 
-    it('calls GET /workflow/rule/config with required types param', async () => {
+    it('calls GET /workflow/rule/config with required types param (repeated)', async () => {
       transport.respondWith(ruleConfigPage);
 
       const result = await workflows.getTransitionRuleConfigs({ types: ['postfunction'] });
 
       expect(result).toEqual(ruleConfigPage);
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/workflow/rule/config`,
-      });
-      expect(transport.lastCall?.options.query).toMatchObject({ types: 'postfunction' });
+      // `types` is a `type: array` query param emitted as repeated params built
+      // into the path, not a CSV value in the scalar query bag.
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/rule/config?types=postfunction`,
+      );
     });
 
-    it('passes multiple types as comma-separated string', async () => {
+    it('passes multiple types as repeated query params', async () => {
       transport.respondWith(ruleConfigPage);
 
       await workflows.getTransitionRuleConfigs({
         types: ['postfunction', 'condition', 'validator'],
       });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        types: 'postfunction,condition,validator',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/rule/config?types=postfunction&types=condition&types=validator`,
+      );
     });
 
     it('passes all optional params correctly', async () => {
@@ -804,13 +805,15 @@ describe('WorkflowsResource', () => {
         expand: 'transition',
       });
 
+      // `types`, `keys`, `workflowNames`, `withTags` are `type: array` params
+      // built into the path as repeated; the scalar bag holds only scalars.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/rule/config?types=postfunction&keys=key-a&keys=key-b` +
+          `&workflowNames=My%20Workflow&withTags=tag1`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
-        types: 'postfunction',
         startAt: 0,
         maxResults: 10,
-        keys: 'key-a,key-b',
-        workflowNames: 'My Workflow',
-        withTags: 'tag1',
         draft: false,
         expand: 'transition',
       });

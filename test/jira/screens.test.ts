@@ -54,12 +54,12 @@ describe('ScreensResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
     });
 
-    it('forwards id as comma-joined string', async () => {
+    it('forwards id as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ id: [10001, 10002] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '10001,10002' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/screens?id=10001&id=10002`);
     });
 
     it('omits empty id array', async () => {
@@ -67,6 +67,7 @@ describe('ScreensResource', () => {
 
       await resource.list({ id: [] });
 
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/screens`);
       expect(transport.lastCall?.options.query?.['id']).toBeUndefined();
     });
 
@@ -78,12 +79,14 @@ describe('ScreensResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ queryString: 'Default' });
     });
 
-    it('forwards scope as comma-joined string', async () => {
+    it('forwards scope as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ scope: ['PROJECT', 'GLOBAL'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ scope: 'PROJECT,GLOBAL' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/screens?scope=PROJECT&scope=GLOBAL`,
+      );
     });
 
     it('forwards orderBy', async () => {
@@ -491,20 +494,22 @@ describe('ScreensResource', () => {
       });
     });
 
-    it('forwards screenId as comma-joined string', async () => {
+    it('forwards screenId as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listScreenTabs({ screenId: [10001, 10002] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ screenId: '10001,10002' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/screens/tabs?screenId=10001&screenId=10002`,
+      );
     });
 
-    it('forwards tabId as comma-joined string', async () => {
+    it('forwards tabId as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listScreenTabs({ tabId: [1, 2] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ tabId: '1,2' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/screens/tabs?tabId=1&tabId=2`);
     });
 
     it('forwards startAt and maxResult', async () => {

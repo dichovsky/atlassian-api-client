@@ -3,6 +3,7 @@ import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { ValidationError } from '../../core/errors.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /**
  * A Jira issue resolution (e.g. Fixed, Won't Fix, Duplicate).
@@ -62,7 +63,7 @@ export interface SearchResolutionsParams {
   readonly startAt?: number;
   /** Maximum number of resolutions to return per page. */
   readonly maxResults?: number;
-  /** Filter to specific resolution IDs (comma-separated by Jira). */
+  /** Filter to specific resolution IDs (sent as repeated `id` query params). */
   readonly id?: string[];
   /** When true, only the default resolution is returned. */
   readonly onlyDefault?: boolean;
@@ -219,7 +220,7 @@ export class ResolutionResource {
     const query = buildSearchQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<Resolution>>({
       method: 'GET',
-      path: `${this.baseUrl}/resolution/search`,
+      path: appendRepeatedParams(`${this.baseUrl}/resolution/search`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -236,7 +237,7 @@ export class ResolutionResource {
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<Resolution>(
       this.transport,
-      `${this.baseUrl}/resolution/search`,
+      appendRepeatedParams(`${this.baseUrl}/resolution/search`, 'id', params?.id),
       query,
       params?.maxResults,
     );
@@ -251,9 +252,9 @@ function buildSearchQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) {
-    query['id'] = params.id.join(',');
-  }
+  // `id` is a `type: array` query parameter (repeated `id=a&id=b` per the v3
+  // spec), built into the path via `appendRepeatedParams` at each call site —
+  // not CSV-joined here (the transport `query` map collapses duplicate keys).
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   if (params?.queryString !== undefined) query['queryString'] = params.queryString;
   return query;

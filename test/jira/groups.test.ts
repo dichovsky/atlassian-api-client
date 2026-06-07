@@ -237,7 +237,7 @@ describe('GroupsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('forwards CSV-joined groupId and groupName arrays plus filters', async () => {
+    it('forwards repeated groupId and groupName arrays plus scalar filters', async () => {
       transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0, isLast: true });
 
       await groups.listBulk({
@@ -249,11 +249,14 @@ describe('GroupsResource', () => {
         applicationKey: 'jira-software',
       });
 
+      // `groupId` and `groupName` are `type: array` query params emitted as
+      // repeated params built into the path; the scalar bag holds the rest.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/group/bulk?groupId=a&groupId=b&groupName=x&groupName=y`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
         startAt: 10,
         maxResults: 25,
-        groupId: 'a,b',
-        groupName: 'x,y',
         accessType: 'site-admin',
         applicationKey: 'jira-software',
       });
@@ -334,8 +337,10 @@ describe('GroupsResource', () => {
       }
 
       expect(results).toHaveLength(0);
+      // `groupId` is a `type: array` query param built into the basePath as a
+      // repeated param; the scalar bag holds only the scalar filters.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/group/bulk?groupId=x`);
       expect(transport.lastCall?.options.query).toMatchObject({
-        groupId: 'x',
         accessType: 'admin',
       });
     });

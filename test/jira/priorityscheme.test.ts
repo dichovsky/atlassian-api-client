@@ -73,15 +73,14 @@ describe('PrioritySchemeResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0, maxResults: 25 });
     });
 
-    it('forwards priorityId and schemeId arrays as comma-joined strings', async () => {
+    it('forwards priorityId and schemeId arrays as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ priorityId: [10000, 10001], schemeId: [20000, 20001] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        priorityId: '10000,10001',
-        schemeId: '20000,20001',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/priorityscheme?priorityId=10000&priorityId=10001&schemeId=20000&schemeId=20001`,
+      );
     });
 
     it('omits empty priorityId / schemeId arrays from the query', async () => {
@@ -150,8 +149,10 @@ describe('PrioritySchemeResource', () => {
         break;
       }
 
+      // `schemeId` is a `type: array` query param built into the basePath as a
+      // repeated param; the scalar bag holds only the scalar filters.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/priorityscheme?schemeId=10001`);
       const query = transport.lastCall?.options.query as Record<string, unknown>;
-      expect(query['schemeId']).toBe('10001');
       expect(query['expand']).toBe('priorities');
     });
 
@@ -389,13 +390,17 @@ describe('PrioritySchemeResource', () => {
       });
     });
 
-    it('forwards projectId as comma-joined string and query', async () => {
+    it('forwards projectId as repeated query params plus scalar query', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listProjects('10001', { projectId: [10100, 10101], query: 'EX' });
 
+      // `projectId` is a `type: array` query param built into the path; the
+      // scalar bag holds only the scalar `query` filter.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/priorityscheme/10001/projects?projectId=10100&projectId=10101`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
-        projectId: '10100,10101',
         query: 'EX',
       });
     });
@@ -518,7 +523,7 @@ describe('PrioritySchemeResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ schemeId: '10001' });
     });
 
-    it('forwards query, exclude, startAt, maxResults', async () => {
+    it('forwards query, repeated exclude, startAt, maxResults (schemeId stays scalar)', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listAvailablePriorities({
@@ -529,10 +534,14 @@ describe('PrioritySchemeResource', () => {
         maxResults: 25,
       });
 
+      // `exclude` is a `type: array` query param built into the path; `schemeId`
+      // is `type: string` (genuine scalar) and stays in the scalar query bag.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/priorityscheme/priorities/available?exclude=10005&exclude=10006`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
         schemeId: '10001',
         query: 'high',
-        exclude: '10005,10006',
         startAt: 0,
         maxResults: 25,
       });
@@ -581,11 +590,15 @@ describe('PrioritySchemeResource', () => {
         break;
       }
 
+      // `exclude` is a `type: array` query param built into the basePath as a
+      // repeated param; `schemeId` is a genuine scalar in the query bag.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/priorityscheme/priorities/available?exclude=10005`,
+      );
       const query = transport.lastCall?.options.query as Record<string, unknown>;
       expect(query['startAt']).toBe(0);
       expect(query['schemeId']).toBe('10001');
       expect(query['query']).toBe('high');
-      expect(query['exclude']).toBe('10005');
     });
 
     it('throws on invalid maxResults', async () => {

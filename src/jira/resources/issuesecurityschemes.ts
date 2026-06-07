@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
@@ -296,7 +297,10 @@ export class IssueSecuritySchemesResource {
       OffsetPaginatedResponse<IssueSecurityLevelMember>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuesecurityschemes/${encodePathSegment(issueSecuritySchemeId)}/members`,
+      path: buildListMembersPath(
+        `${this.baseUrl}/issuesecurityschemes/${encodePathSegment(issueSecuritySchemeId)}/members`,
+        params,
+      ),
       query,
     });
     return response.data;
@@ -313,7 +317,10 @@ export class IssueSecuritySchemesResource {
     const query = buildListMembersQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueSecurityLevelMember>(
       this.transport,
-      `${this.baseUrl}/issuesecurityschemes/${encodePathSegment(issueSecuritySchemeId)}/members`,
+      buildListMembersPath(
+        `${this.baseUrl}/issuesecurityschemes/${encodePathSegment(issueSecuritySchemeId)}/members`,
+        params,
+      ),
       query,
       params?.maxResults,
     );
@@ -421,7 +428,7 @@ export class IssueSecuritySchemesResource {
     const query = buildGetSecurityLevelsQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<IssueSecurityLevel>>({
       method: 'GET',
-      path: `${this.baseUrl}/issuesecurityschemes/level`,
+      path: buildGetSecurityLevelsPath(`${this.baseUrl}/issuesecurityschemes/level`, params),
       query,
     });
     return response.data;
@@ -441,7 +448,7 @@ export class IssueSecuritySchemesResource {
     });
     yield* paginateOffset<IssueSecurityLevel>(
       this.transport,
-      `${this.baseUrl}/issuesecurityschemes/level`,
+      buildGetSecurityLevelsPath(`${this.baseUrl}/issuesecurityschemes/level`, params),
       query,
       params?.maxResults,
     );
@@ -470,7 +477,10 @@ export class IssueSecuritySchemesResource {
     const query = buildGetSecurityLevelMembersQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<SecurityLevelMember>>({
       method: 'GET',
-      path: `${this.baseUrl}/issuesecurityschemes/level/member`,
+      path: buildGetSecurityLevelMembersPath(
+        `${this.baseUrl}/issuesecurityschemes/level/member`,
+        params,
+      ),
       query,
     });
     return response.data;
@@ -490,7 +500,7 @@ export class IssueSecuritySchemesResource {
     });
     yield* paginateOffset<SecurityLevelMember>(
       this.transport,
-      `${this.baseUrl}/issuesecurityschemes/level/member`,
+      buildGetSecurityLevelMembersPath(`${this.baseUrl}/issuesecurityschemes/level/member`, params),
       query,
       params?.maxResults,
     );
@@ -509,7 +519,7 @@ export class IssueSecuritySchemesResource {
       OffsetPaginatedResponse<IssueSecuritySchemeToProjectMapping>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuesecurityschemes/project`,
+      path: buildListProjectsPath(`${this.baseUrl}/issuesecurityschemes/project`, params),
       query,
     });
     return response.data;
@@ -525,7 +535,7 @@ export class IssueSecuritySchemesResource {
     const query = buildListProjectsQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueSecuritySchemeToProjectMapping>(
       this.transport,
-      `${this.baseUrl}/issuesecurityschemes/project`,
+      buildListProjectsPath(`${this.baseUrl}/issuesecurityschemes/project`, params),
       query,
       params?.maxResults,
     );
@@ -563,7 +573,7 @@ export class IssueSecuritySchemesResource {
       OffsetPaginatedResponse<SecuritySchemeWithProjects>
     >({
       method: 'GET',
-      path: `${this.baseUrl}/issuesecurityschemes/search`,
+      path: buildSearchPath(`${this.baseUrl}/issuesecurityschemes/search`, params),
       query,
     });
     return response.data;
@@ -579,7 +589,7 @@ export class IssueSecuritySchemesResource {
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<SecuritySchemeWithProjects>(
       this.transport,
-      `${this.baseUrl}/issuesecurityschemes/search`,
+      buildSearchPath(`${this.baseUrl}/issuesecurityschemes/search`, params),
       query,
       params?.maxResults,
     );
@@ -594,11 +604,18 @@ function buildListMembersQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.issueSecurityLevelId !== undefined && params.issueSecurityLevelId.length > 0) {
-    query['issueSecurityLevelId'] = params.issueSecurityLevelId.join(',');
-  }
+  // `issueSecurityLevelId` is a `type: array` query param, emitted as repeated
+  // params via `buildListMembersPath` (not CSV-joined into the scalar bag).
   if (params?.expand !== undefined) query['expand'] = params.expand;
   return query;
+}
+
+/** Append the repeated `issueSecurityLevelId` (`type: array`) param to a members path. */
+function buildListMembersPath(
+  basePath: string,
+  params: ListSecurityLevelMembersParams | undefined,
+): string {
+  return appendRepeatedParams(basePath, 'issueSecurityLevelId', params?.issueSecurityLevelId);
 }
 
 function buildGetSecurityLevelsQuery(
@@ -607,12 +624,20 @@ function buildGetSecurityLevelsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) query['id'] = params.id.join(',');
-  if (params?.schemeId !== undefined && params.schemeId.length > 0) {
-    query['schemeId'] = params.schemeId.join(',');
-  }
+  // `id` and `schemeId` are `type: array` query params, emitted as repeated
+  // params via `buildGetSecurityLevelsPath` (not CSV-joined here).
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   return query;
+}
+
+/** Append the repeated `id` and `schemeId` (`type: array`) params to a levels path. */
+function buildGetSecurityLevelsPath(
+  basePath: string,
+  params: GetSecurityLevelsParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'id', params?.id);
+  path = appendRepeatedParams(path, 'schemeId', params?.schemeId);
+  return path;
 }
 
 function buildGetSecurityLevelMembersQuery(
@@ -621,15 +646,21 @@ function buildGetSecurityLevelMembersQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) query['id'] = params.id.join(',');
-  if (params?.schemeId !== undefined && params.schemeId.length > 0) {
-    query['schemeId'] = params.schemeId.join(',');
-  }
-  if (params?.levelId !== undefined && params.levelId.length > 0) {
-    query['levelId'] = params.levelId.join(',');
-  }
+  // `id`, `schemeId` and `levelId` are `type: array` query params, emitted as
+  // repeated params via `buildGetSecurityLevelMembersPath` (not CSV-joined).
   if (params?.expand !== undefined) query['expand'] = params.expand;
   return query;
+}
+
+/** Append the repeated `id`, `schemeId` and `levelId` (`type: array`) params to a level-member path. */
+function buildGetSecurityLevelMembersPath(
+  basePath: string,
+  params: GetSecurityLevelMembersParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'id', params?.id);
+  path = appendRepeatedParams(path, 'schemeId', params?.schemeId);
+  path = appendRepeatedParams(path, 'levelId', params?.levelId);
+  return path;
 }
 
 function buildListProjectsQuery(
@@ -638,13 +669,19 @@ function buildListProjectsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.issueSecuritySchemeId !== undefined && params.issueSecuritySchemeId.length > 0) {
-    query['issueSecuritySchemeId'] = params.issueSecuritySchemeId.join(',');
-  }
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `issueSecuritySchemeId` and `projectId` are `type: array` query params,
+  // emitted as repeated params via `buildListProjectsPath` (not CSV-joined).
   return query;
+}
+
+/** Append the repeated `issueSecuritySchemeId` and `projectId` (`type: array`) params to a project path. */
+function buildListProjectsPath(
+  basePath: string,
+  params: SearchProjectsUsingSecuritySchemesParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'issueSecuritySchemeId', params?.issueSecuritySchemeId);
+  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path;
 }
 
 function buildSearchQuery(
@@ -653,9 +690,17 @@ function buildSearchQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.id !== undefined && params.id.length > 0) query['id'] = params.id.join(',');
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `id` and `projectId` are `type: array` query params, emitted as repeated
+  // params via `buildSearchPath` (not CSV-joined into the scalar query bag).
   return query;
+}
+
+/** Append the repeated `id` and `projectId` (`type: array`) params to a scheme-search path. */
+function buildSearchPath(
+  basePath: string,
+  params: SearchSecuritySchemesParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'id', params?.id);
+  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path;
 }

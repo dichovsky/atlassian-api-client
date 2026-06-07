@@ -59,12 +59,14 @@ describe('FieldConfigurationResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 0, maxResults: 25 });
     });
 
-    it('forwards id filter as comma-joined string', async () => {
+    it('forwards id filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ id: [10000, 10001] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '10000,10001' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/fieldconfiguration?id=10000&id=10001`,
+      );
     });
 
     it('forwards isDefault and query filters', async () => {
@@ -122,8 +124,10 @@ describe('FieldConfigurationResource', () => {
       }
 
       expect(results).toHaveLength(1);
+      // `id` is a `type: array` query param emitted as repeated params built
+      // into the basePath; the scalar bag holds only the scalar filters.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/fieldconfiguration?id=10000`);
       expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10000',
         isDefault: false,
         query: 'sw',
       });

@@ -4,6 +4,7 @@ import type { Status } from '../types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { ValidationError } from '../../core/errors.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── New types for extended endpoints (B777-B784) ───────────────────────────
 
@@ -120,10 +121,12 @@ export class StatusesResource {
     if (params.id.some((id) => id.trim() === '')) {
       throw new ValidationError('bulkDelete requires non-empty status IDs');
     }
+    // `id` is a `type: array` query parameter — emit repeated `id=a&id=b`
+    // (per the v3 spec) built into the path, since the transport `query` map
+    // collapses duplicate keys into a single CSV value Jira cannot match.
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/statuses`,
-      query: { id: params.id.join(',') },
+      path: appendRepeatedParams(`${this.baseUrl}/statuses`, 'id', params.id),
     });
   }
 
@@ -237,10 +240,13 @@ export class StatusesResource {
    * GET /rest/api/3/statuses/byNames
    */
   async byNames(params: { names: string[] }): Promise<Status[]> {
+    // The spec parameter is `name` (NOT `statusName`) and is `type: array`:
+    // emit repeated `name=a&name=b` built into the path. The previous code sent
+    // a single CSV value under the wrong key, so the filter was ignored by the
+    // server even for a single name.
     const response = await this.transport.request<Status[]>({
       method: 'GET',
-      path: `${this.baseUrl}/statuses/byNames`,
-      query: { statusName: params.names.join(',') },
+      path: appendRepeatedParams(`${this.baseUrl}/statuses/byNames`, 'name', params.names),
     });
     return response.data;
   }

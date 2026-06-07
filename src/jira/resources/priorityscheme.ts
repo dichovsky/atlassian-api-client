@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { encodePathSegment } from '../../core/path.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { Task } from './task.js';
 
 /**
@@ -207,7 +208,7 @@ export class PrioritySchemeResource {
     const query = buildListQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<PriorityScheme>>({
       method: 'GET',
-      path: `${this.baseUrl}/priorityscheme`,
+      path: buildListPath(`${this.baseUrl}/priorityscheme`, params),
       query,
     });
     return response.data;
@@ -223,7 +224,7 @@ export class PrioritySchemeResource {
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<PriorityScheme>(
       this.transport,
-      `${this.baseUrl}/priorityscheme`,
+      buildListPath(`${this.baseUrl}/priorityscheme`, params),
       query,
       params?.maxResults,
     );
@@ -333,7 +334,10 @@ export class PrioritySchemeResource {
     const query = buildProjectsQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<PrioritySchemeProject>>({
       method: 'GET',
-      path: `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
+      path: buildProjectsPath(
+        `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
+        params,
+      ),
       query,
     });
     return response.data;
@@ -350,7 +354,10 @@ export class PrioritySchemeResource {
     const query = buildProjectsQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<PrioritySchemeProject>(
       this.transport,
-      `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
+      buildProjectsPath(
+        `${this.baseUrl}/priorityscheme/${encodePathSegment(schemeId)}/projects`,
+        params,
+      ),
       query,
       params?.maxResults,
     );
@@ -393,7 +400,10 @@ export class PrioritySchemeResource {
     const query = buildAvailablePrioritiesQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<PriorityWithSequence>>({
       method: 'GET',
-      path: `${this.baseUrl}/priorityscheme/priorities/available`,
+      path: buildAvailablePrioritiesPath(
+        `${this.baseUrl}/priorityscheme/priorities/available`,
+        params,
+      ),
       query,
     });
     return response.data;
@@ -414,7 +424,7 @@ export class PrioritySchemeResource {
     });
     yield* paginateOffset<PriorityWithSequence>(
       this.transport,
-      `${this.baseUrl}/priorityscheme/priorities/available`,
+      buildAvailablePrioritiesPath(`${this.baseUrl}/priorityscheme/priorities/available`, params),
       query,
       params.maxResults,
     );
@@ -429,17 +439,20 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.priorityId !== undefined && params.priorityId.length > 0) {
-    query['priorityId'] = params.priorityId.join(',');
-  }
-  if (params?.schemeId !== undefined && params.schemeId.length > 0) {
-    query['schemeId'] = params.schemeId.join(',');
-  }
+  // `priorityId` and `schemeId` are `type: array` query params, emitted as
+  // repeated params via `buildListPath` (not CSV-joined into the scalar bag).
   if (params?.schemeName !== undefined) query['schemeName'] = params.schemeName;
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
   if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
   if (params?.expand !== undefined) query['expand'] = params.expand;
   return query;
+}
+
+/** Append the repeated `priorityId` and `schemeId` (`type: array`) params to a scheme-list path. */
+function buildListPath(basePath: string, params: ListPrioritySchemesParams | undefined): string {
+  let path = appendRepeatedParams(basePath, 'priorityId', params?.priorityId);
+  path = appendRepeatedParams(path, 'schemeId', params?.schemeId);
+  return path;
 }
 
 function buildPaginationQuery(
@@ -457,11 +470,18 @@ function buildProjectsQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.projectId !== undefined && params.projectId.length > 0) {
-    query['projectId'] = params.projectId.join(',');
-  }
+  // `projectId` is a `type: array` query param, emitted as repeated params via
+  // `buildProjectsPath` (not CSV-joined into the scalar query bag).
   if (params?.query !== undefined) query['query'] = params.query;
   return query;
+}
+
+/** Append the repeated `projectId` (`type: array`) param to a scheme-projects path. */
+function buildProjectsPath(
+  basePath: string,
+  params: ListPrioritySchemeProjectsParams | undefined,
+): string {
+  return appendRepeatedParams(basePath, 'projectId', params?.projectId);
 }
 
 function buildAvailablePrioritiesQuery(
@@ -473,8 +493,16 @@ function buildAvailablePrioritiesQuery(
   if (params.startAt !== undefined) query['startAt'] = params.startAt;
   if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
   if (params.query !== undefined) query['query'] = params.query;
-  if (params.exclude !== undefined && params.exclude.length > 0) {
-    query['exclude'] = params.exclude.join(',');
-  }
+  // `exclude` is a `type: array` query param, emitted as repeated params via
+  // `buildAvailablePrioritiesPath` (not CSV-joined into the scalar bag).
+  // `schemeId` is `type: string` here, so it stays a scalar query param.
   return query;
+}
+
+/** Append the repeated `exclude` (`type: array`) param to an available-priorities path. */
+function buildAvailablePrioritiesPath(
+  basePath: string,
+  params: ListAvailablePrioritiesParams,
+): string {
+  return appendRepeatedParams(basePath, 'exclude', params.exclude);
 }

@@ -108,3 +108,6 @@ export { detectRequiredScopes, listKnownOperations } from './scopes.js';
 // OpenAPI type generation
 export type { OpenApiSpec, OpenApiSchemaObject, GeneratedTypes } from './openapi.js';
 export { generateTypes } from './openapi.js';
+
+// Query string helpers (repeated `type: array` params)
+export { appendRepeatedParams } from './query.js';

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /**
  * Read shape returned by Jira for an existing share permission on a filter
@@ -141,15 +142,14 @@ export class FiltersResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.expand !== undefined) query['expand'] = params.expand;
-      if (params.id !== undefined) {
-        query['id'] = params.id.join(',');
-      }
+      // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built
+      // into the path below — not CSV-joined into the scalar query bag.
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<Filter>>({
       method: 'GET',
-      path: `${this.baseUrl}/filter/search`,
+      path: appendRepeatedParams(`${this.baseUrl}/filter/search`, 'id', params?.id),
       query,
     });
     return response.data;
@@ -361,15 +361,14 @@ export class FiltersResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
       if (params.expand !== undefined) query['expand'] = params.expand;
-      if (params.id !== undefined) {
-        query['id'] = params.id.join(',');
-      }
+      // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built
+      // into the path below — not CSV-joined into the scalar query bag.
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
     }
 
     yield* paginateOffset<Filter>(
       this.transport,
-      `${this.baseUrl}/filter/search`,
+      appendRepeatedParams(`${this.baseUrl}/filter/search`, 'id', params?.id),
       query,
       params?.maxResults,
     );

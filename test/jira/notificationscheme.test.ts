@@ -52,20 +52,24 @@ describe('NotificationSchemeResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
     });
 
-    it('forwards id filter as comma-joined string', async () => {
+    it('forwards id filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ id: ['10001', '10002'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ id: '10001,10002' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme?id=10001&id=10002`,
+      );
     });
 
-    it('forwards projectId filter as comma-joined string', async () => {
+    it('forwards projectId filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.list({ projectId: ['10100', '10101'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({ projectId: '10100,10101' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme?projectId=10100&projectId=10101`,
+      );
     });
 
     it('forwards expand query param', async () => {
@@ -133,15 +137,17 @@ describe('NotificationSchemeResource', () => {
       expect(transport.lastCall?.options.query?.['startAt']).toBe(0);
     });
 
-    it('forwards filters via buildListQuery', async () => {
+    it('forwards filters via buildListQuery + buildListPath', async () => {
       transport.respondWith(makePageOf([]));
 
       for await (const _item of resource.listAll({ id: ['10001'], expand: 'all' })) {
         break;
       }
 
+      // `id` is a `type: array` query param built into the basePath as a
+      // repeated param; the scalar bag holds only the scalar params.
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/notificationscheme?id=10001`);
       expect(transport.lastCall?.options.query).toMatchObject({
-        id: '10001',
         expand: 'all',
       });
     });
@@ -365,14 +371,14 @@ describe('NotificationSchemeResource', () => {
       });
     });
 
-    it('forwards projectId filter as comma-joined string', async () => {
+    it('forwards projectId filter as repeated query params', async () => {
       transport.respondWith(makePageOf([]));
 
       await resource.listProjects({ projectId: ['10100', '10101'] });
 
-      expect(transport.lastCall?.options.query).toMatchObject({
-        projectId: '10100,10101',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme/project?projectId=10100&projectId=10101`,
+      );
     });
 
     it('forwards startAt and maxResults', async () => {
@@ -429,7 +435,9 @@ describe('NotificationSchemeResource', () => {
         break;
       }
 
-      expect(transport.lastCall?.options.query?.['projectId']).toBe('10100');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/notificationscheme/project?projectId=10100`,
+      );
     });
 
     it('throws on invalid maxResults', async () => {

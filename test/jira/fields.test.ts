@@ -95,7 +95,7 @@ describe('FieldsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
     });
 
-    it('joins type array into comma-separated string', async () => {
+    it('emits type array as repeated query params', async () => {
       // Arrange
       transport.respondWith({ values: [], startAt: 0, maxResults: 50 });
 
@@ -103,10 +103,12 @@ describe('FieldsResource', () => {
       await fields.list({ type: ['custom', 'system'] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ type: 'custom,system' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/search?type=custom&type=system`,
+      );
     });
 
-    it('joins id array into comma-separated string', async () => {
+    it('emits id array as repeated query params', async () => {
       // Arrange
       transport.respondWith({ values: [], startAt: 0, maxResults: 50 });
 
@@ -114,9 +116,9 @@ describe('FieldsResource', () => {
       await fields.list({ id: ['customfield_10001', 'customfield_10002'] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        id: 'customfield_10001,customfield_10002',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/search?id=customfield_10001&id=customfield_10002`,
+      );
     });
 
     it('passes query, orderBy, expand params', async () => {
@@ -342,7 +344,7 @@ describe('FieldsResource', () => {
       });
     });
 
-    it('joins contextId array into comma-separated string', async () => {
+    it('emits contextId array as repeated query params', async () => {
       // Arrange
       transport.respondWith({ values: [], startAt: 0, maxResults: 50, total: 0 });
 
@@ -350,7 +352,9 @@ describe('FieldsResource', () => {
       await fields.listContexts('customfield_10001', { contextId: [10025, 10026] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ contextId: '10025,10026' });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context?contextId=10025&contextId=10026`,
+      );
     });
 
     it('passes startAt and maxResults', async () => {
@@ -1068,9 +1072,12 @@ describe('FieldsResource', () => {
         maxResults: 25,
       });
 
-      // Assert
+      // Assert — `contextId` is a `type: array` query param emitted as repeated
+      // params built into the path; the scalar bag holds only the scalars.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/issuetypemapping?contextId=10001&contextId=10002`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
-        contextId: '10001,10002',
         startAt: 10,
         maxResults: 25,
       });
@@ -1157,9 +1164,12 @@ describe('FieldsResource', () => {
         maxResults: 10,
       });
 
-      // Assert
+      // Assert — `contextId` is a `type: array` query param emitted as repeated
+      // params built into the path; the scalar bag holds only the scalars.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/defaultValue?contextId=10001&contextId=10002`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
-        contextId: '10001,10002',
         startAt: 20,
         maxResults: 10,
       });
@@ -1601,7 +1611,7 @@ describe('FieldsResource', () => {
       expect(result.values[1]).toEqual({ contextId: '10026', isGlobalContext: true });
     });
 
-    it('passes contextId array as comma-separated query param', async () => {
+    it('emits contextId array as repeated query params', async () => {
       // Arrange
       transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
 
@@ -1612,9 +1622,11 @@ describe('FieldsResource', () => {
         maxResults: 50,
       });
 
-      // Assert
+      // Assert — `contextId` is a `type: array` query param built into the path.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/customfield_10001/context/projectmapping?contextId=10025&contextId=10026`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
-        contextId: '10025,10026',
         startAt: 0,
         maxResults: 50,
       });
@@ -2453,10 +2465,14 @@ describe('FieldsResource', () => {
         orderBy: 'name',
       });
 
+      // `id` is a `type: array` query param emitted as repeated params built
+      // into the path; the scalar bag carries only the scalar params.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/search/trashed?id=customfield_10000&id=customfield_10001`,
+      );
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 0,
         maxResults: 10,
-        id: 'customfield_10000,customfield_10001',
         query: 'approvers',
         expand: 'trashDate',
         orderBy: 'name',
@@ -2474,15 +2490,14 @@ describe('FieldsResource', () => {
 
   // ── B446 / list() with projectIds ────────────────────────────────────────
   describe('list() with projectIds (B446)', () => {
-    it('sends projectIds as comma-separated query param when provided', async () => {
+    it('sends projectIds as repeated query params when provided', async () => {
       transport.respondWith({ isLast: true, maxResults: 50, startAt: 0, total: 0, values: [] });
 
       await fields.list({ projectIds: [10001, 10002] });
 
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/field/search`);
-      expect(transport.lastCall?.options.query).toMatchObject({
-        projectIds: '10001,10002',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/field/search?projectIds=10001&projectIds=10002`,
+      );
     });
 
     it('omits projectIds when not provided', async () => {

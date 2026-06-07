@@ -1,6 +1,7 @@
 import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /** A group match returned by the group picker. */
 export interface GroupMatch {
@@ -262,7 +263,7 @@ export class GroupsResource {
     const query = buildBulkQuery(params);
     const response = await this.transport.request<OffsetPaginatedResponse<BulkGroupDetails>>({
       method: 'GET',
-      path: `${this.baseUrl}/group/bulk`,
+      path: buildBulkPath(`${this.baseUrl}/group/bulk`, params),
       query,
     });
     return response.data;
@@ -283,7 +284,7 @@ export class GroupsResource {
     const query = buildBulkQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<BulkGroupDetails>(
       this.transport,
-      `${this.baseUrl}/group/bulk`,
+      buildBulkPath(`${this.baseUrl}/group/bulk`, params),
       query,
       params?.maxResults,
     );
@@ -372,15 +373,18 @@ function buildBulkQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  if (params?.groupId !== undefined && params.groupId.length > 0) {
-    query['groupId'] = params.groupId.join(',');
-  }
-  if (params?.groupName !== undefined && params.groupName.length > 0) {
-    query['groupName'] = params.groupName.join(',');
-  }
+  // `groupId` and `groupName` are `type: array` query params, emitted as
+  // repeated params via `buildBulkPath` (not CSV-joined into the scalar bag).
   if (params?.accessType !== undefined) query['accessType'] = params.accessType;
   if (params?.applicationKey !== undefined) query['applicationKey'] = params.applicationKey;
   return query;
+}
+
+/** Append the repeated `groupId` and `groupName` (`type: array`) params to the bulk path. */
+function buildBulkPath(basePath: string, params: ListBulkGroupsParams | undefined): string {
+  let path = appendRepeatedParams(basePath, 'groupId', params?.groupId);
+  path = appendRepeatedParams(path, 'groupName', params?.groupName);
+  return path;
 }
 
 function buildMemberQuery(
