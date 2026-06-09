@@ -27952,8 +27952,8 @@ describe('executeJiraCommand', () => {
       await executeJiraCommand(
         cmd('dashboards', 'add-gadget', ['10001'], {
           'module-key': 'com.atlassian.jira.gadgets:filter-results-gadget',
-          row: '1',
-          column: '2',
+          row: '0',
+          column: '0',
           title: 'My Gadget',
           color: 'blue',
         }),
@@ -27963,7 +27963,7 @@ describe('executeJiraCommand', () => {
         '10001',
         expect.objectContaining({
           moduleKey: 'com.atlassian.jira.gadgets:filter-results-gadget',
-          position: { row: 1, column: 2 },
+          position: { row: 0, column: 0 },
           title: 'My Gadget',
           color: 'blue',
         }),
@@ -28004,13 +28004,13 @@ describe('executeJiraCommand', () => {
     it('update-gadget with row+column builds position object', async () => {
       jiraDashboardsMock.updateGadget.mockResolvedValue(undefined);
       await executeJiraCommand(
-        cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '2', column: '3' }),
+        cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '0', column: '0' }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.updateGadget).toHaveBeenCalledWith(
         '10001',
         5,
-        expect.objectContaining({ position: { row: 2, column: 3 } }),
+        expect.objectContaining({ position: { row: 0, column: 0 } }),
       );
     });
 
