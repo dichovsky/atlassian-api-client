@@ -43,6 +43,7 @@ import type {
   BulkEditDashboardsData,
   SearchDashboardsOrderBy,
   ListSoftwareIssuesParams,
+  RedactionItem,
 } from '../../jira/index.js';
 import type {
   AddWorklogData,
@@ -2282,14 +2283,15 @@ async function executeForge(client: JiraClient, cmd: ParsedCommand): Promise<unk
 
   switch (cmd.action) {
     case 'bulk-panel-action': {
+      const moduleId = requireOpt(opts['module-id'], '--module-id');
       const valueRaw = requireOpt(opts['value'], '--value');
-      let actions: { issueId: string; moduleKey: string; payload?: Record<string, unknown> }[];
+      let projectList: { action: 'PIN' | 'UNPIN'; projectIdOrKey: string }[];
       try {
-        actions = JSON.parse(valueRaw) as typeof actions;
+        projectList = JSON.parse(valueRaw) as typeof projectList;
       } catch {
-        throw new Error('--value must be valid JSON (array of panel action objects)');
+        throw new Error('--value must be valid JSON (array of project pin action objects)');
       }
-      return client.forge.bulkPanelAction({ actions });
+      return client.forge.bulkPanelAction({ moduleId, projectList });
     }
     default:
       throw new Error(`Unknown forge action: ${cmd.action}. Actions: bulk-panel-action`);
@@ -2519,17 +2521,14 @@ async function executeRedact(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'start': {
-      const fieldIdsRaw = asString(opts['field-ids']);
-      const fieldIds = fieldIdsRaw
-        ? fieldIdsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
-      return client.redact.start({
-        jql: requireOpt(opts['jql'], '--jql'),
-        ...(fieldIds !== undefined && { fieldIds }),
-      });
+      const valueRaw = requireOpt(opts['value'], '--value');
+      let redactions: RedactionItem[];
+      try {
+        redactions = JSON.parse(valueRaw) as RedactionItem[];
+      } catch {
+        throw new Error('--value must be valid JSON (array of redaction objects)');
+      }
+      return client.redact.start({ redactions });
     }
     case 'get-status':
       return client.redact.getStatus(requireArg(cmd.positionalArgs[0], 'jobId'));

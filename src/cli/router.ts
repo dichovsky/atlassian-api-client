@@ -493,6 +493,8 @@ const GLOBAL_OPTIONS = {
   // app list-field-context-configurations options
   'field-ids-or-keys': { type: 'string' as const },
   'context-ids': { type: 'string' as const },
+  // forge bulk-panel-action option (moduleId of the Forge panel to pin/unpin)
+  'module-id': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
