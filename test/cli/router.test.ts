@@ -212,6 +212,26 @@ describe('parseCommand', () => {
     expect(result.options['fields-by-keys']).toBe(true);
   });
 
+  it('parses jira forge bulk-panel-action with --module-id and --value (#244)', () => {
+    const argv = [
+      'node',
+      'atlas',
+      'jira',
+      'forge',
+      'bulk-panel-action',
+      '--module-id',
+      'ari:cloud:ecosystem::extension/app/env/static/panel',
+      '--value',
+      '[{"action":"PIN","projectIdOrKey":"PROJ"}]',
+    ];
+
+    const result = parseCommand(argv);
+
+    expect(result.action).toBe('bulk-panel-action');
+    expect(result.options['module-id']).toBe('ari:cloud:ecosystem::extension/app/env/static/panel');
+    expect(result.options['value']).toBe('[{"action":"PIN","projectIdOrKey":"PROJ"}]');
+  });
+
   it('parses jira issues set-properties-by-entity-ids with --entity-ids and --properties', () => {
     const argv = [
       'node',
