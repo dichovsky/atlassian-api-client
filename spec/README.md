@@ -26,7 +26,7 @@ Pinned snapshots of upstream Atlassian REST API specifications. Used by implemen
 
 - **Source:** https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json
 - **Pinned:** 2026-06-10
-- **OpenAPI:** 3.0.1
+- **OpenAPI:** 3.0.3
 - **Upstream version:** `2.0.0`
 - **Paths:** 151 (218 operations, 1 deprecated)
 - **SHA-256:** `21eac8301cc359d792cdf229f2fcb4920bf6b4256c56f429da1ab940e8c0a7f2`
