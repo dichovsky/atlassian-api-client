@@ -51,11 +51,12 @@ function buildRequestKey(opts: RequestOptions): string {
   const pathWithQuery = appendQueryKey(opts.path, opts.query);
   const bodyStr = opts.body !== undefined ? JSON.stringify(opts.body) : '';
   const headersStr = serializeHeaders(opts.headers);
-  // B024: prefix with an auth-identity hash so two concurrent requests that
-  // share method+path+query+body but carry different `Authorization` headers
-  // (e.g. OAuth-refresh middleware rotating tokens, or multi-tenant request
-  // routing) are NOT coalesced — the loser would otherwise receive the
-  // winner's authenticated response.
+  // B024: prefix with an auth-identity hash (the `config.auth`-derived
+  // `authIdentity` that `HttpTransport` injects, or the in-flight credential
+  // for manual options — see `resolveAuthIdentity`) so two concurrent requests
+  // that share method+path+query+body but belong to different tenants are NOT
+  // coalesced — the loser would otherwise receive the winner's authenticated
+  // response.
   return `${resolveAuthIdentity(opts)}|${opts.method}:${pathWithQuery}:${bodyStr}:${headersStr}`;
 }
 

@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "ca54afedff74906f4464edf0c70202c8487e7a1ac22d60733aa422783b7fc7a9",
+  "sourceHash": "17f26b8516060dbecdc5002160b8fae79e39feaf22c2c865515b66922383fcfa",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -12581,7 +12581,7 @@
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 70,
+          "line": 71,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         }

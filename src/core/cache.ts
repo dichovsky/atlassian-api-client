@@ -122,10 +122,11 @@ function sweepExpired(cache: Map<string, CacheEntry>, now: number): void {
 
 function buildCacheKey(opts: RequestOptions): string {
   // B022: scope the cache key to the caller's auth identity so a shared
-  // transport never serves Tenant A's cached body to Tenant B. The auth
-  // identifier prefers an explicit `headers.Authorization` (set by upstream
-  // middleware like createOAuthRefreshMiddleware) and falls back to a
-  // shared-tenant marker when no Authorization header is on the in-flight
-  // options (single-tenant deployments).
+  // transport never serves Tenant A's cached body to Tenant B. The identity
+  // prefers the precomputed `authIdentity` hash that `HttpTransport` injects
+  // from `config.auth` before the chain runs, falling back (for manually
+  // constructed options) to the in-flight credential — a middleware-set
+  // `authorizationOverride` (#243) or a caller `Authorization` header — and to
+  // a shared-tenant marker when none is present (single-tenant deployments).
   return `${resolveAuthIdentity(opts)}|${opts.method}:${appendQueryKey(opts.path, opts.query)}`;
 }
