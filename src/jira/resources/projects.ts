@@ -218,9 +218,17 @@ export interface UpdateProjectCategoryData {
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
+/**
+ * Result of `GET /rest/api/3/projectvalidate/key` (B707).
+ *
+ * Spec: `ErrorCollection`. There is **no** `valid` boolean — a key is valid
+ * when `errorMessages` is empty (and `errors` has no entries). `errors` is a
+ * parameter→message map, not a string array.
+ */
 export interface ProjectKeyValidation {
-  readonly valid: boolean;
-  readonly errors?: string[];
+  readonly errorMessages?: string[];
+  readonly errors?: Record<string, string>;
+  readonly status?: number;
 }
 
 export interface ProjectType {
@@ -259,7 +267,23 @@ export interface CreateProjectData {
   readonly issueTypeScheme?: number;
   readonly issueTypeScreenScheme?: number;
   readonly fieldConfigurationScheme?: number;
-  readonly priorityScheme?: number;
+}
+
+/**
+ * Identifiers for a newly created project, returned by `POST /rest/api/3/project`
+ * (B652). Spec: `ProjectIdentifiers` (201, additionalProperties:false).
+ *
+ * Note: `id` is an integer per spec, not the string used elsewhere for project
+ * IDs. This is **not** the full {@link Project} object — only the three
+ * identifier fields are returned.
+ */
+export interface ProjectIdentifiers {
+  /** The ID of the created project. */
+  readonly id: number;
+  /** The key of the created project. */
+  readonly key: string;
+  /** The URL of the created project. */
+  readonly self: string;
 }
 
 export interface UpdateProjectData {
@@ -364,8 +388,14 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Create a new project (B652). */
-  async create(data: CreateProjectData): Promise<Project> {
+  /**
+   * Create a new project (B652).
+   *
+   * Returns the project identifiers (`id`, `key`, `self`) per spec — **not** the
+   * full {@link Project} object. Fetch the full project with {@link get} using
+   * the returned `key`.
+   */
+  async create(data: CreateProjectData): Promise<ProjectIdentifiers> {
     const body: Record<string, unknown> = {
       key: data.key,
       name: data.name,
@@ -387,9 +417,8 @@ export class ProjectsResource {
       body['issueTypeScreenScheme'] = data.issueTypeScreenScheme;
     if (data.fieldConfigurationScheme !== undefined)
       body['fieldConfigurationScheme'] = data.fieldConfigurationScheme;
-    if (data.priorityScheme !== undefined) body['priorityScheme'] = data.priorityScheme;
 
-    const response = await this.transport.request<Project>({
+    const response = await this.transport.request<ProjectIdentifiers>({
       method: 'POST',
       path: `${this.baseUrl}/project`,
       body,
@@ -981,7 +1010,13 @@ export class ProjectsResource {
 
   // ── B707-B709: project validation ─────────────────────────────────────────
 
-  /** Validate a project key (B707). */
+  /**
+   * Validate a project key (B707).
+   *
+   * Returns an `ErrorCollection` per spec. The key is valid when
+   * `errorMessages` is empty (and `errors` has no entries); otherwise the
+   * messages explain why it was rejected.
+   */
   async validateProjectKey(key: string): Promise<ProjectKeyValidation> {
     const response = await this.transport.request<ProjectKeyValidation>({
       method: 'GET',
@@ -991,9 +1026,13 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Get a valid project key from a supplied one (B708). */
-  async getValidProjectKey(key: string): Promise<{ key: string }> {
-    const response = await this.transport.request<{ key: string }>({
+  /**
+   * Get a valid project key from a supplied one (B708).
+   *
+   * The spec returns a bare string (the validated/adjusted key), not an object.
+   */
+  async getValidProjectKey(key: string): Promise<string> {
+    const response = await this.transport.request<string>({
       method: 'GET',
       path: `${this.baseUrl}/projectvalidate/validProjectKey`,
       query: { key },
@@ -1001,9 +1040,13 @@ export class ProjectsResource {
     return response.data;
   }
 
-  /** Get a valid project name from a supplied one (B709). */
-  async getValidProjectName(name: string): Promise<{ name: string }> {
-    const response = await this.transport.request<{ name: string }>({
+  /**
+   * Get a valid project name from a supplied one (B709).
+   *
+   * The spec returns a bare string (the validated/adjusted name), not an object.
+   */
+  async getValidProjectName(name: string): Promise<string> {
+    const response = await this.transport.request<string>({
       method: 'GET',
       path: `${this.baseUrl}/projectvalidate/validProjectName`,
       query: { name },

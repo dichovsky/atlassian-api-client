@@ -4,12 +4,14 @@ import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
+// Spec: the readable "is this the default scheme" field is `default`
+// (`isDefault` is write-only on create/update and is never returned).
 const makeScheme = (id = '10001') => ({
   id,
   name: 'Default Priority Scheme',
   description: 'A default scheme',
   defaultPriorityId: '10001',
-  isDefault: true,
+  default: true,
 });
 
 const makePriority = (id = '10001') => ({
@@ -63,6 +65,18 @@ describe('PrioritySchemeResource', () => {
         path: `${BASE_URL}/priorityscheme`,
       });
       expect(transport.lastCall?.options.query).toEqual({});
+    });
+
+    it('reads the spec `default` flag on returned schemes (not isDefault)', async () => {
+      // Regression: the read field is `default`; the old type used `isDefault`,
+      // which is write-only and never returned, so it was always undefined.
+      transport.respondWith(makePageOf([makeScheme()]));
+
+      const result = await resource.list();
+      const scheme = result.values[0]!;
+
+      expect(scheme.default).toBe(true);
+      expect(scheme).not.toHaveProperty('isDefault');
     });
 
     it('forwards startAt and maxResults', async () => {

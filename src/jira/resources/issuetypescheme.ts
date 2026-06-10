@@ -91,9 +91,13 @@ export interface AssignIssueTypeSchemeToProjectData {
   readonly projectId: string;
 }
 
-/** Response envelope for POST /rest/api/3/issuetypescheme. */
+/**
+ * Response envelope for POST /rest/api/3/issuetypescheme.
+ *
+ * Spec: `IssueTypeSchemeID` — the field is `issueTypeSchemeId`, not `id`.
+ */
 export interface CreatedIssueTypeScheme {
-  readonly id: string;
+  readonly issueTypeSchemeId: string;
 }
 
 /**

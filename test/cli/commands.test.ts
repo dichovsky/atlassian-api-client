@@ -9922,8 +9922,12 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects create calls client.projects.create with required fields', async () => {
-      // Arrange
-      jiraProjectsMock.create.mockResolvedValue({ id: '10002', key: 'EX' });
+      // Arrange — spec returns ProjectIdentifiers { id (number), key, self }.
+      jiraProjectsMock.create.mockResolvedValue({
+        id: 10002,
+        key: 'EX',
+        self: 'https://example.com/project/10002',
+      });
 
       // Act
       const result = await executeJiraCommand(
@@ -9939,7 +9943,7 @@ describe('executeJiraCommand', () => {
       expect(jiraProjectsMock.create).toHaveBeenCalledWith(
         expect.objectContaining({ key: 'EX', name: 'Example', projectTypeKey: 'software' }),
       );
-      expect(result).toMatchObject({ key: 'EX' });
+      expect(result).toMatchObject({ id: 10002, key: 'EX' });
     });
 
     it('projects create throws when --key is missing', async () => {
@@ -9966,7 +9970,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects create passes valid --assignee-type', async () => {
-      jiraProjectsMock.create.mockResolvedValue({ id: '1', key: 'EX' });
+      jiraProjectsMock.create.mockResolvedValue({ id: 1, key: 'EX', self: 'https://x/1' });
       await executeJiraCommand(
         cmd('projects', 'create', [], {
           key: 'EX',
@@ -10755,23 +10759,25 @@ describe('executeJiraCommand', () => {
     });
 
     it('projects get-valid-project-key calls client.projects.getValidProjectKey', async () => {
-      jiraProjectsMock.getValidProjectKey.mockResolvedValue({ key: 'MYPROJ' });
+      // Spec returns a bare string.
+      jiraProjectsMock.getValidProjectKey.mockResolvedValue('MYPROJ');
       const result = await executeJiraCommand(
         cmd('projects', 'get-valid-project-key', [], { key: 'myproj' }),
         GLOBALS,
       );
       expect(jiraProjectsMock.getValidProjectKey).toHaveBeenCalledWith('myproj');
-      expect(result).toEqual({ key: 'MYPROJ' });
+      expect(result).toBe('MYPROJ');
     });
 
     it('projects get-valid-project-name calls client.projects.getValidProjectName', async () => {
-      jiraProjectsMock.getValidProjectName.mockResolvedValue({ name: 'My Project' });
+      // Spec returns a bare string.
+      jiraProjectsMock.getValidProjectName.mockResolvedValue('My Project');
       const result = await executeJiraCommand(
         cmd('projects', 'get-valid-project-name', [], { name: 'My Project' }),
         GLOBALS,
       );
       expect(jiraProjectsMock.getValidProjectName).toHaveBeenCalledWith('My Project');
-      expect(result).toEqual({ name: 'My Project' });
+      expect(result).toBe('My Project');
     });
 
     it('projects unknown action error includes all new actions', async () => {
@@ -11168,7 +11174,8 @@ describe('executeJiraCommand', () => {
     });
 
     it('users bulk-emails calls bulkGetEmails with parsed account IDs', async () => {
-      const bulkResp = { values: [{ accountId: 'acc-1', email: 'a@example.com' }] };
+      // Spec returns a single UnrestrictedUserEmail object.
+      const bulkResp = { accountId: 'acc-1', email: 'a@example.com' };
       jiraUsersMock.bulkGetEmails.mockResolvedValue(bulkResp);
       const parsed = cmd('users', 'bulk-emails', [], { 'account-ids': 'acc-1,acc-2' });
       const result = await executeJiraCommand(parsed, GLOBALS);
@@ -14181,12 +14188,11 @@ describe('executeJiraCommand', () => {
     });
 
     it('list-failed calls client.webhooks.listFailed() and returns result', async () => {
-      // Arrange
+      // Arrange — real FailedWebhooks shape (maxResults, next?, values).
       const page = {
+        maxResults: 100,
+        next: 'https://example.com/rest/api/3/webhook/failed?after=1700000000000',
         values: [{ id: '1', url: 'https://example.com/hook', failureTime: 1700000000000 }],
-        startAt: 0,
-        maxResults: 50,
-        isLast: true,
       };
       jiraWebhooksMock.listFailed.mockResolvedValue(page);
 
@@ -14200,12 +14206,7 @@ describe('executeJiraCommand', () => {
 
     it('list-failed passes --max-results', async () => {
       // Arrange
-      jiraWebhooksMock.listFailed.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 10,
-        isLast: true,
-      });
+      jiraWebhooksMock.listFailed.mockResolvedValue({ maxResults: 10, values: [] });
 
       // Act
       await executeJiraCommand(
@@ -14219,12 +14220,7 @@ describe('executeJiraCommand', () => {
 
     it('list-failed passes --after as a number', async () => {
       // Arrange
-      jiraWebhooksMock.listFailed.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        isLast: true,
-      });
+      jiraWebhooksMock.listFailed.mockResolvedValue({ maxResults: 50, values: [] });
 
       // Act
       await executeJiraCommand(
@@ -14679,8 +14675,8 @@ describe('executeJiraCommand', () => {
 
   describe('changelog resource', () => {
     it('changelog bulk-fetch calls client.changelog.bulkFetch() with issues', async () => {
-      // Arrange
-      const response = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
+      // Arrange — real spec response shape (issueChangeLogs + nextPageToken).
+      const response = { issueChangeLogs: [], nextPageToken: undefined };
       jiraChangelogMock.bulkFetch.mockResolvedValue(response);
 
       // Act
@@ -14696,37 +14692,9 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(response);
     });
 
-    it('changelog bulk-fetch passes --author-ids as array', async () => {
+    it('changelog bulk-fetch passes --field-ids as fieldIds array', async () => {
       // Arrange
-      jiraChangelogMock.bulkFetch.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-        isLast: true,
-      });
-
-      // Act
-      await executeJiraCommand(
-        cmd('changelog', 'bulk-fetch', [], { issues: 'PROJ-1', 'author-ids': 'acc-1,acc-2' }),
-        GLOBALS,
-      );
-
-      // Assert
-      expect(jiraChangelogMock.bulkFetch).toHaveBeenCalledWith(
-        expect.objectContaining({ filterByAuthorAccountId: ['acc-1', 'acc-2'] }),
-      );
-    });
-
-    it('changelog bulk-fetch passes --field-ids as array', async () => {
-      // Arrange
-      jiraChangelogMock.bulkFetch.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-        isLast: true,
-      });
+      jiraChangelogMock.bulkFetch.mockResolvedValue({ issueChangeLogs: [] });
 
       // Act
       await executeJiraCommand(
@@ -14734,10 +14702,36 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
 
-      // Assert
+      // Assert — spec field is `fieldIds` (the old code sent `filterByFieldId`).
       expect(jiraChangelogMock.bulkFetch).toHaveBeenCalledWith(
-        expect.objectContaining({ filterByFieldId: ['status', 'priority'] }),
+        expect.objectContaining({ fieldIds: ['status', 'priority'] }),
       );
+    });
+
+    it('changelog bulk-fetch passes --next-page-token cursor and omits spec-invalid fields', async () => {
+      // Arrange
+      jiraChangelogMock.bulkFetch.mockResolvedValue({ issueChangeLogs: [] });
+
+      // Act
+      await executeJiraCommand(
+        cmd('changelog', 'bulk-fetch', [], {
+          issues: 'PROJ-1',
+          'next-page-token': 'cursor-1',
+          'max-results': '50',
+        }),
+        GLOBALS,
+      );
+
+      // Assert — only spec-valid fields are forwarded.
+      const arg = jiraChangelogMock.bulkFetch.mock.calls[0]![0] as Record<string, unknown>;
+      expect(arg).toEqual({
+        issueIdsOrKeys: ['PROJ-1'],
+        nextPageToken: 'cursor-1',
+        maxResults: 50,
+      });
+      expect(arg).not.toHaveProperty('filterByFieldId');
+      expect(arg).not.toHaveProperty('filterByAuthorAccountId');
+      expect(arg).not.toHaveProperty('startAt');
     });
 
     it('changelog bulk-fetch throws when --issues is missing', async () => {
@@ -18727,7 +18721,8 @@ describe('executeJiraCommand', () => {
     });
 
     it('issue-type-schemes create calls client.issueTypeSchemes.create', async () => {
-      jiraIssueTypeSchemesMock.create.mockResolvedValue({ id: '10001' });
+      // Spec 201 returns IssueTypeSchemeID { issueTypeSchemeId }.
+      jiraIssueTypeSchemesMock.create.mockResolvedValue({ issueTypeSchemeId: '10001' });
       const result = await executeJiraCommand(
         cmd('issue-type-schemes', 'create', [], {
           name: 'My Scheme',
@@ -18745,11 +18740,11 @@ describe('executeJiraCommand', () => {
           issueTypeIds: ['10010', '10011'],
         }),
       );
-      expect(result).toEqual({ id: '10001' });
+      expect(result).toEqual({ issueTypeSchemeId: '10001' });
     });
 
     it('issue-type-schemes create without optional fields works', async () => {
-      jiraIssueTypeSchemesMock.create.mockResolvedValue({ id: '10002' });
+      jiraIssueTypeSchemesMock.create.mockResolvedValue({ issueTypeSchemeId: '10002' });
       await executeJiraCommand(
         cmd('issue-type-schemes', 'create', [], { name: 'Minimal' }),
         GLOBALS,
@@ -19234,19 +19229,33 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('statuses bulk-create calls client.statuses.bulkCreate with parsed value', async () => {
+    it('statuses bulk-create calls client.statuses.bulkCreate with parsed value and scope', async () => {
       const created = [{ id: '10', name: 'Blocked' }];
       jiraStatusesMock.bulkCreate.mockResolvedValue(created);
       const result = await executeJiraCommand(
         cmd('statuses', 'bulk-create', [], {
           value: '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]',
+          scope: '{"type":"GLOBAL"}',
         }),
         GLOBALS,
       );
+      // Regression: StatusCreateRequest requires a top-level scope.
       expect(jiraStatusesMock.bulkCreate).toHaveBeenCalledWith({
+        scope: { type: 'GLOBAL' },
         statuses: [{ name: 'Blocked', statusCategory: 'IN_PROGRESS' }],
       });
       expect(result).toEqual(created);
+    });
+
+    it('statuses bulk-create throws when --scope is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('statuses', 'bulk-create', [], {
+            value: '[{"name":"Blocked","statusCategory":"IN_PROGRESS"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--scope');
     });
 
     it('statuses bulk-update calls client.statuses.bulkUpdate with parsed value', async () => {
@@ -19264,7 +19273,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('statuses get-issue-type-usages calls client.statuses.getIssueTypeUsages', async () => {
-      const page = { values: [], nextPageToken: undefined };
+      const page = { statusId: 's1', projectId: 'p1', issueTypes: { values: [] } };
       jiraStatusesMock.getIssueTypeUsages.mockResolvedValue(page);
       const result = await executeJiraCommand(
         cmd('statuses', 'get-issue-type-usages', ['s1', 'p1']),
@@ -19278,7 +19287,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('statuses get-project-usages calls client.statuses.getProjectUsages', async () => {
-      const page = { values: [] };
+      const page = { statusId: 's1', projects: { values: [] } };
       jiraStatusesMock.getProjectUsages.mockResolvedValue(page);
       const result = await executeJiraCommand(
         cmd('statuses', 'get-project-usages', ['s1'], { 'next-page-token': 'tok1' }),
@@ -19292,7 +19301,7 @@ describe('executeJiraCommand', () => {
     });
 
     it('statuses get-workflow-usages calls client.statuses.getWorkflowUsages', async () => {
-      const page = { values: [] };
+      const page = { statusId: 's1', workflows: { values: [] } };
       jiraStatusesMock.getWorkflowUsages.mockResolvedValue(page);
       const result = await executeJiraCommand(
         cmd('statuses', 'get-workflow-usages', ['s1']),

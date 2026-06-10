@@ -322,10 +322,10 @@ describe('ProjectsResource', () => {
   // ── create ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('calls POST /project with required fields', async () => {
-      // Arrange
-      const project = makeProject('10002', 'EX');
-      transport.respondWith(project);
+    it('calls POST /project and returns ProjectIdentifiers (id is a number)', async () => {
+      // Arrange — spec 201 returns ProjectIdentifiers { id, key, self }, not a full Project.
+      const identifiers = { id: 12345, key: 'EX', self: `${BASE_URL}/project/12345` };
+      transport.respondWith(identifiers, 201);
 
       // Act
       const result = await projects.create({
@@ -334,8 +334,9 @@ describe('ProjectsResource', () => {
         projectTypeKey: 'software',
       });
 
-      // Assert
-      expect(result).toEqual(project);
+      // Assert — return type is the identifiers, with numeric id.
+      expect(result).toEqual(identifiers);
+      expect(typeof result.id).toBe('number');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/project`,
@@ -349,7 +350,7 @@ describe('ProjectsResource', () => {
 
     it('includes all optional fields in body when provided', async () => {
       // Arrange
-      transport.respondWith(makeProject('10003', 'TEST'));
+      transport.respondWith({ id: 10003, key: 'TEST', self: `${BASE_URL}/project/10003` }, 201);
 
       // Act
       await projects.create({
@@ -369,7 +370,6 @@ describe('ProjectsResource', () => {
         issueTypeScheme: 5,
         issueTypeScreenScheme: 6,
         fieldConfigurationScheme: 7,
-        priorityScheme: 8,
       });
 
       // Assert
@@ -387,8 +387,17 @@ describe('ProjectsResource', () => {
         issueTypeScheme: 5,
         issueTypeScreenScheme: 6,
         fieldConfigurationScheme: 7,
-        priorityScheme: 8,
       });
+    });
+
+    it('never sends priorityScheme in the body (CreateProjectDetails has no such field)', async () => {
+      // Regression: the old code added `priorityScheme`, which CreateProjectDetails
+      // (additionalProperties:false) rejects with 400.
+      transport.respondWith({ id: 10004, key: 'NP', self: `${BASE_URL}/project/10004` }, 201);
+
+      await projects.create({ key: 'NP', name: 'No Priority', projectTypeKey: 'software' });
+
+      expect(transport.lastCall?.options.body).not.toHaveProperty('priorityScheme');
     });
   });
 
@@ -1461,10 +1470,11 @@ describe('ProjectsResource', () => {
   // ── validateProjectKey ────────────────────────────────────────────────────
 
   describe('validateProjectKey()', () => {
-    it('sends GET /projectvalidate/key with key query param', async () => {
-      transport.respondWith({ valid: true });
+    it('sends GET /projectvalidate/key and returns an ErrorCollection (empty = valid)', async () => {
+      // Spec 200 is ErrorCollection; a valid key has empty errorMessages.
+      transport.respondWith({ errorMessages: [], errors: {}, status: 200 });
       const result = await projects.validateProjectKey('MYPROJ');
-      expect(result).toEqual({ valid: true });
+      expect(result.errorMessages).toEqual([]);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/projectvalidate/key`,
@@ -1472,21 +1482,29 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('returns validation errors when invalid', async () => {
-      transport.respondWith({ valid: false, errors: ['Key already exists'] });
+    it('returns errorMessages + errors map when invalid (no `valid` boolean)', async () => {
+      // Regression: the old type declared `valid`/`errors:string[]`; the spec
+      // returns ErrorCollection with `errors` as a parameter→message map.
+      transport.respondWith({
+        errorMessages: ['A project with that key already exists.'],
+        errors: { projectKey: 'Key must be unique.' },
+        status: 400,
+      });
       const result = await projects.validateProjectKey('TAKEN');
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Key already exists');
+      expect(result.errorMessages).toContain('A project with that key already exists.');
+      expect(result.errors).toEqual({ projectKey: 'Key must be unique.' });
+      expect(result).not.toHaveProperty('valid');
     });
   });
 
   // ── getValidProjectKey ────────────────────────────────────────────────────
 
   describe('getValidProjectKey()', () => {
-    it('sends GET /projectvalidate/validProjectKey', async () => {
-      transport.respondWith({ key: 'MYPROJ' });
+    it('sends GET /projectvalidate/validProjectKey and returns the bare string', async () => {
+      // Spec 200 is a bare string, not { key }.
+      transport.respondWith('MYKEY2');
       const result = await projects.getValidProjectKey('myproj');
-      expect(result).toEqual({ key: 'MYPROJ' });
+      expect(result).toBe('MYKEY2');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/projectvalidate/validProjectKey`,
@@ -1498,10 +1516,11 @@ describe('ProjectsResource', () => {
   // ── getValidProjectName ───────────────────────────────────────────────────
 
   describe('getValidProjectName()', () => {
-    it('sends GET /projectvalidate/validProjectName', async () => {
-      transport.respondWith({ name: 'My Project' });
+    it('sends GET /projectvalidate/validProjectName and returns the bare string', async () => {
+      // Spec 200 is a bare string, not { name }.
+      transport.respondWith('My Project');
       const result = await projects.getValidProjectName('My Project');
-      expect(result).toEqual({ name: 'My Project' });
+      expect(result).toBe('My Project');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/projectvalidate/validProjectName`,

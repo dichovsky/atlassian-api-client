@@ -78,6 +78,8 @@ export type {
 export { ProjectsResource } from './resources/projects.js';
 export type {
   ProjectType,
+  ProjectIdentifiers,
+  ProjectKeyValidation,
   ListLegacyProjectsParams,
   CreateProjectData,
   UpdateProjectData,
@@ -370,6 +372,7 @@ export type {
   RegisteredWebhooks,
   ListWebhooksParams,
   FailedWebhook,
+  FailedWebhooks,
   ListFailedWebhooksParams,
 } from './resources/webhooks.js';
 export { JqlResource } from './resources/jql.js';
@@ -468,7 +471,9 @@ export { EventsResource } from './resources/events.js';
 export type {
   ChangelogEntry,
   ChangelogItem,
+  IssueChangeLog,
   BulkFetchChangelogData,
+  BulkChangelogResponse,
 } from './resources/changelog.js';
 export { ChangelogResource } from './resources/changelog.js';
 export type {
@@ -657,10 +662,14 @@ export { ResolutionResource } from './resources/resolution.js';
 export type {
   CreateStatusData,
   UpdateStatusData,
+  StatusScope,
   StatusUsagesPage,
   StatusIssueTypeUsage,
   StatusProjectUsage,
   StatusWorkflowUsage,
+  StatusProjectUsageDTO,
+  StatusWorkflowUsageDTO,
+  StatusProjectIssueTypeUsageDTO,
   SearchStatusesParams,
   StatusUsagesParams,
 } from './resources/statuses.js';

@@ -3,6 +3,7 @@ import { JiraClient } from '../../jira/client.js';
 import type {
   AddFilterSharePermissionData,
   CreateStatusData,
+  StatusScope,
   UpdateStatusData,
   FieldConfigurationItem,
   NotificationSchemeEvent,
@@ -1323,7 +1324,9 @@ async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<
     case 'bulk-create': {
       const valueRaw = requireOpt(opts['value'], '--value');
       const statuses = parseJsonArrayFlag(valueRaw, '--value') as CreateStatusData[];
-      return client.statuses.bulkCreate({ statuses });
+      const scopeRaw = requireOpt(opts['scope'], '--scope');
+      const scope = parseJsonObjectFlag(scopeRaw, '--scope') as unknown as StatusScope;
+      return client.statuses.bulkCreate({ scope, statuses });
     }
     case 'bulk-update': {
       const valueRaw = requireOpt(opts['value'], '--value');
@@ -2250,26 +2253,20 @@ async function executeChangelog(client: JiraClient, cmd: ParsedCommand): Promise
         .split(',')
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      const authorIdsRaw = asString(opts['author-ids']);
-      const filterByAuthorAccountId = authorIdsRaw
-        ? authorIdsRaw
-            .split(',')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : undefined;
       const fieldIdsRaw = asString(opts['field-ids']);
-      const filterByFieldId = fieldIdsRaw
+      const fieldIds = fieldIdsRaw
         ? fieldIdsRaw
             .split(',')
             .map((s) => s.trim())
             .filter((s) => s.length > 0)
         : undefined;
+      const maxResults = asPositiveInt(opts['max-results'], '--max-results');
+      const nextPageToken = asString(opts['next-page-token']);
       return client.changelog.bulkFetch({
         issueIdsOrKeys,
-        ...(filterByAuthorAccountId !== undefined && { filterByAuthorAccountId }),
-        ...(filterByFieldId !== undefined && { filterByFieldId }),
-        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
+        ...(fieldIds !== undefined && { fieldIds }),
+        ...(maxResults !== undefined && { maxResults }),
+        ...(nextPageToken !== undefined && { nextPageToken }),
       });
     }
     default:

@@ -352,9 +352,16 @@ export interface UserEmailRecord {
   readonly email: string;
 }
 
-/** Bulk email response wrapper (B807). */
+/**
+ * Response for the bulk email endpoint (B807).
+ *
+ * Spec: `UnrestrictedUserEmail` — a single `{ accountId, email }` object, **not**
+ * a wrapper with a `values` array. `additionalProperties: true` in the spec, so
+ * extra fields may be present.
+ */
 export interface BulkUserEmailsResponse {
-  readonly values: UserEmailRecord[];
+  readonly accountId?: string;
+  readonly email?: string;
 }
 
 /** A group entry returned by the user groups endpoint (B808). */

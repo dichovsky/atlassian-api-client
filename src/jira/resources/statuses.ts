@@ -13,14 +13,18 @@ export interface CreateStatusData {
   readonly name: string;
   readonly description?: string;
   readonly statusCategory: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  /**
-   * Scope for the new status. When omitted the status is global.
-   * When provided, `type` must be `'PROJECT'` and `project.id` must be set.
-   */
-  readonly scope?: {
-    readonly type: 'PROJECT';
-    readonly project: { readonly id: string };
-  };
+}
+
+/**
+ * Scope of statuses being created (B778).
+ *
+ * Spec: `StatusScope` (required `type`). `GLOBAL` for company-managed projects,
+ * `PROJECT` for team-managed projects; `project.id` is required when
+ * `type === 'PROJECT'`.
+ */
+export interface StatusScope {
+  readonly type: 'GLOBAL' | 'PROJECT';
+  readonly project?: { readonly id: string };
 }
 
 /** Request body entry for bulk-updating a status. */
@@ -32,37 +36,62 @@ export interface UpdateStatusData {
 }
 
 /**
- * Response envelope for usage listing endpoints
+ * A nested page of usage entries inside the usage-listing DTOs
  * (B780 issueTypeUsages, B781 projectUsages, B782 workflowUsages).
  *
- * These endpoints use `nextPageToken` (opaque cursor string) rather than
- * the standard offset model. Each page is fetched independently;
- * use the returned `nextPageToken` to request the subsequent page.
+ * These endpoints use `nextPageToken` (opaque cursor string) rather than the
+ * standard offset model. The page is **nested** inside the response DTO under a
+ * resource-specific key (`projects` / `workflows` / `issueTypes`), not at the
+ * top level.
  */
 export interface StatusUsagesPage<T> {
   readonly values: T[];
   /** Opaque token for the next page; absent when there are no more results. */
   readonly nextPageToken?: string;
-  /** Maximum number of items per page as echoed by the server. */
-  readonly maxResults?: number;
 }
 
-/** A single issue-type usage entry returned by B780. */
-export interface StatusIssueTypeUsage {
-  readonly issueTypeId: string;
-  readonly issueTypeName?: string;
-}
-
-/** A single project-usage entry returned by B781. */
+/** A single project-usage entry returned by B781. Spec: `StatusProjectUsage`. */
 export interface StatusProjectUsage {
-  readonly projectId: string;
-  readonly projectName?: string;
+  readonly id: string;
 }
 
-/** A single workflow-usage entry returned by B782. */
+/** A single workflow-usage entry returned by B782. Spec: `StatusWorkflowUsageWorkflow`. */
 export interface StatusWorkflowUsage {
-  readonly workflowId: string;
-  readonly workflowName?: string;
+  readonly id: string;
+}
+
+/** A single issue-type usage entry returned by B780. Spec: `StatusProjectIssueTypeUsage`. */
+export interface StatusIssueTypeUsage {
+  readonly id: string;
+}
+
+/**
+ * Response DTO for B781 (`GET /statuses/{statusId}/projectUsages`).
+ * Spec: `StatusProjectUsageDTO` — the page is nested under `projects`.
+ */
+export interface StatusProjectUsageDTO {
+  readonly statusId?: string;
+  readonly projects?: StatusUsagesPage<StatusProjectUsage>;
+}
+
+/**
+ * Response DTO for B782 (`GET /statuses/{statusId}/workflowUsages`).
+ * Spec: `StatusWorkflowUsageDTO` — the page is nested under `workflows`.
+ */
+export interface StatusWorkflowUsageDTO {
+  readonly statusId?: string;
+  readonly workflows?: StatusUsagesPage<StatusWorkflowUsage>;
+}
+
+/**
+ * Response DTO for B780
+ * (`GET /statuses/{statusId}/project/{projectId}/issueTypeUsages`).
+ * Spec: `StatusProjectIssueTypeUsageDTO` — the page is nested under `issueTypes`.
+ */
+export interface StatusProjectIssueTypeUsageDTO {
+  readonly statusId?: string;
+  readonly projectId?: string;
+  readonly issueTypes?: StatusUsagesPage<StatusIssueTypeUsage>;
 }
 
 /**
@@ -136,14 +165,17 @@ export class StatusesResource {
    *
    * Returns the created statuses.
    */
-  async bulkCreate(data: { statuses: CreateStatusData[] }): Promise<Status[]> {
+  async bulkCreate(data: { scope: StatusScope; statuses: CreateStatusData[] }): Promise<Status[]> {
     if (data.statuses === undefined || data.statuses.length === 0) {
       throw new ValidationError('bulkCreate requires at least one status entry (--value)');
+    }
+    if (data.scope === undefined) {
+      throw new ValidationError('bulkCreate requires a scope (--scope)');
     }
     const response = await this.transport.request<Status[]>({
       method: 'POST',
       path: `${this.baseUrl}/statuses`,
-      body: data,
+      body: { scope: data.scope, statuses: data.statuses },
     });
     return response.data;
   }
@@ -176,12 +208,12 @@ export class StatusesResource {
     statusId: string,
     projectId: string,
     params?: StatusUsagesParams,
-  ): Promise<StatusUsagesPage<StatusIssueTypeUsage>> {
+  ): Promise<StatusProjectIssueTypeUsageDTO> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
 
-    const response = await this.transport.request<StatusUsagesPage<StatusIssueTypeUsage>>({
+    const response = await this.transport.request<StatusProjectIssueTypeUsageDTO>({
       method: 'GET',
       path: `${this.baseUrl}/statuses/${encodePathSegment(statusId)}/project/${encodePathSegment(projectId)}/issueTypeUsages`,
       query,
@@ -199,12 +231,12 @@ export class StatusesResource {
   async getProjectUsages(
     statusId: string,
     params?: StatusUsagesParams,
-  ): Promise<StatusUsagesPage<StatusProjectUsage>> {
+  ): Promise<StatusProjectUsageDTO> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
 
-    const response = await this.transport.request<StatusUsagesPage<StatusProjectUsage>>({
+    const response = await this.transport.request<StatusProjectUsageDTO>({
       method: 'GET',
       path: `${this.baseUrl}/statuses/${encodePathSegment(statusId)}/projectUsages`,
       query,
@@ -222,12 +254,12 @@ export class StatusesResource {
   async getWorkflowUsages(
     statusId: string,
     params?: StatusUsagesParams,
-  ): Promise<StatusUsagesPage<StatusWorkflowUsage>> {
+  ): Promise<StatusWorkflowUsageDTO> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
 
-    const response = await this.transport.request<StatusUsagesPage<StatusWorkflowUsage>>({
+    const response = await this.transport.request<StatusWorkflowUsageDTO>({
       method: 'GET',
       path: `${this.baseUrl}/statuses/${encodePathSegment(statusId)}/workflowUsages`,
       query,
