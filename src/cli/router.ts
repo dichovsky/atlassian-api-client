@@ -173,7 +173,6 @@ const GLOBAL_OPTIONS = {
   from: { type: 'string' as const },
   to: { type: 'string' as const },
   // changelog options (B354)
-  'author-ids': { type: 'string' as const },
   'field-ids': { type: 'string' as const },
   // groups/picker + groupuserpicker options (B474, B475)
   exclude: { type: 'string' as const },

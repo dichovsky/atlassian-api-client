@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "4afea78d5aa0f8e2fcb94c24275883ae1c40813c6f33095ed73b2d895193d689",
+  "sourceHash": "8a792ebdc0ab51828c68b07d90cdb8d31ca8663bfec24735bdd3561c1b3f2475",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5493,7 +5493,7 @@
         {
           "name": "parseCommand",
           "kind": "function",
-          "line": 498,
+          "line": 497,
           "exported": true,
           "signature": "export function parseCommand(argv: string[]): ParsedCommand & { options: Record<string, string | boolean | undefined>; }"
         }
