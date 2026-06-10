@@ -221,6 +221,7 @@ export class HttpTransport implements Transport {
       this.authProvider.getHeaders(),
       withJsonBody,
       binaryContentType,
+      options.authorizationOverride,
     );
 
     const timeoutController = new AbortController();

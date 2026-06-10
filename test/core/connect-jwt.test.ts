@@ -208,7 +208,9 @@ describe('createConnectJwtMiddleware', () => {
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     await mw(makeOpts(), next);
 
-    const auth = (captured[0]?.headers as Record<string, string>)?.['Authorization'];
+    // #243: the JWT is set on the trusted `authorizationOverride` channel, not
+    // `headers.Authorization` (which the transport strips as a caller header).
+    const auth = captured[0]?.authorizationOverride;
     expect(auth).toMatch(/^JWT /);
   });
 
@@ -222,8 +224,8 @@ describe('createConnectJwtMiddleware', () => {
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     await mw(makeOpts({ headers: { 'X-Trace': 'abc' } }), next);
 
+    expect(captured[0]?.authorizationOverride).toMatch(/^JWT /);
     const headers = captured[0]?.headers as Record<string, string>;
-    expect(headers?.['Authorization']).toMatch(/^JWT /);
     expect(headers?.['X-Trace']).toBe('abc');
   });
 
@@ -252,7 +254,7 @@ describe('createConnectJwtMiddleware', () => {
     const mw = createConnectJwtMiddleware(BASE_CONFIG);
     await mw(opts, next);
 
-    const auth = (captured[0]?.headers as Record<string, string>)?.['Authorization'] ?? '';
+    const auth = captured[0]?.authorizationOverride ?? '';
     const token = auth.replace('JWT ', '');
     const { payload } = decodeJwt(token);
     const expectedQsh = computeQsh('GET', '/rest/api/3/issue', { expand: 'names' });
