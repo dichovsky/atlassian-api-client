@@ -27,10 +27,10 @@ export class ClassificationLevelsResource {
    * GET /rest/api/3/classification-levels
    */
   async list(): Promise<ClassificationLevel[]> {
-    const response = await this.transport.request<ClassificationLevel[]>({
+    const response = await this.transport.request<{ classifications?: ClassificationLevel[] }>({
       method: 'GET',
       path: `${this.baseUrl}/classification-levels`,
     });
-    return response.data;
+    return response.data.classifications ?? [];
   }
 }

@@ -29,6 +29,11 @@ export interface SecuritySchemesResponse {
   readonly issueSecuritySchemes?: IssueSecurityScheme[];
 }
 
+/** Response from POST /rest/api/3/issuesecurityschemes — the new scheme ID only. */
+export interface CreatedIssueSecurityScheme {
+  readonly id: string;
+}
+
 /** A security level returned by GET /rest/api/3/issuesecurityschemes/level. */
 export interface IssueSecurityLevel {
   readonly description?: string;
@@ -244,11 +249,11 @@ export class IssueSecuritySchemesResource {
    * B540: Create an issue security scheme.
    * POST /rest/api/3/issuesecurityschemes
    */
-  async create(data: CreateIssueSecuritySchemeData): Promise<IssueSecurityScheme> {
+  async create(data: CreateIssueSecuritySchemeData): Promise<CreatedIssueSecurityScheme> {
     const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.levels !== undefined) body['levels'] = data.levels;
-    const response = await this.transport.request<IssueSecurityScheme>({
+    const response = await this.transport.request<CreatedIssueSecurityScheme>({
       method: 'POST',
       path: `${this.baseUrl}/issuesecurityschemes`,
       body,

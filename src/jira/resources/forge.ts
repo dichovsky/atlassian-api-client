@@ -1,25 +1,28 @@
 import type { Transport } from '../../core/types.js';
 
 /**
- * A single panel action to be invoked in bulk.
+ * A single project pin/unpin action for a Forge issue panel.
  *
  * @remarks
- * The `payload` field content is Forge-app-specific; it is passed through as-is
- * to the Forge function and is not validated by the Jira platform.
+ * Each entry pins or unpins the panel identified by the request's `moduleId`
+ * to or from one project.
  */
-export interface ForgePanelAction {
-  /** The ID of the issue the panel action is invoked on. */
-  readonly issueId: string;
-  /** The Forge module key for the panel action. */
-  readonly moduleKey: string;
-  /** App-defined payload forwarded to the Forge function. */
-  readonly payload?: Record<string, unknown>;
+export interface ForgeProjectPinAction {
+  /** The action to perform on the project. */
+  readonly action: 'PIN' | 'UNPIN';
+  /** The project ID or key to pin or unpin the panel to or from. */
+  readonly projectIdOrKey: string;
 }
 
-/** Request body for triggering Forge panel actions in bulk (async). */
-export interface BulkForgeActionData {
-  /** List of panel actions to invoke. */
-  readonly actions: ForgePanelAction[];
+/** Request body for pinning/unpinning a Forge panel across projects in bulk (async). */
+export interface BulkForgePanelPinData {
+  /**
+   * The moduleId of the Forge panel, in the format
+   * `ari:cloud:ecosystem::extension/{app-id}/{environment-id}/static/{module-key}`.
+   */
+  readonly moduleId: string;
+  /** The list of projects to pin or unpin the panel to or from. */
+  readonly projectList: ForgeProjectPinAction[];
 }
 
 /**
@@ -49,14 +52,18 @@ export class ForgeResource {
   ) {}
 
   /**
-   * Trigger Forge panel actions for a batch of issues asynchronously.
-   * Returns a task ID that can be used to poll for completion.
+   * Pin or unpin a Forge issue panel across a batch of projects asynchronously.
+   *
+   * @remarks
+   * This is a project-level operation: the panel identified by `moduleId` is
+   * pinned to or unpinned from each project listed in `projectList`. Returns a
+   * task ID that can be used to poll for completion.
    */
-  async bulkPanelAction(data: BulkForgeActionData): Promise<BulkForgeActionResponse> {
+  async bulkPanelAction(data: BulkForgePanelPinData): Promise<BulkForgeActionResponse> {
     const response = await this.transport.request<BulkForgeActionResponse>({
       method: 'POST',
       path: `${this.baseUrl}/forge/panel/action/bulk/async`,
-      body: data,
+      body: { moduleId: data.moduleId, projectList: data.projectList },
     });
     return response.data;
   }

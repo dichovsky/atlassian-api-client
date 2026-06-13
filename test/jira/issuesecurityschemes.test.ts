@@ -62,13 +62,17 @@ describe('IssueSecuritySchemesResource', () => {
   // ── B540: create ───────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('POSTs with required name', async () => {
-      const created = makeScheme();
-      transport.respondWith(created);
+    it('POSTs with required name and returns the { id } from the 201 response', async () => {
+      // Arrange — spec 201 response is `SecuritySchemeId { id }` only.
+      const created = { id: '10001' };
+      transport.respondWith(created, 201);
 
+      // Act
       const result = await resource.create({ name: 'My Security Scheme' });
 
+      // Assert
       expect(result).toEqual(created);
+      expect(result.id).toBe('10001');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/issuesecurityschemes`,
@@ -77,7 +81,7 @@ describe('IssueSecuritySchemesResource', () => {
     });
 
     it('includes optional description', async () => {
-      transport.respondWith(makeScheme());
+      transport.respondWith({ id: '10001' }, 201);
 
       await resource.create({ name: 'My Scheme', description: 'A description' });
 
@@ -88,7 +92,7 @@ describe('IssueSecuritySchemesResource', () => {
     });
 
     it('includes optional levels', async () => {
-      transport.respondWith(makeScheme());
+      transport.respondWith({ id: '10001' }, 201);
       const levels = [{ name: 'Public', isDefault: true }];
 
       await resource.create({ name: 'My Scheme', levels });
@@ -97,7 +101,7 @@ describe('IssueSecuritySchemesResource', () => {
     });
 
     it('omits description when not provided', async () => {
-      transport.respondWith(makeScheme());
+      transport.respondWith({ id: '10001' }, 201);
 
       await resource.create({ name: 'Minimal' });
 
