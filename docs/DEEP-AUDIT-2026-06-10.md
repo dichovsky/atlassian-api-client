@@ -2,7 +2,7 @@
 
 > Full-repo audit: independent API-coverage re-run (3 layers), bidirectional spec-conformance diff, deep core/CLI review, useless-code adjudication, and documentation content audit. Findings are backlog-only (no code fixes in this wave); documentation reorganization ships separately (Phase 3). Every spec claim cites the pinned snapshots below.
 >
-> **Status: DRAFT — layers 1, 3, and adjudications are FINAL; conformance (layer 2), core review, dead code, and docs sections land as their workflows complete.**
+> **Status: FINAL — all layers complete.** Layer 1 (coverage), Layer 2 (conformance, 113/113 modules), Layer 3 (reachability, 113/113 modules), core/CLI deep review, useless-code, and documentation audit are done. CRITICAL/HIGH findings were adversarially verified (independent skeptic agents trying to refute each); refuted findings are excluded from the counts below.
 
 ## 0. Inputs and denominators
 
@@ -70,18 +70,118 @@ Four raw violations from run 1 were adjudicated in the main session:
 
 Side observation (not a violation): `VersionsResource.listForBlogPost/getForBlogPost` duplicate `BlogPostsResource` surfaces — intentional dual-surface pattern; do not unify without explicit decision.
 
-## 4. Layer 2 — bidirectional spec conformance (IN PROGRESS)
+## 4. Layer 2 — bidirectional spec conformance (FINAL)
 
-Per-module field-level diff (wire params/serialization/path/verb/body, pagination, request & response types) of all 113 modules vs the pinned specs, with adversarial verification of CRITICAL/HIGH findings. Early confirmed findings beyond F1/F2:
+Per-module field-level diff of all **113/113 modules** vs the pinned specs (wire params/serialization/path/verb/body, pagination flavor, request & response types), each CRITICAL/HIGH adversarially verified by independent skeptic agents.
 
-- **`app.upsertProperty` (Confluence)** — CRITICAL (pending verification): spec PUT `/app/properties/{propertyKey}` responses 200/201 are **bodyless**; method declares and returns `Promise<AppProperty>` → `response.data` is `undefined` at runtime. Also MEDIUM: `AppProperty` declares fictional `id?`/`version?` (spec: `{key, value}` only).
-- **`attachments` `status` filter (Confluence)** — HIGH: spec `status` is `type: array` (form/explode → repeated params); `statusParam()` joins CSV → multi-status filters silently return wrong sets. Same class as the Jira repeated-param holdouts (PR #222 lineage).
-- Full module-by-module results land here when the conformance workflow completes.
+**Totals: 707 findings — 10 CRITICAL, 139 HIGH, 471 MEDIUM, 87 LOW.** Of the 149 CRITICAL/HIGH, **146 verified, 3 refuted, 0 left unverified.** Dedup: 124 new, 25 already tracked by open PRs #249/#250 (return-shape + body conformance) or the backlog. The MEDIUM tier is dominated by response-type drift (declared interfaces vs spec schemas — fields that read `undefined` at runtime but don't corrupt requests); the CRITICAL/HIGH tier is where bytes on the wire are wrong.
 
-## 5. Core/CLI deep review, useless code, documentation audit (IN PROGRESS)
+The 3 refuted: `settings.setColumns` content-type (duplicate framing of the upheld body-shape finding); `status.untranslatedName` (verifier found the field is legitimately reachable); `workflows TransitionRuleUpdateItem.key` (spec marks `key` `readOnly:true` → correctly omitted from request bodies — a sharp catch).
 
-Sections land when the core-review workflow completes: per-file review of `src/core/*` (23 files) and `src/cli/*` (incl. jira.ts in 3 chunks), ts-prune adjudication (1,257 hard candidates), test-scaffolding/dependency sweep, and 4-agent docs content audit (skill vs CLI, README/examples, ARCHITECTURE drift, docs inventory for the Phase-3 reorg).
+### 4a. Verified CRITICAL (9 distinct — every call fails or data is corrupted)
+
+| Module | Defect | dedup |
+| --- | --- | --- |
+| `jira/app.ts:195` | `updateFieldContextConfiguration` sends wrong body shape — every call fails | new |
+| `jira/forge.ts:20` | request body shape entirely wrong — required `moduleId`/`projectList` never sent | PR #249 |
+| `jira/latest.ts:19` | request body sends worklog-create fields; spec expects `issueId`+`worklogId` lookup pairs | new |
+| `jira/latest.ts:24` | response type `BulkWorklogResponse` ≠ spec `BulkWorklogKeyResponseBean` (wrong items, fabricated `errors`) | new |
+| `jira/redact.ts:5` | `start()` sends fictional `{jql, fieldIds}`; spec requires `{redactions: SingleRedactionRequest[]}` | PR #249 |
+| `jira/service-registry.ts:38` | required query param `serviceIds` never sent → **every call 400s** | new |
+| `jira/statuses.ts:102` | `list()` sends no required `id` param → always 400 (wrong endpoint; bulk-list is `/status`) | new |
+| `jira/statuses.ts:143` | `bulkCreate()` omits required top-level `scope` → 400 | PR #250 |
+| `jira/statuses.ts:184` | `get*Usages()` wrong envelope — `.values` nested one level deeper, always `undefined` | PR #250 |
+
+Plus the two earlier-flagged Confluence CRITICALs are reclassified after verification: **`app.upsertProperty`** (bodyless PUT typed `Promise<AppProperty>` → `undefined` at runtime) verified at **HIGH** (typed-consumer impact, no data loss); **`admin-key`** request/response remain HIGH (F2).
+
+### 4b. Verified HIGH that change bytes on the wire (36)
+
+These break real calls on some inputs (not just type-layer drift). Highlights — full list in the workflow artifacts:
+
+- **Repeated-array-param holdouts** (the recurring class, PR #222 lineage): `projects.list status` CSV-not-repeated; `service-registry.serviceIds`; `tasks` 7 array params serialized as scalars; `attachments.status` (Confluence, F-adjacent). These silently return wrong result sets.
+- **Wrong content-type / body encoding:** `settings.setColumns` sends JSON object-array where spec requires form-data string array; `plans` JSON-patch endpoints send `application/json` not `application/json-patch+json`; `issuetype.loadAvatar` sends multipart where spec wants raw binary.
+- **`readOnly` fields sent in request bodies:** `version` (`userStartDate`/`userReleaseDate`), `version.createRelatedWork`/`updateRelatedWork` (`issueId`).
+- **Fictional params/fields silently dropped or rejected:** `priorities.delete replaceWith`, `priorities.move before` (spec: `position`), `resolution.moveResolutions before`, `exists-by-properties entityType/entityId`, `users.searchQueryKey maxResults` (spec: `maxResult`), `changelog` `filterByFieldId`/`startAt`/`filterByAuthorAccountId` against `additionalProperties:false` → 400.
+- **Path-traversal guard bypass:** `epic.ts` (5 agile endpoints), `linked-workspaces.getSecurity`, `vulnerability` use `encodeURIComponent` instead of the house `encodePathSegment` (which blocks dot-segments).
+- **Pagination flavor mismatch:** `changelog.bulkFetch` offset-wraps a cursor endpoint; `data-policy.getPolicies` offset-paginates a non-paginated endpoint.
+
+### 4c. Per-module CRITICAL/HIGH distribution (58 modules carry ≥1)
+
+The remaining 55 modules are clean or carry only MEDIUM/LOW type-drift.
+
+| module | CRIT | HIGH | MED | LOW |
+| --- | --- | --- | --- | --- |
+| `statuses.ts` | 3 | 3 | 3 | |
+| `latest.ts` | 2 | 1 | 1 | |
+| `app.ts` | 1 | 8 | 7 | 1 |
+| `service-registry.ts` | 1 | 4 | 1 | |
+| `redact.ts` | 1 | 2 | | 1 |
+| `forge.ts` | 1 | 1 | | 1 |
+| `settings.ts` | 1 | 1 | | |
+| `projects.ts` | | 7 | 9 | 1 |
+| `changelog.ts` | | 6 | 2 | |
+| `issues.ts` | | 6 | 10 | 2 |
+| `expression.ts` | | 5 | 6 | 1 |
+| `post-incident-reviews.ts` | | 5 | 2 | |
+| `resolution.ts` | | 5 | 6 | |
+| `dashboards.ts` | | 4 | 10 | 2 |
+| `data-policy.ts` | | 4 | 1 | |
+| `priorities.ts` | | 4 | 6 | |
+| `boards.ts` | | 3 | 12 | 2 |
+| `classification-levels.ts` | | 3 | 4 | |
+| `config.ts` | | 3 | 4 | |
+| `group-user-picker.ts` | | 3 | 7 | |
+| `remote-link.ts` | | 3 | 5 | |
+| `tasks.ts` | | 3 | 4 | |
+| `webhooks.ts` | | 3 | 4 | 1 |
+| `workflows.ts` | | 3 | 14 | 4 |
+| … 34 more modules | | 1–2 each | | |
+
+## 5. Core/CLI deep review, useless code, documentation audit (FINAL)
+
+47 review scopes (per-file `src/core/*`, `src/cli/*` incl. jira.ts in 3 chunks, idiom sweeps over all resources, client wiring) + ts-prune adjudication + test/dep sweep + 4-agent docs audit. **293 findings — 16 CRITICAL, 56 HIGH, 112 MEDIUM, 109 LOW.** CRITICAL/HIGH adversarially verified: **64 upheld, 8 refuted** (refuted: a claimed Bearer-plaintext leak, a non-existent concurrent-401 race, a timeout-disambiguation race, a scopes-positional misparse — all shown unreachable).
+
+### 5a. Two clusters independently reconfirm open PRs
+
+- **Auth-middleware credentials never reach the wire** (`core/connect-jwt.ts`, `core/oauth.ts`, `core/request.ts`) — **~10 independent reviewers** converged on it: `buildHeaders`/`FORBIDDEN_CALLER_HEADERS` strips the `Authorization` the OAuth-refresh and Connect-JWT middlewares set, so a refreshed/JWT token is silently dropped and the original (or none) goes out. **Open [PR #246](https://github.com/dichovsky/atlassian-api-client/pull/246) fixes this; unfixed on HEAD.** Multiple CRITICAL verdicts.
+- **Pagination short-page truncation** (`core/pagination.ts`) — `paginateOffset`/`paginateSearch` stop on a short page even when `total` says rows remain → silent data loss. **Open [PR #247](https://github.com/dichovsky/atlassian-api-client/pull/247) fixes this.** Multiple HIGH verdicts.
+
+### 5b. Verified NEW core findings (not covered by any open PR)
+
+- **`computeQsh` drops `appendRepeatedParams` query params** (`core/connect-jwt.ts`) — array params built into the *path* by the house helper are invisible to QSH computation → Connect-JWT requests with repeated params get **server-rejected QSH**. Two house patterns interacting badly; HIGH.
+- **Wrong Jira Software OAuth scope strings** (`core/scopes.ts`) — board scope `read:jira-work` ≠ `read:board-scope:jira-software`; sprint scope `manage:jira-project` ≠ `write/delete:sprint:jira-software`. HIGH.
+- **`batch` middleware dedupes non-idempotent mutations** (`core/batch.ts`) — no method guard (POST/PUT/PATCH/DELETE coalesced); `formData`/`binaryBody`/`responseType` excluded from the dedup key → concurrent distinct requests collapse. HIGH.
+- **`openapi.ts` `$ref` code-injection + invalid-TS edges** (partly B025) — newline in a `$ref` last segment escapes the type context; empty `allOf`/`oneOf`/`anyOf` emit `export type X = ;`. HIGH.
+- **`circuit-breaker.ts`** — `ResponseTooLargeError` on a 5xx isn't a qualifying failure → breaker never trips for body-cap failures. HIGH.
+- **`transport.ts`** — `getHeaders()` called twice per request; constructor-hashing path can diverge from the request path. HIGH.
+- **`response.ts`** — malformed JSON on a 2xx throws a raw `SyntaxError` outside the error taxonomy. HIGH.
+- **CLI cluster:** `screens --ids` / `context-*` actions pass `NaN` query params from unguarded `Number()`; `printOutput(undefined, 'json')` emits the bare word `undefined` (invalid JSON); `resolveAuthType` is case-sensitive (`Bearer`→basic fallback); `router` negative numeric flags throw `TypeError`; `runCli` never catches parseArgs/credential errors (unhandled rejection); **`blog-posts list` flags `cursor`/`title`/`status`/`sort`/`body-format` are unwired → pagination broken**.
+
+### 5c. Useless code (minimal — codebase is lean)
+
+- **1 dead-internal:** `src/confluence/resources/index.ts` — unreachable partial barrel, zero consumers (removable now, MEDIUM).
+- **1 stale config ref:** `bench/` directory referenced in `tsconfig.json` + `vitest.config.ts` but absent.
+- **7 unused-public exports** tagged `requires-v3` (won't remove pre-major): root-vs-core barrel asymmetries (`HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export) + all 26 Confluence resource classes exported from `confluence/index.ts` but absent from the root public surface. `ts-prune` had ~6 false positives (re-exported via domain barrels) — adjudicated, not filed.
+
+### 5d. Documentation content errors (for the Phase-3 reorg)
+
+13 HIGH/MEDIUM doc-vs-code mismatches to fold into the doc PRs: blog-posts `--cursor` documented but dropped; `comments --blog-post-id` documented but ignored; `labels --cursor` absent from handler; boolean flags (`--validate-query`, `--send-notification`, `--done`) documented with explicit `false` values they don't accept; README `contentProperties` wrong method names; ARCHITECTURE.md drift (footer/inline-comment handler attribution, rate-limiter reactive-429 description). **Rule:** where a doc matches today's (buggy-vs-spec) code, the doc is correct *for now* — only doc-vs-code mismatches are filed here; doc-vs-spec corrections ride the code-fix B-items.
+
+## 6. Headline numbers
+
+| Layer | Scope | Result |
+| --- | --- | --- |
+| 1 — coverage | 942 ops | 0 new gaps; 2 blocked (B1002/B1006); 10 deprecated-skip confirmed |
+| 2 — conformance | 113/113 modules | 707 findings (9 CRIT verified, 36 HIGH wire-affecting, rest type-drift) |
+| 3 — reachability | 113/113 modules | 0 code parity violations; 1 doc gap (dashboards) |
+| Core/CLI review | 47 scopes | 64 verified CRIT/HIGH; 2 reconfirm PRs #246/#247 |
+| Useless code | full repo | 1 dead-internal + 1 stale ref + 7 v3-tagged exports |
+| Docs | skill + human | 13 doc-vs-code mismatches + dashboards table gap |
+
+**The single most important finding is the auth-middleware credential-stripping cluster (§5a, PR #246):** OAuth-refresh and Connect-JWT auth modes are non-functional on HEAD. **Second: the 9 Layer-2 CRITICALs** (§4a) where every call to the method fails. Phase 2 will severity-gate all of the above into BACKLOG.md (CRITICAL/HIGH as individual B-items; MEDIUM/LOW as per-module rollups referencing this report).
 
 ## Appendix A — extraction artifacts
 
 Extractor: `/tmp/audit/extract.mjs` (session artifact; reproducible). Outputs: `spec-ops.json` (942), `sdk-calls.json` (949 resolved calls), `gap-candidates.json` (12: 10 deprecated + B1002/B1006), `sdk-unmatched.json` (1: F1), `jsdoc-only.json` (0), `resource-map.json` (113-module fan-out map). Legacy-extractor cross-check: candidate sets agree modulo the legacy tool's 8 JSIS false positives.
+
+Audit workflow results (session artifacts): `conformance-final.json` (707 findings, verdicts merged), `core-review-full.json` (293 findings, 64 verified), `reachability-final.md`, `verify-tail.json` (36 tail verdicts). Verification method: each CRITICAL/HIGH finding handed to independent skeptic agent(s) instructed to refute it against the pinned spec + code + open-PR diffs; majority-refute drops the finding. 13 findings refuted across all layers.
