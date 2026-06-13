@@ -839,7 +839,7 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
       const commentListParams = {
         limit: asPositiveInt(opts['limit'], '--limit'),
         cursor: asString(opts['cursor']),
-        'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
       };
       if (commentType === 'inline') {
         return client.comments.listInline(commentPageId, commentListParams);
