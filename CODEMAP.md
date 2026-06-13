@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "ff50b6d3412a2673fac06f33c3b00908914f8b8e59fbcff7b823fca60e6bfd0e",
+  "sourceHash": "3c69c84491c5f4bd497d37451815be34f57e8e9d3bef6cc14f414bd549f9a89e",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3519,7 +3519,7 @@
       "name": "detectRequiredScopes",
       "kind": "function",
       "file": "src/core/scopes.ts",
-      "line": 713,
+      "line": 715,
       "signature": "export function detectRequiredScopes(operations: readonly string[]): AtlassianScope[]",
       "jsdoc": "Returns the deduplicated, sorted list of OAuth 2.0 scopes required for the given operations. @example detectRequiredScopes(['jira.issues.get', 'confluence.pages.create']) // → ['read…"
     },
@@ -3559,7 +3559,7 @@
       "name": "listKnownOperations",
       "kind": "function",
       "file": "src/core/scopes.ts",
-      "line": 732,
+      "line": 734,
       "signature": "export function listKnownOperations(): readonly string[]",
       "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
     },
@@ -14523,7 +14523,7 @@
         {
           "name": "detectRequiredScopes",
           "kind": "function",
-          "line": 713,
+          "line": 715,
           "exported": true,
           "signature": "export function detectRequiredScopes(operations: readonly string[]): AtlassianScope[]",
           "jsdoc": "Returns the deduplicated, sorted list of OAuth 2.0 scopes required for the given operations. @example detectRequiredScopes(['jira.issues.get', 'confluence.pages.create']) // → ['read…"
@@ -14531,7 +14531,7 @@
         {
           "name": "listKnownOperations",
           "kind": "function",
-          "line": 732,
+          "line": 734,
           "exported": true,
           "signature": "export function listKnownOperations(): readonly string[]",
           "jsdoc": "Returns all registered operation names in alphabetical order. Useful for validation tooling and documentation generation."
@@ -14539,21 +14539,21 @@
         {
           "name": "KNOWN_SCOPE_CATALOG",
           "kind": "variable",
-          "line": 741,
+          "line": 743,
           "signature": "const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = { 'read:page:confluence': true, 'write:page:confluence': true,…",
           "jsdoc": "Exhaustive catalog of every {@link AtlassianScope}. Typed as `Record<AtlassianScope, true>` so adding a member to the union WITHOUT adding it here is a compile error — that is what actually keeps the two in sync."
         },
         {
           "name": "KNOWN_SCOPES",
           "kind": "variable",
-          "line": 838,
+          "line": 840,
           "signature": "const KNOWN_SCOPES: ReadonlySet<AtlassianScope> = new Set( Object.keys(KNOWN_SCOPE_CATALOG) as AtlassianScope[], );",
           "jsdoc": "The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings."
         },
         {
           "name": "ScopeValidationResult",
           "kind": "interface",
-          "line": 843,
+          "line": 845,
           "exported": true,
           "signature": "export interface ScopeValidationResult { readonly valid: readonly AtlassianScope[]; readonly unknown: readonly string[];…",
           "jsdoc": "Result of validating a set of scope strings."
@@ -14561,7 +14561,7 @@
         {
           "name": "validateScopes",
           "kind": "function",
-          "line": 864,
+          "line": 866,
           "exported": true,
           "signature": "export function validateScopes(scopes: readonly string[]): ScopeValidationResult",
           "jsdoc": "Validates a list of scope strings against the known Atlassian OAuth 2.0 scope catalog. Returns two partitions: `valid` (recognised) and `unknown` (not in the catalog). Order within each partition follows the input order. @example validateScopes(['read:issue:jira', 'write:made-up']) // → { valid: ['read:issue:…"
@@ -14569,7 +14569,7 @@
         {
           "name": "listKnownScopes",
           "kind": "function",
-          "line": 881,
+          "line": 883,
           "exported": true,
           "signature": "export function listKnownScopes(): readonly AtlassianScope[]",
           "jsdoc": "Returns all known Atlassian OAuth 2.0 scope strings in alphabetical order. Useful for listing available scopes in help output and validation tooling."

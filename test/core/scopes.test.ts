@@ -283,6 +283,9 @@ describe('detectRequiredScopes', () => {
     const createScopes = detectRequiredScopes(['jira.filters.create']);
     expect(createScopes).toContain('write:filter:jira');
     expect(createScopes).toContain('read:filter:jira');
+    // POST /rest/api/3/filter Beta omits read:jql:jira (present on GET/search +
+    // PUT, absent on create) — guard against re-inheriting the read-set's jql scope.
+    expect(createScopes).not.toContain('read:jql:jira');
 
     const deleteScopes = detectRequiredScopes(['jira.filters.delete']);
     expect(deleteScopes).toEqual(['delete:filter:jira']);
@@ -355,6 +358,10 @@ describe('detectRequiredScopes', () => {
     expect(uploadScopes).toContain('write:attachment:jira');
     expect(uploadScopes).toContain('read:attachment:jira');
     expect(uploadScopes).not.toContain('write:jira-work');
+
+    const deleteScopes = detectRequiredScopes(['jira.issueAttachments.delete']);
+    // DELETE /rest/api/3/attachment/{id} Beta: delete:attachment:jira
+    expect(deleteScopes).toEqual(['delete:attachment:jira']);
   });
 
   it('handles Jira Platform projects granular scopes', () => {
@@ -594,5 +601,18 @@ describe('listKnownScopes', () => {
 
   it('returns an array (readonly at the type level)', () => {
     expect(Array.isArray(listKnownScopes())).toBe(true);
+  });
+
+  it('has no orphan members — every catalog scope is required by some operation', () => {
+    // Guards against declaring a scope in the AtlassianScope union without wiring
+    // it into OPERATION_SCOPES (e.g. delete:attachment:jira shipped unmapped).
+    const used = new Set<string>();
+    for (const op of listKnownOperations()) {
+      for (const scope of detectRequiredScopes([op])) {
+        used.add(scope);
+      }
+    }
+    const orphans = listKnownScopes().filter((scope) => !used.has(scope));
+    expect(orphans).toEqual([]);
   });
 });

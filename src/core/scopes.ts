@@ -401,6 +401,8 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   // POST /rest/api/3/issue/{issueIdOrKey}/attachments
   //   x-atlassian-oauth2-scopes Beta: read:user:jira, write:attachment:jira,
   //     read:attachment:jira, read:avatar:jira
+  // DELETE /rest/api/3/attachment/{id}
+  //   x-atlassian-oauth2-scopes Beta: delete:attachment:jira
   'jira.issueAttachments.list': [
     'read:avatar:jira',
     'read:field-configuration:jira',
@@ -425,6 +427,7 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
     'read:user:jira',
     'write:attachment:jira',
   ],
+  'jira.issueAttachments.delete': ['delete:attachment:jira'],
 
   // ── Jira — Boards & Sprints ──────────────────────────────────────────────────
   // GET /rest/agile/1.0/board              → OAuth2: ['read:board-scope:jira-software','read:project:jira']
@@ -527,9 +530,9 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   //     read:avatar:jira, read:issue-type-hierarchy:jira
   // GET    /rest/api/3/filter/{id}  (same Beta scopes)
   // POST   /rest/api/3/filter
-  //   x-atlassian-oauth2-scopes Beta: (all of the above) + write:filter:jira +
-  //     read:issue-type:jira, read:project-category:jira, read:project-version:jira,
-  //     read:project.component:jira
+  //   x-atlassian-oauth2-scopes Beta: the read:filter:jira list above EXCEPT
+  //     read:jql:jira, + write:filter:jira + read:issue-type:jira,
+  //     read:project-category:jira, read:project-version:jira, read:project.component:jira
   // PUT    /rest/api/3/filter/{id}
   //   x-atlassian-oauth2-scopes Beta: write:filter:jira + the read:filter:jira list
   // DELETE /rest/api/3/filter/{id}
@@ -563,7 +566,6 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
     'read:group:jira',
     'read:issue-type-hierarchy:jira',
     'read:issue-type:jira',
-    'read:jql:jira',
     'read:project-category:jira',
     'read:project-role:jira',
     'read:project-version:jira',

@@ -32,8 +32,8 @@ EXAMPLES:
   atlas jira search --jql "project = PROJ"
   atlas confluence spaces list --base-url https://jira.internal.example --allowed-hosts jira.internal.example
   atlas install-skill --local
-  atlas scopes validate read:jira-work write:jira-work
-  atlas scopes validate read:jira-work write:made-up
+  atlas scopes validate read:issue:jira write:issue:jira
+  atlas scopes validate read:issue:jira write:made-up
 `;
 
 const SCOPES_HELP = `atlas scopes - Atlassian OAuth 2.0 scope utilities
@@ -56,9 +56,9 @@ EXIT CODES:
   1   One or more scope strings are unknown, or usage error
 
 EXAMPLES:
-  atlas scopes validate read:jira-work
-  atlas scopes validate read:jira-work write:jira-work manage:jira-project
-  atlas scopes validate read:jira-work write:made-up
+  atlas scopes validate read:issue:jira
+  atlas scopes validate read:issue:jira write:issue:jira read:project:jira
+  atlas scopes validate read:issue:jira write:made-up
 `;
 
 const INSTALL_SKILL_HELP = `atlas install-skill - Install the bundled Claude Code skill
