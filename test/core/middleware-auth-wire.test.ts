@@ -97,4 +97,29 @@ describe('#243 — auth middleware credentials reach the wire', () => {
     // The caller cannot override the configured auth via a smuggled header.
     expect(sent).toBe('Bearer CONFIG_TOKEN');
   });
+
+  it('caller-supplied authorizationOverride is stripped at the boundary (#246 P1)', async () => {
+    // authorizationOverride is a trusted middleware-only channel. A direct
+    // transport caller must not be able to set it — otherwise it becomes a
+    // second bypass of the B029 guard, overriding the configured auth without
+    // a forbidden header. The boundary strip in request() must drop it so the
+    // configured auth still wins on the wire.
+    let sent = '(none)';
+    const apiFetch = (async (_url: string | URL, init?: RequestInit) => {
+      sent = (init?.headers as Record<string, string>)?.Authorization ?? '(none)';
+      return new Response('{"ok":true}', {
+        status: 200,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+      });
+    }) as unknown as typeof fetch;
+
+    const config = baseConfig(apiFetch, []);
+    await new HttpTransport(config).request({
+      method: 'GET',
+      path: '/myself',
+      authorizationOverride: 'Bearer ATTACKER_OVERRIDE',
+    });
+
+    expect(sent).toBe('Bearer CONFIG_TOKEN');
+  });
 });

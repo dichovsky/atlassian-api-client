@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "fa8f5a3cf46c161dd84a3d21f627f160a987df7ca62e55f5f6dda859b9b35f63",
+  "sourceHash": "09eeaa25de73591ae5652bce4835bc86e9f447f3088e52a4c7fb4f5347c54348",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1494,7 +1494,7 @@
       "name": "HttpTransport",
       "kind": "class",
       "file": "src/core/transport.ts",
-      "line": 37,
+      "line": 56,
       "signature": "export class HttpTransport implements Transport",
       "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…"
     },
@@ -14573,9 +14573,16 @@
       "path": "src/core/transport.ts",
       "symbols": [
         {
+          "name": "stripCallerAuthorizationOverride",
+          "kind": "function",
+          "line": 26,
+          "signature": "function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions",
+          "jsdoc": "Drop a caller-supplied `authorizationOverride` at the request boundary."
+        },
+        {
           "name": "HttpTransport",
           "kind": "class",
-          "line": 37,
+          "line": 56,
           "exported": true,
           "signature": "export class HttpTransport implements Transport",
           "jsdoc": "HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support. @example ```ts import { HttpTransport, resolveConfig } from 'atlassian-api-client'; const…",
@@ -14583,86 +14590,86 @@
             {
               "name": "config",
               "kind": "property",
-              "line": 38
+              "line": 57
             },
             {
               "name": "authProvider",
               "kind": "property",
-              "line": 39
+              "line": 58
             },
             {
               "name": "authIdentity",
               "kind": "property",
-              "line": 47
+              "line": 66
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 48
+              "line": 67
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 56
+              "line": 75
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 64
+              "line": 83
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 65
+              "line": 84
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 106
+              "line": 125
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 186
+              "line": 214
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 206
+              "line": 234
             }
           ]
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 317,
+          "line": 345,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 324,
+          "line": 352,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 332,
+          "line": 360,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 358,
+          "line": 386,
           "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 377,
+          "line": 405,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

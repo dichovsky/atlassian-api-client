@@ -11,6 +11,25 @@ import { buildFetchBody, buildHeaders, buildUrl, sanitizePathForLogging } from '
 import { buildApiResponse, parseResponseBody, safeParseBody } from './response.js';
 
 /**
+ * Drop a caller-supplied `authorizationOverride` at the request boundary.
+ *
+ * `authorizationOverride` is a trusted, middleware-only channel: the
+ * OAuth-refresh and Connect-JWT middleware set it IN the chain so a rotated
+ * token reaches the wire (#243). It is part of the public `RequestOptions`
+ * shape only because middleware passes options through `next()`. A direct
+ * `transport.request()` caller must never set it — doing so would bypass the
+ * B029 guard that strips caller `Authorization` and let user code override the
+ * configured auth. Returns `options` unchanged (same reference) when the field
+ * is absent, otherwise a new object without it. Middleware adds its own
+ * override after this point, so the credential path on the wire is unchanged.
+ */
+function stripCallerAuthorizationOverride(options: RequestOptions): RequestOptions {
+  if (options.authorizationOverride === undefined) return options;
+  const { authorizationOverride: _stripped, ...rest } = options;
+  return rest;
+}
+
+/**
  * HTTP transport using native `fetch` with auth, retry, rate-limit, and timeout support.
  *
  * Wraps the configured `fetch` with automatic Authorization header injection
@@ -115,7 +134,16 @@ export class HttpTransport implements Transport {
     //
     // `executeFetch` still merges the auth provider's headers via
     // `buildHeaders`, so the credential path on the wire is unchanged.
-    let augmentedOptions = this.injectAuthIdentity(options);
+    //
+    // Strip any caller-supplied `authorizationOverride` at the request
+    // boundary. It is a trusted, middleware-only channel — the OAuth-refresh
+    // and Connect-JWT middleware set it IN the chain (after this point) so a
+    // rotated token reaches the wire. A direct `transport.request()` caller
+    // must NOT be able to set it: otherwise it becomes a new bypass of the
+    // B029 guard (which strips caller `Authorization`) and could override the
+    // configured auth. Mirrors the `authIdentity` boundary strip below.
+    let augmentedOptions = stripCallerAuthorizationOverride(options);
+    augmentedOptions = this.injectAuthIdentity(augmentedOptions);
 
     // B011: outbound request-id injection (opt-in). The id is generated ONCE
     // here — before executeWithRetry — so all retry attempts carry the SAME
