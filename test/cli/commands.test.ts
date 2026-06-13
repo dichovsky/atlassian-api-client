@@ -16263,11 +16263,12 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('Missing required argument: fieldIdOrKey');
     });
 
-    it('app update-field-context-configuration passes parsed configuration and schema', async () => {
+    it('app update-field-context-configuration sends { configurations: [{ id, configuration, schema }] } (B1045)', async () => {
       jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
 
       const result = await executeJiraCommand(
         cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          id: '10000',
           configuration: '{"foo":true}',
           schema: '{"type":"object"}',
         }),
@@ -16277,15 +16278,20 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ updated: true });
       expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
         'customfield_10042',
-        { configuration: { foo: true }, schema: { type: 'object' } },
+        {
+          configurations: [
+            { id: '10000', configuration: { foo: true }, schema: { type: 'object' } },
+          ],
+        },
       );
     });
 
-    it('app update-field-context-configuration accepts just configuration', async () => {
+    it('app update-field-context-configuration accepts just --id + --configuration', async () => {
       jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
 
       await executeJiraCommand(
         cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          id: '10000',
           configuration: '{"foo":1}',
         }),
         GLOBALS,
@@ -16293,15 +16299,18 @@ describe('executeJiraCommand', () => {
 
       expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
         'customfield_10042',
-        { configuration: { foo: 1 } },
+        {
+          configurations: [{ id: '10000', configuration: { foo: 1 } }],
+        },
       );
     });
 
-    it('app update-field-context-configuration accepts just schema', async () => {
+    it('app update-field-context-configuration accepts just --id + --schema', async () => {
       jiraAppMock.updateFieldContextConfiguration.mockResolvedValue(undefined);
 
       await executeJiraCommand(
         cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+          id: '10000',
           schema: '{"type":"string"}',
         }),
         GLOBALS,
@@ -16309,25 +16318,28 @@ describe('executeJiraCommand', () => {
 
       expect(jiraAppMock.updateFieldContextConfiguration).toHaveBeenCalledWith(
         'customfield_10042',
-        { schema: { type: 'string' } },
+        {
+          configurations: [{ id: '10000', schema: { type: 'string' } }],
+        },
       );
     });
 
-    it('app update-field-context-configuration rejects empty body', async () => {
+    it('app update-field-context-configuration rejects a missing --id', async () => {
       await expect(
         executeJiraCommand(
-          cmd('app', 'update-field-context-configuration', ['customfield_10042']),
+          cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+            configuration: '{"foo":true}',
+          }),
           GLOBALS,
         ),
-      ).rejects.toThrow(
-        'update-field-context-configuration requires at least one of: --configuration, --schema',
-      );
+      ).rejects.toThrow('Missing required option: --id');
     });
 
     it('app update-field-context-configuration rejects invalid configuration JSON', async () => {
       await expect(
         executeJiraCommand(
           cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+            id: '10000',
             configuration: 'not-json',
           }),
           GLOBALS,
@@ -16339,6 +16351,7 @@ describe('executeJiraCommand', () => {
       await expect(
         executeJiraCommand(
           cmd('app', 'update-field-context-configuration', ['customfield_10042'], {
+            id: '10000',
             schema: '{not-json',
           }),
           GLOBALS,

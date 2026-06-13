@@ -2821,29 +2821,28 @@ async function executeApp(client: JiraClient, cmd: ParsedCommand): Promise<unkno
       );
     case 'update-field-context-configuration': {
       const fieldIdOrKey = requireArg(cmd.positionalArgs[0], 'fieldIdOrKey');
-      const data: { configuration?: unknown; schema?: unknown } = {};
+      // The spec body is { configurations: [{ id, configuration?, schema? }] };
+      // `id` (the configuration ID) is required. Build the single-entry array the
+      // CLI exposes from --id + --configuration/--schema.
+      const id = requireOpt(opts['id'], '--id');
+      const entry: { id: string; configuration?: unknown; schema?: unknown } = { id };
       const configurationRaw = asString(opts['configuration']);
       const schemaRaw = asString(opts['schema']);
       if (configurationRaw !== undefined) {
         try {
-          data.configuration = JSON.parse(configurationRaw);
+          entry.configuration = JSON.parse(configurationRaw);
         } catch {
           throw new Error('--configuration must be valid JSON');
         }
       }
       if (schemaRaw !== undefined) {
         try {
-          data.schema = JSON.parse(schemaRaw);
+          entry.schema = JSON.parse(schemaRaw);
         } catch {
           throw new Error('--schema must be valid JSON');
         }
       }
-      if (Object.keys(data).length === 0) {
-        throw new Error(
-          'update-field-context-configuration requires at least one of: --configuration, --schema',
-        );
-      }
-      await client.app.updateFieldContextConfiguration(fieldIdOrKey, data);
+      await client.app.updateFieldContextConfiguration(fieldIdOrKey, { configurations: [entry] });
       return { updated: true };
     }
     case 'update-field-value': {

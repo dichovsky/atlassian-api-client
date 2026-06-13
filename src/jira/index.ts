@@ -556,6 +556,7 @@ export type {
 export { ExistsByPropertiesResource } from './resources/exists-by-properties.js';
 export type {
   FieldContextConfiguration,
+  FieldContextConfigurationUpdate,
   UpdateFieldContextConfigurationData,
   FieldValueUpdate,
   UpdateFieldValueData,

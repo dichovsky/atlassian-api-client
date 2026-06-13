@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AppResource } from '../../src/jira/resources/app.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const API_BASE = 'https://test.atlassian.net/rest/api/3';
 const CONNECT_BASE = 'https://test.atlassian.net/rest/atlassian-connect/1';
@@ -49,28 +50,39 @@ describe('AppResource', () => {
   });
 
   describe('updateFieldContextConfiguration()', () => {
-    it('calls PUT with the body and returns void', async () => {
+    it('sends the spec body { configurations: [{ id, ... }] } and returns void (B1045)', async () => {
       transport.respondWith(undefined, 204);
 
       const result = await app.updateFieldContextConfiguration('customfield_10042', {
-        configuration: { foo: true },
-        schema: { type: 'object' },
+        configurations: [{ id: '10000', configuration: { foo: true }, schema: { type: 'object' } }],
       });
 
       expect(result).toBeUndefined();
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${API_BASE}/app/field/customfield_10042/context/configuration`,
-        body: { configuration: { foo: true }, schema: { type: 'object' } },
+        // Regression: the old code sent a flat { configuration, schema } body,
+        // omitting the required `configurations` wrapper → server 400.
+        body: {
+          configurations: [
+            { id: '10000', configuration: { foo: true }, schema: { type: 'object' } },
+          ],
+        },
       });
     });
 
-    it('forwards an empty body unchanged', async () => {
-      transport.respondWith(undefined, 204);
+    it('throws ValidationError when configurations is empty', async () => {
+      await expect(
+        app.updateFieldContextConfiguration('customfield_10042', { configurations: [] }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    });
 
-      await app.updateFieldContextConfiguration('customfield_10042', {});
-
-      expect(transport.lastCall?.options.body).toEqual({});
+    it('throws ValidationError when a configuration has no id', async () => {
+      await expect(
+        app.updateFieldContextConfiguration('customfield_10042', {
+          configurations: [{ id: '' }],
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
     });
   });
 
