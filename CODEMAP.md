@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a82a9f6b58cfaaa891b29f3d4a8e6ed55d38e90717d8a7731ba76aa9dab99905",
+  "sourceHash": "ded76e8b77bc47fa424a21befc9540ba662673904e9e6eb5a27c3e2b72e6da30",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -28,7 +28,7 @@
       "name": "AsymmetricJwtVerifyOptions",
       "kind": "interface",
       "file": "src/core/connect-jwt.ts",
-      "line": 161,
+      "line": 189,
       "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
       "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}.",
       "typeOnly": true
@@ -3615,7 +3615,7 @@
       "name": "verifyConnectAsymmetricJwt",
       "kind": "function",
       "file": "src/core/connect-jwt.ts",
-      "line": 250,
+      "line": 278,
       "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
       "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
     }
@@ -12805,34 +12805,34 @@
         {
           "name": "encodeRfc3986",
           "kind": "function",
-          "line": 119,
+          "line": 147,
           "signature": "function encodeRfc3986(value: string): string",
           "jsdoc": "RFC-3986 percent-encoding for QSH canonicalization."
         },
         {
           "name": "base64UrlEncode",
           "kind": "function",
-          "line": 126,
+          "line": 154,
           "signature": "function base64UrlEncode(input: string): string"
         },
         {
           "name": "ASYMMETRIC_JWT_ALG",
           "kind": "variable",
-          "line": 141,
+          "line": 169,
           "signature": "const ASYMMETRIC_JWT_ALG = 'RS256';",
           "jsdoc": "The only signing algorithm Atlassian uses for asymmetric Connect JWTs."
         },
         {
           "name": "DEFAULT_MAX_CLOCK_SKEW_SECONDS",
           "kind": "variable",
-          "line": 151,
+          "line": 179,
           "signature": "const DEFAULT_MAX_CLOCK_SKEW_SECONDS = 30;",
           "jsdoc": "Default clock-skew tolerance (seconds) for `exp`/`iat`/`nbf` validation."
         },
         {
           "name": "AsymmetricJwtVerifyOptions",
           "kind": "interface",
-          "line": 161,
+          "line": 189,
           "exported": true,
           "signature": "export interface AsymmetricJwtVerifyOptions { readonly publicKey?: string | KeyObject; readonly publicKeyResolver?: (kid…",
           "jsdoc": "Options for {@link verifyConnectAsymmetricJwt}."
@@ -12840,7 +12840,7 @@
         {
           "name": "verifyConnectAsymmetricJwt",
           "kind": "function",
-          "line": 250,
+          "line": 278,
           "exported": true,
           "signature": "export async function verifyConnectAsymmetricJwt( token: string, options: AsymmetricJwtVerifyOptions, ): Promise<Record<…",
           "jsdoc": "Verifies an inbound Atlassian Connect asymmetric (RS256) JWT and returns its claims. @example ```ts const claims = await verifyConnectAsymmetricJwt(token, { publicKeyResolver…"
@@ -12848,63 +12848,63 @@
         {
           "name": "parseJwt",
           "kind": "function",
-          "line": 307,
+          "line": 335,
           "signature": "function parseJwt(token: string): { signingInput: string; header: Record<string, unknown>; payload: Record<string, unkno…",
           "jsdoc": "Splits and decodes a compact JWT, validating structural shape only."
         },
         {
           "name": "decodeJsonSegment",
           "kind": "function",
-          "line": 329,
+          "line": 357,
           "signature": "function decodeJsonSegment(segment: string, name: string): Record<string, unknown>",
           "jsdoc": "Decodes a base64url JSON segment into a plain object."
         },
         {
           "name": "resolvePublicKey",
           "kind": "function",
-          "line": 343,
+          "line": 371,
           "signature": "async function resolvePublicKey( header: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): Promise<KeyObj…",
           "jsdoc": "Resolves the verifying key from an injected key or the caller's resolver."
         },
         {
           "name": "toKeyObject",
           "kind": "function",
-          "line": 370,
+          "line": 398,
           "signature": "function toKeyObject(key: string | KeyObject): KeyObject",
           "jsdoc": "Normalises a PEM string or KeyObject into a public KeyObject."
         },
         {
           "name": "validateTimeClaims",
           "kind": "function",
-          "line": 382,
+          "line": 410,
           "signature": "function validateTimeClaims( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Validates `exp`, `iat`, and `nbf` with the configured clock-skew tolerance."
         },
         {
           "name": "readNumericClaim",
           "kind": "function",
-          "line": 406,
+          "line": 434,
           "signature": "function readNumericClaim(payload: Record<string, unknown>, name: string): number | undefined",
           "jsdoc": "Reads a numeric claim, rejecting present-but-non-numeric values."
         },
         {
           "name": "validateIssuer",
           "kind": "function",
-          "line": 416,
+          "line": 444,
           "signature": "function validateIssuer( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `iss === options.issuer` when an expected issuer is configured."
         },
         {
           "name": "validateAudience",
           "kind": "function",
-          "line": 427,
+          "line": 455,
           "signature": "function validateAudience( payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions, ): void",
           "jsdoc": "Enforces `options.audience` membership in `aud` (string or string[])."
         },
         {
           "name": "validateQsh",
           "kind": "function",
-          "line": 443,
+          "line": 471,
           "signature": "function validateQsh(payload: Record<string, unknown>, options: AsymmetricJwtVerifyOptions): void",
           "jsdoc": "Enforces the `qsh` claim against the expected hash when configured."
         }
