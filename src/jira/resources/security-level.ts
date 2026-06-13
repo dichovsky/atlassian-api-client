@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A Jira issue security level.
@@ -32,7 +33,7 @@ export class SecurityLevelResource {
   async get(id: string): Promise<SecurityLevel> {
     const response = await this.transport.request<SecurityLevel>({
       method: 'GET',
-      path: `${this.baseUrl}/securitylevel/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/securitylevel/${encodePathSegment(id, 'id')}`,
     });
     return response.data;
   }

@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A Jira remote link via the Remote Links API (not issue remote links).
@@ -35,7 +36,7 @@ export class RemoteLinkResource {
   async get(remoteLinkId: string): Promise<RemoteLink> {
     const response = await this.transport.request<RemoteLink>({
       method: 'GET',
-      path: `${this.baseUrl}/remotelink/${encodeURIComponent(remoteLinkId)}`,
+      path: `${this.baseUrl}/remotelink/${encodePathSegment(remoteLinkId, 'remoteLinkId')}`,
     });
     return response.data;
   }
@@ -47,7 +48,7 @@ export class RemoteLinkResource {
   async delete(remoteLinkId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/remotelink/${encodeURIComponent(remoteLinkId)}`,
+      path: `${this.baseUrl}/remotelink/${encodePathSegment(remoteLinkId, 'remoteLinkId')}`,
     });
   }
 }

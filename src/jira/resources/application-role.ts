@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /** A Jira application role. */
 export interface ApplicationRole {
@@ -36,7 +37,7 @@ export class ApplicationRoleResource {
   async get(key: string): Promise<ApplicationRole> {
     const response = await this.transport.request<ApplicationRole>({
       method: 'GET',
-      path: `${this.baseUrl}/applicationrole/${encodeURIComponent(key)}`,
+      path: `${this.baseUrl}/applicationrole/${encodePathSegment(key, 'key')}`,
     });
     return response.data;
   }

@@ -4,6 +4,7 @@ import {
   type JiraStatusCategory,
 } from '../../src/jira/resources/status-category.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -119,6 +120,10 @@ describe('StatusCategoryResource', () => {
 
       // Act / Assert
       await expect(statusCategory.get('unknown')).rejects.toThrow('not found');
+    });
+
+    it('rejects a path-traversal idOrKey (B1052)', async () => {
+      await expect(statusCategory.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

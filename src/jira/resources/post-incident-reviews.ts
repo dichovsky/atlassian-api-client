@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A Jira Operations post-incident review record.
@@ -35,7 +36,7 @@ export class PostIncidentReviewsResource {
   async delete(reviewId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/post-incident-reviews/${encodeURIComponent(reviewId)}`,
+      path: `${this.baseUrl}/post-incident-reviews/${encodePathSegment(reviewId, 'reviewId')}`,
     });
   }
 
@@ -46,7 +47,7 @@ export class PostIncidentReviewsResource {
   async get(reviewId: string): Promise<PostIncidentReview> {
     const response = await this.transport.request<PostIncidentReview>({
       method: 'GET',
-      path: `${this.baseUrl}/post-incident-reviews/${encodeURIComponent(reviewId)}`,
+      path: `${this.baseUrl}/post-incident-reviews/${encodePathSegment(reviewId, 'reviewId')}`,
     });
     return response.data;
   }

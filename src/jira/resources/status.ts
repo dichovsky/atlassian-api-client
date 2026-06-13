@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /** A Jira status category reference embedded in a workflow status. */
 export interface JiraStatusCategoryRef {
@@ -41,7 +42,7 @@ export class StatusResource {
   async get(idOrName: string): Promise<JiraStatus> {
     const response = await this.transport.request<JiraStatus>({
       method: 'GET',
-      path: `${this.baseUrl}/status/${encodeURIComponent(idOrName)}`,
+      path: `${this.baseUrl}/status/${encodePathSegment(idOrName, 'idOrName')}`,
     });
     return response.data;
   }

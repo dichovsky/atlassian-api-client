@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /** A Jira status category returned by GET /rest/api/3/statuscategory. */
 export interface JiraStatusCategory {
@@ -29,7 +30,7 @@ export class StatusCategoryResource {
   async get(idOrKey: string): Promise<JiraStatusCategory> {
     const response = await this.transport.request<JiraStatusCategory>({
       method: 'GET',
-      path: `${this.baseUrl}/statuscategory/${encodeURIComponent(idOrKey)}`,
+      path: `${this.baseUrl}/statuscategory/${encodePathSegment(idOrKey, 'idOrKey')}`,
     });
     return response.data;
   }

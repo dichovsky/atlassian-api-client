@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "523f4e3688cf7bb31d0a596daf524a4ee229b609c701f819175c104c38a0d912",
+  "sourceHash": "f9225df2d29d12ed48390e6b075ed56650bad6df0b6de63abe0460b6e3a236df",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -22178,7 +22178,7 @@
         {
           "name": "FieldContextConfiguration",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface FieldContextConfiguration { readonly id: string; readonly contextId: string; readonly configuration?: u…",
           "jsdoc": "Field context configuration for an app-defined custom field."
@@ -22186,7 +22186,7 @@
         {
           "name": "FieldContextConfigurationUpdate",
           "kind": "interface",
-          "line": 26,
+          "line": 27,
           "exported": true,
           "signature": "export interface FieldContextConfigurationUpdate { readonly id: string; readonly configuration?: unknown; readonly schem…",
           "jsdoc": "A single field-context configuration to update."
@@ -22194,7 +22194,7 @@
         {
           "name": "UpdateFieldContextConfigurationData",
           "kind": "interface",
-          "line": 42,
+          "line": 43,
           "exported": true,
           "signature": "export interface UpdateFieldContextConfigurationData { readonly configurations: readonly FieldContextConfigurationUpdate…",
           "jsdoc": "Request body for PUT /rest/api/3/app/field/{fieldIdOrKey}/context/configuration."
@@ -22202,7 +22202,7 @@
         {
           "name": "FieldValueUpdate",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface FieldValueUpdate { readonly issueIds?: readonly number[]; readonly issueIdsOrKeys?: readonly string[]; …",
           "jsdoc": "Single field-value entry for PUT /rest/api/3/app/field/{fieldIdOrKey}/value."
@@ -22210,7 +22210,7 @@
         {
           "name": "UpdateFieldValueData",
           "kind": "interface",
-          "line": 65,
+          "line": 66,
           "exported": true,
           "signature": "export interface UpdateFieldValueData { readonly updates: readonly FieldValueUpdate[]; }",
           "jsdoc": "Request body for PUT /rest/api/3/app/field/{fieldIdOrKey}/value."
@@ -22218,7 +22218,7 @@
         {
           "name": "ListFieldContextConfigurationsData",
           "kind": "interface",
-          "line": 77,
+          "line": 78,
           "exported": true,
           "signature": "export interface ListFieldContextConfigurationsData { readonly fieldIdsOrKeys?: readonly string[]; readonly contextIds?:…",
           "jsdoc": "Request body for POST /rest/api/3/app/field/context/configuration/list."
@@ -22226,7 +22226,7 @@
         {
           "name": "FieldContextConfigurationList",
           "kind": "interface",
-          "line": 85,
+          "line": 86,
           "exported": true,
           "signature": "export interface FieldContextConfigurationList { readonly configurations: readonly FieldContextConfiguration[]; }",
           "jsdoc": "Response from POST /rest/api/3/app/field/context/configuration/list."
@@ -22234,7 +22234,7 @@
         {
           "name": "BulkFieldValueUpdate",
           "kind": "interface",
-          "line": 96,
+          "line": 97,
           "exported": true,
           "signature": "export interface BulkFieldValueUpdate { readonly fieldIdOrKey: string; readonly updates: readonly FieldValueUpdate[]; }",
           "jsdoc": "Single bulk field-value entry for POST /rest/api/3/app/field/value."
@@ -22242,7 +22242,7 @@
         {
           "name": "BulkUpdateFieldValueData",
           "kind": "interface",
-          "line": 104,
+          "line": 105,
           "exported": true,
           "signature": "export interface BulkUpdateFieldValueData { readonly updates: readonly BulkFieldValueUpdate[]; }",
           "jsdoc": "Request body for POST /rest/api/3/app/field/value."
@@ -22250,7 +22250,7 @@
         {
           "name": "DynamicModule",
           "kind": "interface",
-          "line": 114,
+          "line": 115,
           "exported": true,
           "signature": "export interface DynamicModule { readonly key: string; readonly type?: string; readonly name?: unknown; readonly [extra:…",
           "jsdoc": "A dynamic Atlassian Connect module registered by the calling app."
@@ -22258,7 +22258,7 @@
         {
           "name": "DynamicModulesResponse",
           "kind": "interface",
-          "line": 126,
+          "line": 127,
           "exported": true,
           "signature": "export interface DynamicModulesResponse { readonly modules: readonly DynamicModule[]; }",
           "jsdoc": "Response from GET /rest/atlassian-connect/1/app/module/dynamic."
@@ -22266,7 +22266,7 @@
         {
           "name": "RegisterDynamicModulesData",
           "kind": "interface",
-          "line": 131,
+          "line": 132,
           "exported": true,
           "signature": "export interface RegisterDynamicModulesData { readonly modules: readonly DynamicModule[]; }",
           "jsdoc": "Request body for POST /rest/atlassian-connect/1/app/module/dynamic."
@@ -22274,7 +22274,7 @@
         {
           "name": "DeleteDynamicModulesParams",
           "kind": "interface",
-          "line": 137,
+          "line": 138,
           "exported": true,
           "signature": "export interface DeleteDynamicModulesParams { readonly moduleKey?: readonly string[]; }",
           "jsdoc": "Query params for DELETE /rest/atlassian-connect/1/app/module/dynamic."
@@ -22282,7 +22282,7 @@
         {
           "name": "ForgeAppProperty",
           "kind": "interface",
-          "line": 146,
+          "line": 147,
           "exported": true,
           "signature": "export interface ForgeAppProperty { readonly key: string; readonly value: unknown; }",
           "jsdoc": "A Forge app property (GET /rest/forge/1/app/properties/{propertyKey})."
@@ -22290,7 +22290,7 @@
         {
           "name": "ForgeAppPropertyKey",
           "kind": "interface",
-          "line": 154,
+          "line": 155,
           "exported": true,
           "signature": "export interface ForgeAppPropertyKey { readonly key: string; readonly self?: string; }",
           "jsdoc": "A single key entry in the Forge app properties listing."
@@ -22298,7 +22298,7 @@
         {
           "name": "ForgeAppPropertyKeys",
           "kind": "interface",
-          "line": 162,
+          "line": 163,
           "exported": true,
           "signature": "export interface ForgeAppPropertyKeys { readonly keys: readonly ForgeAppPropertyKey[]; }",
           "jsdoc": "Response from GET /rest/forge/1/app/properties."
@@ -22306,7 +22306,7 @@
         {
           "name": "AppResource",
           "kind": "class",
-          "line": 181,
+          "line": 182,
           "exported": true,
           "signature": "export class AppResource",
           "jsdoc": "Jira \"app\" resource — Forge + Atlassian Connect app-scoped endpoints.",
@@ -22314,73 +22314,74 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 182
+              "line": 183
             },
             {
               "name": "getFieldContextConfiguration",
               "kind": "method",
-              "line": 195
+              "line": 196
             },
             {
               "name": "updateFieldContextConfiguration",
               "kind": "method",
-              "line": 207
+              "line": 208
             },
             {
               "name": "listFieldContextConfigurations",
               "kind": "method",
-              "line": 228
+              "line": 229
             },
             {
               "name": "updateFieldValue",
               "kind": "method",
-              "line": 245
+              "line": 246
             },
             {
               "name": "bulkUpdateFieldValue",
               "kind": "method",
-              "line": 257
+              "line": 258
             },
             {
               "name": "getDynamicModules",
               "kind": "method",
-              "line": 271
+              "line": 272
             },
             {
               "name": "registerDynamicModules",
               "kind": "method",
-              "line": 283
+              "line": 284
             },
             {
               "name": "deleteDynamicModules",
               "kind": "method",
-              "line": 302
+              "line": 303
             },
             {
               "name": "listForgeProperties",
               "kind": "method",
-              "line": 320
+              "line": 321
             },
             {
               "name": "getForgeProperty",
               "kind": "method",
-              "line": 332
+              "line": 333
             },
             {
               "name": "setForgeProperty",
               "kind": "method",
-              "line": 345
+              "line": 346
             },
             {
               "name": "deleteForgeProperty",
               "kind": "method",
-              "line": 357
+              "line": 358
             }
           ]
         }
       ],
       "imports": [
         "../../core/errors.js",
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -22390,7 +22391,7 @@
         {
           "name": "ApplicationProperty",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface ApplicationProperty { readonly id: string; readonly key: string; readonly value: string; readonly name?…",
           "jsdoc": "A Jira application property — a server-wide configuration key/value pair exposed via `/rest/api/3/application-properties`. Some entries are administrative read-only (returned by `advanced-settings`); others can be updated with PUT `/application-properties/{id}`."
@@ -22398,7 +22399,7 @@
         {
           "name": "ListApplicationPropertiesParams",
           "kind": "interface",
-          "line": 41,
+          "line": 42,
           "exported": true,
           "signature": "export interface ListApplicationPropertiesParams { readonly key?: string; readonly permissionLevel?: string; readonly ke…",
           "jsdoc": "Query parameters for GET /rest/api/3/application-properties."
@@ -22406,7 +22407,7 @@
         {
           "name": "UpdateApplicationPropertyData",
           "kind": "interface",
-          "line": 53,
+          "line": 54,
           "exported": true,
           "signature": "export interface UpdateApplicationPropertyData { readonly id: string; readonly value: string; }",
           "jsdoc": "Request body for PUT /rest/api/3/application-properties/{id}."
@@ -22414,7 +22415,7 @@
         {
           "name": "ApplicationPropertiesResource",
           "kind": "class",
-          "line": 63,
+          "line": 64,
           "exported": true,
           "signature": "export class ApplicationPropertiesResource",
           "jsdoc": "Jira application properties resource — global key/value settings under `/rest/api/3/application-properties`. Covers B331 (list), B332 (update), B333 (advanced-settings).",
@@ -22422,27 +22423,28 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 64
+              "line": 65
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 74
+              "line": 75
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 94
+              "line": 95
             },
             {
               "name": "listAdvancedSettings",
               "kind": "method",
-              "line": 108
+              "line": 109
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -22452,7 +22454,7 @@
         {
           "name": "ApplicationRole",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface ApplicationRole { readonly key: string; readonly groups: string[]; readonly name: string; readonly defa…",
           "jsdoc": "A Jira application role."
@@ -22460,7 +22462,7 @@
         {
           "name": "ApplicationRoleResource",
           "kind": "class",
-          "line": 20,
+          "line": 21,
           "exported": true,
           "signature": "export class ApplicationRoleResource",
           "jsdoc": "Jira Application Role resource — GET /rest/api/3/applicationrole.",
@@ -22468,22 +22470,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 21
+              "line": 22
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 27
+              "line": 28
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 36
+              "line": 37
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -22567,7 +22570,7 @@
         {
           "name": "Avatar",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface Avatar { readonly id: string; readonly isSystemAvatar: boolean; readonly isSelected: boolean; readonly …",
           "jsdoc": "A Jira avatar (icon) object."
@@ -22575,7 +22578,7 @@
         {
           "name": "AvatarSystemResponse",
           "kind": "interface",
-          "line": 14,
+          "line": 15,
           "exported": true,
           "signature": "export interface AvatarSystemResponse { readonly system: Avatar[]; }",
           "jsdoc": "Response for system avatar listing."
@@ -22583,7 +22586,7 @@
         {
           "name": "AvatarResource",
           "kind": "class",
-          "line": 23,
+          "line": 24,
           "exported": true,
           "signature": "export class AvatarResource",
           "jsdoc": "Jira Avatar resource — GET /rest/api/3/avatar/{type}/system.",
@@ -22591,17 +22594,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 24
+              "line": 25
             },
             {
               "name": "listSystem",
               "kind": "method",
-              "line": 33
+              "line": 34
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -24128,7 +24132,7 @@
         {
           "name": "CustomFieldOption",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface CustomFieldOption { readonly self: string; readonly value: string; readonly id: string; readonly disabl…",
           "jsdoc": "A Jira custom field option."
@@ -24136,7 +24140,7 @@
         {
           "name": "CustomFieldOptionResource",
           "kind": "class",
-          "line": 16,
+          "line": 17,
           "exported": true,
           "signature": "export class CustomFieldOptionResource",
           "jsdoc": "Jira Custom Field Option resource — GET /rest/api/3/customFieldOption/{id}.",
@@ -24144,17 +24148,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 17
+              "line": 18
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 26
+              "line": 27
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -24526,7 +24531,7 @@
         {
           "name": "DevopsComponent",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface DevopsComponent { readonly id: string; readonly name?: string; readonly description?: string; readonly …",
           "jsdoc": "A Jira DevOps component record."
@@ -24534,7 +24539,7 @@
         {
           "name": "DevopscomponentsResource",
           "kind": "class",
-          "line": 24,
+          "line": 25,
           "exported": true,
           "signature": "export class DevopscomponentsResource",
           "jsdoc": "Jira DevOps Components resource — DELETE and GET /rest/devopscomponents/1.0/devopscomponents/{componentId}.",
@@ -24542,22 +24547,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 25
+              "line": 26
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 34
+              "line": 35
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 45
+              "line": 46
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -26550,7 +26556,7 @@
         {
           "name": "Incident",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface Incident { readonly id: string; readonly name?: string; readonly status?: string; readonly createdAt?: …",
           "jsdoc": "A Jira Operations incident record."
@@ -26558,7 +26564,7 @@
         {
           "name": "IncidentsResource",
           "kind": "class",
-          "line": 24,
+          "line": 25,
           "exported": true,
           "signature": "export class IncidentsResource",
           "jsdoc": "Jira Incidents resource — DELETE and GET /rest/operations/1.0/incidents/{incidentId}.",
@@ -26566,22 +26572,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 25
+              "line": 26
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 34
+              "line": 35
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 45
+              "line": 46
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -29438,7 +29445,7 @@
         {
           "name": "OperationsLinkedWorkspacesResponse",
           "kind": "interface",
-          "line": 8,
+          "line": 9,
           "exported": true,
           "signature": "export interface OperationsLinkedWorkspacesResponse { readonly workspaceIds?: string[]; }",
           "jsdoc": "Response for GET /rest/operations/1.0/linkedWorkspaces. Returns the list of linked workspace IDs."
@@ -29446,7 +29453,7 @@
         {
           "name": "BulkCreateOperationsLinkedWorkspacesBody",
           "kind": "interface",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export interface BulkCreateOperationsLinkedWorkspacesBody { readonly workspaceIds: string[]; }",
           "jsdoc": "Request body for POST /rest/operations/1.0/linkedWorkspaces/bulk."
@@ -29454,7 +29461,7 @@
         {
           "name": "BulkCreateOperationsLinkedWorkspacesResponse",
           "kind": "interface",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export interface BulkCreateOperationsLinkedWorkspacesResponse { readonly acceptedWorkspaceIds?: string[]; }",
           "jsdoc": "Response for POST /rest/operations/1.0/linkedWorkspaces/bulk."
@@ -29462,7 +29469,7 @@
         {
           "name": "SecurityLinkedWorkspacesResponse",
           "kind": "interface",
-          "line": 30,
+          "line": 31,
           "exported": true,
           "signature": "export interface SecurityLinkedWorkspacesResponse { readonly workspaceIds?: string[]; }",
           "jsdoc": "Response for GET /rest/security/1.0/linkedWorkspaces. Returns the list of linked workspace IDs."
@@ -29470,7 +29477,7 @@
         {
           "name": "SecurityLinkedWorkspace",
           "kind": "interface",
-          "line": 37,
+          "line": 38,
           "exported": true,
           "signature": "export interface SecurityLinkedWorkspace { readonly workspaceId?: string; readonly updatedAt?: string; }",
           "jsdoc": "Response for GET /rest/security/1.0/linkedWorkspaces/{workspaceId}."
@@ -29478,7 +29485,7 @@
         {
           "name": "BulkCreateSecurityLinkedWorkspacesBody",
           "kind": "interface",
-          "line": 45,
+          "line": 46,
           "exported": true,
           "signature": "export interface BulkCreateSecurityLinkedWorkspacesBody { readonly workspaceIds: string[]; }",
           "jsdoc": "Request body for POST /rest/security/1.0/linkedWorkspaces/bulk."
@@ -29486,7 +29493,7 @@
         {
           "name": "LinkedWorkspacesResource",
           "kind": "class",
-          "line": 67,
+          "line": 68,
           "exported": true,
           "signature": "export class LinkedWorkspacesResource",
           "jsdoc": "Jira Linked Workspaces resource — spans operations/1.0 and security/1.0.",
@@ -29494,48 +29501,49 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 68
+              "line": 69
             },
             {
               "name": "listOperations",
               "kind": "method",
-              "line": 80
+              "line": 81
             },
             {
               "name": "bulkDeleteOperations",
               "kind": "method",
-              "line": 94
+              "line": 95
             },
             {
               "name": "bulkCreateOperations",
               "kind": "method",
-              "line": 109
+              "line": 110
             },
             {
               "name": "listSecurity",
               "kind": "method",
-              "line": 129
+              "line": 130
             },
             {
               "name": "getSecurity",
               "kind": "method",
-              "line": 141
+              "line": 142
             },
             {
               "name": "bulkDeleteSecurity",
               "kind": "method",
-              "line": 155
+              "line": 156
             },
             {
               "name": "bulkCreateSecurity",
               "kind": "method",
-              "line": 170
+              "line": 171
             }
           ]
         }
       ],
       "imports": [
         "../../core/errors.js",
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -30780,7 +30788,7 @@
         {
           "name": "PostIncidentReview",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface PostIncidentReview { readonly id: string; readonly name?: string; readonly status?: string; readonly in…",
           "jsdoc": "A Jira Operations post-incident review record."
@@ -30788,7 +30796,7 @@
         {
           "name": "PostIncidentReviewsResource",
           "kind": "class",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export class PostIncidentReviewsResource",
           "jsdoc": "Jira Post-Incident Reviews resource — DELETE and GET /rest/operations/1.0/post-incident-reviews/{reviewId}.",
@@ -30796,22 +30804,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 27
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 35
+              "line": 36
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 46
+              "line": 47
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -32000,7 +32009,7 @@
         {
           "name": "RemoteLink",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface RemoteLink { readonly id: string; readonly url?: string; readonly title?: string; readonly summary?: st…",
           "jsdoc": "A Jira remote link via the Remote Links API (not issue remote links)."
@@ -32008,7 +32017,7 @@
         {
           "name": "RemoteLinkResource",
           "kind": "class",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export class RemoteLinkResource",
           "jsdoc": "Jira Remote Link resource — DELETE and GET /rest/remotelinks/1.0/remotelink/{remoteLinkId}.",
@@ -32016,22 +32025,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 27
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 35
+              "line": 36
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 47
+              "line": 48
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -32844,7 +32854,7 @@
         {
           "name": "SecurityLevel",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface SecurityLevel { readonly id: string; readonly name: string; readonly description?: string; readonly iss…",
           "jsdoc": "A Jira issue security level."
@@ -32852,7 +32862,7 @@
         {
           "name": "SecurityLevelResource",
           "kind": "class",
-          "line": 22,
+          "line": 23,
           "exported": true,
           "signature": "export class SecurityLevelResource",
           "jsdoc": "Jira Security Level resource — GET /rest/api/3/securitylevel/{id}.",
@@ -32860,17 +32870,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 23
+              "line": 24
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 32
+              "line": 33
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -33194,7 +33205,7 @@
         {
           "name": "JiraStatusCategory",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface JiraStatusCategory { readonly id: number; readonly key: string; readonly name: string; readonly colorNa…",
           "jsdoc": "A Jira status category returned by GET /rest/api/3/statuscategory."
@@ -33202,7 +33213,7 @@
         {
           "name": "StatusCategoryResource",
           "kind": "class",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export class StatusCategoryResource",
           "jsdoc": "Jira Status Category resource — GET /rest/api/3/statuscategory.",
@@ -33210,22 +33221,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 14
+              "line": 15
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 20
+              "line": 21
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 29
+              "line": 30
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -33235,7 +33247,7 @@
         {
           "name": "JiraStatusCategoryRef",
           "kind": "interface",
-          "line": 4,
+          "line": 5,
           "exported": true,
           "signature": "export interface JiraStatusCategoryRef { readonly id: number; readonly key: string; readonly name: string; readonly colo…",
           "jsdoc": "A Jira status category reference embedded in a workflow status."
@@ -33243,7 +33255,7 @@
         {
           "name": "JiraStatus",
           "kind": "interface",
-          "line": 13,
+          "line": 14,
           "exported": true,
           "signature": "export interface JiraStatus { readonly id: string; readonly name: string; readonly self?: string; readonly description?:…",
           "jsdoc": "A Jira workflow status returned by GET /rest/api/3/status."
@@ -33251,7 +33263,7 @@
         {
           "name": "StatusResource",
           "kind": "class",
-          "line": 25,
+          "line": 26,
           "exported": true,
           "signature": "export class StatusResource",
           "jsdoc": "Jira Status resource — GET /rest/api/3/status.",
@@ -33259,22 +33271,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 27
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 32
+              "line": 33
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 41
+              "line": 42
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },
@@ -34063,7 +34076,7 @@
         {
           "name": "Vulnerability",
           "kind": "interface",
-          "line": 9,
+          "line": 10,
           "exported": true,
           "signature": "export interface Vulnerability { readonly id: string; readonly displayName?: string; readonly description?: string; read…",
           "jsdoc": "A Jira Security vulnerability record."
@@ -34071,7 +34084,7 @@
         {
           "name": "VulnerabilityResource",
           "kind": "class",
-          "line": 27,
+          "line": 28,
           "exported": true,
           "signature": "export class VulnerabilityResource",
           "jsdoc": "Jira Vulnerability resource — DELETE and GET /rest/security/1.0/vulnerability/{vulnerabilityId}.",
@@ -34079,22 +34092,23 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 28
+              "line": 29
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 37
+              "line": 38
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 48
+              "line": 49
             }
           ]
         }
       ],
       "imports": [
+        "../../core/path.js",
         "../../core/types.js"
       ]
     },

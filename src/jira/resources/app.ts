@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * Field context configuration for an app-defined custom field.
@@ -195,7 +196,7 @@ export class AppResource {
   async getFieldContextConfiguration(fieldIdOrKey: string): Promise<FieldContextConfiguration> {
     const response = await this.transport.request<FieldContextConfiguration>({
       method: 'GET',
-      path: `${this.apiBaseUrl}/app/field/${encodeURIComponent(fieldIdOrKey)}/context/configuration`,
+      path: `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/context/configuration`,
     });
     return response.data;
   }
@@ -216,7 +217,7 @@ export class AppResource {
     }
     await this.transport.request<undefined>({
       method: 'PUT',
-      path: `${this.apiBaseUrl}/app/field/${encodeURIComponent(fieldIdOrKey)}/context/configuration`,
+      path: `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/context/configuration`,
       body: data,
     });
   }
@@ -245,7 +246,7 @@ export class AppResource {
   async updateFieldValue(fieldIdOrKey: string, data: UpdateFieldValueData): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',
-      path: `${this.apiBaseUrl}/app/field/${encodeURIComponent(fieldIdOrKey)}/value`,
+      path: `${this.apiBaseUrl}/app/field/${encodePathSegment(fieldIdOrKey, 'fieldIdOrKey')}/value`,
       body: data,
     });
   }
@@ -332,7 +333,7 @@ export class AppResource {
   async getForgeProperty(propertyKey: string): Promise<ForgeAppProperty> {
     const response = await this.transport.request<ForgeAppProperty>({
       method: 'GET',
-      path: `${this.forgeBaseUrl}/app/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.forgeBaseUrl}/app/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
     });
     return response.data;
   }
@@ -345,7 +346,7 @@ export class AppResource {
   async setForgeProperty(propertyKey: string, value: unknown): Promise<void> {
     await this.transport.request<undefined>({
       method: 'PUT',
-      path: `${this.forgeBaseUrl}/app/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.forgeBaseUrl}/app/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
       body: value,
     });
   }
@@ -357,7 +358,7 @@ export class AppResource {
   async deleteForgeProperty(propertyKey: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.forgeBaseUrl}/app/properties/${encodeURIComponent(propertyKey)}`,
+      path: `${this.forgeBaseUrl}/app/properties/${encodePathSegment(propertyKey, 'propertyKey')}`,
     });
   }
 }

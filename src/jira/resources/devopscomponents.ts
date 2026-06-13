@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A Jira DevOps component record.
@@ -34,7 +35,7 @@ export class DevopscomponentsResource {
   async delete(componentId: string): Promise<void> {
     await this.transport.request<undefined>({
       method: 'DELETE',
-      path: `${this.baseUrl}/devopscomponents/${encodeURIComponent(componentId)}`,
+      path: `${this.baseUrl}/devopscomponents/${encodePathSegment(componentId, 'componentId')}`,
     });
   }
 
@@ -45,7 +46,7 @@ export class DevopscomponentsResource {
   async get(componentId: string): Promise<DevopsComponent> {
     const response = await this.transport.request<DevopsComponent>({
       method: 'GET',
-      path: `${this.baseUrl}/devopscomponents/${encodeURIComponent(componentId)}`,
+      path: `${this.baseUrl}/devopscomponents/${encodePathSegment(componentId, 'componentId')}`,
     });
     return response.data;
   }

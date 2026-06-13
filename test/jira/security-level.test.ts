@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SecurityLevelResource } from '../../src/jira/resources/security-level.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -57,6 +58,10 @@ describe('SecurityLevelResource', () => {
 
       // Act / Assert
       await expect(securityLevel.get('10001')).rejects.toThrow('not found');
+    });
+
+    it('rejects a path-traversal id (B1052)', async () => {
+      await expect(securityLevel.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

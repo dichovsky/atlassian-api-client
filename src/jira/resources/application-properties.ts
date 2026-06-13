@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * A Jira application property — a server-wide configuration key/value pair
@@ -94,7 +95,7 @@ export class ApplicationPropertiesResource {
   async update(id: string, data: UpdateApplicationPropertyData): Promise<ApplicationProperty> {
     const response = await this.transport.request<ApplicationProperty>({
       method: 'PUT',
-      path: `${this.baseUrl}/application-properties/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/application-properties/${encodePathSegment(id, 'id')}`,
       body: data,
     });
     return response.data;

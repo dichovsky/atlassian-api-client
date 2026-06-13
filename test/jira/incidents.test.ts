@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { IncidentsResource } from '../../src/jira/resources/incidents.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/operations/1.0';
 
@@ -93,6 +94,10 @@ describe('IncidentsResource', () => {
 
       // Act / Assert
       await expect(incidents.delete('INC-1')).rejects.toThrow('forbidden');
+    });
+
+    it('rejects a path-traversal incidentId (B1052)', async () => {
+      await expect(incidents.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });
