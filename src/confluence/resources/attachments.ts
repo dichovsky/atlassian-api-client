@@ -17,6 +17,7 @@ import type {
   ListAttachmentLabelsParams,
   ListAttachmentVersionsParams,
   ListAttachmentsParams,
+  UploadAttachmentResult,
 } from '../types/attachments.js';
 import type {
   AttachmentStatus,
@@ -71,6 +72,7 @@ export class AttachmentsResource {
   constructor(
     private readonly transport: Transport,
     private readonly baseUrl: string,
+    private readonly v1BaseUrl: string,
   ) {}
 
   /**
@@ -118,30 +120,47 @@ export class AttachmentsResource {
   }
 
   /**
-   * Upload an attachment to a page.
+   * Upload an attachment to a page using the Confluence REST v1 endpoint.
+   *
+   * The Confluence Cloud REST v2 API has **no write path for attachments** —
+   * `GET /pages/{id}/attachments` is read-only and there is no `POST`
+   * equivalent in v2. Every real-site call to the v2 path returns 404/405.
+   *
+   * This method dispatches to the v1 endpoint instead:
+   * `POST /wiki/rest/api/content/{pageId}/child/attachment`
+   *
+   * The `X-Atlassian-Token: nocheck` header is required by Atlassian to
+   * bypass XSRF validation on multipart upload requests.
+   *
+   * **Note:** This method's return type changed from `CursorPaginatedResponse<Attachment>`
+   * (the non-existent v2 shape) to {@link UploadAttachmentResult} (the real v1
+   * envelope). Callers that relied on the old shape will see a type error —
+   * flag for 3.0.0 if needed as a breaking change notice.
+   *
    * @param pageId - The page to attach to.
    * @param filename - The filename as it should appear in Confluence.
    * @param content - The file content as a {@link Blob}. Node ESM callers can
    *   wrap a `Buffer`, a `Uint8Array`, or a `fs.ReadStream`-derived buffer in
    *   a `Blob` before passing it here; raw `ReadableStream` is not accepted
    *   by the current signature.
-   * @param mimeType - Optional MIME type override (e.g. 'image/png').
-   * @see https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments
+   * @param mimeType - Optional MIME type override (e.g. `'image/png'`).
+   * @see https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/#api-wiki-rest-api-content-id-child-attachment-post
    */
   async upload(
     pageId: string,
     filename: string,
     content: Blob,
     mimeType?: string,
-  ): Promise<CursorPaginatedResponse<Attachment>> {
+  ): Promise<UploadAttachmentResult> {
     const formData = new FormData();
     const file = wrapUploadContent(content, mimeType);
     formData.append('file', file, filename);
 
-    const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
+    const response = await this.transport.request<UploadAttachmentResult>({
       method: 'POST',
-      path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/attachments`,
+      path: `${this.v1BaseUrl}/content/${encodePathSegment(pageId)}/child/attachment`,
       formData,
+      headers: { 'X-Atlassian-Token': 'nocheck' },
     });
     return response.data;
   }

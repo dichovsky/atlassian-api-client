@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "1725ba402400b87f3a61ff665005fe34946f8c455fb5f67f435b031d6b6f15fb",
+  "sourceHash": "2fe87be18fc5ae65b099ede726dadb1c9cb35252003e7821cf5cc0adda7b3989",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -6198,6 +6198,14 @@
             {
               "exported": "ListAttachmentsParams",
               "original": "ListAttachmentsParams"
+            },
+            {
+              "exported": "UploadAttachmentResult",
+              "original": "UploadAttachmentResult"
+            },
+            {
+              "exported": "UploadAttachmentResultItem",
+              "original": "UploadAttachmentResultItem"
             }
           ]
         },
@@ -7467,35 +7475,35 @@
         {
           "name": "Query",
           "kind": "type",
-          "line": 31,
+          "line": 32,
           "signature": "type Query = Record<string, string | number | boolean | undefined>;",
           "jsdoc": "Query bag accepted by the underlying transport. Scalars only."
         },
         {
           "name": "statusParam",
           "kind": "function",
-          "line": 38,
+          "line": 39,
           "signature": "function statusParam( value: AttachmentStatus | readonly AttachmentStatus[] | undefined, ): string | undefined",
           "jsdoc": "Flatten a single value or non-empty array of statuses into the comma-joined string the wire format expects. An empty array drops out as `undefined` so callers can build the params object unconditionally."
         },
         {
           "name": "wrapUploadContent",
           "kind": "function",
-          "line": 52,
+          "line": 53,
           "signature": "function wrapUploadContent(content: Blob, mimeType: string | undefined): Blob",
           "jsdoc": "Choose the upload body for `POST /pages/{id}/attachments`. If the caller passed an explicit `mimeType` that differs from the blob's own `type`, wrap the bytes in a new `Blob` so the multipart part carries the override."
         },
         {
           "name": "validateVersionNumber",
           "kind": "function",
-          "line": 63,
+          "line": 64,
           "signature": "function validateVersionNumber(versionNumber: number): void",
           "jsdoc": "Validate that `versionNumber` is a positive integer before dispatching. Mirrors the CLI's `--version-number` guard so SDK callers fail fast instead of round-tripping to the server."
         },
         {
           "name": "AttachmentsResource",
           "kind": "class",
-          "line": 70,
+          "line": 71,
           "exported": true,
           "signature": "export class AttachmentsResource",
           "jsdoc": "Confluence Attachments resource — list, get, delete, and upload attachments on pages.",
@@ -7503,162 +7511,162 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 71
+              "line": 72
             },
             {
               "name": "listForPage",
               "kind": "method",
-              "line": 80
+              "line": 82
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 98
+              "line": 100
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 112
+              "line": 114
             },
             {
               "name": "upload",
               "kind": "method",
-              "line": 131
+              "line": 149
             },
             {
               "name": "listAllForPage",
               "kind": "method",
-              "line": 153
+              "line": 172
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 173
+              "line": 192
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 188
+              "line": 207
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 203
+              "line": 222
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 220
+              "line": 239
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 236
+              "line": 255
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 252
+              "line": 271
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 268
+              "line": 287
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 285
+              "line": 304
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 298
+              "line": 317
             },
             {
               "name": "listAllVersions",
               "kind": "method",
-              "line": 315
+              "line": 334
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 332
+              "line": 351
             },
             {
               "name": "listFooterComments",
               "kind": "method",
-              "line": 350
+              "line": 369
             },
             {
               "name": "listAllFooterComments",
               "kind": "method",
-              "line": 369
+              "line": 388
             },
             {
               "name": "listLabels",
               "kind": "method",
-              "line": 387
+              "line": 406
             },
             {
               "name": "listAllLabels",
               "kind": "method",
-              "line": 404
+              "line": 423
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 422
+              "line": 441
             },
             {
               "name": "downloadThumbnail",
               "kind": "method",
-              "line": 452
+              "line": 471
             },
             {
               "name": "buildListQuery",
               "kind": "method",
-              "line": 468
+              "line": 487
             },
             {
               "name": "buildPageAttachmentsQuery",
               "kind": "method",
-              "line": 482
+              "line": 501
             },
             {
               "name": "buildGetQuery",
               "kind": "method",
-              "line": 493
+              "line": 512
             },
             {
               "name": "buildDeleteQuery",
               "kind": "method",
-              "line": 517
+              "line": 536
             },
             {
               "name": "buildPropertiesQuery",
               "kind": "method",
-              "line": 523
+              "line": 542
             },
             {
               "name": "buildVersionsQuery",
               "kind": "method",
-              "line": 534
+              "line": 553
             },
             {
               "name": "buildFooterCommentsQuery",
               "kind": "method",
-              "line": 544
+              "line": 563
             },
             {
               "name": "buildLabelsQuery",
               "kind": "method",
-              "line": 556
+              "line": 575
             },
             {
               "name": "buildThumbnailQuery",
               "kind": "method",
-              "line": 567
+              "line": 586
             }
           ]
         }
@@ -10199,6 +10207,22 @@
           "exported": true,
           "signature": "export interface GetAttachmentThumbnailParams { readonly width?: number; readonly height?: number; readonly version?: nu…",
           "jsdoc": "Parameters for downloading an attachment thumbnail."
+        },
+        {
+          "name": "UploadAttachmentResultItem",
+          "kind": "interface",
+          "line": 202,
+          "exported": true,
+          "signature": "export interface UploadAttachmentResultItem { readonly id: string; readonly title?: string; readonly type?: string; read…",
+          "jsdoc": "A single attachment entry as returned by the Confluence REST v1 upload endpoint (`POST /wiki/rest/api/content/{pageId}/child/attachment`)."
+        },
+        {
+          "name": "UploadAttachmentResult",
+          "kind": "interface",
+          "line": 228,
+          "exported": true,
+          "signature": "export interface UploadAttachmentResult { readonly results: readonly UploadAttachmentResultItem[]; readonly start?: numb…",
+          "jsdoc": "Response returned by {@link AttachmentsResource.upload}. Mirrors the v1 `POST /wiki/rest/api/content/{id}/child/attachment` response envelope. The `results` array contains one entry per uploaded file (typically one)."
         }
       ],
       "imports": [

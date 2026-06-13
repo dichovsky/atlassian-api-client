@@ -113,13 +113,14 @@ export class ConfluenceClient {
   constructor(config: ClientConfig) {
     const resolved = resolveConfig(config);
     const baseUrl = `${resolved.baseUrl}/wiki/api/v2`;
+    const v1BaseUrl = `${resolved.baseUrl}/wiki/rest/api`;
     const transport: Transport = config.transport ?? new HttpTransport({ ...resolved, baseUrl });
 
     this.pages = new PagesResource(transport, baseUrl);
     this.spaces = new SpacesResource(transport, baseUrl);
     this.blogPosts = new BlogPostsResource(transport, baseUrl);
     this.comments = new CommentsResource(transport, baseUrl);
-    this.attachments = new AttachmentsResource(transport, baseUrl);
+    this.attachments = new AttachmentsResource(transport, baseUrl, v1BaseUrl);
     this.labels = new LabelsResource(transport, baseUrl);
     this.contentProperties = new ContentPropertiesResource(transport, baseUrl);
     this.customContent = new CustomContentResource(transport, baseUrl);

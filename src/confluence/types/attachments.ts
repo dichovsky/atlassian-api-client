@@ -190,3 +190,45 @@ export interface GetAttachmentThumbnailParams {
   readonly height?: number;
   readonly version?: number;
 }
+
+/**
+ * A single attachment entry as returned by the Confluence REST v1 upload endpoint
+ * (`POST /wiki/rest/api/content/{pageId}/child/attachment`).
+ *
+ * The v1 response is richer than the v2 `Attachment` shape; this interface
+ * captures the minimum fields needed to identify the created attachment.
+ * Flag for inclusion in a future major-version richer type model.
+ */
+export interface UploadAttachmentResultItem {
+  readonly id: string;
+  readonly title?: string;
+  readonly type?: string;
+  readonly status?: string;
+  readonly metadata?: {
+    readonly mediaType?: string;
+    readonly comment?: string;
+    readonly labels?: { readonly results?: readonly { readonly name?: string }[] };
+  };
+  readonly extensions?: {
+    readonly mediaType?: string;
+    readonly fileSize?: number;
+    readonly comment?: string;
+    readonly mediaTypeDescription?: string;
+    readonly fileId?: string;
+    readonly collectionName?: string;
+  };
+  readonly _links?: Record<string, string>;
+}
+
+/**
+ * Response returned by {@link AttachmentsResource.upload}. Mirrors the v1
+ * `POST /wiki/rest/api/content/{id}/child/attachment` response envelope.
+ * The `results` array contains one entry per uploaded file (typically one).
+ */
+export interface UploadAttachmentResult {
+  readonly results: readonly UploadAttachmentResultItem[];
+  readonly start?: number;
+  readonly limit?: number;
+  readonly size?: number;
+  readonly _links?: Record<string, string>;
+}
