@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "431f707d93e37e193356ee3e3bbab20f674e88d9f0d9cf10073ff20437ebbf2a",
+  "sourceHash": "6119b45f64e0bcc5ee93547822fafba1481765d66cc63e344030a1fffe3c422b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3332,6 +3332,15 @@
       "line": 19,
       "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly url: string; readonly fieldIdsFilte…",
       "jsdoc": "A registered Jira webhook that fires on matching events. Spec: `Webhook`.",
+      "typeOnly": true
+    },
+    {
+      "name": "WebhooksExpirationDate",
+      "kind": "interface",
+      "file": "src/jira/resources/webhooks.ts",
+      "line": 37,
+      "signature": "export interface WebhooksExpirationDate { readonly expirationDate: number; }",
+      "jsdoc": "Response returned by `PUT /rest/api/3/webhook/refresh`. Contains the new expiration timestamp for the refreshed webhooks.",
       "typeOnly": true
     },
     {
@@ -16618,6 +16627,10 @@
               "original": "RegisteredWebhooks"
             },
             {
+              "exported": "WebhooksExpirationDate",
+              "original": "WebhooksExpirationDate"
+            },
+            {
               "exported": "ListWebhooksParams",
               "original": "ListWebhooksParams"
             },
@@ -21239,6 +21252,10 @@
             {
               "exported": "RegisteredWebhooks",
               "original": "RegisteredWebhooks"
+            },
+            {
+              "exported": "WebhooksExpirationDate",
+              "original": "WebhooksExpirationDate"
             },
             {
               "exported": "ListWebhooksParams",
