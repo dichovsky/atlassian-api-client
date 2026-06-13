@@ -59,10 +59,10 @@ export interface VersionData {
   readonly description?: string;
   readonly archived?: boolean;
   readonly released?: boolean;
+  /** ISO 8601 date (yyyy-mm-dd). Spec-writable. Use this instead of the readOnly `userStartDate`. */
   readonly startDate?: string;
+  /** ISO 8601 date (yyyy-mm-dd). Spec-writable. Use this instead of the readOnly `userReleaseDate`. */
   readonly releaseDate?: string;
-  readonly userStartDate?: string;
-  readonly userReleaseDate?: string;
   readonly project?: string;
   readonly projectId?: number;
   readonly moveUnfixedIssuesTo?: string;
@@ -82,20 +82,16 @@ export interface MoveVersionData {
 export interface CreateVersionRelatedWorkData {
   /** Required. Category of the related work. */
   readonly category: string;
-  readonly issueId?: number;
   readonly title?: string;
   readonly url?: string;
-  readonly relatedWorkId?: string;
 }
 
 /** Request body for PUT `/rest/api/3/version/{id}/relatedwork`. */
 export interface UpdateVersionRelatedWorkData {
   /** Required. Category of the related work. */
   readonly category: string;
-  readonly issueId?: number;
   readonly title?: string;
   readonly url?: string;
-  readonly relatedWorkId?: string;
 }
 
 /** Request body for POST `/rest/api/3/version/{id}/removeAndSwap`. */
@@ -141,8 +137,6 @@ export class VersionResource {
     if (data.released !== undefined) body['released'] = data.released;
     if (data.startDate !== undefined) body['startDate'] = data.startDate;
     if (data.releaseDate !== undefined) body['releaseDate'] = data.releaseDate;
-    if (data.userStartDate !== undefined) body['userStartDate'] = data.userStartDate;
-    if (data.userReleaseDate !== undefined) body['userReleaseDate'] = data.userReleaseDate;
     if (data.project !== undefined) body['project'] = data.project;
     if (data.projectId !== undefined) body['projectId'] = data.projectId;
     if (data.moveUnfixedIssuesTo !== undefined)
@@ -184,8 +178,6 @@ export class VersionResource {
     if (data.released !== undefined) body['released'] = data.released;
     if (data.startDate !== undefined) body['startDate'] = data.startDate;
     if (data.releaseDate !== undefined) body['releaseDate'] = data.releaseDate;
-    if (data.userStartDate !== undefined) body['userStartDate'] = data.userStartDate;
-    if (data.userReleaseDate !== undefined) body['userReleaseDate'] = data.userReleaseDate;
     if (data.project !== undefined) body['project'] = data.project;
     if (data.projectId !== undefined) body['projectId'] = data.projectId;
     if (data.moveUnfixedIssuesTo !== undefined)
@@ -278,10 +270,8 @@ export class VersionResource {
     const body: Record<string, unknown> = {
       category: data.category,
     };
-    if (data.issueId !== undefined) body['issueId'] = data.issueId;
     if (data.title !== undefined) body['title'] = data.title;
     if (data.url !== undefined) body['url'] = data.url;
-    if (data.relatedWorkId !== undefined) body['relatedWorkId'] = data.relatedWorkId;
     const response = await this.transport.request<VersionRelatedWork>({
       method: 'POST',
       path: `${this.baseUrl}/version/${encodePathSegment(id)}/relatedwork`,
@@ -301,10 +291,8 @@ export class VersionResource {
     const body: Record<string, unknown> = {
       category: data.category,
     };
-    if (data.issueId !== undefined) body['issueId'] = data.issueId;
     if (data.title !== undefined) body['title'] = data.title;
     if (data.url !== undefined) body['url'] = data.url;
-    if (data.relatedWorkId !== undefined) body['relatedWorkId'] = data.relatedWorkId;
     const response = await this.transport.request<VersionRelatedWork>({
       method: 'PUT',
       path: `${this.baseUrl}/version/${encodePathSegment(id)}/relatedwork`,

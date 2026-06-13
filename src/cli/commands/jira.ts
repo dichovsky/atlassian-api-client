@@ -1132,7 +1132,6 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'permission-search': {
       return client.users.getPermissionUsers({
         projectKey: asString(opts['project-key']),
-        projectUuid: asString(opts['project-uuid']),
         issueKey: asString(opts['issue-key']),
         query: asString(opts['query']),
         permissions: parseCsv(opts['permissions']),
@@ -1281,14 +1280,14 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
       const after = asString(opts['after']);
-      const before = asString(opts['before']);
-      if (after !== undefined && before !== undefined) {
-        throw new Error('priorities move accepts either --after or --before, not both');
+      const position = asString(opts['position']);
+      if (after !== undefined && position !== undefined) {
+        throw new Error('priorities move accepts either --after or --position, not both');
       }
       await client.priorities.move({
         ids,
         ...(after !== undefined && { after }),
-        ...(before !== undefined && { before }),
+        ...(position !== undefined && { position }),
       });
       return { moved: true };
     }
@@ -2514,13 +2513,11 @@ async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.settings.getColumns();
     case 'set-columns': {
       const rawColumns = requireOpt(opts['columns'], '--columns');
-      let columns: { label?: string; value?: string }[];
-      try {
-        columns = JSON.parse(rawColumns) as typeof columns;
-      } catch {
-        throw new Error('--columns must be valid JSON (array of {label, value} objects)');
-      }
-      await client.settings.setColumns({ columns });
+      const columns = rawColumns
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.settings.setColumns(columns);
       return { updated: true };
     }
     default:
@@ -3615,14 +3612,14 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
       const after = asString(opts['after']);
-      const before = asString(opts['before']);
-      if (after !== undefined && before !== undefined) {
-        throw new Error('resolutions move accepts either --after or --before, not both');
+      const position = asString(opts['position']);
+      if (after !== undefined && position !== undefined) {
+        throw new Error('resolutions move accepts either --after or --position, not both');
       }
       await client.resolutions.moveResolutions({
         ids,
         ...(after !== undefined && { after }),
-        ...(before !== undefined && { before }),
+        ...(position !== undefined && { position }),
       });
       return { moved: true };
     }
@@ -3634,7 +3631,6 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(id !== undefined && { id }),
         onlyDefault: asBoolFlag(opts['only-default']),
-        queryString: asString(opts['query-string']),
       });
     }
     default:
@@ -5202,12 +5198,10 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     case 'create-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
       const category = requireOpt(opts['category'], '--category');
-      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
       return client.version.createRelatedWork(id, {
         category,
-        ...(issueId !== undefined && { issueId }),
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
       });
@@ -5215,16 +5209,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     case 'update-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
       const category = requireOpt(opts['category'], '--category');
-      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
-      const relatedWorkId = asString(opts['related-work-id']);
       return client.version.updateRelatedWork(id, {
         category,
-        ...(issueId !== undefined && { issueId }),
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
-        ...(relatedWorkId !== undefined && { relatedWorkId }),
       });
     }
     case 'delete-and-replace': {

@@ -25,7 +25,8 @@ export interface JqlSearchResult {
   readonly nextPageToken?: string;
   readonly isLast?: boolean;
   readonly names?: Record<string, string>;
-  readonly warnings?: string[];
+  /** Spec `SearchWarningBean[]`: structured warnings (e.g. JQL_FUNCTION_LIMIT_EXCEEDED). */
+  readonly warnings?: { readonly type?: string; readonly details?: unknown }[];
 }
 
 export class SearchResource {

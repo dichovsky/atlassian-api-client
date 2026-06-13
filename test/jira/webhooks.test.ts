@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WebhooksResource } from '../../src/jira/resources/webhooks.js';
 import { MockTransport } from '../helpers/mock-transport.js';
-import type { Webhook, FailedWebhook } from '../../src/jira/resources/webhooks.js';
+import type {
+  Webhook,
+  FailedWebhook,
+  WebhooksExpirationDate,
+} from '../../src/jira/resources/webhooks.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -9,6 +13,8 @@ const makeWebhook = (id: number): Webhook => ({
   id,
   jqlFilter: 'project = TEST',
   events: ['jira:issue_created', 'jira:issue_updated'],
+  // url is required per spec (B1054)
+  url: 'https://example.com/webhook',
 });
 
 const makeFailedWebhook = (id: string, failureTime: number): FailedWebhook => ({
@@ -160,14 +166,18 @@ describe('WebhooksResource', () => {
   // ── refresh ───────────────────────────────────────────────────────────────
 
   describe('refresh()', () => {
-    it('calls PUT /webhook/refresh with webhookIds in body', async () => {
-      // Arrange
-      transport.respondWith(undefined);
+    it('calls PUT /webhook/refresh with webhookIds in body and returns WebhooksExpirationDate (B1054)', async () => {
+      // Spec: PUT /rest/api/3/webhook/refresh → 200 WebhooksExpirationDate { expirationDate: int64 (required) }
+      // Pre-fix: return type was void and body was discarded.
+      const expiration: WebhooksExpirationDate = { expirationDate: 1751000000000 };
+      transport.respondWith(expiration);
 
       // Act
-      await webhooks.refresh([10, 20]);
+      const result = await webhooks.refresh([10, 20]);
 
-      // Assert
+      // Assert — body must be returned (not void)
+      expect(result).toEqual(expiration);
+      expect(result.expirationDate).toBe(1751000000000);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/webhook/refresh`,
@@ -175,15 +185,58 @@ describe('WebhooksResource', () => {
       });
     });
 
-    it('handles single webhook id', async () => {
+    it('returns WebhooksExpirationDate for a single webhook id (B1054)', async () => {
       // Arrange
-      transport.respondWith(undefined);
+      const expiration: WebhooksExpirationDate = { expirationDate: 1751000001000 };
+      transport.respondWith(expiration);
 
       // Act
-      await webhooks.refresh([99]);
+      const result = await webhooks.refresh([99]);
 
       // Assert
+      expect(result.expirationDate).toBe(1751000001000);
       expect(transport.lastCall?.options.body).toEqual({ webhookIds: [99] });
+    });
+  });
+
+  // ── Webhook type shape (B1054) ────────────────────────────────────────────
+
+  describe('Webhook type shape (B1054)', () => {
+    it('requires url field and allows expirationDate as number (spec: int64) — no self field', () => {
+      // Spec: Webhook required = [events, id, jqlFilter, url]
+      // self is a PHANTOM field not in the spec; must be removed.
+      // expirationDate must be number (int64), not string.
+      const webhook: Webhook = {
+        id: 42,
+        jqlFilter: 'project = MYPROJ',
+        events: ['jira:issue_created'],
+        url: 'https://example.com/webhook',
+        expirationDate: 1751000000000, // integer (int64) per spec
+      };
+
+      // url must be accessible (required field)
+      expect(webhook.url).toBe('https://example.com/webhook');
+      // expirationDate is a number
+      expect(typeof webhook.expirationDate).toBe('number');
+      // self must NOT be a known property (compile-time check via type; no runtime 'self')
+      expect(Object.keys(webhook)).not.toContain('self');
+    });
+
+    it('returns webhook with url from list()', async () => {
+      // list() returns Webhook objects from the server; url must be present per spec
+      const page = {
+        values: [makeWebhook(1)],
+        startAt: 0,
+        maxResults: 50,
+        total: 1,
+      };
+      transport.respondWith(page);
+
+      const result = await webhooks.list();
+
+      // Assert url is present and accessible on the returned Webhook
+      const wh = result.values[0]!;
+      expect(wh.url).toBe('https://example.com/webhook');
     });
   });
 

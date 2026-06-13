@@ -378,6 +378,10 @@ export class PlansResource {
   /**
    * B628: Update a plan (JSON-patch).
    * PUT /rest/api/3/plans/plan/{planId}
+   *
+   * Spec media type is `application/json-patch+json`. The patch is serialised
+   * to JSON and sent as a raw binary blob so the transport sets the correct
+   * `Content-Type` header instead of the default `application/json`.
    */
   async update(
     planId: number,
@@ -390,7 +394,7 @@ export class PlansResource {
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}`,
       query,
-      body: patch,
+      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
     });
   }
 
@@ -512,6 +516,8 @@ export class PlansResource {
   /**
    * B635: Update an Atlassian team in a plan (JSON-patch).
    * PUT /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+   *
+   * Spec media type is `application/json-patch+json`.
    */
   async updateAtlassianTeam(
     planId: number,
@@ -521,7 +527,7 @@ export class PlansResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}/team/atlassian/${encodePathSegment(atlassianTeamId)}`,
-      body: patch,
+      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
     });
   }
 
@@ -573,6 +579,8 @@ export class PlansResource {
   /**
    * B639: Update a plan-only team in a plan (JSON-patch).
    * PUT /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+   *
+   * Spec media type is `application/json-patch+json`.
    */
   async updatePlanOnlyTeam(
     planId: number,
@@ -582,7 +590,7 @@ export class PlansResource {
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/plans/plan/${encodePathSegment(String(planId))}/team/planonly/${encodePathSegment(String(planOnlyTeamId))}`,
-      body: patch,
+      binaryBody: new Blob([JSON.stringify(patch)], { type: 'application/json-patch+json' }),
     });
   }
 

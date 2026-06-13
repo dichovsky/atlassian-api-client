@@ -239,7 +239,12 @@ describe('ConfigurationResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/configuration/timetracking/options`,
-        body: { workingHoursPerDay: 7.5, workingDaysPerWeek: 5, timeFormat: 'pretty', defaultUnit: 'minute' },
+        body: {
+          workingHoursPerDay: 7.5,
+          workingDaysPerWeek: 5,
+          timeFormat: 'pretty',
+          defaultUnit: 'minute',
+        },
       });
     });
 

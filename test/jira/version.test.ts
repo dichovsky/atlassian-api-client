@@ -97,13 +97,15 @@ describe('VersionResource', () => {
       expect(body['expand']).toBe('issuesstatus');
     });
 
-    it('forwards userStartDate and userReleaseDate in create body', async () => {
+    it('does NOT forward readOnly userStartDate/userReleaseDate even when provided (B1050)', async () => {
       transport.respondWith(makeVersion());
-      await resource.create({ userStartDate: '01/Jan/26', userReleaseDate: '01/Jun/26' });
+      // Cast bypasses the fixed type; verifies the implementation strips the fields regardless
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await resource.create({ userStartDate: '01/Jan/26', userReleaseDate: '01/Jun/26' } as any);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['userStartDate']).toBe('01/Jan/26');
-      expect(body['userReleaseDate']).toBe('01/Jun/26');
+      expect(body['userStartDate']).toBeUndefined();
+      expect(body['userReleaseDate']).toBeUndefined();
     });
   });
 
@@ -164,15 +166,13 @@ describe('VersionResource', () => {
       expect(body['name']).toBeUndefined();
     });
 
-    it('forwards all optional body fields', async () => {
+    it('forwards all writable optional body fields', async () => {
       transport.respondWith(makeVersion());
       await resource.update('10001', {
         archived: true,
         released: false,
         startDate: '2026-01-01',
         releaseDate: '2026-06-01',
-        userStartDate: '01/Jan/26',
-        userReleaseDate: '01/Jun/26',
         project: 'PROJ',
         projectId: 10100,
         moveUnfixedIssuesTo: `${BASE_URL}/version/10002`,
@@ -185,13 +185,25 @@ describe('VersionResource', () => {
       expect(body['released']).toBe(false);
       expect(body['startDate']).toBe('2026-01-01');
       expect(body['releaseDate']).toBe('2026-06-01');
-      expect(body['userStartDate']).toBe('01/Jan/26');
-      expect(body['userReleaseDate']).toBe('01/Jun/26');
       expect(body['project']).toBe('PROJ');
       expect(body['projectId']).toBe(10100);
       expect(body['moveUnfixedIssuesTo']).toBe(`${BASE_URL}/version/10002`);
       expect(body['expand']).toBe('issuesstatus');
       expect(body['driver']).toBe('driver-id');
+    });
+
+    it('does NOT forward readOnly userStartDate/userReleaseDate even when provided (B1050)', async () => {
+      transport.respondWith(makeVersion());
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.update('10001', {
+        userStartDate: '01/Jan/26',
+        userReleaseDate: '01/Jun/26',
+      } as unknown as Parameters<typeof resource.update>[1]);
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['userStartDate']).toBeUndefined();
+      expect(body['userReleaseDate']).toBeUndefined();
     });
   });
 
@@ -306,7 +318,7 @@ describe('VersionResource', () => {
   // ── createRelatedWork (B827) ──────────────────────────────────────────────
 
   describe('createRelatedWork()', () => {
-    it('calls POST /version/{id}/relatedwork with required category', async () => {
+    it('calls POST /version/{id}/relatedwork with required category and writable fields', async () => {
       const rw = makeRelatedWork();
       transport.respondWith(rw);
 
@@ -314,7 +326,6 @@ describe('VersionResource', () => {
         category: 'Design',
         title: 'Design doc',
         url: 'https://example.com',
-        issueId: 20001,
       });
 
       expect(result).toEqual(rw);
@@ -326,40 +337,46 @@ describe('VersionResource', () => {
       expect(body['category']).toBe('Design');
       expect(body['title']).toBe('Design doc');
       expect(body['url']).toBe('https://example.com');
-      expect(body['issueId']).toBe(20001);
     });
 
-    it('omits optional fields when undefined', async () => {
+    it('does NOT forward readOnly issueId/relatedWorkId even when provided (B1050)', async () => {
+      transport.respondWith(makeRelatedWork());
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.createRelatedWork('10001', {
+        category: 'Design',
+        issueId: 20001,
+        relatedWorkId: 'rw-42',
+      } as unknown as Parameters<typeof resource.createRelatedWork>[1]);
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['issueId']).toBeUndefined();
+      expect(body['relatedWorkId']).toBeUndefined();
+      expect(body['category']).toBe('Design');
+    });
+
+    it('omits optional writable fields when undefined', async () => {
       transport.respondWith(makeRelatedWork());
       await resource.createRelatedWork('10001', { category: 'Design' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['category']).toBe('Design');
-      expect(body['issueId']).toBeUndefined();
       expect(body['title']).toBeUndefined();
       expect(body['url']).toBeUndefined();
-    });
-
-    it('includes relatedWorkId when provided', async () => {
-      transport.respondWith(makeRelatedWork());
-      await resource.createRelatedWork('10001', { category: 'Design', relatedWorkId: 'rw-42' });
-
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['relatedWorkId']).toBe('rw-42');
     });
   });
 
   // ── updateRelatedWork (B828) ──────────────────────────────────────────────
 
   describe('updateRelatedWork()', () => {
-    it('calls PUT /version/{id}/relatedwork with required category', async () => {
+    it('calls PUT /version/{id}/relatedwork with required category and writable fields', async () => {
       const rw = makeRelatedWork('rw-1');
       transport.respondWith(rw);
 
       const result = await resource.updateRelatedWork('10001', {
         category: 'Design',
-        relatedWorkId: 'rw-1',
         title: 'Updated doc',
+        url: 'https://example.com',
       });
 
       expect(result).toEqual(rw);
@@ -369,30 +386,44 @@ describe('VersionResource', () => {
       });
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['category']).toBe('Design');
-      expect(body['relatedWorkId']).toBe('rw-1');
       expect(body['title']).toBe('Updated doc');
+      expect(body['url']).toBe('https://example.com');
     });
 
-    it('omits undefined optional fields', async () => {
+    it('does NOT forward readOnly issueId/relatedWorkId even when provided (B1050)', async () => {
+      transport.respondWith(makeRelatedWork());
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.updateRelatedWork('10001', {
+        category: 'Design',
+        issueId: 20001,
+        relatedWorkId: 'rw-1',
+      } as unknown as Parameters<typeof resource.updateRelatedWork>[1]);
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['issueId']).toBeUndefined();
+      expect(body['relatedWorkId']).toBeUndefined();
+      expect(body['category']).toBe('Design');
+    });
+
+    it('omits undefined optional writable fields', async () => {
       transport.respondWith(makeRelatedWork());
       await resource.updateRelatedWork('10001', { category: 'Design' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['relatedWorkId']).toBeUndefined();
-      expect(body['issueId']).toBeUndefined();
+      expect(body['title']).toBeUndefined();
+      expect(body['url']).toBeUndefined();
     });
 
-    it('includes all optional fields when provided', async () => {
+    it('includes all optional writable fields when provided', async () => {
       transport.respondWith(makeRelatedWork());
       await resource.updateRelatedWork('10001', {
         category: 'Design',
-        issueId: 20001,
         title: 'My title',
         url: 'https://example.com',
       });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['issueId']).toBe(20001);
       expect(body['title']).toBe('My title');
       expect(body['url']).toBe('https://example.com');
     });

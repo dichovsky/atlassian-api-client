@@ -237,14 +237,14 @@ atlas jira application-properties list-advanced-settings
 
 Global Jira instance configuration and time-tracking settings under `/rest/api/3/configuration` (B382–B387).
 
-| Action                        | Positional | Required flags | Optional flags                                                                          |
-| ----------------------------- | ---------- | -------------- | --------------------------------------------------------------------------------------- |
-| `get`                         | —          | —              | —                                                                                       |
-| `get-timetracking`            | —          | —              | —                                                                                       |
-| `select-timetracking`         | —          | `--key`        | `--name`, `--url`                                                                       |
-| `list-timetracking-providers` | —          | —              | —                                                                                       |
-| `get-timetracking-options`    | —          | —              | —                                                                                       |
-| `update-timetracking-options` | —          | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` | — |
+| Action                        | Positional | Required flags                                                                          | Optional flags    |
+| ----------------------------- | ---------- | --------------------------------------------------------------------------------------- | ----------------- |
+| `get`                         | —          | —                                                                                       | —                 |
+| `get-timetracking`            | —          | —                                                                                       | —                 |
+| `select-timetracking`         | —          | `--key`                                                                                 | `--name`, `--url` |
+| `list-timetracking-providers` | —          | —                                                                                       | —                 |
+| `get-timetracking-options`    | —          | —                                                                                       | —                 |
+| `update-timetracking-options` | —          | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` | —                 |
 
 - `get` returns the instance-level feature flags (voting, watching, sub-tasks, time tracking, attachments, issue linking) and the embedded `timeTrackingConfiguration` when time tracking is enabled.
 - `get-timetracking` returns the currently selected provider; `list-timetracking-providers` returns every installed provider. The built-in provider key is `JIRA`.
@@ -287,7 +287,7 @@ atlas jira configuration update-timetracking-options --working-hours-per-day 8 -
 
 - `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
 - `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
-- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry by 30 days.
+- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry and returns `{ expirationDate }` (milliseconds since epoch, int64).
 - `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
 - `delete` calls `DELETE /rest/api/3/webhook`. `--webhook-ids` is a JSON array of numeric webhook IDs to remove permanently.
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
@@ -486,14 +486,14 @@ atlas jira license get-approximate-count-for-product jira-software
 
 - `get-columns` calls `GET /rest/api/3/settings/columns` and returns the default issue navigator columns.
 - `set-columns` calls `PUT /rest/api/3/settings/columns` and replaces the default column configuration. Requires **Jira administrator** global permission.
-- `--columns` is a **JSON array** of `{label, value}` objects where `value` is the column field key. Example: `[{"label":"Key","value":"issuekey"},{"label":"Summary","value":"summary"}]`.
+- `--columns` is a **comma-separated** list of column field keys (e.g. `issuekey,summary,assignee`). The endpoint accepts `multipart/form-data` with repeated `columns` fields.
 
 ```sh
 # Get the current default issue navigator columns
 atlas jira settings get-columns
 
 # Set the default columns to Key and Summary
-atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"},{"label":"Summary","value":"summary"}]'
+atlas jira settings set-columns --columns issuekey,summary
 ```
 
 ## `redact`
@@ -731,21 +731,21 @@ atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"
 atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type":"authenticated"}]'
 ```
 
-| Action                   | Positional                             | Required flags                   | Optional flags                                                                                                                                                   |
-| ------------------------ | -------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list-gadgets`           | `<dashboardId>`                        | —                                | —                                                                                                                                                                |
-| `add-gadget`             | `<dashboardId>`                        | —                                | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
-| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
-| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                | —                                                                                                                                                                |
-| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                | —                                                                                                                                                                |
-| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                | —                                                                                                                                                                |
-| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                 | —                                                                                                                                                                |
-| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                | —                                                                                                                                                                |
+| Action                   | Positional                             | Required flags                                                      | Optional flags                                                                                                                                                   |
+| ------------------------ | -------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list-gadgets`           | `<dashboardId>`                        | —                                                                   | —                                                                                                                                                                |
+| `add-gadget`             | `<dashboardId>`                        | —                                                                   | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
+| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
+| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | —                                                                                                                                                                |
+| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                                                   | —                                                                                                                                                                |
+| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
+| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                                                    | —                                                                                                                                                                |
+| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
 | `copy`                   | `<dashboardId>`                        | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON) | `--description`                                                                                                                                                  |
-| `bulk-edit`              | —                                      | `--entity-ids` (csv ints), `--action` | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                  |
-| `list-available-gadgets` | —                                      | —                                | —                                                                                                                                                                |
-| `search`                 | —                                      | —                                | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
-| `search-all`             | —                                      | —                                | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
+| `bulk-edit`              | —                                      | `--entity-ids` (csv ints), `--action`                               | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                       |
+| `list-available-gadgets` | —                                      | —                                                                   | —                                                                                                                                                                |
+| `search`                 | —                                      | —                                                                   | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
+| `search-all`             | —                                      | —                                                                   | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
 
 - `--row` and `--column` must be supplied together (gadget position).
 - `--action` for `bulk-edit` is one of: `changeOwner`, `changePermission`, `addPermission`, `removePermission`, `changePermissionAndAddPermission`, `delete`.

@@ -312,8 +312,8 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 | `move`                   | `<id>`                          | at least one of `--after`, `--position` | —                                                                                                                                                            |
 | `related-issue-counts`   | `<id>`                          | —                                       | —                                                                                                                                                            |
 | `list-related-work`      | `<id>`                          | —                                       | —                                                                                                                                                            |
-| `create-related-work`    | `<id>`                          | `--category`                            | `--issue-id` (int), `--title`, `--url`                                                                                                                       |
-| `update-related-work`    | `<id>`                          | `--category`                            | `--issue-id` (int), `--title`, `--url`, `--related-work-id`                                                                                                  |
+| `create-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
+| `update-related-work`    | `<id>`                          | `--category`                            | `--title`, `--url`                                                                                                                                           |
 | `delete-and-replace`     | `<id>`                          | —                                       | `--move-fix-issues-to` (int version ID), `--move-affected-issues-to` (int version ID)                                                                        |
 | `unresolved-issue-count` | `<id>`                          | —                                       | —                                                                                                                                                            |
 | `delete-related-work`    | `<versionId>` `<relatedWorkId>` | —                                       | —                                                                                                                                                            |
@@ -351,7 +351,7 @@ atlas jira version list-related-work 10000
 atlas jira version create-related-work 10000 --category "Confluence page" --url "https://example.com"
 
 # Update related work
-atlas jira version update-related-work 10000 --category "Design doc" --related-work-id rw-abc --title "Updated"
+atlas jira version update-related-work 10000 --category "Design doc" --title "Updated"
 
 # Delete and replace version
 atlas jira version delete-and-replace 10000 --move-fix-issues-to 10001 --move-affected-issues-to 10001

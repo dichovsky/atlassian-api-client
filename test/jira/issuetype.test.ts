@@ -164,7 +164,9 @@ describe('IssueTypeResource', () => {
   // ── loadAvatar (B560) ──────────────────────────────────────────────────────
 
   describe('loadAvatar()', () => {
-    it('calls POST /issuetype/{id}/avatar2 with FormData, X-Atlassian-Token header, and crop query', async () => {
+    it('calls POST /issuetype/{id}/avatar2 with raw binaryBody, X-Atlassian-Token header, and crop query (B1051)', async () => {
+      // Spec: POST /rest/api/3/issuetype/{id}/avatar2 requestBody content-type is "*/*"
+      // (raw binary), NOT multipart/form-data. Must use binaryBody, not formData.
       const avatar = {
         id: '10300',
         isSystemAvatar: false,
@@ -178,13 +180,17 @@ describe('IssueTypeResource', () => {
       const result = await issueType.loadAvatar('10001', content, { size: 48, x: 0, y: 0 });
 
       expect(result).toEqual(avatar);
-      expect(transport.lastCall?.options).toMatchObject({
+      const opts = transport.lastCall?.options;
+      expect(opts).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/issuetype/10001/avatar2`,
         headers: { 'X-Atlassian-Token': 'no-check' },
         query: { size: 48, x: 0, y: 0 },
       });
-      expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+      // Must use binaryBody (raw binary upload), not formData (multipart)
+      expect(opts?.formData).toBeUndefined();
+      expect(opts?.binaryBody).toBeInstanceOf(Blob);
+      expect(opts?.binaryBody).toBe(content);
     });
 
     it('omits x and y from query when not supplied', async () => {

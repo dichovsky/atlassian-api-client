@@ -12112,19 +12112,22 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ moved: true });
     });
 
-    it('priorities move with before flag', async () => {
+    it('priorities move with position flag (B1053: spec uses position not before)', async () => {
       jiraPrioritiesMock.move.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('priorities', 'move', [], { ids: '1', before: '3' }), GLOBALS);
-      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], before: '3' });
+      await executeJiraCommand(
+        cmd('priorities', 'move', [], { ids: '1', position: 'First' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], position: 'First' });
     });
 
-    it('priorities move rejects both --after and --before', async () => {
+    it('priorities move rejects both --after and --position', async () => {
       await expect(
         executeJiraCommand(
-          cmd('priorities', 'move', [], { ids: '1', after: '2', before: '3' }),
+          cmd('priorities', 'move', [], { ids: '1', after: '2', position: 'Last' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('priorities move accepts either --after or --before, not both');
+      ).rejects.toThrow('priorities move accepts either --after or --position, not both');
       expect(jiraPrioritiesMock.move).not.toHaveBeenCalled();
     });
 
@@ -15644,34 +15647,35 @@ describe('executeJiraCommand', () => {
       expect(jiraSettingsMock.getColumns).toHaveBeenCalled();
     });
 
-    it('settings set-columns calls client.settings.setColumns() with parsed JSON', async () => {
-      // Arrange
+    it('settings set-columns calls client.settings.setColumns() with CSV column ids', async () => {
+      // --columns is now a comma-separated list of column field keys (string[]),
+      // not a JSON array of {label,value} objects.
       jiraSettingsMock.setColumns.mockResolvedValue(undefined);
-      const columnsJson = '[{"label":"Key","value":"issuekey"}]';
 
-      // Act
       const result = await executeJiraCommand(
-        cmd('settings', 'set-columns', [], { columns: columnsJson }),
+        cmd('settings', 'set-columns', [], { columns: 'issuekey,summary' }),
         GLOBALS,
       );
 
-      // Assert
       expect(result).toEqual({ updated: true });
-      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith({
-        columns: [{ label: 'Key', value: 'issuekey' }],
-      });
+      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith(['issuekey', 'summary']);
+    });
+
+    it('settings set-columns strips whitespace around CSV entries', async () => {
+      jiraSettingsMock.setColumns.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('settings', 'set-columns', [], { columns: ' issuekey , summary ' }),
+        GLOBALS,
+      );
+
+      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith(['issuekey', 'summary']);
     });
 
     it('settings set-columns throws when --columns is missing', async () => {
       await expect(executeJiraCommand(cmd('settings', 'set-columns'), GLOBALS)).rejects.toThrow(
         'Missing required option: --columns',
       );
-    });
-
-    it('settings set-columns throws when --columns is invalid JSON', async () => {
-      await expect(
-        executeJiraCommand(cmd('settings', 'set-columns', [], { columns: 'not-json' }), GLOBALS),
-      ).rejects.toThrow('--columns must be valid JSON');
     });
 
     it('settings unknown action throws', async () => {
@@ -17729,6 +17733,27 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('configuration update-timetracking-options requires --time-format (B1055/1)', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
+        'working-days-per-week': '5',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--time-format is required',
+      );
+    });
+
+    it('configuration update-timetracking-options requires --default-unit (B1055/1)', async () => {
+      const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
+        'working-days-per-week': '5',
+        'time-format': 'pretty',
+      });
+      await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--default-unit is required',
+      );
+    });
+
     it('configuration update-timetracking-options sends all four fields (B1055/1)', async () => {
       // Arrange — spec requires all four fields
       jiraConfigurationMock.updateTimeTrackingOptions.mockResolvedValue({
@@ -19665,26 +19690,30 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ moved: true });
     });
 
-    it('resolutions move with before flag', async () => {
+    it('resolutions move with position flag (B1053: spec uses position not before)', async () => {
       jiraResolutionsMock.moveResolutions.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('resolutions', 'move', [], { ids: '1', before: '3' }), GLOBALS);
+      await executeJiraCommand(
+        cmd('resolutions', 'move', [], { ids: '1', position: 'Last' }),
+        GLOBALS,
+      );
       expect(jiraResolutionsMock.moveResolutions).toHaveBeenCalledWith({
         ids: ['1'],
-        before: '3',
+        position: 'Last',
       });
     });
 
-    it('resolutions move rejects both --after and --before', async () => {
+    it('resolutions move rejects both --after and --position', async () => {
       await expect(
         executeJiraCommand(
-          cmd('resolutions', 'move', [], { ids: '1', after: '2', before: '3' }),
+          cmd('resolutions', 'move', [], { ids: '1', after: '2', position: 'First' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('resolutions move accepts either --after or --before, not both');
+      ).rejects.toThrow('resolutions move accepts either --after or --position, not both');
       expect(jiraResolutionsMock.moveResolutions).not.toHaveBeenCalled();
     });
 
-    it('resolutions search calls client.resolutions.search', async () => {
+    it('resolutions search calls client.resolutions.search (B1053: no queryString param)', async () => {
+      // Spec GET /resolution/search: startAt, maxResults, id, onlyDefault only (no queryString).
       const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
       jiraResolutionsMock.search.mockResolvedValue(page);
       const result = await executeJiraCommand(
@@ -19693,7 +19722,6 @@ describe('executeJiraCommand', () => {
           'max-results': '10',
           ids: '1,2',
           'only-default': true,
-          'query-string': 'Fix',
         }),
         GLOBALS,
       );
@@ -19702,7 +19730,6 @@ describe('executeJiraCommand', () => {
         maxResults: 10,
         id: ['1', '2'],
         onlyDefault: true,
-        queryString: 'Fix',
       });
       expect(result).toEqual(page);
     });
@@ -21264,7 +21291,6 @@ describe('executeJiraCommand', () => {
           category: 'Design',
           title: 'Design doc',
           url: 'https://example.com',
-          'issue-id': '20001',
         }),
         GLOBALS,
       );
@@ -21272,7 +21298,11 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(rw);
       expect(jiraVersionMock.createRelatedWork).toHaveBeenCalledWith(
         '10001',
-        expect.objectContaining({ category: 'Design', title: 'Design doc', issueId: 20001 }),
+        expect.objectContaining({
+          category: 'Design',
+          title: 'Design doc',
+          url: 'https://example.com',
+        }),
       );
     });
 
@@ -21289,8 +21319,6 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(
         cmd('version', 'update-related-work', ['10001'], {
           category: 'Design',
-          'related-work-id': 'rw-1',
-          'issue-id': '20001',
           title: 'Updated doc',
           url: 'https://example.com',
         }),
@@ -21302,8 +21330,6 @@ describe('executeJiraCommand', () => {
         '10001',
         expect.objectContaining({
           category: 'Design',
-          relatedWorkId: 'rw-1',
-          issueId: 20001,
           title: 'Updated doc',
           url: 'https://example.com',
         }),
@@ -28623,6 +28649,35 @@ describe('executeJiraCommand', () => {
         }),
       );
       expect(result).toMatchObject({ status: 'ok' });
+    });
+
+    it('bulk-edit rejects a non-integer --entity-ids (B1055/2a guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': 'abc', action: 'delete' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('is not a positive integer');
+    });
+
+    it('bulk-edit rejects a non-positive --entity-ids (B1055/2a guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'bulk-edit', [], { 'entity-ids': '0', action: 'delete' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('is not a positive integer');
+    });
+
+    it('bulk-edit treats an empty --entity-ids token list as no entity ids', async () => {
+      jiraDashboardsMock.bulkEdit.mockResolvedValue({ status: 'ok' });
+      await executeJiraCommand(
+        cmd('dashboards', 'bulk-edit', [], { 'entity-ids': ',', action: 'delete' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
+        expect.objectContaining({ entityIds: [], action: 'delete' }),
+      );
     });
 
     it('bulk-edit changeOwner action passes changeOwnerDetails with integer entityIds', async () => {

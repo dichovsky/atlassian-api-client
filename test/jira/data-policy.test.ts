@@ -59,7 +59,10 @@ describe('DataPolicyResource', () => {
 
   describe('getPolicies()', () => {
     const makeResponse = (ids: string[]): ProjectDataPolicies => ({
-      projectDataPolicies: ids.map((id) => ({ id: Number(id), dataPolicy: { anyContentBlocked: false } })),
+      projectDataPolicies: ids.map((id) => ({
+        id: Number(id),
+        dataPolicy: { anyContentBlocked: false },
+      })),
     });
 
     it('calls GET /data-policy/project with no params (B1055/5)', async () => {
