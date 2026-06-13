@@ -246,12 +246,12 @@ function resolveNonNegFiniteNumber(
 }
 
 function injectBearerToken(options: RequestOptions, token: string): RequestOptions {
+  // Set the trusted in-chain override (not `headers.Authorization`, which the
+  // transport strips as a caller header) so the refreshed token reaches the
+  // wire (#243).
   return {
     ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-    },
+    authorizationOverride: `Bearer ${token}`,
   };
 }
 

@@ -8210,8 +8210,8 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       let position: { row: number; column: number } | undefined;
       if (rowRaw !== undefined && colRaw !== undefined) {
         position = {
-          row: asPositiveInt(rowRaw, '--row') as number,
-          column: asPositiveInt(colRaw, '--column') as number,
+          row: asNonNegativeInt(rowRaw, '--row') as number,
+          column: asNonNegativeInt(colRaw, '--column') as number,
         };
       }
       return client.dashboards.addGadget(dashboardId, {
@@ -8238,8 +8238,8 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
       let position: { row: number; column: number } | undefined;
       if (rowRaw !== undefined && colRaw !== undefined) {
         position = {
-          row: asPositiveInt(rowRaw, '--row') as number,
-          column: asPositiveInt(colRaw, '--column') as number,
+          row: asNonNegativeInt(rowRaw, '--row') as number,
+          column: asNonNegativeInt(colRaw, '--column') as number,
         };
       }
       await client.dashboards.updateGadget(dashboardId, gadgetId, {
