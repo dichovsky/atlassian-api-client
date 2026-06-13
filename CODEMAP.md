@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "f9225df2d29d12ed48390e6b075ed56650bad6df0b6de63abe0460b6e3a236df",
+  "sourceHash": "6119b45f64e0bcc5ee93547822fafba1481765d66cc63e344030a1fffe3c422b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -2393,7 +2393,7 @@
       "name": "ListWebhooksParams",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 53,
+      "line": 66,
       "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
       "jsdoc": "Query parameters for listing registered Jira webhooks.",
       "typeOnly": true
@@ -2747,7 +2747,7 @@
       "name": "RegisterWebhookData",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 42,
+      "line": 55,
       "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
       "jsdoc": "Request body for registering one or more Jira webhooks at a URL.",
       "typeOnly": true
@@ -2756,7 +2756,7 @@
       "name": "RegisteredWebhooks",
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
-      "line": 48,
+      "line": 61,
       "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
       "jsdoc": "Response returned after registering webhooks, listing per-registration results.",
       "typeOnly": true
@@ -3330,8 +3330,17 @@
       "kind": "interface",
       "file": "src/jira/resources/webhooks.ts",
       "line": 19,
-      "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly…",
-      "jsdoc": "A registered Jira webhook that fires on matching events.",
+      "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly url: string; readonly fieldIdsFilte…",
+      "jsdoc": "A registered Jira webhook that fires on matching events. Spec: `Webhook`.",
+      "typeOnly": true
+    },
+    {
+      "name": "WebhooksExpirationDate",
+      "kind": "interface",
+      "file": "src/jira/resources/webhooks.ts",
+      "line": 37,
+      "signature": "export interface WebhooksExpirationDate { readonly expirationDate: number; }",
+      "jsdoc": "Response returned by `PUT /rest/api/3/webhook/refresh`. Contains the new expiration timestamp for the refreshed webhooks.",
       "typeOnly": true
     },
     {
@@ -16618,6 +16627,10 @@
               "original": "RegisteredWebhooks"
             },
             {
+              "exported": "WebhooksExpirationDate",
+              "original": "WebhooksExpirationDate"
+            },
+            {
               "exported": "ListWebhooksParams",
               "original": "ListWebhooksParams"
             },
@@ -21239,6 +21252,10 @@
             {
               "exported": "RegisteredWebhooks",
               "original": "RegisteredWebhooks"
+            },
+            {
+              "exported": "WebhooksExpirationDate",
+              "original": "WebhooksExpirationDate"
             },
             {
               "exported": "ListWebhooksParams",
@@ -34128,27 +34145,35 @@
           "kind": "interface",
           "line": 19,
           "exported": true,
-          "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly…",
-          "jsdoc": "A registered Jira webhook that fires on matching events."
+          "signature": "export interface Webhook { readonly id: number; readonly jqlFilter: string; readonly url: string; readonly fieldIdsFilte…",
+          "jsdoc": "A registered Jira webhook that fires on matching events. Spec: `Webhook`."
+        },
+        {
+          "name": "WebhooksExpirationDate",
+          "kind": "interface",
+          "line": 37,
+          "exported": true,
+          "signature": "export interface WebhooksExpirationDate { readonly expirationDate: number; }",
+          "jsdoc": "Response returned by `PUT /rest/api/3/webhook/refresh`. Contains the new expiration timestamp for the refreshed webhooks."
         },
         {
           "name": "WebhookRegistration",
           "kind": "interface",
-          "line": 29,
+          "line": 42,
           "exported": true,
           "signature": "export interface WebhookRegistration { readonly jqlFilter: string; readonly fieldIdsFilter?: string[]; readonly issuePro…"
         },
         {
           "name": "WebhookRegistrationResult",
           "kind": "interface",
-          "line": 36,
+          "line": 49,
           "exported": true,
           "signature": "export interface WebhookRegistrationResult { readonly createdWebhookId?: number; readonly errors?: string[]; }"
         },
         {
           "name": "RegisterWebhookData",
           "kind": "interface",
-          "line": 42,
+          "line": 55,
           "exported": true,
           "signature": "export interface RegisterWebhookData { readonly url: string; readonly webhooks: WebhookRegistration[]; }",
           "jsdoc": "Request body for registering one or more Jira webhooks at a URL."
@@ -34156,7 +34181,7 @@
         {
           "name": "RegisteredWebhooks",
           "kind": "interface",
-          "line": 48,
+          "line": 61,
           "exported": true,
           "signature": "export interface RegisteredWebhooks { readonly webhookRegistrationResult: WebhookRegistrationResult[]; }",
           "jsdoc": "Response returned after registering webhooks, listing per-registration results."
@@ -34164,7 +34189,7 @@
         {
           "name": "ListWebhooksParams",
           "kind": "interface",
-          "line": 53,
+          "line": 66,
           "exported": true,
           "signature": "export interface ListWebhooksParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for listing registered Jira webhooks."
@@ -34172,7 +34197,7 @@
         {
           "name": "FailedWebhook",
           "kind": "interface",
-          "line": 59,
+          "line": 72,
           "exported": true,
           "signature": "export interface FailedWebhook { readonly id: string; readonly body?: string; readonly url: string; readonly failureTime…",
           "jsdoc": "A single failed webhook delivery as returned by GET /rest/api/3/webhook/failed."
@@ -34180,51 +34205,51 @@
         {
           "name": "ListFailedWebhooksParams",
           "kind": "interface",
-          "line": 70,
+          "line": 83,
           "exported": true,
           "signature": "export interface ListFailedWebhooksParams { readonly maxResults?: number; readonly after?: number; }"
         },
         {
           "name": "WebhooksResource",
           "kind": "class",
-          "line": 76,
+          "line": 89,
           "exported": true,
           "signature": "export class WebhooksResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 77
+              "line": 90
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 83
+              "line": 96
             },
             {
               "name": "register",
               "kind": "method",
-              "line": 100
+              "line": 113
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 110
+              "line": 123
             },
             {
               "name": "refresh",
               "kind": "method",
-              "line": 119
+              "line": 132
             },
             {
               "name": "listFailed",
               "kind": "method",
-              "line": 128
+              "line": 142
             },
             {
               "name": "listAllFailed",
               "kind": "method",
-              "line": 149
+              "line": 163
             }
           ]
         }

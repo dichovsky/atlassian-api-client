@@ -15,15 +15,28 @@ export interface FailedWebhooks {
   readonly values: FailedWebhook[];
 }
 
-/** A registered Jira webhook that fires on matching events. */
+/** A registered Jira webhook that fires on matching events. Spec: `Webhook`. */
 export interface Webhook {
   readonly id: number;
   readonly jqlFilter: string;
+  /** The URL that specifies where the webhooks are sent. Required per spec. */
+  readonly url: string;
   readonly fieldIdsFilter?: string[];
   readonly issuePropertyKeysFilter?: string[];
   readonly events: string[];
-  readonly expirationDate?: string;
-  readonly self?: string;
+  /** The date after which the webhook is no longer sent (milliseconds since epoch, int64). */
+  readonly expirationDate?: number;
+}
+
+/**
+ * Response returned by `PUT /rest/api/3/webhook/refresh`.
+ * Contains the new expiration timestamp for the refreshed webhooks.
+ *
+ * Spec: `WebhooksExpirationDate`.
+ */
+export interface WebhooksExpirationDate {
+  /** The expiration date of all the refreshed webhooks (milliseconds since epoch, int64). */
+  readonly expirationDate: number;
 }
 
 export interface WebhookRegistration {
@@ -115,13 +128,14 @@ export class WebhooksResource {
     });
   }
 
-  /** Extend the life of webhooks by refreshing them. */
-  async refresh(webhookIds: number[]): Promise<void> {
-    await this.transport.request<undefined>({
+  /** Extend the life of webhooks by refreshing them. Returns the new expiration date. */
+  async refresh(webhookIds: number[]): Promise<WebhooksExpirationDate> {
+    const response = await this.transport.request<WebhooksExpirationDate>({
       method: 'PUT',
       path: `${this.baseUrl}/webhook/refresh`,
       body: { webhookIds },
     });
+    return response.data;
   }
 
   /** List failed webhook deliveries (paginated by timestamp cursor). */

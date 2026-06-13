@@ -370,6 +370,7 @@ export type {
   Webhook,
   RegisterWebhookData,
   RegisteredWebhooks,
+  WebhooksExpirationDate,
   ListWebhooksParams,
   FailedWebhook,
   FailedWebhooks,

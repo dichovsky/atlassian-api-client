@@ -423,6 +423,7 @@ export type {
   Webhook,
   RegisterWebhookData,
   RegisteredWebhooks,
+  WebhooksExpirationDate,
   ListWebhooksParams,
   JqlAutocompleteData,
   ParseJqlQueriesData,
