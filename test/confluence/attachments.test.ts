@@ -3,6 +3,7 @@ import { AttachmentsResource } from '../../src/confluence/resources/attachments.
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
+const V1_BASE_URL = 'https://test.atlassian.net/wiki/rest/api';
 
 const makeAttachment = (id: string) => ({
   id,
@@ -11,13 +12,20 @@ const makeAttachment = (id: string) => ({
   pageId: 'page-1',
 });
 
+const makeUploadResult = (id: string) => ({
+  results: [{ id, title: `file-${id}.pdf`, type: 'attachment', status: 'current' }],
+  start: 0,
+  limit: 1,
+  size: 1,
+});
+
 describe('AttachmentsResource', () => {
   let transport: MockTransport;
   let attachments: AttachmentsResource;
 
   beforeEach(() => {
     transport = new MockTransport();
-    attachments = new AttachmentsResource(transport, BASE_URL);
+    attachments = new AttachmentsResource(transport, BASE_URL, V1_BASE_URL);
   });
 
   // ── listForPage ───────────────────────────────────────────────────────────
@@ -231,9 +239,9 @@ describe('AttachmentsResource', () => {
   // ── upload ────────────────────────────────────────────────────────────────
 
   describe('upload()', () => {
-    it('calls POST /pages/{pageId}/attachments with FormData', async () => {
-      // Arrange
-      const payload = { results: [makeAttachment('new-1')], _links: {} };
+    it('POSTs to the v1 child/attachment path with FormData and X-Atlassian-Token', async () => {
+      // Arrange — the v1 endpoint returns a results array, not a cursor envelope
+      const payload = makeUploadResult('new-1');
       transport.respondWith(payload);
       const content = new Blob(['file content'], { type: 'text/plain' });
 
@@ -244,33 +252,58 @@ describe('AttachmentsResource', () => {
       expect(result).toEqual(payload);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
-        path: `${BASE_URL}/pages/page-1/attachments`,
+        path: `${V1_BASE_URL}/content/page-1/child/attachment`,
+        headers: { 'X-Atlassian-Token': 'nocheck' },
       });
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
     });
 
     it('accepts upload without a mimeType override', async () => {
       // Arrange
-      transport.respondWith({ results: [], _links: {} });
+      transport.respondWith(makeUploadResult('new-2'));
       const content = new Blob(['file content']);
 
       // Act
       await attachments.upload('page-1', 'test.txt', content);
 
       // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${V1_BASE_URL}/content/page-1/child/attachment`,
+        headers: { 'X-Atlassian-Token': 'nocheck' },
+      });
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
     });
 
     it('allows overriding mimeType when it differs from Blob.type', async () => {
       // Arrange
-      transport.respondWith({ results: [], _links: {} });
+      transport.respondWith(makeUploadResult('new-3'));
       const content = new Blob(['file content'], { type: 'application/octet-stream' });
 
       // Act
       await attachments.upload('page-1', 'test.png', content, 'image/png');
 
       // Assert
+      expect(transport.lastCall?.options).toMatchObject({
+        method: 'POST',
+        path: `${V1_BASE_URL}/content/page-1/child/attachment`,
+        headers: { 'X-Atlassian-Token': 'nocheck' },
+      });
       expect(transport.lastCall?.options.formData).toBeInstanceOf(FormData);
+    });
+
+    it('returns the v1 result envelope with results array', async () => {
+      // Arrange
+      const payload = makeUploadResult('att-42');
+      transport.respondWith(payload);
+
+      // Act
+      const result = await attachments.upload('page-1', 'doc.pdf', new Blob(['bytes']));
+
+      // Assert
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0]?.id).toBe('att-42');
+      expect(result.results[0]?.title).toBe('file-att-42.pdf');
     });
   });
 
@@ -296,9 +329,11 @@ describe('AttachmentsResource', () => {
     });
 
     it('encodes pageId in upload()', async () => {
-      transport.respondWith({ results: [], _links: {} });
+      transport.respondWith(makeUploadResult('x'));
       await attachments.upload('../admin', 'test.txt', new Blob(['x']));
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin/attachments`);
+      expect(transport.lastCall?.options.path).toBe(
+        `${V1_BASE_URL}/content/..%2Fadmin/child/attachment`,
+      );
     });
   });
 
