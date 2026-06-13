@@ -4,6 +4,7 @@ import {
   CircuitBreakerOpenError,
   HttpError,
   NetworkError,
+  ResponseTooLargeError,
   TimeoutError,
   ValidationError,
 } from '../../src/core/errors.js';
@@ -230,6 +231,37 @@ describe('createCircuitBreakerMiddleware — CLOSED state', () => {
       await expect(mw(makeOpts(), next)).rejects.toBe(abortErr);
     }
     expect(next).toHaveBeenCalledTimes(4);
+  });
+
+  it('opens the circuit after failureThreshold consecutive ResponseTooLargeError (B1040)', async () => {
+    const mw = createCircuitBreakerMiddleware({ failureThreshold: 3, resetTimeoutMs: 30_000 });
+    const err = new ResponseTooLargeError(1024, 200);
+    const next = vi.fn().mockRejectedValue(err);
+
+    // 3 failures → should open
+    for (let i = 0; i < 3; i++) {
+      await expect(mw(makeOpts(), next)).rejects.toBe(err);
+    }
+
+    // 4th request must be rejected by the open breaker, NOT by calling next
+    await expect(mw(makeOpts(), next)).rejects.toBeInstanceOf(CircuitBreakerOpenError);
+    expect(next).toHaveBeenCalledTimes(3);
+  });
+
+  it('counts ResponseTooLargeError on any HTTP status as a qualifying failure (B1040)', async () => {
+    // 5xx response bodies blasting oversized payloads are clearly server misbehaviour.
+    // 2xx oversized payloads (e.g. a misconfigured endpoint) are equally an upstream problem.
+    for (const status of [200, 204, 404, 500, 503]) {
+      const mw = createCircuitBreakerMiddleware({ failureThreshold: 2, resetTimeoutMs: 30_000 });
+      const err = new ResponseTooLargeError(512, status);
+      const next = vi.fn().mockRejectedValue(err);
+
+      await expect(mw(makeOpts(), next)).rejects.toBe(err);
+      await expect(mw(makeOpts(), next)).rejects.toBe(err);
+
+      await expect(mw(makeOpts(), next)).rejects.toBeInstanceOf(CircuitBreakerOpenError);
+      expect(next).toHaveBeenCalledTimes(2);
+    }
   });
 });
 

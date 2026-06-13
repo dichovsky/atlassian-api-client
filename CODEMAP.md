@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "95c399be0edc11daed02deaa92be0600829493400a6de3784ea1bf12696c350b",
+  "sourceHash": "f1846514961c3afe49a14be1b1943dc637380eab04a5c0cd624d9ce91c8884c6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -457,7 +457,7 @@
       "name": "CircuitBreakerOptions",
       "kind": "interface",
       "file": "src/core/circuit-breaker.ts",
-      "line": 11,
+      "line": 12,
       "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
       "jsdoc": "Options for the circuit breaker middleware.",
       "typeOnly": true
@@ -3472,7 +3472,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 30,
+      "line": 49,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -3488,7 +3488,7 @@
       "name": "createCircuitBreakerMiddleware",
       "kind": "function",
       "file": "src/core/circuit-breaker.ts",
-      "line": 115,
+      "line": 120,
       "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
       "jsdoc": "Creates an opt-in circuit breaker middleware."
     },
@@ -12632,9 +12632,16 @@
       "path": "src/core/batch.ts",
       "symbols": [
         {
+          "name": "IDEMPOTENT_METHODS",
+          "kind": "variable",
+          "line": 12,
+          "signature": "const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);",
+          "jsdoc": "Safe-idempotent methods eligible for request coalescing (B1039)."
+        },
+        {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 30,
+          "line": 49,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -12642,13 +12649,13 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 50,
+          "line": 79,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 71,
+          "line": 104,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         }
@@ -12709,7 +12716,7 @@
         {
           "name": "CircuitBreakerOptions",
           "kind": "interface",
-          "line": 11,
+          "line": 12,
           "exported": true,
           "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
           "jsdoc": "Options for the circuit breaker middleware."
@@ -12717,13 +12724,13 @@
         {
           "name": "State",
           "kind": "type",
-          "line": 28,
+          "line": 30,
           "signature": "type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';"
         },
         {
           "name": "createCircuitBreakerMiddleware",
           "kind": "function",
-          "line": 115,
+          "line": 120,
           "exported": true,
           "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
           "jsdoc": "Creates an opt-in circuit breaker middleware."
@@ -12731,9 +12738,9 @@
         {
           "name": "isQualifyingFailure",
           "kind": "function",
-          "line": 208,
+          "line": 216,
           "signature": "function isQualifyingFailure(error: unknown): boolean",
-          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, or {@link HttpError} with a 5xx status. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
+          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, {@link HttpError} with a 5xx status, or {@link ResponseTooLargeError}. A {@link ResponseTooLargeError} signals that the upstream is blasting oversized payloads — regardless of the HTTP status on the originating response, this is upstream misbehaviour worth tripping the breaker. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
         }
       ],
       "imports": [
