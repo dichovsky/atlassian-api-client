@@ -1,4 +1,5 @@
 import type { AuthConfig } from './types.js';
+import { ValidationError } from './errors.js';
 
 /**
  * Provider that produces Authorization headers for HTTP requests.
@@ -35,10 +36,30 @@ export interface AuthProvider {
  */
 export function createAuthProvider(config: AuthConfig): AuthProvider {
   if (config.type === 'basic') {
+    // B1041(6): fail fast on empty credentials. An empty `email`/`apiToken`
+    // (e.g. an unset env var resolving to `''`) would otherwise silently build
+    // a provider emitting `Basic base64(":")` — an invalid Authorization header
+    // that produces an opaque 401 at request time instead of a clear config error.
+    assertNonEmptyCredential(config.email, 'auth.email');
+    assertNonEmptyCredential(config.apiToken, 'auth.apiToken');
     return new BasicAuthProvider(config.email, config.apiToken);
   }
 
+  // B1041(6): an empty bearer `token` would emit `Bearer ` (no credential) and
+  // fail opaquely at request time; reject it up front.
+  assertNonEmptyCredential(config.token, 'auth.token');
   return new BearerAuthProvider(config.token);
+}
+
+/**
+ * B1041(6): reject an absent or empty credential field with a typed
+ * {@link ValidationError} so a misconfigured client fails at construction with
+ * a clear message rather than emitting a broken `Authorization` header.
+ */
+function assertNonEmptyCredential(value: string, fieldName: string): void {
+  if (typeof value !== 'string' || value === '') {
+    throw new ValidationError(`${fieldName} must be a non-empty string`);
+  }
 }
 
 class BasicAuthProvider implements AuthProvider {

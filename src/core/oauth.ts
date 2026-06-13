@@ -191,8 +191,22 @@ export function createOAuthRefreshMiddleware(config: OAuthRefreshConfig): Middle
         refreshPromise = fetchRefreshedTokens(config, currentTokens.refreshToken)
           .then(async (tokens) => {
             currentTokens = tokens;
+            // B1041(5): the token exchange has SUCCEEDED — `currentTokens` is
+            // now valid. `onTokenRefreshed` is a best-effort persistence side
+            // effect, so a throw from a user callback must NOT convert this
+            // successful refresh into a rejection. Doing so would (a) fail every
+            // concurrent awaiter even though the new token is good, and (b)
+            // record a bogus `lastFailure`, blocking valid refreshes for the
+            // whole cooldown window. Isolate the callback in its own try/catch
+            // so its error never reaches the shared `refreshPromise` state.
             if (config.onTokenRefreshed !== undefined) {
-              await config.onTokenRefreshed(tokens);
+              try {
+                await config.onTokenRefreshed(tokens);
+              } catch {
+                // Swallowed deliberately: the refresh is authoritative. A
+                // persistence failure is the caller's concern to handle inside
+                // their own callback; it must not poison the refresh single-flight.
+              }
             }
             lastFailure = null;
             return tokens;
@@ -372,7 +386,12 @@ function validateTokenEndpoint(
   try {
     parsed = new URL(endpoint);
   } catch {
-    throw new ValidationError(`tokenEndpoint is not a valid URL: ${endpoint}`);
+    // B1041(4): never echo the raw unparseable endpoint into the error. A
+    // pasted/poisoned `tokenEndpoint` may carry userinfo, a query string, or
+    // an embedded credential, and these ValidationErrors are commonly logged.
+    // Use a `<unparseable>` placeholder — mirrors `assertOverrideBaseUrl` in
+    // transport.ts, which already redacts the same class of untrusted input.
+    throw new ValidationError('tokenEndpoint is not a valid URL: <unparseable>');
   }
 
   if (parsed.protocol !== 'https:') {

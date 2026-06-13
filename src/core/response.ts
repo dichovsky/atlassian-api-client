@@ -1,5 +1,5 @@
 import type { ApiResponse, RateLimitInfo, RequestOptions } from './types.js';
-import { ResponseTooLargeError } from './errors.js';
+import { ResponseTooLargeError, ValidationError } from './errors.js';
 
 /** JSON-serialisable projection of {@link ApiResponse}. */
 export interface SerializableApiResponse<T> {
@@ -121,8 +121,27 @@ export async function parseResponseBody(
       // truly empty body in practice. Malformed JSON still throws below so
       // genuine server contract violations stay visible.
       if (text === '' || text.trim() === '') return undefined;
-      return JSON.parse(text) as unknown;
+      return parseJsonOrThrow(text);
     }
+  }
+}
+
+/**
+ * Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy
+ * {@link ValidationError} (B1041(2)).
+ *
+ * On the success path a malformed body is a server contract violation: the
+ * native `JSON.parse` throws a raw `SyntaxError`, which sits OUTSIDE the
+ * `AtlassianError` hierarchy and so escapes any `catch (e) { if (e instanceof
+ * AtlassianError) … }` consumer. Re-throwing as `ValidationError` (chaining the
+ * original `SyntaxError` via `cause`) gives callers a typed, catchable error
+ * without losing the root cause for debugging.
+ */
+function parseJsonOrThrow(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch (error) {
+    throw new ValidationError('Failed to parse response body as JSON', { cause: error });
   }
 }
 

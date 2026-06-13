@@ -5,7 +5,7 @@ import {
   safeParseBody,
   toJSON,
 } from '../../src/core/response.js';
-import { ResponseTooLargeError } from '../../src/core/errors.js';
+import { ResponseTooLargeError, ValidationError, AtlassianError } from '../../src/core/errors.js';
 import type { ApiResponse, RateLimitInfo } from '../../src/core/types.js';
 
 /**
@@ -197,9 +197,27 @@ describe('parseResponseBody', () => {
     expect(await parseResponseBody(response, 'json')).toBeUndefined();
   });
 
-  it('json: malformed JSON still throws SyntaxError (regression guard)', async () => {
+  // B1041(2): malformed JSON on a 2xx body is a server contract violation and
+  // must surface as a typed, catchable taxonomy error — NOT a raw `SyntaxError`
+  // that escapes `catch (e) { if (e instanceof AtlassianError) … }` consumers.
+  it('json: malformed JSON on a 2xx throws ValidationError, not raw SyntaxError', async () => {
     const response = new Response('{not-json', { status: 200 });
-    await expect(parseResponseBody(response, 'json')).rejects.toBeInstanceOf(SyntaxError);
+    await expect(parseResponseBody(response, 'json')).rejects.toBeInstanceOf(ValidationError);
+    // ...and the ValidationError is part of the AtlassianError taxonomy.
+    const response2 = new Response('{not-json', { status: 200 });
+    await expect(parseResponseBody(response2, 'json')).rejects.toBeInstanceOf(AtlassianError);
+  });
+
+  it('json: malformed JSON ValidationError chains the original SyntaxError as cause', async () => {
+    const response = new Response('{not-json', { status: 200 });
+    const err = await parseResponseBody(response, 'json').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ValidationError);
+    expect((err as ValidationError).cause).toBeInstanceOf(SyntaxError);
+  });
+
+  it('json: malformed JSON with responseType undefined also throws ValidationError', async () => {
+    const response = new Response('{not-json', { status: 200 });
+    await expect(parseResponseBody(response, undefined)).rejects.toBeInstanceOf(ValidationError);
   });
 });
 
@@ -323,8 +341,10 @@ describe('parseResponseBody with maxResponseBytes (B026)', () => {
     // Use a real text response so JSON.parse fails on the binary one — we
     // only care here that the header is *ignored*, not that JSON parses.
     expect(await safeParseBody(ok, 16)).toBeUndefined();
-    // And the binary stream version overflows the parse, returns the cap check passed.
-    await expect(parseResponseBody(response, 'json', 16)).rejects.toBeInstanceOf(SyntaxError);
+    // And the binary stream version fails the JSON parse (the cap check passed,
+    // so we reach JSON.parse on non-JSON bytes). B1041(2): that parse failure
+    // surfaces as the taxonomy ValidationError, not a raw SyntaxError.
+    await expect(parseResponseBody(response, 'json', 16)).rejects.toBeInstanceOf(ValidationError);
   });
 
   it('arrayBuffer: returns the bytes when within the cap', async () => {

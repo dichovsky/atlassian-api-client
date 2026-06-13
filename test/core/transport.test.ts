@@ -11,6 +11,7 @@ import {
   ResponseTooLargeError,
 } from '../../src/core/errors.js';
 import { OAuthError } from '../../src/core/oauth.js';
+import * as authModule from '../../src/core/auth.js';
 import type { ResolvedConfig, RequestOptions, ApiResponse } from '../../src/core/types.js';
 
 // ---------------------------------------------------------------------------
@@ -369,6 +370,48 @@ describe('HttpTransport', () => {
       expect((init.headers as Record<string, string>)['Authorization']).toBe(
         `Basic ${expectedToken}`,
       );
+    });
+
+    // B1041(1): the auth headers are captured ONCE at construction and reused
+    // for both the identity hash and every per-request header build. A custom
+    // provider's `getHeaders()` must NOT be invoked again on each request, and
+    // the wire credential must match the snapshot taken at construction.
+    it('invokes the auth provider getHeaders() once at construction, never per request', async () => {
+      // Return a FRESH Response per call — a Response body can only be read
+      // once, and this test issues multiple requests.
+      const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(makeResponse(200, {})));
+      vi.stubGlobal('fetch', fetchMock);
+
+      // Wrap the real provider so we can count getHeaders() calls. The transport
+      // builds its provider via this module-level `createAuthProvider`, so the
+      // spy observes exactly how many times the transport reads the headers.
+      const realProvider = authModule.createAuthProvider(defaultConfig.auth);
+      const getHeadersSpy = vi.fn(() => realProvider.getHeaders());
+      const createSpy = vi
+        .spyOn(authModule, 'createAuthProvider')
+        .mockReturnValue({ getHeaders: getHeadersSpy });
+
+      const transport = new HttpTransport({ ...defaultConfig, retries: 0 });
+      // One getHeaders() call so far — the construction-time snapshot.
+      expect(createSpy).toHaveBeenCalledTimes(1);
+      expect(getHeadersSpy).toHaveBeenCalledTimes(1);
+
+      // Multiple requests must NOT trigger any further getHeaders() calls.
+      await runRequest(transport, { method: 'GET', path: '/pages' });
+      await runRequest(transport, { method: 'GET', path: '/pages/2' });
+      await runRequest(transport, { method: 'GET', path: '/pages/3' });
+
+      expect(getHeadersSpy).toHaveBeenCalledTimes(1);
+
+      // And the wire credential matches the single snapshot, proving the
+      // request path and the construction (hash) path read the same value.
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const expectedToken = Buffer.from('test@example.com:test-token').toString('base64');
+      expect((init.headers as Record<string, string>)['Authorization']).toBe(
+        `Basic ${expectedToken}`,
+      );
+
+      createSpy.mockRestore();
     });
 
     it('strips a lowercase authorization header supplied by caller', async () => {

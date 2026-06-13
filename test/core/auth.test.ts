@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createAuthProvider } from '../../src/core/auth.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type { AuthConfig } from '../../src/core/types.js';
 
 describe('createAuthProvider', () => {
@@ -85,6 +86,49 @@ describe('createAuthProvider', () => {
       const provider = createAuthProvider(specificConfig);
       const headers = provider.getHeaders();
       expect(headers['Authorization']).toBe('Bearer simple-pat-token');
+    });
+  });
+
+  // B1041(6): fail fast on empty credentials. A direct `createAuthProvider`
+  // caller (the function is public) bypasses `resolveConfig`'s validation, so
+  // an empty field — e.g. an unset env var resolving to `''` — would otherwise
+  // silently build a provider emitting a broken `Authorization` header.
+  describe('empty-credential validation (B1041)', () => {
+    it('throws ValidationError when basic email is empty', () => {
+      expect(() => createAuthProvider({ type: 'basic', email: '', apiToken: 'tok' })).toThrow(
+        ValidationError,
+      );
+      expect(() => createAuthProvider({ type: 'basic', email: '', apiToken: 'tok' })).toThrow(
+        /auth\.email/,
+      );
+    });
+
+    it('throws ValidationError when basic apiToken is empty', () => {
+      expect(() =>
+        createAuthProvider({ type: 'basic', email: 'user@example.com', apiToken: '' }),
+      ).toThrow(ValidationError);
+      expect(() =>
+        createAuthProvider({ type: 'basic', email: 'user@example.com', apiToken: '' }),
+      ).toThrow(/auth\.apiToken/);
+    });
+
+    it('throws ValidationError when bearer token is empty', () => {
+      expect(() => createAuthProvider({ type: 'bearer', token: '' })).toThrow(ValidationError);
+      expect(() => createAuthProvider({ type: 'bearer', token: '' })).toThrow(/auth\.token/);
+    });
+
+    it('throws ValidationError when a credential field is a non-string at runtime', () => {
+      // JS callers can pass through an unvalidated object whose field is not a
+      // string; the guard rejects it rather than emitting a broken header.
+      const bad = { type: 'bearer', token: undefined } as unknown as AuthConfig;
+      expect(() => createAuthProvider(bad)).toThrow(ValidationError);
+    });
+
+    it('still builds a valid provider when all credentials are non-empty', () => {
+      expect(() =>
+        createAuthProvider({ type: 'basic', email: 'user@example.com', apiToken: 'tok' }),
+      ).not.toThrow();
+      expect(() => createAuthProvider({ type: 'bearer', token: 'tok' })).not.toThrow();
     });
   });
 });

@@ -275,6 +275,124 @@ describe('createOAuthRefreshMiddleware', () => {
     // Only one token refresh call should have been made
     expect(fetchCalls).toBe(1);
   });
+
+  // B1041(5): a throwing `onTokenRefreshed` callback must NOT poison the shared
+  // refresh single-flight. The token exchange has already succeeded, so the
+  // refresh must still resolve, the request must still retry with the new
+  // token, and a subsequent refresh must still work.
+  describe('onTokenRefreshed throw isolation (B1041)', () => {
+    it('still retries the request with the refreshed token when the callback throws', async () => {
+      const calls: string[] = [];
+      let callCount = 0;
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        calls.push(opts.authorizationOverride ?? '');
+        if (callCount === 1) throw new AuthenticationError();
+        return makeResponse({ retried: true });
+      });
+
+      global.fetch = vi.fn().mockResolvedValue(
+        fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'access-2', refresh_token: 'refresh-2' },
+        }),
+      ) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({
+        accessToken: 'access-1',
+        refreshToken: 'refresh-1',
+        clientId: 'cid',
+        clientSecret: 'csec',
+        onTokenRefreshed: () => {
+          throw new Error('persistence failed');
+        },
+      });
+
+      // The callback throws, but the refresh succeeded — the request must still
+      // succeed with the new token rather than rejecting with the callback error.
+      const result = await mw(makeOpts(), next);
+      expect(result.data).toEqual({ retried: true });
+      expect(calls[1]).toBe('Bearer access-2');
+    });
+
+    it('a later 401 refreshes again even after a previous callback threw (no poisoned cooldown)', async () => {
+      let fetchCalls = 0;
+      let callCount = 0;
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        // Each fresh request first hits 401 on the (current) initial token,
+        // then succeeds after refresh. Two logical requests, two refreshes.
+        if (opts.authorizationOverride === 'Bearer access-1' || callCount === 3) {
+          throw new AuthenticationError();
+        }
+        return makeResponse({ ok: callCount });
+      });
+
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        return fakeFetchResponse({
+          ok: true,
+          json: {
+            access_token: `access-${fetchCalls + 1}`,
+            refresh_token: `refresh-${fetchCalls + 1}`,
+          },
+        });
+      }) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({
+        accessToken: 'access-1',
+        refreshToken: 'refresh-1',
+        clientId: 'cid',
+        clientSecret: 'csec',
+        // failureCooldownMs default (1000): if the callback throw were recorded
+        // as a failure, the SECOND 401 within the window would replay it and
+        // skip the refresh. The guard prevents that.
+        onTokenRefreshed: () => {
+          throw new Error('persistence failed');
+        },
+      });
+
+      await mw(makeOpts(), next); // first request: refresh #1, callback throws but is isolated
+      await mw(makeOpts(), next); // second request: must refresh again, not replay a cached failure
+
+      expect(fetchCalls).toBe(2);
+    });
+
+    it('shares ONE successful refresh across concurrent waiters even when the callback throws', async () => {
+      let fetchCalls = 0;
+      let callCount = 0;
+      const next = vi.fn(async (_opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        if (callCount <= 2) throw new AuthenticationError();
+        return makeResponse({ ok: true });
+      });
+
+      global.fetch = vi.fn(async () => {
+        fetchCalls++;
+        return fakeFetchResponse({
+          ok: true,
+          json: { access_token: 'refreshed', refresh_token: 'new-refresh' },
+        });
+      }) as unknown as typeof fetch;
+
+      const mw = createOAuthRefreshMiddleware({
+        accessToken: 'initial',
+        refreshToken: 'refresh-1',
+        clientId: 'cid',
+        clientSecret: 'csec',
+        onTokenRefreshed: () => {
+          throw new Error('persistence failed');
+        },
+      });
+
+      const results = await Promise.all([mw(makeOpts(), next), mw(makeOpts(), next)]);
+
+      // One shared refresh; both waiters resolve successfully despite the throw.
+      expect(fetchCalls).toBe(1);
+      expect(results[0]?.data).toEqual({ ok: true });
+      expect(results[1]?.data).toEqual({ ok: true });
+    });
+  });
 });
 
 describe('fetchRefreshedTokens', () => {
@@ -812,6 +930,24 @@ describe('B036: tokenEndpoint host allowlist', () => {
           tokenEndpoint: 'not a url',
         }),
       ).toThrow(ValidationError);
+    });
+
+    // B1041(4): an unparseable endpoint may carry userinfo / a query string /
+    // an embedded credential. The ValidationError must NOT reflect the raw
+    // input verbatim (these errors are commonly logged); use a placeholder.
+    it('does not echo the raw unparseable tokenEndpoint into the error message', () => {
+      const secretBearing = 'http ://user:s3cr3t-token@evil.example/oauth?token=leak';
+      let captured: Error | undefined;
+      try {
+        createOAuthRefreshMiddleware({ ...validBaseConfig, tokenEndpoint: secretBearing });
+      } catch (e) {
+        captured = e as Error;
+      }
+      expect(captured).toBeInstanceOf(ValidationError);
+      // The raw string (and any secret inside it) must not appear verbatim.
+      expect(captured?.message).not.toContain('s3cr3t-token');
+      expect(captured?.message).not.toContain(secretBearing);
+      expect(captured?.message).toContain('<unparseable>');
     });
   });
 
