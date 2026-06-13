@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StatusesResource } from '../../src/jira/resources/statuses.js';
+import { StatusesResource, type StatusScope } from '../../src/jira/resources/statuses.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { Status } from '../../src/jira/types.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -111,11 +111,12 @@ describe('StatusesResource', () => {
   // ── bulkCreate (B778) ─────────────────────────────────────────────────────
 
   describe('bulkCreate()', () => {
-    it('calls POST /statuses with statuses body', async () => {
+    it('calls POST /statuses with required top-level scope and statuses body', async () => {
       const created = [makeStatus('10'), makeStatus('11')];
       transport.respondWith(created);
 
       const result = await statuses.bulkCreate({
+        scope: { type: 'GLOBAL' },
         statuses: [
           { name: 'Blocked', statusCategory: 'IN_PROGRESS' },
           { name: 'Done', statusCategory: 'DONE', description: 'Work complete' },
@@ -128,11 +129,37 @@ describe('StatusesResource', () => {
         path: `${BASE_URL}/statuses`,
       });
       const body = transport.lastCall?.options.body as Record<string, unknown>;
+      // Regression: StatusCreateRequest requires a top-level `scope`; the old
+      // code sent `{ statuses }` only → 400.
+      expect(body['scope']).toEqual({ type: 'GLOBAL' });
       expect(body['statuses']).toHaveLength(2);
     });
 
+    it('forwards a PROJECT-scoped scope verbatim', async () => {
+      transport.respondWith([makeStatus('12')]);
+
+      await statuses.bulkCreate({
+        scope: { type: 'PROJECT', project: { id: '10000' } },
+        statuses: [{ name: 'Blocked', statusCategory: 'IN_PROGRESS' }],
+      });
+
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['scope']).toEqual({ type: 'PROJECT', project: { id: '10000' } });
+    });
+
     it('throws ValidationError when statuses array is empty', async () => {
-      await expect(statuses.bulkCreate({ statuses: [] })).rejects.toBeInstanceOf(ValidationError);
+      await expect(
+        statuses.bulkCreate({ scope: { type: 'GLOBAL' }, statuses: [] }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it('throws ValidationError when scope is missing (spec requires top-level scope)', async () => {
+      await expect(
+        statuses.bulkCreate({
+          scope: undefined as unknown as StatusScope,
+          statuses: [{ name: 'Blocked', statusCategory: 'IN_PROGRESS' }],
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
     });
   });
 
@@ -162,12 +189,22 @@ describe('StatusesResource', () => {
   // ── getIssueTypeUsages (B780) ─────────────────────────────────────────────
 
   describe('getIssueTypeUsages()', () => {
-    it('calls GET /statuses/{statusId}/project/{projectId}/issueTypeUsages', async () => {
-      transport.respondWith({ values: [], nextPageToken: undefined });
+    it('returns the nested StatusProjectIssueTypeUsageDTO (page under issueTypes)', async () => {
+      // Spec: StatusProjectIssueTypeUsageDTO { issueTypes: { values:[{id}], nextPageToken }, projectId, statusId }.
+      transport.respondWith({
+        statusId: 's1',
+        projectId: 'p1',
+        issueTypes: { values: [{ id: 'it-1' }], nextPageToken: 'tok2' },
+      });
 
       const result = await statuses.getIssueTypeUsages('s1', 'p1');
 
-      expect(result.values).toEqual([]);
+      // Regression: the old flat type exposed `.values` at top level (undefined here).
+      expect(result).not.toHaveProperty('values');
+      expect(result.statusId).toBe('s1');
+      expect(result.projectId).toBe('p1');
+      expect(result.issueTypes?.values).toEqual([{ id: 'it-1' }]);
+      expect(result.issueTypes?.nextPageToken).toBe('tok2');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/statuses/s1/project/p1/issueTypeUsages`,
@@ -176,7 +213,7 @@ describe('StatusesResource', () => {
     });
 
     it('forwards nextPageToken and maxResults', async () => {
-      transport.respondWith({ values: [], nextPageToken: 'tok2' });
+      transport.respondWith({ statusId: 's1', projectId: 'p1', issueTypes: { values: [] } });
 
       await statuses.getIssueTypeUsages('s1', 'p1', {
         nextPageToken: 'tok1',
@@ -190,7 +227,7 @@ describe('StatusesResource', () => {
     });
 
     it('URL-encodes path segments', async () => {
-      transport.respondWith({ values: [] });
+      transport.respondWith({ issueTypes: { values: [] } });
 
       await statuses.getIssueTypeUsages('s/1', 'p/2');
 
@@ -203,11 +240,20 @@ describe('StatusesResource', () => {
   // ── getProjectUsages (B781) ───────────────────────────────────────────────
 
   describe('getProjectUsages()', () => {
-    it('calls GET /statuses/{statusId}/projectUsages', async () => {
-      transport.respondWith({ values: [] });
+    it('returns the nested StatusProjectUsageDTO (page under projects)', async () => {
+      // Spec: StatusProjectUsageDTO { projects: { values:[{id}], nextPageToken }, statusId }.
+      transport.respondWith({
+        statusId: 's1',
+        projects: { values: [{ id: 'P1' }], nextPageToken: 'tok' },
+      });
 
-      await statuses.getProjectUsages('s1');
+      const result = await statuses.getProjectUsages('s1');
 
+      // Regression: the old flat type exposed `.values` at top level (undefined here).
+      expect(result).not.toHaveProperty('values');
+      expect(result.statusId).toBe('s1');
+      expect(result.projects?.values).toEqual([{ id: 'P1' }]);
+      expect(result.projects?.nextPageToken).toBe('tok');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/statuses/s1/projectUsages`,
@@ -216,7 +262,7 @@ describe('StatusesResource', () => {
     });
 
     it('forwards nextPageToken', async () => {
-      transport.respondWith({ values: [] });
+      transport.respondWith({ projects: { values: [] } });
 
       await statuses.getProjectUsages('s1', { nextPageToken: 'abc' });
 
@@ -224,7 +270,7 @@ describe('StatusesResource', () => {
     });
 
     it('forwards maxResults', async () => {
-      transport.respondWith({ values: [] });
+      transport.respondWith({ projects: { values: [] } });
 
       await statuses.getProjectUsages('s1', { maxResults: 20 });
 
@@ -235,11 +281,20 @@ describe('StatusesResource', () => {
   // ── getWorkflowUsages (B782) ──────────────────────────────────────────────
 
   describe('getWorkflowUsages()', () => {
-    it('calls GET /statuses/{statusId}/workflowUsages', async () => {
-      transport.respondWith({ values: [] });
+    it('returns the nested StatusWorkflowUsageDTO (page under workflows)', async () => {
+      // Spec: StatusWorkflowUsageDTO { workflows: { values:[{id}], nextPageToken }, statusId }.
+      transport.respondWith({
+        statusId: 's1',
+        workflows: { values: [{ id: 'wf-1' }], nextPageToken: 'tok' },
+      });
 
-      await statuses.getWorkflowUsages('s1');
+      const result = await statuses.getWorkflowUsages('s1');
 
+      // Regression: the old flat type exposed `.values` at top level (undefined here).
+      expect(result).not.toHaveProperty('values');
+      expect(result.statusId).toBe('s1');
+      expect(result.workflows?.values).toEqual([{ id: 'wf-1' }]);
+      expect(result.workflows?.nextPageToken).toBe('tok');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/statuses/s1/workflowUsages`,
@@ -248,7 +303,7 @@ describe('StatusesResource', () => {
     });
 
     it('forwards nextPageToken', async () => {
-      transport.respondWith({ values: [] });
+      transport.respondWith({ workflows: { values: [] } });
 
       await statuses.getWorkflowUsages('s1', { nextPageToken: 'tok1' });
 
@@ -256,7 +311,7 @@ describe('StatusesResource', () => {
     });
 
     it('forwards maxResults', async () => {
-      transport.respondWith({ values: [] });
+      transport.respondWith({ workflows: { values: [] } });
 
       await statuses.getWorkflowUsages('s1', { maxResults: 10 });
 

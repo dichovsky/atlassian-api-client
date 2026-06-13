@@ -800,14 +800,13 @@ export class FieldsResource {
     return response.data;
   }
 
-  /** Update a custom field. */
-  async update(fieldId: string, data: UpdateFieldData): Promise<Field> {
-    const response = await this.transport.request<Field>({
+  /** Update a custom field. Returns void (204 No Content per spec). */
+  async update(fieldId: string, data: UpdateFieldData): Promise<void> {
+    await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.baseUrl}/field/${encodePathSegment(fieldId)}`,
       body: data,
     });
-    return response.data;
   }
 
   /** Delete a custom field. */

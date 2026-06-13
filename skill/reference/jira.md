@@ -111,6 +111,8 @@ Issue type scheme management (B566–B575). Covers the full `/rest/api/3/issuety
 | `move-issue-types`  | `<issueTypeSchemeId>`               | `--issue-type-ids` (CSV)                                             | `--position` (First\|Last), `--after` (issueTypeId)                  |
 | `assign-to-project` | —                                   | `--scheme-id`, `--project-id`                                        | —                                                                    |
 
+- `create` returns `{ issueTypeSchemeId }` (spec `IssueTypeSchemeID`), not `{ id }` — chain the returned `issueTypeSchemeId` into subsequent calls.
+
 ```bash
 # List all schemes (paginated)
 atlas jira issue-type-schemes list --start-at 0 --max-results 50
@@ -969,6 +971,9 @@ atlas jira issues export-archived --jql "project = PROJ AND isArchived = true" -
 - `set-feature-state` toggles a named project feature; `--state` accepts `ENABLED` or `DISABLED`.
 - `list-properties`, `get-property`, `delete-property` operate on arbitrary key-value storage attached to the project.
 - `set-property` accepts `--value` as JSON (any valid JSON value).
+- `create` returns **project identifiers** `{ id (number), key, self }` — not the full project object. Use the returned `key` with `get` to fetch full details. There is no `--priority-scheme` flag (the spec create body rejects it).
+- `validate-project-key` returns an `ErrorCollection` `{ errorMessages?: string[], errors?: { param: message }, status? }`. The key is **valid when `errorMessages` is empty**; there is no `valid` boolean.
+- `get-valid-project-key` and `get-valid-project-name` each return a **bare string** (the adjusted key/name), not an object.
 
 ```sh
 # List projects (paginated, preferred)
@@ -1142,7 +1147,7 @@ atlas jira search jql-post --jql "project = PROJ AND assignee = currentUser()"
 - `users delete` requires `--account-id`. Returns `{ deleted: true }` on success.
 - `users create` requires `--email`; `--display-name` is optional.
 - `users assignable-multi-project` accepts `--project-keys` as a comma-separated list.
-- `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list.
+- `users bulk` and `users bulk-emails` accept `--account-ids` as a comma-separated list. `bulk-emails` returns a **single** `{ accountId, email }` object (spec `UnrestrictedUserEmail`), not a `{ values: [...] }` wrapper.
 - `users bulk-migration` accepts `--user-name` and `--key` as comma-separated lists to translate legacy identifiers to account IDs.
 - `users set-columns` accepts `--columns` as a comma-separated list of column names; `--account-id` scopes the update to a specific user (admin only).
 - `permission-search` returns users who have the specified permissions; `--permissions` is a comma-separated list of permission names.
@@ -1710,6 +1715,7 @@ atlas jira backlog move --issues PROJ-3,PROJ-4
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
 - `--max-results` caps the number of results in a single page.
 - The SDK exposes `listFailed()` (single page) and `listAllFailed()` (async generator) on `client.webhooks`.
+- `list-failed` returns a `FailedWebhooks` page `{ maxResults, next?, values }` — cursor pagination via the `next` URL; there is no `startAt`/`isLast`/`total`.
 
 ```sh
 # List registered webhooks (paginated)
@@ -1895,15 +1901,16 @@ atlas jira events list
 
 ## `changelog`
 
-| Action       | Positional | Required flags | Optional flags                                               |
-| ------------ | ---------- | -------------- | ------------------------------------------------------------ |
-| `bulk-fetch` | —          | `--issues`     | `--author-ids`, `--field-ids`, `--start-at`, `--max-results` |
+| Action       | Positional | Required flags | Optional flags                                      |
+| ------------ | ---------- | -------------- | --------------------------------------------------- |
+| `bulk-fetch` | —          | `--issues`     | `--field-ids`, `--max-results`, `--next-page-token` |
 
-- `--issues` — **comma-separated** list of issue IDs or keys (e.g. `PROJ-1,PROJ-2,10001`). Required.
-- `--author-ids` — **comma-separated** account IDs to filter changelog entries by author.
-- `--field-ids` — **comma-separated** field IDs; only entries containing changes to these fields are returned.
-- `--start-at` / `--max-results` — standard offset pagination controls.
+- `--issues` — **comma-separated** list of issue IDs or keys (e.g. `PROJ-1,PROJ-2,10001`). Required (1–1000).
+- `--field-ids` — **comma-separated** field IDs (max 10); only entries containing changes to these fields are returned. Sent as the spec field `fieldIds`.
+- `--max-results` — page size (1–10000, default 1000).
+- `--next-page-token` — opaque cursor from a prior response; pagination is cursor-based, **not** offset (`--start-at`/`--author-ids` are not supported — the spec `BulkChangelogRequestBean` rejects them).
 - Endpoint: `POST /rest/api/3/changelog/bulkfetch`.
+- **Response shape:** `{ issueChangeLogs: [{ issueId, changeHistories: [...] }], nextPageToken? }` — changelogs are grouped per issue, and the next page is fetched with `nextPageToken` (there is no `.values`/`.total`).
 
 ```sh
 # Fetch changelogs for two issues
@@ -1912,8 +1919,8 @@ atlas jira changelog bulk-fetch --issues PROJ-1,PROJ-2
 # Filter to status changes only
 atlas jira changelog bulk-fetch --issues PROJ-1,PROJ-2 --field-ids status
 
-# Paginate through a large result set
-atlas jira changelog bulk-fetch --issues PROJ-1 --start-at 0 --max-results 50
+# Fetch the next page using the cursor from a prior response
+atlas jira changelog bulk-fetch --issues PROJ-1 --max-results 50 --next-page-token <token>
 ```
 
 ## `forge`
@@ -2764,29 +2771,32 @@ atlas jira resolutions search --only-default
 
 Bulk management, usage queries, and search for the `/rest/api/3/statuses` surface.
 
-| Action                  | Positional                 | Required flags | Optional flags                                                                        |
-| ----------------------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------- |
-| `list`                  | —                          | —              | —                                                                                     |
-| `bulk-delete`           | —                          | `--ids`        | —                                                                                     |
-| `bulk-create`           | —                          | `--value`      | —                                                                                     |
-| `bulk-update`           | —                          | `--value`      | —                                                                                     |
-| `get-issue-type-usages` | `<statusId>` `<projectId>` | —              | `--next-page-token`, `--max-results`                                                  |
-| `get-project-usages`    | `<statusId>`               | —              | `--next-page-token`, `--max-results`                                                  |
-| `get-workflow-usages`   | `<statusId>`               | —              | `--next-page-token`, `--max-results`                                                  |
-| `by-names`              | —                          | `--names`      | —                                                                                     |
-| `search`                | —                          | —              | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category` |
+| Action                  | Positional                 | Required flags       | Optional flags                                                                        |
+| ----------------------- | -------------------------- | -------------------- | ------------------------------------------------------------------------------------- |
+| `list`                  | —                          | —                    | —                                                                                     |
+| `bulk-delete`           | —                          | `--ids`              | —                                                                                     |
+| `bulk-create`           | —                          | `--value`, `--scope` | —                                                                                     |
+| `bulk-update`           | —                          | `--value`            | —                                                                                     |
+| `get-issue-type-usages` | `<statusId>` `<projectId>` | —                    | `--next-page-token`, `--max-results`                                                  |
+| `get-project-usages`    | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                  |
+| `get-workflow-usages`   | `<statusId>`               | —                    | `--next-page-token`, `--max-results`                                                  |
+| `by-names`              | —                          | `--names`            | —                                                                                     |
+| `search`                | —                          | —                    | `--project-id`, `--start-at`, `--max-results`, `--search-string`, `--status-category` |
 
 - `--ids` for `bulk-delete`: comma-separated status IDs.
-- `--value` for `bulk-create`: JSON array of `{ name, statusCategory, description?, scope? }` objects. `statusCategory` must be `TODO`, `IN_PROGRESS`, or `DONE`.
+- `--value` for `bulk-create`: JSON array of `{ name, statusCategory, description? }` objects. `statusCategory` must be `TODO`, `IN_PROGRESS`, or `DONE`.
+- `--scope` for `bulk-create` (**required**): JSON object describing the scope of the new statuses. `{"type":"GLOBAL"}` for company-managed projects, or `{"type":"PROJECT","project":{"id":"<projectId>"}}` for a team-managed project. The spec `StatusCreateRequest` requires this top-level scope; omitting it returns 400.
 - `--value` for `bulk-update`: JSON array of `{ id, name?, description?, statusCategory? }` objects.
 - `--next-page-token`: opaque token from previous page response (usages endpoints use cursor pagination, not offset).
+- **Usage response shapes are nested DTOs**, not a flat page: `get-project-usages` → `{ statusId, projects: { values: [{id}], nextPageToken? } }`; `get-workflow-usages` → `{ statusId, workflows: { values: [{id}], nextPageToken? } }`; `get-issue-type-usages` → `{ statusId, projectId, issueTypes: { values: [{id}], nextPageToken? } }`. Read items from the nested `.values`, and the cursor from the nested `.nextPageToken`.
 - `--names` for `by-names`: comma-separated status names.
 - `--status-category`: one of `TODO`, `IN_PROGRESS`, `DONE`.
 
 ```sh
 atlas jira statuses list
 atlas jira statuses bulk-delete --ids 10001,10002
-atlas jira statuses bulk-create --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS","description":"Awaiting external input"}]'
+atlas jira statuses bulk-create --scope '{"type":"GLOBAL"}' --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS","description":"Awaiting external input"}]'
+atlas jira statuses bulk-create --scope '{"type":"PROJECT","project":{"id":"10000"}}' --value '[{"name":"Triage","statusCategory":"TODO"}]'
 atlas jira statuses bulk-update --value '[{"id":"10001","name":"Renamed Status"}]'
 atlas jira statuses get-issue-type-usages 10001 10002
 atlas jira statuses get-project-usages 10001 --next-page-token abc123
@@ -2822,6 +2832,7 @@ Global project-role definitions at `/rest/api/3/role`. These are **top-level rol
 - `--account-id` / `--group-name` / `--group-id` for `delete-actors` accept a single value each (use `--account-id` instead of `--user` to remove a single user).
 - `update` (PUT) and `partial-update` (POST `/{id}`) are distinct Jira endpoints; Jira differentiates set-actors (POST) from full replace (PUT).
 - `--swap` for `delete` is a numeric role ID; Jira reassigns permissions to that role before deleting.
+- Returned roles expose the spec's bare `admin` / `default` boolean flags (whether the role is the admin role / default for new projects), not `isAdmin` / `isDefault`.
 
 ```sh
 # List all global project roles
@@ -3003,6 +3014,7 @@ Priority scheme management (B644–B651). Covers the full `/rest/api/3/prioritys
 - `--priorities` for `update` is a JSON object `{ "add": { "ids": [..] }, "remove": { "ids": [..] } }`; for `suggested-mappings` it is the simpler `{ "add": [..], "remove": [..] }`.
 - `--projects` for `update` follows the same `{ add: { ids: [..] }, remove: { ids: [..] } }` shape; for `suggested-mappings` it is `{ "add": [..] }` only (add-only on this endpoint).
 - `available-priorities` requires `--scheme-id` as a query parameter (string per the spec). It returns the priorities you could still add to the scheme.
+- A returned scheme's "is this the default scheme" flag is the spec field `default` (boolean), not `isDefault` (which is write-only and never returned).
 
 ```sh
 # List schemes (paginated, with priorities + projects inlined)
@@ -3769,12 +3781,14 @@ atlas jira fields field-list --start-at 0 --max-results 50
 # Create a custom field
 atlas jira fields field-create --body '{"name":"Sprint Story Points","type":"com.atlassian.jira.plugin.system.customfieldtypes:float"}'
 
-# Update a custom field
+# Update a custom field (returns no body — 204 No Content)
 atlas jira fields field-update customfield_10001 --body '{"name":"Renamed Field","description":"Updated description"}'
 
 # Delete a custom field
 atlas jira fields field-delete customfield_10001
 ```
+
+- `field-update` returns **no body** (the spec responds 204 No Content); the SDK `update()` resolves to `void`.
 
 ### Field Contexts (B415–B418)
 

@@ -106,12 +106,15 @@ describe('IssueTypeSchemeResource', () => {
   // ── create ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('calls POST /issuetypescheme with name', async () => {
-      transport.respondWith({ id: '10001' });
+    it('calls POST /issuetypescheme and returns IssueTypeSchemeID { issueTypeSchemeId }', async () => {
+      // Spec 201: IssueTypeSchemeID has `issueTypeSchemeId`, not `id`.
+      transport.respondWith({ issueTypeSchemeId: '10042' }, 201);
 
       const result = await resource.create({ name: 'My Scheme' });
 
-      expect(result).toEqual({ id: '10001' });
+      expect(result).toEqual({ issueTypeSchemeId: '10042' });
+      expect(result.issueTypeSchemeId).toBe('10042');
+      expect(result).not.toHaveProperty('id');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/issuetypescheme`,
@@ -120,7 +123,7 @@ describe('IssueTypeSchemeResource', () => {
     });
 
     it('includes optional fields when provided', async () => {
-      transport.respondWith({ id: '10001' });
+      transport.respondWith({ issueTypeSchemeId: '10001' }, 201);
 
       await resource.create({
         name: 'My Scheme',

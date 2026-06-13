@@ -390,16 +390,16 @@ describe('UsersResource', () => {
   // ── bulkGetEmails (B807) ──────────────────────────────────────────────────
 
   describe('bulkGetEmails()', () => {
-    it('calls GET /user/email/bulk with repeated accountId params in the path', async () => {
-      const bulkResp = {
-        values: [
-          { accountId: 'acc-1', email: 'alice@example.com' },
-          { accountId: 'acc-2', email: 'bob@example.com' },
-        ],
-      };
-      transport.respondWith(bulkResp);
+    it('calls GET /user/email/bulk and returns a single UnrestrictedUserEmail object', async () => {
+      // Regression: the spec returns a single { accountId, email } object, not a
+      // { values: [...] } wrapper, so the old `.values` access was always undefined.
+      const resp = { accountId: 'acc-1', email: 'alice@example.com' };
+      transport.respondWith(resp);
       const result = await users.bulkGetEmails(['acc-1', 'acc-2']);
-      expect(result).toEqual(bulkResp);
+      expect(result).toEqual(resp);
+      expect(result).not.toHaveProperty('values');
+      expect(result.accountId).toBe('acc-1');
+      expect(result.email).toBe('alice@example.com');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/user/email/bulk?accountId=acc-1&accountId=acc-2`,

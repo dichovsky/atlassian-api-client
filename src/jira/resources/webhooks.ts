@@ -2,6 +2,19 @@ import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
+/**
+ * A page of failed webhook deliveries returned by `GET /rest/api/3/webhook/failed`.
+ *
+ * Spec: `FailedWebhooks`. Cursor pagination via `next` (a full URL to the next
+ * page); there is no `startAt`/`isLast`/`total`. `maxResults` is the page size.
+ */
+export interface FailedWebhooks {
+  readonly maxResults: number;
+  /** URL to the next page of results. Present only if the request returned at least one result. */
+  readonly next?: string;
+  readonly values: FailedWebhook[];
+}
+
 /** A registered Jira webhook that fires on matching events. */
 export interface Webhook {
   readonly id: number;
@@ -112,15 +125,13 @@ export class WebhooksResource {
   }
 
   /** List failed webhook deliveries (paginated by timestamp cursor). */
-  async listFailed(
-    params?: ListFailedWebhooksParams,
-  ): Promise<OffsetPaginatedResponse<FailedWebhook>> {
+  async listFailed(params?: ListFailedWebhooksParams): Promise<FailedWebhooks> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
     if (params?.after !== undefined) query['after'] = params.after;
 
-    const response = await this.transport.request<OffsetPaginatedResponse<FailedWebhook>>({
+    const response = await this.transport.request<FailedWebhooks>({
       method: 'GET',
       path: `${this.baseUrl}/webhook/failed`,
       query,
@@ -144,11 +155,13 @@ export class WebhooksResource {
         ...(maxResults !== undefined && { maxResults }),
         after,
       });
-      for (const item of page.values) {
+      const values = page.values ?? [];
+      for (const item of values) {
         yield item;
       }
-      if (page.isLast || page.values.length === 0) break;
-      const last = page.values[page.values.length - 1];
+      // `FailedWebhooks` has no `isLast`; an empty page signals the end.
+      if (values.length === 0) break;
+      const last = values[values.length - 1];
       const nextCursor = last?.failureTime;
       // Defensive guard: break if server returns a malformed cursor to avoid an infinite loop.
       if (!Number.isFinite(nextCursor)) break;

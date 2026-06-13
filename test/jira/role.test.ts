@@ -100,6 +100,19 @@ describe('RoleResource', () => {
       });
     });
 
+    it('reads the spec bare `admin`/`default` flags (not isAdmin/isDefault)', async () => {
+      // Regression: the spec (ProjectRole) returns bare `admin`/`default`; the old
+      // type renamed them to isAdmin/isDefault, so they were always undefined.
+      transport.respondWith({ id: 10, name: 'Dev', admin: true, default: false });
+
+      const result = await roles.get(10);
+
+      expect(result.admin).toBe(true);
+      expect(result.default).toBe(false);
+      expect(result).not.toHaveProperty('isAdmin');
+      expect(result).not.toHaveProperty('isDefault');
+    });
+
     it('throws ValidationError for roleId = 0', async () => {
       await expect(roles.get(0)).rejects.toThrow(ValidationError);
     });

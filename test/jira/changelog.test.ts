@@ -21,12 +21,14 @@ const makeEntry = (overrides?: Partial<{ id: string }>) => ({
   ],
 });
 
-const makeResponse = (entries: ReturnType<typeof makeEntry>[], total = 0) => ({
-  values: entries,
-  startAt: 0,
-  maxResults: 50,
-  total,
-  isLast: true,
+// Real spec shape: BulkChangelogResponseBean { issueChangeLogs, nextPageToken? }.
+const makeResponse = (
+  entries: ReturnType<typeof makeEntry>[],
+  nextPageToken?: string,
+  issueId = 'PROJ-1',
+) => ({
+  issueChangeLogs: [{ issueId, changeHistories: entries }],
+  ...(nextPageToken !== undefined && { nextPageToken }),
 });
 
 describe('ChangelogResource', () => {
@@ -43,7 +45,7 @@ describe('ChangelogResource', () => {
   describe('bulkFetch()', () => {
     it('calls POST /changelog/bulkfetch with required issueIdsOrKeys', async () => {
       // Arrange
-      const response = makeResponse([makeEntry()], 1);
+      const response = makeResponse([makeEntry()]);
       transport.respondWith(response);
 
       // Act
@@ -58,95 +60,79 @@ describe('ChangelogResource', () => {
       });
     });
 
-    it('sends filterByAuthorAccountId when provided', async () => {
+    it('sends fieldIds when provided', async () => {
       // Arrange
       transport.respondWith(makeResponse([]));
 
       // Act
       await changelog.bulkFetch({
         issueIdsOrKeys: ['PROJ-1'],
-        filterByAuthorAccountId: ['acc-1', 'acc-2'],
+        fieldIds: ['status', 'priority'],
       });
 
       // Assert
       expect(transport.lastCall?.options.body).toMatchObject({
         issueIdsOrKeys: ['PROJ-1'],
-        filterByAuthorAccountId: ['acc-1', 'acc-2'],
+        fieldIds: ['status', 'priority'],
       });
     });
 
-    it('sends filterByFieldId when provided', async () => {
+    it('sends maxResults and nextPageToken when provided', async () => {
       // Arrange
       transport.respondWith(makeResponse([]));
 
       // Act
       await changelog.bulkFetch({
         issueIdsOrKeys: ['PROJ-1'],
-        filterByFieldId: ['status', 'priority'],
-      });
-
-      // Assert
-      expect(transport.lastCall?.options.body).toMatchObject({
-        issueIdsOrKeys: ['PROJ-1'],
-        filterByFieldId: ['status', 'priority'],
-      });
-    });
-
-    it('sends startAt and maxResults when provided', async () => {
-      // Arrange
-      transport.respondWith(makeResponse([]));
-
-      // Act
-      await changelog.bulkFetch({
-        issueIdsOrKeys: ['PROJ-1'],
-        startAt: 10,
         maxResults: 25,
+        nextPageToken: 'tok-1',
       });
 
       // Assert
       expect(transport.lastCall?.options.body).toMatchObject({
         issueIdsOrKeys: ['PROJ-1'],
-        startAt: 10,
         maxResults: 25,
+        nextPageToken: 'tok-1',
       });
     });
 
-    it('sends all params together', async () => {
-      // Arrange
+    it('sends only spec-valid fields (no filterBy* / startAt)', async () => {
+      // Regression: the old code sent filterByFieldId / filterByAuthorAccountId /
+      // startAt, none of which exist in BulkChangelogRequestBean
+      // (additionalProperties:false) → 400.
       transport.respondWith(makeResponse([]));
 
-      // Act
       await changelog.bulkFetch({
         issueIdsOrKeys: ['PROJ-1', '10002'],
-        filterByAuthorAccountId: ['acc-1'],
-        filterByFieldId: ['status'],
-        startAt: 0,
+        fieldIds: ['status'],
         maxResults: 50,
       });
 
-      // Assert
       expect(transport.lastCall?.options.body).toEqual({
         issueIdsOrKeys: ['PROJ-1', '10002'],
-        filterByAuthorAccountId: ['acc-1'],
-        filterByFieldId: ['status'],
-        startAt: 0,
+        fieldIds: ['status'],
         maxResults: 50,
       });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).not.toHaveProperty('filterByFieldId');
+      expect(body).not.toHaveProperty('filterByAuthorAccountId');
+      expect(body).not.toHaveProperty('startAt');
     });
 
-    it('returns paginated response with values array', async () => {
-      // Arrange
+    it('returns issueChangeLogs grouped per issue with a nextPageToken cursor', async () => {
+      // Regression: the old type exposed `.values`/`.total`; the spec groups
+      // changelogs under `issueChangeLogs` with a `nextPageToken` cursor.
       const entries = [makeEntry({ id: 'cl-1' }), makeEntry({ id: 'cl-2' })];
-      transport.respondWith(makeResponse(entries, 2));
+      transport.respondWith(makeResponse(entries, 'next-tok', 'PROJ-9'));
 
-      // Act
-      const result = await changelog.bulkFetch({ issueIdsOrKeys: ['PROJ-1'] });
+      const result = await changelog.bulkFetch({ issueIdsOrKeys: ['PROJ-9'] });
 
-      // Assert
-      expect(result.values).toHaveLength(2);
-      expect(result.values[0]!.id).toBe('cl-1');
-      expect(result.values[1]!.id).toBe('cl-2');
-      expect(result.total).toBe(2);
+      expect(result).not.toHaveProperty('values');
+      expect(result.issueChangeLogs).toHaveLength(1);
+      expect(result.issueChangeLogs[0]!.issueId).toBe('PROJ-9');
+      expect(result.issueChangeLogs[0]!.changeHistories).toHaveLength(2);
+      expect(result.issueChangeLogs[0]!.changeHistories![0]!.id).toBe('cl-1');
+      expect(result.nextPageToken).toBe('next-tok');
     });
 
     it('propagates transport errors', async () => {

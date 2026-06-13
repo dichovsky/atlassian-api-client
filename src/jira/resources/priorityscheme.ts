@@ -23,7 +23,12 @@ export interface PriorityScheme {
   readonly self?: string;
   readonly description?: string;
   readonly defaultPriorityId?: string;
-  readonly isDefault?: boolean;
+  /**
+   * Whether this is the default priority scheme. Spec: the readable field is
+   * `default`; `isDefault` is write-only (create/update input) and is never
+   * returned, so reading it always yielded `undefined`.
+   */
+  readonly default?: boolean;
   readonly priorities?: OffsetPaginatedResponse<PriorityWithSequence>;
   readonly projects?: OffsetPaginatedResponse<PrioritySchemeProject>;
 }

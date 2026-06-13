@@ -42,8 +42,10 @@ export interface Role {
   };
   readonly translatedName?: string;
   readonly currentUserRole?: boolean;
-  readonly isDefault?: boolean;
-  readonly isAdmin?: boolean;
+  /** Whether this role is the default for newly created projects. Spec: `default`. */
+  readonly default?: boolean;
+  /** Whether this role is the admin role. Spec: `admin`. */
+  readonly admin?: boolean;
 }
 
 /** Request body for `POST /rest/api/3/role` (create). */

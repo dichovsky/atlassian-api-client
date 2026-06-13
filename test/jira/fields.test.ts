@@ -224,17 +224,16 @@ describe('FieldsResource', () => {
   // ── update ────────────────────────────────────────────────────────────────
 
   describe('update()', () => {
-    it('calls PUT /field/{fieldId} with the provided data', async () => {
-      // Arrange
-      const updated = makeField('customfield_10050', 'Renamed Field', true);
-      transport.respondWith(updated);
+    it('calls PUT /field/{fieldId} with the provided data and returns void (204)', async () => {
+      // Spec: PUT /field/{fieldId} returns 204 No Content.
+      transport.respondWith(undefined, 204);
       const data = { name: 'Renamed Field' };
 
       // Act
       const result = await fields.update('customfield_10050', data);
 
-      // Assert
-      expect(result).toEqual(updated);
+      // Assert — no body is returned.
+      expect(result).toBeUndefined();
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/field/customfield_10050`,
@@ -244,7 +243,7 @@ describe('FieldsResource', () => {
 
     it('encodes fieldId in the path', async () => {
       // Arrange
-      transport.respondWith(makeField('customfield_10050', 'Field', true));
+      transport.respondWith(undefined, 204);
 
       // Act
       await fields.update('../admin', { name: 'x' });
