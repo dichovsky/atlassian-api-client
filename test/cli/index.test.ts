@@ -122,22 +122,14 @@ describe('runCli B1042 catch-all', () => {
   it('returns 1 (not a rejection) when --base-url is missing', async () => {
     const io = captureIo();
     // No credentials provided — resolveGlobalOptions will throw.
-    const code = await runCli(
-      ['node', 'atlas', 'jira', 'projects', 'list'],
-      io.out,
-      io.err,
-    );
+    const code = await runCli(['node', 'atlas', 'jira', 'projects', 'list'], io.out, io.err);
     // Must resolve (not reject) to 1.
     expect(code).toBe(1);
   });
 
   it('returns 1 and writes a friendly message when --base-url is missing', async () => {
     const io = captureIo();
-    const code = await runCli(
-      ['node', 'atlas', 'jira', 'projects', 'list'],
-      io.out,
-      io.err,
-    );
+    const code = await runCli(['node', 'atlas', 'jira', 'projects', 'list'], io.out, io.err);
     expect(code).toBe(1);
     // printError writes to process.stderr
     const stderrOut = (stderrSpy.mock.calls as [string, ...unknown[]][]).map((c) => c[0]).join('');

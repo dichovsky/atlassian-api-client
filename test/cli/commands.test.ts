@@ -25949,6 +25949,23 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--issue-ids must be a comma-separated list of positive integers');
     });
 
+    it('B1042: match-issues treats an empty/degenerate --issue-ids CSV as no ids (not NaN)', async () => {
+      // A non-empty but degenerate CSV (only separators/whitespace) reduces to
+      // no entries: asIntArray returns undefined and the call sends issueIds: [].
+      jiraJqlMock.matchIssues.mockResolvedValue({ matches: [] });
+      await executeJiraCommand(
+        cmd('jql', 'match-issues', [], {
+          'issue-ids': ',',
+          jqls: '["project = FOO"]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.matchIssues).toHaveBeenCalledWith({
+        issueIds: [],
+        jqls: ['project = FOO'],
+      });
+    });
+
     it('B1042: autocomplete-data-post rejects non-integer --project-ids (NaN guard)', async () => {
       await expect(
         executeJiraCommand(
