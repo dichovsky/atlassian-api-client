@@ -856,7 +856,7 @@ const matrix: readonly MatrixRow[] = [
     argv: ['confluence', 'admin-key', 'get'],
     routes: [{ method: 'GET', path: `${P}/admin-key`, body: F.adminKey }],
     expectCall: { method: 'GET', pathname: `${P}/admin-key` },
-    expectStdout: ['"durationInHours": 1'],
+    expectStdout: ['"accountId": "abc123"'],
   },
   {
     name: 'admin-key create (no flags)',
@@ -864,25 +864,25 @@ const matrix: readonly MatrixRow[] = [
     routes: [{ method: 'POST', path: `${P}/admin-key`, status: 201, body: F.adminKey }],
     expectCall: { method: 'POST', pathname: `${P}/admin-key` },
     expectBody: (body) => {
-      // CLI omits a body when --duration-hours is not supplied; the fetch mock
+      // CLI omits a body when --duration-minutes is not supplied; the fetch mock
       // reports that as null/undefined.
       expect(body == null).toBe(true);
     },
   },
   {
-    name: 'admin-key create --duration-hours',
-    argv: ['confluence', 'admin-key', 'create', '--duration-hours', '4'],
+    name: 'admin-key create --duration-minutes',
+    argv: ['confluence', 'admin-key', 'create', '--duration-minutes', '30'],
     routes: [
       {
         method: 'POST',
         path: `${P}/admin-key`,
         status: 201,
-        body: { ...F.adminKey, durationInHours: 4 },
+        body: F.adminKey,
       },
     ],
     expectCall: { method: 'POST', pathname: `${P}/admin-key` },
     expectBody: (body) => {
-      expect(body).toEqual({ durationInHours: 4 });
+      expect(body).toEqual({ durationInMinutes: 30 });
     },
   },
   {

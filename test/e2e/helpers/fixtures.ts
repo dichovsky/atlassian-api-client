@@ -157,9 +157,8 @@ export const confluenceFixtures = {
     _links: { next: null },
   },
   adminKey: {
-    createdAt: '2026-05-20T12:00:00.000Z',
-    expireAt: '2026-05-20T13:00:00.000Z',
-    durationInHours: 1,
+    accountId: 'abc123',
+    expirationTime: '2026-05-20T13:00:00.000Z',
   },
   contentIdTypes: {
     results: {

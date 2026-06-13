@@ -386,24 +386,25 @@ atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
 
 The admin key is a tenant-scoped, time-bound credential that lets an organisation admin perform privileged operations (e.g. permanently delete pages or spaces) without per-request elevation. Only one key may be active at a time — `create` rotates an existing key.
 
-| Action   | Positional | Optional flags     |
-| -------- | ---------- | ------------------ |
-| `get`    | —          | —                  |
-| `create` | —          | `--duration-hours` |
-| `delete` | —          | —                  |
+| Action   | Positional | Optional flags       |
+| -------- | ---------- | -------------------- |
+| `get`    | —          | —                    |
+| `create` | —          | `--duration-minutes` |
+| `delete` | —          | —                    |
 
-- `--duration-hours` must be a positive integer; the Confluence server currently accepts 1-24 (default 1). Omit the flag to use the server default.
+- `--duration-minutes` must be a positive integer in the range 1–60 (server default 10). Omit the flag to use the server default.
 - `delete` is idempotent; calling it when no key exists returns success.
+- `get` and `create` return `{ accountId, expirationTime }` where `expirationTime` is an ISO 8601 UTC timestamp.
 
 ```sh
 # Inspect the active admin key (if any)
 atlas confluence admin-key get
 
-# Enable an admin key for the server default duration
+# Enable an admin key for the server default duration (10 minutes)
 atlas confluence admin-key create
 
-# Rotate / enable with an explicit duration (hours)
-atlas confluence admin-key create --duration-hours 4
+# Rotate / enable with an explicit duration (minutes, max 60)
+atlas confluence admin-key create --duration-minutes 30
 
 # Revoke
 atlas confluence admin-key delete

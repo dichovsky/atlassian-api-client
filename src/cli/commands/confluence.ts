@@ -1111,10 +1111,10 @@ async function executeAdminKey(client: ConfluenceClient, cmd: ParsedCommand): Pr
     case 'get':
       return client.adminKey.get();
     case 'create': {
-      const durationRaw = opts['duration-hours'];
-      const durationInHours = asPositiveInt(durationRaw, '--duration-hours');
+      const durationRaw = opts['duration-minutes'];
+      const durationInMinutes = asPositiveInt(durationRaw, '--duration-minutes');
       return client.adminKey.create(
-        durationInHours !== undefined ? { durationInHours } : undefined,
+        durationInMinutes !== undefined ? { durationInMinutes } : undefined,
       );
     }
     case 'delete':

@@ -5,9 +5,8 @@ import { MockTransport } from '../helpers/mock-transport.js';
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
 const sampleKey = {
-  createdAt: '2026-05-20T12:00:00.000Z',
-  expireAt: '2026-05-20T13:00:00.000Z',
-  durationInHours: 1,
+  accountId: 'abc123',
+  expirationTime: '2026-05-20T13:00:00.000Z',
 };
 
 describe('AdminKeyResource', () => {
@@ -59,21 +58,57 @@ describe('AdminKeyResource', () => {
       expect(transport.lastCall?.options.body).toBeUndefined();
     });
 
-    it('forwards durationInHours when provided', async () => {
+    it('forwards durationInMinutes when provided', async () => {
       // Arrange
-      transport.respondWith({ ...sampleKey, durationInHours: 8 });
-      const data = { durationInHours: 8 };
+      transport.respondWith(sampleKey);
+      const data = { durationInMinutes: 30 };
 
       // Act
       const result = await adminKey.create(data);
 
       // Assert
-      expect(result.durationInHours).toBe(8);
+      expect(result).toEqual(sampleKey);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/admin-key`,
         body: data,
       });
+    });
+
+    it('accepts durationInMinutes = 1 (lower bound)', async () => {
+      transport.respondWith(sampleKey);
+      await adminKey.create({ durationInMinutes: 1 });
+      expect(transport.lastCall?.options.body).toEqual({ durationInMinutes: 1 });
+    });
+
+    it('accepts durationInMinutes = 60 (upper bound)', async () => {
+      transport.respondWith(sampleKey);
+      await adminKey.create({ durationInMinutes: 60 });
+      expect(transport.lastCall?.options.body).toEqual({ durationInMinutes: 60 });
+    });
+
+    it('throws ValidationError when durationInMinutes is 0', async () => {
+      await expect(adminKey.create({ durationInMinutes: 0 })).rejects.toThrow(
+        'durationInMinutes must be an integer between 1 and 60',
+      );
+    });
+
+    it('throws ValidationError when durationInMinutes is 61', async () => {
+      await expect(adminKey.create({ durationInMinutes: 61 })).rejects.toThrow(
+        'durationInMinutes must be an integer between 1 and 60',
+      );
+    });
+
+    it('throws ValidationError when durationInMinutes is negative', async () => {
+      await expect(adminKey.create({ durationInMinutes: -5 })).rejects.toThrow(
+        'durationInMinutes must be an integer between 1 and 60',
+      );
+    });
+
+    it('throws ValidationError when durationInMinutes is not an integer', async () => {
+      await expect(adminKey.create({ durationInMinutes: 1.5 })).rejects.toThrow(
+        'durationInMinutes must be an integer between 1 and 60',
+      );
     });
 
     it('passes an empty object body through verbatim (does not coerce to undefined)', async () => {
