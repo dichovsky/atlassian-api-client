@@ -201,7 +201,7 @@
 
 ## 🗺️ API Coverage
 
-> **Truly-missing Jira endpoints:** 0 non-blocked as of 2026-06-08. The 9 previously-open gaps (1 platform `getIsWatchingIssueBulk` + 8 software `*JSIS`) shipped as B1022–B1030 (PRs #235/#236/#238). Only 2 remain — both **BLOCKED** (B1002/B1006 approximate-count, software/1.0-only with no agile equivalent). Verified against live specs in `docs/API-GAP-ANALYSIS-2026-06-07.md`. (Prior "447 as of 2026-05-30" was stale — pre-dated the coverage wave.)
+> **Truly-missing Jira endpoints:** 0 non-blocked as of 2026-06-08. The 9 previously-open gaps (1 platform `getIsWatchingIssueBulk` + 8 software `*JSIS`) shipped as B1022–B1030 (PRs #235/#236/#238). Only 2 remain — both **BLOCKED** (B1002/B1006 approximate-count, software/1.0-only with no agile equivalent). Verified against live specs in `docs/archive/API-GAP-ANALYSIS-2026-06-07.md` (superseded by `docs/DEEP-AUDIT-2026-06-10.md`). (Prior "447 as of 2026-05-30" was stale — pre-dated the coverage wave.)
 
 > Tracks every endpoint from the three Atlassian OpenAPI specs (sources below) against this client. Keep descriptions brief. When a task is completed, REMOVE it from here and APPEND it to BACKLOG-ARCHIVE.md.
 >
