@@ -494,6 +494,8 @@ const GLOBAL_OPTIONS = {
   'context-ids': { type: 'string' as const },
   // forge bulk-panel-action option (moduleId of the Forge panel to pin/unpin)
   'module-id': { type: 'string' as const },
+  // service-registry options (B1047)
+  'service-ids': { type: 'string' as const },
 };
 
 export function parseCommand(argv: string[]): ParsedCommand & {
