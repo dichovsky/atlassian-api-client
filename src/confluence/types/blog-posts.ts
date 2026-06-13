@@ -1,6 +1,7 @@
 import type {
   AttachmentSortOrder,
   AttachmentStatus,
+  BlogPostSortOrder,
   BodyFormat,
   CommentSortOrder,
   CommentStatus,
@@ -31,6 +32,7 @@ export interface ListBlogPostsParams {
   readonly title?: string;
   readonly status?: string;
   readonly 'body-format'?: BodyFormat;
+  readonly sort?: BlogPostSortOrder;
   readonly limit?: number;
   readonly cursor?: string;
 }

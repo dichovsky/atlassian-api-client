@@ -578,11 +578,19 @@ async function executeBlogPosts(client: ConfluenceClient, cmd: ParsedCommand): P
   const opts = cmd.options;
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const bpListSort = asEnum(opts['sort'], BLOG_POST_SORT_ORDERS, 'sort');
+      const bpListBodyFormat = asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format');
       return client.blogPosts.list({
         spaceId: asString(opts['space-id']),
+        title: asString(opts['title']),
+        status: asString(opts['status']),
+        ...(bpListBodyFormat !== undefined ? { 'body-format': bpListBodyFormat } : {}),
+        ...(bpListSort !== undefined ? { sort: bpListSort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
       });
+    }
     case 'get': {
       const getBlogId = requireArg(cmd.positionalArgs[0], 'blog post ID');
       const getParams = buildGetBlogPostParams(opts);
@@ -826,19 +834,35 @@ async function executeComments(client: ConfluenceClient, cmd: ParsedCommand): Pr
   const commentType = asString(opts['comment-type']) ?? 'footer';
 
   switch (cmd.action) {
-    case 'list':
+    case 'list': {
+      const commentPageId = requireOpt(opts['page-id'], '--page-id');
+      const commentListParams = {
+        limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
+        'body-format': asEnum(opts['body-format'], CONTENT_BODY_FORMATS, 'body-format'),
+      };
       if (commentType === 'inline') {
-        return client.comments.listInline(requireOpt(opts['page-id'], '--page-id'));
+        return client.comments.listInline(commentPageId, commentListParams);
       }
-      return client.comments.listFooter(requireOpt(opts['page-id'], '--page-id'));
+      return client.comments.listFooter(commentPageId, commentListParams);
+    }
     case 'get':
       if (commentType === 'inline') {
         return client.comments.getInline(requireArg(cmd.positionalArgs[0], 'comment ID'));
       }
       return client.comments.getFooter(requireArg(cmd.positionalArgs[0], 'comment ID'));
     case 'create': {
+      const commentPageId2 = asString(opts['page-id']);
+      const commentBlogPostId = asString(opts['blog-post-id']);
+      if (commentPageId2 === undefined && commentBlogPostId === undefined) {
+        throw new Error('One of --page-id or --blog-post-id is required');
+      }
+      if (commentPageId2 !== undefined && commentBlogPostId !== undefined) {
+        throw new Error('Specify only one of --page-id or --blog-post-id, not both');
+      }
       const payload = {
-        pageId: asString(opts['page-id']),
+        ...(commentPageId2 !== undefined ? { pageId: commentPageId2 } : {}),
+        ...(commentBlogPostId !== undefined ? { blogPostId: commentBlogPostId } : {}),
         body: {
           representation: 'storage' as const,
           value: requireOpt(opts['body'], '--body'),
@@ -1108,6 +1132,7 @@ async function executeLabels(client: ConfluenceClient, cmd: ParsedCommand): Prom
     case 'list':
       return client.labels.listForPage(requireOpt(opts['page-id'], '--page-id'), {
         limit: asPositiveInt(opts['limit'], '--limit'),
+        cursor: asString(opts['cursor']),
       });
     case 'list-all': {
       const sort = asEnum(opts['sort'], LABEL_SORT_ORDERS, 'sort');
