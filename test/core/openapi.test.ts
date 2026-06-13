@@ -621,5 +621,39 @@ describe('generateTypes', () => {
       expect(source).not.toMatch(/^globalThis\.PWNED/m);
       expect(source).toContain('\\n');
     });
+
+    it('throws on an array enum member instead of splicing it in raw (code injection)', () => {
+      // String(['0;\nexport const X = …']) would emit the payload unquoted at the
+      // type position, escaping into a top-level statement.
+      expect(() =>
+        generateTypes(makeSpec({ Evil: { enum: [['0;\nexport const PWNED = 1;\ntype _j = 0']] } })),
+      ).toThrow(/not a string, finite number, boolean, or null/);
+    });
+
+    it('throws on an object enum member instead of splicing it in raw', () => {
+      expect(() =>
+        generateTypes(makeSpec({ Evil: { enum: [{ toString: () => 'evil()' }] } })),
+      ).toThrow(/not a string, finite number, boolean, or null/);
+    });
+
+    it('throws on a non-finite numeric enum member (NaN/Infinity)', () => {
+      expect(() => generateTypes(makeSpec({ Bad: { enum: [Number.POSITIVE_INFINITY] } }))).toThrow(
+        /not a string, finite number, boolean, or null/,
+      );
+    });
+
+    it('emits boolean and null enum members as safe literals', () => {
+      const { source } = generateTypes(makeSpec({ Flag: { enum: [true, false, null] } }));
+      expect(source).toContain('export type Flag = true | false | null;');
+    });
+
+    it('safely renders an inline enum nested in a property', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Holder: { type: 'object', properties: { mode: { enum: ['a', 1, null] } } },
+        }),
+      );
+      expect(source).toContain("readonly mode?: 'a' | 1 | null;");
+    });
   });
 });

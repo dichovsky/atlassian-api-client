@@ -73,6 +73,30 @@ function escapeStringLiteral(value: string): string {
 }
 
 /**
+ * Renders one enum member as a TypeScript literal. Only safe primitives are
+ * emitted: strings are escaped, finite numbers / booleans / null pass through.
+ * Arrays, objects, and non-finite numbers are rejected rather than spliced raw \u2014
+ * `String(["x"])` would inject attacker-controlled text into the type position.
+ */
+function enumMemberToTs(value: unknown): string {
+  if (typeof value === 'string') {
+    return `'${escapeStringLiteral(value)}'`;
+  }
+  if (typeof value === 'boolean') {
+    return String(value);
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  throw new Error(
+    `OpenAPI enum member (type ${typeof value}) is not a string, finite number, boolean, or null and cannot be safely represented in generated code`,
+  );
+}
+
+/**
  * Escapes a description string for safe embedding inside a JSDoc comment block.
  * Prevents star-slash sequences from terminating the comment block early.
  */
@@ -159,9 +183,7 @@ function generateTypeDeclaration(
 
 function generateEnumType(name: string, schema: OpenApiSchemaObject): string {
   // schema.enum is guaranteed non-undefined here (checked in generateTypeDeclaration)
-  const values = (schema.enum as readonly unknown[]).map((v) =>
-    typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v),
-  );
+  const values = (schema.enum as readonly unknown[]).map(enumMemberToTs);
   return `export type ${name} = ${values.join(' | ')};`;
 }
 
@@ -261,9 +283,7 @@ function schemaToTsType(
   }
 
   if (schema.enum !== undefined) {
-    return schema.enum
-      .map((v) => (typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v)))
-      .join(' | ');
+    return schema.enum.map(enumMemberToTs).join(' | ');
   }
 
   switch (schema.type) {
