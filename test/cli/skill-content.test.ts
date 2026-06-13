@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCommand } from '../../src/cli/router.js';
@@ -10,7 +10,18 @@ const REPO_ROOT = resolve(TEST_DIR, '..', '..');
 const SKILL_DIR = resolve(REPO_ROOT, 'skill');
 const SKILL_MD = readFileSync(resolve(SKILL_DIR, 'SKILL.md'), 'utf8');
 const CONFLUENCE_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'confluence.md'), 'utf8');
-const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8');
+// The Jira reference is split: `reference/jira.md` holds the resource×action
+// matrix + routing index; per-domain detail lives in `reference/jira/*.md`.
+// Concatenate the whole set so content-presence assertions span all of it.
+const JIRA_INDEX = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8');
+const JIRA_DOMAIN_DIR = resolve(SKILL_DIR, 'reference', 'jira');
+const JIRA_DOMAIN_FILES = readdirSync(JIRA_DOMAIN_DIR)
+  .filter((f) => f.endsWith('.md'))
+  .sort();
+const JIRA_REF =
+  JIRA_INDEX +
+  '\n' +
+  JIRA_DOMAIN_FILES.map((f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8')).join('\n');
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
@@ -61,6 +72,24 @@ describe('SKILL.md content', () => {
     expect(SKILL_MD).toContain('reference/examples.md');
     expect(SKILL_MD).toContain('reference/confluence.md');
     expect(SKILL_MD).toContain('reference/jira.md');
+  });
+
+  it('keeps the Jira reference split into an index + per-domain files, all routed from jira.md', () => {
+    // The index keeps the resource×action matrix; per-resource detail lives in jira/*.md.
+    expect(JIRA_INDEX).toContain('## Resource × action matrix');
+    expect(JIRA_DOMAIN_FILES.length).toBeGreaterThanOrEqual(5);
+    for (const f of JIRA_DOMAIN_FILES) {
+      // every domain file must be linked from the index routing section
+      expect(JIRA_INDEX, `jira.md routing must link jira/${f}`).toContain(`jira/${f}`);
+    }
+    // selective-loading goal: index + the single largest domain file is smaller than
+    // the full concatenated reference (an agent never loads everything).
+    const largestDomain = Math.max(
+      ...JIRA_DOMAIN_FILES.map(
+        (f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8').length,
+      ),
+    );
+    expect(JIRA_INDEX.length + largestDomain).toBeLessThan(JIRA_REF.length);
   });
 
   it('keeps SKILL.md compact to reduce prompt tokens', () => {

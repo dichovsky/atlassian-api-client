@@ -22,7 +22,7 @@ source: atlassian-api-client npm package
 - If shaping payloads/results is relevant: read `reference/payload-rules.md`.
 - If user asks for command syntax/examples: read `reference/examples.md`.
 - If Confluence action/flag mapping is needed: read `reference/confluence.md`.
-- If Jira action/flag mapping is needed: read `reference/jira.md`.
+- If Jira action/flag mapping is needed: read `reference/jira.md` for the resource×action matrix, then the one domain file it points to under `reference/jira/` (e.g. `jira/issues.md`, `jira/agile.md`) for that resource's flags and examples — avoids loading the full Jira reference.
 
 ## Always-on rules
 
