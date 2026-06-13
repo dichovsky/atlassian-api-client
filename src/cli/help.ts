@@ -377,7 +377,7 @@ EXAMPLES:
   atlas jira avatar list-system issuetype
   atlas jira custom-field-option get 10001
   atlas jira classification-levels list
-  atlas jira latest bulk-worklog --value '[{"issueIdOrKey":"PROJ-1","timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}]'
+  atlas jira latest bulk-worklog --value '[{"issueId":10001,"worklogId":20001}]'
   atlas jira remote-link get rl-123
   atlas jira remote-link delete rl-123
   atlas jira service-registry get
