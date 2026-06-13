@@ -135,10 +135,33 @@ describe('computeQsh', () => {
     expect(computeQsh('GET', '/path', { q: 'a~b' })).toBe(expected);
   });
 
-  it('strips query string appended to path', () => {
-    const qsh1 = computeQsh('GET', '/path?ignored=1');
-    const qsh2 = computeQsh('GET', '/path');
-    expect(qsh1).toBe(qsh2);
+  it('includes query params baked into the path (B1037 — not stripped)', () => {
+    // The path-baked param is a real request query param and MUST be in the QSH.
+    const canonical = 'GET&/path&single=1';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path?single=1')).toBe(expected);
+  });
+
+  it('canonicalizes REPEATED path params (appendRepeatedParams) as comma-joined values (B1037)', () => {
+    // serviceIds=a&serviceIds=b → serviceIds=a,b (values sorted, literal-comma joined).
+    // Without this, Connect-JWT requests using repeated array params get a 401.
+    const canonical = 'GET&/rest/atlassian-connect/1/service-registry&serviceIds=a,b';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(
+      computeQsh('GET', '/rest/atlassian-connect/1/service-registry?serviceIds=b&serviceIds=a'),
+    ).toBe(expected);
+  });
+
+  it('merges path-baked params with the structured query map, sorted by key (B1037)', () => {
+    const canonical = 'GET&/path&a=1&z=9';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path?z=9', { a: '1' })).toBe(expected);
+  });
+
+  it('excludes the jwt query param from its own QSH', () => {
+    const canonical = 'GET&/path&a=1';
+    const expected = createHash('sha256').update(canonical).digest('hex');
+    expect(computeQsh('GET', '/path?a=1&jwt=the-token')).toBe(expected);
   });
 
   it('handles POST method uppercasing', () => {
