@@ -196,7 +196,7 @@ const matrix: readonly MatrixRow[] = [
   // ─── statuses ─────────────────────────────────────────────────────────
   {
     name: 'statuses list',
-    argv: ['jira', 'statuses', 'list'],
+    argv: ['jira', 'statuses', 'list', '--ids', '1,2'],
     routes: [{ method: 'GET', path: `${P}/statuses`, body: F.statusList }],
     expectCall: { method: 'GET', pathname: `${P}/statuses` },
     expectStdout: ['"name": "To Do"'],
