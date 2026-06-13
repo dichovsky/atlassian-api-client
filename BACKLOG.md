@@ -6,17 +6,13 @@
 
 > Deep-audit 2026-06-10 (`docs/DEEP-AUDIT-2026-06-10.md`) core/CLI findings below (B1037–). Adversarially verified; the auth-middleware (#246) and pagination (#247) clusters already shipped and are excluded.
 
-- [ ] 🟡 🐛 Core: B1039 Batch middleware dedupes non-idempotent mutations + key gaps
-  - problem: `src/core/batch.ts` has no method guard (POST/PUT/PATCH/DELETE coalesced like GETs); `formData`/`binaryBody`/`responseType` excluded from the dedup key → concurrent distinct multipart/binary/responseType requests collapse to one. See report §5b.
-  - files: `src/core/batch.ts`, `test/core/batch.test.ts`
+- [ ] 🟢 🐛 Core: B1064 `pagination.validatePageSize` throws native `RangeError` not taxonomy `ValidationError` (deferred from B1041 sub-item 7)
+  - problem: `validatePageSize` (`src/core/pagination.ts`) throws a native `RangeError`, outside the `AtlassianError` taxonomy. Deferred from B1041 (#282) because the corrected type breaks ~152 `RangeError` assertions across ~30 downstream resource test files (`test/jira/*`, `test/confluence/*`, `test/property/*`) — its own focused PR. NOTE: `RangeError`→`ValidationError` is itself a **breaking** change (callers catching `RangeError`) → 3.0.0 CHANGELOG (B1062). Keep `normalizeMaxPages`'s separate `maxPages` `RangeError` assertions intact (different guard).
+  - files: `src/core/pagination.ts` + ~30 downstream test files
   - deps: none
-- [ ] 🟡 🐛 Core: B1040 Circuit breaker ignores body-cap failures
-  - problem: `ResponseTooLargeError` on a 5xx is not a qualifying failure (`src/core/circuit-breaker.ts`) → breaker never trips for response-too-large failures.
-  - files: `src/core/circuit-breaker.ts`, `test/core/circuit-breaker.test.ts`
-  - deps: none
-- [ ] 🟢 🐛 Core: B1041 Core robustness rollup (deep-audit MED/LOW)
-  - problem: `transport.getHeaders()` called twice per request (constructor hashing path can diverge); `response.ts` throws raw `SyntaxError` on malformed 2xx JSON (outside error taxonomy); `cache.ts` concurrent-miss stampede (no in-flight coalescing); `oauth.validateTokenEndpoint` echoes raw unparseable endpoint into a ValidationError; `onTokenRefreshed` throw poisons `refreshPromise`; `createAuthProvider` doesn't validate non-empty creds; `pagination.validatePageSize` throws native `RangeError`. Full list + file:line in report §5b.
-  - files: `src/core/{transport,response,cache,oauth,auth,pagination}.ts` + tests
+- [ ] 🟢 🐛 Core: B1065 `cache.ts` key omits `responseType` (wrong-shaped cached body)
+  - problem: the cache key (`src/core/cache.ts`) does not include `responseType`, so a cached `json` GET can be served to a later `arrayBuffer`/`text` request as the wrong-shaped parsed body. Same class as B1039 defect-2 (which fixed the *batch* dedup key) but for the *cache* layer; pre-existing, surfaced by the #281 reviewer. Decide: include `responseType` in the cache key, or don't cache requests with a non-default `responseType`.
+  - files: `src/core/cache.ts`, `test/core/cache.test.ts`
   - deps: none
 
 ## 🖥️ CLI
