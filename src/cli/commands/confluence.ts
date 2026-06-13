@@ -111,6 +111,8 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
       });
     case 'update': {
       const versionNum = requirePositiveInt(opts['version-number'], '--version-number');
+      // `body` is required by the spec (PageUpdateRequest required array).
+      const bodyValue = requireOpt(opts['body'], '--body');
       return client.pages.update(requireArg(cmd.positionalArgs[0], 'page ID'), {
         id: requireArg(cmd.positionalArgs[0], 'page ID'),
         title: requireOpt(opts['title'], '--title'),
@@ -118,7 +120,7 @@ async function executePages(client: ConfluenceClient, cmd: ParsedCommand): Promi
         version: {
           number: versionNum,
         },
-        body: makeBody(asString(opts['body'])),
+        body: { representation: 'storage' as const, value: bodyValue },
       });
     }
     case 'delete':

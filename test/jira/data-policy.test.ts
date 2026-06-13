@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ProjectDataPolicies } from '../../src/jira/resources/data-policy.js';
 import { DataPolicyResource } from '../../src/jira/resources/data-policy.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
@@ -52,24 +53,25 @@ describe('DataPolicyResource', () => {
     });
   });
 
-  // ── listProjectPolicies ───────────────────────────────────────────────────
+  // ── getPolicies (B1055/5) ─────────────────────────────────────────────────
+  // The spec endpoint GET /rest/api/3/data-policy/project (getPolicies) is
+  // NON-paginated — it returns ProjectDataPolicies with no total/startAt/maxResults.
 
-  describe('listProjectPolicies()', () => {
-    const makeResponse = (values: { projectId: string; anyContentBlocked: boolean }[]) => ({
-      values,
-      startAt: 0,
-      maxResults: 50,
-      total: values.length,
-      isLast: true,
+  describe('getPolicies()', () => {
+    const makeResponse = (ids: string[]): ProjectDataPolicies => ({
+      projectDataPolicies: ids.map((id) => ({
+        id: Number(id),
+        dataPolicy: { anyContentBlocked: false },
+      })),
     });
 
-    it('calls GET /data-policy/project with no params', async () => {
-      // Arrange
-      const response = makeResponse([{ projectId: '10001', anyContentBlocked: false }]);
+    it('calls GET /data-policy/project with no params (B1055/5)', async () => {
+      // Arrange — non-paginated endpoint; no startAt/maxResults query params
+      const response = makeResponse(['10001']);
       transport.respondWith(response);
 
       // Act
-      const result = await dataPolicy.listProjectPolicies();
+      const result = await dataPolicy.getPolicies();
 
       // Assert
       expect(result).toEqual(response);
@@ -77,6 +79,10 @@ describe('DataPolicyResource', () => {
         method: 'GET',
         path: `${BASE_URL}/data-policy/project`,
       });
+      // must NOT send pagination query params
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query).not.toHaveProperty('startAt');
+      expect(query).not.toHaveProperty('maxResults');
     });
 
     it('sends ids as a comma-separated query param', async () => {
@@ -84,36 +90,10 @@ describe('DataPolicyResource', () => {
       transport.respondWith(makeResponse([]));
 
       // Act
-      await dataPolicy.listProjectPolicies({ ids: ['10001', '10002'] });
+      await dataPolicy.getPolicies({ ids: ['10001', '10002'] });
 
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({ ids: '10001,10002' });
-    });
-
-    it('sends startAt and maxResults query params', async () => {
-      // Arrange
-      transport.respondWith(makeResponse([]));
-
-      // Act
-      await dataPolicy.listProjectPolicies({ startAt: 10, maxResults: 25 });
-
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 10, maxResults: 25 });
-    });
-
-    it('sends all params together', async () => {
-      // Arrange
-      transport.respondWith(makeResponse([]));
-
-      // Act
-      await dataPolicy.listProjectPolicies({ ids: ['10001'], startAt: 0, maxResults: 10 });
-
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        ids: '10001',
-        startAt: 0,
-        maxResults: 10,
-      });
     });
 
     it('omits ids from query when ids array is empty', async () => {
@@ -121,16 +101,40 @@ describe('DataPolicyResource', () => {
       transport.respondWith(makeResponse([]));
 
       // Act
-      await dataPolicy.listProjectPolicies({ ids: [] });
+      await dataPolicy.getPolicies({ ids: [] });
 
       // Assert
       const query = transport.lastCall?.options.query ?? {};
       expect(query).not.toHaveProperty('ids');
     });
 
-    it('throws RangeError for invalid maxResults', async () => {
-      // Act / Assert
-      await expect(dataPolicy.listProjectPolicies({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('omits query entirely when no params given', async () => {
+      // Arrange
+      transport.respondWith(makeResponse([]));
+
+      // Act
+      await dataPolicy.getPolicies();
+
+      // Assert
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
+
+    it('returns the projectDataPolicies array from the response', async () => {
+      // Arrange
+      const response: ProjectDataPolicies = {
+        projectDataPolicies: [
+          { id: 10001, dataPolicy: { anyContentBlocked: true } },
+          { id: 10002, dataPolicy: { anyContentBlocked: false } },
+        ],
+      };
+      transport.respondWith(response);
+
+      // Act
+      const result = await dataPolicy.getPolicies();
+
+      // Assert
+      expect(result.projectDataPolicies).toHaveLength(2);
+      expect(result.projectDataPolicies?.[0]?.id).toBe(10001);
     });
 
     it('propagates transport errors', async () => {
@@ -138,143 +142,7 @@ describe('DataPolicyResource', () => {
       transport.respondWithError(new Error('server error'));
 
       // Act / Assert
-      await expect(dataPolicy.listProjectPolicies()).rejects.toThrow('server error');
-    });
-
-    it('returns paginated response shape correctly', async () => {
-      // Arrange
-      const response = {
-        values: [
-          { projectId: '10001', anyContentBlocked: true },
-          { projectId: '10002', anyContentBlocked: false },
-        ],
-        startAt: 0,
-        maxResults: 50,
-        total: 2,
-        isLast: true,
-      };
-      transport.respondWith(response);
-
-      // Act
-      const result = await dataPolicy.listProjectPolicies();
-
-      // Assert
-      expect(result.values).toHaveLength(2);
-      const first = result.values[0]!;
-      expect(first.projectId).toBe('10001');
-      expect(first.anyContentBlocked).toBe(true);
-    });
-  });
-
-  // ── listAllProjectPolicies ────────────────────────────────────────────────
-
-  describe('listAllProjectPolicies()', () => {
-    it('yields all items from a single page', async () => {
-      // Arrange
-      transport.respondWith({
-        values: [
-          { projectId: '10001', anyContentBlocked: false },
-          { projectId: '10002', anyContentBlocked: true },
-        ],
-        startAt: 0,
-        maxResults: 50,
-        total: 2,
-        isLast: true,
-      });
-
-      // Act
-      const results: { projectId: string; anyContentBlocked: boolean }[] = [];
-      for await (const item of dataPolicy.listAllProjectPolicies()) {
-        results.push(item);
-      }
-
-      // Assert
-      expect(results).toHaveLength(2);
-      expect(results[0]!.projectId).toBe('10001');
-      expect(results[1]!.projectId).toBe('10002');
-    });
-
-    it('paginates across multiple pages', async () => {
-      // Arrange — two pages of 1 item each
-      transport
-        .respondWith({
-          values: [{ projectId: '10001', anyContentBlocked: false }],
-          startAt: 0,
-          maxResults: 1,
-          total: 2,
-          isLast: false,
-        })
-        .respondWith({
-          values: [{ projectId: '10002', anyContentBlocked: true }],
-          startAt: 1,
-          maxResults: 1,
-          total: 2,
-          isLast: true,
-        });
-
-      // Act
-      const results: { projectId: string; anyContentBlocked: boolean }[] = [];
-      for await (const item of dataPolicy.listAllProjectPolicies({ maxResults: 1 })) {
-        results.push(item);
-      }
-
-      // Assert
-      expect(results).toHaveLength(2);
-      expect(results[0]!.projectId).toBe('10001');
-      expect(results[1]!.projectId).toBe('10002');
-    });
-
-    it('passes ids query param when provided', async () => {
-      // Arrange
-      transport.respondWith({
-        values: [{ projectId: '10001', anyContentBlocked: false }],
-        startAt: 0,
-        maxResults: 50,
-        total: 1,
-        isLast: true,
-      });
-
-      // Act
-      const results: { projectId: string; anyContentBlocked: boolean }[] = [];
-      for await (const item of dataPolicy.listAllProjectPolicies({ ids: ['10001', '10002'] })) {
-        results.push(item);
-      }
-
-      // Assert
-      expect(results).toHaveLength(1);
-      expect(transport.lastCall?.options.query).toMatchObject({ ids: '10001,10002' });
-    });
-
-    it('yields nothing for an empty response', async () => {
-      // Arrange
-      transport.respondWith({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-        isLast: true,
-      });
-
-      // Act
-      const results: { projectId: string; anyContentBlocked: boolean }[] = [];
-      for await (const item of dataPolicy.listAllProjectPolicies()) {
-        results.push(item);
-      }
-
-      // Assert
-      expect(results).toHaveLength(0);
-    });
-
-    it('propagates transport errors during iteration', async () => {
-      // Arrange
-      transport.respondWithError(new Error('network failure'));
-
-      // Act / Assert
-      await expect(async () => {
-        for await (const _ of dataPolicy.listAllProjectPolicies()) {
-          // consume
-        }
-      }).rejects.toThrow('network failure');
+      await expect(dataPolicy.getPolicies()).rejects.toThrow('server error');
     });
   });
 });

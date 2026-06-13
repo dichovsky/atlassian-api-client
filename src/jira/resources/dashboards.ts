@@ -101,11 +101,16 @@ export interface DashboardItemProperty {
   readonly value: unknown;
 }
 
+/**
+ * Request body for POST /dashboard/{id}/copy (`copyDashboard`).
+ * `name`, `sharePermissions`, and `editPermissions` are required by the spec
+ * (`DashboardDetails` schema `required` array). `description` is optional.
+ */
 export interface CopyDashboardData {
-  readonly name?: string;
+  readonly name: string;
   readonly description?: string;
-  readonly sharePermissions?: DashboardSharePermission[];
-  readonly editPermissions?: DashboardSharePermission[];
+  readonly sharePermissions: DashboardSharePermission[];
+  readonly editPermissions: DashboardSharePermission[];
 }
 
 /** Action verb accepted by `PUT /dashboard/bulk/edit`. */
@@ -118,7 +123,8 @@ export type BulkEditDashboardAction =
   | 'delete';
 
 export interface BulkEditDashboardsData {
-  readonly entityIds: readonly string[];
+  /** Dashboard IDs to bulk-edit. Spec schema: `integer[]` (format: int64). */
+  readonly entityIds: readonly number[];
   readonly action: BulkEditDashboardAction;
   readonly changeOwnerDetails?: {
     readonly newOwner: string;
@@ -401,13 +407,17 @@ export class DashboardsResource {
     });
   }
 
-  /** B402: Copy a dashboard, optionally overriding metadata/permissions. */
-  async copy(id: string, data?: CopyDashboardData): Promise<Dashboard> {
-    const body: Record<string, unknown> = {};
-    if (data?.name !== undefined) body['name'] = data.name;
-    if (data?.description !== undefined) body['description'] = data.description;
-    if (data?.sharePermissions !== undefined) body['sharePermissions'] = data.sharePermissions;
-    if (data?.editPermissions !== undefined) body['editPermissions'] = data.editPermissions;
+  /**
+   * B402: Copy a dashboard. `data` is required — the spec mandates `name`,
+   * `sharePermissions`, and `editPermissions` in the `DashboardDetails` body.
+   */
+  async copy(id: string, data: CopyDashboardData): Promise<Dashboard> {
+    const body: Record<string, unknown> = {
+      name: data.name,
+      sharePermissions: data.sharePermissions,
+      editPermissions: data.editPermissions,
+    };
+    if (data.description !== undefined) body['description'] = data.description;
     const response = await this.transport.request<Dashboard>({
       method: 'POST',
       path: `${this.baseUrl}/dashboard/${encodePathSegment(id)}/copy`,
@@ -422,8 +432,8 @@ export class DashboardsResource {
       throw new ValidationError('entityIds must be a non-empty array');
     }
     for (const entry of data.entityIds) {
-      if (typeof entry !== 'string' || entry.length === 0) {
-        throw new ValidationError('entityIds entries must be non-empty strings');
+      if (!Number.isInteger(entry) || (entry as number) <= 0) {
+        throw new ValidationError('entityIds entries must be positive integers');
       }
     }
     const body: Record<string, unknown> = {

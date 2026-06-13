@@ -54,12 +54,16 @@ export interface SelectTimeTrackingProviderData {
   readonly url?: string;
 }
 
-/** Request body for PUT /rest/api/3/configuration/timetracking/options. */
+/**
+ * Request body for PUT /rest/api/3/configuration/timetracking/options.
+ * All four fields are required by the spec (`TimeTrackingConfiguration`
+ * schema has a `required` array covering every property).
+ */
 export interface UpdateTimeTrackingConfigurationData {
-  readonly workingHoursPerDay?: number;
-  readonly workingDaysPerWeek?: number;
-  readonly timeFormat?: 'pretty' | 'days' | 'hours';
-  readonly defaultUnit?: 'minute' | 'hour' | 'day' | 'week';
+  readonly workingHoursPerDay: number;
+  readonly workingDaysPerWeek: number;
+  readonly timeFormat: 'pretty' | 'days' | 'hours';
+  readonly defaultUnit: 'minute' | 'hour' | 'day' | 'week';
 }
 
 /**

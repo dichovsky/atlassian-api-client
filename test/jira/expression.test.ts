@@ -168,4 +168,41 @@ describe('ExpressionResource', () => {
       expect(transport.lastCall?.options.query).toBeUndefined();
     });
   });
+
+  // ── custom context variable is an array, not a Record (B1055/3) ──────────
+
+  describe('context.custom is typed as array of CustomContextVariable (B1055/3)', () => {
+    it('eval() forwards custom context as an array of typed variables', async () => {
+      transport.respondWith({ value: true });
+      await resource.eval({
+        expression: 'user.displayName',
+        context: {
+          custom: [
+            { type: 'user', accountId: 'abc123' },
+            { type: 'issue', key: 'PROJ-1' },
+            { type: 'json', value: { x: 1 } },
+          ],
+        },
+      });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const ctx = body['context'] as Record<string, unknown>;
+      expect(Array.isArray(ctx['custom'])).toBe(true);
+      const custom = ctx['custom'] as unknown[];
+      expect(custom).toHaveLength(3);
+      expect((custom[0] as Record<string, unknown>)['type']).toBe('user');
+    });
+
+    it('evaluate() accepts custom as array of CustomContextVariable', async () => {
+      transport.respondWith({ value: true });
+      await resource.evaluate({
+        expression: 'user.displayName',
+        context: {
+          custom: [{ type: 'user', accountId: 'acc-1' }],
+        },
+      });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const ctx = body['context'] as Record<string, unknown>;
+      expect(Array.isArray(ctx['custom'])).toBe(true);
+    });
+  });
 });

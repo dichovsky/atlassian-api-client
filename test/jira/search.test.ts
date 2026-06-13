@@ -422,5 +422,23 @@ describe('SearchResource', () => {
     it('throws RangeError when maxResults is invalid', async () => {
       await expect(search.searchJqlPost({ maxResults: 0 })).rejects.toThrow(RangeError);
     });
+
+    it('surfaces isLast from the SearchAndReconcileResults response (B1055/7)', async () => {
+      // Spec: SearchAndReconcileResults includes isLast: boolean.
+      transport.respondWith({ issues: [], isLast: true, nextPageToken: undefined });
+
+      const result = await search.searchJqlPost({});
+
+      expect(result.isLast).toBe(true);
+    });
+
+    it('surfaces isLast: false when more pages remain', async () => {
+      transport.respondWith({ issues: [], isLast: false, nextPageToken: 'tok-2' });
+
+      const result = await search.searchJqlPost({});
+
+      expect(result.isLast).toBe(false);
+      expect(result.nextPageToken).toBe('tok-2');
+    });
   });
 });

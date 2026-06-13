@@ -42,6 +42,7 @@ import type {
   WorkflowTransitionRulesUpdateEntry,
   WorkflowTransitionRulesDeleteEntry,
   BulkEditDashboardsData,
+  DashboardSharePermission,
   SearchDashboardsOrderBy,
   ListSoftwareIssuesParams,
   RedactionItem,
@@ -1925,6 +1926,7 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
     case 'get-workspace':
       return client.dataPolicy.getWorkspacePolicy();
     case 'list-projects': {
+      // The spec endpoint (getPolicies) is non-paginated — only `ids` filter is accepted.
       const idsRaw = asString(opts['ids']);
       const ids = idsRaw
         ? idsRaw
@@ -1932,11 +1934,7 @@ async function executeDataPolicy(client: JiraClient, cmd: ParsedCommand): Promis
             .map((s) => s.trim())
             .filter((s) => s.length > 0)
         : undefined;
-      return client.dataPolicy.listProjectPolicies({
-        ids,
-        startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
-        maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-      });
+      return client.dataPolicy.getPolicies({ ids });
     }
     default:
       throw new Error(
@@ -3456,6 +3454,24 @@ function asPositiveNumber(value: string | boolean | undefined, name: string): nu
   return n;
 }
 
+function requirePositiveNumber(value: string | boolean | undefined, name: string): number {
+  const n = asPositiveNumber(value, name);
+  if (n === undefined) throw new Error(`${name} is required`);
+  return n;
+}
+
+function requireTimeFormat(value: string | boolean | undefined): TimeFormat {
+  const s = asTimeFormat(value);
+  if (s === undefined) throw new Error(`--time-format is required`);
+  return s;
+}
+
+function requireDefaultUnit(value: string | boolean | undefined): DefaultUnit {
+  const s = asDefaultUnit(value);
+  if (s === undefined) throw new Error(`--default-unit is required`);
+  return s;
+}
+
 async function executeApplicationProperties(
   client: JiraClient,
   cmd: ParsedCommand,
@@ -3514,33 +3530,23 @@ async function executeConfiguration(client: JiraClient, cmd: ParsedCommand): Pro
     case 'get-timetracking-options':
       return client.configuration.getTimeTrackingOptions();
     case 'update-timetracking-options': {
-      const workingHoursPerDay = asPositiveNumber(
+      // All four fields are required by the spec (TimeTrackingConfiguration schema).
+      const workingHoursPerDay = requirePositiveNumber(
         opts['working-hours-per-day'],
         '--working-hours-per-day',
       );
-      const workingDaysPerWeek = asPositiveNumber(
+      const workingDaysPerWeek = requirePositiveNumber(
         opts['working-days-per-week'],
         '--working-days-per-week',
       );
-      const timeFormat = asTimeFormat(opts['time-format']);
-      const defaultUnit = asDefaultUnit(opts['default-unit']);
-
-      if (
-        workingHoursPerDay === undefined &&
-        workingDaysPerWeek === undefined &&
-        timeFormat === undefined &&
-        defaultUnit === undefined
-      ) {
-        throw new Error(
-          'update-timetracking-options requires at least one of: --working-hours-per-day, --working-days-per-week, --time-format, --default-unit',
-        );
-      }
+      const timeFormat = requireTimeFormat(opts['time-format']);
+      const defaultUnit = requireDefaultUnit(opts['default-unit']);
 
       return client.configuration.updateTimeTrackingOptions({
-        ...(workingHoursPerDay !== undefined && { workingHoursPerDay }),
-        ...(workingDaysPerWeek !== undefined && { workingDaysPerWeek }),
-        ...(timeFormat !== undefined && { timeFormat }),
-        ...(defaultUnit !== undefined && { defaultUnit }),
+        workingHoursPerDay,
+        workingDaysPerWeek,
+        timeFormat,
+        defaultUnit,
       });
     }
     default:
@@ -8307,30 +8313,34 @@ async function executeDashboards(client: JiraClient, cmd: ParsedCommand): Promis
 
     // ── copy ─────────────────────────────────────────────────────────────────
     case 'copy': {
+      // The spec body (DashboardDetails) requires name, sharePermissions, editPermissions.
       const dashboardId = requireArg(cmd.positionalArgs[0], 'dashboardId');
-      const nameRaw = asString(opts['name']);
       const descRaw = asString(opts['description']);
-      const sharePermsRaw = asString(opts['share-permissions']);
-      const editPermsRaw = asString(opts['edit-permissions']);
       return client.dashboards.copy(dashboardId, {
-        ...(nameRaw !== undefined && { name: nameRaw }),
+        name: requireOpt(opts['name'], '--name'),
         ...(descRaw !== undefined && { description: descRaw }),
-        ...(sharePermsRaw !== undefined && {
-          sharePermissions: parseJsonArrayFlag(sharePermsRaw, '--share-permissions') as ReturnType<
-            typeof parseJsonArrayFlag
-          >,
-        }),
-        ...(editPermsRaw !== undefined && {
-          editPermissions: parseJsonArrayFlag(editPermsRaw, '--edit-permissions') as ReturnType<
-            typeof parseJsonArrayFlag
-          >,
-        }),
-      } as Parameters<typeof client.dashboards.copy>[1]);
+        sharePermissions: parseJsonArrayFlag(
+          requireOpt(opts['share-permissions'], '--share-permissions'),
+          '--share-permissions',
+        ) as DashboardSharePermission[],
+        editPermissions: parseJsonArrayFlag(
+          requireOpt(opts['edit-permissions'], '--edit-permissions'),
+          '--edit-permissions',
+        ) as DashboardSharePermission[],
+      });
     }
 
     // ── bulk-edit ────────────────────────────────────────────────────────────
     case 'bulk-edit': {
-      const entityIds = csvFlag(requireOpt(opts['entity-ids'], '--entity-ids')) as string[];
+      // entityIds spec type: integer[] — parse each CSV entry as a number.
+      const entityIds = (csvFlag(requireOpt(opts['entity-ids'], '--entity-ids')) ?? []).map(
+        (s: string) => {
+          const n = Number(s);
+          if (!Number.isInteger(n) || n <= 0)
+            throw new Error(`--entity-ids: '${s}' is not a positive integer`);
+          return n;
+        },
+      );
       const action = requireOpt(opts['action'], '--action');
       const newOwnerRaw = asString(opts['new-owner']);
       const autofixNameRaw = asBoolFlag(opts['autofix-name']);

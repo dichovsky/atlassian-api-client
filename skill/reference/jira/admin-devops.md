@@ -157,28 +157,24 @@ atlas jira application-role get --key jira-software
 
 ## `data-policy`
 
-| Action          | Positional | Required flags | Optional flags                         |
-| --------------- | ---------- | -------------- | -------------------------------------- |
-| `get-workspace` | —          | —              | —                                      |
-| `list-projects` | —          | —              | `--ids`, `--start-at`, `--max-results` |
+| Action          | Positional | Required flags | Optional flags |
+| --------------- | ---------- | -------------- | -------------- |
+| `get-workspace` | —          | —              | —              |
+| `list-projects` | —          | —              | `--ids`        |
 
 - `get-workspace` returns `{ anyContentBlocked: boolean }` for the entire Jira workspace.
-- `list-projects` returns a paginated list of per-project data policy entries. Each entry has `projectId` and `anyContentBlocked`.
+- `list-projects` returns a **non-paginated** list of project data policies (`{ projectDataPolicies: [...] }`). The spec endpoint (`getPolicies`) has no pagination; all matching projects are returned in one response.
 - `--ids` is a **comma-separated** list of project IDs to filter by. Omit to return all projects.
-- `--start-at` and `--max-results` control offset-based pagination.
 
 ```sh
 # Check whether any content is blocked at workspace level
 atlas jira data-policy get-workspace
 
-# List data policies for all projects
+# List data policies for all projects (non-paginated)
 atlas jira data-policy list-projects
 
 # List data policies for specific projects
 atlas jira data-policy list-projects --ids 10001,10002
-
-# Paginate through project data policies
-atlas jira data-policy list-projects --start-at 0 --max-results 50
 ```
 
 ## `announcement-banner`
@@ -241,21 +237,21 @@ atlas jira application-properties list-advanced-settings
 
 Global Jira instance configuration and time-tracking settings under `/rest/api/3/configuration` (B382–B387).
 
-| Action                        | Positional | Required flags | Optional flags                                                                          |
-| ----------------------------- | ---------- | -------------- | --------------------------------------------------------------------------------------- |
-| `get`                         | —          | —              | —                                                                                       |
-| `get-timetracking`            | —          | —              | —                                                                                       |
-| `select-timetracking`         | —          | `--key`        | `--name`, `--url`                                                                       |
-| `list-timetracking-providers` | —          | —              | —                                                                                       |
-| `get-timetracking-options`    | —          | —              | —                                                                                       |
-| `update-timetracking-options` | —          | —              | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` |
+| Action                        | Positional | Required flags                                                                          | Optional flags    |
+| ----------------------------- | ---------- | --------------------------------------------------------------------------------------- | ----------------- |
+| `get`                         | —          | —                                                                                       | —                 |
+| `get-timetracking`            | —          | —                                                                                       | —                 |
+| `select-timetracking`         | —          | `--key`                                                                                 | `--name`, `--url` |
+| `list-timetracking-providers` | —          | —                                                                                       | —                 |
+| `get-timetracking-options`    | —          | —                                                                                       | —                 |
+| `update-timetracking-options` | —          | `--working-hours-per-day`, `--working-days-per-week`, `--time-format`, `--default-unit` | —                 |
 
 - `get` returns the instance-level feature flags (voting, watching, sub-tasks, time tracking, attachments, issue linking) and the embedded `timeTrackingConfiguration` when time tracking is enabled.
 - `get-timetracking` returns the currently selected provider; `list-timetracking-providers` returns every installed provider. The built-in provider key is `JIRA`.
 - `select-timetracking --key <key>` switches the active provider; `--name` and `--url` may be supplied for third-party providers that require them.
 - `--time-format` accepts: `pretty`, `days`, `hours`.
 - `--default-unit` accepts: `minute`, `hour`, `day`, `week`.
-- `update-timetracking-options` requires at least one of the four optional flags; the server returns the resulting `TimeTrackingConfiguration`.
+- `update-timetracking-options` requires ALL FOUR flags (spec mandates every field); the server returns the resulting `TimeTrackingConfiguration`.
 
 ```sh
 # Global instance configuration (feature flags + time tracking)
@@ -273,11 +269,8 @@ atlas jira configuration list-timetracking-providers
 # Current display/calculation options
 atlas jira configuration get-timetracking-options
 
-# Set the working day to 8 hours with the pretty time format
-atlas jira configuration update-timetracking-options --working-hours-per-day 8 --time-format pretty
-
-# Update working week and default unit
-atlas jira configuration update-timetracking-options --working-days-per-week 5 --default-unit hour
+# All four flags are required (spec mandates every field)
+atlas jira configuration update-timetracking-options --working-hours-per-day 8 --working-days-per-week 5 --time-format pretty --default-unit hour
 ```
 
 ## `webhooks`
@@ -738,21 +731,21 @@ atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"
 atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type":"authenticated"}]'
 ```
 
-| Action                   | Positional                             | Required flags                   | Optional flags                                                                                                                                                   |
-| ------------------------ | -------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list-gadgets`           | `<dashboardId>`                        | —                                | —                                                                                                                                                                |
-| `add-gadget`             | `<dashboardId>`                        | —                                | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
-| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
-| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                | —                                                                                                                                                                |
-| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                | —                                                                                                                                                                |
-| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                | —                                                                                                                                                                |
-| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                 | —                                                                                                                                                                |
-| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                | —                                                                                                                                                                |
-| `copy`                   | `<dashboardId>`                        | —                                | `--name`, `--description`, `--share-permissions` (JSON), `--edit-permissions` (JSON)                                                                             |
-| `bulk-edit`              | —                                      | `--entity-ids` (csv), `--action` | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                       |
-| `list-available-gadgets` | —                                      | —                                | —                                                                                                                                                                |
-| `search`                 | —                                      | —                                | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
-| `search-all`             | —                                      | —                                | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
+| Action                   | Positional                             | Required flags                                                      | Optional flags                                                                                                                                                   |
+| ------------------------ | -------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list-gadgets`           | `<dashboardId>`                        | —                                                                   | —                                                                                                                                                                |
+| `add-gadget`             | `<dashboardId>`                        | —                                                                   | `--module-key`, `--uri`, `--color`, `--row` + `--column`, `--title`, `--ignore-uri-and-module-key-validation`                                                    |
+| `update-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | `--title`, `--color`, `--row` + `--column`                                                                                                                       |
+| `remove-gadget`          | `<dashboardId> <gadgetId>`             | —                                                                   | —                                                                                                                                                                |
+| `list-item-properties`   | `<dashboardId> <itemId>`               | —                                                                   | —                                                                                                                                                                |
+| `get-item-property`      | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
+| `set-item-property`      | `<dashboardId> <itemId> <propertyKey>` | `--value` (JSON)                                                    | —                                                                                                                                                                |
+| `delete-item-property`   | `<dashboardId> <itemId> <propertyKey>` | —                                                                   | —                                                                                                                                                                |
+| `copy`                   | `<dashboardId>`                        | `--name`, `--share-permissions` (JSON), `--edit-permissions` (JSON) | `--description`                                                                                                                                                  |
+| `bulk-edit`              | —                                      | `--entity-ids` (csv ints), `--action`                               | `--new-owner`, `--autofix-name`, `--extend-admin-permissions`, `--share-permissions`, `--edit-permissions`                                                       |
+| `list-available-gadgets` | —                                      | —                                                                   | —                                                                                                                                                                |
+| `search`                 | —                                      | —                                                                   | `--dashboard-name`, `--account-id`, `--owner`, `--group-name`, `--group-id`, `--project-id`, `--order-by`, `--status`, `--start-at`, `--max-results`, `--expand` |
+| `search-all`             | —                                      | —                                                                   | (same as `search` minus `--start-at`) plus `--max-pages`                                                                                                         |
 
 - `--row` and `--column` must be supplied together (gadget position).
 - `--action` for `bulk-edit` is one of: `changeOwner`, `changePermission`, `addPermission`, `removePermission`, `changePermissionAndAddPermission`, `delete`.
@@ -784,10 +777,10 @@ atlas jira dashboards get-item-property 10001 itm-1 my-key
 atlas jira dashboards set-item-property 10001 itm-1 my-key --value '{"enabled":true}'
 atlas jira dashboards delete-item-property 10001 itm-1 my-key
 
-# Copy a dashboard with new metadata
-atlas jira dashboards copy 10001 --name "Copy of Sprint" --share-permissions '[{"type":"global"}]'
+# Copy a dashboard — name, share-permissions, edit-permissions are required by the spec
+atlas jira dashboards copy 10001 --name "Copy of Sprint" --share-permissions '[{"type":"global"}]' --edit-permissions '[{"type":"loggedin"}]'
 
-# Bulk-delete dashboards
+# Bulk-delete dashboards (entity-ids are integers, comma-separated)
 atlas jira dashboards bulk-edit --entity-ids 10001,10002 --action delete
 
 # Bulk transfer ownership

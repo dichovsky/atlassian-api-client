@@ -16,12 +16,17 @@ export interface JqlSearchParams {
   readonly fieldsByKeys?: boolean;
 }
 
+/**
+ * Response shape for GET/POST /rest/api/3/search/jql (`SearchAndReconcileResults`).
+ * `isLast` indicates whether this is the final page of results.
+ */
 export interface JqlSearchResult {
   readonly issues: Issue[];
   readonly nextPageToken?: string;
-  readonly maxResults?: number;
-  readonly total?: number;
-  readonly startAt?: number;
+  readonly isLast?: boolean;
+  readonly names?: Record<string, string>;
+  /** Spec `SearchWarningBean[]`: structured warnings (e.g. JQL_FUNCTION_LIMIT_EXCEEDED). */
+  readonly warnings?: { readonly type?: string; readonly details?: unknown }[];
 }
 
 export class SearchResource {

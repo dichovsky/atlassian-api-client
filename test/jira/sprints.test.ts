@@ -260,16 +260,20 @@ describe('SprintsResource', () => {
   // ── getIssues ─────────────────────────────────────────────────────────────
 
   describe('getIssues()', () => {
-    it('calls GET /sprint/{sprintId}/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /sprint/{sprintId}/issue and maps .issues → .values (B1055/6)', async () => {
+      // The agile spec response uses SearchResults: { issues, startAt, maxResults, total }.
+      // getIssues() maps that to OffsetPaginatedResponse: { values, startAt, maxResults, total }.
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith({ issues: [issue], startAt: 0, maxResults: 50, total: 1 });
 
       // Act
       const result = await sprints.getIssues(42);
 
-      // Assert
-      expect(result).toEqual(payload);
+      // Assert — response shape uses .values (not .issues)
+      expect(result.values).toEqual([issue]);
+      expect(result.startAt).toBe(0);
+      expect(result.maxResults).toBe(50);
+      expect(result.total).toBe(1);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/sprint/42/issue`,
