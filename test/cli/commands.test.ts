@@ -15665,34 +15665,35 @@ describe('executeJiraCommand', () => {
       expect(jiraSettingsMock.getColumns).toHaveBeenCalled();
     });
 
-    it('settings set-columns calls client.settings.setColumns() with parsed JSON', async () => {
-      // Arrange
+    it('settings set-columns calls client.settings.setColumns() with CSV column ids', async () => {
+      // --columns is now a comma-separated list of column field keys (string[]),
+      // not a JSON array of {label,value} objects.
       jiraSettingsMock.setColumns.mockResolvedValue(undefined);
-      const columnsJson = '[{"label":"Key","value":"issuekey"}]';
 
-      // Act
       const result = await executeJiraCommand(
-        cmd('settings', 'set-columns', [], { columns: columnsJson }),
+        cmd('settings', 'set-columns', [], { columns: 'issuekey,summary' }),
         GLOBALS,
       );
 
-      // Assert
       expect(result).toEqual({ updated: true });
-      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith({
-        columns: [{ label: 'Key', value: 'issuekey' }],
-      });
+      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith(['issuekey', 'summary']);
+    });
+
+    it('settings set-columns strips whitespace around CSV entries', async () => {
+      jiraSettingsMock.setColumns.mockResolvedValue(undefined);
+
+      await executeJiraCommand(
+        cmd('settings', 'set-columns', [], { columns: ' issuekey , summary ' }),
+        GLOBALS,
+      );
+
+      expect(jiraSettingsMock.setColumns).toHaveBeenCalledWith(['issuekey', 'summary']);
     });
 
     it('settings set-columns throws when --columns is missing', async () => {
       await expect(executeJiraCommand(cmd('settings', 'set-columns'), GLOBALS)).rejects.toThrow(
         'Missing required option: --columns',
       );
-    });
-
-    it('settings set-columns throws when --columns is invalid JSON', async () => {
-      await expect(
-        executeJiraCommand(cmd('settings', 'set-columns', [], { columns: 'not-json' }), GLOBALS),
-      ).rejects.toThrow('--columns must be valid JSON');
     });
 
     it('settings unknown action throws', async () => {

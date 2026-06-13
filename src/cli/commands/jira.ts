@@ -2515,13 +2515,11 @@ async function executeSettings(client: JiraClient, cmd: ParsedCommand): Promise<
       return client.settings.getColumns();
     case 'set-columns': {
       const rawColumns = requireOpt(opts['columns'], '--columns');
-      let columns: { label?: string; value?: string }[];
-      try {
-        columns = JSON.parse(rawColumns) as typeof columns;
-      } catch {
-        throw new Error('--columns must be valid JSON (array of {label, value} objects)');
-      }
-      await client.settings.setColumns({ columns });
+      const columns = rawColumns
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      await client.settings.setColumns(columns);
       return { updated: true };
     }
     default:
