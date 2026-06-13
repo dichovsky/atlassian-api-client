@@ -59,12 +59,8 @@ describe('executeScopesCommand validate — all valid', () => {
 
   it('returns 0 for a single valid scope', () => {
     const io = captureIo();
-    // Real parse shape: resource='validate', action='read:confluence-content.all', positionalArgs=[]
-    const code = executeScopesCommand(
-      cmd('validate', 'read:confluence-content.all'),
-      io.out,
-      io.err,
-    );
+    // Real parse shape: resource='validate', action='read:page:confluence', positionalArgs=[]
+    const code = executeScopesCommand(cmd('validate', 'read:page:confluence'), io.out, io.err);
     expect(code).toBe(0);
     const result = JSON.parse(io.stdout[0] as string) as { allValid: boolean };
     expect(result.allValid).toBe(true);
@@ -161,7 +157,7 @@ describe('executeScopesCommand validate — empty input', () => {
     executeScopesCommand(cmd('validate', '', []), io.out, io.err);
     const combined = io.stderr.join('\n');
     expect(combined).toContain('read:jira-work');
-    expect(combined).toContain('write:confluence-content');
+    expect(combined).toContain('write:page:confluence');
   });
 });
 
