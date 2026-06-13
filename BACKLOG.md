@@ -10,14 +10,6 @@
   - problem: verified — newline in a `$ref` last segment escapes the type context (code injection); `spec.info.title`/`version` injected into a single-line comment without newline sanitization; empty `allOf`/`oneOf`/`anyOf` arrays emit invalid TS `export type X = ;`; non-identifier last segment emits an invalid type reference. See report §5b.
   - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
   - deps: none
-- [ ] 🔴 🐛 Core: B1037 `computeQsh` drops `appendRepeatedParams` query params → Connect-JWT 401
-  - problem: `computeQsh` (`src/core/connect-jwt.ts`) builds the canonical query from the parsed query map but ignores array params that `appendRepeatedParams` bakes into the path → QSH mismatch → server rejects any Connect-JWT request using repeated params. Found by the deep audit AND #246's reviewer independently. NOT fixed by #246.
-  - files: `src/core/connect-jwt.ts`, `test/core/connect-jwt.test.ts`
-  - deps: none — see [[project_auth_middleware_wire_channel]]
-- [ ] 🔴 🐛 Core: B1038 Wrong Jira Software OAuth scope strings
-  - problem: `src/core/scopes.ts` maps Jira Software board/sprint scopes to wrong values — board `read:jira-work` ≠ `read:board-scope:jira-software`; sprint `manage:jira-project` ≠ `write/delete:sprint:jira-software`. Granted scopes won't match required → 403.
-  - files: `src/core/scopes.ts`, `test/core/scopes.test.ts`
-  - deps: none
 - [ ] 🟡 🐛 Core: B1039 Batch middleware dedupes non-idempotent mutations + key gaps
   - problem: `src/core/batch.ts` has no method guard (POST/PUT/PATCH/DELETE coalesced like GETs); `formData`/`binaryBody`/`responseType` excluded from the dedup key → concurrent distinct multipart/binary/responseType requests collapse to one. See report §5b.
   - files: `src/core/batch.ts`, `test/core/batch.test.ts`
@@ -45,22 +37,6 @@
 
 > Deep-audit 2026-06-10 conformance findings (`docs/DEEP-AUDIT-2026-06-10.md` §4). CRITICAL/HIGH that change bytes on the wire below; per-module response-type/type-drift (84 HIGH + 358 MED + 72 LOW) rolled into B1056. Excludes the 30 findings shipped via #249/#250.
 
-- [ ] 🔴 🐛 Jira: B1045 `app.updateFieldContextConfiguration` wrong body shape — every call fails (CRITICAL)
-  - problem: `src/jira/resources/app.ts:195` sends a body shape the spec rejects; every call fails. Spec-verified. (Sibling HIGH wire-body defects in the same module — `bulkUpdateFieldValue` nested-vs-flat, `updateFieldValue` fictional `issueIdsOrKeys`/`issueKeys`, `listFieldContextConfigurations` `contextIds`/required `fieldIdsOrKeys` — fix together.)
-  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`
-  - deps: none
-- [ ] 🔴 🐛 Jira: B1046 `latest.ts` bulk-worklog request body + response type both wrong — every call fails (CRITICAL ×2)
-  - problem: `src/jira/resources/latest.ts:19` sends worklog-create fields; spec expects issueId+worklogId lookup pairs. `:24` `BulkWorklogResponse` ≠ spec `BulkWorklogKeyResponseBean` (wrong item fields, fabricated `errors`).
-  - files: `src/jira/resources/latest.ts`, `test/jira/latest.test.ts`
-  - deps: none
-- [ ] 🔴 🐛 Jira: B1047 `service-registry` required `serviceIds` never sent + wrong response shape (CRITICAL)
-  - problem: `src/jira/resources/service-registry.ts` `get()` takes no args and sends no `serviceIds` (required, `type:array` form/explode → repeated params) → every call 400s. `ServiceRegistryEntry` interface is also wrong: fictional `key`/`baseUrl`/`vendor`; missing spec `id`/`organizationId`/`revision`/`serviceTier`.
-  - files: `src/jira/resources/service-registry.ts`, `test/jira/service-registry.test.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`
-  - deps: none
-- [ ] 🔴 🐛 Jira: B1048 `statuses.list()` sends no required `id` param → always 400 (CRITICAL)
-  - problem: `src/jira/resources/statuses.ts:102` `list()` GETs `/statuses` with no params; spec `getStatusesById` requires `id` (`type:array`, 1–50). Signature accepts no args. The zero-param bulk endpoint is `GET /status` (no trailing s) returning `StatusDetails[]`. (statuses `bulkCreate`/usages CRITICALs already fixed in #250.)
-  - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`
-  - deps: none
 - [ ] 🔴 🐛 Jira: B1049 Repeated-array-param serialization holdouts (recurring class)
   - problem: array-type query params still CSV-joined where the spec needs repeated params (`appendRepeatedParams`): `projects.list status`, `tasks` 7 array params serialized as scalars, `service-registry.serviceIds` (see B1047). Silently returns wrong result sets. Same class as #167/#198/#200/#201/#222.
   - files: `src/jira/resources/{projects,tasks,service-registry}.ts` + tests — see [[project_jira_array_query_param_serialization]]
@@ -96,16 +72,6 @@
 
 ## 🧩 Confluence
 
-- [ ] 🔴 🐛 Confluence: B1057 `attachments.upload()` POSTs to a nonexistent v2 endpoint (report F1)
-  - problem: `src/confluence/resources/attachments.ts` POSTs multipart to `/wiki/api/v2/pages/{id}/attachments`; the pinned v2 spec has GET only there and no attachment-write op anywhere (CONFCLOUD-77196). Every real call 404/405s; also missing `X-Atlassian-Token: nocheck`. MockTransport tests hide it.
-  - solution: re-route to v1 `POST /wiki/rest/api/content/{id}/child/attachment` + `nocheck` header (mirror Jira `issue-attachments.upload`); inject a v1/site base; fix the return type (v1 content-array, not `CursorPaginatedResponse<Attachment>`); red→green tests; CLI + skill-doc updates. Signature change OK (never worked).
-  - files: `src/confluence/resources/attachments.ts`, `src/confluence/client.ts`, `test/confluence/attachments.test.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`
-  - deps: none
-- [ ] 🔴 🐛 Confluence: B1058 `admin-key` written against a phantom contract (report F2)
-  - problem: `create()` sends `durationInHours` (typed 1–24); spec `AdminKeyRequest` has only `durationInMinutes` (max 60) → custom durations silently no-op. `AdminKey` response type = `{createdAt, expireAt, durationInHours}`; spec `AdminKeyResponse` = `{accountId, expirationTime}` (zero overlap → typed fields always `undefined`). JSDoc also wrong.
-  - solution: rewrite the request/response types + resource to the spec; update CLI `--duration-hours`→minutes flag + skill docs together (parity rule).
-  - files: `src/confluence/types/admin-key.ts`, `src/confluence/resources/admin-key.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/admin-key.test.ts`
-  - deps: none
 - [ ] 🟢 ♻️ Confluence: B1059 Response-type / type-drift rollup (21 modules — MED/LOW + 5 HIGH)
   - problem: declared interfaces drift from spec schemas (5 HIGH + 109 MED + 14 LOW across 21 Confluence modules). Notable: `app.upsertProperty` typed `Promise<AppProperty>` but the spec PUT is bodyless → `undefined` at runtime (HIGH); `attachments.status` CSV-not-repeated (HIGH, see class B1049); `footer-comments`/`inline-comments`/`tasks` type drift. Full inventory in report §4c.
   - files: `src/confluence/resources/*.ts`, `src/confluence/types/*` + tests (per module)

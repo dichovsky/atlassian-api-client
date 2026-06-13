@@ -2829,3 +2829,40 @@
 - [x] 🟢 📝 CLI: B1044 Document `dashboards create`/`update` flags to the construct-from-skill bar
   - **Impl:** Phase-3 skill doc reorg. `skill/reference/jira/admin-devops.md` dashboards section now documents `create`/`update` required `--name` + `--share-permissions` (JSON) and optional `--description`/`--edit-permissions`, with runnable examples (construct-from-skill bar met).
   - **Rat:** Reachability audit (deep-audit 2026-06-10) flagged create/update as below the construct-from-skill bar (JSON flags only in prose, never tabled).
+
+## 🛠️ Deep-audit 2026-06-10 — CRITICAL+HIGH fix wave (2026-06-13)
+
+> The 5 Layer-2 CRITICAL wire-contract defects + 3 HIGH defects from `docs/DEEP-AUDIT-2026-06-10.md`, shipped as 8 PRs (#262–#269). Each spec-verified against the pinned Atlassian specs, red→green regression-tested, 100% covered, and independently reviewed (fresh-lineage Opus, worktree-safe). CLI + skill parity enforced where the surface changed.
+
+- [x] 🔴 🐛 Core: B1037 `computeQsh` drops `appendRepeatedParams` query params → Connect-JWT 401
+  - files: `src/core/connect-jwt.ts`, `test/core/connect-jwt.test.ts`
+  - **Impl:** PR #262. `computeQsh` now merges path-baked repeated params + structured query into a `Map<string,string[]>`, sorts keys by codepoint, encodes/sorts/comma-joins multi-values, and excludes `jwt` — matching Atlassian's canonical QSH algorithm. RED→GREEN test pins a repeated-param request.
+  - **Rat:** Array params baked into the path by `appendRepeatedParams` were invisible to the QSH builder → hash mismatch → 401 on every Connect-JWT request using repeated params. Found by the audit AND #246's reviewer independently.
+- [x] 🔴 🐛 Core: B1038 Wrong Jira OAuth scope strings (classic → granular migration)
+  - files: `src/core/scopes.ts`, `src/cli/help.ts`, `test/core/scopes.test.ts`, `test/cli/scopes.test.ts`
+  - **Impl:** PRs #268 (+ fixups). Migrated all Jira Software board/sprint scopes AND 35 Jira Platform operations from classic (`read:jira-work`, …) to their granular `x-atlassian-oauth2-scopes` `state:Beta` values; `AtlassianScope` catalog rebuilt (Confluence + 6 Jira Software + Jira Platform granular). Review fixups: dropped extra `read:jql:jira` from `filters.create` (spec Beta=13), added orphaned `jira.issueAttachments.delete`→`['delete:attachment:jira']`, refreshed stale CLI help examples, added a no-orphan catalog-exhaustiveness guard. Adversarially reviewed (67 checks, 60 PASS, 0 blocking).
+  - **Rat:** Classic scopes granted ≠ granular scopes required → 403. Dropping classic scopes from the catalog (so `validateScopes(['read:jira-work'])` → unknown) is the intended, documented v3.0.0 breaking change.
+- [x] 🔴 🐛 Jira: B1045 `app.updateFieldContextConfiguration` wrong body shape — every call failed (CRITICAL)
+  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira/*.md`
+  - **Impl:** PR #263. `UpdateFieldContextConfigurationData = { configurations: readonly FieldContextConfigurationUpdate[] }` (each `{ id, configuration?, schema? }`) matching the spec body; ValidationError guards; CLI `update-field-context-configuration` now requires `--id`.
+  - **Rat:** The prior flat body was rejected by the spec on every call.
+- [x] 🔴 🐛 Jira: B1046 `latest.ts` bulk-worklog request body + response type both wrong — every call failed (CRITICAL ×2)
+  - files: `src/jira/resources/latest.ts`, `test/jira/latest.test.ts`
+  - **Impl:** PR #265. Rewritten as a LOOKUP: `BulkWorklogData = { requests: readonly WorklogCompositeKey[] }` (`{issueId, worklogId}` pairs) → POST `/worklog/bulk`; `BulkWorklogResponse = { worklogs?: readonly WorklogKeyResult[] }` per spec `BulkWorklogKeyResponseBean`.
+  - **Rat:** Prior code modeled a worklog CREATE with fabricated `{ submittedWorklogs, errors }` response — neither matched the spec.
+- [x] 🔴 🐛 Jira: B1047 `service-registry` required `serviceIds` never sent + wrong response shape (CRITICAL)
+  - files: `src/jira/resources/service-registry.ts`, `test/jira/service-registry.test.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira/*.md`
+  - **Impl:** PR #267. `get(serviceIds: readonly string[])` validates + sends `serviceIds` as repeated params (`appendRepeatedParams`); `ServiceRegistryEntry = { id, name?, description?, organizationId?, revision?, serviceTier? }` + new `ServiceRegistryTier`.
+  - **Rat:** Required `serviceIds` was never sent (400 every call); the response interface invented `key`/`baseUrl`/`vendor` that don't exist.
+- [x] 🔴 🐛 Jira: B1048 `statuses.list()` sends no required `id` param → always 400 (CRITICAL)
+  - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`, `test/e2e/cli-jira.test.ts`
+  - **Impl:** PR #264. `list(ids: readonly string[])` validates + sends `appendRepeatedParams('/statuses', 'id', ids)` per spec `getStatusesById` (1–50). The zero-param bulk endpoint stays the separate `status` resource's `GET /status`.
+  - **Rat:** `GET /statuses` with no `id` 400s; the signature accepted no args.
+- [x] 🔴 🐛 Confluence: B1057 `attachments.upload()` POSTed to a nonexistent v2 endpoint (report F1)
+  - files: `src/confluence/resources/attachments.ts`, `src/confluence/client.ts`, `test/confluence/attachments.test.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`
+  - **Impl:** PR #266. Re-routed `upload()` to v1 `POST {v1BaseUrl}/content/{pageId}/child/attachment` + `X-Atlassian-Token: nocheck` (mirrors Jira `issue-attachments.upload`); `v1BaseUrl = {baseUrl}/wiki/rest/api` injected as a 3rd ctor arg; new `UploadAttachmentResult` return type.
+  - **Rat:** Confluence v2 has no attachment-write op (CONFCLOUD-77196); the v2 path 404/405'd on every real call, and MockTransport tests hid it.
+- [x] 🔴 🐛 Confluence: B1058 `admin-key` written against a phantom contract (report F2)
+  - files: `src/confluence/types/admin-key.ts`, `src/confluence/resources/admin-key.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/admin-key.test.ts`
+  - **Impl:** PR #269. `CreateAdminKeyData = { durationInMinutes? }` (1–60 guard); `AdminKey = { accountId?, expirationTime? }` per spec `AdminKeyResponse`. CLI `--duration-hours` → `--duration-minutes`.
+  - **Rat:** The prior `durationInHours` request field + `{createdAt, expireAt, durationInHours}` response had zero spec overlap → custom durations silently no-op'd and every typed response field read `undefined`.
