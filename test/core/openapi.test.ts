@@ -539,4 +539,55 @@ describe('generateTypes', () => {
       expect(source).toContain('"content-type"');
     });
   });
+
+  describe('injection / malformed-input hardening (B025)', () => {
+    it('neutralises a newline in info.title so it cannot escape the header comment', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'Evil\nexport const PWNED = 1', version: '1.0.0' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      // The payload must remain inside the `//` header line, never on its own code line.
+      expect(source).not.toMatch(/^export const PWNED/m);
+    });
+
+    it('neutralises a newline in info.version so it cannot escape the header comment', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API', version: '1.0\nexport const PWNED = 1' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^export const PWNED/m);
+    });
+
+    it('throws when a $ref last segment contains a newline (would inject into a type alias)', () => {
+      expect(() =>
+        generateTypes(
+          makeSpec({
+            Injected: { $ref: '#/components/schemas/Foo\nexport const PWNED = 1' },
+          }),
+        ),
+      ).toThrow(/not a valid TypeScript identifier/);
+    });
+
+    it('throws when a $ref last segment is a non-identifier (e.g. hyphenated)', () => {
+      expect(() =>
+        generateTypes(makeSpec({ BadRef: { $ref: '#/components/schemas/Foo-Bar' } })),
+      ).toThrow(/not a valid TypeScript identifier/);
+    });
+
+    it('throws on an empty allOf array instead of emitting `export type X = ;`', () => {
+      expect(() => generateTypes(makeSpec({ EmptyAll: { allOf: [] } }))).toThrow(/allOf/);
+    });
+
+    it('throws on an empty oneOf array instead of emitting invalid TypeScript', () => {
+      expect(() => generateTypes(makeSpec({ EmptyOne: { oneOf: [] } }))).toThrow(/oneOf/);
+    });
+
+    it('throws on an empty anyOf array instead of emitting invalid TypeScript', () => {
+      expect(() => generateTypes(makeSpec({ EmptyAny: { anyOf: [] } }))).toThrow(/anyOf/);
+    });
+  });
 });

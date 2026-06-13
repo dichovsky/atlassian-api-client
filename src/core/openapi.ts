@@ -75,6 +75,31 @@ function escapeJsDocComment(value: string): string {
 }
 
 /**
+ * Collapses newlines so a value cannot escape a single-line `//` comment and
+ * inject code on a following line.
+ */
+function sanitizeCommentLine(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ');
+}
+
+/**
+ * Joins the members of a composed (`allOf`/`oneOf`/`anyOf`) schema, rejecting an
+ * empty array which would otherwise emit invalid TypeScript (`export type X = ;`).
+ */
+function joinComposed(
+  parts: readonly string[],
+  separator: string,
+  keyword: 'allOf' | 'oneOf' | 'anyOf',
+): string {
+  if (parts.length === 0) {
+    throw new Error(
+      `OpenAPI "${keyword}" must contain at least one schema; an empty composition cannot be represented in TypeScript`,
+    );
+  }
+  return parts.join(separator);
+}
+
+/**
  * Generates TypeScript type declarations from an OpenAPI 3.x spec.
  *
  * Each schema in `components.schemas` produces one `interface` or `type` declaration.
@@ -86,7 +111,7 @@ export function generateTypes(spec: OpenApiSpec): GeneratedTypes {
   const schemas = spec.components?.schemas ?? {};
   const typeNames: string[] = [];
   const parts: string[] = [
-    `// Generated from OpenAPI spec: ${spec.info.title} v${spec.info.version}`,
+    `// Generated from OpenAPI spec: ${sanitizeCommentLine(spec.info.title)} v${sanitizeCommentLine(spec.info.version)}`,
     '// DO NOT EDIT — regenerate with generateTypes()',
     '',
   ];
@@ -183,18 +208,18 @@ function generateComposedType(
 ): string {
   if (schema.allOf !== undefined) {
     const parts = schema.allOf.map((s) => schemaToTsType(s, allSchemas));
-    return `export type ${name} = ${parts.join(' & ')};`;
+    return `export type ${name} = ${joinComposed(parts, ' & ', 'allOf')};`;
   }
   if (schema.oneOf !== undefined) {
     const parts = schema.oneOf.map((s) => schemaToTsType(s, allSchemas));
-    return `export type ${name} = ${parts.join(' | ')};`;
+    return `export type ${name} = ${joinComposed(parts, ' | ', 'oneOf')};`;
   }
   // anyOf must be defined here — this function is only reached when at least one of
   // allOf/oneOf/anyOf is set, and allOf/oneOf are handled above.
   const anyOfParts = (schema.anyOf as readonly OpenApiSchemaObject[]).map((s) =>
     schemaToTsType(s, allSchemas),
   );
-  return `export type ${name} = ${anyOfParts.join(' | ')};`;
+  return `export type ${name} = ${joinComposed(anyOfParts, ' | ', 'anyOf')};`;
 }
 
 function schemaToTsType(
@@ -206,14 +231,26 @@ function schemaToTsType(
   }
 
   if (schema.allOf !== undefined) {
-    return schema.allOf.map((s) => schemaToTsType(s, allSchemas)).join(' & ');
+    return joinComposed(
+      schema.allOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' & ',
+      'allOf',
+    );
   }
 
   if (schema.oneOf !== undefined) {
-    return schema.oneOf.map((s) => schemaToTsType(s, allSchemas)).join(' | ');
+    return joinComposed(
+      schema.oneOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' | ',
+      'oneOf',
+    );
   }
   if (schema.anyOf !== undefined) {
-    return schema.anyOf.map((s) => schemaToTsType(s, allSchemas)).join(' | ');
+    return joinComposed(
+      schema.anyOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' | ',
+      'anyOf',
+    );
   }
 
   if (schema.enum !== undefined) {
@@ -268,5 +305,13 @@ function objectSchemaToTsType(
 function resolveRef(ref: string): string {
   // '#/components/schemas/TypeName' → 'TypeName'
   const slash = ref.lastIndexOf('/');
-  return slash >= 0 ? ref.slice(slash + 1) : ref;
+  const name = slash >= 0 ? ref.slice(slash + 1) : ref;
+  // Refuse to emit a type reference from an untrusted `$ref` whose last segment is
+  // not a plain identifier — a newline or stray syntax would inject into the alias.
+  if (!isValidIdentifier(name)) {
+    throw new Error(
+      `OpenAPI $ref "${ref}" resolves to "${name}", which is not a valid TypeScript identifier and cannot be used in generated code`,
+    );
+  }
+  return name;
 }
