@@ -11,7 +11,7 @@
   - files: `src/core/pagination.ts` + ~30 downstream test files
   - deps: none
 - [ ] 🟢 🐛 Core: B1065 `cache.ts` key omits `responseType` (wrong-shaped cached body)
-  - problem: the cache key (`src/core/cache.ts`) does not include `responseType`, so a cached `json` GET can be served to a later `arrayBuffer`/`text` request as the wrong-shaped parsed body. Same class as B1039 defect-2 (which fixed the *batch* dedup key) but for the *cache* layer; pre-existing, surfaced by the #281 reviewer. Decide: include `responseType` in the cache key, or don't cache requests with a non-default `responseType`.
+  - problem: the cache key (`src/core/cache.ts`) does not include `responseType`, so a cached `json` GET can be served to a later `arrayBuffer`/`text` request as the wrong-shaped parsed body. Same class as B1039 defect-2 (which fixed the _batch_ dedup key) but for the _cache_ layer; pre-existing, surfaced by the #281 reviewer. Decide: include `responseType` in the cache key, or don't cache requests with a non-default `responseType`.
   - files: `src/core/cache.ts`, `test/core/cache.test.ts`
   - deps: none
 
