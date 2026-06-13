@@ -1,3 +1,4 @@
+import { ValidationError } from '../../core/errors.js';
 import type { Transport } from '../../core/types.js';
 import type { AdminKey, CreateAdminKeyData } from '../types/admin-key.js';
 
@@ -5,7 +6,7 @@ import type { AdminKey, CreateAdminKeyData } from '../types/admin-key.js';
  * Confluence Admin Key resource.
  *
  * The admin key is a tenant-scoped, time-bound credential that lets an
- * organization admin perform privileged operations (e.g. permanently delete
+ * organisation admin perform privileged operations (e.g. permanently delete
  * pages or spaces) without requiring per-request elevation. Only one admin
  * key may be active at a time; calling {@link AdminKeyResource.create} while
  * one already exists rotates it.
@@ -30,12 +31,20 @@ export class AdminKeyResource {
   /**
    * Enable (or rotate) the admin key.
    *
-   * Posting with no payload uses the Confluence server default duration.
-   * When `durationInHours` is supplied, it must be an integer in 1-24
-   * (validated by the API server, not client-side, so future server
-   * changes don't require an SDK update).
+   * Posting with no payload uses the Confluence server default duration
+   * (10 minutes). When `durationInMinutes` is supplied it must be an integer
+   * in the range 1–60 (validated client-side); the server enforces a maximum
+   * of 60 minutes.
+   *
+   * @throws {ValidationError} if `durationInMinutes` is outside 1–60.
    */
   async create(data?: CreateAdminKeyData): Promise<AdminKey> {
+    if (data?.durationInMinutes !== undefined) {
+      const d = data.durationInMinutes;
+      if (!Number.isInteger(d) || d < 1 || d > 60) {
+        throw new ValidationError('durationInMinutes must be an integer between 1 and 60');
+      }
+    }
     const response = await this.transport.request<AdminKey>({
       method: 'POST',
       path: `${this.baseUrl}/admin-key`,

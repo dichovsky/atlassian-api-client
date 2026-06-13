@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "9458f70ed2f5d1cbcefd03dcf58a40211e5057f591fc99dd75fd7ad75af52cbc",
+  "sourceHash": "49958b88929ea6f2d51573e8be2449afd72a200ae206da4e74e9d2927431a3ce",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -7385,7 +7385,7 @@
         {
           "name": "AdminKeyResource",
           "kind": "class",
-          "line": 15,
+          "line": 16,
           "exported": true,
           "signature": "export class AdminKeyResource",
           "jsdoc": "Confluence Admin Key resource.",
@@ -7393,27 +7393,28 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 16
+              "line": 17
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 22
+              "line": 23
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 38
+              "line": 41
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 48
+              "line": 57
             }
           ]
         }
       ],
       "imports": [
+        "../../core/errors.js",
         "../../core/types.js",
         "../types/admin-key.js"
       ]
@@ -10032,15 +10033,15 @@
           "kind": "interface",
           "line": 2,
           "exported": true,
-          "signature": "export interface AdminKey { readonly createdAt?: string; readonly expireAt?: string; readonly durationInHours?: number; …",
-          "jsdoc": "Confluence Admin Key."
+          "signature": "export interface AdminKey { readonly accountId?: string; readonly expirationTime?: string; }",
+          "jsdoc": "Confluence Admin Key response (`AdminKeyResponse` in the v2 spec)."
         },
         {
           "name": "CreateAdminKeyData",
           "kind": "interface",
-          "line": 17,
+          "line": 18,
           "exported": true,
-          "signature": "export interface CreateAdminKeyData { readonly durationInHours?: number; }",
+          "signature": "export interface CreateAdminKeyData { readonly durationInMinutes?: number; }",
           "jsdoc": "Request body for enabling / rotating an admin key via `POST /admin-key`."
         }
       ]

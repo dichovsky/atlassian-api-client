@@ -4811,7 +4811,7 @@ describe('executeConfluenceCommand', () => {
   describe('admin-key resource', () => {
     it('admin-key get calls client.adminKey.get', async () => {
       // Arrange
-      const key = { createdAt: '2026-05-20T12:00:00Z', durationInHours: 1 };
+      const key = { accountId: 'abc123', expirationTime: '2026-05-20T13:00:00.000Z' };
       confluenceAdminKeyMock.get.mockResolvedValue(key);
 
       // Act
@@ -4824,7 +4824,10 @@ describe('executeConfluenceCommand', () => {
 
     it('admin-key create with no flags passes undefined', async () => {
       // Arrange
-      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 1 });
+      confluenceAdminKeyMock.create.mockResolvedValue({
+        accountId: 'abc123',
+        expirationTime: '2026-05-20T13:00:00.000Z',
+      });
 
       // Act
       await executeConfluenceCommand(cmd('admin-key', 'create'), GLOBALS);
@@ -4833,29 +4836,32 @@ describe('executeConfluenceCommand', () => {
       expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith(undefined);
     });
 
-    it('admin-key create with --duration-hours passes parsed integer', async () => {
+    it('admin-key create with --duration-minutes passes parsed integer', async () => {
       // Arrange
-      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 4 });
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '4' });
+      confluenceAdminKeyMock.create.mockResolvedValue({
+        accountId: 'abc123',
+        expirationTime: '2026-05-20T13:00:00.000Z',
+      });
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': '30' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith({ durationInHours: 4 });
+      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith({ durationInMinutes: 30 });
     });
 
-    it('admin-key create throws when --duration-hours is not a positive integer', async () => {
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '0' });
+    it('admin-key create throws when --duration-minutes is not a positive integer', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': '0' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--duration-hours must be a positive integer',
+        '--duration-minutes must be a positive integer',
       );
     });
 
-    it('admin-key create throws when --duration-hours is NaN', async () => {
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': 'abc' });
+    it('admin-key create throws when --duration-minutes is NaN', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': 'abc' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--duration-hours must be a positive integer',
+        '--duration-minutes must be a positive integer',
       );
     });
 

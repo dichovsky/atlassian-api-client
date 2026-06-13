@@ -41,7 +41,7 @@ const GLOBAL_OPTIONS = {
   expand: { type: 'string' as const },
   'version-number': { type: 'string' as const },
   'comment-type': { type: 'string' as const },
-  'duration-hours': { type: 'string' as const },
+  'duration-minutes': { type: 'string' as const },
   value: { type: 'string' as const },
   'account-ids': { type: 'string' as const },
   emails: { type: 'string' as const },
