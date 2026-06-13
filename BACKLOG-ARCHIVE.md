@@ -2904,3 +2904,20 @@
   - files: `src/jira/resources/{configuration,dashboards,expression,data-policy,sprints,search}.ts`, `src/confluence/types/pages.ts`, both CLIs, `src/jira/index.ts`, `skill/reference/jira/admin-devops.md` + tests
   - **Impl:** PR #278. (1) `UpdateTimeTrackingConfigurationData` all-required; (2a) `dashboards.bulkEdit entityIds` `string[]`→`number[]`, (2b) `copy()` required `DashboardDetails`; (3) `expression.custom` `Record`→`CustomContextVariable[]`; (4) Confluence `UpdatePageData.body` required; (5) `data-policy` offset-pagination→non-paginated `getPolicies`; (6) `sprints.getIssues` `.values`→`.issues` envelope; (7) `search.JqlSearchResult` +`isLast`/`names`/`warnings` (structured), −`maxResults`/`total`/`startAt`. Zero scope creep (clean).
   - **Rat:** Request/response shapes drifted from spec. **Breaking** (timetracking/copy required flags, data-policy method rename, expression/search/pages types).
+
+## ⚙️ Deep-audit 2026-06-10 — Core robustness wave (2026-06-14)
+
+> Three transport/middleware-layer findings shipped as #280–#282, each verified + independently reviewed (B1041 by security-reviewer for the auth-snapshot risk). Disjoint files (batch / circuit-breaker / transport+auth+cache+oauth+response); hard-fenced agents, zero cross-contamination. Two follow-ups split out (B1064 pagination taxonomy, B1065 cache responseType-key).
+
+- [x] 🟡 🐛 Core: B1039 Batch middleware coalesced non-idempotent mutations + key gaps
+  - files: `src/core/batch.ts`, `test/core/batch.test.ts`
+  - **Impl:** PR #281. Only `GET`/`HEAD` enter the dedup gate (mutations call `next` directly — concurrent POST/PUT/PATCH/DELETE no longer collapse to one); `formData`/`binaryBody` requests bypass dedup (unkeyable); `responseType` added to the dedup key. Brings `batch.ts` to parity with `cache.ts`'s existing method gate. 9 red→green tests asserting transport call-counts.
+  - **Rat:** Coalescing concurrent mutations silently dropped all but the first; key omitting response-shape served the wrong-shaped body to one caller.
+- [x] 🟡 🐛 Core: B1040 Circuit breaker ignored body-cap failures
+  - files: `src/core/circuit-breaker.ts`, `test/core/circuit-breaker.test.ts`
+  - **Impl:** PR #280. `isQualifyingFailure` now counts `ResponseTooLargeError` (on any HTTP status) alongside `NetworkError | TimeoutError | HttpError(5xx)`. Security review confirmed "any status" is correct for the DoS threat model (oversized 2xx body carries a non-5xx status); footgun bounded (cap + breaker both opt-in). No retry double-count (`ResponseTooLargeError` isn't retried).
+  - **Rat:** A backend blasting oversized responses never tripped the breaker → no protection.
+- [x] 🟢 🐛 Core: B1041 Core robustness rollup (6 of 7; #7 → B1064)
+  - files: `src/core/{transport,response,cache,oauth,auth}.ts` + tests
+  - **Impl:** PR #282. (1) snapshot `getHeaders()` once at construction (identity-hash + wire now consistent — safe: providers are static, dynamic auth flows through per-request `authorizationOverride` applied last); (2) malformed-2xx-JSON → `ValidationError` (cause-chained, was raw `SyntaxError`); (3) `cache.ts` per-key single-flight (no concurrent-miss stampede, failures don't poison/cache); (4) `oauth.validateTokenEndpoint` redacts the raw endpoint (`<unparseable>`); (5) throwing `onTokenRefreshed` no longer poisons `refreshPromise`/cooldown; (6) `createAuthProvider` fail-fast `ValidationError` on empty creds. No new error type (reused `ValidationError`). Security-reviewed (auth-snapshot + #246 boundary intact).
+  - **Rat:** Core reliability/robustness defects. Sub-item 7 (pagination `RangeError`) deferred to B1064 (breaking + ~152 test-file churn).
