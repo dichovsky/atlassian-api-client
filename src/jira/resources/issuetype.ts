@@ -138,9 +138,11 @@ export class IssueTypeResource {
   /**
    * Upload (load) a new avatar for an issue type (B560). POST /issuetype/{id}/avatar2.
    *
-   * Jira requires `X-Atlassian-Token: no-check` to bypass XSRF validation on
-   * multipart uploads. The avatar crop region is supplied via query params
-   * (`x`, `y`, `size`); the image bytes are the raw request body.
+   * Spec media type is `*\/*` (raw binary body). The image bytes are sent
+   * directly as the request body; the Blob's `type` determines the
+   * `Content-Type` header. Jira requires `X-Atlassian-Token: no-check` to
+   * bypass XSRF validation. The avatar crop region is supplied via query
+   * params (`x`, `y`, `size`).
    */
   async loadAvatar(
     id: string,
@@ -165,14 +167,11 @@ export class IssueTypeResource {
       query['y'] = params.y;
     }
 
-    const formData = new FormData();
-    formData.append('file', content, 'avatar');
-
     const response = await this.transport.request<IssueTypeAvatar>({
       method: 'POST',
       path: `${this.baseUrl}/issuetype/${encodePathSegment(id)}/avatar2`,
       query,
-      formData,
+      binaryBody: content,
       headers: { 'X-Atlassian-Token': 'no-check' },
     });
     return response.data;

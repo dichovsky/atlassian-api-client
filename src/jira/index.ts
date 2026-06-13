@@ -524,7 +524,7 @@ export type {
   ApproximateProductLicenseCount,
 } from './resources/license.js';
 export { LicenseResource } from './resources/license.js';
-export type { Column, SetSettingsColumnsData } from './resources/settings.js';
+export type { Column } from './resources/settings.js';
 export { SettingsResource } from './resources/settings.js';
 export type {
   RedactIssueData,

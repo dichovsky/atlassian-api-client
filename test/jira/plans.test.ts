@@ -314,10 +314,29 @@ describe('PlansResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/plans/plan/101`,
       });
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['op']).toBe('replace');
-      expect(body['path']).toBe('/name');
-      expect(body['value']).toBe('New Name');
+      // Body is encoded as binaryBody (application/json-patch+json), not plain body
+      const blob = transport.lastCall?.options.binaryBody as Blob;
+      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
+      expect(parsed['op']).toBe('replace');
+      expect(parsed['path']).toBe('/name');
+      expect(parsed['value']).toBe('New Name');
+    });
+
+    it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
+      // Spec: PUT /rest/api/3/plans/plan/{planId} requestBody content-type is
+      // "application/json-patch+json", not "application/json".
+      transport.respondWith(undefined, 204);
+
+      await resource.update(101, { op: 'replace', path: '/name', value: 'X' });
+
+      const opts = transport.lastCall?.options;
+      // Must use binaryBody (Blob with type application/json-patch+json), not body
+      expect(opts?.body).toBeUndefined();
+      expect(opts?.binaryBody).toBeInstanceOf(Blob);
+      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
+      // Blob content must be the JSON-serialized patch
+      const text = await (opts?.binaryBody as Blob).text();
+      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/name', value: 'X' });
     });
 
     it('passes useGroupId query param', async () => {
@@ -531,8 +550,29 @@ describe('PlansResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/plans/plan/101/team/atlassian/team-abc`,
       });
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['value']).toBe(21);
+      // Body is encoded as binaryBody (application/json-patch+json), not plain body
+      const blob = transport.lastCall?.options.binaryBody as Blob;
+      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
+      expect(parsed['value']).toBe(21);
+    });
+
+    it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
+      // Spec: PUT /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}
+      // requestBody content-type is "application/json-patch+json".
+      transport.respondWith(undefined, 204);
+
+      await resource.updateAtlassianTeam(101, 'team-abc', {
+        op: 'replace',
+        path: '/sprintLength',
+        value: 7,
+      });
+
+      const opts = transport.lastCall?.options;
+      expect(opts?.body).toBeUndefined();
+      expect(opts?.binaryBody).toBeInstanceOf(Blob);
+      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
+      const text = await (opts?.binaryBody as Blob).text();
+      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/sprintLength', value: 7 });
     });
   });
 
@@ -623,8 +663,25 @@ describe('PlansResource', () => {
         method: 'PUT',
         path: `${BASE_URL}/plans/plan/101/team/planonly/2001`,
       });
-      const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['value']).toBe('Renamed Team');
+      // Body is encoded as binaryBody (application/json-patch+json), not plain body
+      const blob = transport.lastCall?.options.binaryBody as Blob;
+      const parsed = JSON.parse(await blob.text()) as Record<string, unknown>;
+      expect(parsed['value']).toBe('Renamed Team');
+    });
+
+    it('sends Content-Type: application/json-patch+json via binaryBody (B1051)', async () => {
+      // Spec: PUT /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}
+      // requestBody content-type is "application/json-patch+json".
+      transport.respondWith(undefined, 204);
+
+      await resource.updatePlanOnlyTeam(101, 2001, { op: 'replace', path: '/name', value: 'New' });
+
+      const opts = transport.lastCall?.options;
+      expect(opts?.body).toBeUndefined();
+      expect(opts?.binaryBody).toBeInstanceOf(Blob);
+      expect((opts?.binaryBody as Blob).type).toBe('application/json-patch+json');
+      const text = await (opts?.binaryBody as Blob).text();
+      expect(JSON.parse(text)).toEqual({ op: 'replace', path: '/name', value: 'New' });
     });
   });
 
