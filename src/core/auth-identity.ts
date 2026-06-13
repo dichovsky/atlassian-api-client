@@ -38,14 +38,15 @@ export function pickAuthorizationHeader(headers: RequestOptions['headers']): str
  * Prefers the precomputed `RequestOptions.authIdentity` hash that
  * `HttpTransport` injects before the middleware chain runs (so the raw
  * `Authorization` value is never observed downstream). Falls back to hashing
- * the in-flight `Authorization` header for manually constructed
- * `RequestOptions`. Returns the sentinel `'no-auth'` when neither is present.
+ * the in-flight credential for manually constructed `RequestOptions` — a
+ * middleware-set `authorizationOverride` (#243) takes precedence over a caller
+ * `Authorization` header. Returns the sentinel `'no-auth'` when none is present.
  */
 export function resolveAuthIdentity(opts: RequestOptions): string {
   if (typeof opts.authIdentity === 'string' && opts.authIdentity !== '') {
     return opts.authIdentity;
   }
-  const auth = pickAuthorizationHeader(opts.headers);
+  const auth = opts.authorizationOverride ?? pickAuthorizationHeader(opts.headers);
   if (auth === undefined || auth === '') return 'no-auth';
   return hashAuthValue(auth);
 }

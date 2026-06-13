@@ -477,8 +477,8 @@ export type {
 } from './resources/changelog.js';
 export { ChangelogResource } from './resources/changelog.js';
 export type {
-  ForgePanelAction,
-  BulkForgeActionData,
+  ForgeProjectPinAction,
+  BulkForgePanelPinData,
   BulkForgeActionResponse,
 } from './resources/forge.js';
 export { ForgeResource } from './resources/forge.js';
@@ -525,7 +525,13 @@ export type {
 export { LicenseResource } from './resources/license.js';
 export type { Column, SetSettingsColumnsData } from './resources/settings.js';
 export { SettingsResource } from './resources/settings.js';
-export type { RedactIssueData, RedactJobStarted, RedactJobStatus } from './resources/redact.js';
+export type {
+  RedactIssueData,
+  RedactionItem,
+  ContentItem,
+  RedactionPosition,
+  RedactJobStatus,
+} from './resources/redact.js';
 export { RedactResource } from './resources/redact.js';
 export type { FeatureFlag } from './resources/flag.js';
 export { FlagResource } from './resources/flag.js';
@@ -754,6 +760,7 @@ export { VersionResource } from './resources/version.js';
 
 export type {
   SecuritySchemesResponse,
+  CreatedIssueSecurityScheme,
   IssueSecurityScheme,
   SecuritySchemeLevel,
   IssueSecurityLevel,

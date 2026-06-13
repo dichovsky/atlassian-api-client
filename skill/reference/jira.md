@@ -1925,19 +1925,21 @@ atlas jira changelog bulk-fetch --issues PROJ-1 --max-results 50 --next-page-tok
 
 ## `forge`
 
-| Action              | Positional | Required flags | Optional flags |
-| ------------------- | ---------- | -------------- | -------------- |
-| `bulk-panel-action` | —          | `--value`      | —              |
+| Action              | Positional | Required flags           | Optional flags |
+| ------------------- | ---------- | ------------------------ | -------------- |
+| `bulk-panel-action` | —          | `--module-id`, `--value` | —              |
 
-- `--value` — JSON array of panel action objects; each must have `issueId` (string) and `moduleKey` (string), and optionally `payload` (object).
+- Pins or unpins a Forge issue panel across a batch of projects. This is a **project-level** operation, not a per-issue one.
+- `--module-id` — the moduleId of the Forge panel, in the format `ari:cloud:ecosystem::extension/{app-id}/{environment-id}/static/{module-key}`. Required.
+- `--value` — JSON array of project pin action objects; each must have `action` (`"PIN"` or `"UNPIN"`) and `projectIdOrKey` (string).
 - **Auth:** Requires OAuth 2.0 (3LO) with `manage:jira-configuration` scope. Basic auth (API token) is NOT accepted. Use `--auth-type bearer --token <OAUTH_TOKEN>`.
 - **URL base:** `POST /rest/api/3/forge/panel/action/bulk/async` — uses the standard REST API base, not a Forge tunnel.
 - Returns a `taskId` that can be used to poll for task completion.
 - The Forge app must be installed on the Jira site before this endpoint is usable.
 
 ```sh
-# Trigger a Forge panel action asynchronously for two issues
-atlas jira forge bulk-panel-action --value '[{"issueId":"10001","moduleKey":"my-app:my-panel"},{"issueId":"10002","moduleKey":"my-app:my-panel"}]'
+# Pin a Forge panel to one project and unpin it from another
+atlas jira forge bulk-panel-action --module-id 'ari:cloud:ecosystem::extension/app-id/env-id/static/my-panel' --value '[{"action":"PIN","projectIdOrKey":"PROJ"},{"action":"UNPIN","projectIdOrKey":"OTHER"}]'
 ```
 
 ## `groups`
@@ -2104,20 +2106,20 @@ atlas jira settings set-columns --columns '[{"label":"Key","value":"issuekey"},{
 
 | Action       | Positional | Required flags | Optional flags |
 | ------------ | ---------- | -------------- | -------------- |
-| `start`      | —          | `--jql`        | `--field-ids`  |
+| `start`      | —          | `--value`      | —              |
 | `get-status` | `<jobId>`  | —              | —              |
 
-- `start` calls `POST /rest/api/3/redact` to begin an asynchronous issue redaction job. Returns a `jobId` for polling. **Admin-only endpoint.**
-- `get-status` calls `GET /rest/api/3/redact/status/{jobId}` to check progress. Returns status: `IN_PROGRESS`, `COMPLETE`, or `FAILED`.
-- `--jql` — JQL query identifying issues to redact. Required.
-- `--field-ids` — **comma-separated** field IDs to redact. When omitted, all text fields are redacted.
+- `start` calls `POST /rest/api/3/redact` to begin an asynchronous issue redaction job. Returns the job ID as a **bare UUID string**. **Admin-only endpoint.**
+- `get-status` calls `GET /rest/api/3/redact/status/{jobId}` to check progress. Returns `{ jobStatus, bulkRedactionResponse }` where `jobStatus` is `PENDING`, `IN_PROGRESS`, or `COMPLETED`.
+- `--value` — JSON array of redaction objects. Each object requires:
+  - `contentItem`: `{ entityId, entityType, id }` where `entityType` is `issuefieldvalue`, `issue-comment`, or `issue-worklog`.
+  - `externalId`: a unique UUID for the redaction request.
+  - `reason`: why the content is being redacted.
+  - `redactionPosition`: `{ expectedText, from, to }` (and optional `adfPointer` for rich-text/ADF fields). `expectedText` is the redacted text encoded as a SHA-256 hash with Base64 digest.
 
 ```sh
-# Start a redaction job for issues matching a JQL query
-atlas jira redact start --jql "project = PROJ AND summary ~ secret"
-
-# Redact specific fields only
-atlas jira redact start --jql "project = PROJ" --field-ids summary,description
+# Start a redaction job (single redaction on the summary field of issue 10000)
+atlas jira redact start --value '[{"contentItem":{"entityId":"summary","entityType":"issuefieldvalue","id":"10000"},"externalId":"51101de6-d001-429d-a095-b2b96dd57fcb","reason":"PII data","redactionPosition":{"expectedText":"ODFiNjM3...","from":14,"to":20}}]'
 
 # Check the status of a running redaction job
 atlas jira redact get-status job-abc123
@@ -3197,7 +3199,7 @@ Issue security scheme management (B539–B555). Covers the full `/rest/api/3/iss
 | Action                 | Positional args                       | Key flags                                                                       | Returns                 |
 | ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------- | ----------------------- |
 | `get-all`              | —                                     | —                                                                               | SecuritySchemesResponse |
-| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                        | IssueSecurityScheme     |
+| `create`               | —                                     | `--name` (req), `--description`, `--levels` (JSON array)                        | `{id}`                  |
 | `get`                  | `<id>`                                | —                                                                               | IssueSecurityScheme     |
 | `update`               | `<id>`                                | `--name`, `--description` (≥1 required)                                         | `{updated:true}`        |
 | `list-members`         | `<issueSecuritySchemeId>`             | `--issue-security-level-id`, `--expand`, pagination                             | PageBean                |

@@ -1,8 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RedactResource } from '../../src/jira/resources/redact.js';
+import type { RedactionItem } from '../../src/jira/resources/redact.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
+
+const makeRedaction = (): RedactionItem => ({
+  contentItem: { entityId: 'summary', entityType: 'issuefieldvalue', id: '10000' },
+  externalId: '51101de6-d001-429d-a095-b2b96dd57fcb',
+  reason: 'PII data',
+  redactionPosition: { expectedText: 'ODFiNjM3ZDhmY2Q=', from: 14, to: 20 },
+});
 
 describe('RedactResource', () => {
   let transport: MockTransport;
@@ -16,34 +24,37 @@ describe('RedactResource', () => {
   // ── start ─────────────────────────────────────────────────────────────────
 
   describe('start()', () => {
-    it('calls POST /redact with jql and returns job id', async () => {
-      // Arrange
-      const payload = { jobId: 'job-abc123' };
-      transport.respondWith(payload);
-      const data = { jql: 'project = PROJ AND summary ~ secret' };
+    it('calls POST /redact with a redactions body and returns the bare job-id string', async () => {
+      // Arrange — spec 202 response is a bare UUID string, not an object.
+      const jobId = '51101de6-d001-429d-a095-b2b96dd57fcb';
+      transport.respondWith(jobId, 202);
+      const redactions = [makeRedaction()];
 
       // Act
-      const result = await redact.start(data);
+      const result = await redact.start({ redactions });
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toBe(jobId);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/redact`,
-        body: data,
+        body: { redactions },
       });
     });
 
-    it('sends fieldIds when provided', async () => {
+    it('sends the redactions array verbatim in the request body', async () => {
       // Arrange
-      transport.respondWith({ jobId: 'job-xyz' });
-      const data = { jql: 'project = PROJ', fieldIds: ['summary', 'description'] };
+      transport.respondWith('job-xyz', 202);
+      const redactions = [makeRedaction(), { ...makeRedaction(), externalId: 'other-id' }];
 
       // Act
-      await redact.start(data);
+      await redact.start({ redactions });
 
       // Assert
-      expect(transport.lastCall?.options.body).toEqual(data);
+      expect(transport.lastCall?.options.body).toEqual({ redactions });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).not.toHaveProperty('jql');
+      expect(body).not.toHaveProperty('fieldIds');
     });
 
     it('propagates transport errors', async () => {
@@ -51,16 +62,16 @@ describe('RedactResource', () => {
       transport.respondWithError(new Error('forbidden'));
 
       // Act / Assert
-      await expect(redact.start({ jql: 'project = PROJ' })).rejects.toThrow('forbidden');
+      await expect(redact.start({ redactions: [makeRedaction()] })).rejects.toThrow('forbidden');
     });
   });
 
   // ── getStatus ─────────────────────────────────────────────────────────────
 
   describe('getStatus()', () => {
-    it('calls GET /redact/status/{jobId} and returns job status', async () => {
-      // Arrange
-      const payload = { jobId: 'job-abc123', status: 'IN_PROGRESS' as const, progress: 42 };
+    it('calls GET /redact/status/{jobId} and returns jobStatus + bulkRedactionResponse', async () => {
+      // Arrange — spec field is `jobStatus`, not `status`.
+      const payload = { jobStatus: 'IN_PROGRESS' as const, bulkRedactionResponse: { foo: 'bar' } };
       transport.respondWith(payload);
 
       // Act
@@ -68,6 +79,7 @@ describe('RedactResource', () => {
 
       // Assert
       expect(result).toEqual(payload);
+      expect(result.jobStatus).toBe('IN_PROGRESS');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/redact/status/job-abc123`,
@@ -76,7 +88,7 @@ describe('RedactResource', () => {
 
     it('URL-encodes special characters in jobId', async () => {
       // Arrange
-      transport.respondWith({ jobId: 'job/1', status: 'COMPLETE' as const, progress: 100 });
+      transport.respondWith({ jobStatus: 'COMPLETED' as const });
 
       // Act
       await redact.getStatus('job/1');
@@ -85,17 +97,16 @@ describe('RedactResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/redact/status/job%2F1`);
     });
 
-    it('returns COMPLETE status', async () => {
+    it('returns COMPLETED status', async () => {
       // Arrange
-      const payload = { jobId: 'job-done', status: 'COMPLETE' as const, progress: 100 };
+      const payload = { jobStatus: 'COMPLETED' as const, bulkRedactionResponse: {} };
       transport.respondWith(payload);
 
       // Act
       const result = await redact.getStatus('job-done');
 
       // Assert
-      expect(result.status).toBe('COMPLETE');
-      expect(result.progress).toBe(100);
+      expect(result.jobStatus).toBe('COMPLETED');
     });
 
     it('propagates transport errors', async () => {

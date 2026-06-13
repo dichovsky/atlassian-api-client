@@ -22,15 +22,16 @@ describe('ClassificationLevelsResource', () => {
   // ── list ──────────────────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('calls GET /classification-levels and returns the levels', async () => {
-      // Arrange
+    it('unwraps the { classifications } wrapper and returns the levels array', async () => {
+      // Arrange — the real API returns a DataClassificationLevelsBean wrapper.
       const levels = makeLevels();
-      transport.respondWith(levels);
+      transport.respondWith({ classifications: levels });
 
       // Act
       const result = await classificationLevels.list();
 
       // Assert
+      expect(Array.isArray(result)).toBe(true);
       expect(result).toEqual(levels);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
@@ -38,9 +39,20 @@ describe('ClassificationLevelsResource', () => {
       });
     });
 
-    it('returns an empty array when no levels exist', async () => {
+    it('returns an empty array when the wrapper has an empty classifications list', async () => {
       // Arrange
-      transport.respondWith([]);
+      transport.respondWith({ classifications: [] });
+
+      // Act
+      const result = await classificationLevels.list();
+
+      // Assert
+      expect(result).toEqual([]);
+    });
+
+    it('returns an empty array when classifications is absent from the wrapper', async () => {
+      // Arrange
+      transport.respondWith({});
 
       // Act
       const result = await classificationLevels.list();

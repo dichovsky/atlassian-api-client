@@ -14750,32 +14750,47 @@ describe('executeJiraCommand', () => {
   // ── forge ─────────────────────────────────────────────────────────────────
 
   describe('forge resource', () => {
-    it('forge bulk-panel-action calls client.forge.bulkPanelAction() with parsed actions', async () => {
+    it('forge bulk-panel-action calls client.forge.bulkPanelAction() with moduleId + projectList', async () => {
       // Arrange
       const taskResponse = { taskId: 'task-123' };
       jiraForgeMock.bulkPanelAction.mockResolvedValue(taskResponse);
-      const actions = [{ issueId: '10001', moduleKey: 'my-app:my-panel' }];
+      const projectList = [{ action: 'PIN', projectIdOrKey: 'PROJ' }];
 
       // Act
       const result = await executeJiraCommand(
-        cmd('forge', 'bulk-panel-action', [], { value: JSON.stringify(actions) }),
+        cmd('forge', 'bulk-panel-action', [], {
+          'module-id': 'my-module',
+          value: JSON.stringify(projectList),
+        }),
         GLOBALS,
       );
 
       // Assert
-      expect(jiraForgeMock.bulkPanelAction).toHaveBeenCalledWith({ actions });
+      expect(jiraForgeMock.bulkPanelAction).toHaveBeenCalledWith({
+        moduleId: 'my-module',
+        projectList,
+      });
       expect(result).toEqual(taskResponse);
+    });
+
+    it('forge bulk-panel-action throws when --module-id is missing', async () => {
+      await expect(
+        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], { value: '[]' }), GLOBALS),
+      ).rejects.toThrow('--module-id');
     });
 
     it('forge bulk-panel-action throws when --value is invalid JSON', async () => {
       await expect(
-        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], { value: 'not-json' }), GLOBALS),
+        executeJiraCommand(
+          cmd('forge', 'bulk-panel-action', [], { 'module-id': 'm', value: 'not-json' }),
+          GLOBALS,
+        ),
       ).rejects.toThrow('--value must be valid JSON');
     });
 
     it('forge bulk-panel-action throws when --value is missing', async () => {
       await expect(
-        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], {}), GLOBALS),
+        executeJiraCommand(cmd('forge', 'bulk-panel-action', [], { 'module-id': 'm' }), GLOBALS),
       ).rejects.toThrow('--value');
     });
 
@@ -15548,48 +15563,46 @@ describe('executeJiraCommand', () => {
   // ── redact ────────────────────────────────────────────────────────────────
 
   describe('redact resource', () => {
-    it('redact start calls client.redact.start() with jql and returns jobId', async () => {
-      // Arrange
-      const payload = { jobId: 'job-abc' };
-      jiraRedactMock.start.mockResolvedValue(payload);
+    const sampleRedactions = [
+      {
+        contentItem: { entityId: 'summary', entityType: 'issuefieldvalue', id: '10000' },
+        externalId: '51101de6-d001-429d-a095-b2b96dd57fcb',
+        reason: 'PII data',
+        redactionPosition: { expectedText: 'ODFiNjM3', from: 14, to: 20 },
+      },
+    ];
+
+    it('redact start calls client.redact.start() with --value redactions and returns job id', async () => {
+      // Arrange — spec start response is a bare UUID string.
+      const jobId = '51101de6-d001-429d-a095-b2b96dd57fcb';
+      jiraRedactMock.start.mockResolvedValue(jobId);
 
       // Act
       const result = await executeJiraCommand(
-        cmd('redact', 'start', [], { jql: 'project = PROJ' }),
+        cmd('redact', 'start', [], { value: JSON.stringify(sampleRedactions) }),
         GLOBALS,
       );
 
       // Assert
-      expect(result).toEqual(payload);
-      expect(jiraRedactMock.start).toHaveBeenCalledWith({ jql: 'project = PROJ' });
+      expect(result).toBe(jobId);
+      expect(jiraRedactMock.start).toHaveBeenCalledWith({ redactions: sampleRedactions });
     });
 
-    it('redact start passes fieldIds when --field-ids provided', async () => {
-      // Arrange
-      jiraRedactMock.start.mockResolvedValue({ jobId: 'job-1' });
-
-      // Act
-      await executeJiraCommand(
-        cmd('redact', 'start', [], { jql: 'project = PROJ', 'field-ids': 'summary,description' }),
-        GLOBALS,
-      );
-
-      // Assert
-      expect(jiraRedactMock.start).toHaveBeenCalledWith({
-        jql: 'project = PROJ',
-        fieldIds: ['summary', 'description'],
-      });
+    it('redact start throws when --value is invalid JSON', async () => {
+      await expect(
+        executeJiraCommand(cmd('redact', 'start', [], { value: 'not-json' }), GLOBALS),
+      ).rejects.toThrow('--value must be valid JSON');
     });
 
-    it('redact start throws when --jql is missing', async () => {
+    it('redact start throws when --value is missing', async () => {
       await expect(executeJiraCommand(cmd('redact', 'start'), GLOBALS)).rejects.toThrow(
-        'Missing required option: --jql',
+        'Missing required option: --value',
       );
     });
 
     it('redact get-status calls client.redact.getStatus() with positional jobId', async () => {
-      // Arrange
-      const payload = { jobId: 'job-abc', status: 'IN_PROGRESS', progress: 50 };
+      // Arrange — spec response uses `jobStatus`.
+      const payload = { jobStatus: 'IN_PROGRESS', bulkRedactionResponse: {} };
       jiraRedactMock.getStatus.mockResolvedValue(payload);
 
       // Act
@@ -21482,8 +21495,9 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(resp);
     });
 
-    it('create calls client.issueSecuritySchemes.create with name', async () => {
-      const created = { id: 10001, name: 'My Scheme' };
+    it('create calls client.issueSecuritySchemes.create with name and returns { id }', async () => {
+      // Spec 201 response is `SecuritySchemeId { id }` only.
+      const created = { id: '10001' };
       jiraIssueSecuritySchemesMock.create.mockResolvedValue(created);
       const result = await executeJiraCommand(
         cmd('issuesecurityschemes', 'create', [], { name: 'My Scheme' }),
@@ -27979,6 +27993,24 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('add-gadget accepts --row 0 and --column 0 (valid 0-based top-left, #241)', async () => {
+      // Jira gadget positions are 0-based (the spec example uses { column: 1, row: 0 }),
+      // so the top row / first column must be reachable from the CLI.
+      jiraDashboardsMock.addGadget.mockResolvedValue({ id: 7 });
+      await executeJiraCommand(
+        cmd('dashboards', 'add-gadget', ['10001'], {
+          'module-key': 'com.atlassian.jira.gadgets:filter-results-gadget',
+          row: '0',
+          column: '0',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.addGadget).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ position: { row: 0, column: 0 } }),
+      );
+    });
+
     it('add-gadget with --ignore-uri-and-module-key-validation flag', async () => {
       jiraDashboardsMock.addGadget.mockResolvedValue({ id: 6 });
       await executeJiraCommand(
@@ -28020,6 +28052,19 @@ describe('executeJiraCommand', () => {
         '10001',
         5,
         expect.objectContaining({ position: { row: 2, column: 3 } }),
+      );
+    });
+
+    it('update-gadget accepts --row 0 and --column 0 (#241)', async () => {
+      jiraDashboardsMock.updateGadget.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '0', column: '0' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.updateGadget).toHaveBeenCalledWith(
+        '10001',
+        5,
+        expect.objectContaining({ position: { row: 0, column: 0 } }),
       );
     });
 
