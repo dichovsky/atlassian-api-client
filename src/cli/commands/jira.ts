@@ -2116,6 +2116,23 @@ function requirePositiveInt(value: string | undefined, name: string): number {
   return n;
 }
 
+/**
+ * Parse a CSV string of positive integers; throws a clear Error on any non-integer entry.
+ * Returns undefined when value is not a string (e.g. undefined/boolean flag).
+ */
+function asIntArray(value: string | boolean | undefined, name: string): number[] | undefined {
+  if (typeof value !== 'string') return undefined;
+  const parts = parseCsv(value);
+  if (parts === undefined) return undefined;
+  return parts.map((s) => {
+    const n = Number(s);
+    if (!Number.isInteger(n) || n <= 0) {
+      throw new Error(`${name} must be a comma-separated list of positive integers, got: ${value}`);
+    }
+    return n;
+  });
+}
+
 async function executeApplicationRole(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
   const opts = cmd.options;
 
@@ -5629,13 +5646,13 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
 
   switch (cmd.action) {
     case 'list': {
-      const ids = parseCsv(opts['ids']);
+      const ids = asIntArray(opts['ids'], '--ids');
       const scope = parseCsv(opts['scope']);
       const orderBy = asScreensOrderBy(opts['order-by']);
       return client.screens.list({
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        ...(ids !== undefined && { id: ids.map(Number) }),
+        ...(ids !== undefined && { id: ids }),
         ...(opts['query-string'] !== undefined && { queryString: asString(opts['query-string']) }),
         ...(scope !== undefined && { scope }),
         ...(orderBy !== undefined && { orderBy }),
@@ -5781,11 +5798,11 @@ async function executeScreens(client: JiraClient, cmd: ParsedCommand): Promise<u
       return client.screens.addToDefault(fieldId);
     }
     case 'list-all-tabs': {
-      const screenIds = parseCsv(opts['ids']);
-      const tabIds = parseCsv(opts['tab-ids']);
+      const screenIds = asIntArray(opts['ids'], '--ids');
+      const tabIds = asIntArray(opts['tab-ids'], '--tab-ids');
       return client.screens.listScreenTabs({
-        ...(screenIds !== undefined && { screenId: screenIds.map(Number) }),
-        ...(tabIds !== undefined && { tabId: tabIds.map(Number) }),
+        ...(screenIds !== undefined && { screenId: screenIds }),
+        ...(tabIds !== undefined && { tabId: tabIds }),
         ...(opts['start-at'] !== undefined && {
           startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         }),
@@ -6865,10 +6882,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
       const isAnyIssueType = asBoolFlag(opts['is-any-issue-type']);
       const isGlobalContext = asBoolFlag(opts['is-global-context']);
-      const contextIdRaw = asString(opts['context-id']);
-      const contextId = contextIdRaw
-        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
-        : undefined;
+      const contextId = asIntArray(opts['context-id'], '--context-id');
       return client.fields.listContexts(fieldId, {
         ...(startAt !== undefined && { startAt }),
         ...(maxResults !== undefined && { maxResults }),
@@ -6897,8 +6911,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-update': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const name = asString(opts['name']);
       const description = asString(opts['description']);
       const data: UpdateFieldContextData = {
@@ -6910,19 +6926,22 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-delete': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       await client.fields.deleteContext(fieldId, contextId);
       return { deleted: true };
     }
     case 'context-option-list': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const optionIdStr = asString(opts['option-id']);
-      const optionId = optionIdStr !== undefined ? Number(optionIdStr) : undefined;
+      const optionId = asPositiveInt(opts['option-id'], '--option-id');
       const onlyOptions = asBoolFlag(opts['only-options']);
       return client.fields.listContextOptions(fieldId, contextId, {
         ...(optionId !== undefined && { optionId }),
@@ -6933,8 +6952,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-option-create': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
       return client.fields.createContextOptions(
         fieldId,
@@ -6944,8 +6965,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-option-update': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');
       return client.fields.updateContextOptions(
         fieldId,
@@ -6955,21 +6978,28 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-option-delete': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
-      const optionIdStr = requireOpt(opts['option-id'], '--option-id');
-      const optionId = Number(optionIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
       await client.fields.deleteContextOption(fieldId, contextId, optionId);
       return { deleted: true };
     }
     case 'context-option-replace-issues': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
-      const optionIdStr = requireOpt(opts['option-id'], '--option-id');
-      const optionId = Number(optionIdStr);
-      const replaceWithStr = asString(opts['replace-with']);
-      const replaceWith = replaceWithStr !== undefined ? Number(replaceWithStr) : undefined;
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
+      const optionId = parsePositiveIntArg(
+        requireOpt(opts['option-id'], '--option-id'),
+        '--option-id',
+      );
+      const replaceWith = asPositiveInt(opts['replace-with'], '--replace-with');
       const jql = asString(opts['jql']);
       return client.fields.replaceContextOptionOnIssues(fieldId, contextId, optionId, {
         ...(replaceWith !== undefined && { replaceWith }),
@@ -6978,8 +7008,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-option-move': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const idsRaw = requireOpt(opts['option-ids'], '--option-ids');
       const customFieldOptionIds = idsRaw.split(',').map((s) => s.trim());
       const positionRaw = asString(opts['position']);
@@ -6995,8 +7027,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-issuetype-set': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
       const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
       const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
@@ -7005,8 +7039,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     }
     case 'context-issuetype-remove': {
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const issueTypeIdsRaw = requireOpt(opts['issue-type-ids'], '--issue-type-ids');
       const issueTypeIds = issueTypeIdsRaw.split(',').map((s) => s.trim());
       const data: FieldContextIssueTypeIdsBody = { issueTypeIds };
@@ -7017,10 +7053,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextIdRaw = asString(opts['context-id']);
-      const contextId = contextIdRaw
-        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
-        : undefined;
+      const contextId = asIntArray(opts['context-id'], '--context-id');
       return client.fields.listContextIssueTypeMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -7031,10 +7064,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextIdRaw = asString(opts['context-id']);
-      const contextId = contextIdRaw
-        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
-        : undefined;
+      const contextId = asIntArray(opts['context-id'], '--context-id');
       return client.fields.listContextDefaultValues(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -7054,8 +7084,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'context-project-set': {
       // B427: PUT /field/{fieldId}/context/{contextId}/project
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
       const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
       const data: FieldContextProjectIdsBody = { projectIds };
@@ -7065,8 +7097,10 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
     case 'context-project-remove': {
       // B428: POST /field/{fieldId}/context/{contextId}/project/remove
       const fieldId = requireOpt(opts['field-id'], '--field-id');
-      const contextIdStr = requireOpt(opts['context-id'], '--context-id');
-      const contextId = Number(contextIdStr);
+      const contextId = parsePositiveIntArg(
+        requireOpt(opts['context-id'], '--context-id'),
+        '--context-id',
+      );
       const projectIdsRaw = requireOpt(opts['project-ids'], '--project-ids');
       const projectIds = projectIdsRaw.split(',').map((s) => s.trim());
       const data: FieldContextProjectIdsBody = { projectIds };
@@ -7094,10 +7128,7 @@ async function executeFields(client: JiraClient, cmd: ParsedCommand): Promise<un
       const fieldId = requireOpt(opts['field-id'], '--field-id');
       const startAt = asNonNegativeInt(opts['start-at'], '--start-at');
       const maxResults = asPositiveInt(opts['max-results'], '--max-results');
-      const contextIdRaw = asString(opts['context-id']);
-      const contextId = contextIdRaw
-        ? contextIdRaw.split(',').map((s) => Number(s.trim()))
-        : undefined;
+      const contextId = asIntArray(opts['context-id'], '--context-id');
       return client.fields.listContextProjectMappings(fieldId, {
         ...(contextId !== undefined && { contextId }),
         ...(startAt !== undefined && { startAt }),
@@ -7300,10 +7331,7 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
 
     // B588: POST /jql/autocompletedata
     case 'autocomplete-data-post': {
-      const projectIdsRaw = asString(opts['project-ids']);
-      const projectIds = projectIdsRaw
-        ? projectIdsRaw.split(',').map((s) => Number(s.trim()))
-        : undefined;
+      const projectIds = asIntArray(opts['project-ids'], '--project-ids');
       const includeCollapsedFieldsRaw = opts['include-collapsed-fields'];
       const includeCollapsedFields =
         typeof includeCollapsedFieldsRaw === 'boolean' ? includeCollapsedFieldsRaw : undefined;
@@ -7379,7 +7407,7 @@ async function executeJql(client: JiraClient, cmd: ParsedCommand): Promise<unkno
     // B593: POST /jql/match
     case 'match-issues': {
       const issueIdsRaw = requireOpt(opts['issue-ids'], '--issue-ids');
-      const issueIds = issueIdsRaw.split(',').map((s) => Number(s.trim()));
+      const issueIds = asIntArray(issueIdsRaw, '--issue-ids') ?? [];
       const jqlsRaw = requireOpt(opts['jqls'], '--jqls');
       const jqls = parseJsonArrayFlag(jqlsRaw, '--jqls') as string[];
       return client.jql.matchIssues({ issueIds, jqls });

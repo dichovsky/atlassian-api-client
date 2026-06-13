@@ -89,11 +89,13 @@ function printJson(data: unknown): void {
   // JSON-valid `\u00NN` form so a downstream `JSON.parse` of the
   // captured stdout still works.
   //
-  // PR review (round 3): `JSON.stringify` can return `undefined` for
-  // top-level values of type `undefined`, function, or symbol. Fall back
-  // to the literal `"undefined"` rendering so the call never crashes.
+  // B1042: `JSON.stringify` returns `undefined` for top-level values of type
+  // `undefined`, function, or symbol — which is not valid JSON. Emit `'null'`
+  // instead so the output is always valid JSON that a downstream consumer can
+  // parse without error (corrects the round-3 fallback that emitted the
+  // non-JSON literal `"undefined"`).
   const raw = JSON.stringify(data, null, 2);
-  const serialised = raw === undefined ? 'undefined' : raw;
+  const serialised = raw === undefined ? 'null' : raw;
   process.stdout.write(sanitizeForJson(serialised, stdoutIsTty()) + '\n');
 }
 

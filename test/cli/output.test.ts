@@ -48,20 +48,27 @@ describe('printOutput', () => {
       expect(stdoutWrite).toHaveBeenCalledWith(JSON.stringify(data, null, 2) + '\n');
     });
 
-    it('PR review of round 3: prints the literal "undefined" for top-level undefined', () => {
-      // `JSON.stringify(undefined)` returns `undefined`. Without a guard,
-      // the sanitiser would read `.length` on it and crash. Falling back
-      // to the literal string matches what `JSON.stringify(undefined)`
-      // would print in a Node REPL and avoids a runtime exception.
+    it('B1042: prints "null" (valid JSON) for top-level undefined', () => {
+      // `JSON.stringify(undefined)` returns `undefined` — not valid JSON.
+      // B1042 correction: emit `'null'` instead so downstream JSON.parse
+      // succeeds. (Replaces the round-3 fallback that emitted `"undefined"`.)
       printOutput(undefined, 'json');
-      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
+      expect(stdoutWrite).toHaveBeenCalledWith('null\n');
     });
 
-    it('PR review of round 3: prints the literal "undefined" for a top-level function', () => {
+    it('B1042: prints "null" (valid JSON) for a top-level function', () => {
       // Same problem class as `undefined`: `JSON.stringify(() => 1)`
-      // returns `undefined`.
+      // returns `undefined` — not valid JSON. B1042 correction: emit `'null'`.
       printOutput(() => 1, 'json');
-      expect(stdoutWrite).toHaveBeenCalledWith('undefined\n');
+      expect(stdoutWrite).toHaveBeenCalledWith('null\n');
+    });
+
+    it('B1042: "null" output is parseable as valid JSON', () => {
+      // Verify that the emitted string is well-formed JSON (regression guard).
+      printOutput(undefined, 'json');
+      const written = stdoutWrite.mock.calls[0]?.[0] as string;
+      expect(() => JSON.parse(written.trim())).not.toThrow();
+      expect(JSON.parse(written.trim())).toBeNull();
     });
   });
 

@@ -69,11 +69,12 @@ function resolveValue(flag: string | boolean | undefined, envKey: string): strin
 function resolveAuthType(flag: string | boolean | undefined): AuthType {
   const raw =
     typeof flag === 'string' && flag.length > 0 ? flag : process.env['ATLASSIAN_AUTH_TYPE'];
-  if (raw === 'bearer') {
+  // B1042: compare case-insensitively so `Bearer`/`BEARER` are accepted.
+  // Unknown or undefined still falls back to 'basic' — preserves historical
+  // default so existing CLI invocations continue to work unchanged.
+  if (raw?.toLowerCase() === 'bearer') {
     return 'bearer';
   }
-  // Unknown or undefined falls back to 'basic' — preserves historical default
-  // so existing CLI invocations continue to work unchanged.
   return 'basic';
 }
 

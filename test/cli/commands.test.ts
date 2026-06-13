@@ -22015,6 +22015,21 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--order-by must be one of: name, -name, +name, id, -id, +id');
     });
 
+    it('B1042: list rejects non-integer --ids (NaN guard)', async () => {
+      // Pre-fix: ids.map(Number) would silently send id:[NaN].
+      await expect(
+        executeJiraCommand(cmd('screens', 'list', [], { ids: 'abc,10002' }), GLOBALS),
+      ).rejects.toThrow('--ids must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: list sends numeric id array for valid --ids', async () => {
+      jiraScreensMock.list.mockResolvedValue({ values: [] });
+      await executeJiraCommand(cmd('screens', 'list', [], { ids: '10001,10002' }), GLOBALS);
+      expect(jiraScreensMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ id: [10001, 10002] }),
+      );
+    });
+
     it('create calls client.screens.create with name', async () => {
       const screen = { id: 10001, name: 'Default Screen' };
       jiraScreensMock.create.mockResolvedValue(screen);
@@ -22283,6 +22298,18 @@ describe('executeJiraCommand', () => {
       expect(jiraScreensMock.listScreenTabs).toHaveBeenCalledWith(
         expect.objectContaining({ tabId: [1, 2], startAt: 0, maxResult: 25 }),
       );
+    });
+
+    it('B1042: list-all-tabs rejects non-integer --ids (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(cmd('screens', 'list-all-tabs', [], { ids: 'abc' }), GLOBALS),
+      ).rejects.toThrow('--ids must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: list-all-tabs rejects non-integer --tab-ids (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(cmd('screens', 'list-all-tabs', [], { 'tab-ids': 'x,2' }), GLOBALS),
+      ).rejects.toThrow('--tab-ids must be a comma-separated list of positive integers');
     });
 
     it('move-field throws on invalid position', async () => {
@@ -25129,6 +25156,94 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('--field-id');
     });
 
+    // ── B1042: NaN guards for fields context actions ──────────────────────────
+
+    it('B1042: context-list rejects non-integer --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-list', [], {
+            'field-id': 'customfield_10001',
+            'context-id': 'abc,10026',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: context-issuetype-mapping rejects non-integer --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-issuetype-mapping', [], {
+            'field-id': 'customfield_10001',
+            'context-id': 'notanumber',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: context-default-list rejects non-integer --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-default-list', [], {
+            'field-id': 'customfield_10001',
+            'context-id': '10025,bad',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: context-project-mapping rejects non-integer --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-project-mapping', [], {
+            'field-id': 'customfield_10001',
+            'context-id': 'xyz',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: context-update rejects non-integer scalar --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-update', [], {
+            'field-id': 'customfield_10001',
+            'context-id': 'abc',
+            name: 'New name',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a positive integer');
+    });
+
+    it('B1042: context-option-list rejects non-integer scalar --context-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-option-list', [], {
+            'field-id': 'customfield_10001',
+            'context-id': 'bad',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--context-id must be a positive integer');
+    });
+
+    it('B1042: context-option-list rejects non-integer --option-id (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('fields', 'context-option-list', [], {
+            'field-id': 'customfield_10001',
+            'context-id': '10025',
+            'option-id': 'notanint',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--option-id must be a positive integer');
+    });
+
     // ── field-option-list (B433) ──────────────────────────────────────────────
 
     it('field-option-list calls listFieldOptions and returns page', async () => {
@@ -25819,6 +25934,56 @@ describe('executeJiraCommand', () => {
         issueIds: [10001, 10002],
         jqls: ['project = FOO', 'issuetype = Bug'],
       });
+    });
+
+    it('B1042: match-issues rejects non-integer --issue-ids (NaN guard)', async () => {
+      // Pre-fix: issueIdsRaw.split(',').map(Number) would silently send NaN.
+      await expect(
+        executeJiraCommand(
+          cmd('jql', 'match-issues', [], {
+            'issue-ids': 'abc,10002',
+            jqls: '["project = FOO"]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--issue-ids must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: match-issues treats an empty/degenerate --issue-ids CSV as no ids (not NaN)', async () => {
+      // A non-empty but degenerate CSV (only separators/whitespace) reduces to
+      // no entries: asIntArray returns undefined and the call sends issueIds: [].
+      jiraJqlMock.matchIssues.mockResolvedValue({ matches: [] });
+      await executeJiraCommand(
+        cmd('jql', 'match-issues', [], {
+          'issue-ids': ',',
+          jqls: '["project = FOO"]',
+        }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.matchIssues).toHaveBeenCalledWith({
+        issueIds: [],
+        jqls: ['project = FOO'],
+      });
+    });
+
+    it('B1042: autocomplete-data-post rejects non-integer --project-ids (NaN guard)', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('jql', 'autocomplete-data-post', [], { 'project-ids': 'notanumber' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--project-ids must be a comma-separated list of positive integers');
+    });
+
+    it('B1042: autocomplete-data-post sends numeric projectIds for valid input', async () => {
+      jiraJqlMock.getAutocompleteDataPost.mockResolvedValue({});
+      await executeJiraCommand(
+        cmd('jql', 'autocomplete-data-post', [], { 'project-ids': '1,2,3' }),
+        GLOBALS,
+      );
+      expect(jiraJqlMock.getAutocompleteDataPost).toHaveBeenCalledWith(
+        expect.objectContaining({ projectIds: [1, 2, 3] }),
+      );
     });
 
     // B594: POST /jql/parse
