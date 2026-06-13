@@ -539,4 +539,121 @@ describe('generateTypes', () => {
       expect(source).toContain('"content-type"');
     });
   });
+
+  describe('injection / malformed-input hardening (B025)', () => {
+    it('neutralises a newline in info.title so it cannot escape the header comment', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'Evil\nexport const PWNED = 1', version: '1.0.0' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      // The payload must remain inside the `//` header line, never on its own code line.
+      expect(source).not.toMatch(/^export const PWNED/m);
+    });
+
+    it('neutralises a newline in info.version so it cannot escape the header comment', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API', version: '1.0\nexport const PWNED = 1' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^export const PWNED/m);
+    });
+
+    it('throws when a $ref last segment contains a newline (would inject into a type alias)', () => {
+      expect(() =>
+        generateTypes(
+          makeSpec({
+            Injected: { $ref: '#/components/schemas/Foo\nexport const PWNED = 1' },
+          }),
+        ),
+      ).toThrow(/not a valid TypeScript identifier/);
+    });
+
+    it('throws when a $ref last segment is a non-identifier (e.g. hyphenated)', () => {
+      expect(() =>
+        generateTypes(makeSpec({ BadRef: { $ref: '#/components/schemas/Foo-Bar' } })),
+      ).toThrow(/not a valid TypeScript identifier/);
+    });
+
+    it('throws on an empty allOf array instead of emitting `export type X = ;`', () => {
+      expect(() => generateTypes(makeSpec({ EmptyAll: { allOf: [] } }))).toThrow(/allOf/);
+    });
+
+    it('throws on an empty oneOf array instead of emitting invalid TypeScript', () => {
+      expect(() => generateTypes(makeSpec({ EmptyOne: { oneOf: [] } }))).toThrow(/oneOf/);
+    });
+
+    it('throws on an empty anyOf array instead of emitting invalid TypeScript', () => {
+      expect(() => generateTypes(makeSpec({ EmptyAny: { anyOf: [] } }))).toThrow(/anyOf/);
+    });
+
+    it('neutralises a U+2028 line separator in info.title (ECMAScript ends // comments on it)', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API globalThis.PWNED = 1', version: '1.0.0' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).not.toContain(' ');
+    });
+
+    it('neutralises a U+2029 paragraph separator in info.version', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API', version: '1.0 globalThis.PWNED = 1' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).not.toContain(' ');
+    });
+
+    it('escapes line terminators in enum string values so they cannot break the literal', () => {
+      // A newline in an enum value would otherwise emit an unterminated 'literal and
+      // inject the trailing text as code on the next line.
+      const { source } = generateTypes(
+        makeSpec({ Evil: { enum: ['x\nglobalThis.PWNED = 1;\n//'] } }),
+      );
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).toContain('\\n');
+    });
+
+    it('throws on an array enum member instead of splicing it in raw (code injection)', () => {
+      // String(['0;\nexport const X = …']) would emit the payload unquoted at the
+      // type position, escaping into a top-level statement.
+      expect(() =>
+        generateTypes(makeSpec({ Evil: { enum: [['0;\nexport const PWNED = 1;\ntype _j = 0']] } })),
+      ).toThrow(/not a string, finite number, boolean, or null/);
+    });
+
+    it('throws on an object enum member instead of splicing it in raw', () => {
+      expect(() =>
+        generateTypes(makeSpec({ Evil: { enum: [{ toString: () => 'evil()' }] } })),
+      ).toThrow(/not a string, finite number, boolean, or null/);
+    });
+
+    it('throws on a non-finite numeric enum member (NaN/Infinity)', () => {
+      expect(() => generateTypes(makeSpec({ Bad: { enum: [Number.POSITIVE_INFINITY] } }))).toThrow(
+        /not a string, finite number, boolean, or null/,
+      );
+    });
+
+    it('emits boolean and null enum members as safe literals', () => {
+      const { source } = generateTypes(makeSpec({ Flag: { enum: [true, false, null] } }));
+      expect(source).toContain('export type Flag = true | false | null;');
+    });
+
+    it('safely renders an inline enum nested in a property', () => {
+      const { source } = generateTypes(
+        makeSpec({
+          Holder: { type: 'object', properties: { mode: { enum: ['a', 1, null] } } },
+        }),
+      );
+      expect(source).toContain("readonly mode?: 'a' | 1 | null;");
+    });
+  });
 });

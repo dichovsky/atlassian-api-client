@@ -63,7 +63,37 @@ function isValidIdentifier(value: string): boolean {
  * Prevents enum string values from breaking out of their literal context.
  */
 function escapeStringLiteral(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+/**
+ * Renders one enum member as a TypeScript literal. Only safe primitives are
+ * emitted: strings are escaped, finite numbers / booleans / null pass through.
+ * Arrays, objects, and non-finite numbers are rejected rather than spliced raw \u2014
+ * `String(["x"])` would inject attacker-controlled text into the type position.
+ */
+function enumMemberToTs(value: unknown): string {
+  if (typeof value === 'string') {
+    return `'${escapeStringLiteral(value)}'`;
+  }
+  if (typeof value === 'boolean') {
+    return String(value);
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  throw new Error(
+    `OpenAPI enum member (type ${typeof value}) is not a string, finite number, boolean, or null and cannot be safely represented in generated code`,
+  );
 }
 
 /**
@@ -72,6 +102,32 @@ function escapeStringLiteral(value: string): string {
  */
 function escapeJsDocComment(value: string): string {
   return value.replace(/\*\//g, '*\\/');
+}
+
+/**
+ * Collapses every ECMAScript line terminator (LF, CR, U+2028 LINE SEPARATOR,
+ * U+2029 PARAGRAPH SEPARATOR) so a value cannot escape a single-line `//`
+ * comment and inject code on a following line.
+ */
+function sanitizeCommentLine(value: string): string {
+  return value.replace(/[\r\n\u2028\u2029]+/g, ' ');
+}
+
+/**
+ * Joins the members of a composed (`allOf`/`oneOf`/`anyOf`) schema, rejecting an
+ * empty array which would otherwise emit invalid TypeScript (`export type X = ;`).
+ */
+function joinComposed(
+  parts: readonly string[],
+  separator: string,
+  keyword: 'allOf' | 'oneOf' | 'anyOf',
+): string {
+  if (parts.length === 0) {
+    throw new Error(
+      `OpenAPI "${keyword}" must contain at least one schema; an empty composition cannot be represented in TypeScript`,
+    );
+  }
+  return parts.join(separator);
 }
 
 /**
@@ -86,7 +142,7 @@ export function generateTypes(spec: OpenApiSpec): GeneratedTypes {
   const schemas = spec.components?.schemas ?? {};
   const typeNames: string[] = [];
   const parts: string[] = [
-    `// Generated from OpenAPI spec: ${spec.info.title} v${spec.info.version}`,
+    `// Generated from OpenAPI spec: ${sanitizeCommentLine(spec.info.title)} v${sanitizeCommentLine(spec.info.version)}`,
     '// DO NOT EDIT — regenerate with generateTypes()',
     '',
   ];
@@ -127,9 +183,7 @@ function generateTypeDeclaration(
 
 function generateEnumType(name: string, schema: OpenApiSchemaObject): string {
   // schema.enum is guaranteed non-undefined here (checked in generateTypeDeclaration)
-  const values = (schema.enum as readonly unknown[]).map((v) =>
-    typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v),
-  );
+  const values = (schema.enum as readonly unknown[]).map(enumMemberToTs);
   return `export type ${name} = ${values.join(' | ')};`;
 }
 
@@ -183,18 +237,18 @@ function generateComposedType(
 ): string {
   if (schema.allOf !== undefined) {
     const parts = schema.allOf.map((s) => schemaToTsType(s, allSchemas));
-    return `export type ${name} = ${parts.join(' & ')};`;
+    return `export type ${name} = ${joinComposed(parts, ' & ', 'allOf')};`;
   }
   if (schema.oneOf !== undefined) {
     const parts = schema.oneOf.map((s) => schemaToTsType(s, allSchemas));
-    return `export type ${name} = ${parts.join(' | ')};`;
+    return `export type ${name} = ${joinComposed(parts, ' | ', 'oneOf')};`;
   }
   // anyOf must be defined here — this function is only reached when at least one of
   // allOf/oneOf/anyOf is set, and allOf/oneOf are handled above.
   const anyOfParts = (schema.anyOf as readonly OpenApiSchemaObject[]).map((s) =>
     schemaToTsType(s, allSchemas),
   );
-  return `export type ${name} = ${anyOfParts.join(' | ')};`;
+  return `export type ${name} = ${joinComposed(anyOfParts, ' | ', 'anyOf')};`;
 }
 
 function schemaToTsType(
@@ -206,20 +260,30 @@ function schemaToTsType(
   }
 
   if (schema.allOf !== undefined) {
-    return schema.allOf.map((s) => schemaToTsType(s, allSchemas)).join(' & ');
+    return joinComposed(
+      schema.allOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' & ',
+      'allOf',
+    );
   }
 
   if (schema.oneOf !== undefined) {
-    return schema.oneOf.map((s) => schemaToTsType(s, allSchemas)).join(' | ');
+    return joinComposed(
+      schema.oneOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' | ',
+      'oneOf',
+    );
   }
   if (schema.anyOf !== undefined) {
-    return schema.anyOf.map((s) => schemaToTsType(s, allSchemas)).join(' | ');
+    return joinComposed(
+      schema.anyOf.map((s) => schemaToTsType(s, allSchemas)),
+      ' | ',
+      'anyOf',
+    );
   }
 
   if (schema.enum !== undefined) {
-    return schema.enum
-      .map((v) => (typeof v === 'string' ? `'${escapeStringLiteral(v)}'` : String(v)))
-      .join(' | ');
+    return schema.enum.map(enumMemberToTs).join(' | ');
   }
 
   switch (schema.type) {
@@ -268,5 +332,13 @@ function objectSchemaToTsType(
 function resolveRef(ref: string): string {
   // '#/components/schemas/TypeName' → 'TypeName'
   const slash = ref.lastIndexOf('/');
-  return slash >= 0 ? ref.slice(slash + 1) : ref;
+  const name = slash >= 0 ? ref.slice(slash + 1) : ref;
+  // Refuse to emit a type reference from an untrusted `$ref` whose last segment is
+  // not a plain identifier — a newline or stray syntax would inject into the alias.
+  if (!isValidIdentifier(name)) {
+    throw new Error(
+      `OpenAPI $ref "${ref}" resolves to "${name}", which is not a valid TypeScript identifier and cannot be used in generated code`,
+    );
+  }
+  return name;
 }
