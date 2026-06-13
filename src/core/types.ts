@@ -49,6 +49,20 @@ export interface RequestOptions {
    * caller-supplied value before middleware execution.
    */
   readonly authIdentity?: string;
+  /**
+   * `Authorization` header value set by the library's own auth middleware
+   * (e.g. {@link createOAuthRefreshMiddleware}, {@link createConnectJwtMiddleware})
+   * to override the configured `config.auth` credential for this request.
+   *
+   * This is a SEPARATE, trusted channel from caller-supplied
+   * `headers.Authorization`: the latter is always stripped at the transport's
+   * header chokepoint (B029) so a caller cannot smuggle around configured auth,
+   * whereas this field is applied AFTER the auth provider's header so a token
+   * the middleware refreshes/signs is what actually reaches the wire (#243).
+   *
+   * Set by middleware inside the chain — resource methods never populate it.
+   */
+  readonly authorizationOverride?: string;
 }
 
 /** Parsed API response. */

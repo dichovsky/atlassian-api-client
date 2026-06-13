@@ -35,12 +35,11 @@ export interface ConnectJwtConfig {
 export function createConnectJwtMiddleware(config: ConnectJwtConfig): Middleware {
   return async (options, next) => {
     const token = signConnectJwt(config, options);
+    // Set the trusted in-chain override (not `headers.Authorization`, which the
+    // transport strips as a caller header) so the signed JWT reaches the wire (#243).
     return next({
       ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `JWT ${token}`,
-      },
+      authorizationOverride: `JWT ${token}`,
     });
   };
 }
