@@ -316,8 +316,6 @@ describe('parseCommand', () => {
       'https://example.atlassian.net/rest/api/3/version/10004',
       '--driver',
       'account-123',
-      '--related-work-id',
-      'rw-abc',
       '--category',
       'Design',
       '--issue-id',
@@ -344,7 +342,6 @@ describe('parseCommand', () => {
       'https://example.atlassian.net/rest/api/3/version/10004',
     );
     expect(result.options['driver']).toBe('account-123');
-    expect(result.options['related-work-id']).toBe('rw-abc');
     expect(result.options['category']).toBe('Design');
     expect(result.options['issue-id']).toBe('20001');
   });

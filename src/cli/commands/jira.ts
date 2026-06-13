@@ -1131,7 +1131,6 @@ async function executeUsers(client: JiraClient, cmd: ParsedCommand): Promise<unk
     case 'permission-search': {
       return client.users.getPermissionUsers({
         projectKey: asString(opts['project-key']),
-        projectUuid: asString(opts['project-uuid']),
         issueKey: asString(opts['issue-key']),
         query: asString(opts['query']),
         permissions: parseCsv(opts['permissions']),
@@ -1280,14 +1279,14 @@ async function executePriorities(client: JiraClient, cmd: ParsedCommand): Promis
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
       const after = asString(opts['after']);
-      const before = asString(opts['before']);
-      if (after !== undefined && before !== undefined) {
-        throw new Error('priorities move accepts either --after or --before, not both');
+      const position = asString(opts['position']);
+      if (after !== undefined && position !== undefined) {
+        throw new Error('priorities move accepts either --after or --position, not both');
       }
       await client.priorities.move({
         ids,
         ...(after !== undefined && { after }),
-        ...(before !== undefined && { before }),
+        ...(position !== undefined && { position }),
       });
       return { moved: true };
     }
@@ -3607,14 +3606,14 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const ids = splitCsvIds(idsRaw);
       const after = asString(opts['after']);
-      const before = asString(opts['before']);
-      if (after !== undefined && before !== undefined) {
-        throw new Error('resolutions move accepts either --after or --before, not both');
+      const position = asString(opts['position']);
+      if (after !== undefined && position !== undefined) {
+        throw new Error('resolutions move accepts either --after or --position, not both');
       }
       await client.resolutions.moveResolutions({
         ids,
         ...(after !== undefined && { after }),
-        ...(before !== undefined && { before }),
+        ...(position !== undefined && { position }),
       });
       return { moved: true };
     }
@@ -3626,7 +3625,6 @@ async function executeResolutions(client: JiraClient, cmd: ParsedCommand): Promi
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
         ...(id !== undefined && { id }),
         onlyDefault: asBoolFlag(opts['only-default']),
-        queryString: asString(opts['query-string']),
       });
     }
     default:

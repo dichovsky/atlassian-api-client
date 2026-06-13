@@ -455,11 +455,12 @@ describe('UsersResource', () => {
       });
     });
 
-    it('includes optional params when provided', async () => {
+    it('includes spec-defined optional params when provided (B1053: projectUuid removed — not in spec)', async () => {
+      // Spec GET /user/permission/search: query, username, accountId, permissions,
+      // issueKey, projectKey, startAt, maxResults — no projectUuid.
       transport.respondWith([]);
       await users.getPermissionUsers({
         projectKey: 'PROJ',
-        projectUuid: 'uuid-1',
         issueKey: 'PROJ-1',
         username: 'jdoe',
         accountId: 'acc-1',
@@ -468,13 +469,13 @@ describe('UsersResource', () => {
       });
       expect(transport.lastCall?.options.query).toMatchObject({
         projectKey: 'PROJ',
-        projectUuid: 'uuid-1',
         issueKey: 'PROJ-1',
         username: 'jdoe',
         accountId: 'acc-1',
         startAt: 10,
         maxResults: 50,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('projectUuid');
     });
 
     it('omits undefined optional params', async () => {
@@ -730,10 +731,12 @@ describe('UsersResource', () => {
       });
     });
 
-    it('includes pagination params when provided', async () => {
+    it('sends maxResult (singular) on wire per spec (B1053: GET /user/search/query/key uses maxResult not maxResults)', async () => {
+      // Spec: GET /user/search/query/key param name is `maxResult` (singular).
       transport.respondWith({ values: [], startAt: 5, maxResults: 10, total: 0 });
       await users.searchQueryKey({ startAt: 5, maxResults: 10 });
-      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
+      expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResult: 10 });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('maxResults');
     });
 
     it('omits undefined optional params', async () => {

@@ -382,7 +382,6 @@ export interface GetUserGroupsParams {
 /** Parameters for searching users by permission. */
 export interface GetPermissionUsersParams {
   readonly projectKey?: string;
-  readonly projectUuid?: string;
   readonly issueKey?: string;
   readonly query?: string;
   readonly permissions?: string[];
