@@ -66,7 +66,7 @@ src/
 │   ├── middleware.ts            # createMiddlewareChain (outermost-first composition)
 │   ├── retry.ts                 # executeWithRetry + retry primitives (status, backoff, network errors)
 │   ├── circuit-breaker.ts       # Circuit-breaker middleware (B010)
-│   ├── rate-limiter.ts          # Reactive 429 detection/backoff + proactive token-bucket limiter (B017)
+│   ├── rate-limiter.ts          # Rate-limit header parsing (Retry-After, x-ratelimit-*) + proactive token-bucket limiter (B017); reactive 429 backoff lives in retry.ts
 │   ├── pagination.ts            # Pagination iterators
 │   ├── path.ts                  # Path encoding & dot-segment rejection
 │   ├── oauth.ts                 # OAuth 2.0 token refresh middleware
@@ -82,7 +82,9 @@ src/
 │   │   ├── pages.ts             # /wiki/api/v2/pages
 │   │   ├── spaces.ts            # /wiki/api/v2/spaces
 │   │   ├── blog-posts.ts        # /wiki/api/v2/blogposts
-│   │   ├── comments.ts          # /wiki/api/v2/footer-comments, inline-comments
+│   │   ├── comments.ts          # footer + inline comment CRUD + comment properties
+│   │   ├── footer-comments.ts   # /wiki/api/v2/footer-comments extended reads (children, likes, versions)
+│   │   ├── inline-comments.ts   # /wiki/api/v2/inline-comments extended reads (children, likes, versions)
 │   │   ├── attachments.ts       # /wiki/api/v2/attachments (incl. multipart upload)
 │   │   ├── labels.ts            # /wiki/api/v2/labels
 │   │   ├── content-properties.ts # /wiki/api/v2/*/properties
