@@ -18,7 +18,7 @@ atlas jira priorities delete <id> --replace-with <other-id>
 atlas jira priorities set-default --id <id>
 atlas jira priorities move --ids 10001,10002 --after 10000
 atlas jira priorities move --ids 10001,10002 --before 10003
-atlas jira priorities search --priority-name High --only-default false
+atlas jira priorities search --priority-name High
 atlas jira priorities search --ids 10001,10002 --max-results 25
 atlas jira statuses list
 ```

@@ -724,7 +724,12 @@ atlas jira repository delete-entity my-repo-123 pullRequest pr-1 --update-sequen
 
 ## `dashboards`
 
-`list`, `get`, `create`, `update`, `delete` cover `/rest/api/3/dashboard` plus `listAll()` generator pagination over `GET /dashboard`. The actions below add the platform's full dashboard surface (B391–B405).
+`list`, `get`, `delete` take only `<dashboardId>` (plus `listAll()` generator pagination over `GET /dashboard`). `create` requires `--name` and `--share-permissions` (a JSON array of share-permission objects, e.g. `'[{"type":"global"}]'`), with optional `--description` and `--edit-permissions` (JSON); `update <dashboardId>` takes the same flags. The actions below add the rest of the platform's dashboard surface (B391–B405).
+
+```sh
+atlas jira dashboards create --name "Team board" --share-permissions '[{"type":"global"}]' --description "Sprint health"
+atlas jira dashboards update 10001 --name "Renamed" --share-permissions '[{"type":"authenticated"}]'
+```
 
 | Action                   | Positional                             | Required flags                   | Optional flags                                                                                                                                                   |
 | ------------------------ | -------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -828,8 +833,8 @@ the CLI does NOT auto-poll, callers drive the cadence.
 atlas jira bulk create-issues \
   --issues '[{"fields":{"project":{"key":"PROJ"},"summary":"Issue 1","issuetype":{"name":"Bug"}}},{"fields":{"project":{"key":"PROJ"},"summary":"Issue 2","issuetype":{"name":"Task"}}}]'
 
-# Bulk delete two issues, suppress notifications
-atlas jira bulk delete-issues --issues 10001,10002 --send-notification false
+# Bulk delete two issues (add --send-notification to force notifications; omit for the server default)
+atlas jira bulk delete-issues --issues 10001,10002
 
 # List fields available for bulk edit on two issues
 atlas jira bulk get-fields --issues PROJ-1,PROJ-2 --search-text priority

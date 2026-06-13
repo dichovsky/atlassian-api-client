@@ -905,8 +905,8 @@ atlas jira fields field-delete customfield_10001
 # List contexts for a custom field (B415)
 atlas jira fields context-list --field-id customfield_10001
 
-# Filter contexts by type flags
-atlas jira fields context-list --field-id customfield_10001 --is-global-context true --is-any-issue-type false
+# Filter contexts by type (presence-only boolean flags — include to filter to that type; they take no value)
+atlas jira fields context-list --field-id customfield_10001 --is-global-context --is-any-issue-type
 
 # Filter by specific context IDs (comma-separated)
 atlas jira fields context-list --field-id customfield_10001 --context-id 10025,10026
@@ -931,7 +931,7 @@ atlas jira fields context-delete --field-id customfield_10001 --context-id 10025
 atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025
 
 # List options with pagination and filters (B421)
-atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options true
+atlas jira fields context-option-list --field-id customfield_10001 --context-id 10025 --start-at 0 --max-results 50 --only-options
 
 # Bulk-create options in a context (B422)
 atlas jira fields context-option-create --field-id customfield_10001 --context-id 10025 --body '{"options":[{"value":"New York"},{"value":"Boston","disabled":false}]}'

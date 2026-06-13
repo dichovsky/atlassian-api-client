@@ -396,16 +396,19 @@ atlas jira issue-attachments list PROJ-1
 atlas jira issue-attachments expand-human 10001
 atlas jira issue-attachments expand-raw 10001
 
-# Download the file bytes (CLI prints { bytes: N } — use the SDK for the buffer)
+# Download the file bytes (CLI prints { bytes: N } — use the SDK for the buffer).
+# `--redirect` is a presence-only boolean flag (follow the redirect to the binary);
+# omit it for the default. It takes no value.
 atlas jira issue-attachments download-content 10001
-atlas jira issue-attachments download-content 10001 --redirect false
+atlas jira issue-attachments download-content 10001 --redirect
 
 # Instance-level attachment settings
 atlas jira issue-attachments get-meta
 
-# Render a 200x200 thumbnail with a placeholder fallback
+# Render a 200x200 thumbnail with a placeholder fallback.
+# `--fallback-to-default` is a presence-only boolean flag (takes no value).
 atlas jira issue-attachments download-thumbnail 10001 \
-  --width 200 --height 200 --fallback-to-default true
+  --width 200 --height 200 --fallback-to-default
 
 # Upload a file from disk to an issue
 atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png

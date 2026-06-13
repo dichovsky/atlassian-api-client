@@ -49,7 +49,7 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 
 - `--next-page-token` is the opaque cursor echoed by the previous page's `nextPageToken`; omit it for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to strongly reconcile (force-index) before searching, e.g. `--reconcile-issues 10001,10002`.
-- `--validate-query` (boolean flag) controls server-side JQL validation; when omitted the server defaults to `true`. Pass `--validate-query false` (or omit) for looser validation.
+- `--validate-query` is a presence-only boolean flag: include it to request server-side JQL validation (`validateQuery=true`); omit it for the server default. It takes no value — `--validate-query false` does not disable validation (the CLI cannot currently send `validateQuery=false`).
 - `--fields` is comma-separated field names (same as the non-enhanced actions); `--expand` is a single expand string.
 - `--max-results` caps the page size; the server still controls the actual page boundary via `isLast`/`nextPageToken`.
 
@@ -92,8 +92,8 @@ atlas jira boards backlog 42 --jql "priority = High" --fields summary,assignee
 # Get board configuration
 atlas jira boards configuration 42
 
-# List all epics on a board (not done)
-atlas jira boards list-epics 42 --done false
+# List epics on a board (omit --done for all epics; add --done to filter to completed epics)
+atlas jira boards list-epics 42 --done
 
 # List issues in a specific epic
 atlas jira boards epic-issues 42 7
