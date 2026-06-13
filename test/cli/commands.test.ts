@@ -21266,7 +21266,6 @@ describe('executeJiraCommand', () => {
           category: 'Design',
           title: 'Design doc',
           url: 'https://example.com',
-          'issue-id': '20001',
         }),
         GLOBALS,
       );
@@ -21274,7 +21273,11 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(rw);
       expect(jiraVersionMock.createRelatedWork).toHaveBeenCalledWith(
         '10001',
-        expect.objectContaining({ category: 'Design', title: 'Design doc', issueId: 20001 }),
+        expect.objectContaining({
+          category: 'Design',
+          title: 'Design doc',
+          url: 'https://example.com',
+        }),
       );
     });
 
@@ -21291,8 +21294,6 @@ describe('executeJiraCommand', () => {
       const result = await executeJiraCommand(
         cmd('version', 'update-related-work', ['10001'], {
           category: 'Design',
-          'related-work-id': 'rw-1',
-          'issue-id': '20001',
           title: 'Updated doc',
           url: 'https://example.com',
         }),
@@ -21304,8 +21305,6 @@ describe('executeJiraCommand', () => {
         '10001',
         expect.objectContaining({
           category: 'Design',
-          relatedWorkId: 'rw-1',
-          issueId: 20001,
           title: 'Updated doc',
           url: 'https://example.com',
         }),

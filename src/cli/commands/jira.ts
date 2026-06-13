@@ -5194,12 +5194,10 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     case 'create-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
       const category = requireOpt(opts['category'], '--category');
-      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
       return client.version.createRelatedWork(id, {
         category,
-        ...(issueId !== undefined && { issueId }),
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
       });
@@ -5207,16 +5205,12 @@ async function executeVersionResource(client: JiraClient, cmd: ParsedCommand): P
     case 'update-related-work': {
       const id = requireArg(cmd.positionalArgs[0], 'id');
       const category = requireOpt(opts['category'], '--category');
-      const issueId = asPositiveInt(opts['issue-id'], '--issue-id');
       const title = asString(opts['title']);
       const url = asString(opts['url']);
-      const relatedWorkId = asString(opts['related-work-id']);
       return client.version.updateRelatedWork(id, {
         category,
-        ...(issueId !== undefined && { issueId }),
         ...(title !== undefined && { title }),
         ...(url !== undefined && { url }),
-        ...(relatedWorkId !== undefined && { relatedWorkId }),
       });
     }
     case 'delete-and-replace': {
