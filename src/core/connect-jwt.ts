@@ -80,25 +80,53 @@ export function computeQsh(
   query?: Readonly<Record<string, string | number | boolean | undefined>>,
 ): string {
   const canonicalMethod = method.toUpperCase();
-  // Strip any query string that may have been appended to the path
   const questionMark = path.indexOf('?');
   const canonicalPath = questionMark >= 0 ? path.slice(0, questionMark) : path;
 
-  const canonicalQuery = query
-    ? Object.keys(query)
-        .filter((key) => query[key] !== undefined)
-        // Sort keys by codepoint (UTF-16 code-unit) order, which is what the
-        // Atlassian Connect QSH spec requires:
-        //   sort(["a","A","b","B"]) => ["A","B","a","b"]
-        // The reference impl (`atlassian-jwt`) does exactly `Object.keys(q).sort()`,
-        // so the built-in default comparator is used here verbatim. The previous
-        // `localeCompare` is locale/collation-dependent and does not reliably
-        // produce codepoint order, so it yielded a qsh the server cannot
-        // reproduce → JWT rejected (401).
+  // Collect ALL request query parameters into key → values. The Connect QSH
+  // spec canonicalizes every query parameter of the request, so two sources
+  // must be merged: (1) params baked into the path's query string — notably
+  // REPEATED array params built by `appendRepeatedParams` (B1037), which the
+  // single-value `query` map cannot represent — and (2) the structured `query`
+  // map. Excluding the path-baked params produced a qsh the server cannot
+  // reproduce → JWT rejected (401).
+  const params = new Map<string, string[]>();
+  const add = (key: string, value: string): void => {
+    const existing = params.get(key);
+    if (existing) existing.push(value);
+    else params.set(key, [value]);
+  };
+  if (questionMark >= 0) {
+    // URLSearchParams decodes percent-encoding; values are re-encoded below so
+    // the canonical form is RFC-3986 regardless of how the path encoded them.
+    for (const [key, value] of new URLSearchParams(path.slice(questionMark + 1))) {
+      // The `jwt` param itself is never part of its own QSH.
+      if (key !== 'jwt') add(key, value);
+    }
+  }
+  if (query) {
+    for (const key of Object.keys(query)) {
+      const value = query[key];
+      if (value !== undefined) add(key, String(value));
+    }
+  }
+
+  // Sort keys by codepoint (UTF-16 code-unit) order — what the Connect QSH spec
+  // and the reference impl (`atlassian-jwt`) require: sort(["a","A"]) => ["A","a"].
+  // A parameter with multiple values has them encoded, sorted, and comma-joined
+  // (the comma separator is literal; commas WITHIN a value are %2C-encoded).
+  const canonicalQuery = [...params.entries()]
+    // Map keys are unique, so the two keys are never equal — a two-way
+    // comparator suffices and matches default codepoint order for distinct keys.
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([key, values]) => {
+      const encodedValues = values
+        .map((v) => encodeRfc3986(v))
         .sort()
-        .map((key) => `${encodeRfc3986(key)}=${encodeRfc3986(String(query[key]))}`)
-        .join('&')
-    : '';
+        .join(',');
+      return `${encodeRfc3986(key)}=${encodedValues}`;
+    })
+    .join('&');
 
   const qshInput = `${canonicalMethod}&${canonicalPath}&${canonicalQuery}`;
   return createHash('sha256').update(qshInput).digest('hex');
