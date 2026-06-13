@@ -4,13 +4,6 @@ import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/internal/api/latest';
 
-const makeWorklogEntry = () => ({
-  issueIdOrKey: 'PROJ-1',
-  timeSpentSeconds: 3600,
-  started: '2024-01-01T09:00:00.000+0000',
-  comment: 'Working on the feature',
-});
-
 describe('LatestResource', () => {
   let transport: MockTransport;
   let latest: LatestResource;
@@ -20,51 +13,47 @@ describe('LatestResource', () => {
     latest = new LatestResource(transport, BASE_URL);
   });
 
-  // ── bulkWorklog ───────────────────────────────────────────────────────────
+  // ── bulkWorklog (B1046) ─────────────────────────────────────────────────────
 
   describe('bulkWorklog()', () => {
-    it('calls POST /worklog/bulk with the worklogs payload', async () => {
-      // Arrange
-      const worklogs = [makeWorklogEntry()];
-      const response = { submittedWorklogs: worklogs };
+    it('POSTs the { requests: [{ issueId, worklogId }] } lookup body and returns { worklogs }', async () => {
+      // Spec: getWorklogsByIssueIdAndWorklogId — a bulk LOOKUP by id pairs.
+      // Regression: the old code modeled a worklog CREATE ({ worklogs: [{ issueIdOrKey,
+      // timeSpentSeconds, ... }] }) and a fabricated { submittedWorklogs, errors } response.
+      const requests = [
+        { issueId: 10001, worklogId: 20001 },
+        { issueId: 10001, worklogId: 20002 },
+      ];
+      const response = { worklogs: requests };
       transport.respondWith(response);
 
-      // Act
-      const result = await latest.bulkWorklog({ worklogs });
+      const result = await latest.bulkWorklog({ requests });
 
-      // Assert
       expect(result).toEqual(response);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/worklog/bulk`,
-        body: { worklogs },
+        body: { requests },
       });
     });
 
-    it('sends multiple worklogs', async () => {
-      // Arrange
-      const worklogs = [
-        makeWorklogEntry(),
-        { issueIdOrKey: 'PROJ-2', timeSpentSeconds: 1800, started: '2024-01-01T10:00:00.000+0000' },
-      ];
-      transport.respondWith({ submittedWorklogs: worklogs });
+    it('sends a single id pair', async () => {
+      transport.respondWith({ worklogs: [{ issueId: 1, worklogId: 2 }] });
 
-      // Act
-      const result = await latest.bulkWorklog({ worklogs });
+      const result = await latest.bulkWorklog({ requests: [{ issueId: 1, worklogId: 2 }] });
 
-      // Assert
-      expect(transport.lastCall?.options.body).toEqual({ worklogs });
-      expect(result.submittedWorklogs).toHaveLength(2);
+      expect(transport.lastCall?.options.body).toEqual({
+        requests: [{ issueId: 1, worklogId: 2 }],
+      });
+      expect(result.worklogs).toHaveLength(1);
     });
 
     it('propagates transport errors', async () => {
-      // Arrange
       transport.respondWithError(new Error('internal error'));
 
-      // Act / Assert
-      await expect(latest.bulkWorklog({ worklogs: [makeWorklogEntry()] })).rejects.toThrow(
-        'internal error',
-      );
+      await expect(
+        latest.bulkWorklog({ requests: [{ issueId: 1, worklogId: 2 }] }),
+      ).rejects.toThrow('internal error');
     });
   });
 });

@@ -18,6 +18,8 @@ export type {
   ListAttachmentLabelsParams,
   ListAttachmentVersionsParams,
   ListAttachmentsParams,
+  UploadAttachmentResult,
+  UploadAttachmentResultItem,
 } from './types/attachments.js';
 export type {
   BlogPost,

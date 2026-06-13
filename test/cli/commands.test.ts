@@ -15933,20 +15933,21 @@ describe('executeJiraCommand', () => {
   // ── latest ────────────────────────────────────────────────────────────────
 
   describe('latest resource', () => {
-    it('latest bulk-worklog calls client.latest.bulkWorklog() with parsed JSON value', async () => {
-      const worklogs = [
-        { issueIdOrKey: 'PROJ-1', timeSpentSeconds: 3600, started: '2024-01-01T09:00:00.000+0000' },
+    it('latest bulk-worklog wraps the parsed pairs as { requests } (B1046)', async () => {
+      const requests = [
+        { issueId: 10001, worklogId: 20001 },
+        { issueId: 10001, worklogId: 20002 },
       ];
-      const response = { submittedWorklogs: worklogs };
+      const response = { worklogs: requests };
       jiraLatestMock.bulkWorklog.mockResolvedValue(response);
 
       const result = await executeJiraCommand(
-        cmd('latest', 'bulk-worklog', [], { value: JSON.stringify(worklogs) }),
+        cmd('latest', 'bulk-worklog', [], { value: JSON.stringify(requests) }),
         GLOBALS,
       );
 
       expect(result).toEqual(response);
-      expect(jiraLatestMock.bulkWorklog).toHaveBeenCalledWith({ worklogs });
+      expect(jiraLatestMock.bulkWorklog).toHaveBeenCalledWith({ requests });
     });
 
     it('latest bulk-worklog throws when --value is missing', async () => {

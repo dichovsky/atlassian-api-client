@@ -598,17 +598,17 @@ atlas jira classification-levels list
 
 **URL base:** `/rest/internal/api/latest` (Jira Internal API — not `/rest/api/3`).
 
-This resource exposes the internal worklog bulk endpoint. Stability is not guaranteed by Atlassian.
+This resource exposes the internal bulk worklog **lookup** endpoint (`getWorklogsByIssueIdAndWorklogId`) — it resolves worklogs by `(issueId, worklogId)` pairs, it does not create them. Stability is not guaranteed by Atlassian.
 
 | Action         | Positional | Required flags | Optional flags |
 | -------------- | ---------- | -------------- | -------------- |
 | `bulk-worklog` | —          | `--value`      | —              |
 
-- `--value` must be a JSON array of worklog objects, each with `issueIdOrKey`, `timeSpentSeconds`, `started`, and optional `comment` / `authorAccountId`.
+- `--value` must be a JSON array of `{ issueId, worklogId }` integer pairs to look up.
 
 ```sh
-# Bulk-create worklogs via the internal API
-atlas jira latest bulk-worklog --value '[{"issueIdOrKey":"PROJ-1","timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}]'
+# Bulk-look up worklogs by (issueId, worklogId) pairs via the internal API
+atlas jira latest bulk-worklog --value '[{"issueId":10001,"worklogId":20001},{"issueId":10001,"worklogId":20002}]'
 ```
 
 ## `remote-link`
