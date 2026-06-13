@@ -4,17 +4,119 @@
 
 ## ⚙️ Core
 
-- [ ] 🔴 ♻️ Core: B025 OpenAPI $ref injection hardening
+> Deep-audit 2026-06-10 (`docs/DEEP-AUDIT-2026-06-10.md`) core/CLI findings below (B1037–). Adversarially verified; the auth-middleware (#246) and pagination (#247) clusters already shipped and are excluded.
+
+- [ ] 🔴 🐛 Core: B025 OpenAPI $ref injection hardening (deep-audit specifics)
+  - problem: verified — newline in a `$ref` last segment escapes the type context (code injection); `spec.info.title`/`version` injected into a single-line comment without newline sanitization; empty `allOf`/`oneOf`/`anyOf` arrays emit invalid TS `export type X = ;`; non-identifier last segment emits an invalid type reference. See report §5b.
   - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
+  - deps: none
+- [ ] 🔴 🐛 Core: B1037 `computeQsh` drops `appendRepeatedParams` query params → Connect-JWT 401
+  - problem: `computeQsh` (`src/core/connect-jwt.ts`) builds the canonical query from the parsed query map but ignores array params that `appendRepeatedParams` bakes into the path → QSH mismatch → server rejects any Connect-JWT request using repeated params. Found by the deep audit AND #246's reviewer independently. NOT fixed by #246.
+  - files: `src/core/connect-jwt.ts`, `test/core/connect-jwt.test.ts`
+  - deps: none — see [[project_auth_middleware_wire_channel]]
+- [ ] 🔴 🐛 Core: B1038 Wrong Jira Software OAuth scope strings
+  - problem: `src/core/scopes.ts` maps Jira Software board/sprint scopes to wrong values — board `read:jira-work` ≠ `read:board-scope:jira-software`; sprint `manage:jira-project` ≠ `write/delete:sprint:jira-software`. Granted scopes won't match required → 403.
+  - files: `src/core/scopes.ts`, `test/core/scopes.test.ts`
+  - deps: none
+- [ ] 🟡 🐛 Core: B1039 Batch middleware dedupes non-idempotent mutations + key gaps
+  - problem: `src/core/batch.ts` has no method guard (POST/PUT/PATCH/DELETE coalesced like GETs); `formData`/`binaryBody`/`responseType` excluded from the dedup key → concurrent distinct multipart/binary/responseType requests collapse to one. See report §5b.
+  - files: `src/core/batch.ts`, `test/core/batch.test.ts`
+  - deps: none
+- [ ] 🟡 🐛 Core: B1040 Circuit breaker ignores body-cap failures
+  - problem: `ResponseTooLargeError` on a 5xx is not a qualifying failure (`src/core/circuit-breaker.ts`) → breaker never trips for response-too-large failures.
+  - files: `src/core/circuit-breaker.ts`, `test/core/circuit-breaker.test.ts`
+  - deps: none
+- [ ] 🟢 🐛 Core: B1041 Core robustness rollup (deep-audit MED/LOW)
+  - problem: `transport.getHeaders()` called twice per request (constructor hashing path can diverge); `response.ts` throws raw `SyntaxError` on malformed 2xx JSON (outside error taxonomy); `cache.ts` concurrent-miss stampede (no in-flight coalescing); `oauth.validateTokenEndpoint` echoes raw unparseable endpoint into a ValidationError; `onTokenRefreshed` throw poisons `refreshPromise`; `createAuthProvider` doesn't validate non-empty creds; `pagination.validatePageSize` throws native `RangeError`. Full list + file:line in report §5b.
+  - files: `src/core/{transport,response,cache,oauth,auth,pagination}.ts` + tests
   - deps: none
 
 ## 🖥️ CLI
 
 > SDK-implemented methods not exposed via `atlas` CLI/skill (audit 2026-06-05, code-verified 2026-06-05). SDK already covers these — tasks wire dispatch + router + help + skill docs + tests only; no `src/*/resources/*.ts` changes. `*All` pagination generators are excluded (their base `list`/`search` is already reachable).
 
+- [ ] 🔴 🐛 CLI: B1042 Input-validation cluster (deep-audit 2026-06-10, verified)
+  - problem: `screens list --ids` and `screens list-all-tabs --ids`/`--tab-ids` pass `NaN` query params from unguarded `.map(Number)`; `fields context-*` actions `Number(contextIdStr)` unvalidated; `printOutput(undefined, 'json')` emits the bare word `undefined` (invalid JSON); `resolveAuthType` is case-sensitive (`Bearer`/`BEARER` silently falls back to basic auth); router rejects negative numeric flags with a raw `TypeError`; `runCli` never catches parseArgs/credential errors → unhandled rejection. Report §5b.
+  - files: `src/cli/commands/jira.ts`, `src/cli/output.ts`, `src/cli/config.ts`, `src/cli/router.ts`, `src/cli/index.ts` + tests
+  - deps: none
+- [ ] 🔴 🐛 CLI: B1043 `blog-posts list` flags unwired → pagination broken
+  - problem: `confluence blog-posts list` does not wire `--cursor`/`--title`/`--status`/`--sort`/`--body-format` into the resource call (documented but silently dropped) → cursor pagination unusable from the CLI. Also doc-content mismatches: `comments` `--blog-post-id` and `labels list --cursor` documented but ignored by the handler.
+  - files: `src/cli/commands/confluence.ts`, `test/cli/commands.test.ts`, `skill/reference/confluence.md`
+  - deps: none
+- [ ] 🟢 📝 CLI: B1044 Document `dashboards create`/`update` flags to the construct-from-skill bar
+  - problem: reachability audit — `dashboards create`/`update` appear only in the prose one-liner + master matrix row in `skill/reference/jira.md`; their JSON `--share-permissions`/`--edit-permissions` + `--name`/`--description` flags are never tabled (unlike `copy`). Fails the construct-from-skill bar. (Roll into Phase-3 doc reorg.)
+  - files: `skill/reference/jira.md`
+  - deps: none
+
 ## 🧩 Jira
 
+> Deep-audit 2026-06-10 conformance findings (`docs/DEEP-AUDIT-2026-06-10.md` §4). CRITICAL/HIGH that change bytes on the wire below; per-module response-type/type-drift (84 HIGH + 358 MED + 72 LOW) rolled into B1056. Excludes the 30 findings shipped via #249/#250.
+
+- [ ] 🔴 🐛 Jira: B1045 `app.updateFieldContextConfiguration` wrong body shape — every call fails (CRITICAL)
+  - problem: `src/jira/resources/app.ts:195` sends a body shape the spec rejects; every call fails. Spec-verified. (Sibling HIGH wire-body defects in the same module — `bulkUpdateFieldValue` nested-vs-flat, `updateFieldValue` fictional `issueIdsOrKeys`/`issueKeys`, `listFieldContextConfigurations` `contextIds`/required `fieldIdsOrKeys` — fix together.)
+  - files: `src/jira/resources/app.ts`, `test/jira/app.test.ts`
+  - deps: none
+- [ ] 🔴 🐛 Jira: B1046 `latest.ts` bulk-worklog request body + response type both wrong — every call fails (CRITICAL ×2)
+  - problem: `src/jira/resources/latest.ts:19` sends worklog-create fields; spec expects issueId+worklogId lookup pairs. `:24` `BulkWorklogResponse` ≠ spec `BulkWorklogKeyResponseBean` (wrong item fields, fabricated `errors`).
+  - files: `src/jira/resources/latest.ts`, `test/jira/latest.test.ts`
+  - deps: none
+- [ ] 🔴 🐛 Jira: B1047 `service-registry` required `serviceIds` never sent + wrong response shape (CRITICAL)
+  - problem: `src/jira/resources/service-registry.ts` `get()` takes no args and sends no `serviceIds` (required, `type:array` form/explode → repeated params) → every call 400s. `ServiceRegistryEntry` interface is also wrong: fictional `key`/`baseUrl`/`vendor`; missing spec `id`/`organizationId`/`revision`/`serviceTier`.
+  - files: `src/jira/resources/service-registry.ts`, `test/jira/service-registry.test.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira.md`
+  - deps: none
+- [ ] 🔴 🐛 Jira: B1048 `statuses.list()` sends no required `id` param → always 400 (CRITICAL)
+  - problem: `src/jira/resources/statuses.ts:102` `list()` GETs `/statuses` with no params; spec `getStatusesById` requires `id` (`type:array`, 1–50). Signature accepts no args. The zero-param bulk endpoint is `GET /status` (no trailing s) returning `StatusDetails[]`. (statuses `bulkCreate`/usages CRITICALs already fixed in #250.)
+  - files: `src/jira/resources/statuses.ts`, `test/jira/statuses.test.ts`
+  - deps: none
+- [ ] 🔴 🐛 Jira: B1049 Repeated-array-param serialization holdouts (recurring class)
+  - problem: array-type query params still CSV-joined where the spec needs repeated params (`appendRepeatedParams`): `projects.list status`, `tasks` 7 array params serialized as scalars, `service-registry.serviceIds` (see B1047). Silently returns wrong result sets. Same class as #167/#198/#200/#201/#222.
+  - files: `src/jira/resources/{projects,tasks,service-registry}.ts` + tests — see [[project_jira_array_query_param_serialization]]
+  - deps: none
+- [ ] 🟡 🐛 Jira: B1050 `readOnly` fields sent in request bodies
+  - problem: `version.ts` sends spec-`readOnly` `userStartDate`/`userReleaseDate` in create/update bodies (writable equivalents are `startDate`/`releaseDate`); `createRelatedWork`/`updateRelatedWork` send `readOnly` `issueId`. Server ignores or 400s.
+  - files: `src/jira/resources/version.ts`, `test/jira/version.test.ts`
+  - deps: none
+- [ ] 🟡 🐛 Jira: B1051 Wrong content-type / body encoding
+  - problem: `settings.setColumns` sends JSON object-array; spec requires form-data string array. `plans` JSON-patch endpoints send `application/json` not `application/json-patch+json`. `issuetype.loadAvatar` sends multipart; spec requires raw binary body.
+  - files: `src/jira/resources/{settings,plans,issuetype}.ts` + tests
+  - deps: none
+- [ ] 🟡 🐛 Jira: B1052 Path-traversal guard bypass (encodeURIComponent → encodePathSegment)
+  - problem: `epic.ts` (5 agile endpoints), `linked-workspaces.getSecurity`, `vulnerability` interpolate user path segments via `encodeURIComponent` instead of the house `encodePathSegment` (which rejects dot-segments). Bypasses the traversal guard.
+  - files: `src/jira/resources/{epic,linked-workspaces,vulnerability}.ts` + tests
+  - deps: none
+- [ ] 🟡 🐛 Jira: B1053 Fictional / misnamed query params silently dropped or rejected
+  - problem: `priorities.delete replaceWith`, `priorities.move before` (spec: `position`), `resolution.moveResolutions before`/`SearchResolutionsParams queryString`, `exists-by-properties entityType/entityId`, `users.searchQueryKey maxResults` (spec: `maxResult`), `users.getPermissionUsers projectUuid`, `classification-levels.list status`/`orderBy`. Each unknown param is dropped (or 400s against `additionalProperties:false`).
+  - files: `src/jira/resources/{priorities,resolution,exists-by-properties,users,classification-levels}.ts` + tests
+  - deps: none
+- [ ] 🟡 🐛 Jira: B1054 `webhooks` refresh/response gaps (deferred from #250)
+  - problem: `refresh()` discards the `WebhooksExpirationDate` 200 body (typed `void`); `Webhook` interface declares phantom `self` and is missing required `url`. Flagged non-blocking in #250 review.
+  - files: `src/jira/resources/webhooks.ts`, `test/jira/webhooks.test.ts`
+  - deps: none
+- [ ] 🟢 🐛 Jira: B1055 Misc wire-body / pagination-flavor HIGH
+  - problem: `configuration.UpdateTimeTrackingConfigurationData` all-optional vs spec all-required; `dashboards.bulkEdit entityIds` string[] vs spec integer[], `copy()` empty-body vs required `DashboardDetails`; `expression.custom` Record vs spec array; `pages.UpdatePageData.body` optional vs required; `data-policy.getPolicies` offset-paginates a non-paginated endpoint; `sprints.getIssues` envelope (`.values` vs `.issues`); `search.JqlSearchResult` missing `isLast`. Report §4b.
+  - files: `src/jira/resources/{configuration,dashboards,expression,pages,data-policy,sprints,search}.ts` + tests
+  - deps: none
+- [ ] 🟢 ♻️ Jira: B1056 Response-type / type-drift rollup (85 modules — MED/LOW + non-wire HIGH)
+  - problem: declared request/response interfaces drift from spec schemas (fields that read `undefined` at runtime, wrong optionality, enum subsets, fictional fields) — annoying but not request-corrupting. 79 HIGH + 358 MED + 72 LOW across 85 Jira modules. Full per-module inventory in report §4c + `conformance-final.json`. Heaviest: app, boards, bulk, dashboards, expression, issues, plans, post-incident-reviews, workflows. Fix opportunistically per module or fold into B046 endpoint-registry typing.
+  - files: `src/jira/resources/*.ts`, `src/jira/types*.ts` + tests (per module)
+  - deps: B046 (optional)
+
 ## 🧩 Confluence
+
+- [ ] 🔴 🐛 Confluence: B1057 `attachments.upload()` POSTs to a nonexistent v2 endpoint (report F1)
+  - problem: `src/confluence/resources/attachments.ts` POSTs multipart to `/wiki/api/v2/pages/{id}/attachments`; the pinned v2 spec has GET only there and no attachment-write op anywhere (CONFCLOUD-77196). Every real call 404/405s; also missing `X-Atlassian-Token: nocheck`. MockTransport tests hide it.
+  - solution: re-route to v1 `POST /wiki/rest/api/content/{id}/child/attachment` + `nocheck` header (mirror Jira `issue-attachments.upload`); inject a v1/site base; fix the return type (v1 content-array, not `CursorPaginatedResponse<Attachment>`); red→green tests; CLI + skill-doc updates. Signature change OK (never worked).
+  - files: `src/confluence/resources/attachments.ts`, `src/confluence/client.ts`, `test/confluence/attachments.test.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`
+  - deps: none
+- [ ] 🔴 🐛 Confluence: B1058 `admin-key` written against a phantom contract (report F2)
+  - problem: `create()` sends `durationInHours` (typed 1–24); spec `AdminKeyRequest` has only `durationInMinutes` (max 60) → custom durations silently no-op. `AdminKey` response type = `{createdAt, expireAt, durationInHours}`; spec `AdminKeyResponse` = `{accountId, expirationTime}` (zero overlap → typed fields always `undefined`). JSDoc also wrong.
+  - solution: rewrite the request/response types + resource to the spec; update CLI `--duration-hours`→minutes flag + skill docs together (parity rule).
+  - files: `src/confluence/types/admin-key.ts`, `src/confluence/resources/admin-key.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/admin-key.test.ts`
+  - deps: none
+- [ ] 🟢 ♻️ Confluence: B1059 Response-type / type-drift rollup (21 modules — MED/LOW + 5 HIGH)
+  - problem: declared interfaces drift from spec schemas (5 HIGH + 109 MED + 14 LOW across 21 Confluence modules). Notable: `app.upsertProperty` typed `Promise<AppProperty>` but the spec PUT is bodyless → `undefined` at runtime (HIGH); `attachments.status` CSV-not-repeated (HIGH, see class B1049); `footer-comments`/`inline-comments`/`tasks` type drift. Full inventory in report §4c.
+  - files: `src/confluence/resources/*.ts`, `src/confluence/types/*` + tests (per module)
+  - deps: B046 (optional)
 
 - [ ] 🟢 ♻️ Confluence: B1021 Add `sort` to `ListLabelsParams` (SDK type debt)
   - problem: `ListLabelsParams` (`src/confluence/types/labels.ts`) omits `sort?: LabelSortOrder`, though the live v2 `GET /spaces/{id}/labels` and `GET /blogposts/{id}/labels` accept it. CLI `labels list-for-space`/`list-for-blog-post` (PR #195) forward `--sort` via object spread — works at runtime, but the param type doesn't declare it. Surfaced in PR #195 review.
@@ -24,7 +126,22 @@
 
 ## 🧪 QA
 
+- [ ] 🟡 🐛 QA: B1060 Type-regen drift-guard watches the old Confluence **v1** spec (report F3)
+  - problem: `scripts/regenerate-types.ts` fetches `confluence/swagger.v3.json` (v1, 89 paths) instead of the pinned v2 `openapi-v2.v3.json` (151 paths) — the weekly `spec-drift` smoke test (B018) exercises `generateTypes()` against a spec the SDK doesn't target. Jira URLs verified correct.
+  - solution: one-line URL swap + tighten `test/scripts/regenerate-types.test.ts:41` to assert the exact v2 URL.
+  - files: `scripts/regenerate-types.ts`, `test/scripts/regenerate-types.test.ts`
+  - deps: none
+- [ ] 🟢 ♻️ QA: B1061 Dead-code cleanup (deep-audit, minimal)
+  - problem: `src/confluence/resources/index.ts` is an unreachable partial barrel with zero consumers (removable now); `tsconfig.json`/`vitest.config.ts` reference a `bench/` dir that doesn't exist. Plus 7 unused-public exports (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; all 26 Confluence resource classes exported from `confluence/index.ts` but absent from root) — removal is semver-major, defer to 3.0.0.
+  - files: `src/confluence/resources/index.ts`, `tsconfig.json`, `vitest.config.ts`, `src/core/index.ts`, `src/confluence/index.ts`
+  - deps: 3.0.0 for the public-export trims
+
 ## 🤖 Infra
+
+- [ ] 🟡 📝 Infra: B1062 CHANGELOG breaking changes for next major (3.0.0)
+  - problem: #246/#249/#250 changed typed surfaces (auth `RequestOptions.authorizationOverride` boundary, forge/redact/statuses/role/priorityscheme return + body shapes) — each fixes a 100%-broken method (not a real runtime break) but the typed surface changed. Reviewers flagged 3.0.0. Record the breaking set in CHANGELOG when cutting the next major. Scope to last-published, per [[project_unreleased_breaking_changes]].
+  - files: `CHANGELOG.md`
+  - deps: none
 
 ## 🏛️ Architecture
 
