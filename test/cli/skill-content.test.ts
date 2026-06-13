@@ -101,6 +101,32 @@ describe('SKILL.md content', () => {
 });
 
 describe('Reference content sanity checks', () => {
+  it('every skill markdown file has balanced, standard 3-backtick code fences', () => {
+    // Guards against unclosed / non-standard (4+ backtick) fences that swallow
+    // following sections as literal code — a class of bug a substring-presence
+    // check cannot see (PR #256 review caught one in the jira.md split).
+    const skillDocs = [
+      resolve(SKILL_DIR, 'SKILL.md'),
+      resolve(SKILL_DIR, 'reference', 'confluence.md'),
+      resolve(SKILL_DIR, 'reference', 'jira.md'),
+      resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'),
+      resolve(SKILL_DIR, 'reference', 'payload-rules.md'),
+      resolve(SKILL_DIR, 'reference', 'examples.md'),
+      ...JIRA_DOMAIN_FILES.map((f) => resolve(JIRA_DOMAIN_DIR, f)),
+    ];
+    for (const path of skillDocs) {
+      const fenceLines = readFileSync(path, 'utf8')
+        .split('\n')
+        .filter((l) => /^\s*`{3,}/.test(l));
+      const oversized = fenceLines.filter((l) => /^\s*`{4,}/.test(l));
+      expect(oversized, `${path} has non-standard 4+ backtick fence(s)`).toEqual([]);
+      expect(
+        fenceLines.length % 2,
+        `${path} has an odd number of code fences (unclosed block)`,
+      ).toBe(0);
+    }
+  });
+
   it('includes auth and host safety guidance', () => {
     expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_BASE_URL');
     expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_ALLOWED_HOSTS');

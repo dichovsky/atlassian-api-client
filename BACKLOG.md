@@ -48,8 +48,6 @@
   - solution: decide per-flag — for genuine tri-state filters, register as `type: 'string'` (so `asBoolFlag` gets `'true'`/`'false'`) or add explicit `--no-<flag>` variants; for true on/off toggles, presence-only is correct and the docs already match. Update router + tests + skill docs together (parity rule).
   - files: `src/cli/router.ts`, `src/cli/commands/jira.ts`, `test/cli/router.test.ts`, `skill/reference/jira/*.md`
   - deps: none
-  - files: `skill/reference/jira.md`
-  - deps: none
 
 ## 🧩 Jira
 

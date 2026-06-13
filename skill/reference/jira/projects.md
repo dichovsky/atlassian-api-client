@@ -322,7 +322,7 @@ Project version management (B820–B831, B933). Covers the full `/rest/api/3/ver
 - `--move-fix-issues-to` and `--move-affected-issues-to` take a version ID as a string on `delete`, or as an integer on `delete-and-replace`.
 - `--position` for `move` accepts `First`, `Last`, `Earlier`, or `Later`.
 
-`````sh
+```sh
 # Create a version
 atlas jira version create --name "v1.0" --project PROJ --release-date 2026-06-01
 
@@ -361,6 +361,7 @@ atlas jira version unresolved-issue-count 10000
 
 # Delete a single related work entry
 atlas jira version delete-related-work 10000 rw-abc
+```
 
 ## `project-template`
 
@@ -385,7 +386,7 @@ Custom project template management (B653–B657). Covers the full `/rest/api/3/p
 - `--enable-screen-delegated-admin` and `--enable-workflow-delegated-admin` are boolean flags (bare, no value).
 - `--enable-components` is a boolean flag (bare, no value).
 
-````sh
+```sh
 # Create a project with a custom template (async) — B653
 atlas jira project-template create \
   --name "My Project" \
@@ -428,4 +429,4 @@ atlas jira project-template save-template \
   --project-id 10001 \
   --template-type LIVE \
   --enable-workflow-delegated-admin
-`````
+```
