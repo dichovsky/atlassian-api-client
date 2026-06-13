@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "2f136acbd7a0fce38c11ca158e7820c14f66b42286fe72945803ee2b90a9de4f",
+  "sourceHash": "52f05030667dfcbaa1b675c50a2902f19c565f7053d5b43d3fd60d35ba6de6c2",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3551,7 +3551,7 @@
       "name": "generateTypes",
       "kind": "function",
       "file": "src/core/openapi.ts",
-      "line": 110,
+      "line": 117,
       "signature": "export function generateTypes(spec: OpenApiSpec): GeneratedTypes",
       "jsdoc": "Generates TypeScript type declarations from an OpenAPI 3.x spec."
     },
@@ -13930,28 +13930,28 @@
         {
           "name": "escapeJsDocComment",
           "kind": "function",
-          "line": 73,
+          "line": 79,
           "signature": "function escapeJsDocComment(value: string): string",
           "jsdoc": "Escapes a description string for safe embedding inside a JSDoc comment block. Prevents star-slash sequences from terminating the comment block early."
         },
         {
           "name": "sanitizeCommentLine",
           "kind": "function",
-          "line": 81,
+          "line": 88,
           "signature": "function sanitizeCommentLine(value: string): string",
-          "jsdoc": "Collapses newlines so a value cannot escape a single-line `//` comment and inject code on a following line."
+          "jsdoc": "Collapses every ECMAScript line terminator (LF, CR, U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR) so a value cannot escape a single-line `//` comment and inject code on a following line."
         },
         {
           "name": "joinComposed",
           "kind": "function",
-          "line": 89,
+          "line": 96,
           "signature": "function joinComposed( parts: readonly string[], separator: string, keyword: 'allOf' | 'oneOf' | 'anyOf', ): string",
           "jsdoc": "Joins the members of a composed (`allOf`/`oneOf`/`anyOf`) schema, rejecting an empty array which would otherwise emit invalid TypeScript (`export type X = ;`)."
         },
         {
           "name": "generateTypes",
           "kind": "function",
-          "line": 110,
+          "line": 117,
           "exported": true,
           "signature": "export function generateTypes(spec: OpenApiSpec): GeneratedTypes",
           "jsdoc": "Generates TypeScript type declarations from an OpenAPI 3.x spec."
@@ -13959,43 +13959,43 @@
         {
           "name": "generateTypeDeclaration",
           "kind": "function",
-          "line": 132,
+          "line": 139,
           "signature": "function generateTypeDeclaration( name: string, schema: OpenApiSchemaObject, allSchemas: Readonly<Record<string, OpenApi…"
         },
         {
           "name": "generateEnumType",
           "kind": "function",
-          "line": 153,
+          "line": 160,
           "signature": "function generateEnumType(name: string, schema: OpenApiSchemaObject): string"
         },
         {
           "name": "generateInterface",
           "kind": "function",
-          "line": 161,
+          "line": 168,
           "signature": "function generateInterface( name: string, schema: OpenApiSchemaObject, allSchemas: Readonly<Record<string, OpenApiSchema…"
         },
         {
           "name": "generateComposedType",
           "kind": "function",
-          "line": 204,
+          "line": 211,
           "signature": "function generateComposedType( name: string, schema: OpenApiSchemaObject, allSchemas: Readonly<Record<string, OpenApiSch…"
         },
         {
           "name": "schemaToTsType",
           "kind": "function",
-          "line": 225,
+          "line": 232,
           "signature": "function schemaToTsType( schema: OpenApiSchemaObject, allSchemas: Readonly<Record<string, OpenApiSchemaObject>>, ): stri…"
         },
         {
           "name": "objectSchemaToTsType",
           "kind": "function",
-          "line": 282,
+          "line": 289,
           "signature": "function objectSchemaToTsType( schema: OpenApiSchemaObject, allSchemas: Readonly<Record<string, OpenApiSchemaObject>>, )…"
         },
         {
           "name": "resolveRef",
           "kind": "function",
-          "line": 305,
+          "line": 312,
           "signature": "function resolveRef(ref: string): string"
         }
       ]

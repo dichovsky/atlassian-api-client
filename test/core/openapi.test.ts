@@ -589,5 +589,37 @@ describe('generateTypes', () => {
     it('throws on an empty anyOf array instead of emitting invalid TypeScript', () => {
       expect(() => generateTypes(makeSpec({ EmptyAny: { anyOf: [] } }))).toThrow(/anyOf/);
     });
+
+    it('neutralises a U+2028 line separator in info.title (ECMAScript ends // comments on it)', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API globalThis.PWNED = 1', version: '1.0.0' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).not.toContain(' ');
+    });
+
+    it('neutralises a U+2029 paragraph separator in info.version', () => {
+      const spec: OpenApiSpec = {
+        openapi: '3.0.0',
+        info: { title: 'API', version: '1.0 globalThis.PWNED = 1' },
+        components: { schemas: {} },
+      };
+      const { source } = generateTypes(spec);
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).not.toContain(' ');
+    });
+
+    it('escapes line terminators in enum string values so they cannot break the literal', () => {
+      // A newline in an enum value would otherwise emit an unterminated 'literal and
+      // inject the trailing text as code on the next line.
+      const { source } = generateTypes(
+        makeSpec({ Evil: { enum: ['x\nglobalThis.PWNED = 1;\n//'] } }),
+      );
+      expect(source).not.toMatch(/^globalThis\.PWNED/m);
+      expect(source).toContain('\\n');
+    });
   });
 });

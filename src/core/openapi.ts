@@ -63,7 +63,13 @@ function isValidIdentifier(value: string): boolean {
  * Prevents enum string values from breaking out of their literal context.
  */
 function escapeStringLiteral(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 /**
@@ -75,11 +81,12 @@ function escapeJsDocComment(value: string): string {
 }
 
 /**
- * Collapses newlines so a value cannot escape a single-line `//` comment and
- * inject code on a following line.
+ * Collapses every ECMAScript line terminator (LF, CR, U+2028 LINE SEPARATOR,
+ * U+2029 PARAGRAPH SEPARATOR) so a value cannot escape a single-line `//`
+ * comment and inject code on a following line.
  */
 function sanitizeCommentLine(value: string): string {
-  return value.replace(/[\r\n]+/g, ' ');
+  return value.replace(/[\r\n\u2028\u2029]+/g, ' ');
 }
 
 /**
