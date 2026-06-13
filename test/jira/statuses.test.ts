@@ -42,31 +42,30 @@ describe('StatusesResource', () => {
   // ── list ──────────────────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('calls GET /statuses and returns the array', async () => {
+    it('sends the required id query params as repeated keys (B1048)', async () => {
       // Arrange
-      const statusList = [makeStatus('1'), makeStatus('2'), makeStatus('3')];
+      const statusList = [makeStatus('1'), makeStatus('2')];
       transport.respondWith(statusList);
 
       // Act
-      const result = await statuses.list();
+      const result = await statuses.list(['1', '2']);
 
       // Assert
       expect(result).toEqual(statusList);
+      // Regression: the old parameterless call hit GET /statuses with no `id`,
+      // which the spec requires → 400. `id` is type:array → repeated params.
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/statuses`,
+        path: `${BASE_URL}/statuses?id=1&id=2`,
       });
     });
 
-    it('returns an empty array when no statuses exist', async () => {
-      // Arrange
-      transport.respondWith([]);
+    it('throws ValidationError when ids is empty', async () => {
+      await expect(statuses.list([])).rejects.toBeInstanceOf(ValidationError);
+    });
 
-      // Act
-      const result = await statuses.list();
-
-      // Assert
-      expect(result).toEqual([]);
+    it('throws ValidationError when an id is blank', async () => {
+      await expect(statuses.list(['1', '  '])).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

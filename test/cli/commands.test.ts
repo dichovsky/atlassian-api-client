@@ -12151,16 +12151,22 @@ describe('executeJiraCommand', () => {
   // ── statuses ──────────────────────────────────────────────────────────────
 
   describe('statuses resource', () => {
-    it('statuses list calls client.statuses.list', async () => {
+    it('statuses list passes --ids to client.statuses.list (B1048)', async () => {
       // Arrange
       jiraStatusesMock.list.mockResolvedValue([{ id: '1', name: 'Open' }]);
 
       // Act
-      const result = await executeJiraCommand(cmd('statuses', 'list'), GLOBALS);
+      const result = await executeJiraCommand(cmd('statuses', 'list', [], { ids: '1,2' }), GLOBALS);
 
       // Assert
-      expect(jiraStatusesMock.list).toHaveBeenCalled();
+      expect(jiraStatusesMock.list).toHaveBeenCalledWith(['1', '2']);
       expect(result).toEqual([{ id: '1', name: 'Open' }]);
+    });
+
+    it('statuses list requires --ids', async () => {
+      await expect(executeJiraCommand(cmd('statuses', 'list'), GLOBALS)).rejects.toThrow(
+        'Missing required option: --ids',
+      );
     });
 
     it('statuses unknown action throws', async () => {
