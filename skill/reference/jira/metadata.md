@@ -120,16 +120,16 @@ atlas jira status-category get done
 
 Issue resolution management (B931, B712-B718). `list` is deprecated by Atlassian — prefer `search`.
 
-| Action        | Positional | Required flags                            | Optional flags                                                             |
-| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------------------------- |
-| `list`        | —          | —                                         | — (deprecated; no filtering)                                               |
-| `get`         | `<id>`     | —                                         | —                                                                          |
-| `create`      | —          | `--name`                                  | `--description`                                                            |
-| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                                          |
-| `delete`      | `<id>`     | —                                         | `--replace-with`                                                           |
-| `set-default` | `<id>`     | —                                         | —                                                                          |
-| `move`        | —          | `--ids`                                   | `--after` or `--position`                                                  |
-| `search`      | —          | —                                         | `--only-default`, `--start-at`, `--max-results`, `--ids`                   |
+| Action        | Positional | Required flags                            | Optional flags                                           |
+| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------- |
+| `list`        | —          | —                                         | — (deprecated; no filtering)                             |
+| `get`         | `<id>`     | —                                         | —                                                        |
+| `create`      | —          | `--name`                                  | `--description`                                          |
+| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                        |
+| `delete`      | `<id>`     | —                                         | `--replace-with`                                         |
+| `set-default` | `<id>`     | —                                         | —                                                        |
+| `move`        | —          | `--ids`                                   | `--after` or `--position`                                |
+| `search`      | —          | —                                         | `--only-default`, `--start-at`, `--max-results`, `--ids` |
 
 - `--ids` is comma-separated (for `move` and `search`).
 - `--replace-with` is the ID of the replacement resolution when deleting a resolution that is in use.
