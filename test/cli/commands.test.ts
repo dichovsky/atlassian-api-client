@@ -16013,20 +16013,32 @@ describe('executeJiraCommand', () => {
   // ── service-registry ──────────────────────────────────────────────────────
 
   describe('service-registry resource', () => {
-    it('service-registry get calls client.serviceRegistry.get()', async () => {
-      const entries = [{ key: 'com.example.app', name: 'My App' }];
+    it('service-registry get passes split service-ids to client.serviceRegistry.get()', async () => {
+      const entries = [{ id: 'uuid-1', name: 'My App' }];
       jiraServiceRegistryMock.get.mockResolvedValue(entries);
 
-      const result = await executeJiraCommand(cmd('service-registry', 'get'), GLOBALS);
+      const result = await executeJiraCommand(
+        cmd('service-registry', 'get', [], { 'service-ids': 'svc-a,svc-b' }),
+        GLOBALS,
+      );
 
       expect(result).toEqual(entries);
-      expect(jiraServiceRegistryMock.get).toHaveBeenCalled();
+      expect(jiraServiceRegistryMock.get).toHaveBeenCalledWith(['svc-a', 'svc-b']);
+    });
+
+    it('service-registry get requires --service-ids', async () => {
+      await expect(executeJiraCommand(cmd('service-registry', 'get'), GLOBALS)).rejects.toThrow(
+        '--service-ids',
+      );
     });
 
     it('service-registry unknown action throws', async () => {
-      await expect(executeJiraCommand(cmd('service-registry', 'nope'), GLOBALS)).rejects.toThrow(
-        'Unknown service-registry action',
-      );
+      await expect(
+        executeJiraCommand(
+          cmd('service-registry', 'nope', [], { 'service-ids': 'svc-a' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Unknown service-registry action');
     });
   });
 

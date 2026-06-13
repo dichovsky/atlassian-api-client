@@ -634,13 +634,20 @@ atlas jira remote-link delete rl-123
 
 **URL base:** `/rest/atlassian-connect/1` (Atlassian Connect API — not `/rest/api/3`).
 
-| Action | Positional | Required flags | Optional flags |
-| ------ | ---------- | -------------- | -------------- |
-| `get`  | —          | —              | —              |
+Look up Atlassian Connect services by their service IDs. The `serviceIds` parameter is
+**required** by the spec (min 1, max 20). Pass IDs as a comma-separated list via `--service-ids`;
+they are sent as repeated query params (`?serviceIds=a&serviceIds=b`).
+
+| Action | Positional | Required flags        | Optional flags |
+| ------ | ---------- | --------------------- | -------------- |
+| `get`  | —          | `--service-ids` (CSV) | —              |
 
 ```sh
-# Get the Connect service registry (installed apps)
-atlas jira service-registry get
+# Get one or more Connect services by ID
+atlas jira service-registry get --service-ids "ari:cloud:graph::service/ca075ed7/f51d7252"
+
+# Look up multiple services
+atlas jira service-registry get --service-ids "svc-id-1,svc-id-2,svc-id-3"
 ```
 
 ## `addons`
