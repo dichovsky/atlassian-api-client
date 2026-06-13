@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "713f114e74e8c206731bd0a7516d6cc23cc256acc0750ffe6eb7eac903a320e6",
+  "sourceHash": "1725ba402400b87f3a61ff665005fe34946f8c455fb5f67f435b031d6b6f15fb",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -33320,59 +33320,59 @@
             {
               "name": "list",
               "kind": "method",
-              "line": 130
+              "line": 137
             },
             {
               "name": "bulkDelete",
               "kind": "method",
-              "line": 146
+              "line": 161
             },
             {
               "name": "bulkCreate",
               "kind": "method",
-              "line": 168
+              "line": 183
             },
             {
               "name": "bulkUpdate",
               "kind": "method",
-              "line": 189
+              "line": 204
             },
             {
               "name": "getIssueTypeUsages",
               "kind": "method",
-              "line": 207
+              "line": 222
             },
             {
               "name": "getProjectUsages",
               "kind": "method",
-              "line": 231
+              "line": 246
             },
             {
               "name": "getWorkflowUsages",
               "kind": "method",
-              "line": 254
+              "line": 269
             },
             {
               "name": "byNames",
               "kind": "method",
-              "line": 274
+              "line": 289
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 292
+              "line": 307
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 307
+              "line": 322
             }
           ]
         },
         {
           "name": "buildSearchQuery",
           "kind": "function",
-          "line": 323,
+          "line": 338,
           "signature": "function buildSearchQuery( params: SearchStatusesParams | undefined, ): Record<string, string | number | boolean | undef…"
         }
       ],

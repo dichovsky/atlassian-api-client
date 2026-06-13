@@ -4,7 +4,7 @@
 
 ## `issue-types` / `priorities` / `statuses`
 
-`issue-types` and `statuses` are read-only lookups. `priorities` supports full CRUD and management:
+`issue-types` and `statuses` are read-only lookups. `priorities` supports full CRUD and management. (To list **every** status, use `atlas jira status list`; `statuses list` fetches specific statuses by id via `--ids`.)
 
 ```sh
 atlas jira issue-types list
@@ -20,7 +20,7 @@ atlas jira priorities move --ids 10001,10002 --after 10000
 atlas jira priorities move --ids 10001,10002 --before 10003
 atlas jira priorities search --priority-name High
 atlas jira priorities search --ids 10001,10002 --max-results 25
-atlas jira statuses list
+atlas jira statuses list --ids 10001,10002
 ```
 
 Use them to translate human-readable names into IDs when constructing issue create/update calls.
@@ -175,7 +175,7 @@ Bulk management, usage queries, and search for the `/rest/api/3/statuses` surfac
 - `--status-category`: one of `TODO`, `IN_PROGRESS`, `DONE`.
 
 ```sh
-atlas jira statuses list
+atlas jira statuses list --ids 10001,10002
 atlas jira statuses bulk-delete --ids 10001,10002
 atlas jira statuses bulk-create --scope '{"type":"GLOBAL"}' --value '[{"name":"Blocked","statusCategory":"IN_PROGRESS","description":"Awaiting external input"}]'
 atlas jira statuses bulk-create --scope '{"type":"PROJECT","project":{"id":"10000"}}' --value '[{"name":"Triage","statusCategory":"TODO"}]'

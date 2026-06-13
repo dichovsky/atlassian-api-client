@@ -126,11 +126,26 @@ export class StatusesResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List all statuses. Returns statuses with their usages. */
-  async list(): Promise<Status[]> {
+  /**
+   * Get statuses by ID (`getStatusesById`).
+   * GET /rest/api/3/statuses
+   *
+   * The endpoint's `id` query parameter is **required** (`type: array`); the
+   * previous parameterless call always 400'd. To list every status instead,
+   * use the `status` resource (`GET /rest/api/3/status`).
+   */
+  async list(ids: readonly string[]): Promise<Status[]> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new ValidationError('list requires at least one status id (--ids)');
+    }
+    if (ids.some((id) => id.trim() === '')) {
+      throw new ValidationError('list requires non-empty status IDs');
+    }
+    // `id` is a `type: array` query parameter — emit repeated `id=a&id=b`
+    // built into the path (the transport query map collapses duplicate keys).
     const response = await this.transport.request<Status[]>({
       method: 'GET',
-      path: `${this.baseUrl}/statuses`,
+      path: appendRepeatedParams(`${this.baseUrl}/statuses`, 'id', ids),
     });
     return response.data;
   }

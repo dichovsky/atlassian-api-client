@@ -1315,7 +1315,7 @@ async function executeStatuses(client: JiraClient, cmd: ParsedCommand): Promise<
 
   switch (cmd.action) {
     case 'list':
-      return client.statuses.list();
+      return client.statuses.list(splitCsvIds(requireOpt(opts['ids'], '--ids')));
     case 'bulk-delete': {
       const idsRaw = requireOpt(opts['ids'], '--ids');
       const id = splitCsvIds(idsRaw);
