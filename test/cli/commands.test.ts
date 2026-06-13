@@ -27970,6 +27970,24 @@ describe('executeJiraCommand', () => {
       );
     });
 
+    it('add-gadget accepts --row 0 and --column 0 (valid 0-based top-left, #241)', async () => {
+      // Jira gadget positions are 0-based (the spec example uses { column: 1, row: 0 }),
+      // so the top row / first column must be reachable from the CLI.
+      jiraDashboardsMock.addGadget.mockResolvedValue({ id: 7 });
+      await executeJiraCommand(
+        cmd('dashboards', 'add-gadget', ['10001'], {
+          'module-key': 'com.atlassian.jira.gadgets:filter-results-gadget',
+          row: '0',
+          column: '0',
+        }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.addGadget).toHaveBeenCalledWith(
+        '10001',
+        expect.objectContaining({ position: { row: 0, column: 0 } }),
+      );
+    });
+
     it('add-gadget with --ignore-uri-and-module-key-validation flag', async () => {
       jiraDashboardsMock.addGadget.mockResolvedValue({ id: 6 });
       await executeJiraCommand(
@@ -28011,6 +28029,19 @@ describe('executeJiraCommand', () => {
         '10001',
         5,
         expect.objectContaining({ position: { row: 2, column: 3 } }),
+      );
+    });
+
+    it('update-gadget accepts --row 0 and --column 0 (#241)', async () => {
+      jiraDashboardsMock.updateGadget.mockResolvedValue(undefined);
+      await executeJiraCommand(
+        cmd('dashboards', 'update-gadget', ['10001', '5'], { row: '0', column: '0' }),
+        GLOBALS,
+      );
+      expect(jiraDashboardsMock.updateGadget).toHaveBeenCalledWith(
+        '10001',
+        5,
+        expect.objectContaining({ position: { row: 0, column: 0 } }),
       );
     });
 
