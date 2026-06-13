@@ -269,7 +269,14 @@ const FORBIDDEN_CALLER_HEADERS: ReadonlySet<string> = new Set([
  * case-insensitive) are stripped so a misconfigured caller cannot override
  * or smuggle around the configured auth. Other custom headers (for example
  * `X-Atlassian-Token`) pass through. The auth provider's headers are applied
- * last so they always win.
+ * over the caller's so they always win.
+ *
+ * `authorizationOverride`, when set by the library's own auth middleware
+ * (OAuth refresh / Connect JWT, via {@link RequestOptions.authorizationOverride}),
+ * is applied AFTER the auth provider's header so a refreshed/signed credential
+ * is what reaches the wire (#243). It is a trusted in-chain channel distinct
+ * from the stripped caller `Authorization` header, so B029's protection is
+ * preserved while the library's middleware stays functional.
  *
  * `Accept: application/json` is set as a default and may be overridden by a
  * caller-supplied `Accept` header (matched case-insensitively). `Content-Type:
@@ -292,6 +299,7 @@ export function buildHeaders(
   authHeaders: Readonly<Record<string, string>>,
   withJsonBody: boolean,
   binaryContentType?: string,
+  authorizationOverride?: string,
 ): Record<string, string> {
   const forcesContentType = withJsonBody || binaryContentType !== undefined;
   const safeHeaders: Record<string, string> = {};
@@ -317,6 +325,12 @@ export function buildHeaders(
     ...safeHeaders,
     ...authHeaders,
   };
+  // A credential set by the library's own auth middleware overrides the
+  // configured auth provider (#243). Caller `Authorization` was already
+  // stripped above, so only an in-chain middleware can reach this.
+  if (authorizationOverride !== undefined) {
+    headers['Authorization'] = authorizationOverride;
+  }
   if (withJsonBody) {
     headers['Content-Type'] = 'application/json';
   } else if (binaryContentType !== undefined) {
