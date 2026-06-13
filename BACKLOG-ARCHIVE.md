@@ -2758,7 +2758,7 @@
 
 ## 🗺️ Gap-analysis additions — B1022–B1036 (2026-06-08)
 
-> 14 verified coverage gaps + 1 wire-correctness bug from `docs/API-GAP-ANALYSIS-2026-06-07.md`, shipped as 5 PRs (#234–#238). Each spec-verified against the live Atlassian specs, 100% covered, independently reviewed (fresh-lineage Opus), CLI + skill parity enforced.
+> 14 verified coverage gaps + 1 wire-correctness bug from `docs/archive/API-GAP-ANALYSIS-2026-06-07.md`, shipped as 5 PRs (#234–#238). Each spec-verified against the live Atlassian specs, 100% covered, independently reviewed (fresh-lineage Opus), CLI + skill parity enforced.
 
 - [x] 🔴 🐛 QA: B1036 Jira: `WorkflowsResource.get()` dead path `/workflow` → `/workflow/search`
   - files: `src/jira/resources/workflows.ts`, `test/jira/workflows.test.ts`
