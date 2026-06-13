@@ -2866,3 +2866,16 @@
   - files: `src/confluence/types/admin-key.ts`, `src/confluence/resources/admin-key.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/admin-key.test.ts`
   - **Impl:** PR #269. `CreateAdminKeyData = { durationInMinutes? }` (1–60 guard); `AdminKey = { accountId?, expirationTime? }` per spec `AdminKeyResponse`. CLI `--duration-hours` → `--duration-minutes`.
   - **Rat:** The prior `durationInHours` request field + `{createdAt, expireAt, durationInHours}` response had zero spec overlap → custom durations silently no-op'd and every typed response field read `undefined`.
+
+## 🔐 Deep-audit 2026-06-10 — security cluster (2026-06-13)
+
+> The two security findings from `docs/DEEP-AUDIT-2026-06-10.md` §5b, shipped as #271/#272. Each verified by an independent Opus security reviewer running real exploit payloads (worktree-safe); the reviews escalated coverage materially in both cases (B025: 1→3 closed injection vectors; B1052: 3→15 files).
+
+- [x] 🔴 🐛 Core: B025 OpenAPI generator injection / malformed-input hardening
+  - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
+  - **Impl:** PR #271. `generateTypes` (a public root export) hardened against four injection vectors found across two review rounds: (1) `sanitizeCommentLine` strips all four ECMAScript line terminators (`\r \n` + U+2028/U+2029) from `info.title`/`version` so they can't escape the `//` header; (2) `escapeStringLiteral` now escapes line terminators (not just `\`/`'`) for enum string values; (3) `enumMemberToTs` renders only safe primitives (escaped string / finite number / boolean / null) and **throws** on arrays/objects/non-finite — `String(["x;…"])` previously spliced attacker text raw into the type position (demonstrated RCE on import); (4) `resolveRef` rejects non-identifier `$ref` segments and `joinComposed` throws on empty `allOf`/`oneOf`/`anyOf`. 15 red→green tests; final sign-off ran ~60 payloads + `tsc --strict`.
+  - **Rat:** Generator-time RCE / invalid-TS from an untrusted OpenAPI spec. The audit named 1 vector ($ref); adversarial review found 3 more (comment-newline incl. U+2028/29, enum string terminators, non-primitive enum splice).
+- [x] 🟡 🐛 Jira: B1052 Path-traversal guard bypass — bulk `encodeURIComponent` → `encodePathSegment`
+  - files: 15 `src/jira/resources/*.ts` (app, application-properties, application-role, avatar, custom-field-option, devopscomponents, epic, incidents, linked-workspaces, post-incident-reviews, remote-link, security-level, status-category, status, vulnerability) + their tests
+  - **Impl:** PR #272. Swapped 29 user-controlled path-segment sites from raw `encodeURIComponent` (leaves `.`/`..` intact) to the house `encodePathSegment(value, name)` guard (rejects dot-segments incl. multi-round-encoded `%2e%2e`). 17 red→green traversal-rejection tests. Query-value `encodeURIComponent` left intact (correct there). Independent review re-swept all of `src/` and confirmed zero remaining unguarded string path-segment sites (numeric IDs are `Number.isInteger`-validated; Confluence already guarded).
+  - **Rat:** `epic.get('..')` → `/epic/..` traversal. **Audit under-counted: named 3 files, the identical reachable vuln was in 15.** User opted for the complete-class fix over the 3 named.

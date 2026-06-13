@@ -6,10 +6,6 @@
 
 > Deep-audit 2026-06-10 (`docs/DEEP-AUDIT-2026-06-10.md`) core/CLI findings below (B1037–). Adversarially verified; the auth-middleware (#246) and pagination (#247) clusters already shipped and are excluded.
 
-- [ ] 🔴 🐛 Core: B025 OpenAPI $ref injection hardening (deep-audit specifics)
-  - problem: verified — newline in a `$ref` last segment escapes the type context (code injection); `spec.info.title`/`version` injected into a single-line comment without newline sanitization; empty `allOf`/`oneOf`/`anyOf` arrays emit invalid TS `export type X = ;`; non-identifier last segment emits an invalid type reference. See report §5b.
-  - files: `src/core/openapi.ts`, `test/core/openapi.test.ts`
-  - deps: none
 - [ ] 🟡 🐛 Core: B1039 Batch middleware dedupes non-idempotent mutations + key gaps
   - problem: `src/core/batch.ts` has no method guard (POST/PUT/PATCH/DELETE coalesced like GETs); `formData`/`binaryBody`/`responseType` excluded from the dedup key → concurrent distinct multipart/binary/responseType requests collapse to one. See report §5b.
   - files: `src/core/batch.ts`, `test/core/batch.test.ts`
@@ -48,10 +44,6 @@
 - [ ] 🟡 🐛 Jira: B1051 Wrong content-type / body encoding
   - problem: `settings.setColumns` sends JSON object-array; spec requires form-data string array. `plans` JSON-patch endpoints send `application/json` not `application/json-patch+json`. `issuetype.loadAvatar` sends multipart; spec requires raw binary body.
   - files: `src/jira/resources/{settings,plans,issuetype}.ts` + tests
-  - deps: none
-- [ ] 🟡 🐛 Jira: B1052 Path-traversal guard bypass (encodeURIComponent → encodePathSegment)
-  - problem: `epic.ts` (5 agile endpoints), `linked-workspaces.getSecurity`, `vulnerability` interpolate user path segments via `encodeURIComponent` instead of the house `encodePathSegment` (which rejects dot-segments). Bypasses the traversal guard.
-  - files: `src/jira/resources/{epic,linked-workspaces,vulnerability}.ts` + tests
   - deps: none
 - [ ] 🟡 🐛 Jira: B1053 Fictional / misnamed query params silently dropped or rejected
   - problem: `priorities.delete replaceWith`, `priorities.move before` (spec: `position`), `resolution.moveResolutions before`/`SearchResolutionsParams queryString`, `exists-by-properties entityType/entityId`, `users.searchQueryKey maxResults` (spec: `maxResult`), `users.getPermissionUsers projectUuid`, `classification-levels.list status`/`orderBy`. Each unknown param is dropped (or 400s against `additionalProperties:false`).
