@@ -4,6 +4,7 @@ import {
   CircuitBreakerOpenError,
   HttpError,
   NetworkError,
+  ResponseTooLargeError,
   TimeoutError,
 } from './errors.js';
 
@@ -11,9 +12,10 @@ import {
 export interface CircuitBreakerOptions {
   /**
    * Number of consecutive qualifying failures required to open the circuit.
-   * Qualifying failures are: {@link NetworkError}, {@link TimeoutError}, and
-   * {@link HttpError} with a 5xx status. Non-qualifying errors (4xx, abort,
-   * {@link ValidationError}, etc.) pass through without changing the counter.
+   * Qualifying failures are: {@link NetworkError}, {@link TimeoutError},
+   * {@link HttpError} with a 5xx status, and {@link ResponseTooLargeError}.
+   * Non-qualifying errors (4xx, abort, {@link ValidationError}, etc.) pass
+   * through without changing the counter.
    * @default 5
    */
   readonly failureThreshold?: number;
@@ -65,6 +67,9 @@ type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
  * - {@link NetworkError} — socket/DNS failures
  * - {@link TimeoutError} — request timeout exceeded
  * - {@link HttpError} with `status >= 500 && status <= 599` — server errors
+ * - {@link ResponseTooLargeError} — upstream returned a body that exceeded the
+ *   configured body cap; regardless of HTTP status this indicates the upstream
+ *   is misbehaving and should trip the breaker
  *
  * 4xx errors (including 429), {@link ValidationError}, abort errors, and all
  * other thrown values are re-thrown as-is with **no state change**.
@@ -201,13 +206,17 @@ export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions):
 
 /**
  * Returns `true` when the caught error counts as a circuit-breaker failure:
- * {@link NetworkError}, {@link TimeoutError}, or {@link HttpError} with a
- * 5xx status. Everything else (4xx, abort, {@link ValidationError}, etc.) is
- * a pass-through that does not affect the failure counter.
+ * {@link NetworkError}, {@link TimeoutError}, {@link HttpError} with a 5xx
+ * status, or {@link ResponseTooLargeError}. A {@link ResponseTooLargeError}
+ * signals that the upstream is blasting oversized payloads — regardless of the
+ * HTTP status on the originating response, this is upstream misbehaviour worth
+ * tripping the breaker. Everything else (4xx, abort, {@link ValidationError},
+ * etc.) is a pass-through that does not affect the failure counter.
  */
 function isQualifyingFailure(error: unknown): boolean {
   if (error instanceof NetworkError) return true;
   if (error instanceof TimeoutError) return true;
   if (error instanceof HttpError && error.status >= 500 && error.status <= 599) return true;
+  if (error instanceof ResponseTooLargeError) return true;
   return false;
 }
