@@ -636,7 +636,7 @@ The clients expose a broad Atlassian API surface. The tables below highlight com
 | `comments`          | `listFooter`, `getFooter`, `createFooter`, `updateFooter`, `deleteFooter`, `listInline`, `getInline`, `createInline`, `updateInline`, `deleteInline` |
 | `attachments`       | `listForPage`, `get`, `upload`, `delete`, `listAllForPage`                                                                                           |
 | `labels`            | `listForPage`, `listForSpace`, `listForBlogPost`, `listAllForPage`                                                                                   |
-| `contentProperties` | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
+| `contentProperties` | `listForPage`, `getForPage`, `createForPage`, `updateForPage`, `deleteForPage`                                                                       |
 | `customContent`     | `list`, `get`, `create`, `update`, `delete`                                                                                                          |
 | `whiteboards`       | `get`, `create`, `delete`                                                                                                                            |
 | `tasks`             | `list`, `get`, `update`                                                                                                                              |
