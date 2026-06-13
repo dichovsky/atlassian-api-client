@@ -2879,3 +2879,28 @@
   - files: 15 `src/jira/resources/*.ts` (app, application-properties, application-role, avatar, custom-field-option, devopscomponents, epic, incidents, linked-workspaces, post-incident-reviews, remote-link, security-level, status-category, status, vulnerability) + their tests
   - **Impl:** PR #272. Swapped 29 user-controlled path-segment sites from raw `encodeURIComponent` (leaves `.`/`..` intact) to the house `encodePathSegment(value, name)` guard (rejects dot-segments incl. multi-round-encoded `%2e%2e`). 17 red→green traversal-rejection tests. Query-value `encodeURIComponent` left intact (correct there). Independent review re-swept all of `src/` and confirmed zero remaining unguarded string path-segment sites (numeric IDs are `Number.isInteger`-validated; Confluence already guarded).
   - **Rat:** `epic.get('..')` → `/epic/..` traversal. **Audit under-counted: named 3 files, the identical reachable vuln was in 15.** User opted for the complete-class fix over the 3 named.
+
+## 🧩 Deep-audit 2026-06-10 — Jira wire-correctness wave (2026-06-13)
+
+> Five wire-shape findings shipped as #274–#278, each spec-verified (jq on pinned specs), red→green tested, 100% covered, independently Opus-reviewed (worktree-safe). Several carry **breaking** changes → feed the 3.0.0 CHANGELOG (B1062). Orchestration note: 5 parallel agents all edited shared hub files (`jira.ts`, `commands.test.ts`, barrels); two crept into each other's sections (B1050↔B1051 version/settings) and the review gate caught a broken-tsc state masked by an untyped mock — de-contaminated at merge.
+
+- [x] 🟡 🐛 Jira: B1050 `readOnly` fields sent in request bodies
+  - files: `src/jira/resources/version.ts`, `test/jira/version.test.ts`, `src/cli/commands/jira.ts`, `src/cli/router.ts`, `skill/reference/jira/projects.md`
+  - **Impl:** PR #277. Dropped spec-`readOnly` `userStartDate`/`userReleaseDate` from `Version` create/update bodies (writable `startDate`/`releaseDate` kept) and `issueId` + **`relatedWorkId`** (audit named only `issueId`) from `VersionRelatedWork` create/update. Body built field-by-field so removal is wire-effective. CLI drops `--issue-id`/`--related-work-id` from related-work; removed now-orphan `--related-work-id` router flag.
+  - **Rat:** readOnly fields are ignored/400'd by the server. **Breaking** (type + CLI), but they never worked.
+- [x] 🟡 🐛 Jira: B1051 Wrong content-type / body encoding
+  - files: `src/jira/resources/{settings,plans,issuetype}.ts` + tests, `src/cli/commands/jira.ts`, `src/jira/index.ts`, `skill/reference/jira/admin-devops.md`
+  - **Impl:** PR #276. `settings.setColumns` → `FormData` string array (was JSON object-array); `plans` update/team endpoints → `binaryBody` Blob typed `application/json-patch+json` (was `application/json`); `issuetype.loadAvatar` → raw `binaryBody` (was multipart), mirroring `universal-avatar.storeAvatar`. Transport Content-Type chain independently verified (Blob.type → wire header).
+  - **Rat:** Server ignores/400s on wrong media type. **Breaking** `setColumns` signature (`SetSettingsColumnsData` removed; CLI now CSV).
+- [x] 🟡 🐛 Jira: B1053 Fictional / misnamed query params
+  - files: `src/jira/resources/{priorities,resolution,users}.ts`, `src/jira/types.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira/{metadata,users}.md` + tests
+  - **Impl:** PR #275. Fixed 5 spec-verified: `priorities.move`/`resolution.moveResolutions` `before`→`position`; `resolution.search` drop `queryString`; `users.searchQueryKey` wire `maxResults`→`maxResult`; `users.getPermissionUsers` drop `projectUuid`. Correctly LEFT 3 non-bugs (`priorities.delete replaceWith` = undocumented not misnamed; `exists-by-properties` = DevInfo API absent from spec; `classification-levels.list` = coverage gap not wrong-name).
+  - **Rat:** Unknown params silently dropped or 400'd. **Breaking** CLI (`--before`→`--position`, dropped `--query-string`/`--project-uuid`).
+- [x] 🟡 🐛 Jira: B1054 `webhooks` refresh/response gaps
+  - files: `src/jira/resources/webhooks.ts`, `src/jira/index.ts`, `src/index.ts`, `test/jira/webhooks.test.ts`, `skill/reference/jira/admin-devops.md`
+  - **Impl:** PR #274. `refresh()` `void`→`WebhooksExpirationDate` (returns parsed body); `Webhook` += required `url`, −phantom `self`, `expirationDate` `string`→`number`. New `WebhooksExpirationDate` exported from both barrels (review-caught omission).
+  - **Rat:** Discarded response body + drifted type. Non-breaking widening.
+- [x] 🟢 🐛 Jira/Confluence: B1055 Misc wire-body / pagination-flavor (7-item rollup)
+  - files: `src/jira/resources/{configuration,dashboards,expression,data-policy,sprints,search}.ts`, `src/confluence/types/pages.ts`, both CLIs, `src/jira/index.ts`, `skill/reference/jira/admin-devops.md` + tests
+  - **Impl:** PR #278. (1) `UpdateTimeTrackingConfigurationData` all-required; (2a) `dashboards.bulkEdit entityIds` `string[]`→`number[]`, (2b) `copy()` required `DashboardDetails`; (3) `expression.custom` `Record`→`CustomContextVariable[]`; (4) Confluence `UpdatePageData.body` required; (5) `data-policy` offset-pagination→non-paginated `getPolicies`; (6) `sprints.getIssues` `.values`→`.issues` envelope; (7) `search.JqlSearchResult` +`isLast`/`names`/`warnings` (structured), −`maxResults`/`total`/`startAt`. Zero scope creep (clean).
+  - **Rat:** Request/response shapes drifted from spec. **Breaking** (timetracking/copy required flags, data-policy method rename, expression/search/pages types).
