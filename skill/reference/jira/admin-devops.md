@@ -598,17 +598,17 @@ atlas jira classification-levels list
 
 **URL base:** `/rest/internal/api/latest` (Jira Internal API — not `/rest/api/3`).
 
-This resource exposes the internal worklog bulk endpoint. Stability is not guaranteed by Atlassian.
+This resource exposes the internal bulk worklog **lookup** endpoint (`getWorklogsByIssueIdAndWorklogId`) — it resolves worklogs by `(issueId, worklogId)` pairs, it does not create them. Stability is not guaranteed by Atlassian.
 
 | Action         | Positional | Required flags | Optional flags |
 | -------------- | ---------- | -------------- | -------------- |
 | `bulk-worklog` | —          | `--value`      | —              |
 
-- `--value` must be a JSON array of worklog objects, each with `issueIdOrKey`, `timeSpentSeconds`, `started`, and optional `comment` / `authorAccountId`.
+- `--value` must be a JSON array of `{ issueId, worklogId }` integer pairs to look up.
 
 ```sh
-# Bulk-create worklogs via the internal API
-atlas jira latest bulk-worklog --value '[{"issueIdOrKey":"PROJ-1","timeSpentSeconds":3600,"started":"2024-01-01T09:00:00.000+0000"}]'
+# Bulk-look up worklogs by (issueId, worklogId) pairs via the internal API
+atlas jira latest bulk-worklog --value '[{"issueId":10001,"worklogId":20001},{"issueId":10001,"worklogId":20002}]'
 ```
 
 ## `remote-link`
@@ -634,13 +634,20 @@ atlas jira remote-link delete rl-123
 
 **URL base:** `/rest/atlassian-connect/1` (Atlassian Connect API — not `/rest/api/3`).
 
-| Action | Positional | Required flags | Optional flags |
-| ------ | ---------- | -------------- | -------------- |
-| `get`  | —          | —              | —              |
+Look up Atlassian Connect services by their service IDs. The `serviceIds` parameter is
+**required** by the spec (min 1, max 20). Pass IDs as a comma-separated list via `--service-ids`;
+they are sent as repeated query params (`?serviceIds=a&serviceIds=b`).
+
+| Action | Positional | Required flags        | Optional flags |
+| ------ | ---------- | --------------------- | -------------- |
+| `get`  | —          | `--service-ids` (CSV) | —              |
 
 ```sh
-# Get the Connect service registry (installed apps)
-atlas jira service-registry get
+# Get one or more Connect services by ID
+atlas jira service-registry get --service-ids "ari:cloud:graph::service/ca075ed7/f51d7252"
+
+# Look up multiple services
+atlas jira service-registry get --service-ids "svc-id-1,svc-id-2,svc-id-3"
 ```
 
 ## `addons`

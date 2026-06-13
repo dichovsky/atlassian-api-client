@@ -28,9 +28,8 @@ export class ContentResource {
    *
    * The Confluence API caps each request at 100 ids; the server validates
    * this, so callers receive a 400 if they exceed the limit (no client-side
-   * pre-flight, mirroring how this SDK handles `durationInHours` on admin
-   * keys: keep validation in one place — the server — so we don't ship a
-   * second source of truth that drifts).
+   * pre-flight for the cap — we let the server stay the single source of
+   * truth for this limit rather than shipping a second one that drifts).
    */
   async convertIdsToTypes(
     data: ConvertContentIdsToTypesData,

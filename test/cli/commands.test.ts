@@ -4811,7 +4811,7 @@ describe('executeConfluenceCommand', () => {
   describe('admin-key resource', () => {
     it('admin-key get calls client.adminKey.get', async () => {
       // Arrange
-      const key = { createdAt: '2026-05-20T12:00:00Z', durationInHours: 1 };
+      const key = { accountId: 'abc123', expirationTime: '2026-05-20T13:00:00.000Z' };
       confluenceAdminKeyMock.get.mockResolvedValue(key);
 
       // Act
@@ -4824,7 +4824,10 @@ describe('executeConfluenceCommand', () => {
 
     it('admin-key create with no flags passes undefined', async () => {
       // Arrange
-      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 1 });
+      confluenceAdminKeyMock.create.mockResolvedValue({
+        accountId: 'abc123',
+        expirationTime: '2026-05-20T13:00:00.000Z',
+      });
 
       // Act
       await executeConfluenceCommand(cmd('admin-key', 'create'), GLOBALS);
@@ -4833,29 +4836,32 @@ describe('executeConfluenceCommand', () => {
       expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith(undefined);
     });
 
-    it('admin-key create with --duration-hours passes parsed integer', async () => {
+    it('admin-key create with --duration-minutes passes parsed integer', async () => {
       // Arrange
-      confluenceAdminKeyMock.create.mockResolvedValue({ durationInHours: 4 });
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '4' });
+      confluenceAdminKeyMock.create.mockResolvedValue({
+        accountId: 'abc123',
+        expirationTime: '2026-05-20T13:00:00.000Z',
+      });
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': '30' });
 
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith({ durationInHours: 4 });
+      expect(confluenceAdminKeyMock.create).toHaveBeenCalledWith({ durationInMinutes: 30 });
     });
 
-    it('admin-key create throws when --duration-hours is not a positive integer', async () => {
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': '0' });
+    it('admin-key create throws when --duration-minutes is not a positive integer', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': '0' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--duration-hours must be a positive integer',
+        '--duration-minutes must be a positive integer',
       );
     });
 
-    it('admin-key create throws when --duration-hours is NaN', async () => {
-      const parsed = cmd('admin-key', 'create', [], { 'duration-hours': 'abc' });
+    it('admin-key create throws when --duration-minutes is NaN', async () => {
+      const parsed = cmd('admin-key', 'create', [], { 'duration-minutes': 'abc' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--duration-hours must be a positive integer',
+        '--duration-minutes must be a positive integer',
       );
     });
 
@@ -15933,20 +15939,21 @@ describe('executeJiraCommand', () => {
   // ── latest ────────────────────────────────────────────────────────────────
 
   describe('latest resource', () => {
-    it('latest bulk-worklog calls client.latest.bulkWorklog() with parsed JSON value', async () => {
-      const worklogs = [
-        { issueIdOrKey: 'PROJ-1', timeSpentSeconds: 3600, started: '2024-01-01T09:00:00.000+0000' },
+    it('latest bulk-worklog wraps the parsed pairs as { requests } (B1046)', async () => {
+      const requests = [
+        { issueId: 10001, worklogId: 20001 },
+        { issueId: 10001, worklogId: 20002 },
       ];
-      const response = { submittedWorklogs: worklogs };
+      const response = { worklogs: requests };
       jiraLatestMock.bulkWorklog.mockResolvedValue(response);
 
       const result = await executeJiraCommand(
-        cmd('latest', 'bulk-worklog', [], { value: JSON.stringify(worklogs) }),
+        cmd('latest', 'bulk-worklog', [], { value: JSON.stringify(requests) }),
         GLOBALS,
       );
 
       expect(result).toEqual(response);
-      expect(jiraLatestMock.bulkWorklog).toHaveBeenCalledWith({ worklogs });
+      expect(jiraLatestMock.bulkWorklog).toHaveBeenCalledWith({ requests });
     });
 
     it('latest bulk-worklog throws when --value is missing', async () => {
@@ -16012,20 +16019,32 @@ describe('executeJiraCommand', () => {
   // ── service-registry ──────────────────────────────────────────────────────
 
   describe('service-registry resource', () => {
-    it('service-registry get calls client.serviceRegistry.get()', async () => {
-      const entries = [{ key: 'com.example.app', name: 'My App' }];
+    it('service-registry get passes split service-ids to client.serviceRegistry.get()', async () => {
+      const entries = [{ id: 'uuid-1', name: 'My App' }];
       jiraServiceRegistryMock.get.mockResolvedValue(entries);
 
-      const result = await executeJiraCommand(cmd('service-registry', 'get'), GLOBALS);
+      const result = await executeJiraCommand(
+        cmd('service-registry', 'get', [], { 'service-ids': 'svc-a,svc-b' }),
+        GLOBALS,
+      );
 
       expect(result).toEqual(entries);
-      expect(jiraServiceRegistryMock.get).toHaveBeenCalled();
+      expect(jiraServiceRegistryMock.get).toHaveBeenCalledWith(['svc-a', 'svc-b']);
+    });
+
+    it('service-registry get requires --service-ids', async () => {
+      await expect(executeJiraCommand(cmd('service-registry', 'get'), GLOBALS)).rejects.toThrow(
+        '--service-ids',
+      );
     });
 
     it('service-registry unknown action throws', async () => {
-      await expect(executeJiraCommand(cmd('service-registry', 'nope'), GLOBALS)).rejects.toThrow(
-        'Unknown service-registry action',
-      );
+      await expect(
+        executeJiraCommand(
+          cmd('service-registry', 'nope', [], { 'service-ids': 'svc-a' }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('Unknown service-registry action');
     });
   });
 

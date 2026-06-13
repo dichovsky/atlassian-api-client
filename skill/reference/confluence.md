@@ -82,7 +82,7 @@ Lifecycle (`list` / `get` / `create` / `update` / `delete`) plus the full `/page
 - `versions` lists the full version history of a page (`GET /pages/{id}/versions`). Accepts `--limit` / `--cursor` only (`ListVersionsParams` — no sort or body-format). Dispatched to `client.versions.listForPage`.
 - `footer-comments` lists footer (top-level) comments on a page (`GET /pages/{id}/footer-comments`). `--status` accepts `current` or `deleted`. `--sort` is `CommentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`. Mirrors `blog-posts footer-comments` exactly.
 - `inline-comments` lists inline (anchored) comments on a page (`GET /pages/{id}/inline-comments`). Extends `footer-comments` params with `--resolution-status` (`open` or `resolved`). Mirrors `blog-posts inline-comments` exactly.
-- `upload-attachment --file` reads a local file and POSTs it as multipart form-data to `/pages/{id}/attachments`. `--filename` overrides the on-disk name; `--media-type` overrides server-side MIME sniffing. Dispatched to `client.attachments.upload(pageId, filename, blob, mime?)`.
+- `upload-attachment --file` reads a local file and POSTs it as multipart form-data to the Confluence **REST v1** endpoint `POST /wiki/rest/api/content/{pageId}/child/attachment` (the Confluence v2 API has no write path for attachments). The request includes the required `X-Atlassian-Token: nocheck` header. `--filename` overrides the on-disk name; `--media-type` overrides server-side MIME sniffing. Dispatched to `client.attachments.upload(pageId, filename, blob, mime?)`; returns a `UploadAttachmentResult` with a `results` array of uploaded attachment entries.
 - All list endpoints (except `ancestors`) are cursor-paginated — extract `cursor=…` from `_links.next` and pass it back as `--cursor`.
 
 ```sh
@@ -325,7 +325,7 @@ atlas confluence blog-posts version 99999 --version-number 2
 | `operations`      | `<attachmentId>` | —                                                       | —                                                                         |
 | `thumbnail`       | `<attachmentId>` | —                                                       | `--width`, `--height`, `--version-number`                                 |
 
-- To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first.
+- To upload an attachment via the CLI, use `atlas confluence pages upload-attachment <pageId> --file <path>` (optional: `--filename` to override the on-disk name, `--media-type` to override MIME sniffing). The handler reads the file from disk and dispatches to `client.attachments.upload(pageId, filename, blob, mime?)`. See the `pages` section for full flag details. To call the SDK directly, pass the file content as a `Blob`; Node ESM callers can wrap a `Buffer` or `Uint8Array` in a `Blob` first. **Note:** upload uses the Confluence REST v1 endpoint (`POST /wiki/rest/api/content/{pageId}/child/attachment`) because the v2 API has no write path for attachments; the `X-Atlassian-Token: nocheck` header is set automatically. The return type is `UploadAttachmentResult` (a `{ results: UploadAttachmentResultItem[] }` envelope), not the v2 cursor-paginated shape.
 - `list-all` hits the tenant-wide `GET /attachments`. `--status` accepts a single value or comma-separated list of `current`, `archived`, `trashed`.
 - `--sort` enums per action:
   - `list-all`: `created-date`, `-created-date`, `modified-date`, `-modified-date`
@@ -386,24 +386,25 @@ atlas confluence labels list-for-blog-post 99999 --prefix team --limit 25
 
 The admin key is a tenant-scoped, time-bound credential that lets an organisation admin perform privileged operations (e.g. permanently delete pages or spaces) without per-request elevation. Only one key may be active at a time — `create` rotates an existing key.
 
-| Action   | Positional | Optional flags     |
-| -------- | ---------- | ------------------ |
-| `get`    | —          | —                  |
-| `create` | —          | `--duration-hours` |
-| `delete` | —          | —                  |
+| Action   | Positional | Optional flags       |
+| -------- | ---------- | -------------------- |
+| `get`    | —          | —                    |
+| `create` | —          | `--duration-minutes` |
+| `delete` | —          | —                    |
 
-- `--duration-hours` must be a positive integer; the Confluence server currently accepts 1-24 (default 1). Omit the flag to use the server default.
+- `--duration-minutes` must be a positive integer in the range 1–60 (server default 10). Omit the flag to use the server default.
 - `delete` is idempotent; calling it when no key exists returns success.
+- `get` and `create` return `{ accountId, expirationTime }` where `expirationTime` is an ISO 8601 UTC timestamp.
 
 ```sh
 # Inspect the active admin key (if any)
 atlas confluence admin-key get
 
-# Enable an admin key for the server default duration
+# Enable an admin key for the server default duration (10 minutes)
 atlas confluence admin-key create
 
-# Rotate / enable with an explicit duration (hours)
-atlas confluence admin-key create --duration-hours 4
+# Rotate / enable with an explicit duration (minutes, max 60)
+atlas confluence admin-key create --duration-minutes 30
 
 # Revoke
 atlas confluence admin-key delete

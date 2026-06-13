@@ -1,37 +1,54 @@
 import type { Transport } from '../../core/types.js';
 
 /**
- * A single worklog entry for bulk submission.
+ * A single `(issueId, worklogId)` lookup key.
  *
- * NOTE: This resource uses a non-standard internal API base:
- * `/rest/internal/api/latest` — not the public `/rest/api/3`.
- * The `latest` path segment refers to the Jira internal API versioning alias.
+ * Spec: `WorklogCompositeKey` — both IDs are int64 integers.
  */
-export interface WorklogBulkEntry {
-  readonly issueIdOrKey: string;
-  readonly timeSpentSeconds: number;
-  readonly started: string;
-  readonly comment?: string;
-  readonly authorAccountId?: string;
+export interface WorklogCompositeKey {
+  readonly issueId: number;
+  readonly worklogId: number;
 }
 
-/** Request body for bulk worklog creation. */
+/**
+ * Request body for the bulk worklog lookup.
+ *
+ * Spec: `BulkWorklogKeyRequestBean` — a list of issue/worklog ID pairs to
+ * resolve. The endpoint (`getWorklogsByIssueIdAndWorklogId`) is a bulk *lookup*,
+ * not a worklog create.
+ */
 export interface BulkWorklogData {
-  readonly worklogs: WorklogBulkEntry[];
+  readonly requests: readonly WorklogCompositeKey[];
 }
 
-/** Response from bulk worklog creation. */
+/**
+ * A single resolved worklog key in the response.
+ *
+ * Spec: `WorklogKeyResult` — the issue and worklog IDs of a successfully
+ * retrieved worklog (both optional per the schema).
+ */
+export interface WorklogKeyResult {
+  readonly issueId?: number;
+  readonly worklogId?: number;
+}
+
+/**
+ * Response from the bulk worklog lookup.
+ *
+ * Spec: `BulkWorklogKeyResponseBean` — the successfully retrieved worklogs with
+ * their issue and worklog IDs.
+ */
 export interface BulkWorklogResponse {
-  readonly submittedWorklogs?: WorklogBulkEntry[];
-  readonly errors?: Record<string, string>;
+  readonly worklogs?: readonly WorklogKeyResult[];
 }
 
 /**
  * Jira Latest (internal API) resource — POST /rest/internal/api/latest/worklog/bulk.
  *
- * @devnotes URL base: `/rest/internal/api/latest` — this is an INTERNAL Jira API,
- *   not covered by the public REST API v3 spec. Stability is not guaranteed.
- *   Spec reference: `/rest/internal/api/latest/worklog/bulk` (POST).
+ * @devnotes URL base: `/rest/internal/api/latest` — an internal Jira API
+ *   versioning alias. The operation IS documented in the pinned platform v3 spec
+ *   (`getWorklogsByIssueIdAndWorklogId`) but its long-term stability is not
+ *   otherwise guaranteed.
  */
 export class LatestResource {
   constructor(
@@ -40,8 +57,11 @@ export class LatestResource {
   ) {}
 
   /**
-   * Bulk-create worklogs via the internal API.
-   * POST /rest/internal/api/latest/worklog/bulk
+   * Bulk-look up worklogs by `(issueId, worklogId)` pairs.
+   * POST /rest/internal/api/latest/worklog/bulk (`getWorklogsByIssueIdAndWorklogId`).
+   *
+   * Despite the `/worklog/bulk` path this is a retrieval, not a create — pass the
+   * ID pairs to resolve in `data.requests`.
    */
   async bulkWorklog(data: BulkWorklogData): Promise<BulkWorklogResponse> {
     const response = await this.transport.request<BulkWorklogResponse>({

@@ -2610,20 +2610,15 @@ async function executeLatest(client: JiraClient, cmd: ParsedCommand): Promise<un
 
   switch (cmd.action) {
     case 'bulk-worklog': {
+      // getWorklogsByIssueIdAndWorklogId — a bulk LOOKUP by (issueId, worklogId).
       const valueRaw = requireOpt(opts['value'], '--value');
-      let worklogs: {
-        issueIdOrKey: string;
-        timeSpentSeconds: number;
-        started: string;
-        comment?: string;
-        authorAccountId?: string;
-      }[];
+      let requests: { issueId: number; worklogId: number }[];
       try {
-        worklogs = JSON.parse(valueRaw) as typeof worklogs;
+        requests = JSON.parse(valueRaw) as typeof requests;
       } catch {
-        throw new Error('--value must be valid JSON (array of worklog objects)');
+        throw new Error('--value must be valid JSON (array of { issueId, worklogId } pairs)');
       }
-      return client.latest.bulkWorklog({ worklogs });
+      return client.latest.bulkWorklog({ requests });
     }
     default:
       throw new Error(`Unknown latest action: ${cmd.action}. Actions: bulk-worklog`);
@@ -2643,9 +2638,12 @@ async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promis
 }
 
 async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
   switch (cmd.action) {
     case 'get':
-      return client.serviceRegistry.get();
+      return client.serviceRegistry.get(
+        splitCsvIds(requireOpt(opts['service-ids'], '--service-ids')),
+      );
     default:
       throw new Error(`Unknown service-registry action: ${cmd.action}. Actions: get`);
   }
