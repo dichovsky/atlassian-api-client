@@ -83,9 +83,14 @@ export async function runCli(
   } catch (error: unknown) {
     const raw = error instanceof Error ? error.message : String(error);
     // Provide a friendlier prefix for parseArgs-originated errors (e.g.
-    // `--start-at -5` triggers `ERR_PARSE_ARGS_*`) so the user sees a
-    // plain message rather than a Node.js error code.
-    const message = raw.startsWith('ERR_PARSE_ARGS') ? `Invalid arguments: ${raw}` : raw;
+    // `--start-at -5` triggers an `ERR_PARSE_ARGS_*` code) so the user sees a
+    // plain message rather than a bare Node.js parse error. The code lives on
+    // the error's `.code` property, not its human-readable `.message`.
+    const code = (error as { code?: unknown }).code;
+    const message =
+      typeof code === 'string' && code.startsWith('ERR_PARSE_ARGS')
+        ? `Invalid arguments: ${raw}`
+        : raw;
     printError(message);
     return 1;
   }

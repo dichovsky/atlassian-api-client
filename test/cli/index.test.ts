@@ -136,6 +136,20 @@ describe('runCli B1042 catch-all', () => {
     expect(stderrOut).toContain('Missing --base-url');
   });
 
+  it('returns 1 with an "Invalid arguments:" prefix on a parseArgs error', async () => {
+    const io = captureIo();
+    // `--start-at -5`: parseArgs treats `-5` as an option-like token and throws
+    // an ERR_PARSE_ARGS_* error (the code is on `error.code`, not `.message`).
+    const code = await runCli(
+      ['node', 'atlas', 'jira', 'projects', 'list', '--start-at', '-5'],
+      io.out,
+      io.err,
+    );
+    expect(code).toBe(1);
+    const stderrOut = (stderrSpy.mock.calls as [string, ...unknown[]][]).map((c) => c[0]).join('');
+    expect(stderrOut).toContain('Invalid arguments:');
+  });
+
   it('version still returns 0 after the try/catch wrapper', async () => {
     const io = captureIo();
     const code = await runCli(['node', 'atlas', '--version'], io.out, io.err, () => '0.0.1-test');

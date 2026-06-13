@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "1855bc78ac986ebb6832fd4ac1603d3ecedcdca9ed30d7387a88fe02473d5c6f",
+  "sourceHash": "e2ec707b8f868c7692690f9801694bce4e4aca9e661c85e9ae90f107f1cf1a39",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -5374,13 +5374,13 @@
         {
           "name": "main",
           "kind": "function",
-          "line": 94,
+          "line": 99,
           "signature": "async function main(): Promise<void>"
         },
         {
           "name": "isEntryPoint",
           "kind": "function",
-          "line": 114,
+          "line": 119,
           "signature": "function isEntryPoint(): boolean",
           "jsdoc": "Standard ESM \"is this module the entry point?\" check. When `node` is invoked with this file as `process.argv[1]`, `main()` runs and the CLI behaves as a bin. When the module is imported by a test (or any other consumer), `main()` is skipped so tests can drive {@link runCli} directly."
         }
