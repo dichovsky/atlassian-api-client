@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StatusesResource } from '../../src/jira/resources/statuses.js';
+import { StatusesResource, type StatusScope } from '../../src/jira/resources/statuses.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import type { Status } from '../../src/jira/types.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -150,6 +150,15 @@ describe('StatusesResource', () => {
     it('throws ValidationError when statuses array is empty', async () => {
       await expect(
         statuses.bulkCreate({ scope: { type: 'GLOBAL' }, statuses: [] }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it('throws ValidationError when scope is missing (spec requires top-level scope)', async () => {
+      await expect(
+        statuses.bulkCreate({
+          scope: undefined as unknown as StatusScope,
+          statuses: [{ name: 'Blocked', statusCategory: 'IN_PROGRESS' }],
+        }),
       ).rejects.toBeInstanceOf(ValidationError);
     });
   });

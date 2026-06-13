@@ -299,6 +299,20 @@ describe('WebhooksResource', () => {
       expect(transport.calls).toHaveLength(1);
     });
 
+    it('treats a page with no values field as the end (defensive `?? []` fallback)', async () => {
+      // A degraded response that omits `values` entirely must not throw on
+      // `values.length`; the `?? []` fallback yields nothing and stops.
+      transport.respondWith({ maxResults: 50 });
+
+      const results: FailedWebhook[] = [];
+      for await (const item of webhooks.listAllFailed()) {
+        results.push(item);
+      }
+
+      expect(results).toHaveLength(0);
+      expect(transport.calls).toHaveLength(1);
+    });
+
     it('passes maxResults on each page request', async () => {
       // Arrange
       transport
