@@ -141,10 +141,10 @@ The remaining 55 modules are clean or carry only MEDIUM/LOW type-drift.
 
 47 review scopes (per-file `src/core/*`, `src/cli/*` incl. jira.ts in 3 chunks, idiom sweeps over all resources, client wiring) + ts-prune adjudication + test/dep sweep + 4-agent docs audit. **293 findings — 16 CRITICAL, 56 HIGH, 112 MEDIUM, 109 LOW.** CRITICAL/HIGH adversarially verified: **64 upheld, 8 refuted** (refuted: a claimed Bearer-plaintext leak, a non-existent concurrent-401 race, a timeout-disambiguation race, a scopes-positional misparse — all shown unreachable).
 
-### 5a. Two clusters independently reconfirm open PRs
+### 5a. Two clusters independently reconfirmed the open PRs (both since merged)
 
-- **Auth-middleware credentials never reach the wire** (`core/connect-jwt.ts`, `core/oauth.ts`, `core/request.ts`) — **~10 independent reviewers** converged on it: `buildHeaders`/`FORBIDDEN_CALLER_HEADERS` strips the `Authorization` the OAuth-refresh and Connect-JWT middlewares set, so a refreshed/JWT token is silently dropped and the original (or none) goes out. **Open [PR #246](https://github.com/dichovsky/atlassian-api-client/pull/246) fixes this; unfixed on HEAD.** Multiple CRITICAL verdicts.
-- **Pagination short-page truncation** (`core/pagination.ts`) — `paginateOffset`/`paginateSearch` stop on a short page even when `total` says rows remain → silent data loss. **Open [PR #247](https://github.com/dichovsky/atlassian-api-client/pull/247) fixes this.** Multiple HIGH verdicts.
+- **Auth-middleware credentials never reach the wire** (`core/connect-jwt.ts`, `core/oauth.ts`, `core/request.ts`) — **~10 independent reviewers** converged on it: `buildHeaders`/`FORBIDDEN_CALLER_HEADERS` stripped the `Authorization` the OAuth-refresh and Connect-JWT middlewares set, so a refreshed/JWT token was silently dropped and the original (or none) went out. Multiple CRITICAL verdicts. **Fixed by [PR #246](https://github.com/dichovsky/atlassian-api-client/pull/246), merged 2026-06-13** (see "Resolved during this wave", §6).
+- **Pagination short-page truncation** (`core/pagination.ts`) — `paginateOffset`/`paginateSearch` stopped on a short page even when `total` said rows remained → silent data loss. Multiple HIGH verdicts. **Fixed by [PR #247](https://github.com/dichovsky/atlassian-api-client/pull/247), merged 2026-06-13.**
 
 ### 5b. Verified NEW core findings (not covered by any open PR)
 
