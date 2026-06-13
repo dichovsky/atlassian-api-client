@@ -43,9 +43,10 @@
   - problem: `confluence blog-posts list` does not wire `--cursor`/`--title`/`--status`/`--sort`/`--body-format` into the resource call (documented but silently dropped) → cursor pagination unusable from the CLI. Also doc-content mismatches: `comments` `--blog-post-id` and `labels list --cursor` documented but ignored by the handler.
   - files: `src/cli/commands/confluence.ts`, `test/cli/commands.test.ts`, `skill/reference/confluence.md`
   - deps: none
-- [ ] 🟢 📝 CLI: B1044 Document `dashboards create`/`update` flags to the construct-from-skill bar
-  - problem: reachability audit — `dashboards create`/`update` appear only in the prose one-liner + master matrix row in `skill/reference/jira.md`; their JSON `--share-permissions`/`--edit-permissions` + `--name`/`--description` flags are never tabled (unlike `copy`). Fails the construct-from-skill bar. (Roll into Phase-3 doc reorg.)
-  - files: `skill/reference/jira.md`
+- [ ] 🟡 🐛 CLI: B1063 Boolean filter flags cannot express `false`
+  - problem: several CLI flags are registered `type: 'boolean'` in `src/cli/router.ts` (presence-only — parseArgs sets them `true` and pushes any following `true`/`false` token to positionals). For tri-state filters this loses the `false` case entirely: `--validate-query`, `--done` (boards list-epics), `--send-notification` (bulk ops), `--is-global-context`/`--is-any-issue-type` (fields context-list), `--only-options`, `--only-default`, `--redirect`, `--fallback-to-default`. The handlers read them via `asBoolFlag` which DOES accept the string `'false'`, but a boolean-typed flag never delivers a string — so `--flag false` silently sends `true`. Found during the Phase-3 skill doc reorg (the docs showed broken `--flag false` examples, now corrected to presence-only).
+  - solution: decide per-flag — for genuine tri-state filters, register as `type: 'string'` (so `asBoolFlag` gets `'true'`/`'false'`) or add explicit `--no-<flag>` variants; for true on/off toggles, presence-only is correct and the docs already match. Update router + tests + skill docs together (parity rule).
+  - files: `src/cli/router.ts`, `src/cli/commands/jira.ts`, `test/cli/router.test.ts`, `skill/reference/jira/*.md`
   - deps: none
 
 ## 🧩 Jira

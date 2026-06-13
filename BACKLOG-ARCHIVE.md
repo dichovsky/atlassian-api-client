@@ -2820,3 +2820,6 @@
   - files: `src/confluence/resources/space-permissions.ts`, `src/confluence/types/space-permissions.ts`, `src/cli/commands/confluence.ts`, `skill/reference/confluence.md`, `test/confluence/space-permissions.test.ts`, `test/cli/commands.test.ts`
   - **Impl:** PR #237. `getTransitionTaskStatus(taskId)` → GET (`encodePathSegment` on taskId), returns `{ taskId, status, errorMessage? }`. CLI `space-permissions transition-task-status <taskId>`.
   - **Rat:** Async-poll companion completing the submit→poll flow for B1031/B1033/B1034.
+- [x] 🟢 📝 CLI: B1044 Document `dashboards create`/`update` flags to the construct-from-skill bar
+  - **Impl:** Phase-3 skill doc reorg. `skill/reference/jira/admin-devops.md` dashboards section now documents `create`/`update` required `--name` + `--share-permissions` (JSON) and optional `--description`/`--edit-permissions`, with runnable examples (construct-from-skill bar met).
+  - **Rat:** Reachability audit (deep-audit 2026-06-10) flagged create/update as below the construct-from-skill bar (JSON flags only in prose, never tabled).

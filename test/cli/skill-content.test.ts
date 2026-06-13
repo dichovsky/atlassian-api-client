@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCommand } from '../../src/cli/router.js';
@@ -10,7 +10,18 @@ const REPO_ROOT = resolve(TEST_DIR, '..', '..');
 const SKILL_DIR = resolve(REPO_ROOT, 'skill');
 const SKILL_MD = readFileSync(resolve(SKILL_DIR, 'SKILL.md'), 'utf8');
 const CONFLUENCE_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'confluence.md'), 'utf8');
-const JIRA_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8');
+// The Jira reference is split: `reference/jira.md` holds the resource×action
+// matrix + routing index; per-domain detail lives in `reference/jira/*.md`.
+// Concatenate the whole set so content-presence assertions span all of it.
+const JIRA_INDEX = readFileSync(resolve(SKILL_DIR, 'reference', 'jira.md'), 'utf8');
+const JIRA_DOMAIN_DIR = resolve(SKILL_DIR, 'reference', 'jira');
+const JIRA_DOMAIN_FILES = readdirSync(JIRA_DOMAIN_DIR)
+  .filter((f) => f.endsWith('.md'))
+  .sort();
+const JIRA_REF =
+  JIRA_INDEX +
+  '\n' +
+  JIRA_DOMAIN_FILES.map((f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8')).join('\n');
 const AUTH_SAFETY_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'), 'utf8');
 const PAYLOAD_RULES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'payload-rules.md'), 'utf8');
 const EXAMPLES_REF = readFileSync(resolve(SKILL_DIR, 'reference', 'examples.md'), 'utf8');
@@ -63,6 +74,22 @@ describe('SKILL.md content', () => {
     expect(SKILL_MD).toContain('reference/jira.md');
   });
 
+  it('keeps the Jira reference split into an index + per-domain files, all routed from jira.md', () => {
+    // The index keeps the resource×action matrix; per-resource detail lives in jira/*.md.
+    expect(JIRA_INDEX).toContain('## Resource × action matrix');
+    expect(JIRA_DOMAIN_FILES.length).toBeGreaterThanOrEqual(5);
+    for (const f of JIRA_DOMAIN_FILES) {
+      // every domain file must be linked from the index routing section
+      expect(JIRA_INDEX, `jira.md routing must link jira/${f}`).toContain(`jira/${f}`);
+    }
+    // selective-loading goal: index + the single largest domain file is smaller than
+    // the full concatenated reference (an agent never loads everything).
+    const largestDomain = Math.max(
+      ...JIRA_DOMAIN_FILES.map((f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8').length),
+    );
+    expect(JIRA_INDEX.length + largestDomain).toBeLessThan(JIRA_REF.length);
+  });
+
   it('keeps SKILL.md compact to reduce prompt tokens', () => {
     expect(SKILL_MD.length).toBeLessThanOrEqual(MAX_SKILL_MD_LENGTH);
   });
@@ -74,6 +101,32 @@ describe('SKILL.md content', () => {
 });
 
 describe('Reference content sanity checks', () => {
+  it('every skill markdown file has balanced, standard 3-backtick code fences', () => {
+    // Guards against unclosed / non-standard (4+ backtick) fences that swallow
+    // following sections as literal code — a class of bug a substring-presence
+    // check cannot see (PR #256 review caught one in the jira.md split).
+    const skillDocs = [
+      resolve(SKILL_DIR, 'SKILL.md'),
+      resolve(SKILL_DIR, 'reference', 'confluence.md'),
+      resolve(SKILL_DIR, 'reference', 'jira.md'),
+      resolve(SKILL_DIR, 'reference', 'auth-and-safety.md'),
+      resolve(SKILL_DIR, 'reference', 'payload-rules.md'),
+      resolve(SKILL_DIR, 'reference', 'examples.md'),
+      ...JIRA_DOMAIN_FILES.map((f) => resolve(JIRA_DOMAIN_DIR, f)),
+    ];
+    for (const path of skillDocs) {
+      const fenceLines = readFileSync(path, 'utf8')
+        .split('\n')
+        .filter((l) => /^\s*`{3,}/.test(l));
+      const oversized = fenceLines.filter((l) => /^\s*`{4,}/.test(l));
+      expect(oversized, `${path} has non-standard 4+ backtick fence(s)`).toEqual([]);
+      expect(
+        fenceLines.length % 2,
+        `${path} has an odd number of code fences (unclosed block)`,
+      ).toBe(0);
+    }
+  });
+
   it('includes auth and host safety guidance', () => {
     expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_BASE_URL');
     expect(AUTH_SAFETY_REF).toContain('ATLASSIAN_ALLOWED_HOSTS');
