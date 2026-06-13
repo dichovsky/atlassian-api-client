@@ -244,6 +244,27 @@ describe('resolveGlobalOptions', () => {
     expect(result.authType).toBe('basic');
   });
 
+  it('B1042: resolves auth-type as bearer for mixed-case "Bearer"', () => {
+    // B1042: case-normalise before comparing so `Bearer` / `BEARER` are accepted.
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'Bearer',
+      token: 'bearer-token',
+    };
+    const result = resolveGlobalOptions(options);
+    expect(result.authType).toBe('bearer');
+  });
+
+  it('B1042: resolves auth-type as bearer for upper-case "BEARER"', () => {
+    const options = {
+      'base-url': 'https://test.atlassian.net',
+      'auth-type': 'BEARER',
+      token: 'bearer-token',
+    };
+    const result = resolveGlobalOptions(options);
+    expect(result.authType).toBe('bearer');
+  });
+
   it('still requires a token when using bearer auth', () => {
     // Arrange
     const options = {
