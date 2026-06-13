@@ -60,13 +60,17 @@ export interface CreatePageData {
   };
 }
 
-/** Request body for updating a Confluence page. */
+/**
+ * Request body for updating a Confluence page.
+ * `body` is required by the spec (`PageUpdateRequest` schema `required` array
+ * lists `id`, `status`, `title`, `body`, `version`).
+ */
 export interface UpdatePageData {
   readonly id: string;
   readonly title: string;
   readonly status: 'current' | 'draft';
   readonly version: { readonly number: number; readonly message?: string };
-  readonly body?: {
+  readonly body: {
     readonly representation: 'storage' | 'atlas_doc_format';
     readonly value: string;
   };

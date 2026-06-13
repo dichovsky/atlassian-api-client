@@ -683,7 +683,8 @@ describe('DashboardsResource', () => {
   // ── B402: copy ───────────────────────────────────────────────────────────
 
   describe('copy()', () => {
-    it('calls POST /dashboard/{id}/copy with provided body', async () => {
+    it('calls POST /dashboard/{id}/copy with required + optional body (B1055/2b)', async () => {
+      // All of name, sharePermissions, editPermissions are required by the spec.
       transport.respondWith({ id: '2', name: 'Copy' });
       const result = await dashboards.copy('10001', {
         name: 'Copy',
@@ -704,47 +705,61 @@ describe('DashboardsResource', () => {
       });
     });
 
-    it('sends empty body when no data supplied', async () => {
+    it('sends required fields in the body even without description', async () => {
       transport.respondWith({ id: '2', name: 'X' });
-      await dashboards.copy('10001');
-      expect(transport.lastCall?.options.body).toEqual({});
+      await dashboards.copy('10001', {
+        name: 'X',
+        sharePermissions: [],
+        editPermissions: [],
+      });
+      expect(transport.lastCall?.options.body).toEqual({
+        name: 'X',
+        sharePermissions: [],
+        editPermissions: [],
+      });
     });
 
-    it('strips undefined keys from partial copy data', async () => {
+    it('omits description from body when not provided', async () => {
       transport.respondWith({ id: '2', name: 'X' });
-      await dashboards.copy('10001', { name: 'X' });
-      expect(transport.lastCall?.options.body).toEqual({ name: 'X' });
+      await dashboards.copy('10001', {
+        name: 'X',
+        sharePermissions: [{ type: 'global' }],
+        editPermissions: [{ type: 'loggedin' }],
+      });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['description']).toBeUndefined();
     });
   });
 
   // ── B403: bulkEdit ───────────────────────────────────────────────────────
 
   describe('bulkEdit()', () => {
-    it('calls PUT /dashboard/bulk/edit with payload', async () => {
+    it('calls PUT /dashboard/bulk/edit with integer entityIds (B1055/2a)', async () => {
+      // entityIds spec type: integer[] — not string[].
       transport.respondWith({ taskId: 't1' });
       const result = await dashboards.bulkEdit({
-        entityIds: ['10001', '10002'],
+        entityIds: [10001, 10002],
         action: 'delete',
       });
       expect(result).toEqual({ taskId: 't1' });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/dashboard/bulk/edit`,
-        body: { entityIds: ['10001', '10002'], action: 'delete' },
+        body: { entityIds: [10001, 10002], action: 'delete' },
       });
     });
 
     it('includes optional changeOwnerDetails and permissionDetails', async () => {
       transport.respondWith({});
       await dashboards.bulkEdit({
-        entityIds: ['10001'],
+        entityIds: [10001],
         action: 'changeOwner',
         changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
         extendAdminPermissions: true,
         permissionDetails: { sharePermissions: [{ type: 'global' }] },
       });
       expect(transport.lastCall?.options.body).toEqual({
-        entityIds: ['10001'],
+        entityIds: [10001],
         action: 'changeOwner',
         changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
         extendAdminPermissions: true,
@@ -759,12 +774,12 @@ describe('DashboardsResource', () => {
       expect(transport.calls).toHaveLength(0);
     });
 
-    it.each([[''], [123 as unknown as string]])(
-      'rejects bad entityIds entry: %s',
+    it.each([[0], [-1], [1.5], ['not-a-number' as unknown as number]])(
+      'rejects non-positive-integer entityIds entry: %s',
       async (entry) => {
-        await expect(dashboards.bulkEdit({ entityIds: [entry], action: 'delete' })).rejects.toThrow(
-          'entityIds entries must be non-empty strings',
-        );
+        await expect(
+          dashboards.bulkEdit({ entityIds: [entry as number], action: 'delete' }),
+        ).rejects.toThrow('entityIds entries must be positive integers');
       },
     );
   });

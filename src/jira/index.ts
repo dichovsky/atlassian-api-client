@@ -438,7 +438,8 @@ export type { ApplicationRole } from './resources/application-role.js';
 export { ApplicationRoleResource } from './resources/application-role.js';
 export type {
   WorkspaceDataPolicy,
-  ProjectDataPolicy,
+  ProjectWithDataPolicy,
+  ProjectDataPolicies,
   ListProjectDataPoliciesParams,
 } from './resources/data-policy.js';
 export { DataPolicyResource } from './resources/data-policy.js';

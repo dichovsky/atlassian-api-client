@@ -1,24 +1,35 @@
 import type { Transport } from '../../core/types.js';
-import { paginateOffset, validatePageSize } from '../../core/pagination.js';
-import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 
 /** Workspace-level data policy status. */
 export interface WorkspaceDataPolicy {
   readonly anyContentBlocked: boolean;
 }
 
-/** A single project data policy entry. */
-export interface ProjectDataPolicy {
-  readonly projectId: string;
-  readonly anyContentBlocked: boolean;
+/** A single project entry in the data policy list. */
+export interface ProjectWithDataPolicy {
+  /** Project numeric ID. */
+  readonly id?: number;
+  readonly dataPolicy?: {
+    readonly anyContentBlocked?: boolean;
+  };
 }
 
-/** Parameters for listing project data policies. */
+/**
+ * Response shape for GET /rest/api/3/data-policy/project (`getPolicies`).
+ * The spec returns a flat `ProjectDataPolicies` envelope — no pagination;
+ * all matching projects are included in one response.
+ */
+export interface ProjectDataPolicies {
+  readonly projectDataPolicies?: readonly ProjectWithDataPolicy[];
+}
+
+/** Query parameters for GET /rest/api/3/data-policy/project. */
 export interface ListProjectDataPoliciesParams {
-  /** Project IDs to filter by (sent as comma-separated query param). */
+  /**
+   * Comma-separated list of project IDs to filter by.
+   * The spec exposes a single `ids` query parameter (no pagination params).
+   */
   readonly ids?: string[];
-  readonly startAt?: number;
-  readonly maxResults?: number;
 }
 
 /** Jira App Data Policies resource — GET /rest/api/3/data-policy and GET /rest/api/3/data-policy/project. */
@@ -37,41 +48,23 @@ export class DataPolicyResource {
     return response.data;
   }
 
-  /** List project-level data policies with optional filtering by project IDs. */
-  async listProjectPolicies(
-    params?: ListProjectDataPoliciesParams,
-  ): Promise<OffsetPaginatedResponse<ProjectDataPolicy>> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-
-    const query: Record<string, string | number | undefined> = {};
+  /**
+   * GET /rest/api/3/data-policy/project (`getPolicies`).
+   * Returns data policies for the requested projects in a single non-paginated
+   * response (`ProjectDataPolicies` schema — no `total`/`startAt`/`maxResults`).
+   * Filter by `ids` to restrict to specific projects.
+   */
+  async getPolicies(params?: ListProjectDataPoliciesParams): Promise<ProjectDataPolicies> {
+    const query: Record<string, string | undefined> = {};
     if (params?.ids !== undefined && params.ids.length > 0) {
       query['ids'] = params.ids.join(',');
     }
-    if (params?.startAt !== undefined) query['startAt'] = params.startAt;
-    if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
 
-    const response = await this.transport.request<OffsetPaginatedResponse<ProjectDataPolicy>>({
+    const response = await this.transport.request<ProjectDataPolicies>({
       method: 'GET',
       path: `${this.baseUrl}/data-policy/project`,
-      query,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
-  }
-
-  /** Iterate over all project data policies, fetching pages automatically. */
-  async *listAllProjectPolicies(
-    params?: Omit<ListProjectDataPoliciesParams, 'startAt'>,
-  ): AsyncGenerator<ProjectDataPolicy> {
-    const query: Record<string, string | number | undefined> = {};
-    if (params?.ids !== undefined && params.ids.length > 0) {
-      query['ids'] = params.ids.join(',');
-    }
-
-    yield* paginateOffset<ProjectDataPolicy>(
-      this.transport,
-      `${this.baseUrl}/data-policy/project`,
-      query,
-      params?.maxResults ?? 50,
-    );
   }
 }

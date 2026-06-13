@@ -619,7 +619,7 @@ const jiraApplicationRoleMock = {
 };
 const jiraDataPolicyMock = {
   getWorkspacePolicy: vi.fn(),
-  listProjectPolicies: vi.fn(),
+  getPolicies: vi.fn(),
 };
 const jiraWebhooksMock = {
   list: vi.fn(),
@@ -1541,12 +1541,13 @@ describe('executeConfluenceCommand', () => {
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
     });
 
-    it('pages update calls client.pages.update with version-number', async () => {
-      // Arrange
+    it('pages update calls client.pages.update with required body (B1055/4)', async () => {
+      // `body` is now required by the spec (PageUpdateRequest required array).
       confluencePagesMock.update.mockResolvedValue({ id: '789' });
       const parsed = cmd('pages', 'update', ['789'], {
         title: 'Updated Title',
         'version-number': '3',
+        body: '<p>content</p>',
       });
 
       // Act
@@ -1555,20 +1556,33 @@ describe('executeConfluenceCommand', () => {
       // Assert
       expect(confluencePagesMock.update).toHaveBeenCalledWith(
         '789',
-        expect.objectContaining({ title: 'Updated Title', version: { number: 3 } }),
+        expect.objectContaining({
+          title: 'Updated Title',
+          version: { number: 3 },
+          body: { representation: 'storage', value: '<p>content</p>' },
+        }),
       );
     });
 
     it('pages update throws when page ID is missing', async () => {
-      const parsed = cmd('pages', 'update', [], { title: 'T', 'version-number': '1' });
+      const parsed = cmd('pages', 'update', [], {
+        title: 'T',
+        'version-number': '1',
+        body: '<p/>', // body is required
+      });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
         'Missing required argument: page ID',
       );
     });
 
     it('pages update throws when title is missing', async () => {
-      const parsed = cmd('pages', 'update', ['123'], { 'version-number': '1' });
+      const parsed = cmd('pages', 'update', ['123'], { 'version-number': '1', body: '<p/>' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--title');
+    });
+
+    it('pages update throws when --body is missing', async () => {
+      const parsed = cmd('pages', 'update', ['123'], { title: 'T', 'version-number': '1' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
     });
 
     it('pages update throws when version-number is missing', async () => {
@@ -14108,32 +14122,22 @@ describe('executeJiraCommand', () => {
       expect(jiraDataPolicyMock.getWorkspacePolicy).toHaveBeenCalledOnce();
     });
 
-    it('data-policy list-projects calls client.dataPolicy.listProjectPolicies() with no params', async () => {
-      // Arrange
-      const response = { values: [], startAt: 0, maxResults: 50, total: 0, isLast: true };
-      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue(response);
+    it('data-policy list-projects calls client.dataPolicy.getPolicies() — non-paginated (B1055/5)', async () => {
+      // Arrange — endpoint is non-paginated; no startAt/maxResults accepted.
+      const response = { projectDataPolicies: [] };
+      jiraDataPolicyMock.getPolicies.mockResolvedValue(response);
 
       // Act
       const result = await executeJiraCommand(cmd('data-policy', 'list-projects'), GLOBALS);
 
       // Assert
       expect(result).toEqual(response);
-      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith({
-        ids: undefined,
-        startAt: undefined,
-        maxResults: undefined,
-      });
+      expect(jiraDataPolicyMock.getPolicies).toHaveBeenCalledWith({ ids: undefined });
     });
 
     it('data-policy list-projects passes --ids as array', async () => {
       // Arrange
-      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue({
-        values: [],
-        startAt: 0,
-        maxResults: 50,
-        total: 0,
-        isLast: true,
-      });
+      jiraDataPolicyMock.getPolicies.mockResolvedValue({ projectDataPolicies: [] });
 
       // Act
       await executeJiraCommand(
@@ -14142,30 +14146,8 @@ describe('executeJiraCommand', () => {
       );
 
       // Assert
-      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith(
+      expect(jiraDataPolicyMock.getPolicies).toHaveBeenCalledWith(
         expect.objectContaining({ ids: ['10001', '10002'] }),
-      );
-    });
-
-    it('data-policy list-projects passes --start-at and --max-results', async () => {
-      // Arrange
-      jiraDataPolicyMock.listProjectPolicies.mockResolvedValue({
-        values: [],
-        startAt: 10,
-        maxResults: 25,
-        total: 0,
-        isLast: true,
-      });
-
-      // Act
-      await executeJiraCommand(
-        cmd('data-policy', 'list-projects', [], { 'start-at': '10', 'max-results': '25' }),
-        GLOBALS,
-      );
-
-      // Assert
-      expect(jiraDataPolicyMock.listProjectPolicies).toHaveBeenCalledWith(
-        expect.objectContaining({ startAt: 10, maxResults: 25 }),
       );
     });
 
@@ -17739,20 +17721,27 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual(opts);
     });
 
-    it('configuration update-timetracking-options requires at least one flag', async () => {
+    it('configuration update-timetracking-options requires all four flags (B1055/1)', async () => {
+      // All four fields are required by the spec — missing any should throw.
       const parsed = cmd('configuration', 'update-timetracking-options', [], {});
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
-        'update-timetracking-options requires at least one of:',
+        '--working-hours-per-day is required',
       );
     });
 
-    it('configuration update-timetracking-options sends only working-hours-per-day when set', async () => {
-      // Arrange
+    it('configuration update-timetracking-options sends all four fields (B1055/1)', async () => {
+      // Arrange — spec requires all four fields
       jiraConfigurationMock.updateTimeTrackingOptions.mockResolvedValue({
         workingHoursPerDay: 7.5,
+        workingDaysPerWeek: 5,
+        timeFormat: 'pretty',
+        defaultUnit: 'hour',
       });
       const parsed = cmd('configuration', 'update-timetracking-options', [], {
         'working-hours-per-day': '7.5',
+        'working-days-per-week': '5',
+        'time-format': 'pretty',
+        'default-unit': 'hour',
       });
 
       // Act
@@ -17761,6 +17750,9 @@ describe('executeJiraCommand', () => {
       // Assert
       expect(jiraConfigurationMock.updateTimeTrackingOptions).toHaveBeenCalledWith({
         workingHoursPerDay: 7.5,
+        workingDaysPerWeek: 5,
+        timeFormat: 'pretty',
+        defaultUnit: 'hour',
       });
     });
 
@@ -17787,8 +17779,13 @@ describe('executeJiraCommand', () => {
     });
 
     it('configuration update-timetracking-options rejects invalid --time-format', async () => {
+      // Validation order: working-hours-per-day is checked first since all four are required.
+      // Providing an invalid time-format alongside a valid others triggers the format error.
       const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
+        'working-days-per-week': '5',
         'time-format': 'weird',
+        'default-unit': 'hour',
       });
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
         '--time-format must be one of: pretty, days, hours',
@@ -17797,6 +17794,9 @@ describe('executeJiraCommand', () => {
 
     it('configuration update-timetracking-options rejects invalid --default-unit', async () => {
       const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
+        'working-days-per-week': '5',
+        'time-format': 'pretty',
         'default-unit': 'fortnight',
       });
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
@@ -17815,7 +17815,10 @@ describe('executeJiraCommand', () => {
 
     it('configuration update-timetracking-options rejects non-numeric --working-days-per-week', async () => {
       const parsed = cmd('configuration', 'update-timetracking-options', [], {
+        'working-hours-per-day': '8',
         'working-days-per-week': 'abc',
+        'time-format': 'pretty',
+        'default-unit': 'hour',
       });
       await expect(executeJiraCommand(parsed, GLOBALS)).rejects.toThrow(
         '--working-days-per-week must be a positive number',
@@ -28547,39 +28550,52 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('propertyKey');
     });
 
-    it('copy calls client.dashboards.copy with optional metadata', async () => {
+    it('copy calls client.dashboards.copy with required + optional body (B1055/2b)', async () => {
+      // name, sharePermissions, editPermissions are required by the spec.
       jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy of Sprint' });
       const result = await executeJiraCommand(
         cmd('dashboards', 'copy', ['10001'], {
           name: 'Copy of Sprint',
           'share-permissions': '[{"type":"global"}]',
+          'edit-permissions': '[{"type":"loggedin"}]',
         }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
         name: 'Copy of Sprint',
         sharePermissions: [{ type: 'global' }],
+        editPermissions: [{ type: 'loggedin' }],
       });
       expect(result).toMatchObject({ id: '20001' });
     });
 
-    it('copy with no optional flags passes empty object', async () => {
-      jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy' });
-      await executeJiraCommand(cmd('dashboards', 'copy', ['10001']), GLOBALS);
-      expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {});
+    it('copy throws when --name is missing', async () => {
+      await expect(
+        executeJiraCommand(
+          cmd('dashboards', 'copy', ['10001'], {
+            'share-permissions': '[{"type":"global"}]',
+            'edit-permissions': '[{"type":"loggedin"}]',
+          }),
+          GLOBALS,
+        ),
+      ).rejects.toThrow('--name');
     });
 
-    it('copy forwards --description and --edit-permissions when provided', async () => {
+    it('copy forwards --description when provided', async () => {
       jiraDashboardsMock.copy.mockResolvedValue({ id: '20001', name: 'Copy' });
       await executeJiraCommand(
         cmd('dashboards', 'copy', ['10001'], {
+          name: 'Copy',
           description: 'a copy',
+          'share-permissions': '[{"type":"global"}]',
           'edit-permissions': '[{"type":"loggedin"}]',
         }),
         GLOBALS,
       );
       expect(jiraDashboardsMock.copy).toHaveBeenCalledWith('10001', {
+        name: 'Copy',
         description: 'a copy',
+        sharePermissions: [{ type: 'global' }],
         editPermissions: [{ type: 'loggedin' }],
       });
     });
@@ -28590,7 +28606,8 @@ describe('executeJiraCommand', () => {
       );
     });
 
-    it('bulk-edit calls client.dashboards.bulkEdit with entityIds CSV and action', async () => {
+    it('bulk-edit calls client.dashboards.bulkEdit with integer entityIds and action (B1055/2a)', async () => {
+      // entityIds spec type: integer[] — CLI must parse CSV strings as numbers.
       jiraDashboardsMock.bulkEdit.mockResolvedValue({ status: 'ok' });
       const result = await executeJiraCommand(
         cmd('dashboards', 'bulk-edit', [], {
@@ -28601,14 +28618,14 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
         expect.objectContaining({
-          entityIds: ['10001', '10002'],
+          entityIds: [10001, 10002],
           action: 'delete',
         }),
       );
       expect(result).toMatchObject({ status: 'ok' });
     });
 
-    it('bulk-edit changeOwner action passes changeOwnerDetails', async () => {
+    it('bulk-edit changeOwner action passes changeOwnerDetails with integer entityIds', async () => {
       jiraDashboardsMock.bulkEdit.mockResolvedValue({});
       await executeJiraCommand(
         cmd('dashboards', 'bulk-edit', [], {
@@ -28622,7 +28639,7 @@ describe('executeJiraCommand', () => {
       );
       expect(jiraDashboardsMock.bulkEdit).toHaveBeenCalledWith(
         expect.objectContaining({
-          entityIds: ['10001'],
+          entityIds: [10001],
           action: 'changeOwner',
           changeOwnerDetails: { newOwner: 'acc-1', autofixName: true },
           extendAdminPermissions: true,

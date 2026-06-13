@@ -147,7 +147,8 @@ describe('PagesResource', () => {
   // ── update ────────────────────────────────────────────────────────────────
 
   describe('update()', () => {
-    it('calls PUT /pages/{id} with the provided body', async () => {
+    it('calls PUT /pages/{id} with the provided body including required body field (B1055/4)', async () => {
+      // `body` is required by the Confluence spec (PageUpdateRequest required array).
       const updated = makePage('5');
       transport.respondWith(updated);
       const data = {
@@ -155,6 +156,7 @@ describe('PagesResource', () => {
         title: 'Updated Title',
         status: 'current' as const,
         version: { number: 2 },
+        body: { representation: 'storage' as const, value: '<p>updated</p>' },
       };
 
       const result = await pages.update('5', data);
@@ -283,6 +285,7 @@ describe('PagesResource', () => {
         title: 'T',
         status: 'current',
         version: { number: 2 },
+        body: { representation: 'storage', value: '<p/>' },
       });
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/pages/..%2Fadmin`);
     });

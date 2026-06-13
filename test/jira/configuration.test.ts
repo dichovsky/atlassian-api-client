@@ -222,13 +222,15 @@ describe('ConfigurationResource', () => {
 
   describe('updateTimeTrackingOptions()', () => {
     it('calls PUT /configuration/timetracking/options with the body and returns the updated options', async () => {
-      // Arrange
+      // Arrange — all four fields are required by the spec (B1055/1).
       const options = makeOptions({ workingHoursPerDay: 7.5, defaultUnit: 'minute' });
       transport.respondWith(options);
 
       // Act
       const result = await resource.updateTimeTrackingOptions({
         workingHoursPerDay: 7.5,
+        workingDaysPerWeek: 5,
+        timeFormat: 'pretty',
         defaultUnit: 'minute',
       });
 
@@ -237,11 +239,11 @@ describe('ConfigurationResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/configuration/timetracking/options`,
-        body: { workingHoursPerDay: 7.5, defaultUnit: 'minute' },
+        body: { workingHoursPerDay: 7.5, workingDaysPerWeek: 5, timeFormat: 'pretty', defaultUnit: 'minute' },
       });
     });
 
-    it('accepts every field in the body', async () => {
+    it('sends all four required fields in the body', async () => {
       // Arrange
       transport.respondWith(makeOptions());
 
@@ -267,9 +269,14 @@ describe('ConfigurationResource', () => {
       transport.respondWithError(new Error('forbidden'));
 
       // Act / Assert
-      await expect(resource.updateTimeTrackingOptions({ workingHoursPerDay: 8 })).rejects.toThrow(
-        'forbidden',
-      );
+      await expect(
+        resource.updateTimeTrackingOptions({
+          workingHoursPerDay: 8,
+          workingDaysPerWeek: 5,
+          timeFormat: 'pretty',
+          defaultUnit: 'hour',
+        }),
+      ).rejects.toThrow('forbidden');
     });
   });
 });

@@ -234,7 +234,12 @@ export class SprintsResource {
     });
   }
 
-  /** Get issues for a sprint. */
+  /**
+   * Get issues for a sprint (deprecated agile endpoint).
+   * The spec response schema (`SearchResults`) uses `.issues` as the array key;
+   * this method maps it to the `OffsetPaginatedResponse` `.values` envelope so
+   * callers get a consistent pagination shape.
+   */
   async getIssues(
     sprintId: number,
     params?: ListSprintIssuesParams,
@@ -251,12 +256,24 @@ export class SprintsResource {
       if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // The agile endpoint returns SearchResults: { issues, startAt, maxResults, total }
+    // Map `.issues` → `.values` so callers get the standard OffsetPaginatedResponse shape.
+    const response = await this.transport.request<{
+      issues: BoardIssue[];
+      startAt: number;
+      maxResults: number;
+      total: number;
+    }>({
       method: 'GET',
       path: `${this.baseUrl}/sprint/${sprintId}/issue`,
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   // ── Enhanced (JSIS) sprint issue endpoint (B1030) ────────────────────────

@@ -62,10 +62,32 @@ export interface ExpressionEvalJqlContext {
   readonly validation?: string;
 }
 
+/**
+ * A discriminated custom context variable (`CustomContextVariable` schema).
+ * The spec defines `custom` as an array of these — not a `Record`.
+ * `type` is the discriminator; `accountId` (user), `id`/`key` (issue),
+ * and `value` (json) are type-specific fields.
+ */
+export interface CustomContextVariable {
+  readonly type: 'user' | 'issue' | 'json';
+  /** For type `user`: Atlassian account ID. */
+  readonly accountId?: string;
+  /** For type `issue`: issue ID (integer). */
+  readonly id?: number;
+  /** For type `issue`: issue key (string). */
+  readonly key?: string;
+  /** For type `json`: arbitrary JSON object. */
+  readonly value?: unknown;
+}
+
 /** Evaluation context for POST /expression/eval and /expression/evaluate. */
 export interface ExpressionEvalContext {
   readonly board?: number;
-  readonly custom?: Record<string, unknown>;
+  /**
+   * Custom context variables. Spec schema: array of `CustomContextVariable`
+   * (discriminated by `type`: `user`, `issue`, `json`).
+   */
+  readonly custom?: readonly CustomContextVariable[];
   readonly customerRequest?: number;
   readonly issue?: { readonly key?: string; readonly id?: string };
   readonly issues?: { readonly jql?: ExpressionEvalJqlContext };
