@@ -4,12 +4,15 @@
  * Maps operation names (e.g. `'jira.issues.get'`) to the minimal set of
  * OAuth 2.0 scopes required to perform them.
  *
- * Scope strings are taken directly from each operation's `security` block in the
- * pinned spec snapshots:
- *  - `spec/confluence-v2.json`   → `oAuthDefinitions` array (granular scopes)
- *  - `spec/jira-software.json`   → `OAuth2` array (granular scopes)
- *  - `spec/jira-platform-v3.json`→ `OAuth2` array (classic scopes — the pinned
- *    platform spec does not yet list granular equivalents for all operations)
+ * The SDK now advises **granular scopes throughout** for all three surfaces:
+ *  - `spec/confluence-v2.json`   → `oAuthDefinitions` array (granular GA)
+ *  - `spec/jira-software.json`   → `OAuth2` array (granular, no classic fallback)
+ *  - `spec/jira-platform-v3.json`→ `x-atlassian-oauth2-scopes[state=Beta]`
+ *    (granular Beta scopes; Atlassian has annotated every platform v3 operation
+ *    with its granular equivalents — see the Beta entries in the extension)
+ *
+ * Note: Jira Platform granular scopes are currently **Beta** per Atlassian.
+ * They can be requested today but Atlassian may adjust them before GA.
  */
 
 /** Well-known Atlassian Cloud OAuth 2.0 scopes. */
@@ -37,19 +40,77 @@ export type AtlassianScope =
   // ── Jira Software granular scopes (spec/jira-software.json OAuth2) ──────────
   | 'read:board-scope:jira-software'
   | 'read:issue-details:jira'
-  | 'read:project:jira'
   | 'read:sprint:jira-software'
   | 'write:sprint:jira-software'
   | 'delete:sprint:jira-software'
   | 'read:jql:jira'
-  // ── Jira Platform classic scopes (spec/jira-platform-v3.json OAuth2) ────────
-  | 'read:jira-work'
-  | 'write:jira-work'
-  | 'manage:jira-project'
-  | 'manage:jira-configuration'
-  | 'read:jira-user'
-  | 'manage:jira-webhook'
-  | 'manage:jira-data-provider';
+  // ── Jira Platform granular scopes (x-atlassian-oauth2-scopes state=Beta) ────
+  // Issues
+  | 'read:issue:jira'
+  | 'read:issue-meta:jira'
+  | 'read:issue-security-level:jira'
+  | 'read:issue.vote:jira'
+  | 'read:issue.changelog:jira'
+  | 'read:field-configuration:jira'
+  | 'write:issue:jira'
+  | 'write:issue.property:jira'
+  | 'delete:issue:jira'
+  // Projects / common lookup
+  | 'read:project:jira'
+  | 'read:project.property:jira'
+  | 'read:project-category:jira'
+  | 'read:project-version:jira'
+  | 'read:project.component:jira'
+  | 'read:issue-type:jira'
+  | 'read:issue-type-hierarchy:jira'
+  | 'read:application-role:jira'
+  | 'read:group:jira'
+  | 'read:user:jira'
+  | 'read:user.property:jira'
+  | 'read:avatar:jira'
+  | 'read:status:jira'
+  // Search
+  | 'read:audit-log:jira'
+  | 'read:field:jira'
+  | 'read:field.default-value:jira'
+  | 'read:field.option:jira'
+  // Comments
+  | 'read:comment:jira'
+  | 'read:comment.property:jira'
+  | 'read:project-role:jira'
+  | 'write:comment:jira'
+  | 'write:comment.property:jira'
+  | 'delete:comment:jira'
+  | 'delete:comment.property:jira'
+  // Attachments
+  | 'read:attachment:jira'
+  | 'write:attachment:jira'
+  | 'delete:attachment:jira'
+  // Dashboards
+  | 'read:dashboard:jira'
+  | 'write:dashboard:jira'
+  | 'delete:dashboard:jira'
+  // Filters
+  | 'read:filter:jira'
+  | 'write:filter:jira'
+  | 'delete:filter:jira'
+  // Fields
+  | 'write:field:jira'
+  | 'delete:field:jira'
+  // Webhooks
+  | 'read:webhook:jira'
+  | 'write:webhook:jira'
+  | 'delete:webhook:jira'
+  // JQL
+  | 'validate:jql:jira'
+  | 'read:jira-expressions:jira'
+  // Bulk issue properties
+  | 'delete:issue.property:jira'
+  // Workflows
+  | 'read:workflow:jira'
+  | 'read:screen:jira'
+  // Labels
+  | 'read:label:jira';
 
 /** Registry mapping operation names to their required OAuth scopes. */
 const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
@@ -160,56 +221,210 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   'confluence.versions.getForBlogPost': ['read:page:confluence'],
 
   // ── Jira — Issues ───────────────────────────────────────────────────────────
-  // GET    /rest/api/3/issue/{issueIdOrKey}            → OAuth2: ['read:jira-work']
-  // POST   /rest/api/3/issue                           → OAuth2: ['write:jira-work']
-  // PUT    /rest/api/3/issue/{issueIdOrKey}            → OAuth2: ['write:jira-work']
-  // DELETE /rest/api/3/issue/{issueIdOrKey}            → OAuth2: ['write:jira-work']
-  // POST   /rest/api/3/issue/{issueIdOrKey}/transitions → OAuth2: ['write:jira-work']
-  'jira.issues.get': ['read:jira-work'],
-  'jira.issues.create': ['write:jira-work'],
-  'jira.issues.update': ['write:jira-work'],
-  'jira.issues.delete': ['write:jira-work'],
-  'jira.issues.transition': ['write:jira-work'],
+  // GET    /rest/api/3/issue/{issueIdOrKey}
+  //   x-atlassian-oauth2-scopes Beta: read:issue-meta:jira, read:issue-security-level:jira,
+  //     read:issue.vote:jira, read:issue.changelog:jira, read:avatar:jira, read:issue:jira,
+  //     read:status:jira, read:user:jira, read:field-configuration:jira
+  // POST   /rest/api/3/issue
+  //   x-atlassian-oauth2-scopes Beta: write:issue:jira, write:comment:jira,
+  //     write:comment.property:jira, write:attachment:jira, read:issue:jira
+  // PUT    /rest/api/3/issue/{issueIdOrKey}
+  //   x-atlassian-oauth2-scopes Beta: write:issue:jira
+  // DELETE /rest/api/3/issue/{issueIdOrKey}
+  //   x-atlassian-oauth2-scopes Beta: delete:issue:jira
+  // POST   /rest/api/3/issue/{issueIdOrKey}/transitions
+  //   x-atlassian-oauth2-scopes Beta: write:issue:jira, write:issue.property:jira
+  'jira.issues.get': [
+    'read:avatar:jira',
+    'read:field-configuration:jira',
+    'read:issue-meta:jira',
+    'read:issue-security-level:jira',
+    'read:issue.changelog:jira',
+    'read:issue.vote:jira',
+    'read:issue:jira',
+    'read:status:jira',
+    'read:user:jira',
+  ],
+  'jira.issues.create': [
+    'read:issue:jira',
+    'write:attachment:jira',
+    'write:comment.property:jira',
+    'write:comment:jira',
+    'write:issue:jira',
+  ],
+  'jira.issues.update': ['write:issue:jira'],
+  'jira.issues.delete': ['delete:issue:jira'],
+  'jira.issues.transition': ['write:issue.property:jira', 'write:issue:jira'],
 
   // ── Jira — Projects ─────────────────────────────────────────────────────────
-  // GET /rest/api/3/project/search          → OAuth2: ['read:jira-work']
-  // GET /rest/api/3/project/{projectIdOrKey}→ OAuth2: ['read:jira-work']
-  'jira.projects.list': ['read:jira-work'],
-  'jira.projects.get': ['read:jira-work'],
+  // GET /rest/api/3/project/search
+  //   x-atlassian-oauth2-scopes Beta: read:issue-type:jira, read:project:jira,
+  //     read:project.property:jira, read:user:jira, read:application-role:jira,
+  //     read:avatar:jira, read:group:jira, read:issue-type-hierarchy:jira,
+  //     read:project-category:jira, read:project-version:jira, read:project.component:jira
+  // GET /rest/api/3/project/{projectIdOrKey}  (same Beta scopes)
+  'jira.projects.list': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project.property:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.projects.get': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project.property:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
 
   // ── Jira — Users ────────────────────────────────────────────────────────────
-  // GET /rest/api/3/user              → OAuth2: ['read:jira-user']
-  // GET /rest/api/3/myself            → OAuth2: ['read:jira-user']
-  // GET /rest/api/3/user/search       → OAuth2: ['read:jira-user']
-  'jira.users.get': ['read:jira-user'],
-  'jira.users.getCurrentUser': ['read:jira-user'],
-  'jira.users.search': ['read:jira-user'],
+  // GET /rest/api/3/user
+  //   x-atlassian-oauth2-scopes Beta: read:application-role:jira, read:group:jira,
+  //     read:user:jira, read:avatar:jira
+  // GET /rest/api/3/myself  (same Beta scopes)
+  // GET /rest/api/3/user/search
+  //   x-atlassian-oauth2-scopes Beta: read:user:jira, read:user.property:jira,
+  //     read:application-role:jira, read:avatar:jira, read:group:jira
+  'jira.users.get': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:user:jira',
+  ],
+  'jira.users.getCurrentUser': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:user:jira',
+  ],
+  'jira.users.search': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:user.property:jira',
+    'read:user:jira',
+  ],
 
   // ── Jira — Search ───────────────────────────────────────────────────────────
-  // POST /rest/api/3/search      → OAuth2: ['read:jira-work']
-  // GET  /rest/api/3/search      → OAuth2: ['read:jira-work']
-  'jira.search.search': ['read:jira-work'],
-  'jira.search.searchGet': ['read:jira-work'],
+  // POST /rest/api/3/search
+  //   x-atlassian-oauth2-scopes Beta: read:issue-details:jira, read:field.default-value:jira,
+  //     read:field.option:jira, read:field:jira, read:group:jira
+  // GET  /rest/api/3/search
+  //   x-atlassian-oauth2-scopes Beta: read:issue-details:jira, read:audit-log:jira,
+  //     read:avatar:jira, read:field-configuration:jira, read:issue-meta:jira
+  'jira.search.search': [
+    'read:field.default-value:jira',
+    'read:field.option:jira',
+    'read:field:jira',
+    'read:group:jira',
+    'read:issue-details:jira',
+  ],
+  'jira.search.searchGet': [
+    'read:audit-log:jira',
+    'read:avatar:jira',
+    'read:field-configuration:jira',
+    'read:issue-details:jira',
+    'read:issue-meta:jira',
+  ],
 
   // ── Jira — Issue comments ────────────────────────────────────────────────────
-  // GET    /rest/api/3/issue/{issueIdOrKey}/comment       → OAuth2: ['read:jira-work']
-  // GET    /rest/api/3/issue/{issueIdOrKey}/comment/{id}  → OAuth2: ['read:jira-work']
-  // POST   /rest/api/3/issue/{issueIdOrKey}/comment       → OAuth2: ['write:jira-work']
-  // PUT    /rest/api/3/issue/{issueIdOrKey}/comment/{id}  → OAuth2: ['write:jira-work']
-  // DELETE /rest/api/3/issue/{issueIdOrKey}/comment/{id}  → OAuth2: ['write:jira-work']
-  'jira.issueComments.list': ['read:jira-work'],
-  'jira.issueComments.get': ['read:jira-work'],
-  'jira.issueComments.create': ['write:jira-work'],
-  'jira.issueComments.update': ['write:jira-work'],
-  'jira.issueComments.delete': ['write:jira-work'],
+  // GET  /rest/api/3/issue/{issueIdOrKey}/comment
+  //   x-atlassian-oauth2-scopes Beta: read:comment:jira, read:comment.property:jira,
+  //     read:group:jira, read:project:jira, read:project-role:jira, read:user:jira, read:avatar:jira
+  // GET  /rest/api/3/issue/{issueIdOrKey}/comment/{id}  (same Beta scopes)
+  // POST /rest/api/3/issue/{issueIdOrKey}/comment
+  //   x-atlassian-oauth2-scopes Beta: read:comment:jira, read:comment.property:jira,
+  //     read:group:jira, read:project:jira, read:project-role:jira, read:user:jira,
+  //     write:comment:jira, read:avatar:jira
+  // PUT  /rest/api/3/issue/{issueIdOrKey}/comment/{id}  (same as POST Beta scopes)
+  // DELETE /rest/api/3/issue/{issueIdOrKey}/comment/{id}
+  //   x-atlassian-oauth2-scopes Beta: delete:comment:jira, delete:comment.property:jira
+  'jira.issueComments.list': [
+    'read:avatar:jira',
+    'read:comment.property:jira',
+    'read:comment:jira',
+    'read:group:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.issueComments.get': [
+    'read:avatar:jira',
+    'read:comment.property:jira',
+    'read:comment:jira',
+    'read:group:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.issueComments.create': [
+    'read:avatar:jira',
+    'read:comment.property:jira',
+    'read:comment:jira',
+    'read:group:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:comment:jira',
+  ],
+  'jira.issueComments.update': [
+    'read:avatar:jira',
+    'read:comment.property:jira',
+    'read:comment:jira',
+    'read:group:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:comment:jira',
+  ],
+  'jira.issueComments.delete': ['delete:comment.property:jira', 'delete:comment:jira'],
 
   // ── Jira — Issue attachments ─────────────────────────────────────────────────
-  // GET  /rest/api/3/issue/{issueIdOrKey}              → OAuth2: ['read:jira-work']
-  // GET  /rest/api/3/attachment/{id}                   → OAuth2: ['read:jira-work']
-  // POST /rest/api/3/issue/{issueIdOrKey}/attachments  → OAuth2: ['write:jira-work']
-  'jira.issueAttachments.list': ['read:jira-work'],
-  'jira.issueAttachments.get': ['read:jira-work'],
-  'jira.issueAttachments.upload': ['write:jira-work'],
+  // issueAttachments.list uses GET /issue/{issueIdOrKey}?fields=attachment —
+  //   same path + verb as issues.get → same Beta scopes
+  // GET  /rest/api/3/attachment/{id}
+  //   x-atlassian-oauth2-scopes Beta: read:attachment:jira, read:user:jira,
+  //     read:application-role:jira, read:avatar:jira, read:group:jira
+  // POST /rest/api/3/issue/{issueIdOrKey}/attachments
+  //   x-atlassian-oauth2-scopes Beta: read:user:jira, write:attachment:jira,
+  //     read:attachment:jira, read:avatar:jira
+  'jira.issueAttachments.list': [
+    'read:avatar:jira',
+    'read:field-configuration:jira',
+    'read:issue-meta:jira',
+    'read:issue-security-level:jira',
+    'read:issue.changelog:jira',
+    'read:issue.vote:jira',
+    'read:issue:jira',
+    'read:status:jira',
+    'read:user:jira',
+  ],
+  'jira.issueAttachments.get': [
+    'read:application-role:jira',
+    'read:attachment:jira',
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:user:jira',
+  ],
+  'jira.issueAttachments.upload': [
+    'read:attachment:jira',
+    'read:avatar:jira',
+    'read:user:jira',
+    'write:attachment:jira',
+  ],
 
   // ── Jira — Boards & Sprints ──────────────────────────────────────────────────
   // GET /rest/agile/1.0/board              → OAuth2: ['read:board-scope:jira-software','read:project:jira']
@@ -225,83 +440,261 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
   'jira.boards.getIssues': ['read:board-scope:jira-software', 'read:issue-details:jira'],
   'jira.sprints.get': ['read:sprint:jira-software'],
   'jira.sprints.getIssues': [
-    'read:sprint:jira-software',
     'read:issue-details:jira',
     'read:jql:jira',
+    'read:sprint:jira-software',
   ],
   'jira.sprints.create': ['write:sprint:jira-software'],
   'jira.sprints.update': ['write:sprint:jira-software'],
   'jira.sprints.delete': ['delete:sprint:jira-software'],
 
   // ── Jira — Dashboards ────────────────────────────────────────────────────────
-  // GET    /rest/api/3/dashboard     → OAuth2: ['read:jira-work']
-  // GET    /rest/api/3/dashboard/{id}→ OAuth2: ['read:jira-work']
-  // POST   /rest/api/3/dashboard     → OAuth2: ['write:jira-work']
-  // PUT    /rest/api/3/dashboard/{id}→ OAuth2: ['write:jira-work']
-  // DELETE /rest/api/3/dashboard/{id}→ OAuth2: ['write:jira-work']
-  'jira.dashboards.list': ['read:jira-work'],
-  'jira.dashboards.get': ['read:jira-work'],
-  'jira.dashboards.create': ['write:jira-work'],
-  'jira.dashboards.update': ['write:jira-work'],
-  'jira.dashboards.delete': ['write:jira-work'],
+  // GET    /rest/api/3/dashboard
+  //   x-atlassian-oauth2-scopes Beta: read:dashboard:jira, read:group:jira, read:project:jira,
+  //     read:project-role:jira, read:user:jira, read:application-role:jira, read:avatar:jira,
+  //     read:issue-type-hierarchy:jira, read:issue-type:jira, read:project-category:jira,
+  //     read:project-version:jira, read:project.component:jira
+  // GET    /rest/api/3/dashboard/{id}  (same Beta scopes)
+  // POST   /rest/api/3/dashboard
+  //   x-atlassian-oauth2-scopes Beta: (all of the above) + write:dashboard:jira
+  // PUT    /rest/api/3/dashboard/{id}  (same as POST Beta scopes)
+  // DELETE /rest/api/3/dashboard/{id}
+  //   x-atlassian-oauth2-scopes Beta: delete:dashboard:jira
+  'jira.dashboards.list': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:dashboard:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.dashboards.get': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:dashboard:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.dashboards.create': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:dashboard:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:dashboard:jira',
+  ],
+  'jira.dashboards.update': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:dashboard:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:dashboard:jira',
+  ],
+  'jira.dashboards.delete': ['delete:dashboard:jira'],
 
   // ── Jira — Filters ───────────────────────────────────────────────────────────
-  // GET    /rest/api/3/filter/search → OAuth2: ['read:jira-work']
-  // GET    /rest/api/3/filter/{id}   → OAuth2: ['read:jira-work']
-  // POST   /rest/api/3/filter        → OAuth2: ['write:jira-work']
-  // PUT    /rest/api/3/filter/{id}   → OAuth2: ['write:jira-work']
-  // DELETE /rest/api/3/filter/{id}   → OAuth2: ['write:jira-work']
-  'jira.filters.list': ['read:jira-work'],
-  'jira.filters.get': ['read:jira-work'],
-  'jira.filters.create': ['write:jira-work'],
-  'jira.filters.update': ['write:jira-work'],
-  'jira.filters.delete': ['write:jira-work'],
+  // GET    /rest/api/3/filter/search
+  //   x-atlassian-oauth2-scopes Beta: read:filter:jira, read:group:jira, read:project:jira,
+  //     read:project-role:jira, read:user:jira, read:jql:jira, read:application-role:jira,
+  //     read:avatar:jira, read:issue-type-hierarchy:jira
+  // GET    /rest/api/3/filter/{id}  (same Beta scopes)
+  // POST   /rest/api/3/filter
+  //   x-atlassian-oauth2-scopes Beta: (all of the above) + write:filter:jira +
+  //     read:issue-type:jira, read:project-category:jira, read:project-version:jira,
+  //     read:project.component:jira
+  // PUT    /rest/api/3/filter/{id}
+  //   x-atlassian-oauth2-scopes Beta: write:filter:jira + the read:filter:jira list
+  // DELETE /rest/api/3/filter/{id}
+  //   x-atlassian-oauth2-scopes Beta: delete:filter:jira
+  'jira.filters.list': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:filter:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:jql:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.filters.get': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:filter:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:jql:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+  ],
+  'jira.filters.create': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:filter:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:issue-type:jira',
+    'read:jql:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project-version:jira',
+    'read:project.component:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:filter:jira',
+  ],
+  'jira.filters.update': [
+    'read:application-role:jira',
+    'read:avatar:jira',
+    'read:filter:jira',
+    'read:group:jira',
+    'read:issue-type-hierarchy:jira',
+    'read:jql:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:user:jira',
+    'write:filter:jira',
+  ],
+  'jira.filters.delete': ['delete:filter:jira'],
 
   // ── Jira — Fields ────────────────────────────────────────────────────────────
-  // GET    /rest/api/3/field          → OAuth2: ['read:jira-work']
-  // POST   /rest/api/3/field          → OAuth2: ['manage:jira-configuration']
-  // PUT    /rest/api/3/field/{fieldId}→ OAuth2: ['manage:jira-configuration']
-  // DELETE /rest/api/3/field/{id}     → OAuth2: ['manage:jira-configuration']
-  'jira.fields.list': ['read:jira-work'],
-  'jira.fields.create': ['manage:jira-configuration'],
-  'jira.fields.update': ['manage:jira-configuration'],
-  'jira.fields.delete': ['manage:jira-configuration'],
+  // GET    /rest/api/3/field
+  //   x-atlassian-oauth2-scopes Beta: read:field:jira, read:avatar:jira,
+  //     read:project-category:jira, read:project:jira, read:field-configuration:jira
+  // POST   /rest/api/3/field
+  //   x-atlassian-oauth2-scopes Beta: write:field:jira, read:avatar:jira, read:field:jira,
+  //     read:project-category:jira, read:project:jira, read:field-configuration:jira
+  // PUT    /rest/api/3/field/{fieldId}
+  //   x-atlassian-oauth2-scopes Beta: write:field:jira
+  // DELETE /rest/api/3/field/{id}
+  //   x-atlassian-oauth2-scopes Beta: delete:field:jira
+  'jira.fields.list': [
+    'read:avatar:jira',
+    'read:field-configuration:jira',
+    'read:field:jira',
+    'read:project-category:jira',
+    'read:project:jira',
+  ],
+  'jira.fields.create': [
+    'read:avatar:jira',
+    'read:field-configuration:jira',
+    'read:field:jira',
+    'read:project-category:jira',
+    'read:project:jira',
+    'write:field:jira',
+  ],
+  'jira.fields.update': ['write:field:jira'],
+  'jira.fields.delete': ['delete:field:jira'],
 
   // ── Jira — Webhooks ──────────────────────────────────────────────────────────
-  // GET    /rest/api/3/webhook → OAuth2: ['read:jira-work','manage:jira-webhook']
-  // POST   /rest/api/3/webhook → OAuth2: ['read:jira-work','manage:jira-webhook']
-  // DELETE /rest/api/3/webhook → OAuth2: ['read:jira-work','manage:jira-webhook']
-  'jira.webhooks.list': ['read:jira-work', 'manage:jira-webhook'],
-  'jira.webhooks.register': ['read:jira-work', 'manage:jira-webhook'],
-  'jira.webhooks.delete': ['read:jira-work', 'manage:jira-webhook'],
+  // GET    /rest/api/3/webhook
+  //   x-atlassian-oauth2-scopes Beta: read:webhook:jira, read:jql:jira
+  // POST   /rest/api/3/webhook
+  //   x-atlassian-oauth2-scopes Beta: read:field:jira, read:project:jira, write:webhook:jira
+  // DELETE /rest/api/3/webhook
+  //   x-atlassian-oauth2-scopes Beta: delete:webhook:jira
+  'jira.webhooks.list': ['read:jql:jira', 'read:webhook:jira'],
+  'jira.webhooks.register': ['read:field:jira', 'read:project:jira', 'write:webhook:jira'],
+  'jira.webhooks.delete': ['delete:webhook:jira'],
 
   // ── Jira — JQL ───────────────────────────────────────────────────────────────
-  // GET  /rest/api/3/jql/autocompletedata            → OAuth2: ['read:jira-work']
-  // POST /rest/api/3/jql/parse                       → OAuth2: ['read:jira-work']
-  // POST /rest/api/3/jql/sanitize                    → OAuth2: ['manage:jira-configuration']
-  // GET  /rest/api/3/jql/autocompletedata/suggestions→ OAuth2: ['read:jira-work']
-  'jira.jql.getAutocompleteData': ['read:jira-work'],
-  'jira.jql.parse': ['read:jira-work'],
-  'jira.jql.sanitize': ['manage:jira-configuration'],
-  'jira.jql.getFieldReferenceSuggestions': ['read:jira-work'],
+  // GET  /rest/api/3/jql/autocompletedata
+  //   x-atlassian-oauth2-scopes Beta: read:field:jira
+  // POST /rest/api/3/jql/parse
+  //   x-atlassian-oauth2-scopes Beta: read:field:jira, validate:jql:jira, read:jql:jira
+  // POST /rest/api/3/jql/sanitize
+  //   x-atlassian-oauth2-scopes Beta: read:jql:jira
+  // GET  /rest/api/3/jql/autocompletedata/suggestions
+  //   x-atlassian-oauth2-scopes Beta: read:issue-details:jira
+  'jira.jql.getAutocompleteData': ['read:field:jira'],
+  'jira.jql.parse': ['read:field:jira', 'read:jql:jira', 'validate:jql:jira'],
+  'jira.jql.sanitize': ['read:jql:jira'],
+  'jira.jql.getFieldReferenceSuggestions': ['read:issue-details:jira'],
 
   // ── Jira — Bulk ──────────────────────────────────────────────────────────────
-  // POST   /rest/api/3/issue/bulk                       → OAuth2: ['write:jira-work']
-  // PUT    /rest/api/3/issue/properties/{propertyKey}   → OAuth2: ['write:jira-work']
-  // DELETE /rest/api/3/issue/properties/{propertyKey}   → OAuth2: ['write:jira-work']
-  'jira.bulk.createBulk': ['write:jira-work'],
-  'jira.bulk.setPropertyBulk': ['write:jira-work'],
-  'jira.bulk.deletePropertyBulk': ['write:jira-work'],
+  // POST   /rest/api/3/issue/bulk
+  //   x-atlassian-oauth2-scopes Beta: write:issue:jira, write:comment:jira,
+  //     write:comment.property:jira, write:attachment:jira, read:issue:jira
+  // PUT    /rest/api/3/issue/properties/{propertyKey}
+  //   x-atlassian-oauth2-scopes Beta: read:jira-expressions:jira, write:issue.property:jira
+  // DELETE /rest/api/3/issue/properties/{propertyKey}
+  //   x-atlassian-oauth2-scopes Beta: delete:issue.property:jira
+  'jira.bulk.createBulk': [
+    'read:issue:jira',
+    'write:attachment:jira',
+    'write:comment.property:jira',
+    'write:comment:jira',
+    'write:issue:jira',
+  ],
+  'jira.bulk.setPropertyBulk': ['read:jira-expressions:jira', 'write:issue.property:jira'],
+  'jira.bulk.deletePropertyBulk': ['delete:issue.property:jira'],
 
   // ── Jira — Workflows ─────────────────────────────────────────────────────────
-  // GET /rest/api/3/workflow/search → OAuth2: ['manage:jira-project']
-  // GET /rest/api/3/workflow/search → OAuth2: ['manage:jira-project']
-  'jira.workflows.list': ['manage:jira-project'],
-  'jira.workflows.get': ['manage:jira-project'],
+  // GET /rest/api/3/workflow/search
+  //   x-atlassian-oauth2-scopes Beta: read:group:jira, read:issue-security-level:jira,
+  //     read:project-role:jira, read:screen:jira, read:status:jira, read:user:jira,
+  //     read:workflow:jira, read:webhook:jira, read:avatar:jira, read:project-category:jira,
+  //     read:project:jira
+  'jira.workflows.list': [
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:issue-security-level:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:screen:jira',
+    'read:status:jira',
+    'read:user:jira',
+    'read:webhook:jira',
+    'read:workflow:jira',
+  ],
+  'jira.workflows.get': [
+    'read:avatar:jira',
+    'read:group:jira',
+    'read:issue-security-level:jira',
+    'read:project-category:jira',
+    'read:project-role:jira',
+    'read:project:jira',
+    'read:screen:jira',
+    'read:status:jira',
+    'read:user:jira',
+    'read:webhook:jira',
+    'read:workflow:jira',
+  ],
 
   // ── Jira — Labels ────────────────────────────────────────────────────────────
-  // GET /rest/api/3/label → OAuth2: ['read:jira-work']
-  'jira.labels.list': ['read:jira-work'],
+  // GET /rest/api/3/label
+  //   x-atlassian-oauth2-scopes Beta: read:label:jira
+  'jira.labels.list': ['read:label:jira'],
 };
 
 /**
@@ -315,7 +708,7 @@ const OPERATION_SCOPES: Readonly<Record<string, readonly AtlassianScope[]>> = {
  *
  * @example
  * detectRequiredScopes(['jira.issues.get', 'confluence.pages.create'])
- * // → ['read:jira-work', 'write:page:confluence']
+ * // → ['read:issue:jira', 'read:issue-meta:jira', ..., 'write:page:confluence']
  */
 export function detectRequiredScopes(operations: readonly string[]): AtlassianScope[] {
   const scopeSet = new Set<AtlassianScope>();
@@ -369,19 +762,76 @@ const KNOWN_SCOPE_CATALOG: Record<AtlassianScope, true> = {
   // Jira Software granular
   'read:board-scope:jira-software': true,
   'read:issue-details:jira': true,
-  'read:project:jira': true,
   'read:sprint:jira-software': true,
   'write:sprint:jira-software': true,
   'delete:sprint:jira-software': true,
   'read:jql:jira': true,
-  // Jira Platform classic
-  'read:jira-work': true,
-  'write:jira-work': true,
-  'manage:jira-project': true,
-  'manage:jira-configuration': true,
-  'read:jira-user': true,
-  'manage:jira-webhook': true,
-  'manage:jira-data-provider': true,
+  // Jira Platform granular (Beta) — Issues
+  'read:issue:jira': true,
+  'read:issue-meta:jira': true,
+  'read:issue-security-level:jira': true,
+  'read:issue.vote:jira': true,
+  'read:issue.changelog:jira': true,
+  'read:field-configuration:jira': true,
+  'write:issue:jira': true,
+  'write:issue.property:jira': true,
+  'delete:issue:jira': true,
+  // Jira Platform granular (Beta) — Projects / common lookup
+  'read:project:jira': true,
+  'read:project.property:jira': true,
+  'read:project-category:jira': true,
+  'read:project-version:jira': true,
+  'read:project.component:jira': true,
+  'read:issue-type:jira': true,
+  'read:issue-type-hierarchy:jira': true,
+  'read:application-role:jira': true,
+  'read:group:jira': true,
+  'read:user:jira': true,
+  'read:user.property:jira': true,
+  'read:avatar:jira': true,
+  'read:status:jira': true,
+  // Jira Platform granular (Beta) — Search
+  'read:audit-log:jira': true,
+  'read:field:jira': true,
+  'read:field.default-value:jira': true,
+  'read:field.option:jira': true,
+  // Jira Platform granular (Beta) — Comments
+  'read:comment:jira': true,
+  'read:comment.property:jira': true,
+  'read:project-role:jira': true,
+  'write:comment:jira': true,
+  'write:comment.property:jira': true,
+  'delete:comment:jira': true,
+  'delete:comment.property:jira': true,
+  // Jira Platform granular (Beta) — Attachments
+  'read:attachment:jira': true,
+  'write:attachment:jira': true,
+  'delete:attachment:jira': true,
+  // Jira Platform granular (Beta) — Dashboards
+  'read:dashboard:jira': true,
+  'write:dashboard:jira': true,
+  'delete:dashboard:jira': true,
+  // Jira Platform granular (Beta) — Filters
+  'read:filter:jira': true,
+  'write:filter:jira': true,
+  'delete:filter:jira': true,
+  // Jira Platform granular (Beta) — Fields
+  'write:field:jira': true,
+  'delete:field:jira': true,
+  // Jira Platform granular (Beta) — Webhooks
+  'read:webhook:jira': true,
+  'write:webhook:jira': true,
+  'delete:webhook:jira': true,
+  // Jira Platform granular (Beta) — JQL
+  'validate:jql:jira': true,
+  'read:jira-expressions:jira': true,
+  // Jira Platform granular (Beta) — Bulk issue properties
+  'delete:issue.property:jira': true,
+  // Jira Platform granular (Beta) — Workflows
+  'read:workflow:jira': true,
+  'read:screen:jira': true,
+  // Jira Platform granular (Beta) — Labels
+  'read:label:jira': true,
 };
 
 /** The complete set of well-known Atlassian Cloud OAuth 2.0 scope strings. */
@@ -408,8 +858,8 @@ export interface ScopeValidationResult {
  * @returns {@link ScopeValidationResult} with `valid` and `unknown` partitions.
  *
  * @example
- * validateScopes(['read:jira-work', 'write:made-up'])
- * // → { valid: ['read:jira-work'], unknown: ['write:made-up'] }
+ * validateScopes(['read:issue:jira', 'write:made-up'])
+ * // → { valid: ['read:issue:jira'], unknown: ['write:made-up'] }
  */
 export function validateScopes(scopes: readonly string[]): ScopeValidationResult {
   const valid: AtlassianScope[] = [];
