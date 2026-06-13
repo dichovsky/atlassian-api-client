@@ -41,10 +41,13 @@ export interface SetDefaultPriorityData {
 export interface MovePriorityData {
   /** IDs of the priorities to reorder. */
   readonly ids: string[];
-  /** After: the priority ID after which the moved items are placed; mutually exclusive with `before`. */
+  /** After: the priority ID after which the moved items are placed; mutually exclusive with `position`. */
   readonly after?: string;
-  /** Before: the priority ID before which the moved items are placed; mutually exclusive with `after`. */
-  readonly before?: string;
+  /**
+   * Position: a named position to move priorities to ("First", "Last", etc.).
+   * Required if `after` isn't provided. Spec: ReorderIssuePriorities.position.
+   */
+  readonly position?: string;
 }
 
 /** Query parameters for GET /rest/api/3/priority/search. */
@@ -167,15 +170,15 @@ export class PrioritiesResource {
     if (data.ids === undefined || data.ids.length === 0) {
       throw new ValidationError('priorities.move requires at least one id (--ids)');
     }
-    if (data.after === undefined && data.before === undefined) {
-      throw new ValidationError('priorities.move requires either --after or --before');
+    if (data.after === undefined && data.position === undefined) {
+      throw new ValidationError('priorities.move requires either --after or --position');
     }
-    if (data.after !== undefined && data.before !== undefined) {
-      throw new ValidationError('priorities.move accepts either --after or --before, not both');
+    if (data.after !== undefined && data.position !== undefined) {
+      throw new ValidationError('priorities.move accepts either --after or --position, not both');
     }
     const body: Record<string, unknown> = { ids: data.ids };
     if (data.after !== undefined) body['after'] = data.after;
-    if (data.before !== undefined) body['before'] = data.before;
+    if (data.position !== undefined) body['position'] = data.position;
 
     await this.transport.request<undefined>({
       method: 'PUT',

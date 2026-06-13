@@ -12098,19 +12098,22 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ moved: true });
     });
 
-    it('priorities move with before flag', async () => {
+    it('priorities move with position flag (B1053: spec uses position not before)', async () => {
       jiraPrioritiesMock.move.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('priorities', 'move', [], { ids: '1', before: '3' }), GLOBALS);
-      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], before: '3' });
+      await executeJiraCommand(
+        cmd('priorities', 'move', [], { ids: '1', position: 'First' }),
+        GLOBALS,
+      );
+      expect(jiraPrioritiesMock.move).toHaveBeenCalledWith({ ids: ['1'], position: 'First' });
     });
 
-    it('priorities move rejects both --after and --before', async () => {
+    it('priorities move rejects both --after and --position', async () => {
       await expect(
         executeJiraCommand(
-          cmd('priorities', 'move', [], { ids: '1', after: '2', before: '3' }),
+          cmd('priorities', 'move', [], { ids: '1', after: '2', position: 'Last' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('priorities move accepts either --after or --before, not both');
+      ).rejects.toThrow('priorities move accepts either --after or --position, not both');
       expect(jiraPrioritiesMock.move).not.toHaveBeenCalled();
     });
 
@@ -19662,26 +19665,30 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ moved: true });
     });
 
-    it('resolutions move with before flag', async () => {
+    it('resolutions move with position flag (B1053: spec uses position not before)', async () => {
       jiraResolutionsMock.moveResolutions.mockResolvedValue(undefined);
-      await executeJiraCommand(cmd('resolutions', 'move', [], { ids: '1', before: '3' }), GLOBALS);
+      await executeJiraCommand(
+        cmd('resolutions', 'move', [], { ids: '1', position: 'Last' }),
+        GLOBALS,
+      );
       expect(jiraResolutionsMock.moveResolutions).toHaveBeenCalledWith({
         ids: ['1'],
-        before: '3',
+        position: 'Last',
       });
     });
 
-    it('resolutions move rejects both --after and --before', async () => {
+    it('resolutions move rejects both --after and --position', async () => {
       await expect(
         executeJiraCommand(
-          cmd('resolutions', 'move', [], { ids: '1', after: '2', before: '3' }),
+          cmd('resolutions', 'move', [], { ids: '1', after: '2', position: 'First' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('resolutions move accepts either --after or --before, not both');
+      ).rejects.toThrow('resolutions move accepts either --after or --position, not both');
       expect(jiraResolutionsMock.moveResolutions).not.toHaveBeenCalled();
     });
 
-    it('resolutions search calls client.resolutions.search', async () => {
+    it('resolutions search calls client.resolutions.search (B1053: no queryString param)', async () => {
+      // Spec GET /resolution/search: startAt, maxResults, id, onlyDefault only (no queryString).
       const page = { values: [], startAt: 0, maxResults: 50, isLast: true };
       jiraResolutionsMock.search.mockResolvedValue(page);
       const result = await executeJiraCommand(
@@ -19690,7 +19697,6 @@ describe('executeJiraCommand', () => {
           'max-results': '10',
           ids: '1,2',
           'only-default': true,
-          'query-string': 'Fix',
         }),
         GLOBALS,
       );
@@ -19699,7 +19705,6 @@ describe('executeJiraCommand', () => {
         maxResults: 10,
         id: ['1', '2'],
         onlyDefault: true,
-        queryString: 'Fix',
       });
       expect(result).toEqual(page);
     });

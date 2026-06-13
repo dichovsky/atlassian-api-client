@@ -272,14 +272,16 @@ describe('PrioritiesResource', () => {
       });
     });
 
-    it('calls PUT /priority/move with ids and before', async () => {
+    it('calls PUT /priority/move with ids and position (B1053: spec uses position not before)', async () => {
+      // Spec: ReorderIssuePriorities schema has after/ids/position — no `before`.
       transport.respondWith(undefined, 204);
 
-      await priorities.move({ ids: ['1', '2'], before: '0' });
+      await priorities.move({ ids: ['1', '2'], position: 'First' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['before']).toBe('0');
+      expect(body['position']).toBe('First');
       expect(body).not.toHaveProperty('after');
+      expect(body).not.toHaveProperty('before');
     });
 
     it('throws ValidationError when ids is empty array', async () => {
@@ -288,14 +290,14 @@ describe('PrioritiesResource', () => {
       );
     });
 
-    it('throws ValidationError when both after and before are missing', async () => {
+    it('throws ValidationError when both after and position are missing', async () => {
       await expect(priorities.move({ ids: ['1'] })).rejects.toBeInstanceOf(ValidationError);
     });
 
-    it('throws ValidationError when both after and before are provided', async () => {
-      await expect(priorities.move({ ids: ['1'], after: '2', before: '3' })).rejects.toBeInstanceOf(
-        ValidationError,
-      );
+    it('throws ValidationError when both after and position are provided', async () => {
+      await expect(
+        priorities.move({ ids: ['1'], after: '2', position: 'Last' }),
+      ).rejects.toBeInstanceOf(ValidationError);
     });
   });
 

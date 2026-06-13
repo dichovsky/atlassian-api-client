@@ -17,7 +17,7 @@ atlas jira priorities delete <id>
 atlas jira priorities delete <id> --replace-with <other-id>
 atlas jira priorities set-default --id <id>
 atlas jira priorities move --ids 10001,10002 --after 10000
-atlas jira priorities move --ids 10001,10002 --before 10003
+atlas jira priorities move --ids 10001,10002 --position First
 atlas jira priorities search --priority-name High
 atlas jira priorities search --ids 10001,10002 --max-results 25
 atlas jira statuses list --ids 10001,10002
@@ -120,20 +120,20 @@ atlas jira status-category get done
 
 Issue resolution management (B931, B712-B718). `list` is deprecated by Atlassian — prefer `search`.
 
-| Action        | Positional | Required flags                            | Optional flags                                                             |
-| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------------------------- |
-| `list`        | —          | —                                         | — (deprecated; no filtering)                                               |
-| `get`         | `<id>`     | —                                         | —                                                                          |
-| `create`      | —          | `--name`                                  | `--description`                                                            |
-| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                                          |
-| `delete`      | `<id>`     | —                                         | `--replace-with`                                                           |
-| `set-default` | `<id>`     | —                                         | —                                                                          |
-| `move`        | —          | `--ids`                                   | `--after` or `--before`                                                    |
-| `search`      | —          | —                                         | `--query-string`, `--only-default`, `--start-at`, `--max-results`, `--ids` |
+| Action        | Positional | Required flags                            | Optional flags                                           |
+| ------------- | ---------- | ----------------------------------------- | -------------------------------------------------------- |
+| `list`        | —          | —                                         | — (deprecated; no filtering)                             |
+| `get`         | `<id>`     | —                                         | —                                                        |
+| `create`      | —          | `--name`                                  | `--description`                                          |
+| `update`      | `<id>`     | at least one of `--name`, `--description` | —                                                        |
+| `delete`      | `<id>`     | —                                         | `--replace-with`                                         |
+| `set-default` | `<id>`     | —                                         | —                                                        |
+| `move`        | —          | `--ids`                                   | `--after` or `--position`                                |
+| `search`      | —          | —                                         | `--only-default`, `--start-at`, `--max-results`, `--ids` |
 
 - `--ids` is comma-separated (for `move` and `search`).
 - `--replace-with` is the ID of the replacement resolution when deleting a resolution that is in use.
-- `--after` / `--before` for `move`: the ID of the resolution after/before which the moved items are placed (mutually exclusive).
+- `--after` / `--position` for `move`: use `--after <id>` to place after a specific resolution, or `--position <First|Last>` for a named position (mutually exclusive).
 - `--only-default`: boolean flag; when set only the default resolution is returned.
 
 ```sh
@@ -145,8 +145,9 @@ atlas jira resolutions update 10001 --name "Fixed" --description "Issue was fixe
 atlas jira resolutions delete 10001 --replace-with 10000
 atlas jira resolutions set-default 10001
 atlas jira resolutions move --ids 10001,10002 --after 10000
-atlas jira resolutions search --query-string "Won't" --max-results 10
+atlas jira resolutions move --ids 10001,10002 --position First
 atlas jira resolutions search --only-default
+atlas jira resolutions search --max-results 10
 ```
 
 ## `statuses` (extended — B777-B784)
