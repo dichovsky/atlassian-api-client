@@ -208,7 +208,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 
 | Action                        | Positional     | Required flags                                               | Optional flags                                                                                                                                                                                                                                                                                          |
 | ----------------------------- | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list`                        | —              | —                                                            | `--space-id`, `--limit`, `--cursor`                                                                                                                                                                                                                                                                     |
+| `list`                        | —              | —                                                            | `--space-id`, `--title`, `--status`, `--sort`, `--body-format`, `--limit`, `--cursor`                                                                                                                                                                                                                   |
 | `get`                         | `<blogPostId>` | —                                                            | `--body-format`, `--get-draft`, `--status`, `--historical-version`, `--include-labels`, `--include-properties`, `--include-operations`, `--include-likes`, `--include-versions`, `--include-version`, `--include-favorited-by-current-user-status`, `--include-webresources`, `--include-collaborators` |
 | `create`                      | —              | `--space-id`, `--title`                                      | `--body`                                                                                                                                                                                                                                                                                                |
 | `update`                      | `<blogPostId>` | `--version-number`, `--title`                                | `--body`                                                                                                                                                                                                                                                                                                |
@@ -234,6 +234,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 | `version`                     | `<blogPostId>` | `--version-number`                                           | —                                                                                                                                                                                                                                                                                                       |
 
 - Property `--value` is parsed as JSON when possible, falling back to the raw string (same semantics as `app upsert-property`). `update-property --version-number` must be exactly one greater than the property's current version (Confluence enforces optimistic concurrency; mismatches return 409).
+- `list --sort` accepts `BlogPostSortOrder`: `id`, `-id`, `created-date`, `-created-date`, `modified-date`, `-modified-date`. `--status` is `current`, `draft`, `trashed`, `deleted`, or `historical`. `--body-format` accepts `storage` or `atlas_doc_format`. `--title` filters by exact title.
 - `get` `--body-format` accepts `storage`, `atlas_doc_format`, `view`, `export_view`, `anonymous_export_view`, `styled_view`, or `editor` (spec `PrimaryBodyRepresentationSingle`). `--status` is a comma-separated subset of `current,trashed,deleted,historical,draft`. `--historical-version` selects a specific past version (positive integer); omit for the latest. Boolean `--include-*` flags ask the server to inline an extra sub-resource block (each capped server-side at 50 with a `_links.next` pointer for the full collection); leaving them unset keeps the payload minimal. `--get-draft` retrieves the draft revision when present.
 - `attachments --sort` accepts `AttachmentSortOrder`: `created-date`, `-created-date`, `modified-date`, `-modified-date`. `--status` is a comma-separated subset of `current,archived,trashed` (server default is `current,archived`). `--media-type` filters by MIME, `--filename` by exact name.
 - `get-classification-level --status` accepts `current` (default), `draft`, or `archived`. `update-classification-level --level-id` sends the chosen classification id; the server always treats the request as `status: current`. `reset-classification-level` falls back to the space default and accepts no flags.
@@ -248,6 +249,7 @@ The remaining actions wrap the `/blogposts/{id}/…` sub-resource family — con
 ```sh
 # Lifecycle
 atlas confluence blog-posts list --space-id 654321 --limit 25
+atlas confluence blog-posts list --space-id 654321 --sort -created-date --status current --body-format storage
 atlas confluence blog-posts get 99999
 atlas confluence blog-posts get 99999 --include-labels --include-likes --body-format atlas_doc_format
 
@@ -281,20 +283,22 @@ atlas confluence blog-posts version 99999 --version-number 2
 
 ## `comments`
 
-| Action            | Positional    | Required flags                                          | Optional flags                                  |
-| ----------------- | ------------- | ------------------------------------------------------- | ----------------------------------------------- |
-| `list`            | —             | one of `--page-id` or `--blog-post-id`                  | `--limit`, `--cursor`, `--comment-type`         |
-| `get`             | `<commentId>` | —                                                       | `--comment-type`                                |
-| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | `--comment-type`                                |
-| `update`          | `<commentId>` | `--body`, `--version-number`                            | `--comment-type`, `--resolved`, `--no-resolved` |
-| `delete`          | `<commentId>` | —                                                       | `--comment-type`                                |
-| `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`        |
-| `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                               |
-| `get-property`    | `<commentId>` | `--property-id`                                         | —                                               |
-| `update-property` | `<commentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                               |
-| `delete-property` | `<commentId>` | `--property-id`                                         | —                                               |
+| Action            | Positional    | Required flags                                          | Optional flags                                           |
+| ----------------- | ------------- | ------------------------------------------------------- | -------------------------------------------------------- |
+| `list`            | —             | `--page-id`                                             | `--limit`, `--cursor`, `--body-format`, `--comment-type` |
+| `get`             | `<commentId>` | —                                                       | `--comment-type`                                         |
+| `create`          | —             | one of `--page-id` or `--blog-post-id`, `--body`        | `--comment-type`                                         |
+| `update`          | `<commentId>` | `--body`, `--version-number`                            | `--comment-type`, `--resolved`, `--no-resolved`          |
+| `delete`          | `<commentId>` | —                                                       | `--comment-type`                                         |
+| `list-properties` | `<commentId>` | —                                                       | `--key`, `--sort`, `--cursor`, `--limit`                 |
+| `create-property` | `<commentId>` | `--key`, `--value`                                      | —                                                        |
+| `get-property`    | `<commentId>` | `--property-id`                                         | —                                                        |
+| `update-property` | `<commentId>` | `--property-id`, `--key`, `--value`, `--version-number` | —                                                        |
+| `delete-property` | `<commentId>` | `--property-id`                                         | —                                                        |
 
 - `--comment-type` accepts `footer` (top-level) or `inline`. Default is `footer`.
+- `list` is page-scoped (`GET /pages/{id}/footer-comments` or `/pages/{id}/inline-comments`); it cannot list blog-post comments. To list comments on a blog post, use `atlas confluence blog-posts footer-comments <blogPostId>` or `blog-posts inline-comments <blogPostId>`. `--body-format` accepts `storage` or `atlas_doc_format`.
+- `create` requires exactly one of `--page-id` or `--blog-post-id`; supplying neither or both is an error. `--body` is the comment text (sent with `representation: "storage"`).
 - `update` issues `PUT /footer-comments/{id}` (footer) or `PUT /inline-comments/{id}` (inline). `--body` is sent with `representation: "storage"`. `--version-number` must be exactly one greater than the comment's current version (Confluence enforces optimistic concurrency; mismatches return 409). For inline comments, `--resolved` marks the thread resolved (`resolved: true`) and `--no-resolved` reopens it (`resolved: false`); omitting both flags leaves the server-side resolution state untouched. `--resolved` and `--no-resolved` are mutually exclusive; supplying both is an error.
 - The `*-property` actions hit `/comments/{comment-id}/properties[/{property-id}]` and work for both footer and inline comments — Confluence resolves the comment by id regardless of type, so no `--comment-type` flag is needed.
 - `--sort` on `list-properties` accepts `key` or `-key`.

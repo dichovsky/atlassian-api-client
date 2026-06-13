@@ -2797,6 +2797,39 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
+    // B1043: blog-posts list — all new flags wired (cursor/title/status/sort/body-format)
+    it('blog-posts list forwards cursor, title, status, sort, and body-format (B1043)', async () => {
+      // Arrange
+      confluenceBlogPostsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'list', [], {
+        cursor: 'tok-next',
+        title: 'My Post',
+        status: 'current',
+        sort: '-created-date',
+        'body-format': 'storage',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceBlogPostsMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: 'tok-next',
+          title: 'My Post',
+          status: 'current',
+          sort: '-created-date',
+          'body-format': 'storage',
+        }),
+      );
+    });
+
+    it('blog-posts list throws on invalid --sort value (B1043)', async () => {
+      confluenceBlogPostsMock.list.mockResolvedValue({ results: [] });
+      const parsed = cmd('blog-posts', 'list', [], { sort: 'not-valid' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('sort');
+    });
+
     it('blog-posts get calls client.blogPosts.get', async () => {
       // Arrange
       confluenceBlogPostsMock.get.mockResolvedValue({ id: 'bp-1' });
@@ -3513,7 +3546,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.listFooter).toHaveBeenCalledWith('p-1');
+      expect(confluenceCommentsMock.listFooter).toHaveBeenCalledWith('p-1', expect.any(Object));
     });
 
     it('comments list with comment-type=inline calls listInline', async () => {
@@ -3528,7 +3561,7 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
-      expect(confluenceCommentsMock.listInline).toHaveBeenCalledWith('p-1');
+      expect(confluenceCommentsMock.listInline).toHaveBeenCalledWith('p-1', expect.any(Object));
     });
 
     it('comments list throws when page-id is missing', async () => {
@@ -3611,6 +3644,84 @@ describe('executeConfluenceCommand', () => {
     it('comments create throws when body is missing', async () => {
       const parsed = cmd('comments', 'create', [], { 'page-id': 'p-1' });
       await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('--body');
+    });
+
+    // B1043: comments list — limit/cursor/body-format wired
+    it('comments list (footer) forwards limit, cursor, and body-format (B1043)', async () => {
+      // Arrange
+      confluenceCommentsMock.listFooter.mockResolvedValue({ results: [] });
+      const parsed = cmd('comments', 'list', [], {
+        'page-id': 'p-1',
+        limit: '10',
+        cursor: 'c-tok',
+        'body-format': 'storage',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.listFooter).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({ limit: 10, cursor: 'c-tok', 'body-format': 'storage' }),
+      );
+    });
+
+    it('comments list (inline) forwards limit and cursor (B1043)', async () => {
+      // Arrange
+      confluenceCommentsMock.listInline.mockResolvedValue({ results: [] });
+      const parsed = cmd('comments', 'list', [], {
+        'page-id': 'p-1',
+        'comment-type': 'inline',
+        limit: '5',
+        cursor: 'i-tok',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.listInline).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({ limit: 5, cursor: 'i-tok' }),
+      );
+    });
+
+    // B1043: comments create — blog-post-id wired
+    it('comments create with --blog-post-id sends blogPostId in payload (B1043)', async () => {
+      // Arrange
+      confluenceCommentsMock.createFooter.mockResolvedValue({ id: 'c-new' });
+      const parsed = cmd('comments', 'create', [], {
+        'blog-post-id': 'bp-99',
+        body: 'A blog comment',
+      });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceCommentsMock.createFooter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blogPostId: 'bp-99',
+          body: { representation: 'storage', value: 'A blog comment' },
+        }),
+      );
+    });
+
+    it('comments create throws when neither --page-id nor --blog-post-id given (B1043)', async () => {
+      const parsed = cmd('comments', 'create', [], { body: 'text' });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
+        '--page-id or --blog-post-id',
+      );
+    });
+
+    it('comments create throws when both --page-id and --blog-post-id given (B1043)', async () => {
+      const parsed = cmd('comments', 'create', [], {
+        'page-id': 'p-1',
+        'blog-post-id': 'bp-1',
+        body: 'text',
+      });
+      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow('only one of');
     });
 
     it('comments delete (footer) calls deleteFooter and returns { deleted: true }', async () => {
@@ -4397,6 +4508,22 @@ describe('executeConfluenceCommand', () => {
     it('labels list throws when page-id is missing', async () => {
       await expect(executeConfluenceCommand(cmd('labels', 'list'), GLOBALS)).rejects.toThrow(
         '--page-id',
+      );
+    });
+
+    // B1043: labels list — cursor wired
+    it('labels list forwards cursor to listForPage (B1043)', async () => {
+      // Arrange
+      confluenceLabelsMock.listForPage.mockResolvedValue({ results: [] });
+      const parsed = cmd('labels', 'list', [], { 'page-id': 'p-1', cursor: 'lbl-tok' });
+
+      // Act
+      await executeConfluenceCommand(parsed, GLOBALS);
+
+      // Assert
+      expect(confluenceLabelsMock.listForPage).toHaveBeenCalledWith(
+        'p-1',
+        expect.objectContaining({ cursor: 'lbl-tok' }),
       );
     });
 
