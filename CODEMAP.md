@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "18499916693cc972e0e219ccea32d4723bf07d87882e2bc8723e45cd18c478c1",
+  "sourceHash": "2d4785175b662aca6853a6a90f2344e243f3492ccf58692c2eb3b604b5369dad",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -457,7 +457,7 @@
       "name": "CircuitBreakerOptions",
       "kind": "interface",
       "file": "src/core/circuit-breaker.ts",
-      "line": 11,
+      "line": 12,
       "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
       "jsdoc": "Options for the circuit breaker middleware.",
       "typeOnly": true
@@ -3488,7 +3488,7 @@
       "name": "createCircuitBreakerMiddleware",
       "kind": "function",
       "file": "src/core/circuit-breaker.ts",
-      "line": 115,
+      "line": 120,
       "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
       "jsdoc": "Creates an opt-in circuit breaker middleware."
     },
@@ -12708,7 +12708,7 @@
         {
           "name": "CircuitBreakerOptions",
           "kind": "interface",
-          "line": 11,
+          "line": 12,
           "exported": true,
           "signature": "export interface CircuitBreakerOptions { readonly failureThreshold?: number; readonly resetTimeoutMs?: number; }",
           "jsdoc": "Options for the circuit breaker middleware."
@@ -12716,13 +12716,13 @@
         {
           "name": "State",
           "kind": "type",
-          "line": 28,
+          "line": 30,
           "signature": "type State = 'CLOSED' | 'OPEN' | 'HALF_OPEN';"
         },
         {
           "name": "createCircuitBreakerMiddleware",
           "kind": "function",
-          "line": 115,
+          "line": 120,
           "exported": true,
           "signature": "export function createCircuitBreakerMiddleware(options?: CircuitBreakerOptions): Middleware",
           "jsdoc": "Creates an opt-in circuit breaker middleware."
@@ -12730,9 +12730,9 @@
         {
           "name": "isQualifyingFailure",
           "kind": "function",
-          "line": 208,
+          "line": 216,
           "signature": "function isQualifyingFailure(error: unknown): boolean",
-          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, or {@link HttpError} with a 5xx status. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
+          "jsdoc": "Returns `true` when the caught error counts as a circuit-breaker failure: {@link NetworkError}, {@link TimeoutError}, {@link HttpError} with a 5xx status, or {@link ResponseTooLargeError}. A {@link ResponseTooLargeError} signals that the upstream is blasting oversized payloads — regardless of the HTTP status on the originating response, this is upstream misbehaviour worth tripping the breaker. Everything else (4xx, abort, {@link ValidationError}, etc.) is a pass-through that does not affect the failure counter."
         }
       ],
       "imports": [
