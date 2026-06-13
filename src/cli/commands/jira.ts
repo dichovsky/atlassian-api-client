@@ -2638,9 +2638,12 @@ async function executeRemoteLink(client: JiraClient, cmd: ParsedCommand): Promis
 }
 
 async function executeServiceRegistry(client: JiraClient, cmd: ParsedCommand): Promise<unknown> {
+  const opts = cmd.options;
   switch (cmd.action) {
     case 'get':
-      return client.serviceRegistry.get();
+      return client.serviceRegistry.get(
+        splitCsvIds(requireOpt(opts['service-ids'], '--service-ids')),
+      );
     default:
       throw new Error(`Unknown service-registry action: ${cmd.action}. Actions: get`);
   }
