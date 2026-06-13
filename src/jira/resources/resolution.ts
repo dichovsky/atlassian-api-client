@@ -51,10 +51,13 @@ export interface SetDefaultResolutionData {
 export interface MoveResolutionData {
   /** IDs of the resolutions to reorder, in the desired new order. */
   readonly ids: string[];
-  /** After: the resolution ID after which the moved items are placed; mutually exclusive with `before`. */
+  /** After: the resolution ID after which the moved items are placed; mutually exclusive with `position`. */
   readonly after?: string;
-  /** Before: the resolution ID before which the moved items are placed; mutually exclusive with `after`. */
-  readonly before?: string;
+  /**
+   * Position: a named position to move resolutions to ("First", "Last", etc.).
+   * Required if `after` isn't provided. Spec: ReorderIssueResolutionsRequest.position.
+   */
+  readonly position?: string;
 }
 
 /** Query parameters for GET /rest/api/3/resolution/search. */
@@ -67,8 +70,6 @@ export interface SearchResolutionsParams {
   readonly id?: string[];
   /** When true, only the default resolution is returned. */
   readonly onlyDefault?: boolean;
-  /** Text to match against resolution name. */
-  readonly queryString?: string;
 }
 
 /**
@@ -192,15 +193,15 @@ export class ResolutionResource {
     if (data.ids === undefined || data.ids.length === 0) {
       throw new ValidationError('moveResolutions requires at least one id (--ids)');
     }
-    if (data.after === undefined && data.before === undefined) {
-      throw new ValidationError('moveResolutions requires either --after or --before');
+    if (data.after === undefined && data.position === undefined) {
+      throw new ValidationError('moveResolutions requires either --after or --position');
     }
-    if (data.after !== undefined && data.before !== undefined) {
-      throw new ValidationError('moveResolutions accepts either --after or --before, not both');
+    if (data.after !== undefined && data.position !== undefined) {
+      throw new ValidationError('moveResolutions accepts either --after or --position, not both');
     }
     const body: Record<string, unknown> = { ids: data.ids };
     if (data.after !== undefined) body['after'] = data.after;
-    if (data.before !== undefined) body['before'] = data.before;
+    if (data.position !== undefined) body['position'] = data.position;
 
     await this.transport.request<undefined>({
       method: 'PUT',
@@ -256,6 +257,5 @@ function buildSearchQuery(
   // spec), built into the path via `appendRepeatedParams` at each call site —
   // not CSV-joined here (the transport `query` map collapses duplicate keys).
   if (params?.onlyDefault !== undefined) query['onlyDefault'] = params.onlyDefault;
-  if (params?.queryString !== undefined) query['queryString'] = params.queryString;
   return query;
 }

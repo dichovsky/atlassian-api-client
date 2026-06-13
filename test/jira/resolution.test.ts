@@ -222,14 +222,16 @@ describe('ResolutionResource', () => {
       });
     });
 
-    it('calls PUT /resolution/move with ids and before', async () => {
+    it('calls PUT /resolution/move with ids and position (B1053: spec uses position not before)', async () => {
+      // Spec: ReorderIssueResolutionsRequest schema has after/ids/position — no `before`.
       transport.respondWith(undefined, 204);
 
-      await resource.moveResolutions({ ids: ['1', '2'], before: '0' });
+      await resource.moveResolutions({ ids: ['1', '2'], position: 'Last' });
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['before']).toBe('0');
+      expect(body['position']).toBe('Last');
       expect(body).not.toHaveProperty('after');
+      expect(body).not.toHaveProperty('before');
     });
 
     it('throws ValidationError when ids is empty array', async () => {
@@ -238,15 +240,15 @@ describe('ResolutionResource', () => {
       );
     });
 
-    it('throws ValidationError when both after and before are missing', async () => {
+    it('throws ValidationError when both after and position are missing', async () => {
       await expect(resource.moveResolutions({ ids: ['1'] })).rejects.toBeInstanceOf(
         ValidationError,
       );
     });
 
-    it('throws ValidationError when both after and before are provided', async () => {
+    it('throws ValidationError when both after and position are provided', async () => {
       await expect(
-        resource.moveResolutions({ ids: ['1'], after: '2', before: '3' }),
+        resource.moveResolutions({ ids: ['1'], after: '2', position: 'First' }),
       ).rejects.toBeInstanceOf(ValidationError);
     });
   });
@@ -267,7 +269,9 @@ describe('ResolutionResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('forwards all query params', async () => {
+    it('forwards all spec-defined query params (B1053: queryString removed — not in spec)', async () => {
+      // Spec GET /resolution/search: startAt, maxResults, id, onlyDefault only.
+      // queryString was never a valid param per the v3 spec.
       transport.respondWith(makePage([makeResolution('1')]));
 
       await resource.search({
@@ -275,7 +279,6 @@ describe('ResolutionResource', () => {
         maxResults: 10,
         id: ['1', '2'],
         onlyDefault: true,
-        queryString: 'Fix',
       });
 
       // `id` is a `type: array` query param emitted as repeated params built
@@ -285,8 +288,8 @@ describe('ResolutionResource', () => {
         startAt: 0,
         maxResults: 10,
         onlyDefault: true,
-        queryString: 'Fix',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('queryString');
     });
 
     it('omits empty id array', async () => {
@@ -335,14 +338,14 @@ describe('ResolutionResource', () => {
       transport.respondWith(makePage([], { isLast: true }));
 
       const results: unknown[] = [];
-      for await (const r of resource.searchAll({ queryString: 'Fix', onlyDefault: false })) {
+      for await (const r of resource.searchAll({ onlyDefault: false })) {
         results.push(r);
       }
 
       expect(transport.lastCall?.options.query).toMatchObject({
-        queryString: 'Fix',
         onlyDefault: false,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('queryString');
     });
 
     it('does not include maxResults in base query', async () => {

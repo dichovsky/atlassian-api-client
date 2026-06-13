@@ -242,7 +242,6 @@ export class UsersResource {
   async getPermissionUsers(params: GetPermissionUsersParams = {}): Promise<User[]> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.projectKey !== undefined) query['projectKey'] = params.projectKey;
-    if (params.projectUuid !== undefined) query['projectUuid'] = params.projectUuid;
     if (params.issueKey !== undefined) query['issueKey'] = params.issueKey;
     if (params.query !== undefined) query['query'] = params.query;
     if (params.permissions !== undefined) query['permissions'] = params.permissions.join(',');
@@ -351,7 +350,8 @@ export class UsersResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.query !== undefined) query['query'] = params.query;
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
-    if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    // Spec GET /user/search/query/key uses `maxResult` (singular), not `maxResults`.
+    if (params.maxResults !== undefined) query['maxResult'] = params.maxResults;
     const response = await this.transport.request<UserKeySearchQueryResult>({
       method: 'GET',
       path: `${this.baseUrl}/user/search/query/key`,

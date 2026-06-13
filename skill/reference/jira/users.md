@@ -21,7 +21,7 @@
 | `email`                    | —               | `--account-id`   | —                                                                                                                           |
 | `bulk-emails`              | —               | `--account-ids`  | —                                                                                                                           |
 | `groups`                   | —               | `--account-id`   | `--user-name`, `--key`                                                                                                      |
-| `permission-search`        | —               | —                | `--project-key`, `--project-uuid`, `--issue-key`, `--query`, `--permissions`, `--account-id`, `--start-at`, `--max-results` |
+| `permission-search`        | —               | —                | `--project-key`, `--issue-key`, `--query`, `--permissions`, `--account-id`, `--start-at`, `--max-results` |
 | `picker`                   | —               | `--query`        | `--max-results`, `--show-avatar`, `--exclude`, `--exclude-account-ids`, `--avatar-size`, `--exclude-connect-users`          |
 | `list-properties`          | —               | —                | `--user-key`, `--account-id`                                                                                                |
 | `delete-property`          | `<propertyKey>` | —                | `--user-key`, `--account-id`                                                                                                |
