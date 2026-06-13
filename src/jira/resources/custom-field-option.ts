@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /** A Jira custom field option. */
 export interface CustomFieldOption {
@@ -26,7 +27,7 @@ export class CustomFieldOptionResource {
   async get(id: string): Promise<CustomFieldOption> {
     const response = await this.transport.request<CustomFieldOption>({
       method: 'GET',
-      path: `${this.baseUrl}/customFieldOption/${encodeURIComponent(id)}`,
+      path: `${this.baseUrl}/customFieldOption/${encodePathSegment(id, 'id')}`,
     });
     return response.data;
   }

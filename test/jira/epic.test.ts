@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EpicResource } from '../../src/jira/resources/epic.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
 const SOFTWARE_BASE_URL = 'https://test.atlassian.net/rest/software/1.0';
@@ -586,5 +587,9 @@ describe('EpicResource', () => {
     expect(t.lastCall?.options.path).toBe(
       'https://test.atlassian.net/rest/software/1.0/epic/42/issue',
     );
+  });
+
+  it('rejects a path-traversal epicIdOrKey (B1052)', async () => {
+    await expect(epic.get('..')).rejects.toThrow(ValidationError);
   });
 });

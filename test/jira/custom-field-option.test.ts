@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CustomFieldOptionResource } from '../../src/jira/resources/custom-field-option.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -56,6 +57,10 @@ describe('CustomFieldOptionResource', () => {
 
       // Act / Assert
       await expect(customFieldOption.get('10001')).rejects.toThrow('not found');
+    });
+
+    it('rejects a path-traversal id (B1052)', async () => {
+      await expect(customFieldOption.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

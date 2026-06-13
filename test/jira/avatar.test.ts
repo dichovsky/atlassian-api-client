@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AvatarResource } from '../../src/jira/resources/avatar.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -68,6 +69,10 @@ describe('AvatarResource', () => {
 
       // Act / Assert
       await expect(avatar.listSystem('issuetype')).rejects.toThrow('network error');
+    });
+
+    it('rejects a path-traversal type (B1052)', async () => {
+      await expect(avatar.listSystem('..')).rejects.toThrow(ValidationError);
     });
   });
 });

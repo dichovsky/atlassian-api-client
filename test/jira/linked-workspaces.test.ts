@@ -307,4 +307,8 @@ describe('LinkedWorkspacesResource', () => {
       );
     });
   });
+
+  it('rejects a path-traversal workspaceId (B1052)', async () => {
+    await expect(resource.getSecurity('..')).rejects.toThrow(ValidationError);
+  });
 });

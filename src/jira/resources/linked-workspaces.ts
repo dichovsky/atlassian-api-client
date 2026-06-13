@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { ValidationError } from '../../core/errors.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /**
  * Response for GET /rest/operations/1.0/linkedWorkspaces.
@@ -141,7 +142,7 @@ export class LinkedWorkspacesResource {
   async getSecurity(workspaceId: string): Promise<SecurityLinkedWorkspace> {
     const response = await this.transport.request<SecurityLinkedWorkspace>({
       method: 'GET',
-      path: `${this.securityBaseUrl}/linkedWorkspaces/${encodeURIComponent(workspaceId)}`,
+      path: `${this.securityBaseUrl}/linkedWorkspaces/${encodePathSegment(workspaceId, 'workspaceId')}`,
     });
     return response.data;
   }

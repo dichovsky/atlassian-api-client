@@ -66,7 +66,7 @@ export class EpicResource {
     }
     const response = await this.transport.request<Epic>({
       method: 'GET',
-      path: `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}`,
+      path: `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}`,
     });
     return response.data;
   }
@@ -78,7 +78,7 @@ export class EpicResource {
     }
     const response = await this.transport.request<Epic>({
       method: 'POST',
-      path: `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}`,
+      path: `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}`,
       body: data,
     });
     return response.data;
@@ -103,7 +103,7 @@ export class EpicResource {
 
     const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
       method: 'GET',
-      path: `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}/issue`,
+      path: `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}/issue`,
       query,
     });
     return response.data;
@@ -124,7 +124,7 @@ export class EpicResource {
     }
     await this.transport.request<undefined>({
       method: 'POST',
-      path: `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}/issue`,
+      path: `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}/issue`,
       body: { issues },
     });
   }
@@ -142,7 +142,7 @@ export class EpicResource {
     }
     await this.transport.request<undefined>({
       method: 'PUT',
-      path: `${this.baseUrl}/epic/${encodeURIComponent(epicIdOrKey)}/rank`,
+      path: `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}/rank`,
       body: data,
     });
   }
