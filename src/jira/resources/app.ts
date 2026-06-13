@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { ValidationError } from '../../core/errors.js';
 
 /**
  * Field context configuration for an app-defined custom field.
@@ -17,16 +18,30 @@ export interface FieldContextConfiguration {
 }
 
 /**
+ * A single field-context configuration to update.
+ *
+ * Maps to the spec `ContextualConfiguration`: `id` identifies the configuration
+ * to update and is **required**; `fieldContextId` is read-only (not sent).
+ */
+export interface FieldContextConfigurationUpdate {
+  /** The ID of the configuration to update (required by the spec). */
+  readonly id: string;
+  /** The field configuration (app-defined opaque JSON). */
+  readonly configuration?: unknown;
+  /** The field value schema (app-defined opaque JSON). */
+  readonly schema?: unknown;
+}
+
+/**
  * Request body for PUT /rest/api/3/app/field/{fieldIdOrKey}/context/configuration.
  *
- * Pass the new opaque configuration (and optional schema) to set on every
- * context the field is associated with.
+ * The spec body is `CustomFieldConfigurations { configurations: ContextualConfiguration[] }`
+ * (1–1000 items, each with a required `id`). A flat `{ configuration, schema }`
+ * body omits the required `configurations` wrapper and is rejected by the server.
  */
 export interface UpdateFieldContextConfigurationData {
-  /** The new configuration payload (app-defined opaque JSON). */
-  readonly configuration?: unknown;
-  /** The new schema for the configuration payload (app-defined opaque JSON). */
-  readonly schema?: unknown;
+  /** The configurations to update (1–1000 items). */
+  readonly configurations: readonly FieldContextConfigurationUpdate[];
 }
 
 /**
@@ -193,6 +208,12 @@ export class AppResource {
     fieldIdOrKey: string,
     data: UpdateFieldContextConfigurationData,
   ): Promise<void> {
+    if (!Array.isArray(data.configurations) || data.configurations.length === 0) {
+      throw new ValidationError('configurations must be a non-empty array');
+    }
+    if (data.configurations.some((c) => typeof c.id !== 'string' || c.id.length === 0)) {
+      throw new ValidationError('each configuration requires a non-empty id');
+    }
     await this.transport.request<undefined>({
       method: 'PUT',
       path: `${this.apiBaseUrl}/app/field/${encodeURIComponent(fieldIdOrKey)}/context/configuration`,
