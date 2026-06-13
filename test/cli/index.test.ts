@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -102,6 +102,59 @@ describe('runCli unknown api', () => {
     );
     expect(code).toBe(1);
     expect(io.stdout.length).toBe(1);
+    expect(io.stdout[0]).toContain('atlas - Atlassian Cloud API CLI');
+  });
+});
+
+// B1042: runCli catch-all — never rejects, always returns an exit code
+
+describe('runCli B1042 catch-all', () => {
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns 1 (not a rejection) when --base-url is missing', async () => {
+    const io = captureIo();
+    // No credentials provided — resolveGlobalOptions will throw.
+    const code = await runCli(
+      ['node', 'atlas', 'jira', 'projects', 'list'],
+      io.out,
+      io.err,
+    );
+    // Must resolve (not reject) to 1.
+    expect(code).toBe(1);
+  });
+
+  it('returns 1 and writes a friendly message when --base-url is missing', async () => {
+    const io = captureIo();
+    const code = await runCli(
+      ['node', 'atlas', 'jira', 'projects', 'list'],
+      io.out,
+      io.err,
+    );
+    expect(code).toBe(1);
+    // printError writes to process.stderr
+    const stderrOut = (stderrSpy.mock.calls as [string, ...unknown[]][]).map((c) => c[0]).join('');
+    expect(stderrOut).toContain('Missing --base-url');
+  });
+
+  it('version still returns 0 after the try/catch wrapper', async () => {
+    const io = captureIo();
+    const code = await runCli(['node', 'atlas', '--version'], io.out, io.err, () => '0.0.1-test');
+    expect(code).toBe(0);
+    expect(io.stdout).toEqual(['atlas v0.0.1-test']);
+  });
+
+  it('help still returns 0 after the try/catch wrapper', async () => {
+    const io = captureIo();
+    const code = await runCli(['node', 'atlas', '--help'], io.out, io.err);
+    expect(code).toBe(0);
     expect(io.stdout[0]).toContain('atlas - Atlassian Cloud API CLI');
   });
 });
