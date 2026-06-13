@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "99d576552ba1add075a7996c2ad33e547c0b2febad2a8be75a9b61cba9213d5b",
+  "sourceHash": "95c399be0edc11daed02deaa92be0600829493400a6de3784ea1bf12696c350b",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3552,7 +3552,7 @@
       "name": "fetchRefreshedTokens",
       "kind": "function",
       "file": "src/core/oauth.ts",
-      "line": 267,
+      "line": 281,
       "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
       "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
     },
@@ -12556,7 +12556,7 @@
         {
           "name": "AuthProvider",
           "kind": "interface",
-          "line": 17,
+          "line": 18,
           "exported": true,
           "signature": "export interface AuthProvider { getHeaders(): Record<string, string>; }",
           "jsdoc": "Provider that produces Authorization headers for HTTP requests. @example ```ts const provider = createAuthProvider({ type: 'basic', email: 'user@example.…"
@@ -12564,59 +12564,67 @@
         {
           "name": "createAuthProvider",
           "kind": "function",
-          "line": 36,
+          "line": 37,
           "exported": true,
           "signature": "export function createAuthProvider(config: AuthConfig): AuthProvider",
           "jsdoc": "Create an {@link AuthProvider} from the given {@link AuthConfig}. @example ```ts const provider = createAuthProvider({ type: 'bearer', token: 'at&txxxxx' }…"
         },
         {
+          "name": "assertNonEmptyCredential",
+          "kind": "function",
+          "line": 59,
+          "signature": "function assertNonEmptyCredential(value: string, fieldName: string): void",
+          "jsdoc": "B1041(6): reject an absent or empty credential field with a typed {@link ValidationError} so a misconfigured client fails at construction with a clear message rather than emitting a broken `Authorization` header."
+        },
+        {
           "name": "BasicAuthProvider",
           "kind": "class",
-          "line": 44,
+          "line": 65,
           "signature": "class BasicAuthProvider implements AuthProvider",
           "members": [
             {
               "name": "headerValue",
               "kind": "property",
-              "line": 45
+              "line": 66
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 47
+              "line": 68
             },
             {
               "name": "getHeaders",
               "kind": "method",
-              "line": 52
+              "line": 73
             }
           ]
         },
         {
           "name": "BearerAuthProvider",
           "kind": "class",
-          "line": 57,
+          "line": 78,
           "signature": "class BearerAuthProvider implements AuthProvider",
           "members": [
             {
               "name": "headerValue",
               "kind": "property",
-              "line": 58
+              "line": 79
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 60
+              "line": 81
             },
             {
               "name": "getHeaders",
               "kind": "method",
-              "line": 64
+              "line": 85
             }
           ]
         }
       ],
       "imports": [
+        "./errors.js",
         "./types.js"
       ]
     },
@@ -12678,14 +12686,14 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 115,
+          "line": 138,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 123,
+          "line": 146,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],
@@ -13860,20 +13868,20 @@
         {
           "name": "resolveNonNegFiniteNumber",
           "kind": "function",
-          "line": 236,
+          "line": 250,
           "signature": "function resolveNonNegFiniteNumber( value: number | undefined, dflt: number, fieldName: string, ): number",
           "jsdoc": "Validate a non-negative finite number field on `OAuthRefreshConfig`. Used for both `retryJitterMs` and `failureCooldownMs`. `0` is accepted and documented to disable the feature; negatives, `NaN`, `Infinity`, and non-number runtime values produce `ValidationError`."
         },
         {
           "name": "injectBearerToken",
           "kind": "function",
-          "line": 248,
+          "line": 262,
           "signature": "function injectBearerToken(options: RequestOptions, token: string): RequestOptions"
         },
         {
           "name": "fetchRefreshedTokens",
           "kind": "function",
-          "line": 267,
+          "line": 281,
           "exported": true,
           "signature": "export async function fetchRefreshedTokens( config: Pick< OAuthRefreshConfig, 'clientId' | 'clientSecret' | 'tokenEndpoi…",
           "jsdoc": "Calls the token endpoint with the refresh token and returns new {@link OAuthTokens}. Exported for direct use in advanced scenarios (e.g. proactive token refresh)."
@@ -13881,21 +13889,21 @@
         {
           "name": "validateTokenEndpoint",
           "kind": "function",
-          "line": 365,
+          "line": 379,
           "signature": "function validateTokenEndpoint( configured: string | undefined, allowedHosts: readonly string[] | undefined, ): string",
           "jsdoc": "Validate a `tokenEndpoint` URL against the host allowlist and return the normalised endpoint string for downstream `fetch` calls. Throws `ValidationError` on: - malformed URL - non-HTTPS scheme - host not on the allowlist - invalid `allowedTokenEndpointHosts` entries (empty, port-bearing, whitespace, slashes, control chars, IPv6 brackets)"
         },
         {
           "name": "validateAllowedTokenEndpointHosts",
           "kind": "function",
-          "line": 406,
+          "line": 425,
           "signature": "function validateAllowedTokenEndpointHosts(hosts: readonly string[]): readonly string[]",
           "jsdoc": "Validate user-supplied `allowedTokenEndpointHosts`. Same rules as `validateAllowedHosts` in config.ts (non-empty array, non-empty strings, no port, no whitespace/slashes/control chars/IPv6 brackets). The shared character policy lives in `isInvalidBareHostChar` (atlassian-hosts.ts) so both validators stay in sync."
         },
         {
           "name": "formatBodySnippet",
           "kind": "function",
-          "line": 444,
+          "line": 463,
           "signature": "function formatBodySnippet(raw: string): string",
           "jsdoc": "Build a short diagnostic snippet of a token-endpoint response body. Truncates to 200 chars after replacing any token values with `***` so that an accidentally-echoed credential never reaches an error message or log."
         }
@@ -14407,9 +14415,16 @@
           "jsdoc": "Parse a successful response body according to the caller-supplied `responseType`."
         },
         {
+          "name": "parseJsonOrThrow",
+          "kind": "function",
+          "line": 140,
+          "signature": "function parseJsonOrThrow(text: string): unknown",
+          "jsdoc": "Parse a 2xx body as JSON, wrapping a malformed-JSON failure in the taxonomy {@link ValidationError} (B1041(2))."
+        },
+        {
           "name": "buildApiResponse",
           "kind": "function",
-          "line": 142,
+          "line": 161,
           "exported": true,
           "signature": "export function buildApiResponse( response: Response, data: unknown, rateLimit: RateLimitInfo, requestId?: string, ): Ap…",
           "jsdoc": "Assemble an {@link ApiResponse} from a successful `fetch` Response and the parsed body."
@@ -14417,28 +14432,28 @@
         {
           "name": "readBodyWithCap",
           "kind": "function",
-          "line": 173,
+          "line": 192,
           "signature": "async function readBodyWithCap(response: Response, maxBytes?: number): Promise<Uint8Array>",
           "jsdoc": "Read the response body as bytes under an optional size cap (B026)."
         },
         {
           "name": "readBodyAsText",
           "kind": "function",
-          "line": 256,
+          "line": 275,
           "signature": "async function readBodyAsText(response: Response, maxBytes?: number): Promise<string>",
           "jsdoc": "Read the response body as a UTF-8 string under an optional size cap."
         },
         {
           "name": "cancelBodyQuietly",
           "kind": "function",
-          "line": 270,
+          "line": 289,
           "signature": "async function cancelBodyQuietly(body: ReadableStream<Uint8Array> | null): Promise<void>",
           "jsdoc": "Best-effort `ReadableStream.cancel()` that never throws. Used by the content-length fast-fail path to release the socket before throwing `ResponseTooLargeError`; rejections from buggy custom streams must not mask the documented overflow contract (PR #21 review)."
         },
         {
           "name": "parseContentLength",
           "kind": "function",
-          "line": 288,
+          "line": 307,
           "signature": "function parseContentLength(value: string | null): number | undefined",
           "jsdoc": "Parse a `Content-Length` header value into a non-negative finite integer."
         }
@@ -14678,78 +14693,83 @@
               "line": 58
             },
             {
+              "name": "authHeaders",
+              "kind": "property",
+              "line": 68
+            },
+            {
               "name": "authIdentity",
               "kind": "property",
-              "line": 66
+              "line": 76
             },
             {
               "name": "requestHandler",
               "kind": "property",
-              "line": 67
+              "line": 77
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 75
+              "line": 85
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 83
+              "line": 93
             },
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 84
+              "line": 94
             },
             {
               "name": "request",
               "kind": "method",
-              "line": 125
+              "line": 139
             },
             {
               "name": "injectAuthIdentity",
               "kind": "method",
-              "line": 214
+              "line": 228
             },
             {
               "name": "executeFetch",
               "kind": "method",
-              "line": 234
+              "line": 248
             }
           ]
         },
         {
           "name": "DEFAULT_INBOUND_HEADERS",
           "kind": "variable",
-          "line": 345,
+          "line": 362,
           "signature": "const DEFAULT_INBOUND_HEADERS: readonly string[] = ['X-AREQUESTID', 'X-Request-Id'];",
           "jsdoc": "Default inbound response headers to check for a server-assigned request id (B011). `X-AREQUESTID` is Atlassian's actual header; `X-Request-Id` is the conventional RFC draft / de-facto standard fallback."
         },
         {
           "name": "captureRequestId",
           "kind": "function",
-          "line": 352,
+          "line": 369,
           "signature": "function captureRequestId(headers: Headers, candidates: readonly string[]): string | undefined",
           "jsdoc": "Read the first matching request-id header from the response. Returns the header value, or `undefined` when none of the candidates are present. `Headers.get()` is case-insensitive per the WHATWG Fetch spec."
         },
         {
           "name": "parseBodyWithTimeoutHandling",
           "kind": "function",
-          "line": 360,
+          "line": 377,
           "signature": "async function parseBodyWithTimeoutHandling<T>( parse: () => Promise<T>, timeoutSignal: AbortSignal, timeoutMs: number, …"
         },
         {
           "name": "computeAuthIdentity",
           "kind": "function",
-          "line": 386,
-          "signature": "function computeAuthIdentity(authProvider: AuthProvider): string",
+          "line": 408,
+          "signature": "function computeAuthIdentity(authHeaders: Record<string, string>): string",
           "jsdoc": "Hash the auth provider's `Authorization` header value into the short stable identifier exposed as {@link RequestOptions.authIdentity}. Uses the first 16 hex chars (64 bits) of SHA-256 — wide enough for accidental collisions to vanish in practice, narrow enough to keep cache/batch keys compact, and one-way so a logging/metrics middleware that persists `RequestOptions` never accidentally writes the credential to a log sink."
         },
         {
           "name": "assertOverrideBaseUrl",
           "kind": "function",
-          "line": 405,
+          "line": 427,
           "signature": "function assertOverrideBaseUrl(baseUrl: string, allowedHosts: readonly string[]): void",
           "jsdoc": "Validate a baseUrl override (deprecated constructor overload) against the same `allowedHosts` policy `resolveConfig` already applied to `config.baseUrl`. Without this, an override could silently relocate every relative-path request to a foreign host with the configured `Authorization` header attached. PR review of round 3."
         }

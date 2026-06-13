@@ -68,6 +68,12 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
 
   const methods = new Set<HttpMethod>(options?.methods ?? ['GET']);
   const cache = new Map<string, CacheEntry>();
+  // B1041(3): single-flight (request coalescing). Tracks the in-flight origin
+  // request per cache key so N concurrent misses for the same key share ONE
+  // call to `next` instead of stampeding the origin. Followers await the leader
+  // and receive the same response. A rejected in-flight is removed (in the
+  // leader's `finally`) so a transient failure never poisons future requests.
+  const inFlight = new Map<string, Promise<ApiResponse<unknown>>>();
 
   return async (opts, next) => {
     if (!methods.has(opts.method)) {
@@ -90,7 +96,24 @@ export function createCacheMiddleware(options?: CacheOptions): Middleware {
       cache.delete(key);
     }
 
-    const response = await next(opts);
+    // Coalesce concurrent misses: if a request for this key is already in
+    // flight, await it instead of issuing a second origin call.
+    const pending = inFlight.get(key);
+    if (pending !== undefined) {
+      return pending;
+    }
+
+    const requestPromise = next(opts);
+    inFlight.set(key, requestPromise);
+
+    let response: ApiResponse<unknown>;
+    try {
+      response = await requestPromise;
+    } finally {
+      // Always clear the in-flight slot once settled (success OR failure) so a
+      // failed request does not poison the key for future callers.
+      inFlight.delete(key);
+    }
 
     if (cache.size >= maxSize) {
       sweepExpired(cache, Date.now());

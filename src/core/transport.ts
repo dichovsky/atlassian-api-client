@@ -57,6 +57,16 @@ export class HttpTransport implements Transport {
   private readonly config: ResolvedConfig;
   private readonly authProvider: AuthProvider;
   /**
+   * Auth headers captured ONCE from `authProvider.getHeaders()` at construction
+   * (B1041(1)). Reused for both the {@link authIdentity} hash and every
+   * per-request header build so the hashed identity can never diverge from the
+   * `Authorization` value actually sent on the wire — and so a custom provider's
+   * `getHeaders()` is not invoked twice per request. The built-in providers
+   * return a stable value, so a single capture is equivalent to the prior
+   * per-request call.
+   */
+  private readonly authHeaders: Record<string, string>;
+  /**
    * Hashed identity for the configured auth provider, computed once at
    * construction. Injected into `RequestOptions.authIdentity` before the
    * middleware chain runs so cache/batch middleware can partition by tenant
@@ -96,7 +106,11 @@ export class HttpTransport implements Transport {
       this.config = config;
     }
     this.authProvider = createAuthProvider(this.config.auth);
-    this.authIdentity = computeAuthIdentity(this.authProvider);
+    // B1041(1): capture the auth headers exactly once. Both the identity hash
+    // below and the per-request `executeFetch` header merge read from this
+    // snapshot, so they cannot diverge and `getHeaders()` is never called twice.
+    this.authHeaders = this.authProvider.getHeaders();
+    this.authIdentity = computeAuthIdentity(this.authHeaders);
     this.requestHandler = createMiddlewareChain(this.config.middleware ?? [], (opts) =>
       this.executeFetch(opts),
     );
@@ -246,7 +260,10 @@ export class HttpTransport implements Transport {
     const { body, withJsonBody, binaryContentType } = buildFetchBody(options);
     const headers = buildHeaders(
       options.headers,
-      this.authProvider.getHeaders(),
+      // B1041(1): reuse the construction-time auth-header snapshot rather than
+      // re-invoking `authProvider.getHeaders()` here, so the wire credential
+      // matches the hashed `authIdentity` exactly.
+      this.authHeaders,
       withJsonBody,
       binaryContentType,
       options.authorizationOverride,
@@ -380,11 +397,16 @@ async function parseBodyWithTimeoutHandling<T>(
  * one-way so a logging/metrics middleware that persists `RequestOptions`
  * never accidentally writes the credential to a log sink.
  *
- * Returns the empty string when the provider yields no `Authorization`
+ * B1041(1): takes the construction-time auth-header snapshot (NOT the provider)
+ * so the hashed identity is derived from the exact same `Authorization` value
+ * that {@link HttpTransport.executeFetch} sends on the wire — the two can never
+ * diverge, and `getHeaders()` is invoked only once.
+ *
+ * Returns the empty string when the snapshot has no `Authorization`
  * header — caller checks for this to skip injection entirely.
  */
-function computeAuthIdentity(authProvider: AuthProvider): string {
-  const providerAuth = authProvider.getHeaders()['Authorization'];
+function computeAuthIdentity(authHeaders: Record<string, string>): string {
+  const providerAuth = authHeaders['Authorization'];
   /* c8 ignore start — defensive guard against a future auth provider
      that does not produce an Authorization header. The built-in
      providers (basic, bearer) always do. */

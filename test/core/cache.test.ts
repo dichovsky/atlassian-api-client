@@ -409,4 +409,131 @@ describe('createCacheMiddleware option validation', () => {
       'ttl must be a positive number',
     );
   });
+
+  // -------------------------------------------------------------------------
+  // B1041(3): single-flight (in-flight request coalescing)
+  // -------------------------------------------------------------------------
+  describe('single-flight coalescing (B1041)', () => {
+    /**
+     * A manually-opened gate: `promise` stays pending until `open()` is called.
+     * Lets a test hold the in-flight origin call open while concurrent requests
+     * pile up behind the same cache key.
+     */
+    function makeGate(): { promise: Promise<void>; open: () => void } {
+      let open!: () => void;
+      const promise = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { promise, open };
+    }
+
+    it('coalesces N concurrent misses for the same key into ONE origin call', async () => {
+      let callCount = 0;
+      const gate = makeGate();
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        await gate.promise; // hold the origin call open while others arrive
+        return makeResponse({ n: callCount });
+      });
+
+      const mw = createCacheMiddleware();
+
+      // Fire three concurrent requests for the same key before the first settles.
+      const p1 = mw(makeOpts(), next);
+      const p2 = mw(makeOpts(), next);
+      const p3 = mw(makeOpts(), next);
+
+      gate.open();
+      const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+
+      // Origin was hit exactly once; followers shared the leader's response.
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(r1.data).toEqual({ n: 1 });
+      expect(r2).toBe(r1);
+      expect(r3).toBe(r1);
+    });
+
+    it('does NOT coalesce concurrent misses for different keys', async () => {
+      const gate = makeGate();
+      let counter = 0;
+      const next = vi.fn(async (opts: RequestOptions): Promise<ApiResponse<unknown>> => {
+        await gate.promise;
+        return makeResponse({ path: opts.path, n: ++counter });
+      });
+      const mw = createCacheMiddleware();
+
+      const pa = mw(makeOpts({ path: '/a' }), next);
+      const pb = mw(makeOpts({ path: '/b' }), next);
+
+      gate.open();
+      await Promise.all([pa, pb]);
+
+      expect(next).toHaveBeenCalledTimes(2);
+    });
+
+    it('caches the coalesced response so a later request is served from cache', async () => {
+      const gate = makeGate();
+      let callCount = 0;
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        callCount++;
+        await gate.promise;
+        return makeResponse({ n: callCount });
+      });
+      const mw = createCacheMiddleware();
+
+      const p1 = mw(makeOpts(), next);
+      const p2 = mw(makeOpts(), next);
+      gate.open();
+      await Promise.all([p1, p2]);
+
+      // After the in-flight settles, the entry is cached: no new origin call.
+      const r3 = await mw(makeOpts(), next);
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(r3.data).toEqual({ n: 1 });
+    });
+
+    it('a failed in-flight rejects all current waiters but does NOT poison the key', async () => {
+      const gate = makeGate();
+      let attempt = 0;
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        attempt++;
+        if (attempt === 1) {
+          await gate.promise;
+          throw new Error('origin boom');
+        }
+        return makeResponse({ ok: true });
+      });
+      const mw = createCacheMiddleware();
+
+      const p1 = mw(makeOpts(), next);
+      const p2 = mw(makeOpts(), next);
+      gate.open();
+
+      // Both concurrent waiters share the single rejection.
+      await expect(p1).rejects.toThrow('origin boom');
+      await expect(p2).rejects.toThrow('origin boom');
+      expect(next).toHaveBeenCalledTimes(1);
+
+      // The key is NOT poisoned: a fresh request retries the origin and succeeds.
+      const r3 = await mw(makeOpts(), next);
+      expect(r3.data).toEqual({ ok: true });
+      expect(next).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not cache a failed response (nothing persisted on rejection)', async () => {
+      let attempt = 0;
+      const next = vi.fn(async (): Promise<ApiResponse<unknown>> => {
+        attempt++;
+        if (attempt === 1) throw new Error('first fails');
+        return makeResponse({ n: attempt });
+      });
+      const mw = createCacheMiddleware();
+
+      await expect(mw(makeOpts(), next)).rejects.toThrow('first fails');
+      // Second sequential call re-hits the origin (failure was not cached).
+      const r2 = await mw(makeOpts(), next);
+      expect(r2.data).toEqual({ n: 2 });
+      expect(next).toHaveBeenCalledTimes(2);
+    });
+  });
 });
