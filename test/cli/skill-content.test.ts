@@ -85,9 +85,7 @@ describe('SKILL.md content', () => {
     // selective-loading goal: index + the single largest domain file is smaller than
     // the full concatenated reference (an agent never loads everything).
     const largestDomain = Math.max(
-      ...JIRA_DOMAIN_FILES.map(
-        (f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8').length,
-      ),
+      ...JIRA_DOMAIN_FILES.map((f) => readFileSync(resolve(JIRA_DOMAIN_DIR, f), 'utf8').length),
     );
     expect(JIRA_INDEX.length + largestDomain).toBeLessThan(JIRA_REF.length);
   });
