@@ -294,7 +294,7 @@ atlas jira configuration update-timetracking-options --working-days-per-week 5 -
 
 - `list` calls `GET /rest/api/3/webhook` and returns a paginated list of registered webhooks for the calling app.
 - `register` calls `POST /rest/api/3/webhook`. `--webhooks` is a JSON array of `{ jqlFilter, events, fieldIdsFilter?, issuePropertyKeysFilter? }` objects.
-- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry by 30 days.
+- `refresh` calls `PUT /rest/api/3/webhook/refresh`. `--webhook-ids` is a JSON array of numeric webhook IDs (e.g. `[10000,10001]`). Extends webhook expiry and returns `{ expirationDate }` (milliseconds since epoch, int64).
 - `list-failed` calls `GET /rest/api/3/webhook/failed` and returns a page of failed webhook deliveries.
 - `delete` calls `DELETE /rest/api/3/webhook`. `--webhook-ids` is a JSON array of numeric webhook IDs to remove permanently.
 - `--after` accepts a Unix timestamp in **milliseconds** (e.g. `--after 1700000000000`). Only deliveries with a failure time after this value are returned.
