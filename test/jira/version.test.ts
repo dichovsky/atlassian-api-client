@@ -194,9 +194,12 @@ describe('VersionResource', () => {
 
     it('does NOT forward readOnly userStartDate/userReleaseDate even when provided (B1050)', async () => {
       transport.respondWith(makeVersion());
-      // Cast bypasses the fixed type; verifies the implementation strips the fields regardless
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await resource.update('10001', { userStartDate: '01/Jan/26', userReleaseDate: '01/Jun/26' } as any);
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.update('10001', {
+        userStartDate: '01/Jan/26',
+        userReleaseDate: '01/Jun/26',
+      } as unknown as Parameters<typeof resource.update>[1]);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['userStartDate']).toBeUndefined();
@@ -338,9 +341,13 @@ describe('VersionResource', () => {
 
     it('does NOT forward readOnly issueId/relatedWorkId even when provided (B1050)', async () => {
       transport.respondWith(makeRelatedWork());
-      // Cast bypasses the fixed type; verifies the implementation strips the fields regardless
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await resource.createRelatedWork('10001', { category: 'Design', issueId: 20001, relatedWorkId: 'rw-42' } as any);
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.createRelatedWork('10001', {
+        category: 'Design',
+        issueId: 20001,
+        relatedWorkId: 'rw-42',
+      } as unknown as Parameters<typeof resource.createRelatedWork>[1]);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['issueId']).toBeUndefined();
@@ -385,9 +392,13 @@ describe('VersionResource', () => {
 
     it('does NOT forward readOnly issueId/relatedWorkId even when provided (B1050)', async () => {
       transport.respondWith(makeRelatedWork());
-      // Cast bypasses the fixed type; verifies the implementation strips the fields regardless
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await resource.updateRelatedWork('10001', { category: 'Design', issueId: 20001, relatedWorkId: 'rw-1' } as any);
+      // Cast through unknown bypasses the fixed type; verifies the implementation
+      // strips the readOnly fields regardless of what a caller forces in.
+      await resource.updateRelatedWork('10001', {
+        category: 'Design',
+        issueId: 20001,
+        relatedWorkId: 'rw-1',
+      } as unknown as Parameters<typeof resource.updateRelatedWork>[1]);
 
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body['issueId']).toBeUndefined();
