@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "09eeaa25de73591ae5652bce4835bc86e9f447f3088e52a4c7fb4f5347c54348",
+  "sourceHash": "ab9b7eefe3bf39851023d6a17dde5199b37beed72d067f47f7653ebaa0d93ec4",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3583,7 +3583,7 @@
       "name": "paginateSearch",
       "kind": "function",
       "file": "src/core/pagination.ts",
-      "line": 357,
+      "line": 359,
       "signature": "export async function* paginateSearch<T>( transport: Transport, basePath: string, body: Record<string, unknown>, pageSiz…",
       "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."
     },
@@ -14056,7 +14056,7 @@
         {
           "name": "paginateSearch",
           "kind": "function",
-          "line": 357,
+          "line": 359,
           "exported": true,
           "signature": "export async function* paginateSearch<T>( transport: Transport, basePath: string, body: Record<string, unknown>, pageSiz…",
           "jsdoc": "Async generator for Jira search pagination (uses 'issues' key). Yields individual items across all pages."

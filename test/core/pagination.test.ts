@@ -384,6 +384,32 @@ describe('paginateOffset', () => {
     expect(transport.calls).toHaveLength(2);
     expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 3, maxResults: 5 });
   });
+
+  it('continues past a short page when total indicates more rows remain (#240)', async () => {
+    // total=4 is authoritative: although the page is shorter than maxResults and
+    // the server omitted isLast, `total` says more rows remain. The short-page
+    // heuristic must NOT fire — terminating here silently drops rows 3..4.
+    // (Mirrors the module's empty-page guard, which already trusts `total`.)
+    const transport = new MockTransport();
+    const page1: OffsetPaginatedResponse<number> = {
+      values: [1, 2],
+      startAt: 0,
+      maxResults: 5,
+      total: 4,
+    };
+    const page2: OffsetPaginatedResponse<number> = {
+      values: [3, 4],
+      startAt: 2,
+      maxResults: 5,
+      total: 4,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateOffset<number>(transport, '/items', {}, 5));
+    expect(items).toEqual([1, 2, 3, 4]);
+    expect(transport.calls).toHaveLength(2);
+    expect(transport.calls[1]!.options.query).toMatchObject({ startAt: 2, maxResults: 5 });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -521,6 +547,29 @@ describe('paginateSearch', () => {
     const items = await collect(paginateSearch<number>(transport, '/search', {}, 10));
     expect(items).toEqual([1, 2]);
     expect(transport.calls).toHaveLength(1);
+  });
+
+  it('continues past a short page when total indicates more issues remain (#240)', async () => {
+    // SearchPaginatedResponse has no isLast field, so a short page before `total`
+    // is reached must still advance — terminating silently drops the tail.
+    const transport = new MockTransport();
+    const page1: SearchPaginatedResponse<number> = {
+      issues: [1, 2],
+      startAt: 0,
+      maxResults: 5,
+      total: 4,
+    };
+    const page2: SearchPaginatedResponse<number> = {
+      issues: [3, 4],
+      startAt: 2,
+      maxResults: 5,
+      total: 4,
+    };
+    transport.respondWith(page1).respondWith(page2);
+
+    const items = await collect(paginateSearch<number>(transport, '/search', {}, 5));
+    expect(items).toEqual([1, 2, 3, 4]);
+    expect(transport.calls).toHaveLength(2);
   });
 });
 
