@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DevopscomponentsResource } from '../../src/jira/resources/devopscomponents.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/devopscomponents/1.0';
 
@@ -93,6 +94,10 @@ describe('DevopscomponentsResource', () => {
 
       // Act / Assert
       await expect(devopscomponents.delete('COMP-1')).rejects.toThrow('forbidden');
+    });
+
+    it('rejects a path-traversal componentId (B1052)', async () => {
+      await expect(devopscomponents.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

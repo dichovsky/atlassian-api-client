@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ApplicationRoleResource } from '../../src/jira/resources/application-role.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -122,6 +123,10 @@ describe('ApplicationRoleResource', () => {
 
       // Act / Assert
       await expect(applicationRole.get('unknown-key')).rejects.toThrow('not found');
+    });
+
+    it('rejects a path-traversal key (B1052)', async () => {
+      await expect(applicationRole.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

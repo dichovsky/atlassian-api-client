@@ -301,4 +301,12 @@ describe('AppResource', () => {
       });
     });
   });
+
+  it('rejects a path-traversal fieldIdOrKey (B1052)', async () => {
+    await expect(app.getFieldContextConfiguration('..')).rejects.toThrow(ValidationError);
+  });
+
+  it('rejects a path-traversal propertyKey (B1052)', async () => {
+    await expect(app.getForgeProperty('..')).rejects.toThrow(ValidationError);
+  });
 });

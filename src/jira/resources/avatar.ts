@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { encodePathSegment } from '../../core/path.js';
 
 /** A Jira avatar (icon) object. */
 export interface Avatar {
@@ -33,7 +34,7 @@ export class AvatarResource {
   async listSystem(type: string): Promise<AvatarSystemResponse> {
     const response = await this.transport.request<AvatarSystemResponse>({
       method: 'GET',
-      path: `${this.baseUrl}/avatar/${encodeURIComponent(type)}/system`,
+      path: `${this.baseUrl}/avatar/${encodePathSegment(type, 'type')}/system`,
     });
     return response.data;
   }

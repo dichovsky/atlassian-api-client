@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RemoteLinkResource } from '../../src/jira/resources/remote-link.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/remotelinks/1.0';
 
@@ -95,6 +96,10 @@ describe('RemoteLinkResource', () => {
 
       // Act / Assert
       await expect(remoteLink.delete('rl-1')).rejects.toThrow('forbidden');
+    });
+
+    it('rejects a path-traversal remoteLinkId (B1052)', async () => {
+      await expect(remoteLink.get('..')).rejects.toThrow(ValidationError);
     });
   });
 });

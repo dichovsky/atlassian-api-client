@@ -4,6 +4,7 @@ import {
   type ApplicationProperty,
 } from '../../src/jira/resources/application-properties.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -180,5 +181,9 @@ describe('ApplicationPropertiesResource', () => {
       // Act / Assert
       await expect(resource.listAdvancedSettings()).rejects.toThrow('server error');
     });
+  });
+
+  it('rejects a path-traversal id (B1052)', async () => {
+    await expect(resource.update('..', { id: '..', value: 'x' })).rejects.toThrow(ValidationError);
   });
 });
