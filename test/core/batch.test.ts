@@ -81,6 +81,21 @@ describe('createBatchMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(2);
   });
 
+  it('coalesces concurrent GETs that carry the same body (key includes body JSON)', async () => {
+    // Exercises the JSON.stringify(opts.body) branch in buildRequestKey — some APIs
+    // accept a body on GET (non-standard but valid per RFC 9110 §9.3.1).
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ method: 'GET', path: '/search', body: { jql: 'project=X' } }), next),
+      mw(makeOpts({ method: 'GET', path: '/search', body: { jql: 'project=X' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(r1).toBe(r2);
+  });
+
   it('starts a new request after the first one settles', async () => {
     let n = 0;
     const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++n));
@@ -297,5 +312,122 @@ describe('createBatchMiddleware', () => {
       mw(makeOpts({ path: '/user/bulk?accountId=c&accountId=d', query: { startAt: 0 } }), next),
     ]);
     expect(next).toHaveBeenCalledTimes(3);
+  });
+
+  // ── B1039: method guard ─────────────────────────────────────────────────
+
+  it('B1039: concurrent identical POSTs both reach the transport (no coalescing of mutations)', async () => {
+    // Pre-fix: two concurrent POSTs with the same key collapsed into one request —
+    // only one mutation executed, the other caller silently got a stale response.
+    let callCount = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++callCount }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ method: 'POST', path: '/issue', body: { title: 'x' } }), next),
+      mw(makeOpts({ method: 'POST', path: '/issue', body: { title: 'x' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    // Each caller must receive its own distinct response
+    expect(r1).not.toBe(r2);
+  });
+
+  it('B1039: concurrent identical PUTs both reach the transport (no coalescing of mutations)', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ method: 'PUT', path: '/issue/1', body: { status: 'done' } }), next),
+      mw(makeOpts({ method: 'PUT', path: '/issue/1', body: { status: 'done' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('B1039: concurrent identical PATCHes both reach the transport (no coalescing of mutations)', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ method: 'PATCH', path: '/issue/1', body: { summary: 'y' } }), next),
+      mw(makeOpts({ method: 'PATCH', path: '/issue/1', body: { summary: 'y' } }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('B1039: concurrent identical DELETEs both reach the transport (no coalescing of mutations)', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ method: 'DELETE', path: '/issue/1' }), next),
+      mw(makeOpts({ method: 'DELETE', path: '/issue/1' }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('B1039: GET and HEAD are still coalesced (idempotent-only regression guard)', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ ok: true }));
+    const mw = createBatchMiddleware();
+
+    // Concurrent identical GETs coalesce
+    const [g1, g2] = await Promise.all([
+      mw(makeOpts({ method: 'GET', path: '/search' }), next),
+      mw(makeOpts({ method: 'GET', path: '/search' }), next),
+    ]);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(g1).toBe(g2);
+  });
+
+  // ── B1039: dedup key must include responseType / formData / binaryBody ──
+
+  it('B1039: concurrent GETs differing only in responseType both reach the transport', async () => {
+    // Pre-fix: responseType was absent from the dedup key → the second caller
+    // received a JSON-parsed blob when it requested an ArrayBuffer (or vice-versa).
+    let callCount = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({ n: ++callCount }));
+    const mw = createBatchMiddleware();
+
+    const [r1, r2] = await Promise.all([
+      mw(makeOpts({ method: 'GET', path: '/file', responseType: 'json' }), next),
+      mw(makeOpts({ method: 'GET', path: '/file', responseType: 'arrayBuffer' }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(r1).not.toBe(r2);
+  });
+
+  it('B1039: a GET carrying formData bypasses dedup entirely (non-serialisable body)', async () => {
+    // FormData cannot be safely represented in a stable string key — the safe
+    // default is to never coalesce requests that carry it.
+    const fd1 = new FormData();
+    fd1.append('file', new Blob(['a']), 'a.txt');
+    const fd2 = new FormData();
+    fd2.append('file', new Blob(['a']), 'a.txt');
+
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ method: 'GET', path: '/upload', formData: fd1 }), next),
+      mw(makeOpts({ method: 'GET', path: '/upload', formData: fd2 }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it('B1039: a GET carrying binaryBody bypasses dedup entirely (non-serialisable body)', async () => {
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse({}));
+    const mw = createBatchMiddleware();
+
+    await Promise.all([
+      mw(makeOpts({ method: 'GET', path: '/avatar', binaryBody: new Blob(['img']) }), next),
+      mw(makeOpts({ method: 'GET', path: '/avatar', binaryBody: new Blob(['img']) }), next),
+    ]);
+
+    expect(next).toHaveBeenCalledTimes(2);
   });
 });

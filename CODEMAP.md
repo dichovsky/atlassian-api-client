@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "1077a30bb9a91fe976d2998a63c0233ee634985cdbdc3656167f4776d13e35d9",
+  "sourceHash": "2d4785175b662aca6853a6a90f2344e243f3492ccf58692c2eb3b604b5369dad",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3472,7 +3472,7 @@
       "name": "createBatchMiddleware",
       "kind": "function",
       "file": "src/core/batch.ts",
-      "line": 30,
+      "line": 49,
       "signature": "export function createBatchMiddleware(): Middleware",
       "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
     },
@@ -12624,9 +12624,16 @@
       "path": "src/core/batch.ts",
       "symbols": [
         {
+          "name": "IDEMPOTENT_METHODS",
+          "kind": "variable",
+          "line": 12,
+          "signature": "const IDEMPOTENT_METHODS = new Set<string>(['GET', 'HEAD']);",
+          "jsdoc": "Safe-idempotent methods eligible for request coalescing (B1039)."
+        },
+        {
           "name": "createBatchMiddleware",
           "kind": "function",
-          "line": 30,
+          "line": 49,
           "exported": true,
           "signature": "export function createBatchMiddleware(): Middleware",
           "jsdoc": "Creates a middleware that deduplicates concurrent identical in-flight requests."
@@ -12634,13 +12641,13 @@
         {
           "name": "buildRequestKey",
           "kind": "function",
-          "line": 50,
+          "line": 79,
           "signature": "function buildRequestKey(opts: RequestOptions): string"
         },
         {
           "name": "serializeHeaders",
           "kind": "function",
-          "line": 71,
+          "line": 104,
           "signature": "function serializeHeaders(headers: RequestOptions['headers']): string",
           "jsdoc": "Build a deterministic string representation of request headers for use in the dedupe key. `Authorization` is excluded from this section because the auth identity is already captured by {@link authIdentity} and prefixed onto the key; including the raw value here would leak the credential into any place the key is logged or dumped. Any other custom header (e.g. `X-Atlassian-Token`, `Accept-Language`) MUST keep them separate."
         }
