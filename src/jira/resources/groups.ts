@@ -2,19 +2,28 @@ import type { Transport } from '../../core/types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
+import type { GroupLabel } from './group-user-picker.js';
 
 /** A group match returned by the group picker. */
 export interface GroupMatch {
-  readonly groupId: string;
-  readonly name: string;
+  readonly groupId?: string;
+  readonly name?: string;
   readonly html?: string;
+  /** Avatar URL for the group/team if present. */
+  readonly avatarUrl?: string;
+  /** Labels associated with the group. */
+  readonly labels?: GroupLabel[];
+  /** Describes who/how the team is managed. */
+  readonly managedBy?: 'EXTERNAL' | 'ADMINS' | 'TEAM_MEMBERS' | 'OPEN';
+  /** Describes the type of group. */
+  readonly usageType?: 'USERBASE_GROUP' | 'TEAM_COLLABORATION' | 'ADMIN_OVERSIGHT';
 }
 
 /** Response envelope for GET /rest/api/3/groups/picker. */
 export interface GroupPickerResponse {
-  readonly header: string;
-  readonly total: number;
-  readonly groups: GroupMatch[];
+  readonly header?: string;
+  readonly total?: number;
+  readonly groups?: GroupMatch[];
 }
 
 /** Query parameters for the group picker. */
@@ -23,11 +32,16 @@ export interface GroupPickerParams {
   readonly query?: string;
   /**
    * Group **names** to exclude from results (ampersand-separated on the wire:
-   * `exclude=group1&exclude=group2`). For stable ID-based exclusion use the
-   * separate `excludeId` parameter (not yet exposed in this client — see spec
-   * `GET /rest/api/3/groups/picker`).
+   * `exclude=group1&exclude=group2`).
    */
   readonly exclude?: string[];
+  /**
+   * Group **IDs** to exclude from results (ampersand-separated on the wire:
+   * `excludeId=id1&excludeId=id2`). Preferred over `exclude` for stable exclusion.
+   */
+  readonly excludeId?: string[];
+  /** Whether the search for groups should be case insensitive. */
+  readonly caseInsensitive?: boolean;
   /** Maximum number of groups to return (default 20). */
   readonly maxResults?: number;
   /** Account ID of the user whose groups are excluded. */
@@ -43,13 +57,26 @@ export interface GroupPickerParams {
  */
 export interface GroupMember {
   readonly self?: string;
-  readonly accountId: string;
-  readonly accountType?: 'atlassian' | 'app' | 'customer';
+  readonly accountId?: string;
+  readonly accountType?: string;
   readonly emailAddress?: string;
-  readonly avatarUrls?: Record<string, string>;
+  readonly avatarUrls?: {
+    readonly '16x16'?: string;
+    readonly '24x24'?: string;
+    readonly '32x32'?: string;
+    readonly '48x48'?: string;
+  };
   readonly displayName?: string;
   readonly active?: boolean;
   readonly timeZone?: string;
+  /**
+   * @deprecated No longer available — see Atlassian deprecation notice.
+   */
+  readonly key?: string;
+  /**
+   * @deprecated No longer available — see Atlassian deprecation notice.
+   */
+  readonly name?: string;
 }
 
 /**
@@ -79,7 +106,7 @@ export interface Group {
 
 /** A bulk-listing entry returned by GET /rest/api/3/group/bulk. */
 export interface BulkGroupDetails {
-  readonly groupId: string;
+  readonly groupId: string | null;
   readonly name: string;
 }
 
@@ -192,11 +219,13 @@ export class GroupsResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.query !== undefined) query['query'] = params.query;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params?.caseInsensitive !== undefined) query['caseInsensitive'] = params.caseInsensitive;
     if (params?.userName !== undefined) query['userName'] = params.userName;
 
-    // `exclude` is `type:array` in the Jira v3 spec — emit as repeated params
-    // built into the path (?exclude=g1&exclude=g2), not CSV.
-    const path = appendRepeatedParams(`${this.baseUrl}/groups/picker`, 'exclude', params?.exclude);
+    // `exclude` and `excludeId` are `type:array` in the Jira v3 spec — emit as
+    // repeated params built into the path (?exclude=g1&exclude=g2), not CSV.
+    let path = appendRepeatedParams(`${this.baseUrl}/groups/picker`, 'exclude', params?.exclude);
+    path = appendRepeatedParams(path, 'excludeId', params?.excludeId);
 
     const response = await this.transport.request<GroupPickerResponse>({
       method: 'GET',

@@ -328,6 +328,35 @@ describe('SearchResource', () => {
     it('throws ValidationError when maxResults is invalid', async () => {
       await expect(search.searchJqlGet({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
+
+    it('sends failFast as a boolean query param when provided', async () => {
+      // Spec: failFast is accepted by GET /rest/api/3/search/jql (type: boolean).
+      transport.respondWith({ issues: [] });
+
+      await search.searchJqlGet({ jql: 'project = PROJ', failFast: true });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ failFast: true });
+    });
+
+    it('omits failFast from query when not provided', async () => {
+      transport.respondWith({ issues: [] });
+
+      await search.searchJqlGet({ jql: 'project = PROJ' });
+
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['failFast']).toBeUndefined();
+    });
+
+    it('sends reconcileIssues as repeated path params when provided', async () => {
+      // Spec: reconcileIssues is type:array in GET /rest/api/3/search/jql →
+      // repeated params baked into the path.
+      transport.respondWith({ issues: [] });
+
+      await search.searchJqlGet({ jql: 'project = PROJ', reconcileIssues: [101, 202] });
+
+      expect(transport.lastCall?.options.path).toContain('reconcileIssues=101');
+      expect(transport.lastCall?.options.path).toContain('reconcileIssues=202');
+    });
   });
 
   // ── searchJqlPost ─────────────────────────────────────────────────────────
@@ -448,6 +477,24 @@ describe('SearchResource', () => {
 
       expect(result.isLast).toBe(false);
       expect(result.nextPageToken).toBe('tok-2');
+    });
+
+    it('sends reconcileIssues as an array in body when provided', async () => {
+      // Spec: reconcileIssues is type:array in POST body of SearchAndReconcileRequestBean.
+      transport.respondWith({ issues: [] });
+
+      await search.searchJqlPost({ jql: 'project = PROJ', reconcileIssues: [101, 202] });
+
+      expect(transport.lastCall?.options.body).toMatchObject({ reconcileIssues: [101, 202] });
+    });
+
+    it('omits reconcileIssues from body when not provided', async () => {
+      transport.respondWith({ issues: [] });
+
+      await search.searchJqlPost({ jql: 'project = PROJ' });
+
+      const body = transport.lastCall?.options.body ?? {};
+      expect(body).not.toHaveProperty('reconcileIssues');
     });
   });
 });

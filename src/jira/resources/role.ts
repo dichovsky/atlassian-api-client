@@ -13,6 +13,8 @@ export interface Actor {
   readonly displayName?: string;
   readonly type?: 'atlassian-user-role-actor' | 'atlassian-group-role-actor';
   readonly name?: string;
+  /** The avatar of the role actor. */
+  readonly avatarUrl?: string;
   readonly actorUser?: {
     readonly accountId: string;
   };
@@ -20,7 +22,6 @@ export interface Actor {
     readonly displayName?: string;
     readonly groupId?: string;
     readonly name?: string;
-    readonly self?: string;
   };
 }
 
@@ -37,11 +38,20 @@ export interface Role {
   readonly description?: string;
   readonly actors?: readonly Actor[];
   readonly scope?: {
-    readonly type?: string;
-    readonly project?: { readonly id?: string };
+    readonly type?: 'PROJECT' | 'TEMPLATE';
+    readonly project?: {
+      readonly id?: string;
+      readonly key?: string;
+      readonly name?: string;
+      readonly self?: string;
+      readonly simplified?: boolean;
+      readonly projectTypeKey?: 'software' | 'service_desk' | 'business';
+    };
   };
   readonly translatedName?: string;
   readonly currentUserRole?: boolean;
+  /** Whether this role is configurable. */
+  readonly roleConfigurable?: boolean;
   /** Whether this role is the default for newly created projects. Spec: `default`. */
   readonly default?: boolean;
   /** Whether this role is the admin role. Spec: `admin`. */
@@ -244,8 +254,10 @@ export class RoleResource {
   /**
    * B743: Delete default actors from a global project role.
    * DELETE /rest/api/3/role/{id}/actors
+   *
+   * Returns the updated role with remaining actors per Jira spec 200 response.
    */
-  async deleteActors(roleId: number, params?: DeleteActorsParams): Promise<void> {
+  async deleteActors(roleId: number, params?: DeleteActorsParams): Promise<Role> {
     if (!Number.isInteger(roleId) || roleId <= 0) {
       throw new ValidationError('roleId must be a positive integer');
     }
@@ -253,10 +265,11 @@ export class RoleResource {
     if (params?.user !== undefined) query['user'] = params.user;
     if (params?.group !== undefined) query['group'] = params.group;
     if (params?.groupId !== undefined) query['groupId'] = params.groupId;
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<Role>({
       method: 'DELETE',
       path: `${this.baseUrl}/role/${encodePathSegment(String(roleId))}/actors`,
       ...(Object.keys(query).length > 0 && { query }),
     });
+    return response.data;
   }
 }

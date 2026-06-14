@@ -516,9 +516,22 @@ export type {
 export { ForgeResource } from './resources/forge.js';
 export type { Incident } from './resources/incidents.js';
 export { IncidentsResource } from './resources/incidents.js';
-export type { PostIncidentReview } from './resources/post-incident-reviews.js';
+export type {
+  PostIncidentReview,
+  PostIncidentReviewStatus,
+  PostIncidentReviewAssociation,
+} from './resources/post-incident-reviews.js';
 export { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
-export type { Vulnerability } from './resources/vulnerability.js';
+export type {
+  Vulnerability,
+  VulnerabilitySeverity,
+  VulnerabilitySeverityLevel,
+  VulnerabilityType,
+  VulnerabilityStatus,
+  VulnerabilityIdentifier,
+  VulnerabilityAdditionalInfo,
+  VulnerabilityAssociation,
+} from './resources/vulnerability.js';
 export { VulnerabilityResource } from './resources/vulnerability.js';
 export type {
   DevopsComponent,
