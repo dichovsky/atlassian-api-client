@@ -49,7 +49,7 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 
 - `--next-page-token` is the opaque cursor echoed by the previous page's `nextPageToken`; omit it for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to strongly reconcile (force-index) before searching, e.g. `--reconcile-issues 10001,10002`.
-- `--validate-query` is a presence-only boolean flag: include it to request server-side JQL validation (`validateQuery=true`); omit it for the server default. It takes no value — `--validate-query false` does not disable validation (the CLI cannot currently send `validateQuery=false`).
+- `--validate-query true|false` controls server-side JQL validation. The server default is `true`, so pass `--validate-query false` to skip validation; omit the flag for the default. It is a tri-state filter — the value is required (`--validate-query` without a value is rejected).
 - `--fields` is comma-separated field names (same as the non-enhanced actions); `--expand` is a single expand string.
 - `--max-results` caps the page size; the server still controls the actual page boundary via `isLast`/`nextPageToken`.
 
@@ -61,7 +61,7 @@ Non-deprecated, **token-paginated** replacements for the agile board issue listi
 - `--feature` is the feature key string (e.g. `SIMPLE_ROADMAP`, `BACKLOG`, `SPRINTS`).
 - `--issues` is comma-separated issue keys, e.g. `--issues PROJ-1,PROJ-2`.
 - `--fields` is comma-separated field names, e.g. `--fields summary,status,assignee`.
-- `--done` (boolean flag for `list-epics`) filters to only done or not-done epics.
+- `--done true|false` (for `list-epics`) filters to only done or not-done epics; omit for all epics. Tri-state — the value is required.
 - `--released` (boolean flag for `list-versions`) filters to released versions.
 - `boardId`, `epicId`, `sprintId`, `filterId`, `--filter-id` are all numeric IDs.
 - `--start-at` is the 0-based offset for pagination.
@@ -92,8 +92,8 @@ atlas jira boards backlog 42 --jql "priority = High" --fields summary,assignee
 # Get board configuration
 atlas jira boards configuration 42
 
-# List epics on a board (omit --done for all epics; add --done to filter to completed epics)
-atlas jira boards list-epics 42 --done
+# List epics on a board (omit --done for all epics; --done true for completed, --done false for not-done)
+atlas jira boards list-epics 42 --done true
 
 # List issues in a specific epic
 atlas jira boards epic-issues 42 7
@@ -279,7 +279,7 @@ Non-deprecated, **token-paginated** replacement for `get-issues`. Hits Jira Soft
 
 - `--next-page-token` is the opaque cursor from the previous page's `nextPageToken`; omit for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to force-index before searching, e.g. `--reconcile-issues 10001,10002`.
-- `--validate-query` (boolean flag) controls server-side JQL validation; omit for the server default (`true`).
+- `--validate-query true|false` controls server-side JQL validation; pass `false` to skip it, omit for the server default (`true`). Tri-state — the value is required.
 - `--fields` is comma-separated field names; `--expand` is a single expand string.
 - `sprintId` is a numeric ID (not a name).
 
@@ -318,7 +318,7 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 - `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`).
 - `update` uses **POST** (Atlassian patch semantics) — only the supplied fields are changed. Safe for single-field edits.
 - `--color` accepts the color key string, e.g. `color_1`, `color_2`. Check your Atlassian instance for valid values.
-- `--done` is a boolean flag; passing it sets `done: true` on the epic.
+- `--done true|false` sets the epic's `done` field (`--done true` marks it done, `--done false` not-done); omit to leave it unchanged. Tri-state — the value is required.
 - `--issues` is **comma-separated** issue keys or IDs, e.g. `--issues PROJ-1,PROJ-2`.
 - `rank` requires exactly one of `--before` or `--after` (mutually exclusive).
 - `--before` / `--after` accept an epic ID or key to rank the current epic before or after.
@@ -329,7 +329,7 @@ Manage Agile epics. Supports get, partial update (POST patch semantics), issue a
 - `epicIdOrKey` accepts either a numeric ID (`42`) or an epic key (`PROJ-42`); the value is path-encoded automatically.
 - `--next-page-token` is the opaque cursor from the previous page's `nextPageToken`; omit for the first page.
 - `--reconcile-issues` is a comma-separated list of **positive integer issue IDs** to force-index before searching, e.g. `--reconcile-issues 10001,10002`.
-- `--validate-query` (boolean flag) controls server-side JQL validation; omit for the server default (`true`).
+- `--validate-query true|false` controls server-side JQL validation; pass `false` to skip it, omit for the server default (`true`). Tri-state — the value is required.
 
 ```sh
 # Get an epic by ID
@@ -342,7 +342,7 @@ atlas jira epic get PROJ-42
 atlas jira epic update 42 --name "New Epic Name"
 
 # Mark an epic as done and set summary
-atlas jira epic update PROJ-42 --summary "All done" --done
+atlas jira epic update PROJ-42 --summary "All done" --done true
 
 # List issues in an epic (deprecated agile, offset-paginated)
 atlas jira epic issues 42

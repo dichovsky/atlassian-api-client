@@ -28825,4 +28825,106 @@ describe('executeJiraCommand', () => {
       ).rejects.toThrow('Unknown dashboards action');
     });
   });
+
+  // ─── B1063: tri-state filter flags send `false` on the wire ────────────────
+  // After the router change these flags are `type: 'string'`, so the real
+  // parser delivers the literal `'false'`. Each handler must thread that string
+  // through `asBoolFlag` to the boolean `false` on the wire. Injecting the
+  // string `'false'` here mirrors exactly what `parseCommand` now produces.
+  describe('B1063 tri-state filter flags send false on the wire', () => {
+    it('boards get-issues-enhanced sends validateQuery=false for --validate-query false', async () => {
+      jiraBoardsMock.getIssuesEnhanced.mockResolvedValue({ issues: [], isLast: true });
+      await executeJiraCommand(
+        cmd('boards', 'get-issues-enhanced', ['42'], { 'validate-query': 'false' }),
+        GLOBALS,
+      );
+      expect(jiraBoardsMock.getIssuesEnhanced).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ validateQuery: false }),
+      );
+    });
+
+    it('boards list-epics sends done=false for --done false', async () => {
+      jiraBoardsMock.listEpics.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(cmd('boards', 'list-epics', ['42'], { done: 'false' }), GLOBALS);
+      expect(jiraBoardsMock.listEpics).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ done: false }),
+      );
+    });
+
+    it('epic update sends done=false for --done false', async () => {
+      jiraEpicMock.partialUpdate.mockResolvedValue({ id: '42', done: false });
+      await executeJiraCommand(cmd('epic', 'update', ['42'], { done: 'false' }), GLOBALS);
+      expect(jiraEpicMock.partialUpdate).toHaveBeenCalledWith(
+        '42',
+        expect.objectContaining({ done: false }),
+      );
+    });
+
+    it('bulk delete-issues sends sendBulkNotification=false for --send-notification false', async () => {
+      jiraBulkMock.deleteIssuesBulk.mockResolvedValue({ taskId: 't1' });
+      await executeJiraCommand(
+        cmd('bulk', 'delete-issues', [], {
+          issues: 'PROJ-1,PROJ-2',
+          'send-notification': 'false',
+        }),
+        GLOBALS,
+      );
+      expect(jiraBulkMock.deleteIssuesBulk).toHaveBeenCalledWith({
+        selectedIssueIdsOrKeys: ['PROJ-1', 'PROJ-2'],
+        sendBulkNotification: false,
+      });
+    });
+
+    it('fields context-list sends isGlobalContext/isAnyIssueType=false for the false strings', async () => {
+      jiraFieldsMock.listContexts.mockResolvedValue({
+        values: [],
+        startAt: 0,
+        maxResults: 50,
+        total: 0,
+      });
+      await executeJiraCommand(
+        cmd('fields', 'context-list', [], {
+          'field-id': 'customfield_10001',
+          'is-global-context': 'false',
+          'is-any-issue-type': 'false',
+        }),
+        GLOBALS,
+      );
+      expect(jiraFieldsMock.listContexts).toHaveBeenCalledWith('customfield_10001', {
+        isGlobalContext: false,
+        isAnyIssueType: false,
+      });
+    });
+
+    it('issue-attachments download-content sends redirect=false for --redirect false', async () => {
+      jiraIssueAttachmentsMock.downloadContent.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('issue-attachments', 'download-content', ['10001'], { redirect: 'false' }),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadContent).toHaveBeenCalledWith('10001', {
+        redirect: false,
+      });
+    });
+
+    it('issue-attachments download-thumbnail sends fallbackToDefault=false for the false string', async () => {
+      jiraIssueAttachmentsMock.downloadThumbnail.mockResolvedValue(new ArrayBuffer(0));
+      await executeJiraCommand(
+        cmd('issue-attachments', 'download-thumbnail', ['10001'], {
+          'fallback-to-default': 'false',
+        }),
+        GLOBALS,
+      );
+      expect(jiraIssueAttachmentsMock.downloadThumbnail).toHaveBeenCalledWith('10001', {
+        fallbackToDefault: false,
+      });
+    });
+  });
 });

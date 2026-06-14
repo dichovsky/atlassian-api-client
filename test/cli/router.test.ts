@@ -777,6 +777,7 @@ describe('parseCommand', () => {
 
   // Regression guard: enhanced (JSIS) board flags must be registered in
   // GLOBAL_OPTIONS so real parseCommand doesn't throw "Unknown option".
+  // `--validate-query` is a tri-state filter (B1063) so it carries a value.
   it('parses jira boards backlog-enhanced with --reconcile-issues and --validate-query', () => {
     const argv = [
       'node',
@@ -788,12 +789,143 @@ describe('parseCommand', () => {
       '--reconcile-issues',
       '10001,10002',
       '--validate-query',
+      'true',
     ];
     const result = parseCommand(argv);
     expect(result.resource).toBe('boards');
     expect(result.action).toBe('backlog-enhanced');
     expect(result.positionalArgs).toEqual(['42']);
     expect(result.options['reconcile-issues']).toBe('10001,10002');
-    expect(result.options['validate-query']).toBe(true);
+    expect(result.options['validate-query']).toBe('true');
+  });
+
+  // B1063: tri-state filter flags must accept an explicit `false` value rather
+  // than swallowing it as a positional (the boolean-flag bug). Each flag below
+  // defaults to a non-false value on the wire (or is a 3-valued filter), so the
+  // `false` case is only reachable when the flag is registered `type: 'string'`.
+  describe('B1063 tri-state filter flags accept false', () => {
+    it('parses --validate-query false as the string "false" (not lost to positionals)', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'boards',
+        'get-issues-enhanced',
+        '42',
+        '--validate-query',
+        'false',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['validate-query']).toBe('false');
+      expect(result.positionalArgs).toEqual(['42']);
+    });
+
+    it('parses boards list-epics --done false as the string "false"', () => {
+      const argv = ['node', 'atlas', 'jira', 'boards', 'list-epics', '42', '--done', 'false'];
+      const result = parseCommand(argv);
+      expect(result.options['done']).toBe('false');
+      expect(result.positionalArgs).toEqual(['42']);
+    });
+
+    it('parses epic update --done false as the string "false"', () => {
+      const argv = ['node', 'atlas', 'jira', 'epic', 'update', 'PROJ-42', '--done', 'false'];
+      const result = parseCommand(argv);
+      expect(result.options['done']).toBe('false');
+      expect(result.positionalArgs).toEqual(['PROJ-42']);
+    });
+
+    it('parses bulk delete-issues --send-notification false as the string "false"', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'bulk',
+        'delete-issues',
+        '--issues',
+        'PROJ-1,PROJ-2',
+        '--send-notification',
+        'false',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['send-notification']).toBe('false');
+    });
+
+    it('parses fields context-list --is-global-context false / --is-any-issue-type false', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'fields',
+        'context-list',
+        '--field-id',
+        'customfield_10001',
+        '--is-global-context',
+        'false',
+        '--is-any-issue-type',
+        'false',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['is-global-context']).toBe('false');
+      expect(result.options['is-any-issue-type']).toBe('false');
+    });
+
+    it('parses issue-attachments download-content --redirect false as the string "false"', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'issue-attachments',
+        'download-content',
+        '10001',
+        '--redirect',
+        'false',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['redirect']).toBe('false');
+      expect(result.positionalArgs).toEqual(['10001']);
+    });
+
+    it('parses issue-attachments download-thumbnail --fallback-to-default false', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'issue-attachments',
+        'download-thumbnail',
+        '10001',
+        '--fallback-to-default',
+        'false',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['fallback-to-default']).toBe('false');
+      expect(result.positionalArgs).toEqual(['10001']);
+    });
+  });
+
+  // B1063: flags left as presence-only toggles (API default false; an explicit
+  // `false` is indistinguishable from omission). Guard documents the intent.
+  describe('B1063 presence-only toggle flags', () => {
+    it('parses fields context-option-list --only-options as boolean true (toggle)', () => {
+      const argv = [
+        'node',
+        'atlas',
+        'jira',
+        'fields',
+        'context-option-list',
+        '--field-id',
+        'customfield_10001',
+        '--context-id',
+        '10025',
+        '--only-options',
+      ];
+      const result = parseCommand(argv);
+      expect(result.options['only-options']).toBe(true);
+    });
+
+    it('parses priorities search --only-default as boolean true (toggle)', () => {
+      const argv = ['node', 'atlas', 'jira', 'priorities', 'search', '--only-default'];
+      const result = parseCommand(argv);
+      expect(result.options['only-default']).toBe(true);
+    });
   });
 });

@@ -379,8 +379,8 @@ Covers the platform's `/rest/api/3/attachment` surface (B336, B337, B338–B342)
 
 - `expand-human` / `expand-raw` are only meaningful for archive-typed attachments (zip, tar, etc.). `human` returns each entry's `size` as a pre-formatted string (`"2.5 kB"`); `raw` returns it as a byte count.
 - `download-content` and `download-thumbnail` buffer the binary response into memory. The CLI prints a `{ "bytes": N }` summary instead of the raw bytes — use the SDK (`client.issueAttachments.downloadContent`) when you need the actual `ArrayBuffer`.
-- `--redirect=false` asks the server to return the binary body inline instead of a `303` redirect to its media-CDN. The runtime `fetch` follows the redirect transparently either way, so the CLI behaviour is identical; the flag is exposed for API parity.
-- `--fallback-to-default=true` (thumbnail only) returns a generic placeholder image when the attachment has no renderable preview, instead of `404`.
+- `--redirect false` asks the server to return the binary body inline instead of a `303` redirect to its media-CDN (server default `true`). The runtime `fetch` follows the redirect transparently either way, so the CLI behaviour is identical; the flag is exposed for API parity. Tri-state — pass a value.
+- `--fallback-to-default true|false` (thumbnail only) controls whether the server returns a generic placeholder image when the attachment has no renderable preview (server default `true`); pass `false` to get a `404` instead. Tri-state — pass a value.
 - `upload` reads the file from disk into a `Blob` and POSTs multipart form data with `X-Atlassian-Token: no-check` (Jira requires this to bypass XSRF validation). `--filename` defaults to the basename of `--file`.
 - `get-meta` returns instance-level settings (`{ enabled, uploadLimit }`); no positional or flags.
 
@@ -397,18 +397,19 @@ atlas jira issue-attachments expand-human 10001
 atlas jira issue-attachments expand-raw 10001
 
 # Download the file bytes (CLI prints { bytes: N } — use the SDK for the buffer).
-# `--redirect` is a presence-only boolean flag (follow the redirect to the binary);
-# omit it for the default. It takes no value.
+# `--redirect true|false` is a tri-state filter (server default true). Pass
+# `false` to receive the binary body inline; omit for the default. Value required.
 atlas jira issue-attachments download-content 10001
-atlas jira issue-attachments download-content 10001 --redirect
+atlas jira issue-attachments download-content 10001 --redirect false
 
 # Instance-level attachment settings
 atlas jira issue-attachments get-meta
 
 # Render a 200x200 thumbnail with a placeholder fallback.
-# `--fallback-to-default` is a presence-only boolean flag (takes no value).
+# `--fallback-to-default true|false` is a tri-state filter (server default true).
+# Pass `false` to get a 404 instead of a placeholder; omit for the default. Value required.
 atlas jira issue-attachments download-thumbnail 10001 \
-  --width 200 --height 200 --fallback-to-default
+  --width 200 --height 200 --fallback-to-default true
 
 # Upload a file from disk to an issue
 atlas jira issue-attachments upload PROJ-1 --file ./screenshot.png --media-type image/png

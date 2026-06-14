@@ -826,15 +826,15 @@ the CLI does NOT auto-poll, callers drive the cadence.
 | `submit-remote-links`      | —               | `--value`                          | —                                                      |
 | `submit-security`          | —               | `--value`                          | —                                                      |
 
-`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`).
+`--issues` accepts either a JSON array of issue-update objects (for `create-issues`, where each element is `{ fields: {...}, update?: {...} }`) or a comma-separated list of issue IDs/keys (for `delete-issues`, `get-fields`, `unwatch-issues`, `watch-issues`, `get-transitions`). `--actions` is a comma-separated list of bulk-edit actions. `--value` is a JSON string: an object for `edit-fields` (`editedFieldsInput`), `move-issues` (`targetToSourcesMapping`), and `set-property` (the property value); an array for `transition-issues` (`bulkTransitionInputs`); and the raw provider payload for every DevOps `submit-*` variant. `--filter` for `set-property` / `delete-property` is a JSON object restricting which issues are affected (`entityIds`, `currentValue`, `hasProperty`). `--send-notification true|false` (for `delete-issues`, `edit-fields`, `move-issues`, `transition-issues`) controls the bulk-change notification email; the server default is `true`, so pass `--send-notification false` to suppress it, omit for the default. Tri-state — the value is required.
 
 ```sh
 # Bulk create two issues (B518)
 atlas jira bulk create-issues \
   --issues '[{"fields":{"project":{"key":"PROJ"},"summary":"Issue 1","issuetype":{"name":"Bug"}}},{"fields":{"project":{"key":"PROJ"},"summary":"Issue 2","issuetype":{"name":"Task"}}}]'
 
-# Bulk delete two issues (add --send-notification to force notifications; omit for the server default)
-atlas jira bulk delete-issues --issues 10001,10002
+# Bulk delete two issues (--send-notification false suppresses the bulk email; omit for the server default of true)
+atlas jira bulk delete-issues --issues 10001,10002 --send-notification false
 
 # List fields available for bulk edit on two issues
 atlas jira bulk get-fields --issues PROJ-1,PROJ-2 --search-text priority
