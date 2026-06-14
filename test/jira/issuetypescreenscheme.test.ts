@@ -351,6 +351,36 @@ describe('IssueTypeScreenSchemeResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ startAt: 5, maxResults: 10 });
     });
 
+    it('forwards query filter param (new spec param)', async () => {
+      transport.respondWith(makePageResponse([]));
+
+      await resource.listProject('10001', { query: 'My Project' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ query: 'My Project' });
+    });
+
+    it('omits query when not provided', async () => {
+      transport.respondWith(makePageResponse([]));
+
+      await resource.listProject('10001', { startAt: 0 });
+
+      const q = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(q).not.toHaveProperty('query');
+    });
+
+    it('returns ProjectDetails with projectCategory when present', async () => {
+      transport.respondWith(
+        makePageResponse([{ id: 'p1', key: 'PROJ', projectCategory: { id: '1', name: 'Cat' } }]),
+      );
+
+      const result = await resource.listProject('10001');
+
+      expect(result.values[0]).toMatchObject({
+        id: 'p1',
+        projectCategory: { id: '1', name: 'Cat' },
+      });
+    });
+
     it('rejects non-positive maxResults', async () => {
       await expect(resource.listProject('10001', { maxResults: 0 })).rejects.toThrow(/maxResults/);
     });
@@ -364,7 +394,7 @@ describe('IssueTypeScreenSchemeResource', () => {
         makePageResponse([makeProjectDetails('p1', 'ALPHA'), makeProjectDetails('p2', 'BETA')]),
       );
 
-      const results: { id: string; key: string }[] = [];
+      const results: { id: string; key?: string }[] = [];
       for await (const p of resource.listProjectAll('10001')) {
         results.push(p);
       }

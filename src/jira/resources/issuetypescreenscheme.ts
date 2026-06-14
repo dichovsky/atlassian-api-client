@@ -31,20 +31,27 @@ export interface IssueTypeScreenSchemeMappingDetails {
   readonly screenSchemeId: string;
 }
 
+/** A project category as returned by the Jira spec's `UpdatedProjectCategory` schema. */
+export interface ProjectCategory {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly self?: string;
+}
+
 /**
  * A project returned by GET /issuetypescreenscheme/{id}/project (B583).
  * Matches the PageBeanProjectDetails shape from the Jira spec.
  */
 export interface ProjectDetails {
   readonly id: string;
-  readonly key: string;
-  readonly name: string;
-  readonly projectTypeKey: string;
+  readonly key?: string;
+  readonly name?: string;
+  readonly projectTypeKey?: string;
   readonly self?: string;
   readonly avatarUrls?: Record<string, string>;
   readonly simplified?: boolean;
-  readonly style?: string;
-  readonly isPrivate?: boolean;
+  readonly projectCategory?: ProjectCategory;
 }
 
 /**
@@ -56,6 +63,9 @@ export interface IssueTypeScreenSchemesProjects {
   readonly projectIds: string[];
 }
 
+/** Valid values for the `orderBy` query parameter on GET /rest/api/3/issuetypescreenscheme. */
+export type IssueTypeScreenSchemeOrderBy = 'name' | '-name' | '+name' | 'id' | '-id' | '+id';
+
 /** Query parameters for GET /rest/api/3/issuetypescreenscheme. */
 export interface ListIssueTypeScreenSchemesParams {
   /** Pagination offset (default 0). */
@@ -66,8 +76,8 @@ export interface ListIssueTypeScreenSchemesParams {
   readonly id?: number[];
   /** Filter by name substring. */
   readonly queryString?: string;
-  /** Order by field (e.g. "name", "-name"). */
-  readonly orderBy?: string;
+  /** Order by field. */
+  readonly orderBy?: IssueTypeScreenSchemeOrderBy;
   /** Expand additional fields in the response. */
   readonly expand?: string;
 }
@@ -104,6 +114,8 @@ export interface RemoveIssueTypeScreenSchemeMappingData {
 export interface ListIssueTypeScreenSchemeProjectsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Filter by project name substring. */
+  readonly query?: string;
 }
 
 /** Query parameters for GET /rest/api/3/issuetypescreenscheme/mapping. */
@@ -275,6 +287,7 @@ export class IssueTypeScreenSchemeResource {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.startAt !== undefined) query['startAt'] = params.startAt;
     if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+    if (params?.query !== undefined) query['query'] = params.query;
     const response = await this.transport.request<OffsetPaginatedResponse<ProjectDetails>>({
       method: 'GET',
       path: `${this.baseUrl}/issuetypescreenscheme/${encodePathSegment(schemeId)}/project`,

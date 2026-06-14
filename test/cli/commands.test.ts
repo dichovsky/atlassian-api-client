@@ -19013,13 +19013,24 @@ describe('executeJiraCommand', () => {
       expect(result).toEqual({ issueTypeSchemeId: '10001' });
     });
 
-    it('issue-type-schemes create without optional fields works', async () => {
+    it('issue-type-schemes create with required issueTypeIds works', async () => {
+      // Spec: issueTypeIds is required for POST /issuetypescheme (B1056 fix).
       jiraIssueTypeSchemesMock.create.mockResolvedValue({ issueTypeSchemeId: '10002' });
       await executeJiraCommand(
-        cmd('issue-type-schemes', 'create', [], { name: 'Minimal' }),
+        cmd('issue-type-schemes', 'create', [], { name: 'Minimal', 'issue-type-ids': '10001' }),
         GLOBALS,
       );
-      expect(jiraIssueTypeSchemesMock.create).toHaveBeenCalledWith({ name: 'Minimal' });
+      expect(jiraIssueTypeSchemesMock.create).toHaveBeenCalledWith({
+        name: 'Minimal',
+        issueTypeIds: ['10001'],
+      });
+    });
+
+    it('issue-type-schemes create throws when --issue-type-ids is missing', async () => {
+      // Spec: issueTypeIds is required — CLI must reject missing --issue-type-ids.
+      await expect(
+        executeJiraCommand(cmd('issue-type-schemes', 'create', [], { name: 'Minimal' }), GLOBALS),
+      ).rejects.toThrow('--issue-type-ids is required');
     });
 
     it('issue-type-schemes create throws when --name missing', async () => {
@@ -19034,7 +19045,7 @@ describe('executeJiraCommand', () => {
           cmd('issue-type-schemes', 'create', [], { name: 'My Scheme', 'issue-type-ids': ',,' }),
           GLOBALS,
         ),
-      ).rejects.toThrow('--issue-type-ids must contain at least one issue type ID');
+      ).rejects.toThrow('--issue-type-ids is required and must contain at least one issue type ID');
     });
 
     it('issue-type-schemes update calls client.issueTypeSchemes.update', async () => {

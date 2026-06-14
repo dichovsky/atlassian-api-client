@@ -63,6 +63,29 @@ describe('IssueTypeSchemeResource', () => {
       );
     });
 
+    it('forwards orderBy, expand, and queryString (new spec params)', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.list({ orderBy: '-name', expand: 'projects', queryString: 'Default' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        orderBy: '-name',
+        expand: 'projects',
+        queryString: 'Default',
+      });
+    });
+
+    it('omits orderBy/expand/queryString when not provided', async () => {
+      transport.respondWith(makePageOf([]));
+
+      await resource.list({ startAt: 0 });
+
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query).not.toHaveProperty('orderBy');
+      expect(query).not.toHaveProperty('expand');
+      expect(query).not.toHaveProperty('queryString');
+    });
+
     it('throws on invalid maxResults', async () => {
       await expect(resource.list({ maxResults: 0 })).rejects.toThrow();
     });
@@ -108,9 +131,10 @@ describe('IssueTypeSchemeResource', () => {
   describe('create()', () => {
     it('calls POST /issuetypescheme and returns IssueTypeSchemeID { issueTypeSchemeId }', async () => {
       // Spec 201: IssueTypeSchemeID has `issueTypeSchemeId`, not `id`.
+      // Spec also requires issueTypeIds (at least one).
       transport.respondWith({ issueTypeSchemeId: '10042' }, 201);
 
-      const result = await resource.create({ name: 'My Scheme' });
+      const result = await resource.create({ name: 'My Scheme', issueTypeIds: ['10001'] });
 
       expect(result).toEqual({ issueTypeSchemeId: '10042' });
       expect(result.issueTypeSchemeId).toBe('10042');
@@ -118,7 +142,7 @@ describe('IssueTypeSchemeResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/issuetypescheme`,
-        body: { name: 'My Scheme' },
+        body: { name: 'My Scheme', issueTypeIds: ['10001'] },
       });
     });
 
@@ -328,17 +352,17 @@ describe('IssueTypeSchemeResource', () => {
   // ── listProject ───────────────────────────────────────────────────────────
 
   describe('listProject()', () => {
-    it('calls GET /issuetypescheme/project with no params', async () => {
+    it('calls GET /issuetypescheme/project with projectId (required by spec)', async () => {
       const entry = { issueTypeScheme: makeScheme(), projectIds: ['10100'] };
       const page = makePageOf([entry]);
       transport.respondWith(page);
 
-      const result = await resource.listProject();
+      const result = await resource.listProject({ projectId: ['10100'] });
 
       expect(result).toEqual(page);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/issuetypescheme/project`,
+        path: `${BASE_URL}/issuetypescheme/project?projectId=10100`,
       });
     });
 
@@ -352,10 +376,10 @@ describe('IssueTypeSchemeResource', () => {
       );
     });
 
-    it('forwards startAt and maxResults when listing by params', async () => {
+    it('forwards startAt and maxResults alongside projectId', async () => {
       transport.respondWith(makePageOf([]));
 
-      await resource.listProject({ startAt: 5, maxResults: 10 });
+      await resource.listProject({ projectId: ['10100'], startAt: 5, maxResults: 10 });
 
       expect(transport.lastCall?.options.query).toMatchObject({ startAt: 5, maxResults: 10 });
     });
@@ -369,7 +393,7 @@ describe('IssueTypeSchemeResource', () => {
       transport.respondWith(makePageOf([entry]));
 
       const results: unknown[] = [];
-      for await (const item of resource.listProjectAll()) {
+      for await (const item of resource.listProjectAll({ projectId: ['10100'] })) {
         results.push(item);
       }
 
@@ -380,7 +404,7 @@ describe('IssueTypeSchemeResource', () => {
     it('paginateOffset starts from startAt=0', async () => {
       transport.respondWith(makePageOf([]));
 
-      for await (const _item of resource.listProjectAll()) {
+      for await (const _item of resource.listProjectAll({ projectId: [] })) {
         break;
       }
 
@@ -389,7 +413,7 @@ describe('IssueTypeSchemeResource', () => {
 
     it('throws on invalid maxResults', async () => {
       await expect(async () => {
-        for await (const _item of resource.listProjectAll({ maxResults: 0 })) {
+        for await (const _item of resource.listProjectAll({ projectId: [], maxResults: 0 })) {
           break;
         }
       }).rejects.toThrow();

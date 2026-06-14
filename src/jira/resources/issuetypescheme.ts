@@ -13,14 +13,23 @@ export interface IssueTypeScheme {
   readonly isDefault?: boolean;
 }
 
+/** Valid values for the `orderBy` query parameter on GET /rest/api/3/issuetypescheme. */
+export type IssueTypeSchemeOrderBy = 'name' | '-name' | '+name' | 'id' | '-id' | '+id';
+
 /** Query parameters for GET /rest/api/3/issuetypescheme. */
 export interface ListIssueTypeSchemesParams {
   /** Pagination offset (default 0). */
   readonly startAt?: number;
   /** Page size (default 50). */
   readonly maxResults?: number;
-  /** Filter by scheme IDs (comma-joined). */
+  /** Filter by scheme IDs. */
   readonly id?: string[];
+  /** Order results by field. */
+  readonly orderBy?: IssueTypeSchemeOrderBy;
+  /** Expand additional scheme fields. */
+  readonly expand?: string;
+  /** Filter by name substring. */
+  readonly queryString?: string;
 }
 
 /** Request body for POST /rest/api/3/issuetypescheme. */
@@ -28,7 +37,8 @@ export interface CreateIssueTypeSchemeData {
   readonly name: string;
   readonly description?: string;
   readonly defaultIssueTypeId?: string;
-  readonly issueTypeIds?: string[];
+  /** At least one standard issue type ID is required (spec: required). */
+  readonly issueTypeIds: string[];
 }
 
 /** Request body for PUT /rest/api/3/issuetypescheme/{issueTypeSchemeId}. */
@@ -81,8 +91,8 @@ export interface ListIssueTypeSchemeProjectAssociationParams {
   readonly startAt?: number;
   /** Page size (default 50). */
   readonly maxResults?: number;
-  /** Filter by project IDs. */
-  readonly projectId?: string[];
+  /** Filter by project IDs (required by the API). */
+  readonly projectId: string[];
 }
 
 /** Request body for PUT /rest/api/3/issuetypescheme/project. */
@@ -151,10 +161,9 @@ export class IssueTypeSchemeResource {
    * POST /rest/api/3/issuetypescheme
    */
   async create(data: CreateIssueTypeSchemeData): Promise<CreatedIssueTypeScheme> {
-    const body: Record<string, unknown> = { name: data.name };
+    const body: Record<string, unknown> = { name: data.name, issueTypeIds: data.issueTypeIds };
     if (data.description !== undefined) body['description'] = data.description;
     if (data.defaultIssueTypeId !== undefined) body['defaultIssueTypeId'] = data.defaultIssueTypeId;
-    if (data.issueTypeIds !== undefined) body['issueTypeIds'] = data.issueTypeIds;
     const response = await this.transport.request<CreatedIssueTypeScheme>({
       method: 'POST',
       path: `${this.baseUrl}/issuetypescheme`,
@@ -272,11 +281,13 @@ export class IssueTypeSchemeResource {
   /**
    * B574: List issue type schemes with their associated projects.
    * GET /rest/api/3/issuetypescheme/project
+   *
+   * `projectId` is required by the Jira API.
    */
   async listProject(
-    params?: ListIssueTypeSchemeProjectAssociationParams,
+    params: ListIssueTypeSchemeProjectAssociationParams,
   ): Promise<OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectQuery(params);
     const response = await this.transport.request<
       OffsetPaginatedResponse<IssueTypeSchemeProjectAssociation>
@@ -285,7 +296,7 @@ export class IssueTypeSchemeResource {
       path: appendRepeatedParams(
         `${this.baseUrl}/issuetypescheme/project`,
         'projectId',
-        params?.projectId,
+        params.projectId,
       ),
       query,
     });
@@ -294,21 +305,23 @@ export class IssueTypeSchemeResource {
 
   /**
    * B574: Iterate every project-scheme mapping. Delegates to {@link paginateOffset}.
+   *
+   * `projectId` is required by the Jira API.
    */
   async *listProjectAll(
-    params?: Omit<ListIssueTypeSchemeProjectAssociationParams, 'startAt'>,
+    params: Omit<ListIssueTypeSchemeProjectAssociationParams, 'startAt'>,
   ): AsyncGenerator<IssueTypeSchemeProjectAssociation> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildProjectQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<IssueTypeSchemeProjectAssociation>(
       this.transport,
       appendRepeatedParams(
         `${this.baseUrl}/issuetypescheme/project`,
         'projectId',
-        params?.projectId,
+        params.projectId,
       ),
       query,
-      params?.maxResults,
+      params.maxResults,
     );
   }
 
@@ -333,6 +346,9 @@ function buildListQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+  if (params?.orderBy !== undefined) query['orderBy'] = params.orderBy;
+  if (params?.expand !== undefined) query['expand'] = params.expand;
+  if (params?.queryString !== undefined) query['queryString'] = params.queryString;
   // `id` is a `type: array` query param, emitted as repeated params built into
   // the path at each call site (not CSV-joined into the scalar query bag).
   return query;
@@ -350,11 +366,13 @@ function buildMappingQuery(
 }
 
 function buildProjectQuery(
-  params: ListIssueTypeSchemeProjectAssociationParams | undefined,
+  params:
+    | ListIssueTypeSchemeProjectAssociationParams
+    | Omit<ListIssueTypeSchemeProjectAssociationParams, 'startAt'>,
 ): Record<string, string | number | boolean | undefined> {
   const query: Record<string, string | number | boolean | undefined> = {};
-  if (params?.startAt !== undefined) query['startAt'] = params.startAt;
-  if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
+  if ('startAt' in params && params.startAt !== undefined) query['startAt'] = params.startAt;
+  if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
   // `projectId` is a `type: array` query param, emitted as repeated params
   // built into the path at each call site (not CSV-joined here).
   return query;
