@@ -497,7 +497,11 @@ export type { PostIncidentReview } from './resources/post-incident-reviews.js';
 export { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
 export type { Vulnerability } from './resources/vulnerability.js';
 export { VulnerabilityResource } from './resources/vulnerability.js';
-export type { DevopsComponent } from './resources/devopscomponents.js';
+export type {
+  DevopsComponent,
+  DevopsComponentTier,
+  DevopsComponentType,
+} from './resources/devopscomponents.js';
 export { DevopscomponentsResource } from './resources/devopscomponents.js';
 export type {
   GroupMatch,
@@ -1004,6 +1008,11 @@ export type {
 } from './resources/repository.js';
 export { RepositoryResource } from './resources/repository.js';
 export type {
+  BuildState,
+  DeploymentState,
+  DeploymentEnvironmentType,
+  BuildCommitReference,
+  BuildRefReference,
   Build,
   BuildAssociation,
   BuildTestInfo,
