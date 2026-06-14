@@ -6,33 +6,19 @@
 
 > Deep-audit 2026-06-10 (`docs/DEEP-AUDIT-2026-06-10.md`) core/CLI findings below (B1037–). Adversarially verified; the auth-middleware (#246) and pagination (#247) clusters already shipped and are excluded.
 
-- [ ] 🟢 🐛 Core: B1064 `pagination.validatePageSize` throws native `RangeError` not taxonomy `ValidationError` (deferred from B1041 sub-item 7)
-  - problem: `validatePageSize` (`src/core/pagination.ts`) throws a native `RangeError`, outside the `AtlassianError` taxonomy. Deferred from B1041 (#282) because the corrected type breaks ~152 `RangeError` assertions across ~30 downstream resource test files (`test/jira/*`, `test/confluence/*`, `test/property/*`) — its own focused PR. NOTE: `RangeError`→`ValidationError` is itself a **breaking** change (callers catching `RangeError`) → 3.0.0 CHANGELOG (B1062). Keep `normalizeMaxPages`'s separate `maxPages` `RangeError` assertions intact (different guard).
-  - files: `src/core/pagination.ts` + ~30 downstream test files
-  - deps: none
-- [ ] 🟢 🐛 Core: B1065 `cache.ts` key omits `responseType` (wrong-shaped cached body)
-  - problem: the cache key (`src/core/cache.ts`) does not include `responseType`, so a cached `json` GET can be served to a later `arrayBuffer`/`text` request as the wrong-shaped parsed body. Same class as B1039 defect-2 (which fixed the _batch_ dedup key) but for the _cache_ layer; pre-existing, surfaced by the #281 reviewer. Decide: include `responseType` in the cache key, or don't cache requests with a non-default `responseType`.
-  - files: `src/core/cache.ts`, `test/core/cache.test.ts`
+- [ ] 🟢 ♻️ Core: B1066 Remaining native `RangeError` throws outside the `AtlassianError` taxonomy
+  - problem: B1064 (#288) converted `validatePageSize` `RangeError`→`ValidationError`, but several sibling validation guards still throw native `RangeError`: `normalizeMaxPages` (`maxPages`, `src/core/pagination.ts`), confluence `users` emails guard, `users-bulk` accountIds guard, `footer-comments` versionNumber guard. For taxonomy consistency these should also be `ValidationError` (is `AtlassianError`). Surfaced by the B1064 review (which correctly left them out of B1064's scope). **Breaking** (callers catching `RangeError`) → 3.0.0 CHANGELOG (B1062).
+  - files: `src/core/pagination.ts`, `src/confluence/resources/{users,users-bulk,footer-comments}.ts` + their tests
   - deps: none
 
 ## 🖥️ CLI
 
 > SDK-implemented methods not exposed via `atlas` CLI/skill (audit 2026-06-05, code-verified 2026-06-05). SDK already covers these — tasks wire dispatch + router + help + skill docs + tests only; no `src/*/resources/*.ts` changes. `*All` pagination generators are excluded (their base `list`/`search` is already reachable).
 
-- [ ] 🟡 🐛 CLI: B1063 Boolean filter flags cannot express `false`
-  - problem: several CLI flags are registered `type: 'boolean'` in `src/cli/router.ts` (presence-only — parseArgs sets them `true` and pushes any following `true`/`false` token to positionals). For tri-state filters this loses the `false` case entirely: `--validate-query`, `--done` (boards list-epics), `--send-notification` (bulk ops), `--is-global-context`/`--is-any-issue-type` (fields context-list), `--only-options`, `--only-default`, `--redirect`, `--fallback-to-default`. The handlers read them via `asBoolFlag` which DOES accept the string `'false'`, but a boolean-typed flag never delivers a string — so `--flag false` silently sends `true`. Found during the Phase-3 skill doc reorg (the docs showed broken `--flag false` examples, now corrected to presence-only).
-  - solution: decide per-flag — for genuine tri-state filters, register as `type: 'string'` (so `asBoolFlag` gets `'true'`/`'false'`) or add explicit `--no-<flag>` variants; for true on/off toggles, presence-only is correct and the docs already match. Update router + tests + skill docs together (parity rule).
-  - files: `src/cli/router.ts`, `src/cli/commands/jira.ts`, `test/cli/router.test.ts`, `skill/reference/jira/*.md`
-  - deps: none
-
 ## 🧩 Jira
 
 > Deep-audit 2026-06-10 conformance findings (`docs/DEEP-AUDIT-2026-06-10.md` §4). CRITICAL/HIGH that change bytes on the wire below; per-module response-type/type-drift (84 HIGH + 358 MED + 72 LOW) rolled into B1056. Excludes the 30 findings shipped via #249/#250.
 
-- [ ] 🔴 🐛 Jira: B1049 Repeated-array-param serialization holdouts (recurring class)
-  - problem: array-type query params still CSV-joined where the spec needs repeated params (`appendRepeatedParams`): `projects.list status`, `tasks` 7 array params serialized as scalars, `service-registry.serviceIds` (see B1047). Silently returns wrong result sets. Same class as #167/#198/#200/#201/#222.
-  - files: `src/jira/resources/{projects,tasks,service-registry}.ts` + tests — see [[project_jira_array_query_param_serialization]]
-  - deps: none
 - [ ] 🟢 ♻️ Jira: B1056 Response-type / type-drift rollup (85 modules — MED/LOW + non-wire HIGH)
   - problem: declared request/response interfaces drift from spec schemas (fields that read `undefined` at runtime, wrong optionality, enum subsets, fictional fields) — annoying but not request-corrupting. 79 HIGH + 358 MED + 72 LOW across 85 Jira modules. Full per-module inventory in report §4c + `conformance-final.json`. Heaviest: app, boards, bulk, dashboards, expression, issues, plans, post-incident-reviews, workflows. Fix opportunistically per module or fold into B046 endpoint-registry typing.
   - files: `src/jira/resources/*.ts`, `src/jira/types*.ts` + tests (per module)
@@ -53,15 +39,10 @@
 
 ## 🧪 QA
 
-- [ ] 🟡 🐛 QA: B1060 Type-regen drift-guard watches the old Confluence **v1** spec (report F3)
-  - problem: `scripts/regenerate-types.ts` fetches `confluence/swagger.v3.json` (v1, 89 paths) instead of the pinned v2 `openapi-v2.v3.json` (151 paths) — the weekly `spec-drift` smoke test (B018) exercises `generateTypes()` against a spec the SDK doesn't target. Jira URLs verified correct.
-  - solution: one-line URL swap + tighten `test/scripts/regenerate-types.test.ts:41` to assert the exact v2 URL.
-  - files: `scripts/regenerate-types.ts`, `test/scripts/regenerate-types.test.ts`
-  - deps: none
-- [ ] 🟢 ♻️ QA: B1061 Dead-code cleanup (deep-audit, minimal)
-  - problem: `src/confluence/resources/index.ts` is an unreachable partial barrel with zero consumers (removable now); `tsconfig.json`/`vitest.config.ts` reference a `bench/` dir that doesn't exist. Plus 7 unused-public exports (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; all 26 Confluence resource classes exported from `confluence/index.ts` but absent from root) — removal is semver-major, defer to 3.0.0.
-  - files: `src/confluence/resources/index.ts`, `tsconfig.json`, `vitest.config.ts`, `src/core/index.ts`, `src/confluence/index.ts`
-  - deps: 3.0.0 for the public-export trims
+- [ ] 🟢 ♻️ QA: B1061b Public-export trims (deferred 3.0.0 remainder of B1061)
+  - problem: B1061 (#285) removed the dead barrel + bench refs; the 7 unused-public-export trims remain (root-vs-core barrel asymmetry: `HttpMethod`, `ResolvedConfig`, `AuthProvider`, `appendRepeatedParams` core re-export; the 26 Confluence resource classes exported from `confluence/index.ts` but absent from root). Removal is semver-major → 3.0.0 only.
+  - files: `src/core/index.ts`, `src/confluence/index.ts`, `src/index.ts`
+  - deps: 3.0.0 (B1062)
 
 ## 🤖 Infra
 
