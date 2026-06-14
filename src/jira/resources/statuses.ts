@@ -1,10 +1,29 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
-import type { Status } from '../types.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { ValidationError } from '../../core/errors.js';
 import { appendRepeatedParams } from '../../core/query.js';
+
+/**
+ * A status as returned by the bulk-get/create/search endpoints.
+ *
+ * Spec: `BulkJiraStatus`. `statusCategory` is a plain string enum (`TODO` |
+ * `IN_PROGRESS` | `DONE`), distinct from the richer `StatusCategory` object
+ * returned by the `/rest/api/3/status` and `/rest/api/3/statuses/search`
+ * offset-paginated endpoints.
+ */
+export interface BulkJiraStatus {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  /** Scope of the status (`GLOBAL` for company-managed, `PROJECT` for team-managed). */
+  readonly scope?: {
+    readonly type: 'GLOBAL' | 'PROJECT';
+    readonly project?: { readonly id: string };
+  };
+}
 
 // ─── New types for extended endpoints (B777-B784) ───────────────────────────
 
@@ -27,12 +46,12 @@ export interface StatusScope {
   readonly project?: { readonly id: string };
 }
 
-/** Request body entry for bulk-updating a status. */
+/** Request body entry for bulk-updating a status. Spec: `StatusUpdate` — `name` and `statusCategory` are required. */
 export interface UpdateStatusData {
   readonly id: string;
-  readonly name?: string;
+  readonly name: string;
   readonly description?: string;
-  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  readonly statusCategory: 'TODO' | 'IN_PROGRESS' | 'DONE';
 }
 
 /**
@@ -134,7 +153,7 @@ export class StatusesResource {
    * previous parameterless call always 400'd. To list every status instead,
    * use the `status` resource (`GET /rest/api/3/status`).
    */
-  async list(ids: readonly string[]): Promise<Status[]> {
+  async list(ids: readonly string[]): Promise<BulkJiraStatus[]> {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new ValidationError('list requires at least one status id (--ids)');
     }
@@ -143,7 +162,7 @@ export class StatusesResource {
     }
     // `id` is a `type: array` query parameter — emit repeated `id=a&id=b`
     // built into the path (the transport query map collapses duplicate keys).
-    const response = await this.transport.request<Status[]>({
+    const response = await this.transport.request<BulkJiraStatus[]>({
       method: 'GET',
       path: appendRepeatedParams(`${this.baseUrl}/statuses`, 'id', ids),
     });
@@ -180,14 +199,17 @@ export class StatusesResource {
    *
    * Returns the created statuses.
    */
-  async bulkCreate(data: { scope: StatusScope; statuses: CreateStatusData[] }): Promise<Status[]> {
+  async bulkCreate(data: {
+    scope: StatusScope;
+    statuses: CreateStatusData[];
+  }): Promise<BulkJiraStatus[]> {
     if (data.statuses === undefined || data.statuses.length === 0) {
       throw new ValidationError('bulkCreate requires at least one status entry (--value)');
     }
     if (data.scope === undefined) {
       throw new ValidationError('bulkCreate requires a scope (--scope)');
     }
-    const response = await this.transport.request<Status[]>({
+    const response = await this.transport.request<BulkJiraStatus[]>({
       method: 'POST',
       path: `${this.baseUrl}/statuses`,
       body: { scope: data.scope, statuses: data.statuses },
@@ -285,15 +307,22 @@ export class StatusesResource {
   /**
    * B783: Get statuses by name.
    * GET /rest/api/3/statuses/byNames
+   *
+   * @param params.names Required list of status names (type:array — repeated `name=` params).
+   * @param params.projectId Optional project ID to scope the search (spec: optional query param).
    */
-  async byNames(params: { names: string[] }): Promise<Status[]> {
+  async byNames(params: { names: string[]; projectId?: string }): Promise<BulkJiraStatus[]> {
     // The spec parameter is `name` (NOT `statusName`) and is `type: array`:
     // emit repeated `name=a&name=b` built into the path. The previous code sent
     // a single CSV value under the wrong key, so the filter was ignored by the
     // server even for a single name.
-    const response = await this.transport.request<Status[]>({
+    let path = appendRepeatedParams(`${this.baseUrl}/statuses/byNames`, 'name', params.names);
+    if (params.projectId !== undefined) {
+      path += `&projectId=${encodeURIComponent(params.projectId)}`;
+    }
+    const response = await this.transport.request<BulkJiraStatus[]>({
       method: 'GET',
-      path: appendRepeatedParams(`${this.baseUrl}/statuses/byNames`, 'name', params.names),
+      path,
     });
     return response.data;
   }
@@ -304,10 +333,10 @@ export class StatusesResource {
    *
    * Returns one page of results. For full iteration use {@link searchAll}.
    */
-  async search(params?: SearchStatusesParams): Promise<OffsetPaginatedResponse<Status>> {
+  async search(params?: SearchStatusesParams): Promise<OffsetPaginatedResponse<BulkJiraStatus>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildSearchQuery(params);
-    const response = await this.transport.request<OffsetPaginatedResponse<Status>>({
+    const response = await this.transport.request<OffsetPaginatedResponse<BulkJiraStatus>>({
       method: 'GET',
       path: `${this.baseUrl}/statuses/search`,
       query,
@@ -319,12 +348,12 @@ export class StatusesResource {
    * B784: Iterate every status returned by `/statuses/search` across all pages.
    * Delegates to {@link paginateOffset}.
    */
-  async *searchAll(params?: Omit<SearchStatusesParams, 'startAt'>): AsyncGenerator<Status> {
+  async *searchAll(params?: Omit<SearchStatusesParams, 'startAt'>): AsyncGenerator<BulkJiraStatus> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     // Omit `startAt` and `maxResults` from base query — `paginateOffset` sets
     // them per page (startAt from cursor, maxResults from pageSize argument).
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
-    yield* paginateOffset<Status>(
+    yield* paginateOffset<BulkJiraStatus>(
       this.transport,
       `${this.baseUrl}/statuses/search`,
       query,

@@ -3,6 +3,33 @@ import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 
 /**
+ * A Jira webhook event name as defined in the spec (`Webhook.events` and `WebhookDetails.events`).
+ *
+ * Spec enum values for both the `Webhook` response schema and the `WebhookDetails` request schema.
+ */
+export type WebhookEvent =
+  | 'jira:issue_created'
+  | 'jira:issue_updated'
+  | 'jira:issue_deleted'
+  | 'comment_created'
+  | 'comment_updated'
+  | 'comment_deleted'
+  | 'issue_property_set'
+  | 'issue_property_deleted'
+  | 'sprint_created'
+  | 'sprint_updated'
+  | 'sprint_closed'
+  | 'sprint_deleted'
+  | 'sprint_started'
+  | 'jira:version_released'
+  | 'jira:version_unreleased'
+  | 'jira:version_created'
+  | 'jira:version_moved'
+  | 'jira:version_updated'
+  | 'jira:version_merged'
+  | 'jira:version_deleted';
+
+/**
  * A page of failed webhook deliveries returned by `GET /rest/api/3/webhook/failed`.
  *
  * Spec: `FailedWebhooks`. Cursor pagination via `next` (a full URL to the next
@@ -23,7 +50,8 @@ export interface Webhook {
   readonly url: string;
   readonly fieldIdsFilter?: string[];
   readonly issuePropertyKeysFilter?: string[];
-  readonly events: string[];
+  /** Jira events that trigger the webhook. Spec enum values enforced via `WebhookEvent`. */
+  readonly events: WebhookEvent[];
   /** The date after which the webhook is no longer sent (milliseconds since epoch, int64). */
   readonly expirationDate?: number;
 }
@@ -43,7 +71,8 @@ export interface WebhookRegistration {
   readonly jqlFilter: string;
   readonly fieldIdsFilter?: string[];
   readonly issuePropertyKeysFilter?: string[];
-  readonly events: string[];
+  /** Jira events that trigger the webhook. Spec enum values enforced via `WebhookEvent`. */
+  readonly events: WebhookEvent[];
 }
 
 export interface WebhookRegistrationResult {

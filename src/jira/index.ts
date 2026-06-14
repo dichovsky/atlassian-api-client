@@ -394,7 +394,9 @@ export type {
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {
+  WebhookEvent,
   Webhook,
+  WebhookRegistration,
   RegisterWebhookData,
   RegisteredWebhooks,
   WebhooksExpirationDate,
@@ -735,6 +737,7 @@ export type {
 } from './resources/resolution.js';
 export { ResolutionResource } from './resources/resolution.js';
 export type {
+  BulkJiraStatus,
   CreateStatusData,
   UpdateStatusData,
   StatusScope,
@@ -813,6 +816,10 @@ export type {
 } from './resources/priorityscheme.js';
 export { PrioritySchemeResource } from './resources/priorityscheme.js';
 export type {
+  SimpleLink,
+  VersionApprover,
+  VersionIssuesStatus,
+  VersionUsageInCustomField,
   Version,
   VersionRelatedWork,
   VersionRelatedIssueCounts,

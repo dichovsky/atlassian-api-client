@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { VersionResource } from '../../src/jira/resources/version.js';
+import {
+  VersionResource,
+  type Version,
+  type VersionRelatedIssueCounts,
+  type SimpleLink,
+  type VersionApprover,
+  type VersionIssuesStatus,
+  type VersionUsageInCustomField,
+} from '../../src/jira/resources/version.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
@@ -295,6 +303,86 @@ describe('VersionResource', () => {
         method: 'GET',
         path: `${BASE_URL}/version/10001/relatedIssueCounts`,
       });
+    });
+
+    it('exposes customFieldUsage as VersionUsageInCustomField[] (was readonly unknown[])', async () => {
+      // Regression: VersionRelatedIssueCounts.customFieldUsage was typed as `readonly unknown[]`.
+      // Spec: VersionUsageInCustomField[] with customFieldId, fieldName, issueCountWithVersionInCustomField.
+      const customFieldUsage: VersionUsageInCustomField[] = [
+        { customFieldId: 10100, fieldName: 'Fix Version', issueCountWithVersionInCustomField: 3 },
+      ];
+      const counts: VersionRelatedIssueCounts = {
+        issuesFixedCount: 5,
+        issuesAffectedCount: 3,
+        customFieldUsage,
+      };
+      transport.respondWith(counts);
+
+      const result = await resource.relatedIssueCounts('10001');
+
+      expect(result.customFieldUsage).toHaveLength(1);
+      const entry = result.customFieldUsage![0]!;
+      expect(entry.customFieldId).toBe(10100);
+      expect(entry.fieldName).toBe('Fix Version');
+      expect(entry.issueCountWithVersionInCustomField).toBe(3);
+    });
+  });
+
+  // ── Version expand-only typed fields (type-drift fixes) ───────────────────
+
+  describe('Version typed expand fields (approvers, operations, issuesStatusForFixVersion)', () => {
+    it('exposes approvers as VersionApprover[] (was readonly unknown[])', async () => {
+      // Regression: Version.approvers was typed as readonly unknown[].
+      // Spec: VersionApprover[] with accountId, declineReason, description, status (all readOnly).
+      const approvers: VersionApprover[] = [
+        { accountId: 'acc-1', status: 'PENDING', description: 'Reviewing' },
+      ];
+      const version: Version = { ...makeVersion(), approvers };
+      transport.respondWith(version);
+
+      const result = await resource.get('10001', { expand: 'approvers' });
+
+      expect(result.approvers).toHaveLength(1);
+      const approver = result.approvers![0]!;
+      expect(approver.accountId).toBe('acc-1');
+      expect(approver.status).toBe('PENDING');
+    });
+
+    it('exposes operations as SimpleLink[] (was readonly unknown[])', async () => {
+      // Regression: Version.operations was typed as readonly unknown[].
+      // Spec: SimpleLink[] with id, styleClass, iconClass, label, title, href, weight.
+      const operations: SimpleLink[] = [
+        { id: 'op-1', label: 'Release', href: 'https://example.com/release' },
+      ];
+      const version: Version = { ...makeVersion(), operations };
+      transport.respondWith(version);
+
+      const result = await resource.get('10001', { expand: 'operations' });
+
+      expect(result.operations).toHaveLength(1);
+      const op = result.operations![0]!;
+      expect(op.id).toBe('op-1');
+      expect(op.label).toBe('Release');
+      expect(op.href).toBe('https://example.com/release');
+    });
+
+    it('exposes issuesStatusForFixVersion as VersionIssuesStatus (was Record<string,unknown>)', async () => {
+      // Regression: Version.issuesStatusForFixVersion was typed as Record<string, unknown>.
+      // Spec: VersionIssuesStatus with toDo, inProgress, done, unmapped (all readOnly).
+      const issuesStatusForFixVersion: VersionIssuesStatus = {
+        toDo: 10,
+        inProgress: 3,
+        done: 42,
+        unmapped: 1,
+      };
+      const version: Version = { ...makeVersion(), issuesStatusForFixVersion };
+      transport.respondWith(version);
+
+      const result = await resource.get('10001', { expand: 'issuesstatus' });
+
+      expect(result.issuesStatusForFixVersion).toBeDefined();
+      expect(result.issuesStatusForFixVersion!.toDo).toBe(10);
+      expect(result.issuesStatusForFixVersion!.done).toBe(42);
     });
   });
 
