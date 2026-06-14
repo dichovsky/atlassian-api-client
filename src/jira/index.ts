@@ -136,6 +136,7 @@ export type {
   BoardIssue,
   ListBoardsParams,
   ListBoardIssuesParams,
+  BoardSummary,
 } from './resources/boards.js';
 export type {
   SoftwareIssueResults,
@@ -371,6 +372,10 @@ export type {
   FieldIdentifierObject,
   FieldAssociationsRequest,
   ListTrashedFieldsParams,
+  FieldDetails,
+  FieldSchema,
+  FieldSearcherKey,
+  FieldOrderBy,
 } from './resources/fields.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type {
@@ -440,6 +445,7 @@ export type {
   DevopsBulkAcceptedEntity,
   DevopsBulkFailedEntity,
   DevopsBulkSubmitResponse,
+  BulkErrorCollection,
 } from './resources/bulk.js';
 export { AnnouncementBannerResource } from './resources/announcement-banner.js';
 export type { ApplicationRole } from './resources/application-role.js';

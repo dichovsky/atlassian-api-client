@@ -111,6 +111,14 @@ export type {
   CreateFooterCommentData,
   CreateInlineCommentData,
   UpdateInlineCommentData,
+  ContentStatus,
+  PrimaryBodyRepresentation,
+  PrimaryBodyRepresentationSingle,
+  InlineCommentProperties,
+  InlineCommentChild,
+  CommentVersion,
+  DetailedVersion,
+  GetInlineCommentParams,
 } from './types/comments.js';
 export type {
   ListContentPropertiesParams,
