@@ -14,10 +14,9 @@ export interface ListLabelsParams {
 
 /**
  * Parameters for `GET /labels`. The tenant-wide label listing supports
- * filtering by id and prefix (both are comma-separated lists at the wire
- * level). Callers may pass either a string (already comma-joined) or a
- * non-empty array; the resource flattens arrays via `join(',')` before
- * shipping.
+ * filtering by id and prefix (both spec `type: array` → repeated params on the
+ * wire). Callers may pass either a single string or an array; the resource
+ * serializes via `appendScalarOrArrayParam` (single value or `?id=a&id=b`).
  */
 export interface ListAllLabelsParams {
   readonly 'label-id'?: string | readonly (string | number)[];
@@ -37,11 +36,9 @@ export interface ListAttachmentsByLabelParams {
 /** Parameters for `GET /labels/{id}/blogposts`. */
 export interface ListBlogPostsByLabelParams {
   /**
-   * Filter by space id(s). The wire format is a comma-joined string; the
-   * array form is SDK-only — CLI callers always pass a pre-joined string
-   * via `--space-id`, so the array branch of `csvParam` is unreachable
-   * through the CLI dispatch path (covered by unit tests at the resource
-   * layer).
+   * Filter by space id(s). Spec `type: array` → repeated params on the wire
+   * (single value, or `?space-id=a&space-id=b`) via `appendScalarOrArrayParam`.
+   * Accepts a single string (e.g. the CLI `--space-id`) or an array.
    */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';
@@ -53,11 +50,9 @@ export interface ListBlogPostsByLabelParams {
 /** Parameters for `GET /labels/{id}/pages`. */
 export interface ListPagesByLabelParams {
   /**
-   * Filter by space id(s). The wire format is a comma-joined string; the
-   * array form is SDK-only — CLI callers always pass a pre-joined string
-   * via `--space-id`, so the array branch of `csvParam` is unreachable
-   * through the CLI dispatch path (covered by unit tests at the resource
-   * layer).
+   * Filter by space id(s). Spec `type: array` → repeated params on the wire
+   * (single value, or `?space-id=a&space-id=b`) via `appendScalarOrArrayParam`.
+   * Accepts a single string (e.g. the CLI `--space-id`) or an array.
    */
   readonly 'space-id'?: string | readonly (string | number)[];
   readonly 'body-format'?: 'storage' | 'atlas_doc_format';

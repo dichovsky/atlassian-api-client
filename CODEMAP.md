@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "1936c2d873c88cdc9d1af2fb4d57f2e5d7e119af3fd68f782cfd6a935e5f43cf",
+  "sourceHash": "b68ad0321dc88176b957a3d1f0cafa00f8d6f8d02edf40819be178f8fa5144ff",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -1691,9 +1691,9 @@
       "name": "ListAllLabelsParams",
       "kind": "interface",
       "file": "src/confluence/types/labels.ts",
-      "line": 22,
+      "line": 21,
       "signature": "export interface ListAllLabelsParams { readonly 'label-id'?: string | readonly (string | number)[]; readonly prefix?: st…",
-      "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both are comma-separated lists at the wire level). Callers may pass either a string (already comma-joined) or a non-empty array; the resource flattens arrays via `join(',')` before shipping.",
+      "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both spec `type: array` → repeated params on the wire). Callers may pass either a single string or an array; the resource serializes via `appendScalarOrArrayParam` (single value or `?id=a&id=b`).",
       "typeOnly": true
     },
     {
@@ -1727,7 +1727,7 @@
       "name": "ListAttachmentsByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types/labels.ts",
-      "line": 31,
+      "line": 30,
       "signature": "export interface ListAttachmentsByLabelParams { readonly sort?: AttachmentSortOrder; readonly limit?: number; readonly c…",
       "jsdoc": "Parameters for `GET /labels/{id}/attachments`.",
       "typeOnly": true
@@ -1808,7 +1808,7 @@
       "name": "ListBlogPostsByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types/labels.ts",
-      "line": 38,
+      "line": 37,
       "signature": "export interface ListBlogPostsByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'bod…",
       "jsdoc": "Parameters for `GET /labels/{id}/blogposts`.",
       "typeOnly": true
@@ -2222,7 +2222,7 @@
       "name": "ListPagesByLabelParams",
       "kind": "interface",
       "file": "src/confluence/types/labels.ts",
-      "line": 54,
+      "line": 51,
       "signature": "export interface ListPagesByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'body-fo…",
       "jsdoc": "Parameters for `GET /labels/{id}/pages`.",
       "typeOnly": true
@@ -11560,15 +11560,15 @@
         {
           "name": "ListAllLabelsParams",
           "kind": "interface",
-          "line": 22,
+          "line": 21,
           "exported": true,
           "signature": "export interface ListAllLabelsParams { readonly 'label-id'?: string | readonly (string | number)[]; readonly prefix?: st…",
-          "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both are comma-separated lists at the wire level). Callers may pass either a string (already comma-joined) or a non-empty array; the resource flattens arrays via `join(',')` before shipping."
+          "jsdoc": "Parameters for `GET /labels`. The tenant-wide label listing supports filtering by id and prefix (both spec `type: array` → repeated params on the wire). Callers may pass either a single string or an array; the resource serializes via `appendScalarOrArrayParam` (single value or `?id=a&id=b`)."
         },
         {
           "name": "ListAttachmentsByLabelParams",
           "kind": "interface",
-          "line": 31,
+          "line": 30,
           "exported": true,
           "signature": "export interface ListAttachmentsByLabelParams { readonly sort?: AttachmentSortOrder; readonly limit?: number; readonly c…",
           "jsdoc": "Parameters for `GET /labels/{id}/attachments`."
@@ -11576,7 +11576,7 @@
         {
           "name": "ListBlogPostsByLabelParams",
           "kind": "interface",
-          "line": 38,
+          "line": 37,
           "exported": true,
           "signature": "export interface ListBlogPostsByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'bod…",
           "jsdoc": "Parameters for `GET /labels/{id}/blogposts`."
@@ -11584,7 +11584,7 @@
         {
           "name": "ListPagesByLabelParams",
           "kind": "interface",
-          "line": 54,
+          "line": 51,
           "exported": true,
           "signature": "export interface ListPagesByLabelParams { readonly 'space-id'?: string | readonly (string | number)[]; readonly 'body-fo…",
           "jsdoc": "Parameters for `GET /labels/{id}/pages`."
