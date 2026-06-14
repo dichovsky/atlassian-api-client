@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "f850ce57d5ead8d98145d5072bbdad853eb9cc784cf16d32372b5ae74d0e2546",
+  "sourceHash": "4dd045546874f6979575ee82f6cdc7b4bd72749ef5041e284c1d228897d0d97a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -24152,7 +24152,7 @@
         {
           "name": "ListClassificationLevelsParams",
           "kind": "interface",
-          "line": 7,
+          "line": 8,
           "exported": true,
           "signature": "export interface ListClassificationLevelsParams { readonly status?: readonly ('PUBLISHED' | 'ARCHIVED' | 'DRAFT')[]; rea…",
           "jsdoc": "Query parameters for {@link ClassificationLevelsResource.list}. Spec: `GET /rest/api/3/classification-levels`."
@@ -24160,7 +24160,7 @@
         {
           "name": "ClassificationLevel",
           "kind": "interface",
-          "line": 24,
+          "line": 25,
           "exported": true,
           "signature": "export interface ClassificationLevel { readonly id: string; readonly status: string; readonly name?: string; readonly de…",
           "jsdoc": "A Jira data classification level. Spec: `DataClassificationTagBean`."
@@ -24168,7 +24168,7 @@
         {
           "name": "ClassificationLevelsResource",
           "kind": "class",
-          "line": 43,
+          "line": 44,
           "exported": true,
           "signature": "export class ClassificationLevelsResource",
           "jsdoc": "Jira Classification Levels resource — GET /rest/api/3/classification-levels.",
@@ -24176,17 +24176,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 44
+              "line": 45
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 55
+              "line": 56
             }
           ]
         }
       ],
       "imports": [
+        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -27065,13 +27066,13 @@
           "kind": "interface",
           "line": 40,
           "exported": true,
-          "signature": "export interface IssueIdOrKeysAssociation { readonly issueIdOrKeys: readonly string[]; }",
+          "signature": "export interface IssueIdOrKeysAssociation { readonly associationType: 'issueKeys' | 'issueIdOrKeys'; readonly values: re…",
           "jsdoc": "Issue ID or keys association. Spec: `IssueIdOrKeysAssociation`."
         },
         {
           "name": "FeatureFlag",
           "kind": "interface",
-          "line": 48,
+          "line": 49,
           "exported": true,
           "signature": "export interface FeatureFlag { readonly id: string; readonly key: string; readonly updateSequenceId: number; readonly di…",
           "jsdoc": "A Jira feature flag entity. Spec: `FeatureFlagData` (GET /rest/featureflags/0.1/flag/{featureFlagId})."
@@ -27079,7 +27080,7 @@
         {
           "name": "FlagResource",
           "kind": "class",
-          "line": 69,
+          "line": 70,
           "exported": true,
           "signature": "export class FlagResource",
           "jsdoc": "Jira Feature Flags resource — GET and DELETE /rest/featureflags/0.1/flag/{featureFlagId}.",
@@ -27087,17 +27088,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 70
+              "line": 71
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 79
+              "line": 80
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 91
+              "line": 92
             }
           ]
         }

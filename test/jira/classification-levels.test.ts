@@ -96,9 +96,8 @@ describe('ClassificationLevelsResource', () => {
       await classificationLevels.list({ orderBy: '-rank' });
 
       // Assert
-      expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/classification-levels?orderBy=-rank`,
-      );
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/classification-levels`);
+      expect(transport.lastCall?.options.query).toMatchObject({ orderBy: '-rank' });
     });
 
     it('sends both status and orderBy together', async () => {
@@ -110,8 +109,9 @@ describe('ClassificationLevelsResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/classification-levels?status=PUBLISHED&orderBy=rank`,
+        `${BASE_URL}/classification-levels?status=PUBLISHED`,
       );
+      expect(transport.lastCall?.options.query).toMatchObject({ orderBy: 'rank' });
     });
 
     it('omits status param when status array is empty', async () => {

@@ -38,7 +38,8 @@ export interface FeatureFlagDetails {
 
 /** Issue ID or keys association. Spec: `IssueIdOrKeysAssociation`. */
 export interface IssueIdOrKeysAssociation {
-  readonly issueIdOrKeys: readonly string[];
+  readonly associationType: 'issueKeys' | 'issueIdOrKeys';
+  readonly values: readonly string[];
 }
 
 /**

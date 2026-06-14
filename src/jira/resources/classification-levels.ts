@@ -1,4 +1,5 @@
 import type { Transport } from '../../core/types.js';
+import { appendRepeatedParams } from '../../core/query.js';
 
 /**
  * Query parameters for {@link ClassificationLevelsResource.list}.
@@ -53,23 +54,22 @@ export class ClassificationLevelsResource {
    * @param params - Optional filters: `status` (repeated), `orderBy`.
    */
   async list(params?: ListClassificationLevelsParams): Promise<ClassificationLevel[]> {
-    const query = new URLSearchParams();
-    if (params?.status && params.status.length > 0) {
-      for (const s of params.status) {
-        query.append('status', s);
-      }
-    }
+    // `status` is `type:array` → repeated params baked into the path; `orderBy`
+    // is a scalar query param (B1049 convention via appendRepeatedParams).
+    const path = appendRepeatedParams(
+      `${this.baseUrl}/classification-levels`,
+      'status',
+      params?.status,
+    );
+    const query: Record<string, string | undefined> = {};
     if (params?.orderBy !== undefined) {
-      query.append('orderBy', params.orderBy);
+      query['orderBy'] = params.orderBy;
     }
-    const qs = query.toString();
-    const path = qs
-      ? `${this.baseUrl}/classification-levels?${qs}`
-      : `${this.baseUrl}/classification-levels`;
 
     const response = await this.transport.request<{ classifications?: ClassificationLevel[] }>({
       method: 'GET',
       path,
+      query,
     });
     return response.data.classifications ?? [];
   }

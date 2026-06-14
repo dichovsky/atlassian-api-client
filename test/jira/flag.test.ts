@@ -97,13 +97,15 @@ describe('FlagResource', () => {
     it('exposes associations when present', async () => {
       const payload = {
         ...makeFlag(),
-        associations: [{ issueIdOrKeys: ['PROJ-1'] }],
+        associations: [{ associationType: 'issueIdOrKeys', values: ['PROJ-1'] }],
       };
       transport.respondWith(payload);
 
       const result = await flag.get('flag-xyz');
 
-      expect(result.associations).toEqual([{ issueIdOrKeys: ['PROJ-1'] }]);
+      expect(result.associations).toEqual([
+        { associationType: 'issueIdOrKeys', values: ['PROJ-1'] },
+      ]);
     });
 
     it('propagates transport errors', async () => {
