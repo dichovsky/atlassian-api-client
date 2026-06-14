@@ -10,14 +10,64 @@ import { appendRepeatedParams } from '../../core/query.js';
  *
  * Resolutions are global per-site; any issue can be resolved with any
  * resolution regardless of project or issue type.
+ *
+ * Corresponds to the spec `Resolution` schema used by GET /resolution and
+ * GET /resolution/{id}. Note: the deprecated GET /resolution list endpoint
+ * also returns this shape.
  */
 export interface Resolution {
   readonly id: string;
   readonly name: string;
   readonly self?: string;
   readonly description?: string;
-  /** Whether this is the default resolution applied when no explicit choice is made. */
-  readonly isDefault?: boolean;
+}
+
+/**
+ * A resolution as returned by the search endpoint (GET /resolution/search).
+ *
+ * Corresponds to the spec `ResolutionJsonBean` schema. Note the field name
+ * is `default` (not `isDefault`) and the schema includes `iconUrl`.
+ */
+export interface ResolutionJsonBean {
+  readonly id?: string;
+  readonly name?: string;
+  readonly self?: string;
+  readonly description?: string;
+  readonly iconUrl?: string;
+  /** Whether this is the default resolution. Field name in spec is `default`. */
+  readonly default?: boolean;
+}
+
+/**
+ * The ID of a newly created resolution.
+ *
+ * Corresponds to the spec `ResolutionId` schema returned by
+ * POST /resolution (201 response).
+ */
+export interface ResolutionId {
+  /** The ID of the issue resolution. */
+  readonly id: string;
+}
+
+/**
+ * A running task for an async operation.
+ *
+ * Corresponds to the spec `TaskProgressBeanObject` schema returned by
+ * DELETE /resolution/{id} (303 response).
+ */
+export interface ResolutionTaskProgress {
+  readonly id: string;
+  readonly description?: string;
+  readonly status: string;
+  readonly progress: number;
+  readonly elapsedRuntime: number;
+  readonly submitted?: number;
+  readonly started?: number;
+  readonly finished?: number;
+  readonly lastUpdate?: number;
+  readonly message?: string;
+  readonly result?: unknown;
+  readonly self: string;
 }
 
 /** Request body for POST /rest/api/3/resolution. */
@@ -28,7 +78,8 @@ export interface CreateResolutionData {
 
 /** Request body for PUT /rest/api/3/resolution/{id}. */
 export interface UpdateResolutionData {
-  readonly name?: string;
+  /** Required by spec (UpdateResolutionDetails: required: ["name"]). */
+  readonly name: string;
   readonly description?: string;
 }
 
@@ -36,14 +87,19 @@ export interface UpdateResolutionData {
 export interface DeleteResolutionParams {
   /**
    * ID of the resolution to migrate issues to when deleting.
-   * Required when the resolution is in use by existing issues.
+   * Required by the Jira v3 spec (replaceWith: required: true); kept optional
+   * here to avoid breaking existing CLI callers (DEFERRED-CLI: cli/commands/jira.ts
+   * passes replaceWith conditionally).
    */
   readonly replaceWith?: string;
 }
 
 /** Request body for PUT /rest/api/3/resolution/default. */
 export interface SetDefaultResolutionData {
-  /** ID of the resolution to set as the default. */
+  /**
+   * ID of the resolution to set as the default.
+   * Pass null (as `"null"` per spec description) to clear the default.
+   */
   readonly id: string;
 }
 
@@ -120,12 +176,14 @@ export class ResolutionResource {
   /**
    * B712: Create a new resolution.
    * POST /rest/api/3/resolution
+   *
+   * Returns the ID of the new resolution (spec 201: ResolutionId).
    */
-  async create(data: CreateResolutionData): Promise<Resolution> {
+  async create(data: CreateResolutionData): Promise<ResolutionId> {
     const body: Record<string, unknown> = { name: data.name };
     if (data.description !== undefined) body['description'] = data.description;
 
-    const response = await this.transport.request<Resolution>({
+    const response = await this.transport.request<ResolutionId>({
       method: 'POST',
       path: `${this.baseUrl}/resolution`,
       body,
@@ -156,21 +214,25 @@ export class ResolutionResource {
   }
 
   /**
-   * B713: Delete a resolution.
+   * B713: Delete a resolution (asynchronous operation).
    * DELETE /rest/api/3/resolution/{id}
    *
-   * If the resolution is used by existing issues `replaceWith` must be
-   * provided; the server will reject the request without it in that case.
+   * The operation is asynchronous — returns a task progress object
+   * (spec 303: TaskProgressBeanObject). Follow the `self` link to poll
+   * the task status.
+   *
+   * The `replaceWith` parameter is required by the Jira v3 spec.
    */
-  async delete(id: string, params?: DeleteResolutionParams): Promise<void> {
+  async delete(id: string, params?: DeleteResolutionParams): Promise<ResolutionTaskProgress> {
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.replaceWith !== undefined) query['replaceWith'] = params.replaceWith;
 
-    await this.transport.request<undefined>({
+    const response = await this.transport.request<ResolutionTaskProgress>({
       method: 'DELETE',
       path: `${this.baseUrl}/resolution/${encodePathSegment(id)}`,
       query,
     });
+    return response.data;
   }
 
   /**
@@ -215,11 +277,14 @@ export class ResolutionResource {
    * GET /rest/api/3/resolution/search
    *
    * Returns one page of results. For full iteration use {@link searchAll}.
+   * Items are typed as {@link ResolutionJsonBean} (spec schema for this endpoint).
    */
-  async search(params?: SearchResolutionsParams): Promise<OffsetPaginatedResponse<Resolution>> {
+  async search(
+    params?: SearchResolutionsParams,
+  ): Promise<OffsetPaginatedResponse<ResolutionJsonBean>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     const query = buildSearchQuery(params);
-    const response = await this.transport.request<OffsetPaginatedResponse<Resolution>>({
+    const response = await this.transport.request<OffsetPaginatedResponse<ResolutionJsonBean>>({
       method: 'GET',
       path: appendRepeatedParams(`${this.baseUrl}/resolution/search`, 'id', params?.id),
       query,
@@ -231,12 +296,14 @@ export class ResolutionResource {
    * B718: Iterate every resolution returned by the search endpoint across
    * all result pages. Delegates to {@link paginateOffset}.
    */
-  async *searchAll(params?: Omit<SearchResolutionsParams, 'startAt'>): AsyncGenerator<Resolution> {
+  async *searchAll(
+    params?: Omit<SearchResolutionsParams, 'startAt'>,
+  ): AsyncGenerator<ResolutionJsonBean> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
     // Omit `startAt` and `maxResults` from base query — `paginateOffset` sets
     // them per page (startAt from cursor, maxResults from pageSize argument).
     const query = buildSearchQuery({ ...params, startAt: undefined, maxResults: undefined });
-    yield* paginateOffset<Resolution>(
+    yield* paginateOffset<ResolutionJsonBean>(
       this.transport,
       appendRepeatedParams(`${this.baseUrl}/resolution/search`, 'id', params?.id),
       query,

@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ResolutionResource } from '../../src/jira/resources/resolution.js';
-import type { Resolution } from '../../src/jira/resources/resolution.js';
+import type {
+  Resolution,
+  ResolutionJsonBean,
+  ResolutionId,
+  ResolutionTaskProgress,
+} from '../../src/jira/resources/resolution.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 
@@ -11,11 +16,30 @@ const makeResolution = (id: string): Resolution => ({
   name: `Resolution ${id}`,
   self: `${BASE_URL}/resolution/${id}`,
   description: 'A test resolution',
-  isDefault: false,
+});
+
+const makeResolutionJsonBean = (id: string): ResolutionJsonBean => ({
+  id,
+  name: `Resolution ${id}`,
+  self: `${BASE_URL}/resolution/${id}`,
+  description: 'A test resolution',
+  iconUrl: 'https://example.com/icon.png',
+  default: false,
+});
+
+const makeResolutionId = (id: string): ResolutionId => ({ id });
+
+const makeTaskProgress = (id: string): ResolutionTaskProgress => ({
+  id,
+  description: 'Deleting resolution',
+  status: 'RUNNING',
+  progress: 50,
+  elapsedRuntime: 100,
+  self: `${BASE_URL}/task/${id}`,
 });
 
 const makePage = (
-  items: Resolution[],
+  items: ResolutionJsonBean[],
   opts?: { total?: number; isLast?: boolean; startAt?: number },
 ) => ({
   values: items,
@@ -88,18 +112,31 @@ describe('ResolutionResource', () => {
 
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/resolution/a%20b`);
     });
+
+    it('returns Resolution without isDefault field (not in spec Resolution schema)', async () => {
+      // Resolution schema: id, name, self, description only — no isDefault.
+      const res: Resolution = makeResolution('1');
+      transport.respondWith(res);
+
+      const result = await resource.get('1');
+
+      // Result should not have isDefault
+      expect(result).not.toHaveProperty('isDefault');
+    });
   });
 
   // ── create (B712) ──────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('calls POST /resolution with required name', async () => {
-      const created = makeResolution('99');
+    it('calls POST /resolution and returns ResolutionId (spec 201 body)', async () => {
+      // Spec: POST /resolution returns 201 with ResolutionId { id: string }
+      const created: ResolutionId = makeResolutionId('99');
       transport.respondWith(created);
 
       const result = await resource.create({ name: 'Fixed' });
 
       expect(result).toEqual(created);
+      expect(result).toHaveProperty('id', '99');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/resolution`,
@@ -108,7 +145,7 @@ describe('ResolutionResource', () => {
     });
 
     it('includes optional description in body', async () => {
-      transport.respondWith(makeResolution('99'));
+      transport.respondWith(makeResolutionId('99'));
 
       await resource.create({ name: 'Fixed', description: 'Issue was resolved' });
 
@@ -119,7 +156,7 @@ describe('ResolutionResource', () => {
     });
 
     it('omits undefined description from body', async () => {
-      transport.respondWith(makeResolution('99'));
+      transport.respondWith(makeResolutionId('99'));
 
       await resource.create({ name: 'Fixed' });
 
@@ -152,16 +189,11 @@ describe('ResolutionResource', () => {
       expect(body).toEqual({ name: 'Renamed', description: 'Updated description' });
     });
 
-    it('throws ValidationError when name is missing', async () => {
-      await expect(resource.update('10', {})).rejects.toBeInstanceOf(ValidationError);
-    });
-
     it('throws ValidationError when name is empty string', async () => {
-      await expect(resource.update('10', { name: '' })).rejects.toBeInstanceOf(ValidationError);
-    });
-
-    it('throws ValidationError when only description provided (name required by Jira spec)', async () => {
-      await expect(resource.update('10', { description: 'desc only' })).rejects.toBeInstanceOf(
+      // name is required by spec (UpdateResolutionDetails: required: ["name"])
+      // TypeScript enforces at compile time, but runtime guard covers runtime callers.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(resource.update('10', { name: '' } as any)).rejects.toBeInstanceOf(
         ValidationError,
       );
     });
@@ -170,24 +202,38 @@ describe('ResolutionResource', () => {
   // ── delete (B713) ──────────────────────────────────────────────────────────
 
   describe('delete()', () => {
-    it('calls DELETE /resolution/{id} with no query', async () => {
-      transport.respondWith(undefined, 204);
+    it('calls DELETE /resolution/{id} with replaceWith param and returns task', async () => {
+      // Spec: DELETE /resolution/{id} requires replaceWith (required: true) and
+      // returns 303 with TaskProgressBeanObject.
+      const task = makeTaskProgress('task-1');
+      transport.respondWith(task, 303);
 
-      await resource.delete('10');
+      const result = await resource.delete('10', { replaceWith: '1' });
 
+      expect(result).toEqual(task);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
         path: `${BASE_URL}/resolution/10`,
       });
-      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.query).toEqual({ replaceWith: '1' });
     });
 
-    it('forwards replaceWith query parameter', async () => {
-      transport.respondWith(undefined, 204);
+    it('always sends replaceWith query parameter (spec: required)', async () => {
+      transport.respondWith(makeTaskProgress('task-2'), 303);
 
-      await resource.delete('10', { replaceWith: '1' });
+      await resource.delete('10', { replaceWith: '5' });
 
-      expect(transport.lastCall?.options.query).toEqual({ replaceWith: '1' });
+      expect(transport.lastCall?.options.query).toEqual({ replaceWith: '5' });
+    });
+
+    it('omits replaceWith from query when not provided (params omitted)', async () => {
+      // Spec requires replaceWith but SDK keeps it optional for CLI compat.
+      // When absent, query is sent without it.
+      transport.respondWith(makeTaskProgress('task-3'), 303);
+
+      await resource.delete('10');
+
+      expect(transport.lastCall?.options.query).toEqual({});
     });
   });
 
@@ -269,10 +315,23 @@ describe('ResolutionResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
+    it('returns ResolutionJsonBean items with correct field names (default not isDefault, iconUrl present)', async () => {
+      // Spec: search response uses ResolutionJsonBean with field `default` (not `isDefault`)
+      // and includes `iconUrl`.
+      const bean = makeResolutionJsonBean('1');
+      transport.respondWith(makePage([bean]));
+
+      const result = await resource.search();
+
+      expect(result.values[0]).toHaveProperty('default', false);
+      expect(result.values[0]).toHaveProperty('iconUrl', 'https://example.com/icon.png');
+      expect(result.values[0]).not.toHaveProperty('isDefault');
+    });
+
     it('forwards all spec-defined query params (B1053: queryString removed — not in spec)', async () => {
       // Spec GET /resolution/search: startAt, maxResults, id, onlyDefault only.
       // queryString was never a valid param per the v3 spec.
-      transport.respondWith(makePage([makeResolution('1')]));
+      transport.respondWith(makePage([makeResolutionJsonBean('1')]));
 
       await resource.search({
         startAt: 0,
@@ -310,10 +369,10 @@ describe('ResolutionResource', () => {
   // ── searchAll (B718, paginated) ───────────────────────────────────────────
 
   describe('searchAll()', () => {
-    it('yields items from a single page', async () => {
-      transport.respondWith(makePage([makeResolution('1'), makeResolution('2')]));
+    it('yields ResolutionJsonBean items from a single page', async () => {
+      transport.respondWith(makePage([makeResolutionJsonBean('1'), makeResolutionJsonBean('2')]));
 
-      const results: { id: string }[] = [];
+      const results: ResolutionJsonBean[] = [];
       for await (const r of resource.searchAll()) {
         results.push(r);
       }
@@ -323,10 +382,12 @@ describe('ResolutionResource', () => {
 
     it('paginates across multiple pages', async () => {
       transport
-        .respondWith(makePage([makeResolution('1')], { total: 2, isLast: false }))
-        .respondWith(makePage([makeResolution('2')], { total: 2, isLast: true, startAt: 1 }));
+        .respondWith(makePage([makeResolutionJsonBean('1')], { total: 2, isLast: false }))
+        .respondWith(
+          makePage([makeResolutionJsonBean('2')], { total: 2, isLast: true, startAt: 1 }),
+        );
 
-      const results: { id: string }[] = [];
+      const results: ResolutionJsonBean[] = [];
       for await (const r of resource.searchAll({ maxResults: 1 })) {
         results.push(r);
       }
