@@ -2921,3 +2921,28 @@
   - files: `src/core/{transport,response,cache,oauth,auth}.ts` + tests
   - **Impl:** PR #282. (1) snapshot `getHeaders()` once at construction (identity-hash + wire now consistent — safe: providers are static, dynamic auth flows through per-request `authorizationOverride` applied last); (2) malformed-2xx-JSON → `ValidationError` (cause-chained, was raw `SyntaxError`); (3) `cache.ts` per-key single-flight (no concurrent-miss stampede, failures don't poison/cache); (4) `oauth.validateTokenEndpoint` redacts the raw endpoint (`<unparseable>`); (5) throwing `onTokenRefreshed` no longer poisons `refreshPromise`/cooldown; (6) `createAuthProvider` fail-fast `ValidationError` on empty creds. No new error type (reused `ValidationError`). Security-reviewed (auth-snapshot + #246 boundary intact).
   - **Rat:** Core reliability/robustness defects. Sub-item 7 (pagination `RangeError`) deferred to B1064 (breaking + ~152 test-file churn).
+
+## 🧹 Deep-audit 2026-06-10 — B1049 + small-items cleanup (2026-06-14)
+
+> The lone-🔴 repeated-param sweep (#284) plus 5 small cleanup items (#285–#289). Each spec/code-verified + independently reviewed. Follow-ups filed: B1066 (remaining native RangeError guards), B1061b (3.0.0 public-export trims). Several carry **breaking** changes → B1062.
+
+- [x] 🔴 🐛 Jira/Confluence: B1049 Repeated-array-param serialization holdouts
+  - files: 16 source (7 Jira + 8 Confluence resources + `src/core/query.ts`) + tests
+  - **Impl:** PR #284. Converted every CONFIRMED `type:array` GET-query param from CSV `.join(',')` to repeated params (`appendRepeatedParams`; new `appendScalarOrArrayParam` for Confluence scalar-or-array inputs). FIXED: Jira `projects status`, `fields`/`properties` on search/issue/agile/JSIS; Confluence `status`/`resolution-status`/`ids`/`keys`/`space-id`/`label-id`/`prefix`. **Every param jq-verified against the spec's `.schema.type` — the audit AND prior memory were both wrong in places.** LEFT as CSV (confirmed `type:string`): `expand`, `typeKey`, `users.projectKeys`/`permissions`, Jira `data-policy ids` (with guard tests). Corrected memory's mis-classification of `fields`/`status`/`properties`.
+  - **Rat:** CSV for a `type:array` param silently returns wrong result sets. Reviewer independently re-verified 20+ params both directions — zero misclassifications.
+- [x] 🟢 🐛 Core: B1064 `validatePageSize` → `ValidationError` (was native `RangeError`)
+  - files: `src/core/pagination.ts` + 31 test files
+  - **Impl:** PR #288. Surgical 1-line source change + 332 assertion updates across 31 files. `normalizeMaxPages`/emails/accountIds/versionNumber RangeError guards correctly LEFT intact (→ B1066). **Breaking** (3.0.0).
+- [x] 🟢 🐛 Core: B1065 `cache.ts` key includes `responseType`
+  - files: `src/core/cache.ts`, `test/core/cache.test.ts`
+  - **Impl:** PR #287. `responseType` (default `'json'`) added to the cache key (mirrors B1039's batch fix) — a cached `json` GET no longer served to an `arrayBuffer`/`stream` caller as the wrong shape.
+- [x] 🟡 🐛 CLI: B1063 Tri-state filter flags accept `false`
+  - files: `src/cli/router.ts`, `src/cli/commands/jira.ts`, `skill/reference/jira/{agile,admin-devops,issues,schemes}.md`, `test/cli/{router,commands}.test.ts`
+  - **Impl:** PR #289. 7 flags `boolean`→`string` (tri-state: `--validate-query`/`--done`/`--send-notification`/`--is-global-context`/`--is-any-issue-type`/`--redirect`/`--fallback-to-default`; all read via `asBoolFlag`); 2 left toggles (`--only-options`/`--only-default`). Fixed the shared `done` flag's `epic update` handler (`=== true` could never set false). **Breaking** CLI (3.0.0).
+  - **Rat:** parseArgs boolean flags are presence-only → `--flag false` silently sent the default.
+- [x] 🟡 🐛 QA: B1060 Drift-guard fetches Confluence v2 spec not v1
+  - files: `scripts/regenerate-types.ts`, `test/scripts/regenerate-types.test.ts`
+  - **Impl:** PR #286. `swagger.v3.json` (v1, 89 paths) → `openapi-v2.v3.json` (v2, 151 paths) matching the pinned snapshot; assertion tightened from `.toContain` to exact-URL `.toBe`.
+- [x] 🟢 ♻️ QA: B1061 Dead-code cleanup (minimal)
+  - files: `src/confluence/resources/index.ts` (deleted), `tsconfig.json`, `vitest.config.ts`
+  - **Impl:** PR #285. Removed the unreachable confluence resources barrel (zero consumers) + stale `bench/` refs. Public-export trims deferred to B1061b (3.0.0).
