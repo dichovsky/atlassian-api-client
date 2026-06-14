@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ProjectsResource } from '../../src/jira/resources/projects.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -265,14 +266,14 @@ describe('ProjectsResource', () => {
   // ── validation ────────────────────────────────────────────────────────────
 
   describe('validation', () => {
-    it('throws RangeError when list() is called with maxResults: 0', async () => {
+    it('throws ValidationError when list() is called with maxResults: 0', async () => {
       // Act & Assert
-      await expect(projects.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+      await expect(projects.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError when list() is called with negative maxResults', async () => {
+    it('throws ValidationError when list() is called with negative maxResults', async () => {
       // Act & Assert
-      await expect(projects.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+      await expect(projects.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
   });
 

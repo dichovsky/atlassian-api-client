@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "7c402a92229bdbecc4e042324f8509b5af54c99c6f97c9e1476a1c535048e426",
+  "sourceHash": "8fb087aa3511741caac166466310fe4d476674c7290792c96542e3e0e609306a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -3480,7 +3480,7 @@
       "name": "createCacheMiddleware",
       "kind": "function",
       "file": "src/core/cache.ts",
-      "line": 58,
+      "line": 62,
       "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
       "jsdoc": "Creates a middleware that caches API responses in memory."
     },
@@ -8798,143 +8798,6 @@
       ]
     },
     {
-      "path": "src/confluence/resources/index.ts",
-      "reExports": [
-        {
-          "kind": "named",
-          "from": "./attachments.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "AttachmentsResource",
-              "original": "AttachmentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./blog-posts.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "BlogPostsResource",
-              "original": "BlogPostsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./comments.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "CommentsResource",
-              "original": "CommentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./content-properties.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "ContentPropertiesResource",
-              "original": "ContentPropertiesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./custom-content.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "CustomContentResource",
-              "original": "CustomContentResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./inline-comments.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "InlineCommentsResource",
-              "original": "InlineCommentsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./labels.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "LabelsResource",
-              "original": "LabelsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./pages.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "PagesResource",
-              "original": "PagesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./spaces.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "SpacesResource",
-              "original": "SpacesResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./tasks.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "TasksResource",
-              "original": "TasksResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./versions.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "VersionsResource",
-              "original": "VersionsResource"
-            }
-          ]
-        },
-        {
-          "kind": "named",
-          "from": "./whiteboards.js",
-          "typeOnly": false,
-          "names": [
-            {
-              "exported": "WhiteboardsResource",
-              "original": "WhiteboardsResource"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "path": "src/confluence/resources/inline-comments.ts",
       "symbols": [
         {
@@ -12701,7 +12564,7 @@
         {
           "name": "createCacheMiddleware",
           "kind": "function",
-          "line": 58,
+          "line": 62,
           "exported": true,
           "signature": "export function createCacheMiddleware(options?: CacheOptions): Middleware",
           "jsdoc": "Creates a middleware that caches API responses in memory."
@@ -12709,14 +12572,14 @@
         {
           "name": "sweepExpired",
           "kind": "function",
-          "line": 138,
+          "line": 142,
           "signature": "function sweepExpired(cache: Map<string, CacheEntry>, now: number): void",
           "jsdoc": "Delete every expired entry from the cache. Called on eviction to reclaim TTL-expired slots before resorting to LRU, so that a still-valid entry is not pushed out by a dead one that happened to be inserted earlier."
         },
         {
           "name": "buildCacheKey",
           "kind": "function",
-          "line": 146,
+          "line": 150,
           "signature": "function buildCacheKey(opts: RequestOptions): string"
         }
       ],
@@ -14074,7 +13937,7 @@
           "line": 8,
           "exported": true,
           "signature": "export function validatePageSize(value: number, name = 'pageSize'): void",
-          "jsdoc": "Validate a pagination size value (maxResults / pageSize / limit). Throws RangeError for zero, negative, non-integer, or non-finite values."
+          "jsdoc": "Validate a pagination size value (maxResults / pageSize / limit). Throws {@link ValidationError} for zero, negative, non-integer, or non-finite values."
         },
         {
           "name": "CursorPaginatedResponse",

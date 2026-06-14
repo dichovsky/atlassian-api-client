@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TasksResource } from '../../src/confluence/resources/tasks.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -98,8 +99,8 @@ describe('TasksResource', () => {
       expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('throws RangeError for invalid limit', async () => {
-      await expect(resource.list({ limit: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for invalid limit', async () => {
+      await expect(resource.list({ limit: -1 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

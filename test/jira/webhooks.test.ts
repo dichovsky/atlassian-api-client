@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WebhooksResource } from '../../src/jira/resources/webhooks.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type {
   Webhook,
   FailedWebhook,
@@ -76,9 +77,9 @@ describe('WebhooksResource', () => {
     });
 
     it.each([0, -1, 1.5, Infinity])(
-      'throws RangeError for invalid maxResults: %s',
+      'throws ValidationError for invalid maxResults: %s',
       async (maxResults) => {
-        await expect(webhooks.list({ maxResults })).rejects.toThrow(RangeError);
+        await expect(webhooks.list({ maxResults })).rejects.toThrow(ValidationError);
         expect(transport.calls).toHaveLength(0);
       },
     );
@@ -302,9 +303,9 @@ describe('WebhooksResource', () => {
     });
 
     it.each([0, -1, 1.5, Infinity])(
-      'throws RangeError for invalid maxResults: %s',
+      'throws ValidationError for invalid maxResults: %s',
       async (maxResults) => {
-        await expect(webhooks.listFailed({ maxResults })).rejects.toThrow(RangeError);
+        await expect(webhooks.listFailed({ maxResults })).rejects.toThrow(ValidationError);
         expect(transport.calls).toHaveLength(0);
       },
     );

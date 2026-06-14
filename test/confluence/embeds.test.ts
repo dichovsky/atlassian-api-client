@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EmbedsResource } from '../../src/confluence/resources/embeds.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
@@ -176,8 +177,10 @@ describe('EmbedsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ limit: 10 });
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listAncestors('embed-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listAncestors('embed-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -224,8 +227,10 @@ describe('EmbedsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is invalid', async () => {
-      await expect(resource.listDescendants('embed-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is invalid', async () => {
+      await expect(resource.listDescendants('embed-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -257,9 +262,9 @@ describe('EmbedsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDescendantsAll('embed-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -318,9 +323,9 @@ describe('EmbedsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is invalid', async () => {
+    it('throws ValidationError when limit is invalid', async () => {
       await expect(resource.listDirectChildren('embed-1', { limit: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -348,9 +353,9 @@ describe('EmbedsResource', () => {
       expect(transport.calls[0]?.options.query).toMatchObject({ sort: 'title' });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listDirectChildrenAll('embed-1', { limit: 0 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
 
@@ -443,8 +448,10 @@ describe('EmbedsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('throws RangeError when limit is non-positive', async () => {
-      await expect(resource.listProperties('embed-1', { limit: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when limit is non-positive', async () => {
+      await expect(resource.listProperties('embed-1', { limit: 0 })).rejects.toThrow(
+        ValidationError,
+      );
       expect(transport.calls).toHaveLength(0);
     });
   });
@@ -489,9 +496,9 @@ describe('EmbedsResource', () => {
       });
     });
 
-    it('throws RangeError when limit is invalid before any request', async () => {
+    it('throws ValidationError when limit is invalid before any request', async () => {
       const iter = resource.listPropertiesAll('embed-1', { limit: -1 });
-      await expect(iter.next()).rejects.toThrow(RangeError);
+      await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
   });

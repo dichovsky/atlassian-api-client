@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { SearchResource } from '../../src/jira/resources/search.js';
 import type { ApproximateCountResult, JqlSearchResult } from '../../src/jira/resources/search.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
@@ -324,8 +325,8 @@ describe('SearchResource', () => {
       expect(query['jql']).toBeUndefined();
     });
 
-    it('throws RangeError when maxResults is invalid', async () => {
-      await expect(search.searchJqlGet({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when maxResults is invalid', async () => {
+      await expect(search.searchJqlGet({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -427,8 +428,8 @@ describe('SearchResource', () => {
       expect(body).not.toHaveProperty('jql');
     });
 
-    it('throws RangeError when maxResults is invalid', async () => {
-      await expect(search.searchJqlPost({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError when maxResults is invalid', async () => {
+      await expect(search.searchJqlPost({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
     it('surfaces isLast from the SearchAndReconcileResults response (B1055/7)', async () => {

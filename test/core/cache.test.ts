@@ -537,3 +537,46 @@ describe('createCacheMiddleware option validation', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// B1065 — responseType must be part of the cache key
+// ---------------------------------------------------------------------------
+describe('createCacheMiddleware — B1065 responseType in cache key', () => {
+  it('treats a json GET then an arrayBuffer GET for the same URL as a cache MISS', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++counter));
+    const mw = createCacheMiddleware();
+
+    const first = await mw(makeOpts({ responseType: 'json' }), next);
+    const second = await mw(makeOpts({ responseType: 'arrayBuffer' }), next);
+
+    // Different responseType → must NOT hit the cache → two origin calls.
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(first.data).toBe(1);
+    expect(second.data).toBe(2);
+  });
+
+  it('treats an explicit responseType json and an omitted responseType as a cache HIT', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++counter));
+    const mw = createCacheMiddleware();
+
+    const first = await mw(makeOpts({ responseType: 'json' }), next);
+    // No responseType → defaults to 'json' → same effective shape → cache hit.
+    const second = await mw(makeOpts(), next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(second).toBe(first);
+  });
+
+  it('treats an arrayBuffer GET then a stream GET for the same URL as separate cache entries', async () => {
+    let counter = 0;
+    const next = vi.fn(async (): Promise<ApiResponse<unknown>> => makeResponse(++counter));
+    const mw = createCacheMiddleware();
+
+    await mw(makeOpts({ responseType: 'arrayBuffer' }), next);
+    await mw(makeOpts({ responseType: 'stream' }), next);
+
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+});

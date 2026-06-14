@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BoardsResource, type QuickFilter } from '../../src/jira/resources/boards.js';
 import { MockTransport } from '../helpers/mock-transport.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type { Sprint } from '../../src/jira/resources/sprints.js';
 
 const BASE_URL = 'https://test.atlassian.net/rest/agile/1.0';
@@ -103,20 +104,20 @@ describe('BoardsResource', () => {
       expect(transport.lastCall?.options.query).toMatchObject({ type: 'kanban' });
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.list({ maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(boards.list({ maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(boards.list({ maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(boards.list({ maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(boards.list({ maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(boards.list({ maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(boards.list({ maxResults: Infinity })).rejects.toThrow(ValidationError);
     });
 
     it('does not include undefined query params when params is empty object', async () => {
@@ -220,20 +221,20 @@ describe('BoardsResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getIssues(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getIssues(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(boards.getIssues(42, { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(boards.getIssues(42, { maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: 1.5', async () => {
-      await expect(boards.getIssues(42, { maxResults: 1.5 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 1.5', async () => {
+      await expect(boards.getIssues(42, { maxResults: 1.5 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(boards.getIssues(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(boards.getIssues(42, { maxResults: Infinity })).rejects.toThrow(ValidationError);
     });
 
     it('throws ValidationError for non-positive boardId', async () => {
@@ -317,9 +318,9 @@ describe('BoardsResource', () => {
       expect(items).toHaveLength(0);
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
+    it('throws ValidationError for maxResults: 0', async () => {
       const gen = boards.listAll({ maxResults: 0 });
-      await expect(gen.next()).rejects.toThrow(RangeError);
+      await expect(gen.next()).rejects.toThrow(ValidationError);
     });
 
     it('passes all listAll params including projectKeyOrId', async () => {
@@ -446,16 +447,18 @@ describe('BoardsResource', () => {
       await expect(boards.listSprints(1.5)).rejects.toThrow('boardId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listSprints(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listSprints(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(boards.listSprints(42, { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(boards.listSprints(42, { maxResults: -1 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(boards.listSprints(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(boards.listSprints(42, { maxResults: Infinity })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -568,17 +571,21 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getSprintIssues(42, 10, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getSprintIssues(42, 10, { maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(boards.getSprintIssues(42, 10, { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(boards.getSprintIssues(42, 10, { maxResults: -1 })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
+    it('throws ValidationError for maxResults: Infinity', async () => {
       await expect(boards.getSprintIssues(42, 10, { maxResults: Infinity })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -748,12 +755,14 @@ describe('BoardsResource', () => {
       await expect(boards.getBacklog(-3)).rejects.toThrow('boardId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getBacklog(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getBacklog(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(boards.getBacklog(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(boards.getBacklog(42, { maxResults: Infinity })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -856,8 +865,8 @@ describe('BoardsResource', () => {
       await expect(boards.listEpics(0)).rejects.toThrow('boardId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listEpics(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listEpics(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -924,8 +933,8 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getEpicIssues(42, 7, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getEpicIssues(42, 7, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -980,8 +989,10 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getIssuesWithoutEpic(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getIssuesWithoutEpic(42, { maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -1206,8 +1217,8 @@ describe('BoardsResource', () => {
       await expect(boards.listProjects(0)).rejects.toThrow('boardId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listProjects(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listProjects(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -1263,8 +1274,8 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listProjectsFull(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listProjectsFull(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -1334,12 +1345,14 @@ describe('BoardsResource', () => {
       await expect(boards.listVersions(-5)).rejects.toThrow('boardId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listVersions(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listVersions(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
-      await expect(boards.listVersions(42, { maxResults: Infinity })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: Infinity', async () => {
+      await expect(boards.listVersions(42, { maxResults: Infinity })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -1401,8 +1414,8 @@ describe('BoardsResource', () => {
       await expect(boards.listByFilter(1.5)).rejects.toThrow('filterId must be a positive integer');
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listByFilter(5, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listByFilter(5, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
   });
 
@@ -1722,17 +1735,19 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.listQuickFilters(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.listQuickFilters(42, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
 
-    it('throws RangeError for maxResults: -1', async () => {
-      await expect(boards.listQuickFilters(42, { maxResults: -1 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: -1', async () => {
+      await expect(boards.listQuickFilters(42, { maxResults: -1 })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
-    it('throws RangeError for maxResults: Infinity', async () => {
+    it('throws ValidationError for maxResults: Infinity', async () => {
       await expect(boards.listQuickFilters(42, { maxResults: Infinity })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -1887,8 +1902,10 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getBacklogEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getBacklogEnhanced(42, { maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -1938,8 +1955,10 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
-      await expect(boards.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(RangeError);
+    it('throws ValidationError for maxResults: 0', async () => {
+      await expect(boards.getIssuesEnhanced(42, { maxResults: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -1973,9 +1992,9 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
+    it('throws ValidationError for maxResults: 0', async () => {
       await expect(boards.getIssuesWithoutEpicEnhanced(42, { maxResults: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -2018,9 +2037,9 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
+    it('throws ValidationError for maxResults: 0', async () => {
       await expect(boards.getEpicIssuesEnhanced(42, 7, { maxResults: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });
@@ -2068,9 +2087,9 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws RangeError for maxResults: 0', async () => {
+    it('throws ValidationError for maxResults: 0', async () => {
       await expect(boards.getSprintIssuesEnhanced(42, 10, { maxResults: 0 })).rejects.toThrow(
-        RangeError,
+        ValidationError,
       );
     });
   });

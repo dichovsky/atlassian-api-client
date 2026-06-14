@@ -20,6 +20,7 @@ import {
   paginateSearch,
   validatePageSize,
 } from '../../src/core/pagination.js';
+import { ValidationError } from '../../src/core/errors.js';
 import type {
   OffsetPaginatedResponse,
   CursorPaginatedResponse,
@@ -456,7 +457,7 @@ describe('validatePageSize (property)', () => {
   it('rejects zero and negative integers', () => {
     fc.assert(
       fc.property(fc.integer({ min: -10_000, max: 0 }), (n) => {
-        expect(() => validatePageSize(n)).toThrow(RangeError);
+        expect(() => validatePageSize(n)).toThrow(ValidationError);
       }),
       FC_OPTIONS,
     );
@@ -464,7 +465,7 @@ describe('validatePageSize (property)', () => {
 
   it('rejects non-finite values (NaN, Infinity, -Infinity)', () => {
     for (const bad of [NaN, Infinity, -Infinity]) {
-      expect(() => validatePageSize(bad)).toThrow(RangeError);
+      expect(() => validatePageSize(bad)).toThrow(ValidationError);
     }
   });
 
@@ -476,7 +477,7 @@ describe('validatePageSize (property)', () => {
           .float({ min: Math.fround(0.001), max: Math.fround(999), noNaN: true })
           .filter((n) => !Number.isInteger(n)),
         (n) => {
-          expect(() => validatePageSize(n)).toThrow(RangeError);
+          expect(() => validatePageSize(n)).toThrow(ValidationError);
         },
       ),
       FC_OPTIONS,
