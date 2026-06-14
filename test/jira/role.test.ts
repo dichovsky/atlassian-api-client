@@ -113,6 +113,43 @@ describe('RoleResource', () => {
       expect(result).not.toHaveProperty('isDefault');
     });
 
+    it('exposes roleConfigurable field from spec ProjectRole', async () => {
+      // spec ProjectRole has roleConfigurable; old type lacked it
+      transport.respondWith({ id: 10, name: 'Dev', roleConfigurable: true });
+
+      const result = await roles.get(10);
+
+      expect(result.roleConfigurable).toBe(true);
+    });
+
+    it('exposes scope.type as PROJECT | TEMPLATE enum', async () => {
+      // spec Scope.type is enum 'PROJECT' | 'TEMPLATE'; old type was plain string
+      transport.respondWith({
+        id: 10,
+        name: 'Dev',
+        scope: { type: 'PROJECT', project: { id: '10000', key: 'PROJ', name: 'Project' } },
+      });
+
+      const result = await roles.get(10);
+
+      expect(result.scope?.type).toBe('PROJECT');
+      expect(result.scope?.project?.key).toBe('PROJ');
+      expect(result.scope?.project?.name).toBe('Project');
+    });
+
+    it('Actor exposes avatarUrl field from spec RoleActor', async () => {
+      // spec RoleActor has avatarUrl; old Actor type lacked it
+      transport.respondWith({
+        id: 10,
+        name: 'Dev',
+        actors: [{ id: 1, displayName: 'Alice', avatarUrl: 'https://example.com/avatar.png' }],
+      });
+
+      const result = await roles.get(10);
+
+      expect(result.actors?.[0]?.avatarUrl).toBe('https://example.com/avatar.png');
+    });
+
     it('throws ValidationError for roleId = 0', async () => {
       await expect(roles.get(0)).rejects.toThrow(ValidationError);
     });
@@ -341,7 +378,7 @@ describe('RoleResource', () => {
     });
 
     it('calls DELETE /role/{id}/actors with user query param', async () => {
-      transport.respondWith(undefined);
+      transport.respondWith(makeRole());
 
       await roles.deleteActors(10001, { user: 'acc-1' });
 
@@ -353,7 +390,7 @@ describe('RoleResource', () => {
     });
 
     it('sends groupId query param', async () => {
-      transport.respondWith(undefined);
+      transport.respondWith(makeRole());
 
       await roles.deleteActors(10001, { groupId: 'grp-1' });
 
@@ -361,7 +398,7 @@ describe('RoleResource', () => {
     });
 
     it('sends group (deprecated) query param', async () => {
-      transport.respondWith(undefined);
+      transport.respondWith(makeRole());
 
       await roles.deleteActors(10001, { group: 'my-group' });
 
@@ -369,7 +406,7 @@ describe('RoleResource', () => {
     });
 
     it('calls DELETE /role/{id}/actors with no query when no params', async () => {
-      transport.respondWith(undefined);
+      transport.respondWith(makeRole());
 
       await roles.deleteActors(10001);
 
@@ -380,12 +417,14 @@ describe('RoleResource', () => {
       expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
-    it('returns void', async () => {
-      transport.respondWith(undefined);
+    it('returns updated Role with remaining actors (spec 200 response)', async () => {
+      // Spec: DELETE /rest/api/3/role/{id}/actors returns 200 with ProjectRole body
+      const roleAfterDelete = { ...makeRole(), actors: [] };
+      transport.respondWith(roleAfterDelete);
 
       const result = await roles.deleteActors(10001, { user: 'acc-1' });
 
-      expect(result).toBeUndefined();
+      expect(result).toEqual(roleAfterDelete);
     });
   });
 });
