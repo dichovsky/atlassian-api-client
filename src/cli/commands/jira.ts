@@ -6,7 +6,7 @@ import type {
   StatusScope,
   UpdateStatusData,
   FieldConfigurationItem,
-  NotificationSchemeEvent,
+  NotificationSchemeEventWrite,
   CreateRemoteLinkData,
   RemoveFieldAssociationsBody,
   UpdateFieldAssociationsBody,
@@ -4790,7 +4790,7 @@ async function executeNotificationSchemes(
           ? (parseJsonArrayFlag(
               eventsRaw,
               '--notification-scheme-events',
-            ) as NotificationSchemeEvent[])
+            ) as NotificationSchemeEventWrite[])
           : undefined;
       return client.notificationSchemes.create({
         name,
@@ -4825,7 +4825,7 @@ async function executeNotificationSchemes(
       const notificationSchemeEvents = parseJsonArrayFlag(
         eventsRaw,
         '--notification-scheme-events',
-      ) as NotificationSchemeEvent[];
+      ) as NotificationSchemeEventWrite[];
       await client.notificationSchemes.addNotifications(id, { notificationSchemeEvents });
       return { updated: true };
     }

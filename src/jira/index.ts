@@ -795,6 +795,8 @@ export type {
   NotificationScheme,
   NotificationSchemeEvent,
   NotificationSchemeNotification,
+  NotificationSchemeNotificationWrite,
+  NotificationSchemeEventWrite,
   NotificationEventRef,
   NotificationSchemeProjectAssociation,
   CreatedNotificationScheme,

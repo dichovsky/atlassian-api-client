@@ -61,13 +61,16 @@ export interface PrioritySchemeProject {
   readonly key?: string;
   readonly name?: string;
   readonly self?: string;
-  readonly projectTypeKey?: string;
+  /** The project type. Spec: enum `software | service_desk | business`. */
+  readonly projectTypeKey?: 'software' | 'service_desk' | 'business';
   readonly simplified?: boolean;
   readonly avatarUrls?: Readonly<Record<string, string>>;
   readonly projectCategory?: {
     readonly id?: string;
     readonly name?: string;
     readonly description?: string;
+    /** The URL of the project category. */
+    readonly self?: string;
   };
 }
 
