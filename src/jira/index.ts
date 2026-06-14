@@ -81,6 +81,7 @@ export type {
   ProjectIdentifiers,
   ProjectKeyValidation,
   ListLegacyProjectsParams,
+  ListAllProjectVersionsParams,
   CreateProjectData,
   UpdateProjectData,
   DeleteProjectParams,

@@ -397,6 +397,22 @@ describe('ProjectsResource', () => {
       });
     });
 
+    it('sends fieldScheme and projectTemplateKey when provided (spec CreateProjectDetails fields)', async () => {
+      // Regression: old CreateProjectData was missing fieldScheme and projectTemplateKey.
+      transport.respondWith({ id: 10005, key: 'FS', self: `${BASE_URL}/project/10005` }, 201);
+      await projects.create({
+        key: 'FS',
+        name: 'Field Scheme Project',
+        projectTypeKey: 'software',
+        fieldScheme: 42,
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-basic',
+      });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        fieldScheme: 42,
+        projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-basic',
+      });
+    });
+
     it('never sends priorityScheme in the body (CreateProjectDetails has no such field)', async () => {
       // Regression: the old code added `priorityScheme`, which CreateProjectDetails
       // (additionalProperties:false) rejects with 400.
@@ -505,6 +521,21 @@ describe('ProjectsResource', () => {
         notificationScheme: 3,
         categoryId: 4,
       });
+    });
+
+    it('sends releasedProjectKeys when provided (spec UpdateProjectDetails field)', async () => {
+      // Regression: old UpdateProjectData was missing releasedProjectKeys.
+      transport.respondWith(makeProject('10001', 'PROJ'));
+      await projects.update('PROJ', { releasedProjectKeys: ['OLDKEY1', 'OLDKEY2'] });
+      expect(transport.lastCall?.options.body).toMatchObject({
+        releasedProjectKeys: ['OLDKEY1', 'OLDKEY2'],
+      });
+    });
+
+    it('omits releasedProjectKeys when not provided', async () => {
+      transport.respondWith(makeProject('10001', 'PROJ'));
+      await projects.update('PROJ', { name: 'Test' });
+      expect(transport.lastCall?.options.body).not.toHaveProperty('releasedProjectKeys');
     });
   });
 
@@ -653,8 +684,9 @@ describe('ProjectsResource', () => {
   // ── getEmail ──────────────────────────────────────────────────────────────
 
   describe('getEmail()', () => {
-    it('sends GET /project/:id/email', async () => {
-      const payload = { projectId: 1, emailAddress: 'test@example.com' };
+    it('sends GET /project/:id/email and returns ProjectEmail (no projectId field per spec)', async () => {
+      // Spec: ProjectEmailAddress has emailAddress and emailAddressStatus only — no projectId.
+      const payload = { emailAddress: 'test@example.com', emailAddressStatus: [] };
       transport.respondWith(payload);
       const result = await projects.getEmail('PROJ');
       expect(transport.lastCall?.options).toMatchObject({
@@ -662,6 +694,8 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/project/PROJ/email`,
       });
       expect(result).toMatchObject({ emailAddress: 'test@example.com' });
+      // Regression: old type included projectId which spec does not return.
+      expect(result).not.toHaveProperty('projectId');
     });
 
     it('encodes projectId in path', async () => {
@@ -703,6 +737,20 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/project/10001/hierarchy`,
       });
       expect(result).toMatchObject({ projectId: 10001 });
+    });
+
+    it('hierarchy levels have entityId/level/name but NOT id or avatarId (spec: ProjectIssueTypesHierarchyLevel)', async () => {
+      // Regression: old ProjectHierarchyLevel declared `id: number` and `avatarId`
+      // which do not exist in the spec schema.
+      const level = { entityId: 'abc-uuid', level: 0, name: 'Epic' };
+      const payload = { projectId: 10001, hierarchy: [level] };
+      transport.respondWith(payload);
+      const result = await projects.getHierarchy('10001');
+      // Spec fields present
+      expect(result.hierarchy?.[0]).toMatchObject({ entityId: 'abc-uuid', level: 0, name: 'Epic' });
+      // Non-spec fields absent
+      expect(result.hierarchy?.[0]).not.toHaveProperty('id');
+      expect(result.hierarchy?.[0]).not.toHaveProperty('avatarId');
     });
   });
 
@@ -765,6 +813,21 @@ describe('ProjectsResource', () => {
       });
       expect(result).toMatchObject({ id: 'av-new' });
     });
+
+    it('sends x, y, size crop region query params when provided', async () => {
+      // Spec: POST /project/{key}/avatar2 accepts x, y, size query params for crop region.
+      transport.respondWith({ id: 'av-crop' });
+      await projects.loadAvatar('PROJ', {}, { x: 10, y: 20, size: 64 });
+      expect(transport.lastCall?.options.query).toMatchObject({ x: 10, y: 20, size: 64 });
+    });
+
+    it('omits crop params when not provided', async () => {
+      transport.respondWith({ id: 'av-no-crop' });
+      await projects.loadAvatar('PROJ', {});
+      expect(transport.lastCall?.options.query).not.toHaveProperty('x');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('y');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('size');
+    });
   });
 
   // ── getAvatars ────────────────────────────────────────────────────────────
@@ -779,6 +842,22 @@ describe('ProjectsResource', () => {
         path: `${BASE_URL}/project/PROJ/avatars`,
       });
       expect(result).toMatchObject({ system: [], custom: [] });
+    });
+
+    it('avatars include fileName and owner fields from spec Avatar schema', async () => {
+      // Regression: old ProjectAvatar was missing fileName and owner (readOnly spec fields).
+      const avatar = {
+        id: 'av-1',
+        isSystemAvatar: true,
+        isSelected: false,
+        isDeletable: false,
+        fileName: 'jira-icon.png',
+        owner: null,
+        urls: { '16x16': 'https://example.com/av.png' },
+      };
+      transport.respondWith({ system: [avatar], custom: [] });
+      const result = await projects.getAvatars('PROJ');
+      expect(result.system[0]).toMatchObject({ id: 'av-1', fileName: 'jira-icon.png' });
     });
   });
 
@@ -813,9 +892,12 @@ describe('ProjectsResource', () => {
   // ── restore ───────────────────────────────────────────────────────────────
 
   describe('restore()', () => {
-    it('sends POST /project/:id/restore', async () => {
-      transport.respondWith(undefined);
-      await projects.restore('PROJ');
+    it('sends POST /project/:id/restore and returns the restored Project (200 Project per spec)', async () => {
+      // Spec: 200 response is a full Project object, not void.
+      const project = makeProject('10001', 'PROJ');
+      transport.respondWith(project);
+      const result = await projects.restore('PROJ');
+      expect(result).toEqual(project);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/project/PROJ/restore`,
@@ -823,7 +905,7 @@ describe('ProjectsResource', () => {
     });
 
     it('encodes projectIdOrKey in path', async () => {
-      transport.respondWith(undefined);
+      transport.respondWith(makeProject('x', 'x'));
       await projects.restore('../admin');
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/..%2Fadmin/restore`);
     });
@@ -1049,6 +1131,19 @@ describe('ProjectsResource', () => {
       await projects.getRoleDetails('PROJ', { excludeConnectAddons: true });
       expect(transport.lastCall?.options.query).toMatchObject({ excludeConnectAddons: true });
     });
+
+    it('passes excludeOtherServiceRoles param (added to spec params)', async () => {
+      // Spec: GET /project/{key}/roledetails has excludeOtherServiceRoles param.
+      transport.respondWith([]);
+      await projects.getRoleDetails('PROJ', { excludeOtherServiceRoles: true });
+      expect(transport.lastCall?.options.query).toMatchObject({ excludeOtherServiceRoles: true });
+    });
+
+    it('omits excludeOtherServiceRoles when not provided', async () => {
+      transport.respondWith([]);
+      await projects.getRoleDetails('PROJ');
+      expect(transport.lastCall?.options.query?.['excludeOtherServiceRoles']).toBeUndefined();
+    });
   });
 
   // ── getStatuses ───────────────────────────────────────────────────────────
@@ -1119,14 +1214,27 @@ describe('ProjectsResource', () => {
   // ── deleteAsync ───────────────────────────────────────────────────────────
 
   describe('deleteAsync()', () => {
-    it('sends POST /project/:key/delete and returns TaskId', async () => {
-      transport.respondWith({ id: 'task-123' });
+    it('sends POST /project/:key/delete and returns TaskProgressBeanObject (not bare TaskId)', async () => {
+      // Spec: 303 response is TaskProgressBeanObject with 13 fields.
+      const taskProgress = {
+        id: 'task-123',
+        self: `${BASE_URL}/task/task-123`,
+        status: 'ENQUEUED',
+        description: 'Delete project PROJ',
+        elapsedRuntime: 0,
+        submitted: 1700000000000,
+        progress: 0,
+      };
+      transport.respondWith(taskProgress);
       const result = await projects.deleteAsync('PROJ');
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
         path: `${BASE_URL}/project/PROJ/delete`,
       });
-      expect(result).toMatchObject({ id: 'task-123' });
+      expect(result).toMatchObject({ id: 'task-123', status: 'ENQUEUED' });
+      // Must NOT be a narrow TaskId-only object — full task progress is returned.
+      expect(result).toHaveProperty('description');
+      expect(result).toHaveProperty('progress');
     });
   });
 
@@ -1164,6 +1272,13 @@ describe('ProjectsResource', () => {
       transport.respondWith({ features: [] });
       await projects.setFeatureState('PROJ', 'some.feature', 'DISABLED');
       expect(transport.lastCall?.options.body).toMatchObject({ state: 'DISABLED' });
+    });
+
+    it('sends COMING_SOON state (spec ProjectFeatureState enum includes it)', async () => {
+      // Regression: old code narrowed enum to ENABLED|DISABLED; spec allows COMING_SOON too.
+      transport.respondWith({ features: [] });
+      await projects.setFeatureState('PROJ', 'jsw.classic.roadmap', 'COMING_SOON');
+      expect(transport.lastCall?.options.body).toMatchObject({ state: 'COMING_SOON' });
     });
 
     it('encodes featureKey in path', async () => {
