@@ -503,6 +503,8 @@ export { EventsResource } from './resources/events.js';
 export type {
   ChangelogEntry,
   ChangelogItem,
+  HistoryMetadataParticipant,
+  HistoryMetadata,
   IssueChangeLog,
   BulkFetchChangelogData,
   BulkChangelogResponse,
@@ -516,9 +518,22 @@ export type {
 export { ForgeResource } from './resources/forge.js';
 export type { Incident } from './resources/incidents.js';
 export { IncidentsResource } from './resources/incidents.js';
-export type { PostIncidentReview } from './resources/post-incident-reviews.js';
+export type {
+  PostIncidentReview,
+  PostIncidentReviewStatus,
+  PostIncidentReviewAssociation,
+} from './resources/post-incident-reviews.js';
 export { PostIncidentReviewsResource } from './resources/post-incident-reviews.js';
-export type { Vulnerability } from './resources/vulnerability.js';
+export type {
+  Vulnerability,
+  VulnerabilitySeverity,
+  VulnerabilitySeverityLevel,
+  VulnerabilityType,
+  VulnerabilityStatus,
+  VulnerabilityIdentifier,
+  VulnerabilityAdditionalInfo,
+  VulnerabilityAssociation,
+} from './resources/vulnerability.js';
 export { VulnerabilityResource } from './resources/vulnerability.js';
 export type {
   DevopsComponent,
@@ -587,7 +602,12 @@ export type {
   BulkWorklogResponse,
 } from './resources/latest.js';
 export { LatestResource } from './resources/latest.js';
-export type { RemoteLink } from './resources/remote-link.js';
+export type {
+  RemoteLink,
+  RemoteLinkType,
+  RemoteLinkAppearance,
+  RemoteLinkStatus,
+} from './resources/remote-link.js';
 export { RemoteLinkResource } from './resources/remote-link.js';
 export type { ServiceRegistryEntry, ServiceRegistryTier } from './resources/service-registry.js';
 export { ServiceRegistryResource } from './resources/service-registry.js';
@@ -883,10 +903,19 @@ export type {
   DeletedFieldAssociationScheme,
   FieldAssociationParameters,
   WorkTypeParameters,
+  SearchResultWorkTypeParameters,
   FieldAssociationSchemeItemParameters,
   FieldAssociationSchemeFieldResult,
   FieldAssociationSchemeProjectResult,
   ProjectFieldSchemeMapping,
+  MinimalFieldSchemeToFieldsPartialFailure,
+  MinimalFieldSchemeToFieldsResponse,
+  FieldSchemeToFieldsPartialFailure,
+  FieldSchemeToFieldsResponse,
+  UpdateFieldSchemeParametersPartialFailure,
+  UpdateFieldSchemeParametersResponse,
+  FieldSchemeToProjectsPartialFailure,
+  FieldSchemeToProjectsResponse,
   CreateFieldAssociationSchemeData,
   UpdateFieldAssociationSchemeData,
   RemoveFieldAssociationsBody,

@@ -6,12 +6,14 @@ import { appendRepeatedParams } from '../../core/query.js';
 
 // ─── Response types ────────────────────────────────────────────────────────
 
-/** A security level bean embedded in a scheme response. */
+/** A security level bean embedded in a scheme response (spec: SecurityLevel). */
 export interface SecuritySchemeLevel {
   readonly description?: string;
   readonly id?: string;
   readonly isDefault?: boolean;
+  readonly issueSecuritySchemeId?: string;
   readonly name?: string;
+  readonly self?: string;
 }
 
 /** An issue security scheme summary. */
@@ -46,18 +48,21 @@ export interface IssueSecurityLevel {
 
 /** A security level member. */
 export interface SecurityLevelMember {
-  readonly holder?: SecurityLevelMemberHolder;
-  readonly id?: string;
-  readonly issueSecurityLevelId?: string;
-  readonly issueSecuritySchemeId?: string;
-  readonly managed?: boolean;
+  readonly holder: SecurityLevelMemberHolder;
+  readonly id: string;
+  readonly issueSecurityLevelId: string;
+  readonly issueSecuritySchemeId: string;
+  /**
+   * @deprecated This field is writeOnly in the spec and is not present in API responses.
+   */
+  readonly managed?: never;
 }
 
-/** Holder details within a security level member. */
+/** Holder details within a security level member (spec: PermissionHolder). */
 export interface SecurityLevelMemberHolder {
   readonly expand?: string;
   readonly parameter?: string;
-  readonly type?: string;
+  readonly type: string;
   readonly value?: string;
 }
 
@@ -71,17 +76,17 @@ export interface IssueSecuritySchemeToProjectMapping {
 export interface SecuritySchemeWithProjects {
   readonly defaultLevel?: number;
   readonly description?: string;
-  readonly id?: number;
-  readonly name?: string;
-  readonly projectIds?: string[];
-  readonly self?: string;
+  readonly id: number;
+  readonly name: string;
+  readonly projectIds?: number[];
+  readonly self: string;
 }
 
 /** A member of an issue security level (legacy endpoint B543). */
 export interface IssueSecurityLevelMember {
-  readonly holder?: SecurityLevelMemberHolder;
-  readonly id?: number;
-  readonly issueSecurityLevelId?: string;
+  readonly holder: SecurityLevelMemberHolder;
+  readonly id: number;
+  readonly issueSecurityLevelId: number;
 }
 
 // ─── Request body types ───────────────────────────────────────────────────

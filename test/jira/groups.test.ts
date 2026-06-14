@@ -113,6 +113,27 @@ describe('GroupsResource', () => {
       expect(transport.lastCall?.options.query).not.toHaveProperty('exclude');
     });
 
+    it('forwards excludeId array as repeated params built into path (not CSV)', async () => {
+      // Jira v3 spec: `excludeId` is `type:array` — must be emitted as repeated params
+      transport.respondWith(makeGroupPickerResponse());
+
+      await groups.picker({ excludeId: ['id-1', 'id-2'] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/groups/picker?excludeId=id-1&excludeId=id-2`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('excludeId');
+    });
+
+    it('forwards caseInsensitive param', async () => {
+      // Jira v3 spec: `caseInsensitive` is a boolean query param
+      transport.respondWith(makeGroupPickerResponse());
+
+      await groups.picker({ caseInsensitive: true });
+
+      expect(transport.lastCall?.options.query).toMatchObject({ caseInsensitive: true });
+    });
+
     it('forwards userName param', async () => {
       // Arrange
       transport.respondWith(makeGroupPickerResponse());
@@ -295,7 +316,7 @@ describe('GroupsResource', () => {
         isLast: true,
       });
 
-      const results: { groupId: string; name: string }[] = [];
+      const results: { groupId: string | null; name: string }[] = [];
       for await (const g of groups.listAllBulk()) {
         results.push(g);
       }
@@ -323,7 +344,7 @@ describe('GroupsResource', () => {
           isLast: true,
         });
 
-      const results: { groupId: string; name: string }[] = [];
+      const results: { groupId: string | null; name: string }[] = [];
       for await (const g of groups.listAllBulk({ maxResults: 1 })) {
         results.push(g);
       }
@@ -413,7 +434,7 @@ describe('GroupsResource', () => {
         isLast: true,
       });
 
-      const results: { accountId: string }[] = [];
+      const results: { accountId?: string }[] = [];
       for await (const u of groups.listAllMembers({ groupId: 'grp-1' })) {
         results.push(u);
       }
@@ -438,7 +459,7 @@ describe('GroupsResource', () => {
           isLast: true,
         });
 
-      const results: { accountId: string }[] = [];
+      const results: { accountId?: string }[] = [];
       for await (const u of groups.listAllMembers({ groupId: 'grp-1', maxResults: 1 })) {
         results.push(u);
       }
