@@ -35,7 +35,7 @@ interface CacheEntry {
  *
  * Only responses for the configured HTTP methods (default: GET) are cached.
  *
- * Cache key composition (B022 + PR review of round 3, round 4 → round 5):
+ * Cache key composition (B022 + PR review of round 3, round 4 → round 5, B1065):
  * - an auth-identity scope. When `HttpTransport` runs the chain, it injects
  *   a precomputed `RequestOptions.authIdentity` hash so the cache partitions
  *   per tenant WITHOUT observing the raw credential. For callers that build
@@ -45,7 +45,11 @@ interface CacheEntry {
  *   neither is present.
  * - the request method;
  * - the request path;
- * - the query parameters (sorted, `undefined` values dropped).
+ * - the query parameters (sorted, `undefined` values dropped);
+ * - the `responseType` discriminator (B1065 — same class as B1039/batch.ts):
+ *   `'json'` is the effective default so an explicit `responseType:'json'` and
+ *   an omitted `responseType` map to the same key; `'arrayBuffer'` and
+ *   `'stream'` are partitioned separately.
  *
  * Headers OTHER than `Authorization` do NOT contribute to the cache key —
  * a value variant like `Accept-Language: fr` will hit a cache entry stored
@@ -151,5 +155,11 @@ function buildCacheKey(opts: RequestOptions): string {
   // constructed options) to the in-flight credential — a middleware-set
   // `authorizationOverride` (#243) or a caller `Authorization` header — and to
   // a shared-tenant marker when none is present (single-tenant deployments).
-  return `${resolveAuthIdentity(opts)}|${opts.method}:${appendQueryKey(opts.path, opts.query)}`;
+  // B1065: include responseType so GETs for the same URL but requesting
+  // different response shapes ('json' vs 'arrayBuffer' vs 'stream') are never
+  // served from the same cache entry. Mirrors the batch.ts fix (B1039).
+  // Omitted responseType defaults to 'json' — the same effective shape — so
+  // explicit and implicit 'json' callers share one cache slot.
+  const responseType = opts.responseType ?? 'json';
+  return `${resolveAuthIdentity(opts)}|${opts.method}:${appendQueryKey(opts.path, opts.query)}:${responseType}`;
 }
