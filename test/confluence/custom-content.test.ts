@@ -609,7 +609,7 @@ describe('CustomContentResource', () => {
       });
     });
 
-    it('joins status array into a CSV scalar and forwards other params', async () => {
+    it('serializes a status array as repeated path params and forwards other params (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       await resource.listAttachments('cc-1', {
@@ -621,26 +621,33 @@ describe('CustomContentResource', () => {
         limit: 10,
       });
 
+      // `status` is `type: array` → repeated params in the path, not CSV.
       expect(transport.lastCall?.options.query).toEqual({
         sort: '-created-date',
         cursor: 'tok',
-        status: 'current,archived',
         mediaType: 'image/png',
         filename: 'a.png',
         limit: 10,
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/custom-content/cc-1/attachments?status=current&status=archived`,
+      );
     });
 
-    it('forwards scalar status as-is', async () => {
+    it('serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await resource.listAttachments('cc-1', { status: 'archived' });
-      expect(transport.lastCall?.options.query).toEqual({ status: 'archived' });
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/custom-content/cc-1/attachments?status=archived`,
+      );
     });
 
     it('drops empty status array entirely', async () => {
       transport.respondWith({ results: [], _links: {} });
       await resource.listAttachments('cc-1', { status: [] });
       expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/custom-content/cc-1/attachments`);
     });
 
     it('rejects invalid limit', async () => {

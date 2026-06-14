@@ -183,17 +183,19 @@ describe('EpicResource', () => {
       });
     });
 
-    it('joins fields array with commas', async () => {
+    it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
       // Act
       await epic.getIssues('42', { fields: ['summary', 'status'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fields: 'summary,status',
-      });
+      // Assert — `fields` is `type: array` → repeated params in the path.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/epic/42/issue?fields=summary&fields=status`,
+      );
+      expect(transport.lastCall?.options.path).not.toContain('%2C');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('throws RangeError for maxResults: 0', async () => {
@@ -370,11 +372,14 @@ describe('EpicResource', () => {
       // Act
       await epic.getIssuesWithoutEpic({ jql: 'priority = High', fields: ['summary', 'priority'] });
 
-      // Assert
+      // Assert — `fields` is `type: array` → repeated params in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'priority = High',
-        fields: 'summary,priority',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/epic/none/issue?fields=summary&fields=priority`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('throws RangeError for maxResults: 0', async () => {
@@ -461,16 +466,18 @@ describe('EpicResource', () => {
         validateQuery: false,
       });
 
+      // `fields` and `reconcileIssues` are both `type: array` → repeated params
+      // in the path; `expand` is `type: string` and stays in the query (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         nextPageToken: 'TOK',
         maxResults: 10,
         jql: 'project = X',
-        fields: 'summary,status',
         expand: 'schema',
         validateQuery: false,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
       expect(transport.lastCall?.options.path).toBe(
-        `${SOFTWARE_BASE_URL}/epic/42/issue?reconcileIssues=10001&reconcileIssues=10002`,
+        `${SOFTWARE_BASE_URL}/epic/42/issue?reconcileIssues=10001&reconcileIssues=10002&fields=summary&fields=status`,
       );
     });
 
@@ -533,11 +540,15 @@ describe('EpicResource', () => {
         validateQuery: true,
       });
 
+      // `fields` is `type: array` → repeated param in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'priority = High',
-        fields: 'summary',
         validateQuery: true,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/epic/none/issue?fields=summary`,
+      );
     });
 
     it('threads all params including nextPageToken, maxResults, expand', async () => {
@@ -552,14 +563,18 @@ describe('EpicResource', () => {
         validateQuery: false,
       });
 
+      // `fields` is `type: array` → repeated param in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         nextPageToken: 'TOK',
         maxResults: 5,
         jql: 'status = Done',
-        fields: 'id',
         expand: 'names',
         validateQuery: false,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/epic/none/issue?fields=id`,
+      );
     });
 
     it('serializes reconcileIssues as repeated params', async () => {

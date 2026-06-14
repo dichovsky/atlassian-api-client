@@ -43,7 +43,7 @@ describe('IssuesResource', () => {
       });
     });
 
-    it('calls GET /issue/{key} with fields, expand, and properties joined by commas', async () => {
+    it('serializes fields/properties as repeated path params, expand as CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeIssue('10001', 'PROJ-1'));
 
@@ -54,12 +54,16 @@ describe('IssuesResource', () => {
         properties: ['prop1', 'prop2'],
       });
 
-      // Assert
+      // Assert — `/issue/{id}` GET: `fields`/`properties` are `type: array` →
+      // repeated params in the path; `expand` is `type: string` → CSV.
       expect(transport.lastCall?.options.query).toMatchObject({
-        fields: 'summary,status,assignee',
         expand: 'renderedFields,names',
-        properties: 'prop1,prop2',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('properties');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/PROJ-1?fields=summary&fields=status&fields=assignee&properties=prop1&properties=prop2`,
+      );
     });
 
     it('does not include undefined query params when no options passed', async () => {

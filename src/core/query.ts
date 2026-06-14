@@ -41,3 +41,37 @@ export function appendRepeatedParams(
   const separator = path.includes('?') ? '&' : '?';
   return `${path}${separator}${pairs}`;
 }
+
+/**
+ * Append a `type: array` query parameter whose SDK input accepts either a
+ * single scalar *or* an array (the shape used by several Confluence v2 filters,
+ * e.g. `status`/`resolution-status`/`keys`).
+ *
+ * Both shapes serialise to repeated wire params via {@link appendRepeatedParams}
+ * — a lone scalar becomes a single `?status=current`, an array becomes
+ * `?status=current&status=archived`. A comma-joined value would be parsed by
+ * the server as one nonexistent token, silently dropping the filter (B1049).
+ *
+ * - `undefined` and explicit empty arrays are skipped (path returned unchanged),
+ *   matching the prior `csvOrScalar`/`csvParam` "treat empty as unset" posture.
+ * - A scalar is wrapped to a one-element array so the single value still flows
+ *   through the same `encodeURIComponent` path-baking as the array case.
+ *
+ * @param path - The path (or path + existing query string) to extend.
+ * @param name - The query parameter name (emitted verbatim).
+ * @param value - A single scalar, an array of scalars, or `undefined`.
+ * @returns A new path string with the repeated param(s) appended.
+ */
+export function appendScalarOrArrayParam(
+  path: string,
+  name: string,
+  value: string | number | readonly (string | number)[] | undefined,
+): string {
+  if (value === undefined) {
+    return path;
+  }
+  const values = Array.isArray(value)
+    ? (value as readonly (string | number)[])
+    : [value as string | number];
+  return appendRepeatedParams(path, name, values);
+}

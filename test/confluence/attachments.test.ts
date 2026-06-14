@@ -354,7 +354,7 @@ describe('AttachmentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('flattens a status array and forwards every filter', async () => {
+    it('serializes a status array as repeated path params and forwards every filter (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
       await attachments.list({
         sort: '-modified-date',
@@ -364,25 +364,31 @@ describe('AttachmentsResource', () => {
         filename: 'report',
         limit: 25,
       });
+      // `status` is `type: array` → repeated params in the path, not CSV.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/attachments?status=current&status=archived`,
+      );
       expect(transport.lastCall?.options.query).toEqual({
         sort: '-modified-date',
         cursor: 'tok',
-        status: 'current,archived',
         mediaType: 'application/pdf',
         filename: 'report',
         limit: 25,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
     });
 
-    it('passes a scalar status straight through', async () => {
+    it('serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await attachments.list({ status: 'archived' });
-      expect(transport.lastCall?.options.query).toEqual({ status: 'archived' });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments?status=archived`);
+      expect(transport.lastCall?.options.query).toEqual({});
     });
 
     it('drops an empty status array', async () => {
       transport.respondWith({ results: [], _links: {} });
       await attachments.list({ status: [] });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/attachments`);
       expect(transport.lastCall?.options.query).toEqual({});
     });
 

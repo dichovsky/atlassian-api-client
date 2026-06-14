@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
+import { appendScalarOrArrayParam } from '../../core/query.js';
 import { nonEmptyQuery } from './query.js';
 import type {
   Attachment,
@@ -20,7 +21,6 @@ import type {
   UploadAttachmentResult,
 } from '../types/attachments.js';
 import type {
-  AttachmentStatus,
   ContentProperty,
   CreateContentPropertyData,
   Label,
@@ -30,20 +30,6 @@ import type {
 
 /** Query bag accepted by the underlying transport. Scalars only. */
 type Query = Record<string, string | number | boolean | undefined>;
-
-/**
- * Flatten a single value or non-empty array of statuses into the
- * comma-joined string the wire format expects. An empty array drops out as
- * `undefined` so callers can build the params object unconditionally.
- */
-function statusParam(
-  value: AttachmentStatus | readonly AttachmentStatus[] | undefined,
-): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value === 'string') return value;
-  if (value.length === 0) return undefined;
-  return value.join(',');
-}
 
 /**
  * Choose the upload body for `POST /pages/{id}/attachments`. If the caller
@@ -193,7 +179,7 @@ export class AttachmentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const response = await this.transport.request<CursorPaginatedResponse<Attachment>>({
       method: 'GET',
-      path: `${this.baseUrl}/attachments`,
+      path: this.buildListPath(params),
       query: this.buildListQuery(params),
     });
     return response.data;
@@ -208,7 +194,7 @@ export class AttachmentsResource {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     yield* paginateCursor<Attachment>(
       this.transport,
-      `${this.baseUrl}/attachments`,
+      this.buildListPath(params),
       this.buildListQuery(params),
     );
   }
@@ -483,18 +469,24 @@ export class AttachmentsResource {
 
   // ── internals ────────────────────────────────────────────────────────────
 
-  /** Build the query bag for `GET /attachments`, flattening the `status` array. */
+  /** Build the scalar query bag for `GET /attachments` (the `type: array`
+   * `status` filter is baked into the path by {@link buildListPath} — B1049). */
   private buildListQuery(params: ListAllAttachmentsParams | undefined): Query {
     const query: Query = {};
     if (params === undefined) return query;
     if (params.sort !== undefined) query.sort = params.sort;
     if (params.cursor !== undefined) query.cursor = params.cursor;
-    const status = statusParam(params.status);
-    if (status !== undefined) query.status = status;
     if (params.mediaType !== undefined) query.mediaType = params.mediaType;
     if (params.filename !== undefined) query.filename = params.filename;
     if (params.limit !== undefined) query.limit = params.limit;
     return query;
+  }
+
+  /** Bake the `type: array` `status` filter into the `GET /attachments` path as
+   * repeated params (`?status=current&status=archived`) — a CSV value is parsed
+   * by the server as one nonexistent token, dropping the filter (B1049). */
+  private buildListPath(params: ListAllAttachmentsParams | undefined): string {
+    return appendScalarOrArrayParam(`${this.baseUrl}/attachments`, 'status', params?.status);
   }
 
   /** Build the query bag for `GET /pages/{pageId}/attachments`. */

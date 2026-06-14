@@ -24,6 +24,12 @@ interface MatrixRow {
   expectBody?: (body: unknown) => void;
   /** Optional assertion on the captured request querystring. */
   expectQuery?: (query: Record<string, string>) => void;
+  /**
+   * Optional assertion on the full captured request URL. Needed when the wire
+   * carries repeated `type: array` params (`?status=a&status=b`), which the
+   * collapsed `query` record cannot represent (B1049).
+   */
+  expectUrl?: (url: string) => void;
 }
 
 const HAPPY_EXIT = 0;
@@ -461,8 +467,12 @@ const matrix: readonly MatrixRow[] = [
       expect(query['include-labels']).toBe('true');
       expect(query['include-likes']).toBe('true');
       expect(query['body-format']).toBe('atlas_doc_format');
-      expect(query['status']).toBe('current,draft');
       expect(query['version']).toBe('3');
+    },
+    expectUrl: (url) => {
+      // `status` is `type: array` → repeated params, not CSV (B1049).
+      expect(url).toContain('status=current&status=draft');
+      expect(url).not.toContain('status=current%2Cdraft');
     },
   },
   {
@@ -1068,9 +1078,16 @@ const matrix: readonly MatrixRow[] = [
     ],
     expectCall: { method: 'GET', pathname: `${P}/data-policies/spaces` },
     expectQuery: (query) => {
-      expect(query.keys).toBe('ENG,OPS');
+      // `keys` is `type: array` → repeated params on the wire, so the collapsed
+      // record only shows the last value; assert scalars here, repeats below.
       expect(query.limit).toBe('50');
       expect(query.sort).toBe('-key');
+    },
+    expectUrl: (url) => {
+      // The CLI splits `--keys ENG,OPS` into an array; the SDK emits repeated
+      // params, not CSV (B1049).
+      expect(url).toContain('keys=ENG&keys=OPS');
+      expect(url).not.toContain('keys=ENG%2COPS');
     },
   },
 
@@ -2443,8 +2460,10 @@ const matrix: readonly MatrixRow[] = [
       },
     ],
     expectCall: { method: 'GET', pathname: `${P}/blogposts/99999/attachments` },
-    expectQuery: (query) => {
-      expect(query.status).toBe('current,archived');
+    expectUrl: (url) => {
+      // `status` is `type: array` → repeated params, not CSV (B1049).
+      expect(url).toContain('status=current&status=archived');
+      expect(url).not.toContain('status=current%2Carchived');
     },
   },
   {
@@ -3275,6 +3294,7 @@ describe('atlas confluence — full action matrix', () => {
 
     if (row.expectBody) row.expectBody(call.body);
     if (row.expectQuery) row.expectQuery(call.query);
+    if (row.expectUrl) row.expectUrl(call.url);
 
     for (const needle of row.expectStdout ?? []) {
       expect(result.stdout).toContain(needle);

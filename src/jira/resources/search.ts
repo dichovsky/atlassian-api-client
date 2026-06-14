@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { paginateSearch, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { SearchResult, SearchParams, Issue } from '../types.js';
 
 export interface ApproximateCountResult {
@@ -60,12 +61,13 @@ export class SearchResource {
     };
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params.fields) query['fields'] = params.fields.join(',');
+    // `/search` GET: `fields` is `type: array` → repeated params baked into the
+    // path; `expand` is `type: string` → stays comma-joined (B1049).
     if (params.expand) query['expand'] = params.expand.join(',');
 
     const response = await this.transport.request<SearchResult>({
       method: 'GET',
-      path: `${this.baseUrl}/search`,
+      path: appendRepeatedParams(`${this.baseUrl}/search`, 'fields', params.fields),
       query,
     });
     return response.data;
@@ -102,13 +104,15 @@ export class SearchResource {
     if (params.jql !== undefined) query['jql'] = params.jql;
     if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
-    if (params.fields) query['fields'] = params.fields.join(',');
+    // `/search/jql` GET: `fields`/`properties` are `type: array` → repeated
+    // params baked into the path; `expand` is `type: string` → CSV (B1049).
     if (params.expand) query['expand'] = params.expand.join(',');
-    if (params.properties) query['properties'] = params.properties.join(',');
     if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
+    let path = appendRepeatedParams(`${this.baseUrl}/search/jql`, 'fields', params.fields);
+    path = appendRepeatedParams(path, 'properties', params.properties);
     const response = await this.transport.request<JqlSearchResult>({
       method: 'GET',
-      path: `${this.baseUrl}/search/jql`,
+      path,
       query,
     });
     return response.data;

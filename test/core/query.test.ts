@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { appendRepeatedParams } from '../../src/core/query.js';
+import { appendRepeatedParams, appendScalarOrArrayParam } from '../../src/core/query.js';
 
 describe('appendRepeatedParams', () => {
   it('returns the path unchanged for an undefined value array', () => {
@@ -46,5 +46,46 @@ describe('appendRepeatedParams', () => {
 
   it('does not encode the parameter name', () => {
     expect(appendRepeatedParams('/x', 'workflowNames', ['wf'])).toBe('/x?workflowNames=wf');
+  });
+});
+
+describe('appendScalarOrArrayParam', () => {
+  it('returns the path unchanged for an undefined value', () => {
+    expect(appendScalarOrArrayParam('/blogposts/1', 'status', undefined)).toBe('/blogposts/1');
+  });
+
+  it('returns the path unchanged for an explicit empty array (treated as unset)', () => {
+    expect(appendScalarOrArrayParam('/blogposts/1', 'status', [])).toBe('/blogposts/1');
+  });
+
+  it('emits a single scalar string as one param', () => {
+    expect(appendScalarOrArrayParam('/blogposts/1', 'status', 'current')).toBe(
+      '/blogposts/1?status=current',
+    );
+  });
+
+  it('emits a single scalar number as one param', () => {
+    expect(appendScalarOrArrayParam('/labels', 'space-id', 100)).toBe('/labels?space-id=100');
+  });
+
+  it('emits an array as repeated params, never CSV (B1049)', () => {
+    expect(appendScalarOrArrayParam('/blogposts/1', 'status', ['current', 'archived'])).toBe(
+      '/blogposts/1?status=current&status=archived',
+    );
+  });
+
+  it('percent-encodes a scalar value that contains a comma (kept as one token)', () => {
+    // A caller that passes a literal pre-joined string gets it back as a single
+    // (encoded) value — it is NOT split, so the server still sees one token.
+    expect(appendScalarOrArrayParam('/labels', 'label-id', '1,2,3')).toBe(
+      '/labels?label-id=1%2C2%2C3',
+    );
+  });
+
+  it('chains onto a path that already has a query string', () => {
+    const withStatus = appendScalarOrArrayParam('/pages/1/inline-comments', 'status', ['open']);
+    expect(appendScalarOrArrayParam(withStatus, 'resolution-status', ['reopened', 'open'])).toBe(
+      '/pages/1/inline-comments?status=open&resolution-status=reopened&resolution-status=open',
+    );
   });
 });

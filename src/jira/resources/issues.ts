@@ -388,13 +388,19 @@ export class IssuesResource {
   /** Get an issue by ID or key. */
   async get(issueIdOrKey: string, params?: GetIssueParams): Promise<Issue> {
     const query: Record<string, string | undefined> = {};
-    if (params?.fields) query['fields'] = params.fields.join(',');
+    // `/issue/{issueIdOrKey}` GET: `fields`/`properties` are `type: array` →
+    // repeated params baked into the path; `expand` is `type: string` → CSV (B1049).
     if (params?.expand) query['expand'] = params.expand.join(',');
-    if (params?.properties) query['properties'] = params.properties.join(',');
 
+    let path = appendRepeatedParams(
+      `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
+      'fields',
+      params?.fields,
+    );
+    path = appendRepeatedParams(path, 'properties', params?.properties);
     const response = await this.transport.request<Issue>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
+      path,
       query,
     });
     return response.data;

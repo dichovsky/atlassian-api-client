@@ -130,32 +130,33 @@ describe('BlogPostsResource', () => {
         'include-collaborators': true,
       });
 
-      // Assert
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/blogposts/42`,
-        query: {
-          'body-format': 'atlas_doc_format',
-          'get-draft': true,
-          status: 'current,draft',
-          version: 3,
-          'include-labels': true,
-          'include-properties': true,
-          'include-operations': true,
-          'include-likes': true,
-          'include-versions': true,
-          'include-version': false,
-          'include-favorited-by-current-user-status': true,
-          'include-webresources': true,
-          'include-collaborators': true,
-        },
+      // Assert — `status` is `type: array` on /blogposts/{id} → repeated params
+      // in the path; every other filter stays in the query bag (B1049).
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/42?status=current&status=draft`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'atlas_doc_format',
+        'get-draft': true,
+        version: 3,
+        'include-labels': true,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': true,
+        'include-version': false,
+        'include-favorited-by-current-user-status': true,
+        'include-webresources': true,
+        'include-collaborators': true,
       });
     });
 
-    it('accepts a scalar status string', async () => {
+    it('serializes a scalar status as a single path param', async () => {
       transport.respondWith(makeBlogPost('42'));
       await blogPosts.get('42', { status: 'historical' });
-      expect(transport.lastCall?.options.query).toEqual({ status: 'historical' });
+      expect(transport.lastCall?.options.query).toEqual({});
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/blogposts/42?status=historical`);
     });
 
     it('drops an empty-array status', async () => {
@@ -422,7 +423,7 @@ describe('BlogPostsResource', () => {
   // ── attachments (B072) ──────────────────────────────────────────────────────
 
   describe('attachments', () => {
-    it('listAttachments() forwards filters and joins array status as CSV', async () => {
+    it('listAttachments() serializes array status as repeated path params (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listAttachments('bp-1', {
         sort: '-created-date',
@@ -432,17 +433,17 @@ describe('BlogPostsResource', () => {
         filename: 'a.png',
         limit: 10,
       });
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/blogposts/bp-1/attachments`,
-        query: {
-          sort: '-created-date',
-          cursor: 'c',
-          status: 'current,archived',
-          mediaType: 'image/png',
-          filename: 'a.png',
-          limit: 10,
-        },
+      // `status` is `type: array` → repeated params in the path, not CSV.
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/attachments?status=current&status=archived`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        sort: '-created-date',
+        cursor: 'c',
+        mediaType: 'image/png',
+        filename: 'a.png',
+        limit: 10,
       });
     });
 
@@ -535,7 +536,7 @@ describe('BlogPostsResource', () => {
   // ── footer / inline comments (B077-B078) ───────────────────────────────────
 
   describe('comments', () => {
-    it('listFooterComments() forwards filters and joins status arrays', async () => {
+    it('listFooterComments() serializes status arrays as repeated path params (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listFooterComments('bp-1', {
         'body-format': 'storage',
@@ -544,16 +545,16 @@ describe('BlogPostsResource', () => {
         cursor: 'c',
         limit: 4,
       });
-      expect(transport.lastCall?.options).toMatchObject({
-        method: 'GET',
-        path: `${BASE_URL}/blogposts/bp-1/footer-comments`,
-        query: {
-          'body-format': 'storage',
-          status: 'current,historical',
-          sort: '-created-date',
-          cursor: 'c',
-          limit: 4,
-        },
+      // `status` is `type: array` → repeated params in the path, not CSV.
+      expect(transport.lastCall?.options.method).toBe('GET');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/footer-comments?status=current&status=historical`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'storage',
+        sort: '-created-date',
+        cursor: 'c',
+        limit: 4,
       });
     });
 
@@ -570,14 +571,15 @@ describe('BlogPostsResource', () => {
       expect(items.map((i) => i.id)).toEqual(['c1', 'c2']);
     });
 
-    it('listInlineComments() forwards resolution-status as CSV', async () => {
+    it('listInlineComments() serializes resolution-status arrays as repeated path params (B1049)', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listInlineComments('bp-1', {
         'resolution-status': ['open', 'reopened'],
       });
-      expect(transport.lastCall?.options.query).toMatchObject({
-        'resolution-status': 'open,reopened',
-      });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('resolution-status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/inline-comments?resolution-status=open&resolution-status=reopened`,
+      );
     });
 
     it('listInlineCommentsAll() iterates pages', async () => {
@@ -736,7 +738,7 @@ describe('BlogPostsResource', () => {
   // guards. The matrix below sweeps the unset paths so every branch is exercised:
   // - list*() with no params object
   // - listAll*() with no params object (covers "skip every if" branch)
-  // - csvOrScalar(): string scalar and empty-array branches
+  // - appendScalarOrArrayParam(): string scalar and empty-array branches
   // - getClassificationLevel() / listAttachments() / listProperties() / list*Comments() /
   //   listLabels() / listLikeUsers() / listCustomContent() / listVersions() each get
   //   a no-params (or minimum-only) call to drive the unset branches.
@@ -774,10 +776,13 @@ describe('BlogPostsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('listAttachments() accepts a scalar status', async () => {
+    it('listAttachments() serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listAttachments('bp-1', { status: 'current' });
-      expect(transport.lastCall?.options.query).toMatchObject({ status: 'current' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/attachments?status=current`,
+      );
     });
 
     it('listAttachments() drops an empty-array status', async () => {
@@ -826,10 +831,13 @@ describe('BlogPostsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('listFooterComments() accepts a scalar status', async () => {
+    it('listFooterComments() serializes a scalar status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listFooterComments('bp-1', { status: 'current' });
-      expect(transport.lastCall?.options.query).toMatchObject({ status: 'current' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/footer-comments?status=current`,
+      );
     });
 
     it('listFooterComments() drops an empty-array status', async () => {
@@ -852,10 +860,13 @@ describe('BlogPostsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('listInlineComments() accepts a scalar resolution-status', async () => {
+    it('listInlineComments() serializes a scalar resolution-status as a single path param', async () => {
       transport.respondWith({ results: [], _links: {} });
       await blogPosts.listInlineComments('bp-1', { 'resolution-status': 'open' });
-      expect(transport.lastCall?.options.query).toMatchObject({ 'resolution-status': 'open' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('resolution-status');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/inline-comments?resolution-status=open`,
+      );
     });
 
     it('listInlineComments() drops an empty-array resolution-status', async () => {
@@ -954,7 +965,7 @@ describe('BlogPostsResource', () => {
       });
     });
 
-    it('listAttachmentsAll() forwards filters (no cursor)', async () => {
+    it('listAttachmentsAll() forwards filters and status as a path param (no cursor)', async () => {
       transport.respondWith({ results: [], _links: {} });
       for await (const _ of blogPosts.listAttachmentsAll('bp-1', {
         sort: 'created-date',
@@ -965,16 +976,20 @@ describe('BlogPostsResource', () => {
       })) {
         /* consume */
       }
+      // `status` is `type: array` → repeated param in the path (B1049).
       expect(transport.calls[0]?.options.query).toMatchObject({
         sort: 'created-date',
-        status: 'current',
         mediaType: 'image/jpeg',
         filename: 'b.jpg',
         limit: 2,
       });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('status');
+      expect(transport.calls[0]?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/attachments?status=current`,
+      );
     });
 
-    it('listFooterCommentsAll() forwards body-format/status/sort/limit (no cursor)', async () => {
+    it('listFooterCommentsAll() forwards body-format/sort/limit and status as a path param (no cursor)', async () => {
       transport.respondWith({ results: [], _links: {} });
       for await (const _ of blogPosts.listFooterCommentsAll('bp-1', {
         'body-format': 'storage',
@@ -984,15 +999,19 @@ describe('BlogPostsResource', () => {
       })) {
         /* consume */
       }
+      // `status` is `type: array` → repeated param in the path (B1049).
       expect(transport.calls[0]?.options.query).toMatchObject({
         'body-format': 'storage',
-        status: 'current',
         sort: '-created-date',
         limit: 5,
       });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('status');
+      expect(transport.calls[0]?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/footer-comments?status=current`,
+      );
     });
 
-    it('listInlineCommentsAll() forwards body-format/status/resolution-status/sort/limit', async () => {
+    it('listInlineCommentsAll() forwards body-format/sort/limit and status/resolution-status as path params', async () => {
       transport.respondWith({ results: [], _links: {} });
       for await (const _ of blogPosts.listInlineCommentsAll('bp-1', {
         'body-format': 'storage',
@@ -1003,13 +1022,17 @@ describe('BlogPostsResource', () => {
       })) {
         /* consume */
       }
+      // `status`/`resolution-status` are `type: array` → repeated path params (B1049).
       expect(transport.calls[0]?.options.query).toMatchObject({
         'body-format': 'storage',
-        status: 'current',
-        'resolution-status': 'open',
         sort: '-created-date',
         limit: 5,
       });
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('status');
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('resolution-status');
+      expect(transport.calls[0]?.options.path).toBe(
+        `${BASE_URL}/blogposts/bp-1/inline-comments?status=current&resolution-status=open`,
+      );
     });
 
     it('listInlineComments() forwards cursor + limit (exercises remaining branches)', async () => {

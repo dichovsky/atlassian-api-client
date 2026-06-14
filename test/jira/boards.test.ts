@@ -204,17 +204,20 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('joins fields array with commas', async () => {
+    it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
       // Act
       await boards.getIssues(42, { fields: ['summary', 'status'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fields: 'summary,status',
-      });
+      // Assert — `fields` is `type: array` on the agile issue endpoint:
+      // repeated params in the path, never `fields=summary%2Cstatus`.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/issue?fields=summary&fields=status`,
+      );
+      expect(transport.lastCall?.options.path).not.toContain('fields=summary%2Cstatus');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('throws RangeError for maxResults: 0', async () => {
@@ -487,16 +490,19 @@ describe('BoardsResource', () => {
         fields: ['summary', 'status'],
       });
 
-      // Assert
+      // Assert — `fields` is `type: array` → repeated params in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 5,
         maxResults: 20,
         jql: 'status = Done',
-        fields: 'summary,status',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/sprint/10/issue?fields=summary&fields=status`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
-    it('joins fields array with commas', async () => {
+    it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
@@ -504,9 +510,11 @@ describe('BoardsResource', () => {
       await boards.getSprintIssues(42, 10, { fields: ['assignee', 'priority', 'labels'] });
 
       // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        fields: 'assignee,priority,labels',
-      });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/sprint/10/issue?fields=assignee&fields=priority&fields=labels`,
+      );
+      expect(transport.lastCall?.options.path).not.toContain('%2C');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('does not include undefined query params when params is empty object', async () => {
@@ -699,13 +707,16 @@ describe('BoardsResource', () => {
         fields: ['summary', 'status'],
       });
 
-      // Assert
+      // Assert — `fields` is `type: array` → repeated params in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 5,
         maxResults: 20,
         jql: 'status = Done',
-        fields: 'summary,status',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/backlog?fields=summary&fields=status`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('passes only jql and fields without startAt or maxResults', async () => {
@@ -714,7 +725,10 @@ describe('BoardsResource', () => {
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('startAt');
       expect(q).not.toHaveProperty('maxResults');
-      expect(q).toMatchObject({ jql: 'status = Open', fields: 'id' });
+      expect(q).toMatchObject({ jql: 'status = Open' });
+      // `fields` is a repeated param in the path, not the query bag (B1049).
+      expect(q).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/board/42/backlog?fields=id`);
     });
 
     it('passes only startAt without jql or fields', async () => {
@@ -873,11 +887,14 @@ describe('BoardsResource', () => {
       // Act
       await boards.getEpicIssues(42, 7, { jql: 'status = Done', fields: ['summary'] });
 
-      // Assert
+      // Assert — `fields` is `type: array` → repeated param in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'status = Done',
-        fields: 'summary',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/epic/7/issue?fields=summary`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('passes startAt and maxResults without jql or fields', async () => {
@@ -938,11 +955,14 @@ describe('BoardsResource', () => {
       // Act
       await boards.getIssuesWithoutEpic(42, { jql: 'status != Done', fields: ['summary'] });
 
-      // Assert
+      // Assert — `fields` is `type: array` → repeated param in the path (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'status != Done',
-        fields: 'summary',
       });
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/board/42/epic/none/issue?fields=summary`,
+      );
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
     });
 
     it('passes startAt and maxResults without jql or fields', async () => {
@@ -1805,7 +1825,7 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('threads nextPageToken, maxResults, jql, fields (CSV), and expand into query', async () => {
+    it('threads scalar params into query and repeated fields into the path (B1049)', async () => {
       transport.respondWith(makeSoftwareIssueResults([]));
 
       await boards.getBacklogEnhanced(42, {
@@ -1816,13 +1836,18 @@ describe('BoardsResource', () => {
         expand: 'names',
       });
 
+      // `expand` is `type: string` (stays in the query bag); `fields` is
+      // `type: array` on the JSIS endpoint → repeated params in the path.
       expect(transport.lastCall?.options.query).toMatchObject({
         nextPageToken: 'TOK',
         maxResults: 20,
         jql: 'status = Done',
-        fields: 'summary,status',
         expand: 'names',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/backlog?fields=summary&fields=status`,
+      );
     });
 
     it('threads validateQuery into query when provided', async () => {
@@ -1893,15 +1918,17 @@ describe('BoardsResource', () => {
         reconcileIssues: [5],
       });
 
+      // `fields` and `reconcileIssues` are both `type: array` on the JSIS
+      // endpoint → repeated params in the path, not the query bag (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
         nextPageToken: 'TOK',
         maxResults: 10,
         jql: 'project = X',
-        fields: 'id',
         expand: 'schema',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
       expect(transport.lastCall?.options.path).toBe(
-        `${SOFTWARE_BASE_URL}/board/42/issue?reconcileIssues=5`,
+        `${SOFTWARE_BASE_URL}/board/42/issue?reconcileIssues=5&fields=id`,
       );
     });
 
@@ -1930,10 +1957,14 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('threads jql and fields', async () => {
+    it('threads jql into query and fields as a repeated path param (B1049)', async () => {
       transport.respondWith(makeSoftwareIssueResults([]));
       await boards.getIssuesWithoutEpicEnhanced(42, { jql: 'a', fields: ['summary'] });
-      expect(transport.lastCall?.options.query).toMatchObject({ jql: 'a', fields: 'summary' });
+      expect(transport.lastCall?.options.query).toMatchObject({ jql: 'a' });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      expect(transport.lastCall?.options.path).toBe(
+        `${SOFTWARE_BASE_URL}/board/42/epic/none/issue?fields=summary`,
+      );
     });
 
     it('throws ValidationError for boardId = 0', async () => {
@@ -2008,7 +2039,7 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('threads jql, fields, and repeated reconcileIssues', async () => {
+    it('threads jql into query and repeated fields + reconcileIssues into the path (B1049)', async () => {
       transport.respondWith(makeSoftwareIssueResults([]));
       await boards.getSprintIssuesEnhanced(42, 10, {
         jql: 'status = "In Progress"',
@@ -2017,10 +2048,11 @@ describe('BoardsResource', () => {
       });
       expect(transport.lastCall?.options.query).toMatchObject({
         jql: 'status = "In Progress"',
-        fields: 'summary,status',
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+      // `reconcileIssues` is appended first, then `fields` — both repeated.
       expect(transport.lastCall?.options.path).toBe(
-        `${SOFTWARE_BASE_URL}/board/42/sprint/10/issue?reconcileIssues=99`,
+        `${SOFTWARE_BASE_URL}/board/42/sprint/10/issue?reconcileIssues=99&fields=summary&fields=status`,
       );
     });
 

@@ -2,6 +2,7 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { Project, ListProjectsParams } from '../types.js';
 
 export interface ProjectEmail {
@@ -323,14 +324,15 @@ export class ProjectsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
+      // `expand`/`typeKey` are `type: string` on /project/search (CSV stays);
+      // `status` is `type: array` → repeated params baked into the path (B1049).
       if (params.expand) query['expand'] = params.expand.join(',');
-      if (params.status) query['status'] = params.status.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<Project>>({
       method: 'GET',
-      path: `${this.baseUrl}/project/search`,
+      path: appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status),
       query,
     });
     return response.data;
@@ -355,14 +357,15 @@ export class ProjectsResource {
     if (params) {
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.orderBy) query['orderBy'] = params.orderBy;
+      // `expand`/`typeKey` are `type: string` (CSV stays); `status` is
+      // `type: array` → repeated params baked into the path (B1049).
       if (params.expand) query['expand'] = params.expand.join(',');
-      if (params.status) query['status'] = params.status.join(',');
       if (params.typeKey) query['typeKey'] = params.typeKey;
     }
 
     yield* paginateOffset<Project>(
       this.transport,
-      `${this.baseUrl}/project/search`,
+      appendRepeatedParams(`${this.baseUrl}/project/search`, 'status', params?.status),
       query,
       params?.maxResults,
     );

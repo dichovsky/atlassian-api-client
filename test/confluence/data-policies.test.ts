@@ -70,18 +70,19 @@ describe('DataPoliciesResource', () => {
       expect(transport.lastCall?.options.body).toBeUndefined();
     });
 
-    it('joins ids and keys arrays as comma-separated strings', async () => {
+    it('serializes ids and keys arrays as repeated path params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
       // Act
       await resource.listSpaces({ ids: ['1', '2', '3'], keys: ['ENG', 'OPS'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toEqual({
-        ids: '1,2,3',
-        keys: 'ENG,OPS',
-      });
+      // Assert — `ids`/`keys` are `type: array` on /data-policies/spaces:
+      // repeated params in the path, never `ids=1%2C2%2C3`.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/data-policies/spaces?ids=1&ids=2&ids=3&keys=ENG&keys=OPS`,
+      );
+      expect(transport.lastCall?.options.query).toEqual({});
     });
 
     it('omits ids and keys when arrays are empty', async () => {
@@ -92,6 +93,7 @@ describe('DataPoliciesResource', () => {
       await resource.listSpaces({ ids: [], keys: [] });
 
       // Assert
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/data-policies/spaces`);
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
@@ -172,13 +174,17 @@ describe('DataPoliciesResource', () => {
       });
       await iter.next();
 
-      // Assert
+      // Assert — `ids`/`keys` are `type: array` → repeated path params; `sort`/
+      // `limit` stay in the query bag (B1049).
       expect(transport.lastCall?.options.query).toMatchObject({
-        ids: '10,20',
-        keys: 'ENG',
         sort: 'key',
         limit: 25,
       });
+      expect(transport.lastCall?.options.query).not.toHaveProperty('ids');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/data-policies/spaces?ids=10&ids=20&keys=ENG`,
+      );
     });
 
     it('drops any caller-supplied cursor so pagination starts at the head', async () => {

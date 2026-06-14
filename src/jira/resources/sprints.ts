@@ -253,7 +253,6 @@ export class SprintsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
     }
 
     // The agile endpoint returns SearchResults: { issues, startAt, maxResults, total }
@@ -265,7 +264,12 @@ export class SprintsResource {
       total: number;
     }>({
       method: 'GET',
-      path: `${this.baseUrl}/sprint/${sprintId}/issue`,
+      // `fields` is `type: array` → repeated params baked into the path (B1049).
+      path: appendRepeatedParams(
+        `${this.baseUrl}/sprint/${sprintId}/issue`,
+        'fields',
+        params?.fields,
+      ),
       query,
     });
     return {
@@ -296,12 +300,14 @@ export class SprintsResource {
       if (params.nextPageToken !== undefined) query['nextPageToken'] = params.nextPageToken;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
-      if (params.fields !== undefined) query['fields'] = params.fields.join(',');
       if (params.expand !== undefined) query['expand'] = params.expand;
       if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
     }
+    // `reconcileIssues` and `fields` are both `type: array` on the JSIS
+    // endpoint → repeated params baked into the path, not CSV (B1049).
     const basePath = `${this.softwareBaseUrl}/sprint/${sprintId}/issue`;
-    const finalPath = appendRepeatedParams(basePath, 'reconcileIssues', params?.reconcileIssues);
+    let finalPath = appendRepeatedParams(basePath, 'reconcileIssues', params?.reconcileIssues);
+    finalPath = appendRepeatedParams(finalPath, 'fields', params?.fields);
     const response = await this.transport.request<SoftwareIssueResults>({
       method: 'GET',
       path: finalPath,

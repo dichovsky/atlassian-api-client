@@ -60,17 +60,20 @@ describe('ProjectsResource', () => {
       });
     });
 
-    it('converts status array to comma-joined string', async () => {
+    it('serializes status array as repeated params, not CSV (B1049)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
       // Act
       await projects.list({ status: ['live', 'archived'] });
 
-      // Assert
-      expect(transport.lastCall?.options.query).toMatchObject({
-        status: 'live,archived',
-      });
+      // Assert — `status` is `type: array` on /project/search: repeated params,
+      // never `status=live%2Carchived`.
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/project/search?status=live&status=archived`,
+      );
+      expect(transport.lastCall?.options.path).not.toContain('status=live%2Carchived');
+      expect(transport.lastCall?.options.query).not.toHaveProperty('status');
     });
 
     it('passes all supported params correctly', async () => {
@@ -87,15 +90,16 @@ describe('ProjectsResource', () => {
         typeKey: 'software',
       });
 
-      // Assert
+      // Assert — `expand`/`typeKey` are `type: string` (stay comma-joined in the
+      // query bag); `status` is `type: array` (repeated param in the path).
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 10,
         maxResults: 25,
         orderBy: 'name',
         expand: 'description',
-        status: 'live',
         typeKey: 'software',
       });
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/project/search?status=live`);
     });
   });
 
@@ -208,14 +212,16 @@ describe('ProjectsResource', () => {
         items.push(item);
       }
 
-      // Assert
+      // Assert — `expand`/`typeKey` stay comma-joined (type:string); `status`
+      // (type:array) is a repeated param in the path (B1049).
       expect(items).toHaveLength(1);
       expect(transport.calls[0]?.options.query).toMatchObject({
         expand: 'description',
-        status: 'live',
         typeKey: 'software',
         orderBy: 'name',
       });
+      expect(transport.calls[0]?.options.path).toBe(`${BASE_URL}/project/search?status=live`);
+      expect(transport.calls[0]?.options.query).not.toHaveProperty('status');
     });
 
     it('works with no params', async () => {
