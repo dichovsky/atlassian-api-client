@@ -92,7 +92,11 @@ const GLOBAL_OPTIONS = {
   with: { type: 'string' as const },
   // epic options
   color: { type: 'string' as const },
-  done: { type: 'boolean' as const },
+  // Tri-state filter (B1063): `--done true|false` filters epics that are
+  // done / not-done (`list-epics`) or sets the epic's `done` body field
+  // (`epic update`); omit for all. Registered `string` so `--done false`
+  // reaches `asBoolFlag` instead of being swallowed as a positional.
+  done: { type: 'string' as const },
   before: { type: 'string' as const },
   after: { type: 'string' as const },
   'custom-field': { type: 'string' as const },
@@ -116,7 +120,10 @@ const GLOBAL_OPTIONS = {
   released: { type: 'boolean' as const },
   // enhanced (JSIS) board issue options (B1023-B1027)
   'reconcile-issues': { type: 'string' as const },
-  'validate-query': { type: 'boolean' as const },
+  // Tri-state filter (B1063): `validateQuery` defaults to `true` on the wire,
+  // so disabling validation is only reachable via `--validate-query false`.
+  // Registered `string` so the `false` case isn't lost to positionals.
+  'validate-query': { type: 'string' as const },
   // blog-posts sub-resource flags (B066-B084)
   'resolution-status': { type: 'string' as const },
   // `redact` convenience overrides — when set, these merge into the
@@ -208,7 +215,10 @@ const GLOBAL_OPTIONS = {
   x: { type: 'string' as const },
   y: { type: 'string' as const },
   // bulk options (B345-B353 + DevOps bulk POST variants)
-  'send-notification': { type: 'boolean' as const },
+  // Tri-state filter (B1063): `sendBulkNotification` defaults to `true` on the
+  // wire, so suppressing notifications is only reachable via
+  // `--send-notification false`. Registered `string` to carry the `false` case.
+  'send-notification': { type: 'string' as const },
   'search-text': { type: 'string' as const },
   'ending-before': { type: 'string' as const },
   'starting-after': { type: 'string' as const },
@@ -219,8 +229,11 @@ const GLOBAL_OPTIONS = {
   // endpoint and asks the server to return a generic placeholder instead of
   // 404 when no preview is renderable. `width`, `height`, `file`, `filename`,
   // and `media-type` reuse existing global flags above.
-  redirect: { type: 'boolean' as const },
-  'fallback-to-default': { type: 'boolean' as const },
+  // Both are tri-state filters (B1063): each defaults to `true` on the wire,
+  // so the useful override (`false`) is only reachable via the value form
+  // (`--redirect false`). Registered `string` so `false` isn't lost to positionals.
+  redirect: { type: 'string' as const },
+  'fallback-to-default': { type: 'string' as const },
   // component options (B361-B366)
   'project-ids-or-keys': { type: 'string' as const },
   'order-by': { type: 'string' as const },
@@ -406,8 +419,11 @@ const GLOBAL_OPTIONS = {
   'include-reserved-keys': { type: 'boolean' as const },
   // fields context options (B415-B418)
   'context-id': { type: 'string' as const },
-  'is-any-issue-type': { type: 'boolean' as const },
-  'is-global-context': { type: 'boolean' as const },
+  // Tri-state filters (B1063): `--is-any-issue-type`/`--is-global-context`
+  // are 3-valued context filters (true / false / unset all distinct). Registered
+  // `string` so `--flag false` reaches `asBoolFlag` instead of a positional.
+  'is-any-issue-type': { type: 'string' as const },
+  'is-global-context': { type: 'string' as const },
   // fields context option options (B421-B426)
   'option-id': { type: 'string' as const },
   'option-ids': { type: 'string' as const },

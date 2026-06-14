@@ -1793,7 +1793,8 @@ async function executeEpic(client: JiraClient, cmd: ParsedCommand): Promise<unkn
       if (summary !== undefined) data['summary'] = summary;
       const color = asString(opts['color']);
       if (color !== undefined) data['color'] = { key: color };
-      if (opts['done'] === true) data['done'] = true;
+      const done = asBoolFlag(opts['done']);
+      if (done !== undefined) data['done'] = done;
       return client.epic.partialUpdate(epicIdOrKey, data);
     }
     case 'issues': {

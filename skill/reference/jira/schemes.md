@@ -905,8 +905,8 @@ atlas jira fields field-delete customfield_10001
 # List contexts for a custom field (B415)
 atlas jira fields context-list --field-id customfield_10001
 
-# Filter contexts by type (presence-only boolean flags — include to filter to that type; they take no value)
-atlas jira fields context-list --field-id customfield_10001 --is-global-context --is-any-issue-type
+# Filter contexts by type (tri-state filters — pass true|false; omit to not filter on that dimension)
+atlas jira fields context-list --field-id customfield_10001 --is-global-context true --is-any-issue-type true
 
 # Filter by specific context IDs (comma-separated)
 atlas jira fields context-list --field-id customfield_10001 --context-id 10025,10026
