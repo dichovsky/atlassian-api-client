@@ -820,4 +820,48 @@ describe('IssueSecuritySchemesResource', () => {
       }).rejects.toThrow();
     });
   });
+
+  // ── B1059 spec alignment regressions ──────────────────────────────────────
+
+  describe('spec alignment (B1056)', () => {
+    it('SecuritySchemeLevel includes issueSecuritySchemeId and self from spec SecurityLevel', async () => {
+      // spec SecurityLevel has issueSecuritySchemeId and self; old type lacked them
+      const schemeWithLevel = {
+        id: 10001,
+        name: 'My Scheme',
+        self: `${BASE_URL}/issuesecurityschemes/10001`,
+        levels: [
+          {
+            id: '10100',
+            name: 'Public',
+            isDefault: false,
+            issueSecuritySchemeId: '10001',
+            self: `${BASE_URL}/issuesecurityschemes/10001/levels/10100`,
+          },
+        ],
+      };
+      transport.respondWith(schemeWithLevel);
+
+      const result = await resource.get('10001');
+
+      expect(result.levels?.[0]?.issueSecuritySchemeId).toBe('10001');
+      expect(result.levels?.[0]?.self).toContain('10100');
+    });
+
+    it('SecurityLevelMemberHolder.type is required (spec PermissionHolder required: [type])', async () => {
+      // spec: type is required in PermissionHolder; old type made it optional
+      const memberWithHolder = {
+        id: '10200',
+        issueSecurityLevelId: '10100',
+        issueSecuritySchemeId: '10001',
+        holder: { type: 'group', parameter: 'jira-developers' },
+      };
+      const page = makePageOf([memberWithHolder]);
+      transport.respondWith(page);
+
+      const result = await resource.listLevelMembers();
+
+      expect(result.values[0]?.holder.type).toBe('group');
+    });
+  });
 });
