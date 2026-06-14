@@ -166,6 +166,14 @@ describe('WorkflowSchemeResource', () => {
       expect(transport.lastCall?.options.body).not.toHaveProperty('defaultWorkflow');
       expect(transport.lastCall?.options.body).not.toHaveProperty('issueTypeMappings');
     });
+
+    it('includes updateDraftIfNeeded when provided', async () => {
+      transport.respondWith(makeScheme());
+
+      await resource.create({ name: 'My Scheme', updateDraftIfNeeded: true });
+
+      expect(transport.lastCall?.options.body).toMatchObject({ updateDraftIfNeeded: true });
+    });
   });
 
   // ── B857: delete ───────────────────────────────────────────────────────────
@@ -576,7 +584,7 @@ describe('WorkflowSchemeResource', () => {
       };
       transport.respondWith(container);
 
-      const result = await resource.getProjectAssociations({ projectId: ['10010', '10020'] });
+      const result = await resource.getProjectAssociations({ projectId: [10010, 10020] });
 
       expect(result).toEqual(container);
       expect(transport.lastCall?.options).toMatchObject({
@@ -602,7 +610,7 @@ describe('WorkflowSchemeResource', () => {
     it('sends multiple project IDs as repeated query params, not a CSV value', async () => {
       transport.respondWith({ values: [] });
 
-      await resource.getProjectAssociations({ projectId: ['10010', '10020'] });
+      await resource.getProjectAssociations({ projectId: [10010, 10020] });
 
       expect(transport.lastCall?.options.path).toBe(
         `${BASE_URL}/workflowscheme/project?projectId=10010&projectId=10020`,

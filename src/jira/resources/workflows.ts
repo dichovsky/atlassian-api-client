@@ -68,7 +68,6 @@ export interface WorkflowSchemeUsage {
 
 /**
  * A workflow transition property.
- * Schema: WorkflowTransitionProperty — only `value` is writable; `key` and `id` are read-only.
  * @deprecated Endpoints removed June 1, 2026; use Bulk update workflows instead.
  */
 export interface WorkflowTransitionProperty {
@@ -132,10 +131,12 @@ export interface Workflow {
   readonly updated?: string;
 }
 
-/** Query parameters for listing Jira workflows. */
+/** Query parameters for listing Jira workflows (GET /rest/api/3/workflow/search). */
 export interface ListWorkflowsParams {
   readonly startAt?: number;
   readonly maxResults?: number;
+  /** Filter by workflow name(s). Spec parameter is type:array. */
+  readonly workflowName?: string[];
   readonly expand?: string;
   readonly queryString?: string;
   readonly orderBy?: string;
@@ -148,9 +149,17 @@ export class WorkflowsResource {
     private readonly baseUrl: string,
   ) {}
 
-  /** List workflows with optional filtering. */
+  /**
+   * List workflows with optional filtering.
+   * @deprecated Calls GET /rest/api/3/workflow/search (getWorkflowsPaginated), a deprecated endpoint.
+   * Use searchWorkflows() (B852) for new code.
+   */
   async list(params?: ListWorkflowsParams): Promise<OffsetPaginatedResponse<Workflow>> {
     if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    let path = `${this.baseUrl}/workflow/search`;
+    if (params?.workflowName?.length) {
+      path = appendRepeatedParams(path, 'workflowName', params.workflowName);
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params) {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
@@ -163,7 +172,7 @@ export class WorkflowsResource {
 
     const response = await this.transport.request<OffsetPaginatedResponse<Workflow>>({
       method: 'GET',
-      path: `${this.baseUrl}/workflow/search`,
+      path,
       query,
     });
     return response.data;
@@ -185,7 +194,6 @@ export class WorkflowsResource {
   /**
    * Delete an inactive workflow (B837).
    * DELETE /rest/api/3/workflow/{entityId}
-   * Returns 204 No Content on success.
    */
   async deleteWorkflow(entityId: string): Promise<void> {
     await this.transport.request<undefined>({
@@ -312,7 +320,6 @@ export class WorkflowsResource {
   async readWorkflowFromHistory(
     body: WorkflowHistoryReadRequest,
   ): Promise<WorkflowHistoryReadResponse> {
-    if (!body.workflowId) throw new ValidationError('workflowId is required');
     const resp = await this.transport.request<WorkflowHistoryReadResponse>({
       method: 'POST',
       path: `${this.baseUrl}/workflow/history`,
@@ -359,7 +366,6 @@ export class WorkflowsResource {
     body: WorkflowHistoryListRequest,
     params?: WorkflowHistoryListParams,
   ): Promise<WorkflowHistoryListResponse> {
-    if (!body.workflowId) throw new ValidationError('workflowId is required');
     const query: Record<string, string | undefined> = {};
     if (params?.expand !== undefined) query['expand'] = params.expand;
     const resp = await this.transport.request<WorkflowHistoryListResponse>({
@@ -410,9 +416,6 @@ export class WorkflowsResource {
       throw new ValidationError('types is required for getTransitionRuleConfigs');
     }
     if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
-    // `types`, `keys`, `workflowNames` and `withTags` are `type: array` query
-    // params (repeated `name=a&name=b` per the v3 spec), built into the path —
-    // not CSV-joined into the scalar query bag (which collapses duplicate keys).
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params.startAt !== undefined) query['startAt'] = params.startAt;
     if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
@@ -595,6 +598,37 @@ export class WorkflowsResource {
   }
 }
 
+// ── Shared sub-schema types ────────────────────────────────────────────────
+
+/**
+ * Approval configuration for a JSM workflow status. Mirrors spec ApprovalConfiguration (nullable).
+ */
+export interface ApprovalConfiguration {
+  /** Required. Whether the approval configuration is active. */
+  readonly active: 'true' | 'false';
+  /** Required. How the required approval count is calculated. */
+  readonly conditionType: 'number' | 'percent' | 'numberPerPrincipal';
+  /** Required. The number or percentage of approvals required. */
+  readonly conditionValue: string;
+  /** Required. The custom field ID of the Approvers or Approver Groups field. */
+  readonly fieldId: string;
+  /** Required. The numeric ID of the transition to execute if approved. */
+  readonly transitionApproved: string;
+  /** Required. The numeric ID of the transition to execute if rejected. */
+  readonly transitionRejected: string;
+  readonly exclude?: ('assignee' | 'reporter' | null)[];
+  readonly prePopulatedFieldId?: string | null;
+}
+
+/**
+ * A condition group for a workflow transition. Mirrors spec ConditionGroupConfiguration (nullable, recursive).
+ */
+export interface ConditionGroupConfiguration {
+  readonly operation?: 'ANY' | 'ALL';
+  readonly conditions?: WorkflowRuleConfiguration[];
+  readonly conditionGroups?: ConditionGroupConfiguration[];
+}
+
 // ── B846-B850 types ────────────────────────────────────────────────────────
 
 /** Project+issueType pair for bulk workflow lookup (B846). */
@@ -610,38 +644,40 @@ export interface WorkflowReadRequest {
   readonly workflowNames?: string[];
 }
 
-/** A workflow returned by the bulk-read API (B846/B848 response). */
+/** A workflow returned by the bulk-read API (B846/B848 response). Mirrors spec JiraWorkflow. */
 export interface JiraWorkflow {
   readonly id?: string;
   readonly name?: string;
   readonly description?: string;
   readonly isEditable?: boolean;
   readonly scope?: WorkflowScope;
-  readonly startPointLayout?: WorkflowLayout;
-  readonly loopedTransitionContainerLayout?: WorkflowLayout;
+  readonly startPointLayout?: WorkflowLayout | null;
+  readonly loopedTransitionContainerLayout?: WorkflowLayout | null;
   readonly statuses?: WorkflowReferenceStatus[];
   readonly transitions?: WorkflowTransitions[];
-  readonly taskId?: string;
+  readonly taskId?: string | null;
   readonly version?: DocumentVersion;
-  readonly created?: string;
-  readonly updated?: string;
+  readonly created?: string | null;
+  readonly updated?: string | null;
 }
 
-/** Layout coordinates used by workflow editor (sub-schema). */
+/** Layout coordinates used by workflow editor (sub-schema). Mirrors spec WorkflowLayout (format:double). */
 export interface WorkflowLayout {
   readonly x?: number;
   readonly y?: number;
 }
 
-/** Status reference with layout info used in JiraWorkflow (sub-schema). */
+/** Status reference with layout info used in JiraWorkflow. Mirrors spec WorkflowReferenceStatus. */
 export interface WorkflowReferenceStatus {
   readonly statusReference?: string;
   readonly layout?: WorkflowLayout;
   readonly properties?: Record<string, string>;
   readonly deprecated?: boolean;
+  /** Approval configuration for JSM approval statuses (nullable per spec). */
+  readonly approvalConfiguration?: ApprovalConfiguration | null;
 }
 
-/** Transition in a JiraWorkflow response (sub-schema). */
+/** Transition in a JiraWorkflow response. Mirrors spec WorkflowTransitions. */
 export interface WorkflowTransitions {
   readonly id?: string;
   readonly name?: string;
@@ -653,36 +689,51 @@ export interface WorkflowTransitions {
   readonly validators?: WorkflowRuleConfiguration[];
   readonly triggers?: WorkflowTrigger[];
   readonly properties?: Record<string, string>;
+  /** Conditions group for this transition (nullable per spec). */
+  readonly conditions?: ConditionGroupConfiguration | null;
+  /** Screen shown on this transition (nullable per spec). */
+  readonly transitionScreen?: WorkflowRuleConfiguration | null;
+  /** Custom issue event ID for this transition (nullable per spec). */
+  readonly customIssueEventId?: string | null;
 }
 
-/** A link between two statuses in a transition. */
+/** A link between two statuses in a transition. Mirrors spec WorkflowTransitionLinks. */
 export interface WorkflowTransitionLink {
-  readonly fromStatusReference?: string;
-  readonly fromPort?: number;
-  readonly toPort?: number;
+  readonly fromStatusReference?: string | null;
+  readonly fromPort?: number | null;
+  readonly toPort?: number | null;
 }
 
-/** A rule (action/validator) configuration on a transition. */
+/**
+ * A rule (action/validator) configuration on a transition. Mirrors spec WorkflowRuleConfiguration.
+ * ruleKey is required per spec.
+ */
 export interface WorkflowRuleConfiguration {
-  readonly ruleKey?: string;
+  /** Required per spec. */
+  readonly ruleKey: string;
   readonly parameters?: Record<string, string>;
-  readonly id?: string;
+  readonly id?: string | null;
 }
 
-/** A trigger attached to a transition. */
+/**
+ * A trigger attached to a transition. Mirrors spec WorkflowTrigger.
+ * ruleKey and parameters are required per spec.
+ */
 export interface WorkflowTrigger {
-  readonly ruleKey?: string;
-  readonly parameters?: Record<string, string>;
+  /** Required per spec. */
+  readonly ruleKey: string;
+  /** Required per spec. */
+  readonly parameters: Record<string, string>;
   readonly id?: string;
 }
 
-/** A status returned by the bulk-read API (B846/B848 response). */
+/** A status returned by the bulk-read API (B846/B848 response). Mirrors spec JiraWorkflowStatus. */
 export interface JiraWorkflowStatus {
   readonly id?: string;
   readonly name?: string;
   readonly description?: string;
   readonly scope?: WorkflowScope;
-  readonly statusCategory?: string;
+  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
   readonly statusReference?: string;
 }
 
@@ -732,10 +783,15 @@ export interface AvailableWorkflowSystemRule {
   readonly ruleType?: string;
 }
 
-/** Trigger rules available in the workflow editor. */
+/**
+ * Trigger rules available in the workflow editor. Mirrors spec AvailableWorkflowTriggers.
+ * availableTypes and ruleKey are required per spec.
+ */
 export interface AvailableWorkflowTriggers {
-  readonly availableTypes?: AvailableWorkflowTriggerType[];
-  readonly ruleKey?: string;
+  /** Required per spec. */
+  readonly availableTypes: AvailableWorkflowTriggerType[];
+  /** Required per spec. */
+  readonly ruleKey: string;
 }
 
 /** A type of trigger available in the workflow editor. */
@@ -748,14 +804,15 @@ export interface AvailableWorkflowTriggerType {
 /** Response for GET /rest/api/3/workflows/capabilities — B847. */
 export interface WorkflowCapabilities {
   readonly connectRules?: AvailableWorkflowConnectRule[];
-  readonly editorScope?: string;
+  /** Scope of workflow capabilities. Spec constrains to 'PROJECT' | 'GLOBAL'. */
+  readonly editorScope?: 'PROJECT' | 'GLOBAL';
   readonly forgeRules?: AvailableWorkflowForgeRule[];
   readonly projectTypes?: string[];
   readonly systemRules?: AvailableWorkflowSystemRule[];
   readonly triggerRules?: AvailableWorkflowTriggers[];
 }
 
-/** A status entry in the create request (B848). */
+/** A status entry in the create/update request (B848/B853). Mirrors spec WorkflowStatusUpdate. */
 export interface WorkflowStatusUpdate {
   readonly id?: string;
   readonly name: string;
@@ -764,14 +821,19 @@ export interface WorkflowStatusUpdate {
   readonly description?: string;
 }
 
-/** A status with layout info in a WorkflowCreate entry. */
+/**
+ * A status with layout info in a WorkflowCreate/WorkflowUpdate entry.
+ * Mirrors spec StatusLayoutUpdate. approvalConfiguration is optional per spec.
+ */
 export interface StatusLayoutUpdate {
   readonly statusReference: string;
   readonly layout?: WorkflowLayout;
   readonly properties: Record<string, string>;
+  /** Optional JSM approval configuration for this status (nullable per spec). */
+  readonly approvalConfiguration?: ApprovalConfiguration | null;
 }
 
-/** A transition in a WorkflowCreate entry. Spec marks no fields required. */
+/** A transition in a WorkflowCreate/WorkflowUpdate entry. */
 export interface TransitionUpdateDTO {
   readonly id?: string;
   readonly name?: string;
@@ -795,16 +857,14 @@ export interface WorkflowCreate {
   readonly loopedTransitionContainerLayout?: WorkflowLayout;
 }
 
-/** Request body for POST /rest/api/3/workflows/create — B848.
- *  NOTE: distinct from WorkflowReadRequest — different schema name. */
+/** Request body for POST /rest/api/3/workflows/create — B848. */
 export interface WorkflowCreateRequest {
   readonly scope?: WorkflowScope;
   readonly statuses?: WorkflowStatusUpdate[];
   readonly workflows?: WorkflowCreate[];
 }
 
-/** Response for POST /rest/api/3/workflows/create — B848.
- *  NOTE: distinct from WorkflowReadResponse — different schema name. */
+/** Response for POST /rest/api/3/workflows/create — B848. */
 export interface WorkflowCreateResponse {
   readonly workflows?: JiraWorkflow[];
   readonly statuses?: JiraWorkflowStatus[];
@@ -830,12 +890,6 @@ export interface WorkflowElementReference {
   readonly propertyKey?: string;
 }
 
-/** Workflow ID reference in a validation error element (B849). */
-export interface WorkflowIdRefForValidation {
-  readonly entityId?: string;
-  readonly name?: string;
-}
-
 /** A single validation error from create/validate or update/validate. */
 export interface WorkflowValidationError {
   readonly message?: string;
@@ -859,89 +913,52 @@ export interface DefaultWorkflowEditorResponse {
 
 // ── B841 types ─────────────────────────────────────────────────────────────
 
-/** Request body for POST /workflow/history (B841). */
+/**
+ * Request body for POST /workflow/history (B841).
+ * Spec does not mark workflowId as required.
+ */
 export interface WorkflowHistoryReadRequest {
-  readonly workflowId: string;
+  readonly workflowId?: string;
   readonly version?: number;
 }
 
-/** A status entry in the workflow history read response. */
+/**
+ * A status entry in the workflow history read response.
+ * Mirrors spec WorkflowDocumentStatusDTO.
+ */
 export interface WorkflowDocumentStatus {
   readonly description?: string;
   readonly id?: string;
   readonly name?: string;
-  readonly scope?: WorkflowDocumentScope;
+  readonly scope?: WorkflowScope;
   readonly statusCategory?: string;
   readonly statusReference?: string;
 }
 
-/** Scope for a workflow document status. */
-export interface WorkflowDocumentScope {
-  readonly type?: 'PROJECT' | 'GLOBAL';
-  readonly project?: { readonly id?: string };
-}
-
-/** Layout position for a workflow element. */
-export interface WorkflowDocumentLayout {
-  readonly x?: number;
-  readonly y?: number;
-}
-
-/** Version info for a workflow document. */
-export interface WorkflowDocumentVersion {
-  readonly id?: string;
-  readonly versionNumber?: number;
-}
-
-/** A workflow document in the history read response. */
+/**
+ * A workflow document in the history read response. Mirrors spec WorkflowDocumentDTO.
+ * Layouts use WorkflowLayout (format:double x/y per spec).
+ */
 export interface WorkflowDocument {
   readonly created?: string;
   readonly description?: string;
   readonly id?: string;
   readonly lastUpdateAuthorAAID?: string;
-  readonly loopedTransitionContainerLayout?: WorkflowDocumentLayout;
+  /** Spec uses WorkflowLayout (format:double, nullable). */
+  readonly loopedTransitionContainerLayout?: WorkflowLayout | null;
   readonly name?: string;
-  readonly scope?: WorkflowDocumentScope;
-  readonly startPointLayout?: WorkflowDocumentLayout;
-  readonly statuses?: WorkflowReferenceStatusItem[];
-  readonly transitions?: WorkflowTransitionsItem[];
+  readonly scope?: WorkflowScope;
+  /** Spec uses WorkflowLayout (format:double, nullable). */
+  readonly startPointLayout?: WorkflowLayout | null;
+  /** Spec uses WorkflowReferenceStatus (same as JiraWorkflow.statuses). */
+  readonly statuses?: WorkflowReferenceStatus[];
+  /** Spec uses WorkflowTransitions (same as JiraWorkflow.transitions). */
+  readonly transitions?: WorkflowTransitions[];
   readonly updated?: string;
-  readonly version?: WorkflowDocumentVersion;
+  readonly version?: DocumentVersion;
 }
 
-/** A status reference in a workflow document. */
-export interface WorkflowReferenceStatusItem {
-  readonly deprecated?: boolean;
-  readonly layout?: WorkflowDocumentLayout;
-  readonly properties?: Record<string, string>;
-  readonly statusReference?: string;
-}
-
-/** A transition in a workflow document. */
-export interface WorkflowTransitionsItem {
-  readonly actions?: WorkflowRuleConfigurationItem[];
-  readonly conditions?: unknown;
-  readonly customIssueEventId?: string | null;
-  readonly description?: string;
-  readonly id?: string;
-  readonly links?: unknown[];
-  readonly name?: string;
-  readonly properties?: Record<string, string>;
-  readonly toStatusReference?: string;
-  readonly transitionScreen?: WorkflowRuleConfigurationItem;
-  readonly triggers?: unknown[];
-  readonly type?: 'INITIAL' | 'GLOBAL' | 'DIRECTED';
-  readonly validators?: WorkflowRuleConfigurationItem[];
-}
-
-/** A rule configuration item in a workflow. */
-export interface WorkflowRuleConfigurationItem {
-  readonly id?: string;
-  readonly parameters?: Record<string, string>;
-  readonly ruleKey?: string;
-}
-
-/** Response for POST /workflow/history (B841). */
+/** Response for POST /workflow/history (B841). Mirrors spec WorkflowHistoryReadResponseDTO. */
 export interface WorkflowHistoryReadResponse {
   readonly statuses?: WorkflowDocumentStatus[];
   readonly workflows?: WorkflowDocument[];
@@ -949,9 +966,12 @@ export interface WorkflowHistoryReadResponse {
 
 // ── B842 types ─────────────────────────────────────────────────────────────
 
-/** Request body for POST /workflow/history/list (B842). */
+/**
+ * Request body for POST /workflow/history/list (B842).
+ * Spec does not mark workflowId as required.
+ */
 export interface WorkflowHistoryListRequest {
-  readonly workflowId: string;
+  readonly workflowId?: string;
 }
 
 /** Query params for POST /workflow/history/list (B842). */
@@ -1002,7 +1022,7 @@ export interface TransitionRuleTransitionRef {
   readonly name: string;
 }
 
-/** An individual workflow transition rule. */
+/** An individual workflow transition rule (GET response item). */
 export interface AppWorkflowTransitionRuleItem {
   readonly id: string;
   readonly key: string;
@@ -1010,7 +1030,7 @@ export interface AppWorkflowTransitionRuleItem {
   readonly transition?: TransitionRuleTransitionRef;
 }
 
-/** Identifies a workflow by name (and optionally draft status). */
+/** Identifies a workflow by name (and optionally draft status). Mirrors spec WorkflowId. */
 export interface WorkflowIdRef {
   readonly name: string;
   /** @deprecated Will be removed November 2, 2026. */
@@ -1038,9 +1058,14 @@ export interface WorkflowTransitionRuleConfigPage {
 
 // ── B844 types ─────────────────────────────────────────────────────────────
 
-/** An individual rule update item in the update body. */
+/**
+ * An individual rule update item in the update body. Mirrors spec AppWorkflowTransitionRule.
+ * key is required per spec (readOnly — identifies the rule being updated).
+ */
 export interface TransitionRuleUpdateItem {
   readonly id: string;
+  /** Required per spec (readOnly — identifies the rule being updated). */
+  readonly key: string;
   readonly configuration: TransitionRuleConfiguration;
 }
 
@@ -1096,24 +1121,122 @@ export interface WorkflowPreviewRequest {
   readonly issueTypeIds?: string[];
 }
 
-/** A workflow entry in a WorkflowPreviewResponse. */
+/**
+ * Scope of a workflow in the preview context. Mirrors spec WorkflowPreviewScope.
+ * project.id is optional (WorkflowProjectIdScope).
+ */
+export interface WorkflowPreviewScope {
+  readonly type?: 'PROJECT' | 'GLOBAL';
+  readonly project?: { readonly id?: string } | null;
+}
+
+/** Approval configuration in a preview status. Mirrors spec ApprovalConfigurationPreview. */
+export interface ApprovalConfigurationPreview {
+  readonly active?: string;
+  readonly transitionApproved?: string;
+  readonly transitionRejected?: string;
+}
+
+/** Layout for a workflow preview element (format:double per spec). */
+export interface WorkflowPreviewLayout {
+  readonly x?: number;
+  readonly y?: number;
+}
+
+/** A status reference inside a WorkflowPreview. Mirrors spec WorkflowPreviewStatus. */
+export interface WorkflowPreviewStatus {
+  readonly statusReference?: string;
+  readonly layout?: WorkflowPreviewLayout;
+  readonly deprecated?: boolean;
+  readonly approvalConfiguration?: ApprovalConfigurationPreview;
+}
+
+/** A rule configuration in a preview transition (nullable per spec). */
+export interface PreviewRuleConfiguration {
+  readonly id?: string;
+  readonly parameters?: Record<string, string>;
+  readonly ruleKey?: string;
+}
+
+/** A condition group in a preview transition (nullable, recursive). */
+export interface PreviewConditionGroupConfiguration {
+  readonly operation?: 'ANY' | 'ALL';
+  readonly conditions?: PreviewRuleConfiguration[];
+  readonly conditionGroups?: PreviewConditionGroupConfiguration[];
+}
+
+/** A trigger in a preview transition. */
+export interface PreviewTrigger {
+  readonly id?: string;
+  readonly ruleKey?: string;
+}
+
+/** A link in a preview transition. */
+export interface PreviewTransitionLink {
+  readonly fromStatusReference?: string;
+  readonly fromPort?: number;
+  readonly toPort?: number;
+}
+
+/** Project+issueType query context. */
+export interface ProjectIssueTypeQueryContext {
+  readonly project?: string;
+  readonly issueTypes?: string[];
+}
+
+/** A transition in a WorkflowPreview. */
+export interface TransitionPreview {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly type?: 'INITIAL' | 'GLOBAL' | 'DIRECTED';
+  readonly toStatusReference?: string;
+  readonly links?: PreviewTransitionLink[];
+  readonly actions?: PreviewRuleConfiguration[];
+  readonly validators?: PreviewRuleConfiguration[];
+  readonly triggers?: PreviewTrigger[];
+  readonly conditions?: PreviewConditionGroupConfiguration | null;
+  readonly transitionScreen?: PreviewRuleConfiguration | null;
+  readonly customIssueEventId?: string;
+}
+
+/**
+ * A workflow entry in a WorkflowPreviewResponse. Mirrors spec WorkflowPreview.
+ * Uses WorkflowPreviewScope (project.id optional).
+ */
 export interface WorkflowPreviewWorkflow {
   readonly id?: string;
   readonly name?: string;
   readonly description?: string;
   readonly version?: { readonly id?: string; readonly versionNumber?: number };
-  readonly scope?: WorkflowScope;
-  readonly startPointLayout?: WorkflowLayout;
-  readonly loopedTransitionContainerLayout?: WorkflowLayout;
-  readonly statuses?: Record<string, unknown>[];
-  readonly transitions?: Record<string, unknown>[];
-  readonly queryContext?: Record<string, unknown>[];
+  readonly scope?: WorkflowPreviewScope;
+  readonly startPointLayout?: WorkflowPreviewLayout;
+  readonly loopedTransitionContainerLayout?: WorkflowPreviewLayout;
+  readonly statuses?: WorkflowPreviewStatus[];
+  readonly transitions?: TransitionPreview[];
+  readonly queryContext?: ProjectIssueTypeQueryContext[];
+}
+
+/**
+ * Status returned by the preview endpoint. Mirrors spec JiraWorkflowPreviewStatus.
+ * Has additional rawName field and uses WorkflowPreviewScope.
+ */
+export interface JiraWorkflowPreviewStatus {
+  readonly id?: string;
+  readonly name?: string;
+  readonly description?: string;
+  /** The raw (untranslated) name of the status. Not present in JiraWorkflowStatus. */
+  readonly rawName?: string;
+  readonly scope?: WorkflowPreviewScope;
+  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  readonly statusReference?: string;
 }
 
 /** Response for POST /rest/api/3/workflows/preview (B851). */
 export interface WorkflowPreviewResponse {
   readonly workflows?: WorkflowPreviewWorkflow[];
-  readonly statuses?: JiraWorkflowStatus[];
+  /** Spec uses JiraWorkflowPreviewStatus (has rawName field, WorkflowPreviewScope). */
+  readonly statuses?: JiraWorkflowPreviewStatus[];
 }
 
 // ── B852 types ──────────────────────────────────────────────────────────────
@@ -1143,48 +1266,64 @@ export interface WorkflowSearchResponse {
 
 // ── B853 types ──────────────────────────────────────────────────────────────
 
-/** Request body for POST /rest/api/3/workflows/update (B853). */
+/** A status migration mapping (old to new status reference). Mirrors spec StatusMigration. */
+export interface StatusMigration {
+  readonly newStatusReference: string;
+  readonly oldStatusReference: string;
+}
+
+/** A per-project-and-issue-type status migration override. Mirrors spec StatusMappingDTO. */
+export interface StatusMappingDTO {
+  readonly issueTypeId: string;
+  readonly projectId: string;
+  readonly statusMigrations: StatusMigration[];
+}
+
+/**
+ * A single workflow in the update request body. Mirrors spec WorkflowUpdate.
+ * Required: id, statuses, transitions, version.
+ */
+export interface WorkflowUpdate {
+  /** Required per spec. */
+  readonly id: string;
+  /** Required per spec. */
+  readonly statuses: StatusLayoutUpdate[];
+  /** Required per spec. */
+  readonly transitions: TransitionUpdateDTO[];
+  /** Required per spec. */
+  readonly version: DocumentVersion;
+  readonly description?: string;
+  readonly startPointLayout?: WorkflowLayout;
+  readonly loopedTransitionContainerLayout?: WorkflowLayout;
+  readonly defaultStatusMappings?: StatusMigration[];
+  readonly statusMappings?: StatusMappingDTO[];
+}
+
+/**
+ * Request body for POST /rest/api/3/workflows/update (B853). Mirrors spec WorkflowUpdateRequest.
+ * workflows items are WorkflowUpdate; statuses items are WorkflowStatusUpdate.
+ */
 export interface WorkflowUpdateRequest {
-  readonly workflows?: Record<string, unknown>[];
-  readonly statuses?: Record<string, unknown>[];
+  readonly workflows?: WorkflowUpdate[];
+  readonly statuses?: WorkflowStatusUpdate[];
 }
 
-/** A status entry returned in WorkflowUpdateResponse (distinct from request statuses). */
-export interface WorkflowUpdateResponseStatus {
-  readonly id?: string;
-  readonly name?: string;
-  readonly description?: string;
-  readonly statusCategory?: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  readonly statusReference?: string;
-  readonly scope?: WorkflowScope;
-}
-
-/** A workflow entry returned in WorkflowUpdateResponse (distinct from request workflows). */
-export interface WorkflowUpdateResponseWorkflow {
-  readonly id?: string;
-  readonly description?: string;
-  readonly created?: string | null;
-  readonly updated?: string | null;
-  readonly isDefault?: boolean;
-  readonly scope?: WorkflowScope;
-  readonly statuses?: Record<string, unknown>[];
-  readonly transitions?: Record<string, unknown>[];
-  readonly version?: { readonly id?: string; readonly versionNumber?: number };
-}
-
-/** Response for POST /rest/api/3/workflows/update (B853). */
+/**
+ * Response for POST /rest/api/3/workflows/update (B853). Mirrors spec WorkflowUpdateResponse.
+ * workflows items are JiraWorkflow; statuses items are JiraWorkflowStatus.
+ */
 export interface WorkflowUpdateResponse {
   /** If an async task was triggered, its ID. */
   readonly taskId?: string | null;
-  readonly workflows?: WorkflowUpdateResponseWorkflow[];
-  readonly statuses?: WorkflowUpdateResponseStatus[];
+  readonly workflows?: JiraWorkflow[];
+  readonly statuses?: JiraWorkflowStatus[];
 }
 
 // ── B854 types ──────────────────────────────────────────────────────────────
 
 /** Request body for POST /rest/api/3/workflows/update/validation (B854). */
 export interface WorkflowUpdateValidateRequest {
-  /** Required: the update payload to validate (same shape as WorkflowUpdateRequest). */
+  /** Required: the update payload to validate. */
   readonly payload: WorkflowUpdateRequest;
   readonly validationOptions?: {
     readonly levels?: ('WARNING' | 'ERROR')[];

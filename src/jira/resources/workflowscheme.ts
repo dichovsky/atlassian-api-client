@@ -127,6 +127,7 @@ export interface CreateWorkflowSchemeData {
   readonly defaultWorkflow?: string;
   readonly description?: string;
   readonly issueTypeMappings?: Readonly<Record<string, string>>;
+  readonly updateDraftIfNeeded?: boolean;
 }
 
 /** Request body for PUT /rest/api/3/workflowscheme/{id} (B859). */
@@ -208,14 +209,18 @@ export interface WorkflowMetadataAndIssueTypeRestModel {
   readonly workflow: WorkflowMetadataRestModel;
 }
 
-/** Project ID reference inside a {@link WorkflowScope}. */
+/**
+ * Project ID reference inside a {@link WorkflowScope}.
+ * Mirrors spec ProjectId: id is required, and the project field is nullable.
+ */
 export interface ProjectIdRef {
-  readonly id?: string;
+  readonly id: string;
 }
 
 /** Scope of a workflow scheme (B887 sub-schema). */
 export interface WorkflowScope {
-  readonly project?: ProjectIdRef;
+  /** Nullable per spec: project reference may be absent. */
+  readonly project?: ProjectIdRef | null;
   readonly type?: 'PROJECT' | 'GLOBAL';
 }
 
@@ -358,8 +363,8 @@ export interface GetProjectUsagesParams {
 
 /** Query parameters for GET /rest/api/3/workflowscheme/project (B884). */
 export interface GetSchemeProjectAssociationsParams {
-  /** Required: one or more project IDs (min 1, max 100). */
-  readonly projectId: readonly (string | number)[];
+  /** Required: one or more project IDs (min 1, max 100). Spec type:array, items:integer. */
+  readonly projectId: readonly number[];
 }
 
 /** Query parameters for POST /rest/api/3/workflowscheme/{id}/draft/publish (B873). */
@@ -436,6 +441,8 @@ export class WorkflowSchemeResource {
     if (data.defaultWorkflow !== undefined) body['defaultWorkflow'] = data.defaultWorkflow;
     if (data.description !== undefined) body['description'] = data.description;
     if (data.issueTypeMappings !== undefined) body['issueTypeMappings'] = data.issueTypeMappings;
+    if (data.updateDraftIfNeeded !== undefined)
+      body['updateDraftIfNeeded'] = data.updateDraftIfNeeded;
     const response = await this.transport.request<WorkflowScheme>({
       method: 'POST',
       path: `${this.baseUrl}/workflowscheme`,

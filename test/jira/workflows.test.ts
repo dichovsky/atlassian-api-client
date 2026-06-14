@@ -106,6 +106,16 @@ describe('WorkflowsResource', () => {
       expect(query['isActive']).toBeUndefined();
     });
 
+    it('appends workflowName as repeated query params when provided', async () => {
+      transport.respondWith(makeListResponse([]));
+
+      await workflows.list({ workflowName: ['Default Workflow', 'My Workflow'] });
+
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/workflow/search?workflowName=Default%20Workflow&workflowName=My%20Workflow`,
+      );
+    });
+
     it('throws ValidationError for maxResults: 0', async () => {
       await expect(workflows.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
@@ -674,10 +684,12 @@ describe('WorkflowsResource', () => {
       expect(transport.lastCall?.options.body).toEqual({ workflowId: WORKFLOW_ID });
     });
 
-    it('throws ValidationError when workflowId is empty', async () => {
-      await expect(workflows.readWorkflowFromHistory({ workflowId: '' })).rejects.toThrow(
-        ValidationError,
-      );
+    it('forwards empty body when workflowId is omitted (workflowId is optional per spec)', async () => {
+      transport.respondWith(historyReadResponse);
+
+      await workflows.readWorkflowFromHistory({});
+
+      expect(transport.lastCall?.options.body).toEqual({});
     });
   });
 
@@ -736,10 +748,12 @@ describe('WorkflowsResource', () => {
       expect(query['expand']).toBeUndefined();
     });
 
-    it('throws ValidationError when workflowId is empty', async () => {
-      await expect(workflows.listWorkflowHistory({ workflowId: '' })).rejects.toThrow(
-        ValidationError,
-      );
+    it('forwards empty body when workflowId is omitted (workflowId is optional per spec)', async () => {
+      transport.respondWith(historyListResponse);
+
+      await workflows.listWorkflowHistory({});
+
+      expect(transport.lastCall?.options.body).toEqual({});
     });
   });
 
@@ -867,7 +881,9 @@ describe('WorkflowsResource', () => {
         workflows: [
           {
             workflowId: { name: 'My Workflow', draft: false },
-            postFunctions: [{ id: 'rule-id', configuration: { value: '{}' } }],
+            postFunctions: [
+              { id: 'rule-id', key: 'postfunction-key', configuration: { value: '{}' } },
+            ],
           },
         ],
       });
@@ -886,7 +902,13 @@ describe('WorkflowsResource', () => {
         workflows: [
           {
             workflowId: { name: 'Workflow A' },
-            conditions: [{ id: 'cond-id', configuration: { value: '{"x":1}', disabled: false } }],
+            conditions: [
+              {
+                id: 'cond-id',
+                key: 'condition-key',
+                configuration: { value: '{"x":1}', disabled: false },
+              },
+            ],
           },
         ],
       };
@@ -1314,7 +1336,15 @@ describe('WorkflowsResource', () => {
     };
 
     const updateBody: WorkflowUpdateRequest = {
-      workflows: [{ id: WORKFLOW_ID, description: 'Updated' }],
+      workflows: [
+        {
+          id: WORKFLOW_ID,
+          description: 'Updated',
+          statuses: [],
+          transitions: [],
+          version: { id: 'ver-1', versionNumber: 1 },
+        },
+      ],
       statuses: [{ statusReference: '1', name: 'To Do', statusCategory: 'TODO' }],
     };
 
@@ -1335,7 +1365,14 @@ describe('WorkflowsResource', () => {
       transport.respondWith(updateResponse);
 
       const body: WorkflowUpdateRequest = {
-        workflows: [{ id: WORKFLOW_ID }],
+        workflows: [
+          {
+            id: WORKFLOW_ID,
+            statuses: [],
+            transitions: [],
+            version: { id: 'ver-2', versionNumber: 2 },
+          },
+        ],
         statuses: [{ name: 'In Progress', statusCategory: 'IN_PROGRESS', statusReference: '2' }],
       };
       await workflows.updateWorkflows(body);
@@ -1359,7 +1396,15 @@ describe('WorkflowsResource', () => {
 
     const validateBody: WorkflowUpdateValidateRequest = {
       payload: {
-        workflows: [{ id: WORKFLOW_ID, description: 'Test' }],
+        workflows: [
+          {
+            id: WORKFLOW_ID,
+            description: 'Test',
+            statuses: [],
+            transitions: [],
+            version: { id: 'ver-1', versionNumber: 1 },
+          },
+        ],
       },
     };
 
@@ -1388,7 +1433,16 @@ describe('WorkflowsResource', () => {
       transport.respondWith({ errors: [] });
 
       const body: WorkflowUpdateValidateRequest = {
-        payload: { workflows: [{ id: WORKFLOW_ID }] },
+        payload: {
+          workflows: [
+            {
+              id: WORKFLOW_ID,
+              statuses: [],
+              transitions: [],
+              version: { id: 'ver-1', versionNumber: 1 },
+            },
+          ],
+        },
         validationOptions: { levels: ['ERROR'] },
       };
       await workflows.validateWorkflowUpdate(body);
