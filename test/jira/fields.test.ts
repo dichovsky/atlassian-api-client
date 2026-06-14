@@ -4,6 +4,7 @@ import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
 import type {
   Field,
+  FieldDetails,
   FieldContext,
   CreatedFieldContext,
   FieldContextOption,
@@ -28,7 +29,21 @@ import type {
 
 const BASE_URL = 'https://test.atlassian.net/rest/api/3';
 
-const makeField = (id: string, name: string, custom = false): Field => ({
+/**
+ * Fixture for GET /field/search paginated results.
+ * Spec: Field schema — required: id, name, schema. No 'custom' field.
+ */
+const makeField = (id: string, name: string): Field => ({
+  id,
+  name,
+  schema: { type: 'string' },
+});
+
+/**
+ * Fixture for GET /field (listAll) and POST /field (create) results.
+ * Spec: FieldDetails schema — has 'custom', 'orderable', etc.
+ */
+const makeFieldDetails = (id: string, name: string, custom = false): FieldDetails => ({
   id,
   name,
   custom,
@@ -66,7 +81,7 @@ describe('FieldsResource', () => {
     it('calls GET /field/search with no params', async () => {
       // Arrange
       const page = {
-        values: [makeField('f1', 'Summary', false)],
+        values: [makeField('f1', 'Summary')],
         startAt: 0,
         maxResults: 50,
         total: 1,
@@ -151,7 +166,11 @@ describe('FieldsResource', () => {
   describe('listAll()', () => {
     it('calls GET /field and returns the flat array', async () => {
       // Arrange
-      const allFields = [makeField('f1', 'Summary', false), makeField('f2', 'My Field', true)];
+      // listAll() calls GET /field which returns FieldDetails (has 'custom', etc.)
+      const allFields = [
+        makeFieldDetails('f1', 'Summary', false),
+        makeFieldDetails('f2', 'My Field', true),
+      ];
       transport.respondWith(allFields);
 
       // Act
@@ -181,8 +200,8 @@ describe('FieldsResource', () => {
 
   describe('create()', () => {
     it('calls POST /field with the provided data', async () => {
-      // Arrange
-      const created = makeField('customfield_10050', 'My Field', true);
+      // Arrange — create() returns FieldDetails (spec: POST /field → 201 FieldDetails)
+      const created = makeFieldDetails('customfield_10050', 'My Field', true);
       transport.respondWith(created);
       const data = {
         name: 'My Field',
@@ -202,13 +221,13 @@ describe('FieldsResource', () => {
     });
 
     it('includes optional description and searcherKey in body', async () => {
-      // Arrange
-      transport.respondWith(makeField('customfield_10051', 'Notes', true));
+      // Arrange — searcherKey must be a FieldSearcherKey enum value per spec
+      transport.respondWith(makeFieldDetails('customfield_10051', 'Notes', true));
       const data = {
         name: 'Notes',
         type: 'com.atlassian.jira.plugin.system.customfieldtypes:textfield',
         description: 'Extra notes',
-        searcherKey: 'com.atlassian.jira.plugin.system.customfieldtypes:textsearcher',
+        searcherKey: 'com.atlassian.jira.plugin.system.customfieldtypes:textsearcher' as const,
       };
 
       // Act
