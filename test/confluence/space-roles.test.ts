@@ -68,6 +68,17 @@ describe('SpaceRolesResource', () => {
       });
     });
 
+    it('accepts role-type as an open string (not restricted to SYSTEM/CUSTOM enum) (B1059)', async () => {
+      // Spec declares role-type as type:string without an enum constraint.
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list({ 'role-type': 'TENANT_DEFINED_ROLE' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'role-type': 'TENANT_DEFINED_ROLE',
+      });
+    });
+
     it('omits cursor when only limit is provided', async () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });

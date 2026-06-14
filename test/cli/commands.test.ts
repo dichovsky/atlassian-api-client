@@ -5813,10 +5813,10 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert
+      // Assert — ids are integer/int64 in the spec (B1059): CLI parses as numbers
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
         expect.objectContaining({
-          ids: ['1', '2', '3'],
+          ids: [1, 2, 3],
           keys: ['ENG', 'OPS'],
         }),
       );
@@ -5832,9 +5832,9 @@ describe('executeConfluenceCommand', () => {
       // Act
       await executeConfluenceCommand(parsed, GLOBALS);
 
-      // Assert
+      // Assert — ids parsed as integers after trimming (B1059)
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
-        expect.objectContaining({ ids: ['1', '2'] }),
+        expect.objectContaining({ ids: [1, 2] }),
       );
     });
 
@@ -5847,6 +5847,19 @@ describe('executeConfluenceCommand', () => {
       await executeConfluenceCommand(parsed, GLOBALS);
 
       // Assert
+      expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
+        expect.objectContaining({ ids: undefined }),
+      );
+    });
+
+    it('data-policies list-spaces drops non-numeric --ids and returns undefined', async () => {
+      // parseCsvIntList filters non-finite values; if all entries fail parseInt
+      // the result is undefined (empty-array guard in parseCsvIntList).
+      confluenceDataPoliciesMock.listSpaces.mockResolvedValue({ results: [], _links: {} });
+      const parsed = cmd('data-policies', 'list-spaces', [], { ids: 'abc,def' });
+
+      await executeConfluenceCommand(parsed, GLOBALS);
+
       expect(confluenceDataPoliciesMock.listSpaces).toHaveBeenCalledWith(
         expect.objectContaining({ ids: undefined }),
       );
@@ -6374,21 +6387,23 @@ describe('executeConfluenceCommand', () => {
     it('tasks list forwards every filter flag', async () => {
       // Arrange
       confluenceTasksMock.list.mockResolvedValue({ results: [], _links: {} });
+      // B1059: taskId/spaceId/pageId/blogPostId are integer arrays; created/due
+      // timestamps are epoch milliseconds (integers), not ISO strings.
       const parsed = cmd('tasks', 'list', [], {
         'body-format': 'storage',
         'include-blank-tasks': true,
         status: 'complete',
-        'task-id': '42',
-        'space-id': 'space-1',
-        'page-id': 'page-1',
-        'blog-post-id': 'blog-1',
-        'created-by': 'acc-creator',
+        'task-id': '42,99',
+        'space-id': '11,22',
+        'page-id': '33',
+        'blog-post-id': '44',
+        'created-by': 'acc-creator,acc-other',
         'assigned-to': 'acc-assignee',
         'completed-by': 'acc-finisher',
-        'created-at-from': '2026-01-01T00:00:00Z',
-        'created-at-to': '2026-02-01T00:00:00Z',
-        'due-at-from': '2026-01-15T00:00:00Z',
-        'due-at-to': '2026-02-15T00:00:00Z',
+        'created-at-from': '1700000000000',
+        'created-at-to': '1710000000000',
+        'due-at-from': '1705000000000',
+        'due-at-to': '1715000000000',
         cursor: 'next-page',
         limit: '50',
       });
@@ -6401,17 +6416,17 @@ describe('executeConfluenceCommand', () => {
         'body-format': 'storage',
         includeBlankTasks: true,
         status: 'complete',
-        taskId: 42,
-        spaceId: 'space-1',
-        pageId: 'page-1',
-        blogPostId: 'blog-1',
-        createdBy: 'acc-creator',
-        assignedTo: 'acc-assignee',
-        completedBy: 'acc-finisher',
-        createdAtFrom: '2026-01-01T00:00:00Z',
-        createdAtTo: '2026-02-01T00:00:00Z',
-        dueAtFrom: '2026-01-15T00:00:00Z',
-        dueAtTo: '2026-02-15T00:00:00Z',
+        taskId: [42, 99],
+        spaceId: [11, 22],
+        pageId: [33],
+        blogPostId: [44],
+        createdBy: ['acc-creator', 'acc-other'],
+        assignedTo: ['acc-assignee'],
+        completedBy: ['acc-finisher'],
+        createdAtFrom: 1700000000000,
+        createdAtTo: 1710000000000,
+        dueAtFrom: 1705000000000,
+        dueAtTo: 1715000000000,
         cursor: 'next-page',
         limit: 50,
       });
@@ -6431,10 +6446,15 @@ describe('executeConfluenceCommand', () => {
       );
     });
 
-    it('tasks list throws when --task-id is invalid', async () => {
+    it('tasks list passes negative --task-id as part of the integer array (B1059: no client-side range check for array IDs)', async () => {
+      // B1059: task-id is now a CSV array of int64. We no longer reject
+      // non-positive values at the CLI layer — the server is responsible
+      // for returning an empty results set for nonexistent IDs.
+      confluenceTasksMock.list.mockResolvedValue({ results: [], _links: {} });
       const parsed = cmd('tasks', 'list', [], { 'task-id': '-1' });
-      await expect(executeConfluenceCommand(parsed, GLOBALS)).rejects.toThrow(
-        '--task-id must be a positive integer',
+      await executeConfluenceCommand(parsed, GLOBALS);
+      expect(confluenceTasksMock.list).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: [-1] }),
       );
     });
 

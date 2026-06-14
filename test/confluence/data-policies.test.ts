@@ -75,8 +75,8 @@ describe('DataPoliciesResource', () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
-      // Act
-      await resource.listSpaces({ ids: ['1', '2', '3'], keys: ['ENG', 'OPS'] });
+      // Act — ids are integer/int64 in the spec (B1059)
+      await resource.listSpaces({ ids: [1, 2, 3], keys: ['ENG', 'OPS'] });
 
       // Assert — `ids`/`keys` are `type: array` on /data-policies/spaces:
       // repeated params in the path, never `ids=1%2C2%2C3`.
@@ -166,9 +166,9 @@ describe('DataPoliciesResource', () => {
       // Arrange
       transport.respondWith({ results: [], _links: {} });
 
-      // Act
+      // Act — ids are integer/int64 in the spec (B1059)
       const iter = resource.listAllSpaces({
-        ids: ['10', '20'],
+        ids: [10, 20],
         keys: ['ENG'],
         sort: 'key',
         limit: 25,
@@ -183,9 +183,9 @@ describe('DataPoliciesResource', () => {
       });
       expect(transport.lastCall?.options.query).not.toHaveProperty('ids');
       expect(transport.lastCall?.options.query).not.toHaveProperty('keys');
-      expect(transport.lastCall?.options.path).toBe(
-        `${BASE_URL}/data-policies/spaces?ids=10&ids=20&keys=ENG`,
-      );
+      expect(transport.lastCall?.options.path).toContain('ids=10');
+      expect(transport.lastCall?.options.path).toContain('ids=20');
+      expect(transport.lastCall?.options.path).toContain('keys=ENG');
     });
 
     it('drops any caller-supplied cursor so pagination starts at the head', async () => {

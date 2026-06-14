@@ -1,13 +1,65 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
-/** A Jira feature flag entity. */
+/** Rollout configuration for a feature flag. Spec: `FeatureFlagRollout`. */
+export interface FeatureFlagRollout {
+  readonly percentage?: number;
+  readonly text?: string;
+  readonly rules?: number;
+}
+
+/** Status of a feature flag in one environment. Spec: `FeatureFlagStatus`. */
+export interface FeatureFlagStatus {
+  readonly enabled: boolean;
+  readonly defaultValue?: string;
+  readonly rollout?: FeatureFlagRollout;
+}
+
+/** Summary information for a feature flag. Spec: `FeatureFlagSummary`. */
+export interface FeatureFlagSummary {
+  readonly url?: string;
+  readonly status: FeatureFlagStatus;
+  readonly lastUpdated: string;
+}
+
+/** Details of a single environment. Spec: `EnvironmentDetails`. */
+export interface EnvironmentDetails {
+  readonly name: string;
+  readonly type?: 'development' | 'testing' | 'staging' | 'production';
+}
+
+/** Per-environment details for a feature flag. Spec: `FeatureFlagDetails`. */
+export interface FeatureFlagDetails {
+  readonly url: string;
+  readonly lastUpdated: string;
+  readonly environment: EnvironmentDetails;
+  readonly status: FeatureFlagStatus;
+}
+
+/** Issue ID or keys association. Spec: `IssueIdOrKeysAssociation`. */
+export interface IssueIdOrKeysAssociation {
+  readonly associationType: 'issueKeys' | 'issueIdOrKeys';
+  readonly values: readonly string[];
+}
+
+/**
+ * A Jira feature flag entity.
+ * Spec: `FeatureFlagData` (GET /rest/featureflags/0.1/flag/{featureFlagId}).
+ */
 export interface FeatureFlag {
   readonly id: string;
-  readonly updateSequenceId?: number;
+  /** Identifier users reference in source code. Required by spec. */
+  readonly key: string;
+  readonly updateSequenceId: number;
   readonly displayName?: string;
-  readonly summary?: string;
-  readonly details?: Record<string, unknown>[];
+  readonly schemaVersion?: '1.0';
+  /** @deprecated Use `associations` instead per spec. */
+  readonly issueKeys?: readonly string[];
+  readonly associations?: readonly IssueIdOrKeysAssociation[];
+  /** Summary information for the flag. Spec type: `FeatureFlagSummary` (not `string`). */
+  readonly summary: FeatureFlagSummary;
+  /** Per-environment details. Spec type: `FeatureFlagDetails[]`. */
+  readonly details: readonly FeatureFlagDetails[];
 }
 
 /**

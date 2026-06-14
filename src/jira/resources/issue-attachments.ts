@@ -1,5 +1,6 @@
 import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
+import { appendRepeatedParams } from '../../core/query.js';
 import type { IssueAttachment } from '../types.js';
 
 /** @deprecated Unused; kept for backward compatibility until next major. */
@@ -11,13 +12,17 @@ export interface IssueAttachmentsResponse {
 export interface AttachmentArchiveEntry {
   readonly entryIndex?: number;
   readonly mediaType?: string;
-  readonly path?: string;
+  /** The name of the entry within the archive. */
+  readonly name?: string;
+  /** An abbreviated version of the entry name for display purposes. */
+  readonly abbreviatedName?: string;
   readonly size?: number;
 }
 
 /** A single entry inside an archive-typed attachment — human-readable form. */
 export interface AttachmentArchiveItemReadable {
   readonly index?: number;
+  readonly label?: string;
   readonly mediaType?: string;
   readonly path?: string;
   readonly size?: string;
@@ -92,12 +97,18 @@ export class IssueAttachmentsResource {
 
   /** List attachments for an issue (via issue fields). */
   async list(issueIdOrKey: string): Promise<IssueAttachment[]> {
+    // `fields` is a `type: array` query param in the spec — send as a repeated
+    // param rather than a single CSV string.
+    const path = appendRepeatedParams(
+      `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
+      'fields',
+      ['attachment'],
+    );
     const response = await this.transport.request<{
       fields?: { attachment?: IssueAttachment[] };
     }>({
       method: 'GET',
-      path: `${this.baseUrl}/issue/${encodePathSegment(issueIdOrKey)}`,
-      query: { fields: 'attachment' },
+      path,
     });
     return response.data.fields?.attachment ?? [];
   }

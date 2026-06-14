@@ -592,7 +592,15 @@ export type {
   RedactJobStatus,
 } from './resources/redact.js';
 export { RedactResource } from './resources/redact.js';
-export type { FeatureFlag } from './resources/flag.js';
+export type {
+  FeatureFlag,
+  FeatureFlagSummary,
+  FeatureFlagStatus,
+  FeatureFlagRollout,
+  FeatureFlagDetails,
+  EnvironmentDetails,
+  IssueIdOrKeysAssociation,
+} from './resources/flag.js';
 export { FlagResource } from './resources/flag.js';
 export type { Task } from './resources/task.js';
 export { TaskResource } from './resources/task.js';
@@ -600,7 +608,10 @@ export type { Avatar, AvatarSystemResponse } from './resources/avatar.js';
 export { AvatarResource } from './resources/avatar.js';
 export type { CustomFieldOption } from './resources/custom-field-option.js';
 export { CustomFieldOptionResource } from './resources/custom-field-option.js';
-export type { ClassificationLevel } from './resources/classification-levels.js';
+export type {
+  ClassificationLevel,
+  ListClassificationLevelsParams,
+} from './resources/classification-levels.js';
 export { ClassificationLevelsResource } from './resources/classification-levels.js';
 export type {
   WorklogCompositeKey,
@@ -794,6 +805,8 @@ export type {
   NotificationScheme,
   NotificationSchemeEvent,
   NotificationSchemeNotification,
+  NotificationSchemeNotificationWrite,
+  NotificationSchemeEventWrite,
   NotificationEventRef,
   NotificationSchemeProjectAssociation,
   CreatedNotificationScheme,
