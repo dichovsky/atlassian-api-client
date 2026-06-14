@@ -38,7 +38,9 @@ describe('SPEC_URLS', () => {
     expect(Object.keys(SPEC_URLS)).toHaveLength(3);
     expect(SPEC_URLS.jiraPlatform).toContain('jira/platform');
     expect(SPEC_URLS.jiraSoftware).toContain('jira/software');
-    expect(SPEC_URLS.confluence).toContain('confluence');
+    expect(SPEC_URLS.confluence).toBe(
+      'https://developer.atlassian.com/cloud/confluence/openapi-v2.v3.json',
+    );
   });
 
   it('all URLs are HTTPS', () => {
