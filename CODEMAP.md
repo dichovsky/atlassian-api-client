@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "c5d3d93292a7d5dd03a419a465a2aebb8741a8566771ec81246e2395fb00dc9a",
+  "sourceHash": "1b1c6910d646bf9fa6ba66706b06c55ba83200ed525ea1b2b05ea732bbbe9959",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -20486,6 +20486,14 @@
             {
               "exported": "PostIncidentReview",
               "original": "PostIncidentReview"
+            },
+            {
+              "exported": "PostIncidentReviewStatus",
+              "original": "PostIncidentReviewStatus"
+            },
+            {
+              "exported": "PostIncidentReviewAssociation",
+              "original": "PostIncidentReviewAssociation"
             }
           ]
         },
@@ -21489,6 +21497,34 @@
             {
               "exported": "Vulnerability",
               "original": "Vulnerability"
+            },
+            {
+              "exported": "VulnerabilitySeverity",
+              "original": "VulnerabilitySeverity"
+            },
+            {
+              "exported": "VulnerabilitySeverityLevel",
+              "original": "VulnerabilitySeverityLevel"
+            },
+            {
+              "exported": "VulnerabilityType",
+              "original": "VulnerabilityType"
+            },
+            {
+              "exported": "VulnerabilityStatus",
+              "original": "VulnerabilityStatus"
+            },
+            {
+              "exported": "VulnerabilityIdentifier",
+              "original": "VulnerabilityIdentifier"
+            },
+            {
+              "exported": "VulnerabilityAdditionalInfo",
+              "original": "VulnerabilityAdditionalInfo"
+            },
+            {
+              "exported": "VulnerabilityAssociation",
+              "original": "VulnerabilityAssociation"
             }
           ]
         },
@@ -31541,17 +31577,33 @@
       "path": "src/jira/resources/post-incident-reviews.ts",
       "symbols": [
         {
+          "name": "PostIncidentReviewStatus",
+          "kind": "type",
+          "line": 12,
+          "exported": true,
+          "signature": "export type PostIncidentReviewStatus = | 'in progress' | 'outstanding actions' | 'completed' | 'unknown';",
+          "jsdoc": "Current status of a Post-Incident Review."
+        },
+        {
+          "name": "PostIncidentReviewAssociation",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface PostIncidentReviewAssociation { readonly associationType?: 'issueIdOrKeys' | 'serviceIdOrKeys' | 'ati:c…",
+          "jsdoc": "An association linked to a Post-Incident Review (e.g. Jira issue, service)."
+        },
+        {
           "name": "PostIncidentReview",
           "kind": "interface",
-          "line": 10,
+          "line": 28,
           "exported": true,
-          "signature": "export interface PostIncidentReview { readonly id: string; readonly name?: string; readonly status?: string; readonly in…",
-          "jsdoc": "A Jira Operations post-incident review record."
+          "signature": "export interface PostIncidentReview { readonly schemaVersion: '1.0'; readonly id: string; readonly updateSequenceNumber:…",
+          "jsdoc": "Full response shape for GET /rest/operations/1.0/post-incident-reviews/{reviewId}. Required fields match the `required` array in the pinned jira-software.json spec."
         },
         {
           "name": "PostIncidentReviewsResource",
           "kind": "class",
-          "line": 26,
+          "line": 56,
           "exported": true,
           "signature": "export class PostIncidentReviewsResource",
           "jsdoc": "Jira Post-Incident Reviews resource — DELETE and GET /rest/operations/1.0/post-incident-reviews/{reviewId}.",
@@ -31559,17 +31611,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 27
+              "line": 57
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 36
+              "line": 66
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 47
+              "line": 77
             }
           ]
         }
@@ -33579,7 +33631,7 @@
         {
           "name": "JqlSearchResult",
           "kind": "interface",
-          "line": 24,
+          "line": 34,
           "exported": true,
           "signature": "export interface JqlSearchResult { readonly issues: Issue[]; readonly nextPageToken?: string; readonly isLast?: boolean;…",
           "jsdoc": "Response shape for GET/POST /rest/api/3/search/jql (`SearchAndReconcileResults`). `isLast` indicates whether this is the final page of results."
@@ -33587,44 +33639,44 @@
         {
           "name": "SearchResource",
           "kind": "class",
-          "line": 33,
+          "line": 43,
           "exported": true,
           "signature": "export class SearchResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 34
+              "line": 44
             },
             {
               "name": "search",
               "kind": "method",
-              "line": 40
+              "line": 50
             },
             {
               "name": "searchGet",
               "kind": "method",
-              "line": 57
+              "line": 67
             },
             {
               "name": "searchAll",
               "kind": "method",
-              "line": 77
+              "line": 87
             },
             {
               "name": "approximateCount",
               "kind": "method",
-              "line": 91
+              "line": 101
             },
             {
               "name": "searchJqlGet",
               "kind": "method",
-              "line": 101
+              "line": 111
             },
             {
               "name": "searchJqlPost",
               "kind": "method",
-              "line": 122
+              "line": 135
             }
           ]
         }
@@ -34854,17 +34906,73 @@
       "path": "src/jira/resources/vulnerability.ts",
       "symbols": [
         {
+          "name": "VulnerabilitySeverityLevel",
+          "kind": "type",
+          "line": 12,
+          "exported": true,
+          "signature": "export type VulnerabilitySeverityLevel = 'critical' | 'high' | 'medium' | 'low' | 'unknown';",
+          "jsdoc": "Severity level of a Vulnerability."
+        },
+        {
+          "name": "VulnerabilitySeverity",
+          "kind": "interface",
+          "line": 15,
+          "exported": true,
+          "signature": "export interface VulnerabilitySeverity { readonly level: VulnerabilitySeverityLevel; }",
+          "jsdoc": "Severity object for a Vulnerability."
+        },
+        {
+          "name": "VulnerabilityType",
+          "kind": "type",
+          "line": 20,
+          "exported": true,
+          "signature": "export type VulnerabilityType = 'sca' | 'sast' | 'dast' | 'unknown';",
+          "jsdoc": "Type of Vulnerability detected."
+        },
+        {
+          "name": "VulnerabilityStatus",
+          "kind": "type",
+          "line": 23,
+          "exported": true,
+          "signature": "export type VulnerabilityStatus = 'open' | 'closed' | 'ignored' | 'unknown';",
+          "jsdoc": "Current status of a Vulnerability."
+        },
+        {
+          "name": "VulnerabilityIdentifier",
+          "kind": "interface",
+          "line": 26,
+          "exported": true,
+          "signature": "export interface VulnerabilityIdentifier { readonly displayName: string; readonly url: string; }",
+          "jsdoc": "Identifier for a Vulnerability."
+        },
+        {
+          "name": "VulnerabilityAdditionalInfo",
+          "kind": "interface",
+          "line": 32,
+          "exported": true,
+          "signature": "export interface VulnerabilityAdditionalInfo { readonly content: string; readonly url?: string; }",
+          "jsdoc": "Additional info for a Vulnerability."
+        },
+        {
+          "name": "VulnerabilityAssociation",
+          "kind": "interface",
+          "line": 38,
+          "exported": true,
+          "signature": "export interface VulnerabilityAssociation { readonly associationType: 'issueIdOrKeys'; readonly values: string[]; }",
+          "jsdoc": "An association entry (e.g. Jira issue id/key)."
+        },
+        {
           "name": "Vulnerability",
           "kind": "interface",
-          "line": 10,
+          "line": 47,
           "exported": true,
-          "signature": "export interface Vulnerability { readonly id: string; readonly displayName?: string; readonly description?: string; read…",
-          "jsdoc": "A Jira Security vulnerability record."
+          "signature": "export interface Vulnerability { readonly schemaVersion: '1.0'; readonly id: string; readonly updateSequenceNumber: numb…",
+          "jsdoc": "Full response shape for GET /rest/security/1.0/vulnerability/{vulnerabilityId}. Required fields match the `required` array in the pinned jira-software.json spec."
         },
         {
           "name": "VulnerabilityResource",
           "kind": "class",
-          "line": 28,
+          "line": 81,
           "exported": true,
           "signature": "export class VulnerabilityResource",
           "jsdoc": "Jira Vulnerability resource — DELETE and GET /rest/security/1.0/vulnerability/{vulnerabilityId}.",
@@ -34872,17 +34980,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 29
+              "line": 82
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 38
+              "line": 91
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 49
+              "line": 102
             }
           ]
         }

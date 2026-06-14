@@ -15,6 +15,16 @@ export interface JqlSearchParams {
   readonly expand?: string[];
   readonly properties?: string[];
   readonly fieldsByKeys?: boolean;
+  /**
+   * Strong-consistency issue IDs to reconcile with search results (max 50).
+   * Accepted by both GET and POST /rest/api/3/search/jql.
+   */
+  readonly reconcileIssues?: number[];
+  /**
+   * When true, the search fails fast on first error instead of returning partial results.
+   * Accepted by GET /rest/api/3/search/jql.
+   */
+  readonly failFast?: boolean;
 }
 
 /**
@@ -108,8 +118,11 @@ export class SearchResource {
     // params baked into the path; `expand` is `type: string` → CSV (B1049).
     if (params.expand) query['expand'] = params.expand.join(',');
     if (params.fieldsByKeys !== undefined) query['fieldsByKeys'] = params.fieldsByKeys;
+    if (params.failFast !== undefined) query['failFast'] = params.failFast;
     let path = appendRepeatedParams(`${this.baseUrl}/search/jql`, 'fields', params.fields);
     path = appendRepeatedParams(path, 'properties', params.properties);
+    // `reconcileIssues` is `type: array` → repeated params baked into the path.
+    path = appendRepeatedParams(path, 'reconcileIssues', params.reconcileIssues?.map(String));
     const response = await this.transport.request<JqlSearchResult>({
       method: 'GET',
       path,
@@ -132,6 +145,8 @@ export class SearchResource {
     if (params.expand) body['expand'] = params.expand.join(',');
     if (params.properties) body['properties'] = params.properties;
     if (params.fieldsByKeys !== undefined) body['fieldsByKeys'] = params.fieldsByKeys;
+    // `reconcileIssues` is `type: array` in POST body — send as array directly.
+    if (params.reconcileIssues) body['reconcileIssues'] = params.reconcileIssues;
     const response = await this.transport.request<JqlSearchResult>({
       method: 'POST',
       path: `${this.baseUrl}/search/jql`,
