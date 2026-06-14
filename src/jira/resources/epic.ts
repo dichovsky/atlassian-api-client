@@ -7,6 +7,15 @@ import { appendRepeatedParams } from '../../core/query.js';
 import type { BoardIssue } from './boards.js';
 import type { ListSoftwareIssuesParams, SoftwareIssueResults } from './software-issues.js';
 
+/** Internal wire shape for agile epic/sprint issue endpoints (`{issues:[...]}`). */
+interface EpicSearchResults {
+  readonly issues: BoardIssue[];
+  readonly startAt: number;
+  readonly maxResults: number;
+  readonly total: number;
+  readonly expand?: string;
+}
+
 export interface Epic {
   readonly id: number;
   readonly self: string;
@@ -16,14 +25,33 @@ export interface Epic {
     readonly key: string;
   };
   readonly done: boolean;
+  /** Epic key (e.g. 'PROJ-42'). Not always present in spec responses. */
   readonly key?: string;
 }
+
+/** Enum values for `UpdateEpicData.color.key` as defined in the spec. */
+export type EpicColorKey =
+  | 'color_1'
+  | 'color_2'
+  | 'color_3'
+  | 'color_4'
+  | 'color_5'
+  | 'color_6'
+  | 'color_7'
+  | 'color_8'
+  | 'color_9'
+  | 'color_10'
+  | 'color_11'
+  | 'color_12'
+  | 'color_13'
+  | 'color_14';
 
 export interface UpdateEpicData {
   readonly name?: string;
   readonly summary?: string;
   readonly color?: {
-    readonly key: string;
+    /** Must be one of the 14 spec-defined color keys: color_1 … color_14. */
+    readonly key: EpicColorKey;
   };
   readonly done?: boolean;
 }
@@ -33,6 +61,10 @@ export interface ListEpicIssuesParams {
   readonly maxResults?: number;
   readonly jql?: string;
   readonly fields?: string[];
+  /** Whether to validate the JQL query (default: true). */
+  readonly validateQuery?: boolean;
+  /** A comma-separated list of fields to expand in the response. */
+  readonly expand?: string;
 }
 
 export interface RankEpicData {
@@ -84,7 +116,12 @@ export class EpicResource {
     return response.data;
   }
 
-  /** Get issues in an epic (B901). */
+  /**
+   * Get issues in an epic (B901).
+   *
+   * The agile endpoint returns `{issues:[...], startAt, maxResults, total}`.
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getIssues(
     epicIdOrKey: string,
     params?: ListEpicIssuesParams,
@@ -98,11 +135,13 @@ export class EpicResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<EpicSearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(
         `${this.baseUrl}/epic/${encodePathSegment(epicIdOrKey, 'epicIdOrKey')}/issue`,
         'fields',
@@ -110,7 +149,12 @@ export class EpicResource {
       ),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   /** Move issues into an epic (B262). */
@@ -151,7 +195,12 @@ export class EpicResource {
     });
   }
 
-  /** Get issues without an epic (B902). */
+  /**
+   * Get issues without an epic (B902).
+   *
+   * The agile endpoint returns `{issues:[...], startAt, maxResults, total}`.
+   * This method maps `.issues` → `.values` for a consistent `OffsetPaginatedResponse` shape.
+   */
   async getIssuesWithoutEpic(
     params?: ListEpicIssuesParams,
   ): Promise<OffsetPaginatedResponse<BoardIssue>> {
@@ -161,15 +210,22 @@ export class EpicResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
-    const response = await this.transport.request<OffsetPaginatedResponse<BoardIssue>>({
+    // `fields` is `type: array` → repeated params baked into the path (B1049).
+    const response = await this.transport.request<EpicSearchResults>({
       method: 'GET',
-      // `fields` is `type: array` → repeated params baked into the path (B1049).
       path: appendRepeatedParams(`${this.baseUrl}/epic/none/issue`, 'fields', params?.fields),
       query,
     });
-    return response.data;
+    return {
+      values: response.data.issues,
+      startAt: response.data.startAt,
+      maxResults: response.data.maxResults,
+      total: response.data.total,
+    };
   }
 
   /** Remove issues from their epics (B264). */

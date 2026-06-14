@@ -21,11 +21,12 @@ const makeBoardIssue = (id: string, key: string) => ({
   fields: {},
 });
 
-const makeListResponse = <T>(values: T[]) => ({
-  values,
+/** Wire format for agile SearchResults (spec uses `.issues`, not `.values`). */
+const makeIssueSearchResults = (issues: ReturnType<typeof makeBoardIssue>[]) => ({
+  issues,
   startAt: 0,
   maxResults: 50,
-  total: values.length,
+  total: issues.length,
 });
 
 describe('EpicResource', () => {
@@ -101,7 +102,12 @@ describe('EpicResource', () => {
     it('accepts done flag, summary, and color', async () => {
       // Arrange
       transport.respondWith(makeEpic(5, 'Epic'));
-      const data = { name: 'Epic', summary: 'New summary', color: { key: 'color_1' }, done: true };
+      const data = {
+        name: 'Epic',
+        summary: 'New summary',
+        color: { key: 'color_1' as const },
+        done: true,
+      };
 
       // Act
       await epic.partialUpdate('PROJ-5', data);
@@ -138,16 +144,19 @@ describe('EpicResource', () => {
   // ── getIssues ─────────────────────────────────────────────────────────────
 
   describe('getIssues()', () => {
-    it('calls GET /epic/{epicIdOrKey}/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /epic/{epicIdOrKey}/issue and maps .issues → .values (B1056)', async () => {
+      // Arrange — wire sends SearchResults: { issues, startAt, maxResults, total }
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await epic.getIssues('42');
 
-      // Assert
-      expect(result).toEqual(payload);
+      // Assert — result uses OffsetPaginatedResponse shape with .values
+      expect(result.values).toEqual([issue]);
+      expect(result.startAt).toBe(0);
+      expect(result.maxResults).toBe(50);
+      expect(result.total).toBe(1);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/epic/42/issue`,
@@ -156,7 +165,7 @@ describe('EpicResource', () => {
 
     it('calls GET /epic/{epicKey}/issue with string key', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await epic.getIssues('PROJ-42');
@@ -170,7 +179,7 @@ describe('EpicResource', () => {
 
     it('passes startAt, maxResults, and jql params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await epic.getIssues('42', { startAt: 5, maxResults: 10, jql: 'status = Done' });
@@ -185,7 +194,7 @@ describe('EpicResource', () => {
 
     it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await epic.getIssues('42', { fields: ['summary', 'status'] });
@@ -196,6 +205,20 @@ describe('EpicResource', () => {
       );
       expect(transport.lastCall?.options.path).not.toContain('%2C');
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await epic.getIssues('42', { validateQuery: false, expand: 'changelog' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: false,
+        expand: 'changelog',
+      });
     });
 
     it('throws ValidationError for maxResults: 0', async () => {
@@ -335,16 +358,19 @@ describe('EpicResource', () => {
   // ── getIssuesWithoutEpic ──────────────────────────────────────────────────
 
   describe('getIssuesWithoutEpic()', () => {
-    it('calls GET /epic/none/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('10', 'PROJ-10')]);
-      transport.respondWith(payload);
+    it('calls GET /epic/none/issue and maps .issues → .values (B1056)', async () => {
+      // Arrange — wire sends SearchResults: { issues, startAt, maxResults, total }
+      const issue = makeBoardIssue('10', 'PROJ-10');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await epic.getIssuesWithoutEpic();
 
-      // Assert
-      expect(result).toEqual(payload);
+      // Assert — result uses OffsetPaginatedResponse shape with .values
+      expect(result.values).toEqual([issue]);
+      expect(result.startAt).toBe(0);
+      expect(result.maxResults).toBe(50);
+      expect(result.total).toBe(1);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/epic/none/issue`,
@@ -353,7 +379,7 @@ describe('EpicResource', () => {
 
     it('passes pagination params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await epic.getIssuesWithoutEpic({ startAt: 10, maxResults: 25 });
@@ -367,7 +393,7 @@ describe('EpicResource', () => {
 
     it('passes jql and fields', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await epic.getIssuesWithoutEpic({ jql: 'priority = High', fields: ['summary', 'priority'] });
@@ -380,6 +406,20 @@ describe('EpicResource', () => {
         `${BASE_URL}/epic/none/issue?fields=summary&fields=priority`,
       );
       expect(transport.lastCall?.options.query).not.toHaveProperty('fields');
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await epic.getIssuesWithoutEpic({ validateQuery: true, expand: 'names' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: true,
+        expand: 'names',
+      });
     });
 
     it('throws ValidationError for maxResults: 0', async () => {

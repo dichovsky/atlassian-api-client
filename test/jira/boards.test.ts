@@ -28,6 +28,18 @@ const makeListResponse = <T>(values: T[]) => ({
   total: values.length,
 });
 
+/**
+ * Builds the wire-format response for the agile issue endpoints that return
+ * `SearchResults` (`{issues:[...], startAt, maxResults, total}`).
+ * The resource methods map `.issues` → `.values` before returning to callers.
+ */
+const makeIssueSearchResults = (issues: ReturnType<typeof makeBoardIssue>[]) => ({
+  issues,
+  startAt: 0,
+  maxResults: 50,
+  total: issues.length,
+});
+
 const makeSprint = (id: number, name: string): Sprint => ({
   id,
   self: `${BASE_URL}/sprint/${id}`,
@@ -144,6 +156,35 @@ describe('BoardsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({ projectKeyOrId: 'PROJ' });
     });
+
+    it('passes all new B1056 params for list()', async () => {
+      // Arrange
+      transport.respondWith(makeListResponse([]));
+
+      // Act — 8 new params added by B1056 spec alignment
+      await boards.list({
+        accountIdLocation: 'account-123',
+        projectLocation: 'project-loc',
+        includePrivate: true,
+        negateLocationFiltering: true,
+        orderBy: 'name',
+        expand: 'permissions',
+        projectTypeLocation: 'software',
+        filterId: 42,
+      });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        accountIdLocation: 'account-123',
+        projectLocation: 'project-loc',
+        includePrivate: true,
+        negateLocationFiltering: true,
+        orderBy: 'name',
+        expand: 'permissions',
+        projectTypeLocation: 'software',
+        filterId: 42,
+      });
+    });
   });
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -174,16 +215,16 @@ describe('BoardsResource', () => {
   // ── getIssues ─────────────────────────────────────────────────────────────
 
   describe('getIssues()', () => {
-    it('calls GET /board/{boardId}/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /board/{boardId}/issue and maps .issues → .values', async () => {
+      // Arrange — wire response uses SearchResults shape (.issues); method maps to .values
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await boards.getIssues(42);
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toEqual({ values: [issue], startAt: 0, maxResults: 50, total: 1 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/board/42/issue`,
@@ -192,7 +233,7 @@ describe('BoardsResource', () => {
 
     it('passes startAt, maxResults, and jql params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getIssues(42, { startAt: 5, maxResults: 10, jql: 'status = Done' });
@@ -207,7 +248,7 @@ describe('BoardsResource', () => {
 
     it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getIssues(42, { fields: ['summary', 'status'] });
@@ -235,6 +276,20 @@ describe('BoardsResource', () => {
 
     it('throws ValidationError for maxResults: Infinity', async () => {
       await expect(boards.getIssues(42, { maxResults: Infinity })).rejects.toThrow(ValidationError);
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await boards.getIssues(42, { validateQuery: false, expand: 'changelog' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: false,
+        expand: 'changelog',
+      });
     });
 
     it('throws ValidationError for non-positive boardId', async () => {
@@ -465,16 +520,16 @@ describe('BoardsResource', () => {
   // ── getSprintIssues ───────────────────────────────────────────────────────
 
   describe('getSprintIssues()', () => {
-    it('calls GET /board/{boardId}/sprint/{sprintId}/issue with no params', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /board/{boardId}/sprint/{sprintId}/issue and maps .issues → .values', async () => {
+      // Arrange — wire response uses SearchResults-like shape (.issues); method maps to .values
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await boards.getSprintIssues(42, 10);
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toEqual({ values: [issue], startAt: 0, maxResults: 50, total: 1 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/board/42/sprint/10/issue`,
@@ -483,7 +538,7 @@ describe('BoardsResource', () => {
 
     it('passes startAt, maxResults, jql, and fields params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getSprintIssues(42, 10, {
@@ -507,7 +562,7 @@ describe('BoardsResource', () => {
 
     it('serializes fields array as repeated params, not CSV (B1049)', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getSprintIssues(42, 10, { fields: ['assignee', 'priority', 'labels'] });
@@ -522,7 +577,7 @@ describe('BoardsResource', () => {
 
     it('does not include undefined query params when params is empty object', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getSprintIssues(42, 10, {});
@@ -533,6 +588,20 @@ describe('BoardsResource', () => {
       expect(query['maxResults']).toBeUndefined();
       expect(query['jql']).toBeUndefined();
       expect(query['fields']).toBeUndefined();
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await boards.getSprintIssues(42, 10, { validateQuery: true, expand: 'names' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: true,
+        expand: 'names',
+      });
     });
 
     it('throws ValidationError for boardId = 0', async () => {
@@ -634,22 +703,29 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('throws ValidationError for invalid filterId', async () => {
-      await expect(boards.create({ name: 'Board', type: 'scrum', filterId: 0 })).rejects.toThrow(
-        'filterId must be a positive integer',
-      );
+    it('accepts filterId: 0 (spec has no minimum; 0 is a valid non-negative integer)', async () => {
+      // filterId: 0 was previously rejected, but spec places no minimum constraint
+      transport.respondWith({
+        id: 1,
+        name: 'Board',
+        type: 'scrum',
+        self: 'https://test.atlassian.net/rest/agile/1.0/board/1',
+      });
+      const result = await boards.create({ name: 'Board', type: 'scrum', filterId: 0 });
+      expect(result).toMatchObject({ id: 1, name: 'Board' });
     });
 
     it('throws ValidationError for negative filterId', async () => {
       await expect(boards.create({ name: 'Board', type: 'scrum', filterId: -1 })).rejects.toThrow(
-        'filterId must be a positive integer',
+        'filterId must be a non-negative integer',
       );
     });
 
-    it('throws ValidationError when type is missing', async () => {
+    it('throws ValidationError when type is not a valid enum value', async () => {
+      // Valid types per spec: 'kanban', 'scrum', 'agility' (spec dropped 'simple')
       await expect(
         boards.create({ name: 'Board', type: '' as 'scrum', filterId: 1 }),
-      ).rejects.toThrow('type must be one of: scrum, kanban, simple');
+      ).rejects.toThrow('type must be one of: kanban, scrum, agility');
     });
   });
 
@@ -686,16 +762,16 @@ describe('BoardsResource', () => {
   // ── getBacklog ─────────────────────────────────────────────────────────────
 
   describe('getBacklog()', () => {
-    it('calls GET /board/{boardId}/backlog', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /board/{boardId}/backlog and maps .issues → .values', async () => {
+      // Arrange — wire response uses SearchResults shape (.issues); method maps to .values
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await boards.getBacklog(42);
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toEqual({ values: [issue], startAt: 0, maxResults: 50, total: 1 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/board/42/backlog`,
@@ -704,7 +780,7 @@ describe('BoardsResource', () => {
 
     it('passes startAt, maxResults, jql, and fields params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getBacklog(42, {
@@ -727,7 +803,7 @@ describe('BoardsResource', () => {
     });
 
     it('passes only jql and fields without startAt or maxResults', async () => {
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
       await boards.getBacklog(42, { jql: 'status = Open', fields: ['id'] });
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('startAt');
@@ -739,7 +815,7 @@ describe('BoardsResource', () => {
     });
 
     it('passes only startAt without jql or fields', async () => {
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
       await boards.getBacklog(42, { startAt: 5 });
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('jql');
@@ -763,6 +839,20 @@ describe('BoardsResource', () => {
       await expect(boards.getBacklog(42, { maxResults: Infinity })).rejects.toThrow(
         ValidationError,
       );
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await boards.getBacklog(42, { validateQuery: false, expand: 'changelog' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: false,
+        expand: 'changelog',
+      });
     });
   });
 
@@ -829,28 +919,28 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('passes startAt, maxResults, and done params', async () => {
+    it('passes startAt, maxResults, and done params as strings (spec is type:string)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
-      // Act
-      await boards.listEpics(42, { startAt: 5, maxResults: 10, done: false });
+      // Act — spec declares `done` as type:string with valid values 'true'/'false'
+      await boards.listEpics(42, { startAt: 5, maxResults: 10, done: 'false' });
 
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 5,
         maxResults: 10,
-        done: false,
+        done: 'false',
       });
     });
 
     it('passes only done param without startAt or maxResults', async () => {
       transport.respondWith(makeListResponse([]));
-      await boards.listEpics(42, { done: true });
+      await boards.listEpics(42, { done: 'true' });
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('startAt');
       expect(q).not.toHaveProperty('maxResults');
-      expect(q).toMatchObject({ done: true });
+      expect(q).toMatchObject({ done: 'true' });
     });
 
     it('passes startAt and maxResults without done', async () => {
@@ -873,16 +963,16 @@ describe('BoardsResource', () => {
   // ── getEpicIssues ─────────────────────────────────────────────────────────
 
   describe('getEpicIssues()', () => {
-    it('calls GET /board/{boardId}/epic/{epicId}/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('1', 'PROJ-1')]);
-      transport.respondWith(payload);
+    it('calls GET /board/{boardId}/epic/{epicId}/issue and maps .issues → .values', async () => {
+      // Arrange — wire response uses SearchResults-like shape (.issues); method maps to .values
+      const issue = makeBoardIssue('1', 'PROJ-1');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await boards.getEpicIssues(42, 7);
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toEqual({ values: [issue], startAt: 0, maxResults: 50, total: 1 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/board/42/epic/7/issue`,
@@ -891,7 +981,7 @@ describe('BoardsResource', () => {
 
     it('passes jql and fields params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getEpicIssues(42, 7, { jql: 'status = Done', fields: ['summary'] });
@@ -907,7 +997,7 @@ describe('BoardsResource', () => {
     });
 
     it('passes startAt and maxResults without jql or fields', async () => {
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
       await boards.getEpicIssues(42, 7, { startAt: 5, maxResults: 10 });
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('jql');
@@ -936,21 +1026,35 @@ describe('BoardsResource', () => {
     it('throws ValidationError for maxResults: 0', async () => {
       await expect(boards.getEpicIssues(42, 7, { maxResults: 0 })).rejects.toThrow(ValidationError);
     });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await boards.getEpicIssues(42, 7, { validateQuery: false, expand: 'changelog' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: false,
+        expand: 'changelog',
+      });
+    });
   });
 
   // ── getIssuesWithoutEpic ──────────────────────────────────────────────────
 
   describe('getIssuesWithoutEpic()', () => {
-    it('calls GET /board/{boardId}/epic/none/issue', async () => {
-      // Arrange
-      const payload = makeListResponse([makeBoardIssue('2', 'PROJ-2')]);
-      transport.respondWith(payload);
+    it('calls GET /board/{boardId}/epic/none/issue and maps .issues → .values', async () => {
+      // Arrange — wire response uses SearchResults-like shape (.issues); method maps to .values
+      const issue = makeBoardIssue('2', 'PROJ-2');
+      transport.respondWith(makeIssueSearchResults([issue]));
 
       // Act
       const result = await boards.getIssuesWithoutEpic(42);
 
       // Assert
-      expect(result).toEqual(payload);
+      expect(result).toEqual({ values: [issue], startAt: 0, maxResults: 50, total: 1 });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/board/42/epic/none/issue`,
@@ -959,7 +1063,7 @@ describe('BoardsResource', () => {
 
     it('passes jql and fields params', async () => {
       // Arrange
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
 
       // Act
       await boards.getIssuesWithoutEpic(42, { jql: 'status != Done', fields: ['summary'] });
@@ -975,7 +1079,7 @@ describe('BoardsResource', () => {
     });
 
     it('passes startAt and maxResults without jql or fields', async () => {
-      transport.respondWith(makeListResponse([]));
+      transport.respondWith(makeIssueSearchResults([]));
       await boards.getIssuesWithoutEpic(42, { startAt: 5, maxResults: 10 });
       const q = transport.lastCall?.options.query ?? {};
       expect(q).not.toHaveProperty('jql');
@@ -993,6 +1097,20 @@ describe('BoardsResource', () => {
       await expect(boards.getIssuesWithoutEpic(42, { maxResults: 0 })).rejects.toThrow(
         ValidationError,
       );
+    });
+
+    it('passes validateQuery and expand params (B1056)', async () => {
+      // Arrange
+      transport.respondWith(makeIssueSearchResults([]));
+
+      // Act — params added in B1056 spec alignment
+      await boards.getIssuesWithoutEpic(42, { validateQuery: true, expand: 'names' });
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject({
+        validateQuery: true,
+        expand: 'names',
+      });
     });
   });
 
@@ -1134,6 +1252,16 @@ describe('BoardsResource', () => {
       const body = transport.lastCall?.options.body as Record<string, unknown>;
       expect(body).toMatchObject({ issues: ['PROJ-1'], rankAfterIssue: 'PROJ-3' });
       expect(body).not.toHaveProperty('rankBeforeIssue');
+    });
+
+    it('includes rankCustomFieldId when provided (B1056)', async () => {
+      // rankCustomFieldId was added by B1056 spec alignment
+      transport.respondWith(undefined);
+      await boards.moveIssues(42, ['PROJ-1'], undefined, undefined, 10001);
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body).toMatchObject({ issues: ['PROJ-1'], rankCustomFieldId: 10001 });
+      expect(body).not.toHaveProperty('rankBeforeIssue');
+      expect(body).not.toHaveProperty('rankAfterIssue');
     });
 
     it('throws ValidationError for boardId = 0', async () => {
@@ -1304,18 +1432,18 @@ describe('BoardsResource', () => {
       });
     });
 
-    it('passes startAt, maxResults, and released params', async () => {
+    it('passes startAt, maxResults, and released params as string (spec is type:string)', async () => {
       // Arrange
       transport.respondWith(makeListResponse([]));
 
-      // Act
-      await boards.listVersions(42, { startAt: 0, maxResults: 20, released: true });
+      // Act — spec declares `released` as type:string with valid values 'true'/'false'
+      await boards.listVersions(42, { startAt: 0, maxResults: 20, released: 'true' });
 
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject({
         startAt: 0,
         maxResults: 20,
-        released: true,
+        released: 'true',
       });
     });
 

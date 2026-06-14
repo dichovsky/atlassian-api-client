@@ -43,12 +43,22 @@ export interface CreateSprintData {
   readonly goal?: string;
 }
 
-/** Request body for updating an existing sprint. */
+/**
+ * Request body for updating an existing sprint (PUT = full replace).
+ * All fields are optional for partial update (POST semantics); the spec
+ * PUT body includes additional read-only-in-practice fields (`id`, `self`,
+ * `createdDate`, `completeDate`) that may be supplied for round-trip fidelity.
+ */
 export interface UpdateSprintData {
+  readonly id?: number;
+  readonly self?: string;
   readonly name?: string;
   readonly state?: 'active' | 'closed' | 'future';
   readonly startDate?: string;
   readonly endDate?: string;
+  readonly completeDate?: string;
+  readonly createdDate?: string;
+  readonly originBoardId?: number;
   readonly goal?: string;
 }
 
@@ -58,6 +68,10 @@ export interface ListSprintIssuesParams {
   readonly maxResults?: number;
   readonly jql?: string;
   readonly fields?: string[];
+  /** Whether to validate the JQL query (default: true). */
+  readonly validateQuery?: boolean;
+  /** A comma-separated list of fields to expand in the response. */
+  readonly expand?: string;
 }
 
 export class SprintsResource {
@@ -137,8 +151,18 @@ export class SprintsResource {
     return response.data;
   }
 
-  /** Move issues into a sprint (B318). Max 50 issues per call. */
-  async moveIssues(sprintId: number, issues: readonly string[]): Promise<void> {
+  /**
+   * Move issues into a sprint (B318). Max 50 issues per call.
+   * Optional rank control fields (`rankBeforeIssue`, `rankAfterIssue`, `rankCustomFieldId`)
+   * are forwarded to the spec request body when provided.
+   */
+  async moveIssues(
+    sprintId: number,
+    issues: readonly string[],
+    rankBeforeIssue?: string,
+    rankAfterIssue?: string,
+    rankCustomFieldId?: number,
+  ): Promise<void> {
     if (!Number.isInteger(sprintId) || sprintId <= 0) {
       throw new ValidationError('sprintId must be a positive integer');
     }
@@ -153,10 +177,16 @@ export class SprintsResource {
         throw new ValidationError('issues entries must be non-empty strings');
       }
     }
+    const body = {
+      issues,
+      ...(rankBeforeIssue !== undefined && { rankBeforeIssue }),
+      ...(rankAfterIssue !== undefined && { rankAfterIssue }),
+      ...(rankCustomFieldId !== undefined && { rankCustomFieldId }),
+    };
     await this.transport.request<undefined>({
       method: 'POST',
       path: `${this.baseUrl}/sprint/${sprintId}/issue`,
-      body: { issues },
+      body,
     });
   }
 
@@ -239,6 +269,8 @@ export class SprintsResource {
    * The spec response schema (`SearchResults`) uses `.issues` as the array key;
    * this method maps it to the `OffsetPaginatedResponse` `.values` envelope so
    * callers get a consistent pagination shape.
+   *
+   * @deprecated Use {@link getIssuesEnhanced} (non-deprecated JSIS endpoint) for new integrations.
    */
   async getIssues(
     sprintId: number,
@@ -253,6 +285,8 @@ export class SprintsResource {
       if (params.startAt !== undefined) query['startAt'] = params.startAt;
       if (params.maxResults !== undefined) query['maxResults'] = params.maxResults;
       if (params.jql !== undefined) query['jql'] = params.jql;
+      if (params.validateQuery !== undefined) query['validateQuery'] = params.validateQuery;
+      if (params.expand !== undefined) query['expand'] = params.expand;
     }
 
     // The agile endpoint returns SearchResults: { issues, startAt, maxResults, total }

@@ -1425,7 +1425,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.listEpics(boardId, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        done: asBoolFlag(opts['done']),
+        done: asStringBoolFlag(opts['done']),
       });
     }
     case 'epic-issues': {
@@ -1506,7 +1506,7 @@ async function executeBoards(client: JiraClient, cmd: ParsedCommand): Promise<un
       return client.boards.listVersions(boardId, {
         startAt: asNonNegativeInt(opts['start-at'], '--start-at'),
         maxResults: asPositiveInt(opts['max-results'], '--max-results'),
-        released: asBoolFlag(opts['released']),
+        released: asStringBoolFlag(opts['released']),
       });
     }
     case 'sprint-issues': {
@@ -2083,11 +2083,11 @@ function asExpressionCheck(
   throw new Error(`Invalid --check value "${s}". Must be one of: syntax, type, complexity`);
 }
 
-function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'simple' {
+function requireBoardType(value: string | boolean | undefined): 'scrum' | 'kanban' | 'agility' {
   const s = asString(value);
   if (!s) throw new Error('Missing required option: --type');
-  if (s === 'scrum' || s === 'kanban' || s === 'simple') return s;
-  throw new Error(`--type must be one of: scrum, kanban, simple. Got: ${s}`);
+  if (s === 'scrum' || s === 'kanban' || s === 'agility') return s;
+  throw new Error(`--type must be one of: scrum, kanban, agility. Got: ${s}`);
 }
 
 function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
@@ -2096,6 +2096,17 @@ function asBoolFlag(value: string | boolean | undefined): boolean | undefined {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`expected 'true' or 'false', got: ${value}`);
+}
+
+/**
+ * Validates that a flag value is 'true' or 'false' and returns it as a string.
+ * Use for query params that are `type:string` in the spec but accept only boolean-like values.
+ */
+function asStringBoolFlag(value: string | boolean | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  if (value === true || value === 'true') return 'true';
+  if (value === false || value === 'false') return 'false';
+  throw new Error(`expected 'true' or 'false', got: ${String(value)}`);
 }
 
 function asWorkflowMode(value: string | boolean | undefined): 'live' | 'draft' | undefined {
