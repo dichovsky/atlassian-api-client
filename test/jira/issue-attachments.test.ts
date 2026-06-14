@@ -26,7 +26,7 @@ describe('IssueAttachmentsResource', () => {
   // ── list ──────────────────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('calls GET /issue/{key} with fields=attachment and returns attachment array', async () => {
+    it('calls GET /issue/{key} with fields=attachment as a repeated query param and returns attachment array', async () => {
       // Arrange
       const attachments = [makeAttachment('10001'), makeAttachment('10002')];
       transport.respondWith({ fields: { attachment: attachments } });
@@ -36,11 +36,13 @@ describe('IssueAttachmentsResource', () => {
 
       // Assert
       expect(result).toEqual(attachments);
+      // Spec: `fields` is `type: array` → emitted as repeated param built into
+      // the path, not as a single CSV string in the query bag.
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
-        path: `${BASE_URL}/issue/PROJ-1`,
-        query: { fields: 'attachment' },
+        path: `${BASE_URL}/issue/PROJ-1?fields=attachment`,
       });
+      expect(transport.lastCall?.options.query).toBeUndefined();
     });
 
     it('returns empty array when attachment field is missing', async () => {
@@ -166,6 +168,29 @@ describe('IssueAttachmentsResource', () => {
         path: `${BASE_URL}/attachment/10001/expand/human`,
       });
     });
+
+    it('surfaces the label field from AttachmentArchiveItemReadable', async () => {
+      // Regression: `label` was missing from the type; spec `AttachmentArchiveItemReadable`
+      // includes it as a human-readable description of the archive entry.
+      const payload = {
+        id: 7237,
+        name: 'archive.zip',
+        entries: [
+          {
+            index: 0,
+            label: 'README',
+            mediaType: 'text/plain',
+            path: 'README.md',
+            size: '1.2 kB',
+          },
+        ],
+        totalEntryCount: 1,
+        mediaType: 'application/zip',
+      };
+      transport.respondWith(payload);
+      const result = await resource.expandHuman('10001');
+      expect(result.entries?.[0]?.label).toBe('README');
+    });
   });
 
   // ── expandRaw (B339) ──────────────────────────────────────────────────────
@@ -173,7 +198,7 @@ describe('IssueAttachmentsResource', () => {
   describe('expandRaw()', () => {
     it('calls GET /attachment/{id}/expand/raw and returns numeric-sized entries', async () => {
       const payload = {
-        entries: [{ entryIndex: 0, mediaType: 'text/plain', path: 'foo.txt', size: 2560 }],
+        entries: [{ entryIndex: 0, mediaType: 'text/plain', name: 'foo.txt', size: 2560 }],
         totalEntryCount: 1,
       };
       transport.respondWith(payload);
@@ -183,6 +208,27 @@ describe('IssueAttachmentsResource', () => {
         method: 'GET',
         path: `${BASE_URL}/attachment/10001/expand/raw`,
       });
+    });
+
+    it('surfaces name and abbreviatedName from AttachmentArchiveEntry', async () => {
+      // Regression: the type had `path` (not in spec) instead of `name` and
+      // was missing `abbreviatedName`. Spec: `AttachmentArchiveEntry`.
+      const payload = {
+        entries: [
+          {
+            entryIndex: 0,
+            mediaType: 'text/plain',
+            name: 'very-long-filename-in-archive.txt',
+            abbreviatedName: 'very-long-fi…',
+            size: 2560,
+          },
+        ],
+        totalEntryCount: 1,
+      };
+      transport.respondWith(payload);
+      const result = await resource.expandRaw('10001');
+      expect(result.entries?.[0]?.name).toBe('very-long-filename-in-archive.txt');
+      expect(result.entries?.[0]?.abbreviatedName).toBe('very-long-fi…');
     });
   });
 
@@ -288,7 +334,9 @@ describe('IssueAttachmentsResource', () => {
     it('encodes issueIdOrKey in list()', async () => {
       transport.respondWith({ fields: { attachment: [] } });
       await resource.list('../admin');
-      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/issue/..%2Fadmin`);
+      expect(transport.lastCall?.options.path).toBe(
+        `${BASE_URL}/issue/..%2Fadmin?fields=attachment`,
+      );
     });
 
     it('encodes attachmentId in get()', async () => {

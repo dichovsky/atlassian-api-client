@@ -4,23 +4,65 @@ import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { paginateOffset, validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
 
-/** A reference to a Jira issue event triggering a notification. */
+/**
+ * A Jira notification event — returned inside notification scheme events.
+ * Contains the full event details as returned by the read endpoints.
+ */
 export interface NotificationEventRef {
-  readonly id: string;
+  readonly id?: number;
+  readonly name?: string;
+  readonly description?: string;
+  /** The template event, if this is a custom event built on a standard one. */
+  readonly templateEvent?: NotificationEventRef;
 }
 
 /**
- * A single notification target within a notification scheme event.
- * `notificationType` is the recipient kind (e.g. `CurrentAssignee`, `Group`,
- * `User`, `ProjectLead`, `EmailAddress`); `parameter` is the type-specific
- * value (group name, accountId, email, etc.).
+ * A single notification target within a notification scheme event — as
+ * returned by the read endpoints (`EventNotification` in the spec).
+ *
+ * `notificationType` identifies the recipient kind (e.g. `CurrentAssignee`,
+ * `Group`, `User`, `ProjectLead`, `EmailAddress`); `parameter` is the
+ * type-specific value (group name, accountId, email, etc.).
  */
 export interface NotificationSchemeNotification {
-  readonly id?: string;
-  readonly notificationType: string;
+  /** The ID of the notification. Spec: integer. */
+  readonly id?: number;
+  readonly notificationType?: string;
   readonly parameter?: string;
+  /** The identifier associated with `notificationType` (preferred over `parameter`). */
+  readonly recipient?: string;
   readonly emailAddress?: string;
   readonly expand?: string;
+  /** The specified group (when `notificationType` is `Group` or `GroupCustomField`). */
+  readonly group?: {
+    readonly name?: string;
+    readonly groupId?: string | null;
+    readonly self?: string;
+  };
+  /** The specified user (when `notificationType` is `User`). */
+  readonly user?: {
+    readonly accountId?: string;
+    readonly displayName?: string;
+    readonly active?: boolean;
+    readonly self?: string;
+    readonly accountType?: string;
+    readonly emailAddress?: string;
+  };
+  /** The specified project role (when `notificationType` is `ProjectRole`). */
+  readonly projectRole?: {
+    readonly id?: number;
+    readonly name?: string;
+    readonly self?: string;
+    readonly description?: string;
+  };
+  /** The custom user or group field (when `notificationType` is `UserCustomField` or `GroupCustomField`). */
+  readonly field?: {
+    readonly id?: string;
+    readonly key?: string;
+    readonly name?: string;
+    readonly custom?: boolean;
+    readonly navigable?: boolean;
+  };
 }
 
 /**
@@ -43,7 +85,8 @@ export interface NotificationScheme {
   readonly expand?: string;
   readonly notificationSchemeEvents?: NotificationSchemeEvent[];
   readonly scope?: {
-    readonly type?: string;
+    /** Spec: enum `PROJECT | TEMPLATE`. */
+    readonly type?: 'PROJECT' | 'TEMPLATE';
     readonly project?: {
       readonly id?: string;
       readonly key?: string;
@@ -74,11 +117,35 @@ export interface GetNotificationSchemeParams {
   readonly expand?: string;
 }
 
+/**
+ * A single notification entry for write bodies (create/addNotifications).
+ * Spec: `NotificationSchemeNotificationDetails` — only `notificationType` and
+ * `parameter` are accepted on write; all other `EventNotification` fields are
+ * read-only.
+ */
+export interface NotificationSchemeNotificationWrite {
+  /** The notification type, e.g. `CurrentAssignee`, `Group`, `EmailAddress`. */
+  readonly notificationType: string;
+  /** The value corresponding to the specified notification type. */
+  readonly parameter?: string;
+}
+
+/**
+ * A `(event, notifications[])` write entry for create/addNotifications bodies.
+ * Spec: `NotificationSchemeEventDetails` — `event` is `{id: string}` and
+ * `notifications` is `NotificationSchemeNotificationDetails[]`.
+ */
+export interface NotificationSchemeEventWrite {
+  /** The event that triggers this notification list. Only `id` is accepted on write. */
+  readonly event: { readonly id: string };
+  readonly notifications: NotificationSchemeNotificationWrite[];
+}
+
 /** Request body for POST /rest/api/3/notificationscheme. */
 export interface CreateNotificationSchemeData {
   readonly name: string;
   readonly description?: string;
-  readonly notificationSchemeEvents?: NotificationSchemeEvent[];
+  readonly notificationSchemeEvents?: NotificationSchemeEventWrite[];
 }
 
 /** Request body for PUT /rest/api/3/notificationscheme/{id}. */
@@ -89,7 +156,7 @@ export interface UpdateNotificationSchemeData {
 
 /** Request body for PUT /rest/api/3/notificationscheme/{id}/notification. */
 export interface AddNotificationsData {
-  readonly notificationSchemeEvents: NotificationSchemeEvent[];
+  readonly notificationSchemeEvents: NotificationSchemeEventWrite[];
 }
 
 /** Response envelope for POST /rest/api/3/notificationscheme. */
@@ -109,6 +176,8 @@ export interface ListNotificationSchemeProjectsParams {
   readonly startAt?: number;
   /** Page size (default 50). */
   readonly maxResults?: number;
+  /** Filter by notification scheme IDs. */
+  readonly notificationSchemeId?: string[];
   /** Filter by project IDs. */
   readonly projectId?: string[];
 }
@@ -253,11 +322,7 @@ export class NotificationSchemeResource {
       OffsetPaginatedResponse<NotificationSchemeProjectAssociation>
     >({
       method: 'GET',
-      path: appendRepeatedParams(
-        `${this.baseUrl}/notificationscheme/project`,
-        'projectId',
-        params?.projectId,
-      ),
+      path: buildProjectPath(`${this.baseUrl}/notificationscheme/project`, params),
       query,
     });
     return response.data;
@@ -273,11 +338,7 @@ export class NotificationSchemeResource {
     const query = buildProjectQuery({ ...params, startAt: undefined, maxResults: undefined });
     yield* paginateOffset<NotificationSchemeProjectAssociation>(
       this.transport,
-      appendRepeatedParams(
-        `${this.baseUrl}/notificationscheme/project`,
-        'projectId',
-        params?.projectId,
-      ),
+      buildProjectPath(`${this.baseUrl}/notificationscheme/project`, params),
       query,
       params?.maxResults,
     );
@@ -315,7 +376,20 @@ function buildProjectQuery(
   const query: Record<string, string | number | boolean | undefined> = {};
   if (params?.startAt !== undefined) query['startAt'] = params.startAt;
   if (params?.maxResults !== undefined) query['maxResults'] = params.maxResults;
-  // `projectId` is a `type: array` query param, emitted as repeated params
-  // built into the path at each call site (not CSV-joined here).
+  // `notificationSchemeId` and `projectId` are `type: array` query params,
+  // emitted as repeated params built into the path (not CSV-joined here).
   return query;
+}
+
+/**
+ * Append the repeated `notificationSchemeId` and `projectId` (`type: array`)
+ * params to the project-list path.
+ */
+function buildProjectPath(
+  basePath: string,
+  params: ListNotificationSchemeProjectsParams | undefined,
+): string {
+  let path = appendRepeatedParams(basePath, 'notificationSchemeId', params?.notificationSchemeId);
+  path = appendRepeatedParams(path, 'projectId', params?.projectId);
+  return path;
 }
