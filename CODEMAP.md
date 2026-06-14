@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "8fb087aa3511741caac166466310fe4d476674c7290792c96542e3e0e609306a",
+  "sourceHash": "9ffc9a0e56ada1351912f703dc094f04317135fce484d9a9410b896698c3c03d",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -260,7 +260,7 @@
       "name": "BulkCreateIssueData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 23,
+      "line": 48,
       "signature": "export interface BulkCreateIssueData { readonly issueUpdates: BulkIssueUpdate[]; }",
       "jsdoc": "Request body for bulk-creating multiple Jira issues in a single call.",
       "typeOnly": true
@@ -269,7 +269,7 @@
       "name": "BulkCreatedIssues",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 28,
+      "line": 53,
       "signature": "export interface BulkCreatedIssues { readonly issues: BulkCreatedIssue[]; readonly errors?: BulkIssueError[]; }",
       "jsdoc": "Response from the bulk issue creation endpoint listing created issues and any per-issue errors.",
       "typeOnly": true
@@ -278,9 +278,9 @@
       "name": "BulkDeleteIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 44,
-      "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: string[]; readonly currentValue?…",
-      "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues.",
+      "line": 78,
+      "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: number[]; readonly currentValue?…",
+      "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues. Spec: IssueFilterForBulkPropertyDelete",
       "typeOnly": true
     },
     {
@@ -305,9 +305,9 @@
       "name": "BulkSetIssuePropertyData",
       "kind": "interface",
       "file": "src/jira/resources/bulk.ts",
-      "line": 34,
-      "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …",
-      "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues.",
+      "line": 62,
+      "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly expression?: string; readonly filter?: { r…",
+      "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues. Spec: BulkIssuePropertyUpdateRequest",
       "typeOnly": true
     },
     {
@@ -740,7 +740,7 @@
       "name": "CreateFieldData",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 31,
+      "line": 81,
       "signature": "export interface CreateFieldData { readonly name: string; readonly description?: string; readonly type: string; readonly…",
       "jsdoc": "Request body for creating a new custom Jira field.",
       "typeOnly": true
@@ -1181,9 +1181,9 @@
       "name": "Field",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 8,
-      "signature": "export interface Field { readonly id: string; readonly name: string; readonly custom: boolean; readonly orderable?: bool…",
-      "jsdoc": "A Jira issue field (system or custom).",
+      "line": 23,
+      "signature": "export interface Field { readonly id: string; readonly name: string; readonly schema: FieldSchema; readonly key?: string…",
+      "jsdoc": "A Jira field as returned by the paginated GET /field/search endpoint. Spec: Field schema — required: id, name, schema. Note: does NOT include `custom`, `orderable`, `navigable`, `searchable`, `clauseNames`, or `scope` — those are part of FieldDetails (GET /field).",
       "typeOnly": true
     },
     {
@@ -2006,7 +2006,7 @@
       "name": "ListFieldsParams",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 46,
+      "line": 119,
       "signature": "export interface ListFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom' |…",
       "jsdoc": "Query parameters for listing Jira fields.",
       "typeOnly": true
@@ -3168,8 +3168,8 @@
       "name": "UpdateFieldData",
       "kind": "interface",
       "file": "src/jira/resources/fields.ts",
-      "line": 39,
-      "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: string;…",
+      "line": 89,
+      "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: FieldSe…",
       "jsdoc": "Request body for updating an existing custom Jira field.",
       "typeOnly": true
     },
@@ -23046,21 +23046,31 @@
         {
           "name": "BulkCreatedIssue",
           "kind": "interface",
-          "line": 10,
+          "line": 11,
           "exported": true,
-          "signature": "export interface BulkCreatedIssue { readonly id: string; readonly key: string; readonly self: string; }"
+          "signature": "export interface BulkCreatedIssue { readonly id: string; readonly key: string; readonly self: string; readonly transitio…",
+          "jsdoc": "Spec: CreatedIssue — id/key/self plus optional transition/watchers nested responses."
+        },
+        {
+          "name": "BulkErrorCollection",
+          "kind": "interface",
+          "line": 34,
+          "exported": true,
+          "signature": "export interface BulkErrorCollection { readonly errorMessages?: string[]; readonly errors?: Record<string, string>; read…",
+          "jsdoc": "Spec: ErrorCollection"
         },
         {
           "name": "BulkIssueError",
           "kind": "interface",
-          "line": 16,
+          "line": 41,
           "exported": true,
-          "signature": "export interface BulkIssueError { readonly status?: number; readonly elementErrors?: Record<string, unknown>; readonly f…"
+          "signature": "export interface BulkIssueError { readonly status?: number; readonly elementErrors?: BulkErrorCollection; readonly faile…",
+          "jsdoc": "Spec: BulkOperationErrorResult"
         },
         {
           "name": "BulkCreateIssueData",
           "kind": "interface",
-          "line": 23,
+          "line": 48,
           "exported": true,
           "signature": "export interface BulkCreateIssueData { readonly issueUpdates: BulkIssueUpdate[]; }",
           "jsdoc": "Request body for bulk-creating multiple Jira issues in a single call."
@@ -23068,7 +23078,7 @@
         {
           "name": "BulkCreatedIssues",
           "kind": "interface",
-          "line": 28,
+          "line": 53,
           "exported": true,
           "signature": "export interface BulkCreatedIssues { readonly issues: BulkCreatedIssue[]; readonly errors?: BulkIssueError[]; }",
           "jsdoc": "Response from the bulk issue creation endpoint listing created issues and any per-issue errors."
@@ -23076,23 +23086,23 @@
         {
           "name": "BulkSetIssuePropertyData",
           "kind": "interface",
-          "line": 34,
+          "line": 62,
           "exported": true,
-          "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly filter?: { readonly entityIds?: string[]; …",
-          "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues."
+          "signature": "export interface BulkSetIssuePropertyData { readonly value: unknown; readonly expression?: string; readonly filter?: { r…",
+          "jsdoc": "Request body for bulk-setting a property value on multiple Jira issues. Spec: BulkIssuePropertyUpdateRequest"
         },
         {
           "name": "BulkDeleteIssuePropertyData",
           "kind": "interface",
-          "line": 44,
+          "line": 78,
           "exported": true,
-          "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: string[]; readonly currentValue?…",
-          "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues."
+          "signature": "export interface BulkDeleteIssuePropertyData { readonly filter?: { readonly entityIds?: number[]; readonly currentValue?…",
+          "jsdoc": "Request body for bulk-deleting a property from multiple Jira issues. Spec: IssueFilterForBulkPropertyDelete"
         },
         {
           "name": "SubmittedBulkOperation",
           "kind": "interface",
-          "line": 58,
+          "line": 93,
           "exported": true,
           "signature": "export interface SubmittedBulkOperation { readonly taskId: string; }",
           "jsdoc": "Async task identifier returned by every bulk POST endpoint (B345, B347, B348, B350, B351, B352). Callers poll `GET /rest/api/3/bulk/queue/{taskId}` (B353) until `status` is COMPLETE or FAILED — polling is intentionally NOT auto-driven inside the POST methods so the caller controls the cadence/timeout."
@@ -23100,140 +23110,250 @@
         {
           "name": "BulkDeleteIssuesInput",
           "kind": "interface",
-          "line": 64,
+          "line": 99,
           "exported": true,
           "signature": "export interface BulkDeleteIssuesInput { readonly selectedIssueIdsOrKeys: string[]; readonly sendBulkNotification?: bool…"
         },
         {
           "name": "BulkGetIssueFieldsParams",
           "kind": "interface",
-          "line": 71,
+          "line": 106,
           "exported": true,
           "signature": "export interface BulkGetIssueFieldsParams { readonly issueIdsOrKeys: string; readonly searchText?: string; readonly endi…"
         },
         {
           "name": "BulkEditableField",
           "kind": "interface",
-          "line": 78,
+          "line": 114,
           "exported": true,
-          "signature": "export interface BulkEditableField { readonly id: string; readonly name: string; readonly type: string; readonly isRequi…"
+          "signature": "export interface BulkEditableField { readonly id: string; readonly name: string; readonly type: string; readonly descrip…",
+          "jsdoc": "Spec: IssueBulkEditField"
         },
         {
           "name": "BulkEditableFieldsResponse",
           "kind": "interface",
-          "line": 89,
+          "line": 128,
           "exported": true,
-          "signature": "export interface BulkEditableFieldsResponse { readonly fields: BulkEditableField[]; }"
+          "signature": "export interface BulkEditableFieldsResponse { readonly fields: BulkEditableField[]; readonly endingBefore?: string; read…",
+          "jsdoc": "Spec: BulkEditGetFields"
         },
         {
           "name": "BulkEditIssueFieldsInput",
           "kind": "interface",
-          "line": 98,
+          "line": 141,
           "exported": true,
           "signature": "export interface BulkEditIssueFieldsInput { readonly editedFieldsInput: Record<string, unknown>; readonly selectedAction…"
         },
         {
           "name": "BulkMoveIssuesInput",
           "kind": "interface",
-          "line": 107,
+          "line": 150,
           "exported": true,
           "signature": "export interface BulkMoveIssuesInput { readonly sendBulkNotification?: boolean; readonly targetToSourcesMapping: Record<…"
         },
         {
           "name": "BulkGetTransitionsParams",
           "kind": "interface",
-          "line": 114,
+          "line": 157,
           "exported": true,
-          "signature": "export interface BulkGetTransitionsParams { readonly issueIdsOrKeys: string; }"
+          "signature": "export interface BulkGetTransitionsParams { readonly issueIdsOrKeys: string; readonly endingBefore?: string; readonly st…"
         },
         {
           "name": "BulkAvailableTransitionTarget",
           "kind": "interface",
-          "line": 118,
+          "line": 166,
           "exported": true,
-          "signature": "export interface BulkAvailableTransitionTarget { readonly statusId: string; readonly statusName: string; }"
+          "signature": "export interface BulkAvailableTransitionTarget { readonly statusId: number; readonly statusName: string; }",
+          "jsdoc": "Spec: IssueTransitionStatus"
         },
         {
           "name": "BulkAvailableTransition",
           "kind": "interface",
-          "line": 123,
+          "line": 173,
           "exported": true,
-          "signature": "export interface BulkAvailableTransition { readonly to: BulkAvailableTransitionTarget; readonly transitionId: string; re…"
+          "signature": "export interface BulkAvailableTransition { readonly to: BulkAvailableTransitionTarget; readonly transitionId: number; re…",
+          "jsdoc": "Spec: SimplifiedIssueTransition"
         },
         {
           "name": "BulkAvailableTransitionsForIssues",
           "kind": "interface",
-          "line": 129,
+          "line": 181,
           "exported": true,
-          "signature": "export interface BulkAvailableTransitionsForIssues { readonly isTransitionsFiltered: boolean; readonly issues: string[];…"
+          "signature": "export interface BulkAvailableTransitionsForIssues { readonly isTransitionsFiltered: boolean; readonly issues: string[];…",
+          "jsdoc": "Spec: IssueBulkTransitionForWorkflow"
         },
         {
           "name": "BulkAvailableTransitionsResponse",
           "kind": "interface",
-          "line": 135,
+          "line": 188,
           "exported": true,
-          "signature": "export interface BulkAvailableTransitionsResponse { readonly availableTransitions: BulkAvailableTransitionsForIssues[]; …"
+          "signature": "export interface BulkAvailableTransitionsResponse { readonly availableTransitions: BulkAvailableTransitionsForIssues[]; …",
+          "jsdoc": "Spec: BulkTransitionGetAvailableTransitions"
         },
         {
           "name": "BulkTransitionInput",
           "kind": "interface",
-          "line": 141,
+          "line": 198,
           "exported": true,
           "signature": "export interface BulkTransitionInput { readonly selectedIssueIdsOrKeys: string[]; readonly transitionId: string; }"
         },
         {
           "name": "BulkTransitionIssuesInput",
           "kind": "interface",
-          "line": 146,
+          "line": 203,
           "exported": true,
           "signature": "export interface BulkTransitionIssuesInput { readonly bulkTransitionInputs: BulkTransitionInput[]; readonly sendBulkNoti…"
         },
         {
           "name": "BulkWatchIssuesInput",
           "kind": "interface",
-          "line": 153,
+          "line": 210,
           "exported": true,
           "signature": "export interface BulkWatchIssuesInput { readonly selectedIssueIdsOrKeys: string[]; }"
         },
         {
           "name": "BulkOperationSubmittedBy",
           "kind": "interface",
-          "line": 159,
+          "line": 217,
           "exported": true,
-          "signature": "export interface BulkOperationSubmittedBy { readonly accountId: string; }"
+          "signature": "export interface BulkOperationSubmittedBy { readonly accountId?: string; readonly accountType?: string; readonly active?…",
+          "jsdoc": "Spec: BulkOperationProgress — submittedBy references the full User schema."
         },
         {
           "name": "BulkOperationProgress",
           "kind": "interface",
-          "line": 163,
+          "line": 229,
           "exported": true,
-          "signature": "export interface BulkOperationProgress { readonly taskId: string; readonly status: string; readonly progressPercent: num…"
+          "signature": "export interface BulkOperationProgress { readonly taskId: string; readonly status: | 'ENQUEUED' | 'RUNNING' | 'COMPLETE'…",
+          "jsdoc": "Spec: BulkOperationProgress"
+        },
+        {
+          "name": "DevopsBulkErrorMessage",
+          "kind": "interface",
+          "line": 268,
+          "exported": true,
+          "signature": "export interface DevopsBulkErrorMessage { readonly message: string; readonly errorTraceId?: string; }",
+          "jsdoc": "Shared error message shape used across DevOps bulk responses."
+        },
+        {
+          "name": "DevopsBuildKey",
+          "kind": "interface",
+          "line": 276,
+          "exported": true,
+          "signature": "export interface DevopsBuildKey { readonly pipelineId: string; readonly buildNumber: number; }"
+        },
+        {
+          "name": "DevopsRejectedBuild",
+          "kind": "interface",
+          "line": 281,
+          "exported": true,
+          "signature": "export interface DevopsRejectedBuild { readonly key: DevopsBuildKey; readonly errors: DevopsBulkErrorMessage[]; }"
+        },
+        {
+          "name": "SubmitBuildsResponse",
+          "kind": "interface",
+          "line": 286,
+          "exported": true,
+          "signature": "export interface SubmitBuildsResponse { readonly acceptedBuilds?: DevopsBuildKey[]; readonly rejectedBuilds?: DevopsReje…"
+        },
+        {
+          "name": "DevopsDeploymentKey",
+          "kind": "interface",
+          "line": 296,
+          "exported": true,
+          "signature": "export interface DevopsDeploymentKey { readonly pipelineId: string; readonly environmentId: string; readonly deploymentS…"
+        },
+        {
+          "name": "DevopsRejectedDeployment",
+          "kind": "interface",
+          "line": 302,
+          "exported": true,
+          "signature": "export interface DevopsRejectedDeployment { readonly key: DevopsDeploymentKey; readonly errors: DevopsBulkErrorMessage[]…"
+        },
+        {
+          "name": "SubmitDeploymentsResponse",
+          "kind": "interface",
+          "line": 307,
+          "exported": true,
+          "signature": "export interface SubmitDeploymentsResponse { readonly acceptedDeployments?: DevopsDeploymentKey[]; readonly rejectedDepl…"
+        },
+        {
+          "name": "DevopsDevinfoEntityIds",
+          "kind": "interface",
+          "line": 317,
+          "exported": true,
+          "signature": "export interface DevopsDevinfoEntityIds { readonly commits?: string[]; readonly branches?: string[]; readonly pullReques…"
+        },
+        {
+          "name": "SubmitDevInfoResponse",
+          "kind": "interface",
+          "line": 323,
+          "exported": true,
+          "signature": "export interface SubmitDevInfoResponse { readonly acceptedDevinfoEntities?: Record<string, DevopsDevinfoEntityIds>; read…"
+        },
+        {
+          "name": "SubmitDevopsComponentsResponse",
+          "kind": "interface",
+          "line": 340,
+          "exported": true,
+          "signature": "export interface SubmitDevopsComponentsResponse { readonly acceptedComponents?: unknown[]; readonly failedComponents?: u…"
+        },
+        {
+          "name": "SubmitFeatureFlagsResponse",
+          "kind": "interface",
+          "line": 348,
+          "exported": true,
+          "signature": "export interface SubmitFeatureFlagsResponse { readonly acceptedFeatureFlags?: unknown[]; readonly failedFeatureFlags?: u…"
+        },
+        {
+          "name": "SubmitOperationsResponse",
+          "kind": "interface",
+          "line": 357,
+          "exported": true,
+          "signature": "export interface SubmitOperationsResponse { readonly acceptedIncidents?: unknown[]; readonly failedIncidents?: unknown[]…"
+        },
+        {
+          "name": "SubmitRemoteLinksResponse",
+          "kind": "interface",
+          "line": 365,
+          "exported": true,
+          "signature": "export interface SubmitRemoteLinksResponse { readonly acceptedRemoteLinks?: unknown[]; readonly rejectedRemoteLinks?: un…"
+        },
+        {
+          "name": "SubmitSecurityResponse",
+          "kind": "interface",
+          "line": 373,
+          "exported": true,
+          "signature": "export interface SubmitSecurityResponse { readonly acceptedVulnerabilities?: unknown[]; readonly failedVulnerabilities?:…"
         },
         {
           "name": "DevopsBulkAcceptedEntity",
-          "kind": "interface",
-          "line": 180,
+          "kind": "type",
+          "line": 385,
           "exported": true,
-          "signature": "export interface DevopsBulkAcceptedEntity { readonly id: string; }"
+          "signature": "export type DevopsBulkAcceptedEntity = DevopsBuildKey;",
+          "jsdoc": "@deprecated Use SubmitBuildsResponse, SubmitDeploymentsResponse, or per-API response types."
         },
         {
           "name": "DevopsBulkFailedEntity",
           "kind": "interface",
-          "line": 184,
+          "line": 388,
           "exported": true,
-          "signature": "export interface DevopsBulkFailedEntity { readonly key?: string; readonly errors?: unknown[]; }"
+          "signature": "export interface DevopsBulkFailedEntity { readonly key?: string; readonly errors?: DevopsBulkErrorMessage[]; }",
+          "jsdoc": "@deprecated Use DevopsRejectedBuild, DevopsRejectedDeployment, or per-API error types."
         },
         {
           "name": "DevopsBulkSubmitResponse",
           "kind": "interface",
-          "line": 189,
+          "line": 398,
           "exported": true,
-          "signature": "export interface DevopsBulkSubmitResponse { readonly acceptedBuilds?: DevopsBulkAcceptedEntity[]; readonly acceptedDeplo…"
+          "signature": "export interface DevopsBulkSubmitResponse { readonly acceptedBuilds?: DevopsBuildKey[]; readonly acceptedDeployments?: D…",
+          "jsdoc": "@deprecated Use per-API response types: SubmitBuildsResponse, SubmitDeploymentsResponse, SubmitDevInfoResponse, SubmitDevopsComponentsResponse, SubmitFeatureFlagsResponse, SubmitOperationsResponse, SubmitRemoteLinksResponse, SubmitSecurityResponse."
         },
         {
           "name": "BulkResourceBaseUrls",
           "kind": "interface",
-          "line": 208,
+          "line": 414,
           "exported": true,
           "signature": "export interface BulkResourceBaseUrls { readonly builds: string; readonly deployments: string; readonly devInfo: string;…",
           "jsdoc": "Extra base URLs accepted alongside the v3 `baseUrl`. Each maps 1:1 to one of the DevOps integration APIs that exposes a POST `/bulk` ingest endpoint (B952, B956, B961, B967, B971, B980, B989, B993). They're injected from `JiraClient` so the resource stays transport-agnostic and the prefixes live in a single place."
@@ -23241,119 +23361,119 @@
         {
           "name": "BulkResource",
           "kind": "class",
-          "line": 219,
+          "line": 425,
           "exported": true,
           "signature": "export class BulkResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 220
+              "line": 426
             },
             {
               "name": "createBulk",
               "kind": "method",
-              "line": 227
+              "line": 433
             },
             {
               "name": "setPropertyBulk",
               "kind": "method",
-              "line": 237
+              "line": 443
             },
             {
               "name": "deletePropertyBulk",
               "kind": "method",
-              "line": 246
+              "line": 455
             },
             {
               "name": "deleteIssuesBulk",
               "kind": "method",
-              "line": 261
+              "line": 470
             },
             {
               "name": "getIssueFieldsBulk",
               "kind": "method",
-              "line": 276
+              "line": 485
             },
             {
               "name": "editIssueFieldsBulk",
               "kind": "method",
-              "line": 296
+              "line": 505
             },
             {
               "name": "moveIssuesBulk",
               "kind": "method",
-              "line": 312
+              "line": 521
             },
             {
               "name": "getAvailableTransitionsBulk",
               "kind": "method",
-              "line": 327
+              "line": 536
             },
             {
               "name": "transitionIssuesBulk",
               "kind": "method",
-              "line": 345
+              "line": 557
             },
             {
               "name": "unwatchIssuesBulk",
               "kind": "method",
-              "line": 361
+              "line": 573
             },
             {
               "name": "watchIssuesBulk",
               "kind": "method",
-              "line": 377
+              "line": 589
             },
             {
               "name": "getBulkOperationStatus",
               "kind": "method",
-              "line": 392
+              "line": 604
             },
             {
               "name": "submitBuilds",
               "kind": "method",
-              "line": 410
+              "line": 620
             },
             {
               "name": "submitDeployments",
               "kind": "method",
-              "line": 422
+              "line": 632
             },
             {
               "name": "submitDevInfo",
               "kind": "method",
-              "line": 434
+              "line": 644
             },
             {
               "name": "submitDevopsComponents",
               "kind": "method",
-              "line": 446
+              "line": 656
             },
             {
               "name": "submitFeatureFlags",
               "kind": "method",
-              "line": 458
+              "line": 668
             },
             {
               "name": "submitOperations",
               "kind": "method",
-              "line": 470
+              "line": 680
             },
             {
               "name": "submitRemoteLinks",
               "kind": "method",
-              "line": 482
+              "line": 692
             },
             {
               "name": "submitSecurity",
               "kind": "method",
-              "line": 494
+              "line": 704
             },
             {
               "name": "requireDevopsBaseUrls",
               "kind": "method",
-              "line": 503
+              "line": 713
             }
           ]
         }
@@ -25017,17 +25137,41 @@
       "path": "src/jira/resources/fields.ts",
       "symbols": [
         {
-          "name": "Field",
+          "name": "FieldSchema",
           "kind": "interface",
           "line": 8,
           "exported": true,
-          "signature": "export interface Field { readonly id: string; readonly name: string; readonly custom: boolean; readonly orderable?: bool…",
-          "jsdoc": "A Jira issue field (system or custom)."
+          "signature": "export interface FieldSchema { readonly type: string; readonly system?: string; readonly custom?: string; readonly custo…",
+          "jsdoc": "JsonTypeBean — the schema of a Jira field."
+        },
+        {
+          "name": "Field",
+          "kind": "interface",
+          "line": 23,
+          "exported": true,
+          "signature": "export interface Field { readonly id: string; readonly name: string; readonly schema: FieldSchema; readonly key?: string…",
+          "jsdoc": "A Jira field as returned by the paginated GET /field/search endpoint. Spec: Field schema — required: id, name, schema. Note: does NOT include `custom`, `orderable`, `navigable`, `searchable`, `clauseNames`, or `scope` — those are part of FieldDetails (GET /field)."
+        },
+        {
+          "name": "FieldDetails",
+          "kind": "interface",
+          "line": 48,
+          "exported": true,
+          "signature": "export interface FieldDetails { readonly id: string; readonly key?: string; readonly name: string; readonly custom: bool…",
+          "jsdoc": "A Jira field as returned by GET /field (all fields, flat array) and POST /field (create custom field). Spec: FieldDetails schema. Includes `custom`, `orderable`, `navigable`, `searchable`, `clauseNames`, `scope`."
+        },
+        {
+          "name": "FieldSearcherKey",
+          "kind": "type",
+          "line": 65,
+          "exported": true,
+          "signature": "export type FieldSearcherKey = | 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselectsearcher' | 'com.atla…",
+          "jsdoc": "Valid searcher keys for Jira custom fields. Spec: CustomFieldDefinitionJsonBean.searcherKey enum."
         },
         {
           "name": "CreateFieldData",
           "kind": "interface",
-          "line": 31,
+          "line": 81,
           "exported": true,
           "signature": "export interface CreateFieldData { readonly name: string; readonly description?: string; readonly type: string; readonly…",
           "jsdoc": "Request body for creating a new custom Jira field."
@@ -25035,15 +25179,23 @@
         {
           "name": "UpdateFieldData",
           "kind": "interface",
-          "line": 39,
+          "line": 89,
           "exported": true,
-          "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: string;…",
+          "signature": "export interface UpdateFieldData { readonly name?: string; readonly description?: string; readonly searcherKey?: FieldSe…",
           "jsdoc": "Request body for updating an existing custom Jira field."
+        },
+        {
+          "name": "FieldOrderBy",
+          "kind": "type",
+          "line": 100,
+          "exported": true,
+          "signature": "export type FieldOrderBy = | 'contextsCount' | '-contextsCount' | '+contextsCount' | 'lastUsed' | '-lastUsed' | '+lastUs…",
+          "jsdoc": "Valid orderBy values for GET /field/search. Spec: contextsCount, lastUsed, name, screensCount, projectsCount (with optional +/- prefix). The `| (string & {})` tail preserves autocomplete while still accepting arbitrary strings."
         },
         {
           "name": "ListFieldsParams",
           "kind": "interface",
-          "line": 46,
+          "line": 119,
           "exported": true,
           "signature": "export interface ListFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly type?: ('custom' |…",
           "jsdoc": "Query parameters for listing Jira fields."
@@ -25051,7 +25203,7 @@
         {
           "name": "FieldContext",
           "kind": "interface",
-          "line": 59,
+          "line": 132,
           "exported": true,
           "signature": "export interface FieldContext { readonly id: string; readonly name: string; readonly description: string; readonly isGlo…",
           "jsdoc": "A custom field context."
@@ -25059,7 +25211,7 @@
         {
           "name": "FieldContextPage",
           "kind": "type",
-          "line": 68,
+          "line": 141,
           "exported": true,
           "signature": "export type FieldContextPage = OffsetPaginatedResponse<FieldContext>;",
           "jsdoc": "Paginated page of FieldContext items."
@@ -25067,7 +25219,7 @@
         {
           "name": "ListFieldContextsParams",
           "kind": "interface",
-          "line": 71,
+          "line": 144,
           "exported": true,
           "signature": "export interface ListFieldContextsParams { readonly isAnyIssueType?: boolean; readonly isGlobalContext?: boolean; readon…",
           "jsdoc": "Query parameters for listing field contexts (B415)."
@@ -25075,7 +25227,7 @@
         {
           "name": "CreateFieldContextData",
           "kind": "interface",
-          "line": 80,
+          "line": 153,
           "exported": true,
           "signature": "export interface CreateFieldContextData { readonly name: string; readonly description?: string; readonly projectIds?: st…",
           "jsdoc": "Request body for creating a custom field context (B416)."
@@ -25083,7 +25235,7 @@
         {
           "name": "CreatedFieldContext",
           "kind": "interface",
-          "line": 88,
+          "line": 161,
           "exported": true,
           "signature": "export interface CreatedFieldContext { readonly id?: string; readonly name: string; readonly description?: string; reado…",
           "jsdoc": "Response shape returned by POST /field/{fieldId}/context (CreateCustomFieldContext). B416"
@@ -25091,7 +25243,7 @@
         {
           "name": "UpdateFieldContextData",
           "kind": "interface",
-          "line": 97,
+          "line": 170,
           "exported": true,
           "signature": "export interface UpdateFieldContextData { readonly name?: string; readonly description?: string; }",
           "jsdoc": "Request body for updating a custom field context (B418)."
@@ -25099,7 +25251,7 @@
         {
           "name": "FieldContextOption",
           "kind": "interface",
-          "line": 103,
+          "line": 176,
           "exported": true,
           "signature": "export interface FieldContextOption { readonly id: string; readonly value: string; readonly disabled: boolean; readonly …",
           "jsdoc": "A single custom field context option (B421)."
@@ -25107,7 +25259,7 @@
         {
           "name": "FieldContextOptionPage",
           "kind": "type",
-          "line": 111,
+          "line": 184,
           "exported": true,
           "signature": "export type FieldContextOptionPage = OffsetPaginatedResponse<FieldContextOption>;",
           "jsdoc": "Paginated page of FieldContextOption items (B421)."
@@ -25115,7 +25267,7 @@
         {
           "name": "ListFieldContextOptionsParams",
           "kind": "interface",
-          "line": 114,
+          "line": 187,
           "exported": true,
           "signature": "export interface ListFieldContextOptionsParams { readonly optionId?: number; readonly onlyOptions?: boolean; readonly st…",
           "jsdoc": "Query parameters for listing field context options (B421)."
@@ -25123,7 +25275,7 @@
         {
           "name": "FieldContextOptionCreateItem",
           "kind": "interface",
-          "line": 122,
+          "line": 195,
           "exported": true,
           "signature": "export interface FieldContextOptionCreateItem { readonly value: string; readonly disabled?: boolean; readonly optionId?:…",
           "jsdoc": "A single option to create within a field context (B422)."
@@ -25131,7 +25283,7 @@
         {
           "name": "BulkCreateFieldContextOptionData",
           "kind": "interface",
-          "line": 129,
+          "line": 202,
           "exported": true,
           "signature": "export interface BulkCreateFieldContextOptionData { readonly options?: readonly FieldContextOptionCreateItem[]; }",
           "jsdoc": "Request body for bulk-creating custom field context options (B422)."
@@ -25139,7 +25291,7 @@
         {
           "name": "CreatedFieldContextOptionsList",
           "kind": "interface",
-          "line": 134,
+          "line": 207,
           "exported": true,
           "signature": "export interface CreatedFieldContextOptionsList { readonly options?: readonly FieldContextOption[]; }",
           "jsdoc": "Response envelope returned by POST /field/{fieldId}/context/{contextId}/option (B422)."
@@ -25147,7 +25299,7 @@
         {
           "name": "FieldContextOptionUpdateItem",
           "kind": "interface",
-          "line": 139,
+          "line": 212,
           "exported": true,
           "signature": "export interface FieldContextOptionUpdateItem { readonly id: string; readonly value?: string; readonly disabled?: boolea…",
           "jsdoc": "A single option to update within a field context (B423)."
@@ -25155,7 +25307,7 @@
         {
           "name": "BulkUpdateFieldContextOptionData",
           "kind": "interface",
-          "line": 146,
+          "line": 219,
           "exported": true,
           "signature": "export interface BulkUpdateFieldContextOptionData { readonly options?: readonly FieldContextOptionUpdateItem[]; }",
           "jsdoc": "Request body for bulk-updating custom field context options (B423)."
@@ -25163,7 +25315,7 @@
         {
           "name": "UpdatedFieldContextOptionsList",
           "kind": "interface",
-          "line": 153,
+          "line": 226,
           "exported": true,
           "signature": "export interface UpdatedFieldContextOptionsList { readonly options?: readonly FieldContextOptionUpdateItem[]; }",
           "jsdoc": "Response envelope returned by PUT /field/{fieldId}/context/{contextId}/option (B423). Note: the spec's `CustomFieldUpdatedContextOptionsList` wraps `CustomFieldOptionUpdate` items (id + value? + disabled?), not the full `CustomFieldContextOption` shape."
@@ -25171,7 +25323,7 @@
         {
           "name": "ReplaceContextOptionOnIssuesParams",
           "kind": "interface",
-          "line": 158,
+          "line": 231,
           "exported": true,
           "signature": "export interface ReplaceContextOptionOnIssuesParams { readonly replaceWith?: number; readonly jql?: string; }",
           "jsdoc": "Query parameters for replacing a custom field option on issues (B425)."
@@ -25179,7 +25331,7 @@
         {
           "name": "TaskProgressBeanRemoveOptionFromIssuesResult",
           "kind": "interface",
-          "line": 164,
+          "line": 237,
           "exported": true,
           "signature": "export interface TaskProgressBeanRemoveOptionFromIssuesResult { readonly id: string; readonly self: string; readonly des…",
           "jsdoc": "Task progress result returned by DELETE /field/{fieldId}/context/{contextId}/option/{optionId}/issue (B425, 303)."
@@ -25187,7 +25339,7 @@
         {
           "name": "OrderFieldContextOptionsData",
           "kind": "interface",
-          "line": 185,
+          "line": 258,
           "exported": true,
           "signature": "export interface OrderFieldContextOptionsData { readonly customFieldOptionIds: readonly string[]; readonly after?: strin…",
           "jsdoc": "Request body for reordering custom field context options (B426)."
@@ -25195,7 +25347,7 @@
         {
           "name": "FieldContextIssueTypeIdsBody",
           "kind": "interface",
-          "line": 194,
+          "line": 267,
           "exported": true,
           "signature": "export interface FieldContextIssueTypeIdsBody { readonly issueTypeIds: readonly string[]; }",
           "jsdoc": "Request body for adding or removing issue types from a context (B419, B420)."
@@ -25203,7 +25355,7 @@
         {
           "name": "FieldContextIssueTypeMapping",
           "kind": "interface",
-          "line": 199,
+          "line": 272,
           "exported": true,
           "signature": "export interface FieldContextIssueTypeMapping { readonly contextId: string; readonly issueTypeId?: string; readonly isAn…",
           "jsdoc": "A single mapping of a context to an issue type (B429)."
@@ -25211,7 +25363,7 @@
         {
           "name": "FieldContextIssueTypeMappingPage",
           "kind": "type",
-          "line": 209,
+          "line": 282,
           "exported": true,
           "signature": "export type FieldContextIssueTypeMappingPage = OffsetPaginatedResponse<FieldContextIssueTypeMapping>;",
           "jsdoc": "Paginated page of FieldContextIssueTypeMapping items (B429)."
@@ -25219,7 +25371,7 @@
         {
           "name": "ListFieldContextIssueTypeMappingParams",
           "kind": "interface",
-          "line": 213,
+          "line": 286,
           "exported": true,
           "signature": "export interface ListFieldContextIssueTypeMappingParams { readonly contextId?: number[]; readonly startAt?: number; read…",
           "jsdoc": "Query parameters for listing field context issue-type mappings (B429)."
@@ -25227,7 +25379,7 @@
         {
           "name": "FieldContextUserFilter",
           "kind": "interface",
-          "line": 258,
+          "line": 331,
           "exported": true,
           "signature": "export interface FieldContextUserFilter { readonly enabled: boolean; readonly groups?: readonly string[]; readonly roleI…",
           "jsdoc": "Filter applied to user-picker autocomplete suggestions."
@@ -25235,7 +25387,7 @@
         {
           "name": "FieldContextDefaultValueCascadingOption",
           "kind": "interface",
-          "line": 265,
+          "line": 338,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueCascadingOption { readonly type: 'option.cascading'; readonly contextId: string…",
           "jsdoc": "type: `option.cascading` — cascading select list default."
@@ -25243,7 +25395,7 @@
         {
           "name": "FieldContextDefaultValueMultipleOption",
           "kind": "interface",
-          "line": 273,
+          "line": 346,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleOption { readonly type: 'option.multiple'; readonly contextId: string; …",
           "jsdoc": "type: `option.multiple` — multi-select / checkbox default."
@@ -25251,7 +25403,7 @@
         {
           "name": "FieldContextDefaultValueSingleOption",
           "kind": "interface",
-          "line": 280,
+          "line": 353,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleOption { readonly type: 'option.single'; readonly contextId: string; read…",
           "jsdoc": "type: `option.single` — single-select / radio-button default."
@@ -25259,7 +25411,7 @@
         {
           "name": "FieldContextDefaultValueSingleUserPicker",
           "kind": "interface",
-          "line": 287,
+          "line": 360,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleUserPicker { readonly type: 'single.user.select'; readonly contextId: str…",
           "jsdoc": "type: `single.user.select` — single user picker default."
@@ -25267,7 +25419,7 @@
         {
           "name": "FieldContextDefaultValueMultiUserPicker",
           "kind": "interface",
-          "line": 295,
+          "line": 368,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultiUserPicker { readonly type: 'multi.user.select'; readonly contextId: strin…",
           "jsdoc": "type: `multi.user.select` — multi user picker default."
@@ -25275,7 +25427,7 @@
         {
           "name": "FieldContextDefaultValueSingleGroupPicker",
           "kind": "interface",
-          "line": 302,
+          "line": 375,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleGroupPicker { readonly type: 'grouppicker.single'; readonly contextId: st…",
           "jsdoc": "type: `grouppicker.single` — single group picker default."
@@ -25283,7 +25435,7 @@
         {
           "name": "FieldContextDefaultValueMultipleGroupPicker",
           "kind": "interface",
-          "line": 309,
+          "line": 382,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleGroupPicker { readonly type: 'grouppicker.multiple'; readonly contextId…",
           "jsdoc": "type: `grouppicker.multiple` — multiple group picker default."
@@ -25291,7 +25443,7 @@
         {
           "name": "FieldContextDefaultValueDate",
           "kind": "interface",
-          "line": 316,
+          "line": 389,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueDate { readonly type: 'datepicker'; readonly contextId: string; readonly date?:…",
           "jsdoc": "type: `datepicker` — date field default (ISO date string)."
@@ -25299,7 +25451,7 @@
         {
           "name": "FieldContextDefaultValueDateTime",
           "kind": "interface",
-          "line": 324,
+          "line": 397,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueDateTime { readonly type: 'datetimepicker'; readonly contextId: string; readonl…",
           "jsdoc": "type: `datetimepicker` — date-time field default (ISO datetime string)."
@@ -25307,7 +25459,7 @@
         {
           "name": "FieldContextDefaultValueURL",
           "kind": "interface",
-          "line": 332,
+          "line": 405,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueURL { readonly type: 'url'; readonly contextId: string; readonly url: string; }",
           "jsdoc": "type: `url` — URL field default."
@@ -25315,7 +25467,7 @@
         {
           "name": "FieldContextDefaultValueProject",
           "kind": "interface",
-          "line": 339,
+          "line": 412,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueProject { readonly type: 'project'; readonly contextId: string; readonly projec…",
           "jsdoc": "type: `project` — project picker default."
@@ -25323,7 +25475,7 @@
         {
           "name": "FieldContextDefaultValueFloat",
           "kind": "interface",
-          "line": 346,
+          "line": 419,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueFloat { readonly type: 'float'; readonly contextId: string; readonly number: nu…",
           "jsdoc": "type: `float` — floating-point number default."
@@ -25331,7 +25483,7 @@
         {
           "name": "FieldContextDefaultValueLabels",
           "kind": "interface",
-          "line": 353,
+          "line": 426,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueLabels { readonly type: 'labels'; readonly contextId: string; readonly labels: …",
           "jsdoc": "type: `labels` — labels field default."
@@ -25339,7 +25491,7 @@
         {
           "name": "FieldContextDefaultValueTextField",
           "kind": "interface",
-          "line": 360,
+          "line": 433,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueTextField { readonly type: 'textfield'; readonly contextId: string; readonly te…",
           "jsdoc": "type: `textfield` — text field default (max 254 chars)."
@@ -25347,7 +25499,7 @@
         {
           "name": "FieldContextDefaultValueTextArea",
           "kind": "interface",
-          "line": 367,
+          "line": 440,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueTextArea { readonly type: 'textarea'; readonly contextId: string; readonly text…",
           "jsdoc": "type: `textarea` — text area field default (max 32767 chars)."
@@ -25355,7 +25507,7 @@
         {
           "name": "FieldContextDefaultValueReadOnly",
           "kind": "interface",
-          "line": 374,
+          "line": 447,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueReadOnly { readonly type: 'readonly'; readonly contextId: string; readonly text…",
           "jsdoc": "type: `readonly` — read-only text field default (max 255 chars)."
@@ -25363,7 +25515,7 @@
         {
           "name": "FieldContextDefaultValueSingleVersionPicker",
           "kind": "interface",
-          "line": 381,
+          "line": 454,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueSingleVersionPicker { readonly type: 'version.single'; readonly contextId: stri…",
           "jsdoc": "type: `version.single` — single version picker default."
@@ -25371,7 +25523,7 @@
         {
           "name": "FieldContextDefaultValueMultipleVersionPicker",
           "kind": "interface",
-          "line": 389,
+          "line": 462,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueMultipleVersionPicker { readonly type: 'version.multiple'; readonly contextId: …",
           "jsdoc": "type: `version.multiple` — multiple version picker default."
@@ -25379,7 +25531,7 @@
         {
           "name": "FieldContextDefaultValueForgeStringField",
           "kind": "interface",
-          "line": 397,
+          "line": 470,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeStringField { readonly type: 'forge.string'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.string` — Forge string field default (max 254 chars)."
@@ -25387,7 +25539,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiStringField",
           "kind": "interface",
-          "line": 404,
+          "line": 477,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiStringField { readonly type: 'forge.string.list'; readonly contextId:…",
           "jsdoc": "type: `forge.string.list` — Forge collection-of-strings field default."
@@ -25395,7 +25547,7 @@
         {
           "name": "FieldContextDefaultValueForgeObjectField",
           "kind": "interface",
-          "line": 411,
+          "line": 484,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeObjectField { readonly type: 'forge.object'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.object` — Forge object field default."
@@ -25403,7 +25555,7 @@
         {
           "name": "FieldContextDefaultValueForgeDateTimeField",
           "kind": "interface",
-          "line": 418,
+          "line": 491,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeDateTimeField { readonly type: 'forge.datetime'; readonly contextId: strin…",
           "jsdoc": "type: `forge.datetime` — Forge date-time field default."
@@ -25411,7 +25563,7 @@
         {
           "name": "FieldContextDefaultValueForgeGroupField",
           "kind": "interface",
-          "line": 426,
+          "line": 499,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeGroupField { readonly type: 'forge.group'; readonly contextId: string; rea…",
           "jsdoc": "type: `forge.group` — Forge group field default."
@@ -25419,7 +25571,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiGroupField",
           "kind": "interface",
-          "line": 433,
+          "line": 506,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiGroupField { readonly type: 'forge.group.list'; readonly contextId: s…",
           "jsdoc": "type: `forge.group.list` — Forge group-collection field default."
@@ -25427,7 +25579,7 @@
         {
           "name": "FieldContextDefaultValueForgeNumberField",
           "kind": "interface",
-          "line": 440,
+          "line": 513,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeNumberField { readonly type: 'forge.number'; readonly contextId: string; r…",
           "jsdoc": "type: `forge.number` — Forge number field default."
@@ -25435,7 +25587,7 @@
         {
           "name": "FieldContextDefaultValueForgeUserField",
           "kind": "interface",
-          "line": 447,
+          "line": 520,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeUserField { readonly type: 'forge.user'; readonly contextId: string; reado…",
           "jsdoc": "type: `forge.user` — Forge user field default."
@@ -25443,7 +25595,7 @@
         {
           "name": "FieldContextDefaultValueForgeMultiUserField",
           "kind": "interface",
-          "line": 455,
+          "line": 528,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueForgeMultiUserField { readonly type: 'forge.user.list'; readonly contextId: str…",
           "jsdoc": "type: `forge.user.list` — Forge user-collection field default."
@@ -25451,7 +25603,7 @@
         {
           "name": "FieldContextDefaultValueUnknown",
           "kind": "interface",
-          "line": 466,
+          "line": 539,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueUnknown { readonly type: string; readonly contextId: string; readonly [key: str…",
           "jsdoc": "Forward-compat fallback for default-value variants not yet defined in the spec snapshot (2026-05-30). Placed last in the union so typed variants take precedence in narrowing."
@@ -25459,7 +25611,7 @@
         {
           "name": "FieldContextDefaultValue",
           "kind": "type",
-          "line": 478,
+          "line": 551,
           "exported": true,
           "signature": "export type FieldContextDefaultValue = | FieldContextDefaultValueCascadingOption | FieldContextDefaultValueMultipleOptio…",
           "jsdoc": "Polymorphic union for CustomFieldContextDefaultValue. Discriminated by the `type` string literal. 27 variants typed exactly per spec snapshot 2026-05-30. FieldContextDefaultValueUnknown at the end covers future variants."
@@ -25467,7 +25619,7 @@
         {
           "name": "FieldContextDefaultValuePage",
           "kind": "type",
-          "line": 509,
+          "line": 582,
           "exported": true,
           "signature": "export type FieldContextDefaultValuePage = OffsetPaginatedResponse<FieldContextDefaultValue>;",
           "jsdoc": "Paginated page of FieldContextDefaultValue items (B905)."
@@ -25475,7 +25627,7 @@
         {
           "name": "ListFieldContextDefaultValueParams",
           "kind": "interface",
-          "line": 512,
+          "line": 585,
           "exported": true,
           "signature": "export interface ListFieldContextDefaultValueParams { readonly contextId?: number[]; readonly startAt?: number; readonly…",
           "jsdoc": "Query parameters for listing field context default values (B905)."
@@ -25483,7 +25635,7 @@
         {
           "name": "FieldContextDefaultValueUpdateBody",
           "kind": "interface",
-          "line": 519,
+          "line": 592,
           "exported": true,
           "signature": "export interface FieldContextDefaultValueUpdateBody { readonly defaultValues?: readonly FieldContextDefaultValue[]; }",
           "jsdoc": "Request body for bulk-updating field context default values (B906)."
@@ -25491,7 +25643,7 @@
         {
           "name": "IssueFieldOptionScope",
           "kind": "interface",
-          "line": 529,
+          "line": 602,
           "exported": true,
           "signature": "export interface IssueFieldOptionScope { readonly projects?: readonly number[]; readonly projects2?: readonly { readonly…",
           "jsdoc": "Scope configuration for a field-key option. Spec: IssueFieldOptionConfiguration.scope (IssueFieldOptionScopeBean)"
@@ -25499,7 +25651,7 @@
         {
           "name": "IssueFieldOptionConfiguration",
           "kind": "interface",
-          "line": 550,
+          "line": 623,
           "exported": true,
           "signature": "export interface IssueFieldOptionConfiguration { readonly attributes?: readonly ('notSelectable' | 'defaultValue')[]; re…",
           "jsdoc": "Configuration for a field-key option. Spec: IssueFieldOptionConfiguration."
@@ -25507,7 +25659,7 @@
         {
           "name": "IssueFieldOption",
           "kind": "interface",
-          "line": 562,
+          "line": 635,
           "exported": true,
           "signature": "export interface IssueFieldOption { readonly id: number; readonly value: string; readonly properties?: Record<string, un…",
           "jsdoc": "A single issue field option (Connect-app-managed). Spec: IssueFieldOption — required: id, value. B433, B434, B436, B437"
@@ -25515,7 +25667,7 @@
         {
           "name": "IssueFieldOptionPage",
           "kind": "type",
-          "line": 574,
+          "line": 647,
           "exported": true,
           "signature": "export type IssueFieldOptionPage = OffsetPaginatedResponse<IssueFieldOption>;",
           "jsdoc": "Paginated page of IssueFieldOption items. B433, B439, B440"
@@ -25523,7 +25675,7 @@
         {
           "name": "ListIssueFieldOptionsParams",
           "kind": "interface",
-          "line": 577,
+          "line": 650,
           "exported": true,
           "signature": "export interface ListIssueFieldOptionsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query params for listing all field options (B433)."
@@ -25531,7 +25683,7 @@
         {
           "name": "CreateIssueFieldOptionData",
           "kind": "interface",
-          "line": 586,
+          "line": 659,
           "exported": true,
           "signature": "export interface CreateIssueFieldOptionData { readonly value: string; readonly properties?: Record<string, unknown>; rea…",
           "jsdoc": "Request body for creating a field option (B434). Spec: IssueFieldOptionCreateBean — required: value."
@@ -25539,7 +25691,7 @@
         {
           "name": "ReplaceIssueFieldOptionOnIssuesParams",
           "kind": "interface",
-          "line": 596,
+          "line": 669,
           "exported": true,
           "signature": "export interface ReplaceIssueFieldOptionOnIssuesParams { readonly replaceWith?: number; readonly jql?: string; readonly …",
           "jsdoc": "Query params for replacing a field option on issues (B438)."
@@ -25547,7 +25699,7 @@
         {
           "name": "ListIssueFieldOptionSuggestionsParams",
           "kind": "interface",
-          "line": 608,
+          "line": 681,
           "exported": true,
           "signature": "export interface ListIssueFieldOptionSuggestionsParams { readonly startAt?: number; readonly maxResults?: number; readon…",
           "jsdoc": "Query params for listing field option suggestions (B439, B440)."
@@ -25555,7 +25707,7 @@
         {
           "name": "FieldProjectAssociation",
           "kind": "interface",
-          "line": 619,
+          "line": 692,
           "exported": true,
           "signature": "export interface FieldProjectAssociation { readonly projectId?: string; }",
           "jsdoc": "A single project association entry returned by B414. Spec: FieldProjectAssociation"
@@ -25563,7 +25715,7 @@
         {
           "name": "FieldProjectAssociationPage",
           "kind": "type",
-          "line": 625,
+          "line": 698,
           "exported": true,
           "signature": "export type FieldProjectAssociationPage = OffsetPaginatedResponse<FieldProjectAssociation>;",
           "jsdoc": "Paginated page of FieldProjectAssociation items (B414). Spec: PageBeanFieldProjectAssociation"
@@ -25571,7 +25723,7 @@
         {
           "name": "ListFieldProjectAssociationsParams",
           "kind": "interface",
-          "line": 628,
+          "line": 701,
           "exported": true,
           "signature": "export interface ListFieldProjectAssociationsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for listing field project associations (B414)."
@@ -25579,7 +25731,7 @@
         {
           "name": "ScreenWithTab",
           "kind": "interface",
-          "line": 635,
+          "line": 708,
           "exported": true,
           "signature": "export interface ScreenWithTab { readonly id?: number; readonly name?: string; readonly description?: string; readonly s…",
           "jsdoc": "A single screen with tab info returned by B432. Spec: ScreenWithTab"
@@ -25587,7 +25739,7 @@
         {
           "name": "ScreenWithTabPage",
           "kind": "type",
-          "line": 648,
+          "line": 721,
           "exported": true,
           "signature": "export type ScreenWithTabPage = OffsetPaginatedResponse<ScreenWithTab>;",
           "jsdoc": "Paginated page of ScreenWithTab items (B432). Spec: PageBeanScreenWithTab"
@@ -25595,7 +25747,7 @@
         {
           "name": "ListScreensForFieldParams",
           "kind": "interface",
-          "line": 651,
+          "line": 724,
           "exported": true,
           "signature": "export interface ListScreensForFieldParams { readonly startAt?: number; readonly maxResults?: number; readonly expand?: …",
           "jsdoc": "Query parameters for listing screens for a field (B432)."
@@ -25603,7 +25755,7 @@
         {
           "name": "AssociationContextObject",
           "kind": "interface",
-          "line": 659,
+          "line": 732,
           "exported": true,
           "signature": "export interface AssociationContextObject { readonly type: string; readonly identifier?: unknown; }",
           "jsdoc": "Context association item in an association request (B444, B445). Spec: AssociationContextObject — discriminated by `type` (e.g. PROJECT_ID)."
@@ -25611,7 +25763,7 @@
         {
           "name": "FieldIdentifierObject",
           "kind": "interface",
-          "line": 666,
+          "line": 739,
           "exported": true,
           "signature": "export interface FieldIdentifierObject { readonly type: string; readonly identifier?: unknown; }",
           "jsdoc": "Field identifier item in an association request (B444, B445). Spec: FieldIdentifierObject — discriminated by `type` (e.g. FIELD_ID)."
@@ -25619,7 +25771,7 @@
         {
           "name": "FieldAssociationsRequest",
           "kind": "interface",
-          "line": 674,
+          "line": 747,
           "exported": true,
           "signature": "export interface FieldAssociationsRequest { readonly associationContexts: readonly AssociationContextObject[]; readonly …",
           "jsdoc": "Request body for PUT /rest/api/3/field/association (B445) and DELETE /rest/api/3/field/association (B444). Spec: FieldAssociationsRequest"
@@ -25627,7 +25779,7 @@
         {
           "name": "ListTrashedFieldsParams",
           "kind": "interface",
-          "line": 680,
+          "line": 753,
           "exported": true,
           "signature": "export interface ListTrashedFieldsParams { readonly startAt?: number; readonly maxResults?: number; readonly id?: string…",
           "jsdoc": "Query parameters for GET /rest/api/3/field/search/trashed (B447)."
@@ -25635,7 +25787,7 @@
         {
           "name": "FieldContextProjectIdsBody",
           "kind": "interface",
-          "line": 693,
+          "line": 766,
           "exported": true,
           "signature": "export interface FieldContextProjectIdsBody { readonly projectIds: readonly string[]; }",
           "jsdoc": "Request body for assigning or removing projects from a context (B427, B428). Spec: ProjectIds"
@@ -25643,7 +25795,7 @@
         {
           "name": "FieldContextProjectMapping",
           "kind": "interface",
-          "line": 699,
+          "line": 772,
           "exported": true,
           "signature": "export interface FieldContextProjectMapping { readonly contextId: string; readonly projectId?: string; readonly isGlobal…",
           "jsdoc": "A single context-to-project association entry (B431). Spec: CustomFieldContextProjectMapping"
@@ -25651,7 +25803,7 @@
         {
           "name": "FieldContextProjectMappingPage",
           "kind": "type",
-          "line": 710,
+          "line": 783,
           "exported": true,
           "signature": "export type FieldContextProjectMappingPage = OffsetPaginatedResponse<FieldContextProjectMapping>;",
           "jsdoc": "Paginated page of FieldContextProjectMapping items (B431). Spec: PageBeanCustomFieldContextProjectMapping"
@@ -25659,7 +25811,7 @@
         {
           "name": "ListFieldContextProjectMappingParams",
           "kind": "interface",
-          "line": 713,
+          "line": 786,
           "exported": true,
           "signature": "export interface ListFieldContextProjectMappingParams { readonly contextId?: number[]; readonly startAt?: number; readon…",
           "jsdoc": "Query parameters for listing context-to-project mappings (B431)."
@@ -25667,7 +25819,7 @@
         {
           "name": "FieldContextProjectIssueTypeMapping",
           "kind": "interface",
-          "line": 722,
+          "line": 795,
           "exported": true,
           "signature": "export interface FieldContextProjectIssueTypeMapping { readonly projectId: string; readonly issueTypeId: string; }",
           "jsdoc": "A single project+issueType entry in a bulk mapping lookup (B430). Spec: ProjectIssueTypeMapping"
@@ -25675,7 +25827,7 @@
         {
           "name": "FieldContextMappingBulkBody",
           "kind": "interface",
-          "line": 729,
+          "line": 802,
           "exported": true,
           "signature": "export interface FieldContextMappingBulkBody { readonly mappings: readonly FieldContextProjectIssueTypeMapping[]; }",
           "jsdoc": "Request body for bulk-looking up contexts by project+issueType pairs (B430). Spec: ProjectIssueTypeMappings"
@@ -25683,15 +25835,15 @@
         {
           "name": "FieldContextForProjectAndIssueType",
           "kind": "interface",
-          "line": 736,
+          "line": 808,
           "exported": true,
-          "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string | null; readonly issueTypeId: string; r…",
-          "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType. `contextId` is `null` when no context matches the {projectId, issueTypeId} pair."
+          "signature": "export interface FieldContextForProjectAndIssueType { readonly contextId: string; readonly issueTypeId: string; readonly…",
+          "jsdoc": "A single result item from the bulk context lookup (B430). Spec: ContextForProjectAndIssueType — contextId is required (non-nullable string)."
         },
         {
           "name": "FieldContextMappingPage",
           "kind": "type",
-          "line": 744,
+          "line": 816,
           "exported": true,
           "signature": "export type FieldContextMappingPage = OffsetPaginatedResponse<FieldContextForProjectAndIssueType>;",
           "jsdoc": "Paginated response for the bulk context lookup (B430). Spec: PageBeanContextForProjectAndIssueType"
@@ -25699,7 +25851,7 @@
         {
           "name": "GetFieldContextMappingsParams",
           "kind": "interface",
-          "line": 747,
+          "line": 819,
           "exported": true,
           "signature": "export interface GetFieldContextMappingsParams { readonly startAt?: number; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for the bulk context lookup (B430)."
@@ -25707,209 +25859,209 @@
         {
           "name": "FieldsResource",
           "kind": "class",
-          "line": 752,
+          "line": 824,
           "exported": true,
           "signature": "export class FieldsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 753
+              "line": 825
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 759
+              "line": 831
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 785
+              "line": 857
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 794
+              "line": 870
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 804
+              "line": 880
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 813
+              "line": 889
             },
             {
               "name": "listContexts",
               "kind": "method",
-              "line": 821
+              "line": 897
             },
             {
               "name": "createContext",
               "kind": "method",
-              "line": 844
+              "line": 920
             },
             {
               "name": "updateContext",
               "kind": "method",
-              "line": 854
+              "line": 930
             },
             {
               "name": "deleteContext",
               "kind": "method",
-              "line": 867
+              "line": 943
             },
             {
               "name": "listContextOptions",
               "kind": "method",
-              "line": 875
+              "line": 951
             },
             {
               "name": "createContextOptions",
               "kind": "method",
-              "line": 897
+              "line": 973
             },
             {
               "name": "updateContextOptions",
               "kind": "method",
-              "line": 911
+              "line": 987
             },
             {
               "name": "deleteContextOption",
               "kind": "method",
-              "line": 925
+              "line": 1001
             },
             {
               "name": "replaceContextOptionOnIssues",
               "kind": "method",
-              "line": 934
+              "line": 1010
             },
             {
               "name": "reorderContextOptions",
               "kind": "method",
-              "line": 954
+              "line": 1030
             },
             {
               "name": "setContextIssueTypes",
               "kind": "method",
-              "line": 967
+              "line": 1043
             },
             {
               "name": "removeContextIssueTypes",
               "kind": "method",
-              "line": 980
+              "line": 1056
             },
             {
               "name": "listContextIssueTypeMappings",
               "kind": "method",
-              "line": 993
+              "line": 1069
             },
             {
               "name": "listContextDefaultValues",
               "kind": "method",
-              "line": 1018
+              "line": 1094
             },
             {
               "name": "setContextDefaultValues",
               "kind": "method",
-              "line": 1043
+              "line": 1119
             },
             {
               "name": "setContextProjects",
               "kind": "method",
-              "line": 1056
+              "line": 1132
             },
             {
               "name": "removeContextProjects",
               "kind": "method",
-              "line": 1070
+              "line": 1146
             },
             {
               "name": "getContextMappings",
               "kind": "method",
-              "line": 1084
+              "line": 1160
             },
             {
               "name": "listContextProjectMappings",
               "kind": "method",
-              "line": 1106
+              "line": 1182
             },
             {
               "name": "listFieldProjectAssociations",
               "kind": "method",
-              "line": 1133
+              "line": 1209
             },
             {
               "name": "listFieldScreens",
               "kind": "method",
-              "line": 1153
+              "line": 1229
             },
             {
               "name": "restoreField",
               "kind": "method",
-              "line": 1174
+              "line": 1250
             },
             {
               "name": "trashField",
               "kind": "method",
-              "line": 1183
+              "line": 1259
             },
             {
               "name": "removeAssociations",
               "kind": "method",
-              "line": 1192
+              "line": 1268
             },
             {
               "name": "createAssociations",
               "kind": "method",
-              "line": 1202
+              "line": 1278
             },
             {
               "name": "listTrashedFields",
               "kind": "method",
-              "line": 1212
+              "line": 1288
             },
             {
               "name": "listFieldOptions",
               "kind": "method",
-              "line": 1237
+              "line": 1313
             },
             {
               "name": "createFieldOption",
               "kind": "method",
-              "line": 1257
+              "line": 1333
             },
             {
               "name": "deleteFieldOption",
               "kind": "method",
-              "line": 1271
+              "line": 1347
             },
             {
               "name": "getFieldOption",
               "kind": "method",
-              "line": 1280
+              "line": 1356
             },
             {
               "name": "updateFieldOption",
               "kind": "method",
-              "line": 1291
+              "line": 1367
             },
             {
               "name": "replaceFieldOptionOnIssues",
               "kind": "method",
-              "line": 1307
+              "line": 1383
             },
             {
               "name": "listFieldOptionSuggestionsEdit",
               "kind": "method",
-              "line": 1331
+              "line": 1407
             },
             {
               "name": "listFieldOptionSuggestionsSearch",
               "kind": "method",
-              "line": 1352
+              "line": 1428
             }
           ]
         }
