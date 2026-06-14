@@ -7,15 +7,15 @@ const BASE_URL = 'https://test.atlassian.net/wiki/api/v2';
 
 const makeFooterComment = (id: string) => ({
   id,
-  status: 'current',
+  status: 'current' as const,
   pageId: 'page-1',
 });
 
 const makeInlineComment = (id: string) => ({
   id,
-  status: 'current',
+  status: 'current' as const,
   pageId: 'page-1',
-  resolutionStatus: 'open',
+  resolutionStatus: 'open' as const,
 });
 
 describe('CommentsResource', () => {
@@ -57,6 +57,21 @@ describe('CommentsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('forwards status (array) and sort to the query', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+      const params = {
+        status: ['current', 'archived'] as const,
+        sort: 'created-date' as const,
+      };
+
+      // Act
+      await comments.listFooter('page-1', params);
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject(params);
+    });
   });
 
   describe('getFooter()', () => {
@@ -73,6 +88,28 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/footer-comments/c42`,
+      });
+    });
+
+    it('forwards query params when provided', async () => {
+      transport.respondWith(makeFooterComment('c99'));
+      await comments.getFooter('c99', {
+        'body-format': 'view',
+        version: 3,
+        'include-properties': true,
+        'include-operations': false,
+        'include-likes': true,
+        'include-versions': false,
+        'include-version': true,
+      });
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'view',
+        version: 3,
+        'include-properties': true,
+        'include-operations': false,
+        'include-likes': true,
+        'include-versions': false,
+        'include-version': true,
       });
     });
   });
@@ -97,6 +134,25 @@ describe('CommentsResource', () => {
         path: `${BASE_URL}/footer-comments`,
         body: data,
       });
+    });
+
+    it('accepts parentCommentId, attachmentId, customContentId (spec fields)', async () => {
+      // Arrange
+      const created = { id: 'reply-1', status: 'current', parentCommentId: 'parent-42' };
+      transport.respondWith(created);
+      const data = {
+        parentCommentId: 'parent-42',
+        attachmentId: 'att-1',
+        customContentId: 'cc-1',
+        body: { representation: 'wiki' as const, value: 'h1. Title' },
+      };
+
+      // Act
+      const result = await comments.createFooter(data);
+
+      // Assert
+      expect(result).toEqual(created);
+      expect(transport.lastCall?.options.body).toEqual(data);
     });
   });
 
@@ -169,6 +225,22 @@ describe('CommentsResource', () => {
       // Assert
       expect(transport.lastCall?.options.query).toMatchObject(params);
     });
+
+    it('forwards status, resolution-status, and sort to the query', async () => {
+      // Arrange
+      transport.respondWith({ results: [], _links: {} });
+      const params = {
+        status: ['current'] as const,
+        'resolution-status': ['open', 'reopened'] as const,
+        sort: '-created-date' as const,
+      };
+
+      // Act
+      await comments.listInline('page-1', params);
+
+      // Assert
+      expect(transport.lastCall?.options.query).toMatchObject(params);
+    });
   });
 
   describe('getInline()', () => {
@@ -185,6 +257,28 @@ describe('CommentsResource', () => {
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/inline-comments/i42`,
+      });
+    });
+
+    it('forwards all query params when provided', async () => {
+      transport.respondWith(makeInlineComment('i99'));
+      await comments.getInline('i99', {
+        'body-format': 'styled_view',
+        version: 2,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': false,
+        'include-version': true,
+      });
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'styled_view',
+        version: 2,
+        'include-properties': true,
+        'include-operations': true,
+        'include-likes': true,
+        'include-versions': false,
+        'include-version': true,
       });
     });
   });
@@ -214,6 +308,22 @@ describe('CommentsResource', () => {
         path: `${BASE_URL}/inline-comments`,
         body: data,
       });
+    });
+
+    it('accepts parentCommentId for reply creation (spec field)', async () => {
+      // Arrange
+      const created = makeInlineComment('reply-1');
+      transport.respondWith(created);
+      const data = {
+        parentCommentId: 'parent-88888',
+        body: { representation: 'wiki' as const, value: 'reply text' },
+      };
+
+      // Act
+      await comments.createInline(data);
+
+      // Assert
+      expect(transport.lastCall?.options.body).toEqual(data);
     });
   });
 

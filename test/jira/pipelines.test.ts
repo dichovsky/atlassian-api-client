@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type {
+  Build,
+  Deployment,
+  DeploymentGatingStatus,
+} from '../../src/jira/resources/pipelines.js';
 import { PipelinesResource } from '../../src/jira/resources/pipelines.js';
 import { MockTransport } from '../helpers/mock-transport.js';
 import { ValidationError } from '../../src/core/errors.js';
@@ -6,7 +11,7 @@ import { ValidationError } from '../../src/core/errors.js';
 const BUILDS_BASE_URL = 'https://test.atlassian.net/rest/builds/0.1';
 const DEPLOYMENTS_BASE_URL = 'https://test.atlassian.net/rest/deployments/0.1';
 
-const makeBuild = (overrides?: Partial<{ pipelineId: string; buildNumber: number }>) => ({
+const makeBuild = (overrides?: Partial<{ pipelineId: string; buildNumber: number }>): Build => ({
   schemaVersion: '1.0',
   pipelineId: overrides?.pipelineId ?? 'pipeline-abc',
   buildNumber: overrides?.buildNumber ?? 42,
@@ -26,14 +31,14 @@ const makeDeployment = (
     environmentId: string;
     deploymentSequenceNumber: number;
   }>,
-) => ({
+): Deployment => ({
   deploymentSequenceNumber: overrides?.deploymentSequenceNumber ?? 7,
   updateSequenceNumber: 1,
-  issueKeys: ['PROJ-3'],
   displayName: 'Deployment #7',
   url: 'https://ci.example.com/deployments/7',
-  state: 'successful',
+  description: 'Production deployment',
   lastUpdated: '2024-01-15T11:00:00.000Z',
+  state: 'successful',
   pipeline: {
     id: overrides?.pipelineId ?? 'pipeline-abc',
     displayName: 'My Pipeline',
@@ -44,10 +49,11 @@ const makeDeployment = (
     displayName: 'Production',
     type: 'production',
   },
+  issueKeys: ['PROJ-3'],
   schemaVersion: '1.0',
 });
 
-const makeGatingStatus = () => ({
+const makeGatingStatus = (): DeploymentGatingStatus => ({
   deploymentSequenceNumber: 7,
   pipelineId: 'pipeline-abc',
   environmentId: 'env-prod',

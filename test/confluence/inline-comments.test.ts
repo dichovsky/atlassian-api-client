@@ -154,6 +154,23 @@ describe('InlineCommentsResource', () => {
       });
     });
 
+    it('returns InlineCommentChild entries (spec shape with properties)', async () => {
+      const child = {
+        id: 'child-1',
+        status: 'current' as const,
+        parentCommentId: 'parent-88888',
+        version: { number: 1 },
+        resolutionStatus: 'open' as const,
+        properties: { inlineMarkerRef: 'ref-1', inlineOriginalSelection: 'hello' },
+      };
+      transport.respondWith({ results: [child], _links: {} });
+
+      const result = await resource.listChildren('88888');
+
+      expect(result.results[0]).toEqual(child);
+      expect(result.results[0]?.properties?.inlineMarkerRef).toBe('ref-1');
+    });
+
     it('encodes the comment ID path segment', async () => {
       transport.respondWith({ results: [], _links: {} });
 
@@ -183,7 +200,7 @@ describe('InlineCommentsResource', () => {
         limit: 5,
         sort: '-modified-date',
       })) {
-        ids.push(c.id);
+        ids.push(c.id as string);
       }
 
       expect(ids).toEqual(['r1', 'r2']);
@@ -267,8 +284,22 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({ cursor: 'c1', limit: 50 });
     });
 
-    it('throws ValidationError when limit is invalid', async () => {
+    it('accepts limit=0 (spec minimum=0)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.listLikeUsers('88888', { limit: 0 });
+      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
+    });
+
+    it('throws ValidationError when limit is negative', async () => {
       await expect(resource.listLikeUsers('88888', { limit: -1 })).rejects.toThrow(ValidationError);
+      expect(transport.calls).toHaveLength(0);
+    });
+
+    it('throws ValidationError when limit is a non-integer', async () => {
+      await expect(resource.listLikeUsers('88888', { limit: 1.5 })).rejects.toThrow(
+        ValidationError,
+      );
+      expect(transport.calls).toHaveLength(0);
     });
   });
 
@@ -291,8 +322,15 @@ describe('InlineCommentsResource', () => {
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
     });
 
-    it('throws ValidationError when limit is invalid before any request', async () => {
+    it('accepts limit=0 (spec minimum=0)', async () => {
+      transport.respondWith({ results: [], _links: {} });
       const iter = resource.listLikeUsersAll('88888', { limit: 0 });
+      await iter.next();
+      expect(transport.lastCall?.options.query).toEqual({ limit: 0 });
+    });
+
+    it('throws ValidationError when limit is negative before any request', async () => {
+      const iter = resource.listLikeUsersAll('88888', { limit: -1 });
       await expect(iter.next()).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
     });
@@ -347,16 +385,37 @@ describe('InlineCommentsResource', () => {
       expect(transport.lastCall?.options.query).toEqual({});
     });
 
-    it('serializes sort + cursor + limit into the query', async () => {
+    it('serializes body-format, sort, cursor, limit into the query', async () => {
       transport.respondWith({ results: [{ number: 1 }], _links: {} });
 
-      await resource.listVersions('88888', { sort: '-modified-date', cursor: 'c1', limit: 5 });
-
-      expect(transport.lastCall?.options.query).toEqual({
+      await resource.listVersions('88888', {
+        'body-format': 'storage',
         sort: '-modified-date',
         cursor: 'c1',
         limit: 5,
       });
+
+      expect(transport.lastCall?.options.query).toEqual({
+        'body-format': 'storage',
+        sort: '-modified-date',
+        cursor: 'c1',
+        limit: 5,
+      });
+    });
+
+    it('returns CommentVersion entries including the comment sub-object', async () => {
+      const version = {
+        number: 1,
+        authorId: 'user-1',
+        minorEdit: false,
+        comment: { id: '88888', title: 'Re: hello' },
+      };
+      transport.respondWith({ results: [version], _links: {} });
+
+      const result = await resource.listVersions('88888');
+
+      expect(result.results[0]).toEqual(version);
+      expect(result.results[0]?.comment?.id).toBe('88888');
     });
 
     it('throws ValidationError when limit is invalid', async () => {
@@ -368,17 +427,17 @@ describe('InlineCommentsResource', () => {
     it('iterates pages until _links.next is absent', async () => {
       transport
         .respondWith({
-          results: [{ number: 2 }],
+          results: [{ number: 2, comment: { id: '88888' } }],
           _links: { next: '/wiki/api/v2/inline-comments/88888/versions?cursor=c2' },
         })
-        .respondWith({ results: [{ number: 1 }], _links: {} });
+        .respondWith({ results: [{ number: 1, comment: { id: '88888' } }], _links: {} });
 
       const numbers: number[] = [];
       for await (const v of resource.listVersionsAll('88888', {
         limit: 5,
         sort: 'modified-date',
       })) {
-        numbers.push(v.number);
+        numbers.push(v.number as number);
       }
 
       expect(numbers).toEqual([2, 1]);
@@ -387,6 +446,15 @@ describe('InlineCommentsResource', () => {
         sort: 'modified-date',
       });
       expect(transport.calls[1]?.options.query).toMatchObject({ cursor: 'c2' });
+    });
+
+    it('passes body-format into the query', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      const iter = resource.listVersionsAll('88888', { 'body-format': 'atlas_doc_format' });
+      await iter.next();
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'body-format': 'atlas_doc_format',
+      });
     });
 
     it('throws ValidationError when limit is invalid before any request', async () => {
@@ -406,13 +474,24 @@ describe('InlineCommentsResource', () => {
   });
 
   describe('getVersion()', () => {
-    it('issues GET /inline-comments/{id}/versions/{number}', async () => {
-      const payload = { number: 2, minorEdit: false };
+    it('issues GET /inline-comments/{id}/versions/{number} and returns DetailedVersion', async () => {
+      const payload = {
+        number: 2,
+        minorEdit: false,
+        authorId: 'user-1',
+        collaborators: ['user-2'],
+        prevVersion: 1,
+        nextVersion: 3,
+        contentTypeModified: false,
+      };
       transport.respondWith(payload);
 
       const result = await resource.getVersion('88888', 2);
 
       expect(result).toEqual(payload);
+      expect(result.collaborators).toEqual(['user-2']);
+      expect(result.prevVersion).toBe(1);
+      expect(result.nextVersion).toBe(3);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/inline-comments/88888/versions/2`,

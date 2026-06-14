@@ -13,6 +13,8 @@ import type {
   CreateFooterCommentData,
   CreateInlineCommentData,
   FooterComment,
+  GetFooterCommentParams,
+  GetInlineCommentParams,
   InlineComment,
   ListFooterCommentsParams,
   ListInlineCommentsParams,
@@ -41,10 +43,23 @@ export class CommentsResource {
   }
 
   /** Get a footer comment by ID. */
-  async getFooter(commentId: string): Promise<FooterComment> {
+  async getFooter(commentId: string, params?: GetFooterCommentParams): Promise<FooterComment> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.version !== undefined) query['version'] = params.version;
+    if (params?.['include-properties'] !== undefined)
+      query['include-properties'] = params['include-properties'];
+    if (params?.['include-operations'] !== undefined)
+      query['include-operations'] = params['include-operations'];
+    if (params?.['include-likes'] !== undefined) query['include-likes'] = params['include-likes'];
+    if (params?.['include-versions'] !== undefined)
+      query['include-versions'] = params['include-versions'];
+    if (params?.['include-version'] !== undefined)
+      query['include-version'] = params['include-version'];
     const response = await this.transport.request<FooterComment>({
       method: 'GET',
       path: `${this.baseUrl}/footer-comments/${encodePathSegment(commentId)}`,
+      query,
     });
     return response.data;
   }
@@ -93,10 +108,23 @@ export class CommentsResource {
   }
 
   /** Get an inline comment by ID. */
-  async getInline(commentId: string): Promise<InlineComment> {
+  async getInline(commentId: string, params?: GetInlineCommentParams): Promise<InlineComment> {
+    const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
+    if (params?.version !== undefined) query['version'] = params.version;
+    if (params?.['include-properties'] !== undefined)
+      query['include-properties'] = params['include-properties'];
+    if (params?.['include-operations'] !== undefined)
+      query['include-operations'] = params['include-operations'];
+    if (params?.['include-likes'] !== undefined) query['include-likes'] = params['include-likes'];
+    if (params?.['include-versions'] !== undefined)
+      query['include-versions'] = params['include-versions'];
+    if (params?.['include-version'] !== undefined)
+      query['include-version'] = params['include-version'];
     const response = await this.transport.request<InlineComment>({
       method: 'GET',
       path: `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}`,
+      query,
     });
     return response.data;
   }

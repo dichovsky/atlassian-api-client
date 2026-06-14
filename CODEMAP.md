@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "250cfc25c6209e9267074fbbbf34c016b990409675d5ec23a1e12910b9700a5c",
+  "sourceHash": "3f2ab2d343836fe74b155cb683ca9dec42170deb697ac5e58c252a40f531cdb6",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -767,18 +767,18 @@
       "name": "CreateFooterCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 48,
-      "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-      "jsdoc": "Request body for creating a footer comment.",
+      "line": 162,
+      "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+      "jsdoc": "Request body for creating a footer comment (mirrors `CreateFooterCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "CreateInlineCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 65,
-      "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-      "jsdoc": "Request body for creating an inline comment.",
+      "line": 185,
+      "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+      "jsdoc": "Request body for creating an inline comment (mirrors `CreateInlineCommentModel`).",
       "typeOnly": true
     },
     {
@@ -1271,16 +1271,16 @@
       "name": "FooterComment",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 11,
-      "signature": "export interface FooterComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-      "jsdoc": "Confluence Footer Comment.",
+      "line": 56,
+      "signature": "export interface FooterComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+      "jsdoc": "Confluence Footer Comment (mirrors `FooterCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "FooterCommentChild",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 111,
+      "line": 247,
       "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
       "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`.",
       "typeOnly": true
@@ -1289,7 +1289,7 @@
       "name": "FooterCommentLike",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 127,
+      "line": 263,
       "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
       "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -1298,7 +1298,7 @@
       "name": "FooterCommentLikeCount",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 122,
+      "line": 258,
       "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
       "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`.",
       "typeOnly": true
@@ -1307,7 +1307,7 @@
       "name": "FooterCommentOperation",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 138,
+      "line": 274,
       "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`.",
       "typeOnly": true
@@ -1316,17 +1316,17 @@
       "name": "FooterCommentOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 144,
+      "line": 280,
       "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
       "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`.",
       "typeOnly": true
     },
     {
       "name": "FooterCommentVersionDetail",
-      "kind": "interface",
+      "kind": "type",
       "file": "src/confluence/types/comments.ts",
-      "line": 173,
-      "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
+      "line": 308,
+      "signature": "export type FooterCommentVersionDetail = DetailedVersion;",
       "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`.",
       "typeOnly": true
     },
@@ -1334,7 +1334,7 @@
       "name": "FooterCommentVersionSummary",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 157,
+      "line": 293,
       "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
       "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`.",
       "typeOnly": true
@@ -1432,8 +1432,8 @@
       "name": "GetFooterCommentParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 92,
-      "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
+      "line": 213,
+      "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
       "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip.",
       "typeOnly": true
     },
@@ -1502,16 +1502,16 @@
       "name": "InlineComment",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 25,
-      "signature": "export interface InlineComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-      "jsdoc": "Confluence Inline Comment.",
+      "line": 71,
+      "signature": "export interface InlineComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+      "jsdoc": "Confluence Inline Comment (mirrors `InlineCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "InlineCommentLikeUser",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 248,
+      "line": 376,
       "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
       "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible.",
       "typeOnly": true
@@ -1520,7 +1520,7 @@
       "name": "InlineCommentLikesCount",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 239,
+      "line": 367,
       "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
       "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim.",
       "typeOnly": true
@@ -1529,7 +1529,7 @@
       "name": "InlineCommentOperation",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 253,
+      "line": 381,
       "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`.",
       "typeOnly": true
@@ -1538,7 +1538,7 @@
       "name": "InlineCommentOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 259,
+      "line": 387,
       "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
       "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`.",
       "typeOnly": true
@@ -1556,7 +1556,7 @@
       "name": "InlineCommentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/comments.ts",
-      "line": 189,
+      "line": 316,
       "signature": "export type InlineCommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by the inline-comment list endpoints (tenant-wide list and the per-comment `/children` collection). Mirrors the `CommentSortOrder` enum in the OpenAPI spec — the default direction is ascending; prefix with `-` for descending.",
       "typeOnly": true
@@ -2051,8 +2051,8 @@
       "name": "ListFooterCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 103,
-      "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 239,
+      "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: C…",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`.",
       "typeOnly": true
     },
@@ -2060,7 +2060,7 @@
       "name": "ListFooterCommentLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 132,
+      "line": 268,
       "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -2069,8 +2069,8 @@
       "name": "ListFooterCommentVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 149,
-      "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 285,
+      "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`.",
       "typeOnly": true
     },
@@ -2078,8 +2078,8 @@
       "name": "ListFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 41,
-      "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
+      "line": 153,
+      "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
       "jsdoc": "Parameters for listing footer comments on a page or blog post.",
       "typeOnly": true
     },
@@ -2087,8 +2087,8 @@
       "name": "ListFooterCommentsTenantParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 80,
-      "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
+      "line": 201,
+      "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Co…",
       "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list).",
       "typeOnly": true
     },
@@ -2096,8 +2096,8 @@
       "name": "ListInlineCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 204,
-      "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 331,
+      "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: I…",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/children`.",
       "typeOnly": true
     },
@@ -2105,7 +2105,7 @@
       "name": "ListInlineCommentLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 212,
+      "line": 339,
       "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -2114,8 +2114,8 @@
       "name": "ListInlineCommentVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 218,
-      "signature": "export interface ListInlineCommentVersionsParams { readonly sort?: VersionSortOrder; readonly limit?: number; readonly c…",
+      "line": 345,
+      "signature": "export interface ListInlineCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`.",
       "typeOnly": true
     },
@@ -2123,8 +2123,8 @@
       "name": "ListInlineCommentsAllParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 196,
-      "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: …",
+      "line": 323,
+      "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Inlin…",
       "jsdoc": "Parameters for tenant-wide `GET /inline-comments`.",
       "typeOnly": true
     },
@@ -2132,8 +2132,8 @@
       "name": "ListInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 58,
-      "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly limit?: nu…",
+      "line": 175,
+      "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
       "jsdoc": "Parameters for listing inline comments on a page or blog post.",
       "typeOnly": true
     },
@@ -3186,7 +3186,7 @@
       "name": "UpdateInlineCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 231,
+      "line": 359,
       "signature": "export interface UpdateInlineCommentData extends UpdateCommentData { readonly resolved?: boolean; }",
       "jsdoc": "Request body for `PUT /inline-comments/{id}`. Extends the shared {@link UpdateCommentData} shape with an optional `resolved` flag — the inline-comment endpoint is the resolve / unresolve verb for an inline thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose this field and continue to use {@link UpdateCommentData}.",
       "typeOnly": true
@@ -7991,94 +7991,94 @@
         {
           "name": "CommentsResource",
           "kind": "class",
-          "line": 22,
+          "line": 24,
           "exported": true,
           "signature": "export class CommentsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 23
+              "line": 25
             },
             {
               "name": "listFooter",
               "kind": "method",
-              "line": 31
+              "line": 33
             },
             {
               "name": "getFooter",
               "kind": "method",
-              "line": 44
+              "line": 46
             },
             {
               "name": "createFooter",
               "kind": "method",
-              "line": 53
+              "line": 68
             },
             {
               "name": "updateFooter",
               "kind": "method",
-              "line": 63
+              "line": 78
             },
             {
               "name": "deleteFooter",
               "kind": "method",
-              "line": 73
+              "line": 88
             },
             {
               "name": "listInline",
               "kind": "method",
-              "line": 83
+              "line": 98
             },
             {
               "name": "getInline",
               "kind": "method",
-              "line": 96
+              "line": 111
             },
             {
               "name": "createInline",
               "kind": "method",
-              "line": 105
+              "line": 133
             },
             {
               "name": "updateInline",
               "kind": "method",
-              "line": 119
+              "line": 147
             },
             {
               "name": "deleteInline",
               "kind": "method",
-              "line": 129
+              "line": 157
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 148
+              "line": 176
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 168
+              "line": 196
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 185
+              "line": 213
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 198
+              "line": 226
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 213
+              "line": 241
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 227
+              "line": 255
             }
           ]
         }
@@ -8838,7 +8838,7 @@
         {
           "name": "InlineCommentsResource",
           "kind": "class",
-          "line": 37,
+          "line": 39,
           "exported": true,
           "signature": "export class InlineCommentsResource",
           "jsdoc": "Resource for the tenant-wide Confluence v2 inline-comments surface.",
@@ -8846,62 +8846,62 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 38
+              "line": 40
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 53
+              "line": 55
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 72
+              "line": 74
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 86
+              "line": 94
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 106
+              "line": 114
             },
             {
               "name": "getLikesCount",
               "kind": "method",
-              "line": 125
+              "line": 133
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 134
+              "line": 147
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 152
+              "line": 171
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 169
+              "line": 190
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 180
+              "line": 206
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 199
+              "line": 226
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 221
+              "line": 253
             }
           ]
         }
@@ -8911,8 +8911,7 @@
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js",
-        "../types/comments.js",
-        "../types/versions.js"
+        "../types/comments.js"
       ]
     },
     {
@@ -10404,81 +10403,145 @@
       "path": "src/confluence/types/comments.ts",
       "symbols": [
         {
+          "name": "ContentStatus",
+          "kind": "type",
+          "line": 14,
+          "exported": true,
+          "signature": "export type ContentStatus = | 'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';",
+          "jsdoc": "Status values accepted/returned by Confluence comment endpoints. Mirrors the OpenAPI `ContentStatus` enum."
+        },
+        {
+          "name": "PrimaryBodyRepresentationSingle",
+          "kind": "type",
+          "line": 28,
+          "exported": true,
+          "signature": "export type PrimaryBodyRepresentationSingle = | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'anonymous_exp…",
+          "jsdoc": "The representation formats accepted by single-comment retrieval endpoints (`GET /footer-comments/{id}`, `GET /inline-comments/{id}`). Mirrors the OpenAPI `PrimaryBodyRepresentationSingle` enum (7 values)."
+        },
+        {
+          "name": "PrimaryBodyRepresentation",
+          "kind": "type",
+          "line": 42,
+          "exported": true,
+          "signature": "export type PrimaryBodyRepresentation = 'storage' | 'atlas_doc_format';",
+          "jsdoc": "The representation formats accepted by comment list endpoints. Mirrors the OpenAPI `PrimaryBodyRepresentation` enum — only `storage` and `atlas_doc_format` are valid (no `view`, no `raw`)."
+        },
+        {
+          "name": "InlineCommentProperties",
+          "kind": "interface",
+          "line": 48,
+          "exported": true,
+          "signature": "export interface InlineCommentProperties { readonly inlineMarkerRef?: string; readonly inlineOriginalSelection?: string;…",
+          "jsdoc": "The `properties` sub-object returned inside `InlineCommentModel`. Mirrors the OpenAPI `InlineCommentProperties` schema."
+        },
+        {
           "name": "FooterComment",
           "kind": "interface",
-          "line": 11,
+          "line": 56,
           "exported": true,
-          "signature": "export interface FooterComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-          "jsdoc": "Confluence Footer Comment."
+          "signature": "export interface FooterComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+          "jsdoc": "Confluence Footer Comment (mirrors `FooterCommentModel`)."
         },
         {
           "name": "InlineComment",
           "kind": "interface",
-          "line": 25,
+          "line": 71,
           "exported": true,
-          "signature": "export interface InlineComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-          "jsdoc": "Confluence Inline Comment."
+          "signature": "export interface InlineComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+          "jsdoc": "Confluence Inline Comment (mirrors `InlineCommentModel`)."
+        },
+        {
+          "name": "InlineCommentChild",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface InlineCommentChild { readonly id?: string; readonly status?: ContentStatus; readonly title?: string; re…",
+          "jsdoc": "Child inline-comment returned by `GET /inline-comments/{id}/children`. Mirrors the OpenAPI `InlineCommentChildrenModel` schema — note the `body` here uses `BodyBulk` (`storage` + `atlas_doc_format` only, no `view`)."
+        },
+        {
+          "name": "CommentVersion",
+          "kind": "interface",
+          "line": 115,
+          "exported": true,
+          "signature": "export interface CommentVersion { readonly number?: number; readonly authorId?: string; readonly message?: string; reado…",
+          "jsdoc": "Version entry returned by `GET /inline-comments/{id}/versions`. Mirrors the OpenAPI `CommentVersion` schema — includes a `comment` field (absent from the generic `ContentVersion`)."
+        },
+        {
+          "name": "DetailedVersion",
+          "kind": "interface",
+          "line": 140,
+          "exported": true,
+          "signature": "export interface DetailedVersion { readonly number?: number; readonly authorId?: string; readonly message?: string; read…",
+          "jsdoc": "Detailed version response for `GET /inline-comments/{id}/versions/{version-number}` and `GET /footer-comments/{id}/versions/{version-number}`. Mirrors the OpenAPI `DetailedVersion` schema."
         },
         {
           "name": "ListFooterCommentsParams",
           "kind": "interface",
-          "line": 41,
+          "line": 153,
           "exported": true,
-          "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
+          "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
           "jsdoc": "Parameters for listing footer comments on a page or blog post."
         },
         {
           "name": "CreateFooterCommentData",
           "kind": "interface",
-          "line": 48,
+          "line": 162,
           "exported": true,
-          "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-          "jsdoc": "Request body for creating a footer comment."
+          "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+          "jsdoc": "Request body for creating a footer comment (mirrors `CreateFooterCommentModel`)."
         },
         {
           "name": "ListInlineCommentsParams",
           "kind": "interface",
-          "line": 58,
+          "line": 175,
           "exported": true,
-          "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly limit?: nu…",
+          "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
           "jsdoc": "Parameters for listing inline comments on a page or blog post."
         },
         {
           "name": "CreateInlineCommentData",
           "kind": "interface",
-          "line": 65,
+          "line": 185,
           "exported": true,
-          "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-          "jsdoc": "Request body for creating an inline comment."
+          "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+          "jsdoc": "Request body for creating an inline comment (mirrors `CreateInlineCommentModel`)."
         },
         {
           "name": "ListFooterCommentsTenantParams",
           "kind": "interface",
-          "line": 80,
+          "line": 201,
           "exported": true,
-          "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
+          "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Co…",
           "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list)."
         },
         {
           "name": "GetFooterCommentParams",
           "kind": "interface",
-          "line": 92,
+          "line": 213,
           "exported": true,
-          "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
+          "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
           "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip."
+        },
+        {
+          "name": "GetInlineCommentParams",
+          "kind": "interface",
+          "line": 228,
+          "exported": true,
+          "signature": "export interface GetInlineCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
+          "jsdoc": "Query parameters for `GET /inline-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip."
         },
         {
           "name": "ListFooterCommentChildrenParams",
           "kind": "interface",
-          "line": 103,
+          "line": 239,
           "exported": true,
-          "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: C…",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`."
         },
         {
           "name": "FooterCommentChild",
           "kind": "interface",
-          "line": 111,
+          "line": 247,
           "exported": true,
           "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
           "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`."
@@ -10486,7 +10549,7 @@
         {
           "name": "FooterCommentLikeCount",
           "kind": "interface",
-          "line": 122,
+          "line": 258,
           "exported": true,
           "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
           "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`."
@@ -10494,7 +10557,7 @@
         {
           "name": "FooterCommentLike",
           "kind": "interface",
-          "line": 127,
+          "line": 263,
           "exported": true,
           "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
           "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`."
@@ -10502,7 +10565,7 @@
         {
           "name": "ListFooterCommentLikeUsersParams",
           "kind": "interface",
-          "line": 132,
+          "line": 268,
           "exported": true,
           "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`."
@@ -10510,7 +10573,7 @@
         {
           "name": "FooterCommentOperation",
           "kind": "interface",
-          "line": 138,
+          "line": 274,
           "exported": true,
           "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`."
@@ -10518,7 +10581,7 @@
         {
           "name": "FooterCommentOperationsResponse",
           "kind": "interface",
-          "line": 144,
+          "line": 280,
           "exported": true,
           "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
           "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`."
@@ -10526,31 +10589,31 @@
         {
           "name": "ListFooterCommentVersionsParams",
           "kind": "interface",
-          "line": 149,
+          "line": 285,
           "exported": true,
-          "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`."
         },
         {
           "name": "FooterCommentVersionSummary",
           "kind": "interface",
-          "line": 157,
+          "line": 293,
           "exported": true,
           "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
           "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`."
         },
         {
           "name": "FooterCommentVersionDetail",
-          "kind": "interface",
-          "line": 173,
+          "kind": "type",
+          "line": 308,
           "exported": true,
-          "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
+          "signature": "export type FooterCommentVersionDetail = DetailedVersion;",
           "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`."
         },
         {
           "name": "InlineCommentSortOrder",
           "kind": "type",
-          "line": 189,
+          "line": 316,
           "exported": true,
           "signature": "export type InlineCommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by the inline-comment list endpoints (tenant-wide list and the per-comment `/children` collection). Mirrors the `CommentSortOrder` enum in the OpenAPI spec — the default direction is ascending; prefix with `-` for descending."
@@ -10558,23 +10621,23 @@
         {
           "name": "ListInlineCommentsAllParams",
           "kind": "interface",
-          "line": 196,
+          "line": 323,
           "exported": true,
-          "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: …",
+          "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Inlin…",
           "jsdoc": "Parameters for tenant-wide `GET /inline-comments`."
         },
         {
           "name": "ListInlineCommentChildrenParams",
           "kind": "interface",
-          "line": 204,
+          "line": 331,
           "exported": true,
-          "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: I…",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/children`."
         },
         {
           "name": "ListInlineCommentLikeUsersParams",
           "kind": "interface",
-          "line": 212,
+          "line": 339,
           "exported": true,
           "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`."
@@ -10582,15 +10645,15 @@
         {
           "name": "ListInlineCommentVersionsParams",
           "kind": "interface",
-          "line": 218,
+          "line": 345,
           "exported": true,
-          "signature": "export interface ListInlineCommentVersionsParams { readonly sort?: VersionSortOrder; readonly limit?: number; readonly c…",
+          "signature": "export interface ListInlineCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`."
         },
         {
           "name": "UpdateInlineCommentData",
           "kind": "interface",
-          "line": 231,
+          "line": 359,
           "exported": true,
           "signature": "export interface UpdateInlineCommentData extends UpdateCommentData { readonly resolved?: boolean; }",
           "jsdoc": "Request body for `PUT /inline-comments/{id}`. Extends the shared {@link UpdateCommentData} shape with an optional `resolved` flag — the inline-comment endpoint is the resolve / unresolve verb for an inline thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose this field and continue to use {@link UpdateCommentData}."
@@ -10598,7 +10661,7 @@
         {
           "name": "InlineCommentLikesCount",
           "kind": "interface",
-          "line": 239,
+          "line": 367,
           "exported": true,
           "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
           "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim."
@@ -10606,7 +10669,7 @@
         {
           "name": "InlineCommentLikeUser",
           "kind": "interface",
-          "line": 248,
+          "line": 376,
           "exported": true,
           "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
           "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible."
@@ -10614,7 +10677,7 @@
         {
           "name": "InlineCommentOperation",
           "kind": "interface",
-          "line": 253,
+          "line": 381,
           "exported": true,
           "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`."
@@ -10622,7 +10685,7 @@
         {
           "name": "InlineCommentOperationsResponse",
           "kind": "interface",
-          "line": 259,
+          "line": 387,
           "exported": true,
           "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
           "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`."
@@ -18161,6 +18224,14 @@
             {
               "exported": "DevopsComponent",
               "original": "DevopsComponent"
+            },
+            {
+              "exported": "DevopsComponentTier",
+              "original": "DevopsComponentTier"
+            },
+            {
+              "exported": "DevopsComponentType",
+              "original": "DevopsComponentType"
             }
           ]
         },
@@ -20013,6 +20084,26 @@
           "typeOnly": true,
           "names": [
             {
+              "exported": "BuildState",
+              "original": "BuildState"
+            },
+            {
+              "exported": "DeploymentState",
+              "original": "DeploymentState"
+            },
+            {
+              "exported": "DeploymentEnvironmentType",
+              "original": "DeploymentEnvironmentType"
+            },
+            {
+              "exported": "BuildCommitReference",
+              "original": "BuildCommitReference"
+            },
+            {
+              "exported": "BuildRefReference",
+              "original": "BuildRefReference"
+            },
+            {
               "exported": "Build",
               "original": "Build"
             },
@@ -20165,6 +20256,18 @@
             {
               "exported": "PermissionHolderType",
               "original": "PermissionHolderType"
+            },
+            {
+              "exported": "PermissionType",
+              "original": "PermissionType"
+            },
+            {
+              "exported": "PlanTeamType",
+              "original": "PlanTeamType"
+            },
+            {
+              "exported": "JsonPatchOperation",
+              "original": "JsonPatchOperation"
             },
             {
               "exported": "CreateDateFieldData",
@@ -24747,17 +24850,33 @@
       "path": "src/jira/resources/devopscomponents.ts",
       "symbols": [
         {
+          "name": "DevopsComponentTier",
+          "kind": "type",
+          "line": 8,
+          "exported": true,
+          "signature": "export type DevopsComponentTier = 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Tier 4';",
+          "jsdoc": "Tier values for a DevOps component. Verified against jira-software.json `DevOpsComponentData.tier` enum."
+        },
+        {
+          "name": "DevopsComponentType",
+          "kind": "type",
+          "line": 14,
+          "exported": true,
+          "signature": "export type DevopsComponentType = | 'Service' | 'Application' | 'Library' | 'Capability' | 'Cloud resource' | 'Data pipe…",
+          "jsdoc": "Component type values for a DevOps component. Verified against jira-software.json `DevOpsComponentData.componentType` enum."
+        },
+        {
           "name": "DevopsComponent",
           "kind": "interface",
-          "line": 10,
+          "line": 34,
           "exported": true,
-          "signature": "export interface DevopsComponent { readonly id: string; readonly name?: string; readonly description?: string; readonly …",
+          "signature": "export interface DevopsComponent { readonly schemaVersion?: '1.0'; readonly id: string; readonly updateSequenceNumber: n…",
           "jsdoc": "A Jira DevOps component record."
         },
         {
           "name": "DevopscomponentsResource",
           "kind": "class",
-          "line": 25,
+          "line": 55,
           "exported": true,
           "signature": "export class DevopscomponentsResource",
           "jsdoc": "Jira DevOps Components resource — DELETE and GET /rest/devopscomponents/1.0/devopscomponents/{componentId}.",
@@ -24765,17 +24884,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 56
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 35
+              "line": 65
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 46
+              "line": 76
             }
           ]
         }
@@ -30516,89 +30635,129 @@
       "path": "src/jira/resources/pipelines.ts",
       "symbols": [
         {
+          "name": "BuildState",
+          "kind": "type",
+          "line": 8,
+          "exported": true,
+          "signature": "export type BuildState = | 'pending' | 'in_progress' | 'successful' | 'failed' | 'cancelled' | 'unknown';",
+          "jsdoc": "Build state values as specified in the Jira Software Builds API schema. Verified against jira-software.json `BuildState` enum."
+        },
+        {
+          "name": "DeploymentState",
+          "kind": "type",
+          "line": 20,
+          "exported": true,
+          "signature": "export type DeploymentState = | 'unknown' | 'pending' | 'in_progress' | 'cancelled' | 'failed' | 'rolled_back' | 'succes…",
+          "jsdoc": "Deployment state values as specified in the Jira Software Deployments API schema. Verified against jira-software.json `DeploymentData.state` enum."
+        },
+        {
+          "name": "DeploymentEnvironmentType",
+          "kind": "type",
+          "line": 33,
+          "exported": true,
+          "signature": "export type DeploymentEnvironmentType = | 'unmapped' | 'development' | 'testing' | 'staging' | 'production';",
+          "jsdoc": "Environment type values as specified in the Jira Software Deployments API schema. Verified against jira-software.json `Environment.type` enum."
+        },
+        {
+          "name": "BuildCommitReference",
+          "kind": "interface",
+          "line": 44,
+          "exported": true,
+          "signature": "export interface BuildCommitReference { readonly id: string; readonly repositoryUri: string; }",
+          "jsdoc": "Commit reference for a build entity. Verified against jira-software.json `BuildCommitReference` schema."
+        },
+        {
+          "name": "BuildRefReference",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface BuildRefReference { readonly name: string; readonly uri: string; }",
+          "jsdoc": "Branch/tag ref reference for a build entity. Verified against jira-software.json `BuildRefReference` schema."
+        },
+        {
           "name": "Build",
           "kind": "interface",
-          "line": 10,
+          "line": 66,
           "exported": true,
-          "signature": "export interface Build { readonly schemaVersion?: string; readonly pipelineId: string; readonly buildNumber: number; rea…",
+          "signature": "export interface Build { readonly schemaVersion?: '1.0'; readonly pipelineId: string; readonly buildNumber: number; read…",
           "jsdoc": "A Jira Software build entity stored via the Builds API."
         },
         {
           "name": "BuildAssociation",
           "kind": "interface",
-          "line": 28,
+          "line": 88,
           "exported": true,
-          "signature": "export interface BuildAssociation { readonly associationType?: string; readonly values?: readonly string[]; }",
-          "jsdoc": "Association entry for a build entity."
+          "signature": "export interface BuildAssociation { readonly associationType: string; readonly values: readonly string[]; }",
+          "jsdoc": "Association entry for a build entity. Verified against jira-software.json `IssueIdOrKeysAssociation` schema (the type used for build associations)."
         },
         {
           "name": "BuildTestInfo",
           "kind": "interface",
-          "line": 34,
+          "line": 97,
           "exported": true,
-          "signature": "export interface BuildTestInfo { readonly totalNumber?: number; readonly numberPassed?: number; readonly numberFailed?: …",
-          "jsdoc": "Test result summary for a build."
+          "signature": "export interface BuildTestInfo { readonly totalNumber: number; readonly numberPassed: number; readonly numberFailed: num…",
+          "jsdoc": "Test result summary for a build. Verified required fields against jira-software.json `TestInfo` schema."
         },
         {
           "name": "BuildReference",
           "kind": "interface",
-          "line": 42,
+          "line": 105,
           "exported": true,
-          "signature": "export interface BuildReference { readonly commit?: Record<string, unknown>; readonly ref?: Record<string, unknown>; }",
+          "signature": "export interface BuildReference { readonly commit?: BuildCommitReference; readonly ref?: BuildRefReference; }",
           "jsdoc": "Reference entry (e.g. commit, branch ref) for a build."
-        },
-        {
-          "name": "Deployment",
-          "kind": "interface",
-          "line": 53,
-          "exported": true,
-          "signature": "export interface Deployment { readonly deploymentSequenceNumber?: number; readonly updateSequenceNumber?: number; readon…",
-          "jsdoc": "A Jira Software deployment entity stored via the Deployments API."
         },
         {
           "name": "DeploymentAssociation",
           "kind": "interface",
-          "line": 72,
+          "line": 116,
           "exported": true,
-          "signature": "export interface DeploymentAssociation { readonly associationType?: string; readonly values?: readonly string[]; }",
-          "jsdoc": "Association entry for a deployment entity."
+          "signature": "export interface DeploymentAssociation { readonly associationType: string; readonly values: readonly (string | Record<st…",
+          "jsdoc": "Association entry for a deployment entity. Covers IssueIdOrKeysAssociation, ServiceIdOrKeysAssociation (string values), and EntityAssociation (object values: Commit, Repository). Verified against jira-software.json association schemas."
         },
         {
           "name": "DeploymentPipeline",
           "kind": "interface",
-          "line": 78,
+          "line": 122,
           "exported": true,
-          "signature": "export interface DeploymentPipeline { readonly id?: string; readonly displayName?: string; readonly url?: string; }",
+          "signature": "export interface DeploymentPipeline { readonly id: string; readonly displayName: string; readonly url: string; }",
           "jsdoc": "Pipeline metadata on a deployment."
         },
         {
           "name": "DeploymentEnvironment",
           "kind": "interface",
-          "line": 85,
+          "line": 129,
           "exported": true,
-          "signature": "export interface DeploymentEnvironment { readonly id?: string; readonly displayName?: string; readonly type?: string; }",
+          "signature": "export interface DeploymentEnvironment { readonly id: string; readonly displayName: string; readonly type: DeploymentEnv…",
           "jsdoc": "Environment metadata on a deployment."
         },
         {
           "name": "DeploymentCommand",
           "kind": "interface",
-          "line": 92,
+          "line": 136,
           "exported": true,
           "signature": "export interface DeploymentCommand { readonly command?: string; }",
           "jsdoc": "Command associated with a deployment."
         },
         {
+          "name": "Deployment",
+          "kind": "interface",
+          "line": 148,
+          "exported": true,
+          "signature": "export interface Deployment { readonly deploymentSequenceNumber: number; readonly updateSequenceNumber: number; readonly…",
+          "jsdoc": "A Jira Software deployment entity stored via the Deployments API."
+        },
+        {
           "name": "DeploymentGatingStatusDetail",
           "kind": "interface",
-          "line": 97,
+          "line": 167,
           "exported": true,
-          "signature": "export interface DeploymentGatingStatusDetail { readonly type?: string; readonly issueKey?: string; readonly issueLink?:…",
+          "signature": "export interface DeploymentGatingStatusDetail { readonly type: string; readonly issueKey: string; readonly issueLink: st…",
           "jsdoc": "A single detail entry in a deployment gating-status response."
         },
         {
           "name": "DeploymentGatingStatus",
           "kind": "interface",
-          "line": 110,
+          "line": 180,
           "exported": true,
           "signature": "export interface DeploymentGatingStatus { readonly deploymentSequenceNumber?: number; readonly pipelineId?: string; read…",
           "jsdoc": "Gating status for a deployment."
@@ -30606,7 +30765,7 @@
         {
           "name": "PipelinesResource",
           "kind": "class",
-          "line": 127,
+          "line": 197,
           "exported": true,
           "signature": "export class PipelinesResource",
           "jsdoc": "Jira Software Pipelines resource — covering builds and deployments at the pipeline/build and pipeline/environment/deployment level.",
@@ -30614,32 +30773,32 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 128
+              "line": 198
             },
             {
               "name": "getBuild",
               "kind": "method",
-              "line": 141
+              "line": 211
             },
             {
               "name": "deleteBuild",
               "kind": "method",
-              "line": 154
+              "line": 224
             },
             {
               "name": "getDeployment",
               "kind": "method",
-              "line": 168
+              "line": 238
             },
             {
               "name": "deleteDeployment",
               "kind": "method",
-              "line": 185
+              "line": 255
             },
             {
               "name": "getDeploymentGatingStatus",
               "kind": "method",
-              "line": 201
+              "line": 271
             }
           ]
         }
@@ -30653,129 +30812,9 @@
       "path": "src/jira/resources/plans.ts",
       "symbols": [
         {
-          "name": "PlanPage",
-          "kind": "interface",
-          "line": 7,
-          "exported": true,
-          "signature": "export interface PlanPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; readonl…",
-          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan."
-        },
-        {
-          "name": "PlanTeamPage",
-          "kind": "interface",
-          "line": 17,
-          "exported": true,
-          "signature": "export interface PlanTeamPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; rea…",
-          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan/{planId}/team."
-        },
-        {
-          "name": "PlanSummary",
-          "kind": "interface",
-          "line": 29,
-          "exported": true,
-          "signature": "export interface PlanSummary { readonly id: string; readonly issueSources?: PlanIssueSource[]; readonly name: string; re…",
-          "jsdoc": "A plan summary as returned by the list endpoint (GetPlanResponseForPage)."
-        },
-        {
-          "name": "PlanTeamSummary",
-          "kind": "interface",
-          "line": 38,
-          "exported": true,
-          "signature": "export interface PlanTeamSummary { readonly id: string; readonly name?: string; readonly type: string; }",
-          "jsdoc": "A team summary as returned by the list teams endpoint (GetTeamResponseForPage)."
-        },
-        {
-          "name": "PlanDateField",
-          "kind": "interface",
-          "line": 45,
-          "exported": true,
-          "signature": "export interface PlanDateField { readonly dateCustomFieldId?: number; readonly type: string; }",
-          "jsdoc": "Date field configuration returned in a plan."
-        },
-        {
-          "name": "PlanScheduling",
-          "kind": "interface",
-          "line": 51,
-          "exported": true,
-          "signature": "export interface PlanScheduling { readonly dependencies: string; readonly endDate: PlanDateField; readonly estimation: s…",
-          "jsdoc": "Scheduling configuration returned in a plan."
-        },
-        {
-          "name": "PlanExclusionRules",
-          "kind": "interface",
-          "line": 60,
-          "exported": true,
-          "signature": "export interface PlanExclusionRules { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly numberOfD…",
-          "jsdoc": "Exclusion rules returned in a plan."
-        },
-        {
-          "name": "PlanCrossProjectRelease",
-          "kind": "interface",
-          "line": 70,
-          "exported": true,
-          "signature": "export interface PlanCrossProjectRelease { readonly name?: string; readonly releaseIds?: number[]; }",
-          "jsdoc": "Cross-project release returned in a plan."
-        },
-        {
-          "name": "PlanCustomField",
-          "kind": "interface",
-          "line": 76,
-          "exported": true,
-          "signature": "export interface PlanCustomField { readonly customFieldId?: number; readonly filter?: boolean; }",
-          "jsdoc": "Custom field returned in a plan."
-        },
-        {
-          "name": "PlanIssueSource",
-          "kind": "interface",
-          "line": 82,
-          "exported": true,
-          "signature": "export interface PlanIssueSource { readonly type?: string; readonly value?: number; }",
-          "jsdoc": "Issue source returned in a plan."
-        },
-        {
-          "name": "PlanPermission",
-          "kind": "interface",
-          "line": 88,
-          "exported": true,
-          "signature": "export interface PlanPermission { readonly holder?: PlanPermissionHolder; readonly type?: string; }",
-          "jsdoc": "Permission returned in a plan."
-        },
-        {
-          "name": "PlanPermissionHolder",
-          "kind": "interface",
-          "line": 94,
-          "exported": true,
-          "signature": "export interface PlanPermissionHolder { readonly type?: string; readonly value?: string; }",
-          "jsdoc": "Permission holder returned in a plan."
-        },
-        {
-          "name": "PlanResponse",
-          "kind": "interface",
-          "line": 100,
-          "exported": true,
-          "signature": "export interface PlanResponse { readonly crossProjectReleases?: PlanCrossProjectRelease[]; readonly customFields?: PlanC…",
-          "jsdoc": "Full plan response from GET /rest/api/3/plans/plan/{planId}."
-        },
-        {
-          "name": "AtlassianTeamResponse",
-          "kind": "interface",
-          "line": 115,
-          "exported": true,
-          "signature": "export interface AtlassianTeamResponse { readonly capacity?: number; readonly id: string; readonly issueSourceId?: numbe…",
-          "jsdoc": "Atlassian team response from GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}."
-        },
-        {
-          "name": "PlanOnlyTeamResponse",
-          "kind": "interface",
-          "line": 124,
-          "exported": true,
-          "signature": "export interface PlanOnlyTeamResponse { readonly capacity?: number; readonly id: number; readonly issueSourceId?: number…",
-          "jsdoc": "Plan-only team response from GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}."
-        },
-        {
           "name": "PlanStatus",
           "kind": "type",
-          "line": 137,
+          "line": 7,
           "exported": true,
           "signature": "export type PlanStatus = 'Active' | 'Trashed' | 'Archived';",
           "jsdoc": "Plan status values."
@@ -30783,7 +30822,7 @@
         {
           "name": "PlanningStyle",
           "kind": "type",
-          "line": 140,
+          "line": 10,
           "exported": true,
           "signature": "export type PlanningStyle = 'Scrum' | 'Kanban';",
           "jsdoc": "Planning style values for teams."
@@ -30791,7 +30830,7 @@
         {
           "name": "SchedulingDependencies",
           "kind": "type",
-          "line": 143,
+          "line": 13,
           "exported": true,
           "signature": "export type SchedulingDependencies = 'Sequential' | 'Concurrent';",
           "jsdoc": "Scheduling dependencies values."
@@ -30799,7 +30838,7 @@
         {
           "name": "SchedulingEstimation",
           "kind": "type",
-          "line": 146,
+          "line": 16,
           "exported": true,
           "signature": "export type SchedulingEstimation = 'StoryPoints' | 'Days' | 'Hours';",
           "jsdoc": "Scheduling estimation values."
@@ -30807,7 +30846,7 @@
         {
           "name": "SchedulingInferredDates",
           "kind": "type",
-          "line": 149,
+          "line": 19,
           "exported": true,
           "signature": "export type SchedulingInferredDates = 'None' | 'SprintDates' | 'ReleaseDates';",
           "jsdoc": "Scheduling inferred dates values."
@@ -30815,7 +30854,7 @@
         {
           "name": "DateFieldType",
           "kind": "type",
-          "line": 152,
+          "line": 22,
           "exported": true,
           "signature": "export type DateFieldType = 'DueDate' | 'TargetStartDate' | 'TargetEndDate' | 'DateCustomField';",
           "jsdoc": "Date field type values."
@@ -30823,23 +30862,167 @@
         {
           "name": "IssueSourceType",
           "kind": "type",
-          "line": 155,
+          "line": 25,
           "exported": true,
-          "signature": "export type IssueSourceType = 'Board' | 'Project' | 'Filter';",
+          "signature": "export type IssueSourceType = 'Board' | 'Project' | 'Filter' | 'Custom';",
           "jsdoc": "Issue source type values."
         },
         {
           "name": "PermissionHolderType",
           "kind": "type",
-          "line": 158,
+          "line": 28,
           "exported": true,
           "signature": "export type PermissionHolderType = 'Group' | 'AccountId';",
           "jsdoc": "Permission holder type values."
         },
         {
+          "name": "PermissionType",
+          "kind": "type",
+          "line": 31,
+          "exported": true,
+          "signature": "export type PermissionType = 'View' | 'Edit';",
+          "jsdoc": "Permission type values."
+        },
+        {
+          "name": "PlanTeamType",
+          "kind": "type",
+          "line": 34,
+          "exported": true,
+          "signature": "export type PlanTeamType = 'PlanOnly' | 'Atlassian';",
+          "jsdoc": "Team type values for the list-teams response."
+        },
+        {
+          "name": "PlanPage",
+          "kind": "interface",
+          "line": 39,
+          "exported": true,
+          "signature": "export interface PlanPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; readonl…",
+          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan."
+        },
+        {
+          "name": "PlanTeamPage",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface PlanTeamPage { readonly cursor?: string; readonly last?: boolean; readonly nextPageCursor?: string; rea…",
+          "jsdoc": "Cursor-paginated response for GET /rest/api/3/plans/plan/{planId}/team."
+        },
+        {
+          "name": "PlanSummary",
+          "kind": "interface",
+          "line": 61,
+          "exported": true,
+          "signature": "export interface PlanSummary { readonly id: string; readonly issueSources?: PlanIssueSource[]; readonly name: string; re…",
+          "jsdoc": "A plan summary as returned by the list endpoint (GetPlanResponseForPage)."
+        },
+        {
+          "name": "PlanTeamSummary",
+          "kind": "interface",
+          "line": 70,
+          "exported": true,
+          "signature": "export interface PlanTeamSummary { readonly id: string; readonly name?: string; readonly type: PlanTeamType; }",
+          "jsdoc": "A team summary as returned by the list teams endpoint (GetTeamResponseForPage)."
+        },
+        {
+          "name": "PlanDateField",
+          "kind": "interface",
+          "line": 77,
+          "exported": true,
+          "signature": "export interface PlanDateField { readonly dateCustomFieldId?: number; readonly type: DateFieldType; }",
+          "jsdoc": "Date field configuration returned in a plan."
+        },
+        {
+          "name": "PlanScheduling",
+          "kind": "interface",
+          "line": 83,
+          "exported": true,
+          "signature": "export interface PlanScheduling { readonly dependencies: SchedulingDependencies; readonly endDate: PlanDateField; readon…",
+          "jsdoc": "Scheduling configuration returned in a plan."
+        },
+        {
+          "name": "PlanExclusionRules",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface PlanExclusionRules { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly numberOfD…",
+          "jsdoc": "Exclusion rules returned in a plan."
+        },
+        {
+          "name": "PlanCrossProjectRelease",
+          "kind": "interface",
+          "line": 102,
+          "exported": true,
+          "signature": "export interface PlanCrossProjectRelease { readonly name?: string; readonly releaseIds?: number[]; }",
+          "jsdoc": "Cross-project release returned in a plan."
+        },
+        {
+          "name": "PlanCustomField",
+          "kind": "interface",
+          "line": 108,
+          "exported": true,
+          "signature": "export interface PlanCustomField { readonly customFieldId: number; readonly filter?: boolean; }",
+          "jsdoc": "Custom field returned in a plan."
+        },
+        {
+          "name": "PlanIssueSource",
+          "kind": "interface",
+          "line": 114,
+          "exported": true,
+          "signature": "export interface PlanIssueSource { readonly type: IssueSourceType; readonly value: number; }",
+          "jsdoc": "Issue source returned in a plan."
+        },
+        {
+          "name": "PlanPermissionHolder",
+          "kind": "interface",
+          "line": 120,
+          "exported": true,
+          "signature": "export interface PlanPermissionHolder { readonly type: PermissionHolderType; readonly value: string; }",
+          "jsdoc": "Permission holder returned in a plan."
+        },
+        {
+          "name": "PlanPermission",
+          "kind": "interface",
+          "line": 126,
+          "exported": true,
+          "signature": "export interface PlanPermission { readonly holder: PlanPermissionHolder; readonly type: PermissionType; }",
+          "jsdoc": "Permission returned in a plan."
+        },
+        {
+          "name": "PlanResponse",
+          "kind": "interface",
+          "line": 132,
+          "exported": true,
+          "signature": "export interface PlanResponse { readonly crossProjectReleases?: PlanCrossProjectRelease[]; readonly customFields?: PlanC…",
+          "jsdoc": "Full plan response from GET /rest/api/3/plans/plan/{planId}."
+        },
+        {
+          "name": "AtlassianTeamResponse",
+          "kind": "interface",
+          "line": 147,
+          "exported": true,
+          "signature": "export interface AtlassianTeamResponse { readonly capacity?: number; readonly id: string; readonly issueSourceId?: numbe…",
+          "jsdoc": "Atlassian team response from GET /rest/api/3/plans/plan/{planId}/team/atlassian/{atlassianTeamId}."
+        },
+        {
+          "name": "PlanOnlyTeamResponse",
+          "kind": "interface",
+          "line": 156,
+          "exported": true,
+          "signature": "export interface PlanOnlyTeamResponse { readonly capacity?: number; readonly id: number; readonly issueSourceId?: number…",
+          "jsdoc": "Plan-only team response from GET /rest/api/3/plans/plan/{planId}/team/planonly/{planOnlyTeamId}."
+        },
+        {
+          "name": "JsonPatchOperation",
+          "kind": "interface",
+          "line": 172,
+          "exported": true,
+          "signature": "export interface JsonPatchOperation { readonly op: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test'; readonly pat…",
+          "jsdoc": "A single JSON Patch operation as defined by RFC 6902. Used for PUT endpoints that accept `application/json-patch+json`."
+        },
+        {
           "name": "CreateDateFieldData",
           "kind": "interface",
-          "line": 163,
+          "line": 182,
           "exported": true,
           "signature": "export interface CreateDateFieldData { readonly dateCustomFieldId?: number; readonly type: DateFieldType; }",
           "jsdoc": "Date field configuration for plan creation."
@@ -30847,7 +31030,7 @@
         {
           "name": "CreateSchedulingData",
           "kind": "interface",
-          "line": 169,
+          "line": 188,
           "exported": true,
           "signature": "export interface CreateSchedulingData { readonly dependencies?: SchedulingDependencies; readonly endDate?: CreateDateFie…",
           "jsdoc": "Scheduling configuration for plan creation."
@@ -30855,7 +31038,7 @@
         {
           "name": "CreateExclusionRulesData",
           "kind": "interface",
-          "line": 178,
+          "line": 197,
           "exported": true,
           "signature": "export interface CreateExclusionRulesData { readonly issueIds?: number[]; readonly issueTypeIds?: number[]; readonly num…",
           "jsdoc": "Exclusion rules configuration for plan creation."
@@ -30863,7 +31046,7 @@
         {
           "name": "CreateCrossProjectReleaseData",
           "kind": "interface",
-          "line": 188,
+          "line": 207,
           "exported": true,
           "signature": "export interface CreateCrossProjectReleaseData { readonly name: string; readonly releaseIds?: number[]; }",
           "jsdoc": "Cross-project release for plan creation."
@@ -30871,7 +31054,7 @@
         {
           "name": "CreateCustomFieldData",
           "kind": "interface",
-          "line": 194,
+          "line": 213,
           "exported": true,
           "signature": "export interface CreateCustomFieldData { readonly customFieldId: number; readonly filter?: boolean; }",
           "jsdoc": "Custom field for plan creation."
@@ -30879,7 +31062,7 @@
         {
           "name": "CreateIssueSourceData",
           "kind": "interface",
-          "line": 200,
+          "line": 219,
           "exported": true,
           "signature": "export interface CreateIssueSourceData { readonly type: IssueSourceType; readonly value: number; }",
           "jsdoc": "Issue source for plan creation."
@@ -30887,7 +31070,7 @@
         {
           "name": "CreatePermissionHolderData",
           "kind": "interface",
-          "line": 206,
+          "line": 225,
           "exported": true,
           "signature": "export interface CreatePermissionHolderData { readonly type: PermissionHolderType; readonly value: string; }",
           "jsdoc": "Permission holder for plan creation."
@@ -30895,15 +31078,15 @@
         {
           "name": "CreatePermissionData",
           "kind": "interface",
-          "line": 212,
+          "line": 231,
           "exported": true,
-          "signature": "export interface CreatePermissionData { readonly holder: CreatePermissionHolderData; readonly type: string; }",
+          "signature": "export interface CreatePermissionData { readonly holder: CreatePermissionHolderData; readonly type: PermissionType; }",
           "jsdoc": "Permission for plan creation."
         },
         {
           "name": "CreatePlanData",
           "kind": "interface",
-          "line": 218,
+          "line": 237,
           "exported": true,
           "signature": "export interface CreatePlanData { readonly crossProjectReleases?: CreateCrossProjectReleaseData[]; readonly customFields…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan."
@@ -30911,7 +31094,7 @@
         {
           "name": "DuplicatePlanData",
           "kind": "interface",
-          "line": 230,
+          "line": 249,
           "exported": true,
           "signature": "export interface DuplicatePlanData { readonly name: string; }",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/duplicate."
@@ -30919,7 +31102,7 @@
         {
           "name": "AddAtlassianTeamData",
           "kind": "interface",
-          "line": 235,
+          "line": 254,
           "exported": true,
           "signature": "export interface AddAtlassianTeamData { readonly capacity?: number; readonly id: string; readonly issueSourceId?: number…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/team/atlassian."
@@ -30927,7 +31110,7 @@
         {
           "name": "CreatePlanOnlyTeamData",
           "kind": "interface",
-          "line": 244,
+          "line": 263,
           "exported": true,
           "signature": "export interface CreatePlanOnlyTeamData { readonly capacity?: number; readonly issueSourceId?: number; readonly memberAc…",
           "jsdoc": "Request body for POST /rest/api/3/plans/plan/{planId}/team/planonly."
@@ -30935,7 +31118,7 @@
         {
           "name": "ListPlansParams",
           "kind": "interface",
-          "line": 256,
+          "line": 275,
           "exported": true,
           "signature": "export interface ListPlansParams { readonly cursor?: string; readonly includeTrashed?: boolean; readonly includeArchived…",
           "jsdoc": "Query parameters for GET /rest/api/3/plans/plan."
@@ -30943,15 +31126,15 @@
         {
           "name": "GetPlanParams",
           "kind": "interface",
-          "line": 264,
+          "line": 283,
           "exported": true,
           "signature": "export interface GetPlanParams { readonly useGroupId?: boolean; }",
-          "jsdoc": "Query parameters for GET /rest/api/3/plans/plan (single-page)."
+          "jsdoc": "Query parameters for GET /rest/api/3/plans/plan/{planId}."
         },
         {
           "name": "ListPlanTeamsParams",
           "kind": "interface",
-          "line": 269,
+          "line": 288,
           "exported": true,
           "signature": "export interface ListPlanTeamsParams { readonly cursor?: string; readonly maxResults?: number; }",
           "jsdoc": "Query parameters for GET /rest/api/3/plans/plan/{planId}/team."
@@ -30959,7 +31142,7 @@
         {
           "name": "PlansResource",
           "kind": "class",
-          "line": 282,
+          "line": 301,
           "exported": true,
           "signature": "export class PlansResource",
           "jsdoc": "Jira Plans resource — B625-B640.",
@@ -30967,97 +31150,97 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 283
+              "line": 302
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 292
+              "line": 311
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 309
+              "line": 328
             },
             {
               "name": "create",
               "kind": "method",
-              "line": 340
+              "line": 359
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 367
+              "line": 386
             },
             {
               "name": "update",
               "kind": "method",
-              "line": 386
+              "line": 409
             },
             {
               "name": "archive",
               "kind": "method",
-              "line": 405
+              "line": 428
             },
             {
               "name": "duplicate",
               "kind": "method",
-              "line": 417
+              "line": 440
             },
             {
               "name": "listTeams",
               "kind": "method",
-              "line": 430
+              "line": 453
             },
             {
               "name": "listTeamsAll",
               "kind": "method",
-              "line": 445
+              "line": 468
             },
             {
               "name": "addAtlassianTeam",
               "kind": "method",
-              "line": 478
+              "line": 501
             },
             {
               "name": "deleteAtlassianTeam",
               "kind": "method",
-              "line": 497
+              "line": 520
             },
             {
               "name": "getAtlassianTeam",
               "kind": "method",
-              "line": 508
+              "line": 531
             },
             {
               "name": "updateAtlassianTeam",
               "kind": "method",
-              "line": 522
+              "line": 547
             },
             {
               "name": "createPlanOnlyTeam",
               "kind": "method",
-              "line": 539
+              "line": 564
             },
             {
               "name": "deletePlanOnlyTeam",
               "kind": "method",
-              "line": 560
+              "line": 585
             },
             {
               "name": "getPlanOnlyTeam",
               "kind": "method",
-              "line": 571
+              "line": 596
             },
             {
               "name": "updatePlanOnlyTeam",
               "kind": "method",
-              "line": 585
+              "line": 612
             },
             {
               "name": "trash",
               "kind": "method",
-              "line": 601
+              "line": 628
             }
           ]
         }
