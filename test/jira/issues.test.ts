@@ -127,6 +127,37 @@ describe('IssuesResource', () => {
         body: data,
       });
     });
+
+    it('passes all spec query params when provided (B1056)', async () => {
+      // Spec: notifyUsers, overrideScreenSecurity, overrideEditableFlag, returnIssue, expand
+      transport.respondWith(undefined);
+      await issues.update(
+        'PROJ-1',
+        { fields: {} },
+        {
+          notifyUsers: false,
+          overrideScreenSecurity: true,
+          overrideEditableFlag: true,
+          returnIssue: true,
+          expand: 'renderedFields',
+        },
+      );
+      expect(transport.lastCall?.options.query).toMatchObject({
+        notifyUsers: false,
+        overrideScreenSecurity: true,
+        overrideEditableFlag: true,
+        returnIssue: true,
+        expand: 'renderedFields',
+      });
+    });
+
+    it('omits query params when not provided', async () => {
+      transport.respondWith(undefined);
+      await issues.update('PROJ-1', { fields: {} });
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['notifyUsers']).toBeUndefined();
+      expect(query['returnIssue']).toBeUndefined();
+    });
   });
 
   // ── delete ────────────────────────────────────────────────────────────────
@@ -144,6 +175,20 @@ describe('IssuesResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/issue/PROJ-1`,
       });
+    });
+
+    it('passes deleteSubtasks query param when provided (B1056)', async () => {
+      // Spec: deleteSubtasks is a string enum "true" | "false", not boolean
+      transport.respondWith(undefined);
+      await issues.delete('PROJ-1', { deleteSubtasks: 'true' });
+      expect(transport.lastCall?.options.query).toMatchObject({ deleteSubtasks: 'true' });
+    });
+
+    it('omits deleteSubtasks query param when not provided', async () => {
+      transport.respondWith(undefined);
+      await issues.delete('PROJ-1');
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['deleteSubtasks']).toBeUndefined();
     });
   });
 
@@ -167,6 +212,33 @@ describe('IssuesResource', () => {
         method: 'GET',
         path: `${BASE_URL}/issue/PROJ-1/transitions`,
       });
+    });
+
+    it('passes all spec query params when provided (B1056)', async () => {
+      // Spec: expand, transitionId, skipRemoteOnlyCondition, includeUnavailableTransitions, sortByOpsBarAndStatus
+      transport.respondWith({ transitions: [] });
+      await issues.getTransitions('PROJ-1', {
+        expand: 'transitions.fields',
+        transitionId: '21',
+        skipRemoteOnlyCondition: true,
+        includeUnavailableTransitions: true,
+        sortByOpsBarAndStatus: false,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        expand: 'transitions.fields',
+        transitionId: '21',
+        skipRemoteOnlyCondition: true,
+        includeUnavailableTransitions: true,
+        sortByOpsBarAndStatus: false,
+      });
+    });
+
+    it('omits query params when not provided', async () => {
+      transport.respondWith({ transitions: [] });
+      await issues.getTransitions('PROJ-1');
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['expand']).toBeUndefined();
+      expect(query['transitionId']).toBeUndefined();
     });
   });
 
@@ -267,6 +339,25 @@ describe('IssuesResource', () => {
     it('throws ValidationError when agileBaseUrl is not configured', async () => {
       const noAgile = new IssuesResource(transport, BASE_URL);
       await expect(noAgile.getAgile('PROJ-1')).rejects.toThrow('agileBaseUrl is required');
+    });
+
+    it('passes expand and updateHistory as query params (B1056)', async () => {
+      // Spec: expand (string), updateHistory (boolean), fields (array → repeated params)
+      transport.respondWith({ id: '10001', key: 'PROJ-1', self: '', fields: {} });
+      await issues.getAgile('PROJ-1', { expand: 'changelog', updateHistory: true });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        expand: 'changelog',
+        updateHistory: true,
+      });
+    });
+
+    it('passes fields as repeated path params (type:array in agile spec) (B1056)', async () => {
+      transport.respondWith({ id: '10001', key: 'PROJ-1', self: '', fields: {} });
+      await issues.getAgile('PROJ-1', { fields: ['summary', 'status'] });
+      // fields must be repeated params in the path, not in query
+      expect(transport.lastCall?.options.path).toContain('fields=summary');
+      expect(transport.lastCall?.options.path).toContain('fields=status');
+      expect(transport.lastCall?.options.query ?? {}).not.toHaveProperty('fields');
     });
   });
 
@@ -453,13 +544,31 @@ describe('IssuesResource', () => {
       expect(query['startAt']).toBeUndefined();
       expect(query['maxResults']).toBeUndefined();
     });
+
+    it('returns isLast and nextPage from spec PageBeanChangelog (B1056)', async () => {
+      // Spec: PageBeanChangelog — has isLast, nextPage, self in addition to startAt/maxResults/total/values
+      const nextUrl = `${BASE_URL}/issue/PROJ-1/changelog?startAt=50`;
+      transport.respondWith({
+        startAt: 0,
+        maxResults: 50,
+        total: 100,
+        values: [],
+        isLast: false,
+        nextPage: nextUrl,
+        self: `${BASE_URL}/issue/PROJ-1/changelog`,
+      });
+      const result = await resource.getChangelog('PROJ-1');
+      expect(result.isLast).toBe(false);
+      expect(result.nextPage).toBe(nextUrl);
+    });
   });
 
   // ── filterChangelog (B481) ────────────────────────────────────────────────
 
   describe('filterChangelog() — B481', () => {
     it('sends POST /issue/:key/changelog/list with changelogIds', async () => {
-      const payload = { startAt: 0, maxResults: 50, total: 2, values: [] };
+      // Spec: PageOfChangelogs — uses `histories[]`, not `values[]`
+      const payload = { startAt: 0, maxResults: 50, total: 2, histories: [] };
       transport.respondWith(payload);
       const result = await resource.filterChangelog('PROJ-1', [10001, 10002]);
       expect(result).toEqual(payload);
@@ -468,6 +577,14 @@ describe('IssuesResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/changelog/list`,
         body: { changelogIds: [10001, 10002] },
       });
+    });
+
+    it('returns histories[] not values[] in response (B1056)', async () => {
+      // Spec: PageOfChangelogs has histories[], not values[]
+      const histories = [{ id: '10001', created: '2024-01-01T00:00:00.000Z', items: [] }];
+      transport.respondWith({ startAt: 0, maxResults: 50, total: 1, histories });
+      const result = await resource.filterChangelog('PROJ-1', [10001]);
+      expect(result.histories).toEqual(histories);
     });
   });
 
@@ -727,6 +844,13 @@ describe('IssuesResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/votes`,
       });
     });
+
+    it('sends no request body (spec has no requestBody for POST /votes) (B1056)', async () => {
+      // Spec: POST /rest/api/3/issue/{issueIdOrKey}/votes has no requestBody defined
+      transport.respondWith(undefined);
+      await resource.addVote('PROJ-1');
+      expect(transport.lastCall?.options.body).toBeUndefined();
+    });
   });
 
   // ── removeWatcher (B502) ──────────────────────────────────────────────────
@@ -761,6 +885,29 @@ describe('IssuesResource', () => {
         path: `${BASE_URL}/issue/PROJ-1/watchers`,
       });
     });
+
+    it('returns watchers with full UserDetails fields (B1056)', async () => {
+      // Spec: Watchers.watchers items are UserDetails — many more fields than just accountId/displayName
+      const watchers = [
+        {
+          accountId: 'acc-1',
+          accountType: 'atlassian',
+          active: true,
+          displayName: 'Alice',
+          emailAddress: 'alice@example.com',
+          self: 'https://example.atlassian.net/rest/api/3/user?accountId=acc-1',
+          avatarUrls: { '48x48': 'https://example.com/avatar.png' },
+        },
+      ];
+      transport.respondWith({ self: 'url', isWatching: false, watchCount: 1, watchers });
+      const result = await resource.getWatchers('PROJ-1');
+      expect(result.watchers?.[0]).toMatchObject({
+        accountId: 'acc-1',
+        accountType: 'atlassian',
+        active: true,
+        emailAddress: 'alice@example.com',
+      });
+    });
   });
 
   // ── addWatcher (B504) ─────────────────────────────────────────────────────
@@ -787,6 +934,27 @@ describe('IssuesResource', () => {
         method: 'DELETE',
         path: `${BASE_URL}/issue/PROJ-1/worklog`,
       });
+    });
+
+    it('passes adjustEstimate and overrideEditableFlag as query params (B1056)', async () => {
+      // Spec: adjustEstimate (enum: "leave"|"auto"), overrideEditableFlag (boolean)
+      transport.respondWith(undefined);
+      await issues.deleteAllWorklogs('PROJ-1', [10001], {
+        adjustEstimate: 'leave',
+        overrideEditableFlag: true,
+      });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        adjustEstimate: 'leave',
+        overrideEditableFlag: true,
+      });
+    });
+
+    it('omits query params when not provided', async () => {
+      transport.respondWith(undefined);
+      await issues.deleteAllWorklogs('PROJ-1', [10001]);
+      const query = transport.lastCall?.options.query ?? {};
+      expect(query['adjustEstimate']).toBeUndefined();
+      expect(query['overrideEditableFlag']).toBeUndefined();
     });
 
     it('encodes issueIdOrKey', async () => {
@@ -1097,14 +1265,27 @@ describe('IssuesResource', () => {
 
   describe('archiveIssues() — B516', () => {
     it('sends PUT /issue/archive with issueIdsOrKeys body', async () => {
-      transport.respondWith({ archived: 2, failed: 0 });
+      // Spec: IssueArchivalSyncResponse — { numberOfIssuesUpdated?, errors? }
+      // (archived/failed were fictional fields; spec uses numberOfIssuesUpdated)
+      transport.respondWith({ numberOfIssuesUpdated: 2, errors: {} });
       const result = await issues.archiveIssues(['PROJ-1', 'PROJ-2']);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/issue/archive`,
         body: { issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] },
       });
-      expect(result).toMatchObject({ archived: 2 });
+      expect(result).toMatchObject({ numberOfIssuesUpdated: 2 });
+    });
+
+    it('returns spec-shape errors when some issues fail to archive (B1056)', async () => {
+      // Spec errors is an object with named error categories, not an array
+      const errorsPayload = {
+        issueIsSubtask: { count: 1, issueIdsOrKeys: ['ST-1'], message: 'Issue is subtask.' },
+      };
+      transport.respondWith({ numberOfIssuesUpdated: 1, errors: errorsPayload });
+      const result = await issues.archiveIssues(['PROJ-1', 'ST-1']);
+      expect(result.errors).toMatchObject(errorsPayload);
+      expect(result.numberOfIssuesUpdated).toBe(1);
     });
   });
 
@@ -1127,14 +1308,15 @@ describe('IssuesResource', () => {
 
   describe('unarchiveIssues() — B528', () => {
     it('sends PUT /issue/unarchive with issueIdsOrKeys body', async () => {
-      transport.respondWith({ archived: 1, failed: 0 });
+      // Spec: IssueArchivalSyncResponse — { numberOfIssuesUpdated?, errors? }
+      transport.respondWith({ numberOfIssuesUpdated: 1, errors: {} });
       const result = await issues.unarchiveIssues(['PROJ-1']);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/issue/unarchive`,
         body: { issueIdsOrKeys: ['PROJ-1'] },
       });
-      expect(result).toMatchObject({ archived: 1 });
+      expect(result).toMatchObject({ numberOfIssuesUpdated: 1 });
     });
   });
 
@@ -1142,7 +1324,8 @@ describe('IssuesResource', () => {
 
   describe('bulkFetch() — B519', () => {
     it('sends POST /issue/bulkfetch', async () => {
-      transport.respondWith({ issues: [], errors: [] });
+      // Spec: BulkIssueResults — { issues?, issueErrors? } (not "errors")
+      transport.respondWith({ issues: [], issueErrors: [] });
       const result = await issues.bulkFetch({ issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'POST',
@@ -1150,6 +1333,14 @@ describe('IssuesResource', () => {
         body: { issueIdsOrKeys: ['PROJ-1', 'PROJ-2'] },
       });
       expect(result).toMatchObject({ issues: [] });
+    });
+
+    it('returns issueErrors (not errors) in response shape (B1056)', async () => {
+      // Spec: the field is issueErrors, not errors
+      const issueErrors = [{ id: 'PROJ-999', errorMessage: 'Issue not found' }];
+      transport.respondWith({ issues: [], issueErrors });
+      const result = await issues.bulkFetch({ issueIdsOrKeys: ['PROJ-1', 'PROJ-999'] });
+      expect(result.issueErrors).toEqual(issueErrors);
     });
 
     it('passes fields and expand when provided', async () => {
@@ -1255,13 +1446,33 @@ describe('IssuesResource', () => {
 
   describe('getLimitReport() — B522', () => {
     it('sends GET /issue/limit/report', async () => {
-      transport.respondWith({ issueIds: [10001, 10002] });
+      // Spec: IssueLimitReportResponseBean — { issuesApproachingLimit?, issuesBreachingLimit?, limits? }
+      const payload = {
+        issuesApproachingLimit: { '10001': { customfield_10000: 95 } },
+        issuesBreachingLimit: {},
+        limits: { customfield_10000: 100 },
+      };
+      transport.respondWith(payload);
       const result = await issues.getLimitReport();
       expect(transport.lastCall?.options).toMatchObject({
         method: 'GET',
         path: `${BASE_URL}/issue/limit/report`,
       });
-      expect(result).toMatchObject({ issueIds: [10001, 10002] });
+      expect(result).toMatchObject({ limits: { customfield_10000: 100 } });
+    });
+
+    it('returns correct spec shape with issuesApproachingLimit and issuesBreachingLimit (B1056)', async () => {
+      // Spec: field is issuesApproachingLimit/issuesBreachingLimit/limits, not issueIds
+      const payload = {
+        issuesApproachingLimit: { '10001': { customfield_10000: 95 } },
+        issuesBreachingLimit: { '10002': { customfield_10000: 101 } },
+        limits: { customfield_10000: 100 },
+      };
+      transport.respondWith(payload);
+      const result = await issues.getLimitReport();
+      expect(result.issuesApproachingLimit).toMatchObject({ '10001': { customfield_10000: 95 } });
+      expect(result.issuesBreachingLimit).toMatchObject({ '10002': { customfield_10000: 101 } });
+      expect(result.limits).toMatchObject({ customfield_10000: 100 });
     });
   });
 
@@ -1387,27 +1598,43 @@ describe('IssuesResource', () => {
   // ── Archive export (B538) ─────────────────────────────────────────────────
 
   describe('exportArchivedIssues() — B538', () => {
-    it('sends PUT /issues/archive/export (plural issues)', async () => {
-      transport.respondWith(undefined);
-      await issues.exportArchivedIssues({ jql: 'project = PROJ', exportType: 'CSV' });
+    it('sends PUT /issues/archive/export (plural issues) and returns task progress response (B1056)', async () => {
+      // Spec: responds 202 with ExportArchivedIssuesTaskProgressResponse { taskId, status, progress, ... }
+      const taskResponse = { taskId: '10990', status: 'ENQUEUED', progress: 0 };
+      transport.respondWith(taskResponse, 202);
+      const result = await issues.exportArchivedIssues({
+        projects: ['PROJ'],
+        reporters: ['uuid-001'],
+      });
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/issues/archive/export`,
-        body: { jql: 'project = PROJ', exportType: 'CSV' },
+        body: { projects: ['PROJ'], reporters: ['uuid-001'] },
       });
+      expect(result).toMatchObject({ taskId: '10990', status: 'ENQUEUED' });
     });
 
-    it('supports XLSX export type', async () => {
-      transport.respondWith(undefined);
-      await issues.exportArchivedIssues({ exportType: 'XLSX' });
-      expect(transport.lastCall?.options.body).toMatchObject({ exportType: 'XLSX' });
-    });
-
-    it('sends without exportType when not provided', async () => {
-      transport.respondWith(undefined);
-      await issues.exportArchivedIssues({ jql: 'project = PROJ' });
+    it('accepts spec-correct filter fields: archivedBy, archivedDateRange, issueTypes, projects, reporters', async () => {
+      transport.respondWith({ taskId: 'task-1', status: 'ENQUEUED', progress: 0 }, 202);
+      const result = await issues.exportArchivedIssues({
+        archivedBy: ['uuid-rep-001'],
+        archivedDateRange: { dateAfter: '2023-01-01', dateBefore: '2023-01-12' },
+        issueTypes: ['10001'],
+        projects: ['FOO', 'BAR'],
+        reporters: ['uuid-rep-002'],
+      });
       const body = transport.lastCall?.options.body as Record<string, unknown>;
-      expect(body['exportType']).toBeUndefined();
+      expect(body['archivedBy']).toEqual(['uuid-rep-001']);
+      expect(body['archivedDateRange']).toMatchObject({ dateAfter: '2023-01-01' });
+      expect(result.taskId).toBe('task-1');
+    });
+
+    it('still accepts deprecated jql/exportType fields (CLI compat, see DEFERRED-CLI)', async () => {
+      // These are deprecated but retained to avoid breaking the CLI until it is updated
+      transport.respondWith({ taskId: 'task-2', status: 'ENQUEUED', progress: 0 }, 202);
+      await issues.exportArchivedIssues({ jql: 'project = PROJ', exportType: 'CSV' });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      expect(body['jql']).toBe('project = PROJ');
     });
   });
 });

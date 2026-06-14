@@ -61,6 +61,7 @@ export { IssuesResource } from './resources/issues.js';
 export type {
   IssueChangelogEntry,
   IssueChangelog,
+  PageOfChangelogs,
   ListChangelogParams,
   IssuePropertyKey,
   IssuePropertyKeys,
@@ -70,10 +71,23 @@ export type {
   CreateRemoteLinkData,
   CreateRemoteLinkResult,
   IssueVotes,
+  IssueUserDetails,
   IssueWatchers,
   IssueNotifyData,
   AssignIssueData,
   BulkIssueIsWatchingResult,
+  BulkFetchIssueError,
+  BulkFetchResult,
+  IssueArchiveResult,
+  IssueLimitReport,
+  DateRangeFilterRequest,
+  IssueArchiveExportData,
+  ExportArchivedIssuesResult,
+  UpdateIssueParams,
+  DeleteIssueParams,
+  GetTransitionsParams,
+  GetAgileIssueParams,
+  DeleteAllWorklogsParams,
 } from './resources/issues.js';
 export { ProjectsResource } from './resources/projects.js';
 export type {
