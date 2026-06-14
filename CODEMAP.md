@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "cee3e44832750dd37fd73d74d15b937f8881ecbd50a2a1d2e512dce5468c20b0",
+  "sourceHash": "4dd045546874f6979575ee82f6cdc7b4bd72749ef5041e284c1d228897d0d97a",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -17894,6 +17894,10 @@
             {
               "exported": "ClassificationLevel",
               "original": "ClassificationLevel"
+            },
+            {
+              "exported": "ListClassificationLevelsParams",
+              "original": "ListClassificationLevelsParams"
             }
           ]
         },
@@ -18974,6 +18978,30 @@
             {
               "exported": "FeatureFlag",
               "original": "FeatureFlag"
+            },
+            {
+              "exported": "FeatureFlagSummary",
+              "original": "FeatureFlagSummary"
+            },
+            {
+              "exported": "FeatureFlagStatus",
+              "original": "FeatureFlagStatus"
+            },
+            {
+              "exported": "FeatureFlagRollout",
+              "original": "FeatureFlagRollout"
+            },
+            {
+              "exported": "FeatureFlagDetails",
+              "original": "FeatureFlagDetails"
+            },
+            {
+              "exported": "EnvironmentDetails",
+              "original": "EnvironmentDetails"
+            },
+            {
+              "exported": "IssueIdOrKeysAssociation",
+              "original": "IssueIdOrKeysAssociation"
             }
           ]
         },
@@ -24122,17 +24150,25 @@
       "path": "src/jira/resources/classification-levels.ts",
       "symbols": [
         {
+          "name": "ListClassificationLevelsParams",
+          "kind": "interface",
+          "line": 8,
+          "exported": true,
+          "signature": "export interface ListClassificationLevelsParams { readonly status?: readonly ('PUBLISHED' | 'ARCHIVED' | 'DRAFT')[]; rea…",
+          "jsdoc": "Query parameters for {@link ClassificationLevelsResource.list}. Spec: `GET /rest/api/3/classification-levels`."
+        },
+        {
           "name": "ClassificationLevel",
           "kind": "interface",
-          "line": 4,
+          "line": 25,
           "exported": true,
-          "signature": "export interface ClassificationLevel { readonly id: string; readonly name: string; readonly description?: string; readon…",
-          "jsdoc": "A Jira data classification level."
+          "signature": "export interface ClassificationLevel { readonly id: string; readonly status: string; readonly name?: string; readonly de…",
+          "jsdoc": "A Jira data classification level. Spec: `DataClassificationTagBean`."
         },
         {
           "name": "ClassificationLevelsResource",
           "kind": "class",
-          "line": 19,
+          "line": 44,
           "exported": true,
           "signature": "export class ClassificationLevelsResource",
           "jsdoc": "Jira Classification Levels resource — GET /rest/api/3/classification-levels.",
@@ -24140,17 +24176,18 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 20
+              "line": 45
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 29
+              "line": 56
             }
           ]
         }
       ],
       "imports": [
+        "../../core/query.js",
         "../../core/types.js"
       ]
     },
@@ -26985,17 +27022,65 @@
       "path": "src/jira/resources/flag.ts",
       "symbols": [
         {
-          "name": "FeatureFlag",
+          "name": "FeatureFlagRollout",
           "kind": "interface",
           "line": 5,
           "exported": true,
-          "signature": "export interface FeatureFlag { readonly id: string; readonly updateSequenceId?: number; readonly displayName?: string; r…",
-          "jsdoc": "A Jira feature flag entity."
+          "signature": "export interface FeatureFlagRollout { readonly percentage?: number; readonly text?: string; readonly rules?: number; }",
+          "jsdoc": "Rollout configuration for a feature flag. Spec: `FeatureFlagRollout`."
+        },
+        {
+          "name": "FeatureFlagStatus",
+          "kind": "interface",
+          "line": 12,
+          "exported": true,
+          "signature": "export interface FeatureFlagStatus { readonly enabled: boolean; readonly defaultValue?: string; readonly rollout?: Featu…",
+          "jsdoc": "Status of a feature flag in one environment. Spec: `FeatureFlagStatus`."
+        },
+        {
+          "name": "FeatureFlagSummary",
+          "kind": "interface",
+          "line": 19,
+          "exported": true,
+          "signature": "export interface FeatureFlagSummary { readonly url?: string; readonly status: FeatureFlagStatus; readonly lastUpdated: s…",
+          "jsdoc": "Summary information for a feature flag. Spec: `FeatureFlagSummary`."
+        },
+        {
+          "name": "EnvironmentDetails",
+          "kind": "interface",
+          "line": 26,
+          "exported": true,
+          "signature": "export interface EnvironmentDetails { readonly name: string; readonly type?: 'development' | 'testing' | 'staging' | 'pr…",
+          "jsdoc": "Details of a single environment. Spec: `EnvironmentDetails`."
+        },
+        {
+          "name": "FeatureFlagDetails",
+          "kind": "interface",
+          "line": 32,
+          "exported": true,
+          "signature": "export interface FeatureFlagDetails { readonly url: string; readonly lastUpdated: string; readonly environment: Environm…",
+          "jsdoc": "Per-environment details for a feature flag. Spec: `FeatureFlagDetails`."
+        },
+        {
+          "name": "IssueIdOrKeysAssociation",
+          "kind": "interface",
+          "line": 40,
+          "exported": true,
+          "signature": "export interface IssueIdOrKeysAssociation { readonly associationType: 'issueKeys' | 'issueIdOrKeys'; readonly values: re…",
+          "jsdoc": "Issue ID or keys association. Spec: `IssueIdOrKeysAssociation`."
+        },
+        {
+          "name": "FeatureFlag",
+          "kind": "interface",
+          "line": 49,
+          "exported": true,
+          "signature": "export interface FeatureFlag { readonly id: string; readonly key: string; readonly updateSequenceId: number; readonly di…",
+          "jsdoc": "A Jira feature flag entity. Spec: `FeatureFlagData` (GET /rest/featureflags/0.1/flag/{featureFlagId})."
         },
         {
           "name": "FlagResource",
           "kind": "class",
-          "line": 18,
+          "line": 70,
           "exported": true,
           "signature": "export class FlagResource",
           "jsdoc": "Jira Feature Flags resource — GET and DELETE /rest/featureflags/0.1/flag/{featureFlagId}.",
@@ -27003,17 +27088,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 19
+              "line": 71
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 28
+              "line": 80
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 40
+              "line": 92
             }
           ]
         }
