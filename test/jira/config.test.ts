@@ -83,6 +83,10 @@ describe('ConfigResource', () => {
     it('throws on invalid maxResults', async () => {
       await expect(resource.list({ maxResults: 0 })).rejects.toThrow();
     });
+
+    it('throws when maxResults exceeds spec maximum of 100', async () => {
+      await expect(resource.list({ maxResults: 101 })).rejects.toThrow(/must not exceed 100/);
+    });
   });
 
   // ── B367: listAll ──────────────────────────────────────────────────────────
@@ -132,6 +136,14 @@ describe('ConfigResource', () => {
           break;
         }
       }).rejects.toThrow();
+    });
+
+    it('throws when maxResults exceeds 100 in listAll', async () => {
+      await expect(async () => {
+        for await (const _item of resource.listAll({ maxResults: 101 })) {
+          break;
+        }
+      }).rejects.toThrow(/must not exceed 100/);
     });
   });
 
@@ -310,6 +322,12 @@ describe('ConfigResource', () => {
     it('throws on invalid maxResults', async () => {
       await expect(resource.listFields(10001, { maxResults: 0 })).rejects.toThrow();
     });
+
+    it('throws when maxResults exceeds 100 for listFields', async () => {
+      await expect(resource.listFields(10001, { maxResults: 101 })).rejects.toThrow(
+        /must not exceed 100/,
+      );
+    });
   });
 
   // ── B373: listFieldsAll ────────────────────────────────────────────────────
@@ -346,6 +364,14 @@ describe('ConfigResource', () => {
           break;
         }
       }).rejects.toThrow();
+    });
+
+    it('throws when maxResults exceeds 100 in listFieldsAll', async () => {
+      await expect(async () => {
+        for await (const _item of resource.listFieldsAll(10001, { maxResults: 101 })) {
+          break;
+        }
+      }).rejects.toThrow(/must not exceed 100/);
     });
   });
 
@@ -397,6 +423,12 @@ describe('ConfigResource', () => {
       await expect(resource.listProjects(10001, { maxResults: 0 })).rejects.toThrow();
     });
 
+    it('throws when maxResults exceeds 100 for listProjects', async () => {
+      await expect(resource.listProjects(10001, { maxResults: 101 })).rejects.toThrow(
+        /must not exceed 100/,
+      );
+    });
+
     it('forwards startAt and maxResults via buildSchemeProjectsQuery', async () => {
       transport.respondWith(makePageOf([]));
 
@@ -441,36 +473,79 @@ describe('ConfigResource', () => {
         }
       }).rejects.toThrow();
     });
+
+    it('throws when maxResults exceeds 100 in listProjectsAll', async () => {
+      await expect(async () => {
+        for await (const _item of resource.listProjectsAll(10001, { maxResults: 101 })) {
+          break;
+        }
+      }).rejects.toThrow(/must not exceed 100/);
+    });
   });
 
   // ── B376: removeFieldAssociations ──────────────────────────────────────────
 
   describe('removeFieldAssociations()', () => {
-    it('calls DELETE /config/fieldschemes/fields with body', async () => {
-      transport.respondWith(undefined);
+    it('calls DELETE /config/fieldschemes/fields with body and returns result', async () => {
+      // Regression: was void — spec returns MinimalFieldSchemeToFieldsResponse on 200/207.
+      const responseBody = {
+        results: [{ fieldId: 'customfield_10001', schemeId: 10001, success: true }],
+      };
+      transport.respondWith(responseBody);
 
       const body = { customfield_10001: { schemeIds: [10001, 10002] } };
-      await resource.removeFieldAssociations(body);
+      const result = await resource.removeFieldAssociations(body);
 
+      expect(result).toEqual(responseBody);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'DELETE',
         path: `${BASE_URL}/config/fieldschemes/fields`,
         body,
       });
     });
+
+    it('returns partial failure details on 207', async () => {
+      const responseBody = {
+        results: [
+          { fieldId: 'customfield_10001', schemeId: 10001, success: true },
+          {
+            fieldId: 'customfield_10002',
+            schemeId: 99999,
+            success: false,
+            error: "Scheme 99999 doesn't exist",
+          },
+        ],
+      };
+      transport.respondWith(responseBody);
+
+      const result = await resource.removeFieldAssociations({
+        customfield_10002: { schemeIds: [99999] },
+      });
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[1]!.success).toBe(false);
+      expect(result.results[1]!.error).toBeDefined();
+    });
   });
 
   // ── B377: updateFieldAssociations ──────────────────────────────────────────
 
   describe('updateFieldAssociations()', () => {
-    it('calls PUT /config/fieldschemes/fields with body', async () => {
-      transport.respondWith(undefined);
+    it('calls PUT /config/fieldschemes/fields with body and returns result', async () => {
+      // Regression: was void — spec returns FieldSchemeToFieldsResponse on 200/207.
+      const responseBody = {
+        results: [
+          { fieldId: 'customfield_10001', schemeId: 10001, success: true, workTypeIds: [1, 2] },
+        ],
+      };
+      transport.respondWith(responseBody);
 
       const body = {
         customfield_10001: [{ schemeIds: [10001], restrictedToWorkTypes: [1, 2] }],
       };
-      await resource.updateFieldAssociations(body);
+      const result = await resource.updateFieldAssociations(body);
 
+      expect(result).toEqual(responseBody);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/config/fieldschemes/fields`,
@@ -499,14 +574,19 @@ describe('ConfigResource', () => {
   // ── B379: updateFieldParameters ───────────────────────────────────────────
 
   describe('updateFieldParameters()', () => {
-    it('calls PUT /config/fieldschemes/fields/parameters with body', async () => {
-      transport.respondWith(undefined);
+    it('calls PUT /config/fieldschemes/fields/parameters with body and returns result', async () => {
+      // Regression: was void — spec returns UpdateFieldSchemeParametersResponse on 200/207.
+      const responseBody = {
+        results: [{ fieldId: 'customfield_10001', schemeId: 10001, success: true }],
+      };
+      transport.respondWith(responseBody);
 
       const body = {
         customfield_10001: [{ schemeIds: [10001], parameters: { isRequired: true } }],
       };
-      await resource.updateFieldParameters(body);
+      const result = await resource.updateFieldParameters(body);
 
+      expect(result).toEqual(responseBody);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/config/fieldschemes/fields/parameters`,
@@ -592,20 +672,70 @@ describe('ConfigResource', () => {
     });
   });
 
+  // ── B380: getProjectsWithSchemes maxResults ──────────────────────────────
+
+  describe('getProjectsWithSchemes() maxResults validation', () => {
+    it('throws when maxResults exceeds 100', async () => {
+      await expect(
+        resource.getProjectsWithSchemes({ projectId: [10100], maxResults: 101 }),
+      ).rejects.toThrow(/must not exceed 100/);
+    });
+  });
+
+  // ── B380: getProjectsWithSchemesAll maxResults ───────────────────────────
+
+  describe('getProjectsWithSchemesAll() maxResults validation', () => {
+    it('throws when maxResults exceeds 100', async () => {
+      await expect(async () => {
+        for await (const _item of resource.getProjectsWithSchemesAll({
+          projectId: [10100],
+          maxResults: 101,
+        })) {
+          break;
+        }
+      }).rejects.toThrow(/must not exceed 100/);
+    });
+  });
+
   // ── B381: associateProjects ────────────────────────────────────────────────
 
   describe('associateProjects()', () => {
-    it('calls PUT /config/fieldschemes/projects with body', async () => {
-      transport.respondWith(undefined);
+    it('calls PUT /config/fieldschemes/projects with body and returns result', async () => {
+      // Regression: was void — spec returns FieldSchemeToProjectsResponse on 200/207.
+      const responseBody = {
+        results: [{ projectId: 10100, schemeId: 10001, success: true }],
+      };
+      transport.respondWith(responseBody);
 
       const body = { '10001': { projectIds: [10100, 10101] } };
-      await resource.associateProjects(body);
+      const result = await resource.associateProjects(body);
 
+      expect(result).toEqual(responseBody);
       expect(transport.lastCall?.options).toMatchObject({
         method: 'PUT',
         path: `${BASE_URL}/config/fieldschemes/projects`,
         body,
       });
+    });
+
+    it('returns partial failure details on 207', async () => {
+      const responseBody = {
+        results: [
+          { projectId: 10100, schemeId: 10001, success: true },
+          {
+            projectId: 10101,
+            schemeId: 99999,
+            success: false,
+            error: "Field scheme #99999 doesn't exist",
+          },
+        ],
+      };
+      transport.respondWith(responseBody);
+
+      const result = await resource.associateProjects({ '99999': { projectIds: [10101] } });
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[1]!.success).toBe(false);
     });
   });
 });

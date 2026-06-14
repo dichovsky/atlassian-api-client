@@ -11,17 +11,56 @@ export interface ChangelogItem {
   readonly toString?: string | null;
 }
 
-/** A single changelog entry for an issue. */
+/**
+ * A participant in history metadata (actor, cause, generator).
+ * Spec: `HistoryMetadataParticipant` (additionalProperties:true).
+ */
+export interface HistoryMetadataParticipant {
+  readonly avatarUrl?: string;
+  readonly displayName?: string;
+  readonly displayNameKey?: string;
+  readonly id?: string;
+  readonly type?: string;
+  readonly url?: string;
+}
+
+/**
+ * Metadata associated with a changelog entry.
+ * Spec: `HistoryMetadata` (additionalProperties:true).
+ */
+export interface HistoryMetadata {
+  readonly activityDescription?: string;
+  readonly activityDescriptionKey?: string;
+  readonly actor?: HistoryMetadataParticipant;
+  readonly cause?: HistoryMetadataParticipant;
+  readonly description?: string;
+  readonly descriptionKey?: string;
+  readonly emailDescription?: string;
+  readonly emailDescriptionKey?: string;
+  readonly extraData?: Record<string, string>;
+  readonly generator?: HistoryMetadataParticipant;
+  readonly type?: string;
+}
+
+/** A single changelog entry for an issue. Spec: `Changelog`. */
 export interface ChangelogEntry {
-  readonly id: string;
-  readonly author: {
-    readonly accountId: string;
+  readonly id?: string;
+  /** The user who made the change. Spec: `UserDetails`. */
+  readonly author?: {
+    readonly accountId?: string;
+    readonly accountType?: string;
+    readonly active?: boolean;
+    readonly avatarUrls?: Record<string, string>;
     readonly displayName?: string;
     readonly emailAddress?: string;
-    readonly avatarUrls?: Record<string, string>;
+    readonly key?: string;
+    readonly name?: string;
+    readonly self?: string;
+    readonly timeZone?: string;
   };
-  readonly created: string;
-  readonly items: ChangelogItem[];
+  readonly created?: string;
+  readonly historyMetadata?: HistoryMetadata;
+  readonly items?: ChangelogItem[];
 }
 
 /**

@@ -68,11 +68,24 @@ export interface FieldAssociationParameters {
   readonly isRequired: boolean;
 }
 
-/** Per-work-type parameter override. */
+/**
+ * Per-work-type parameter override.
+ * Spec: `WorkTypeParameters` — used in `getFieldParameters` response (`workTypeId` is integer/int64).
+ */
 export interface WorkTypeParameters {
   readonly description?: string;
   readonly isRequired: boolean;
   readonly workTypeId: number;
+}
+
+/**
+ * Per-work-type parameter in a field search result.
+ * Spec: `SearchResultWorkTypeParameters` — `workTypeId` is string (different from `WorkTypeParameters`).
+ */
+export interface SearchResultWorkTypeParameters {
+  readonly description?: string;
+  readonly isRequired?: boolean;
+  readonly workTypeId?: string;
 }
 
 /** Response from GET /rest/api/3/config/fieldschemes/{id}/fields/{fieldId}/parameters. */
@@ -82,13 +95,17 @@ export interface FieldAssociationSchemeItemParameters {
   readonly workTypeParameters?: WorkTypeParameters[];
 }
 
-/** A single field search result within a scheme. */
+/**
+ * A single field search result within a scheme.
+ * Spec: `FieldAssociationSchemeFieldSearchResult` — `workTypeParameters` uses
+ * `SearchResultWorkTypeParameters` (workTypeId is string, not number).
+ */
 export interface FieldAssociationSchemeFieldResult {
   readonly allowedOperations?: string[];
   readonly fieldId?: string;
   readonly parameters?: FieldAssociationParameters;
   readonly restrictedToWorkTypes?: string[];
-  readonly workTypeParameters?: WorkTypeParameters[];
+  readonly workTypeParameters?: SearchResultWorkTypeParameters[];
 }
 
 /** A single project associated with a field association scheme. */
@@ -104,6 +121,90 @@ export interface FieldAssociationSchemeProjectResult {
 export interface ProjectFieldSchemeMapping {
   readonly projectId?: number;
   readonly schemeId?: number;
+}
+
+// ─── Mutation response types ──────────────────────────────────────────────
+
+/**
+ * A single result entry from DELETE /rest/api/3/config/fieldschemes/fields.
+ * Spec: `MinimalFieldSchemeToFieldsPartialFailure`.
+ */
+export interface MinimalFieldSchemeToFieldsPartialFailure {
+  readonly fieldId: string;
+  readonly schemeId: number;
+  readonly success: boolean;
+  readonly error?: string;
+}
+
+/**
+ * Response from DELETE /rest/api/3/config/fieldschemes/fields.
+ * Spec: `MinimalFieldSchemeToFieldsResponse`.
+ * Returned on 200 (full success) or 207 (partial failure).
+ */
+export interface MinimalFieldSchemeToFieldsResponse {
+  readonly results: MinimalFieldSchemeToFieldsPartialFailure[];
+}
+
+/**
+ * A single result entry from PUT /rest/api/3/config/fieldschemes/fields.
+ * Spec: `FieldSchemeToFieldsPartialFailure`.
+ */
+export interface FieldSchemeToFieldsPartialFailure {
+  readonly fieldId: string;
+  readonly schemeId: number;
+  readonly success: boolean;
+  readonly workTypeIds: number[];
+  readonly error?: string;
+}
+
+/**
+ * Response from PUT /rest/api/3/config/fieldschemes/fields.
+ * Spec: `FieldSchemeToFieldsResponse`.
+ * Returned on 200 (full success) or 207 (partial failure).
+ */
+export interface FieldSchemeToFieldsResponse {
+  readonly results: FieldSchemeToFieldsPartialFailure[];
+}
+
+/**
+ * A single result entry from PUT /rest/api/3/config/fieldschemes/fields/parameters.
+ * Spec: `UpdateFieldSchemeParametersPartialFailure`.
+ */
+export interface UpdateFieldSchemeParametersPartialFailure {
+  readonly fieldId: string;
+  readonly schemeId: number;
+  readonly success: boolean;
+  readonly workTypeId?: number;
+  readonly error?: string;
+}
+
+/**
+ * Response from PUT /rest/api/3/config/fieldschemes/fields/parameters.
+ * Spec: `UpdateFieldSchemeParametersResponse`.
+ * Returned on 200 (full success) or 207 (partial failure).
+ */
+export interface UpdateFieldSchemeParametersResponse {
+  readonly results: UpdateFieldSchemeParametersPartialFailure[];
+}
+
+/**
+ * A single result entry from PUT /rest/api/3/config/fieldschemes/projects.
+ * Spec: `FieldSchemeToProjectsPartialFailure`.
+ */
+export interface FieldSchemeToProjectsPartialFailure {
+  readonly projectId: number;
+  readonly schemeId: number;
+  readonly success: boolean;
+  readonly error?: string;
+}
+
+/**
+ * Response from PUT /rest/api/3/config/fieldschemes/projects.
+ * Spec: `FieldSchemeToProjectsResponse`.
+ * Returned on 200 (full success) or 207 (partial failure).
+ */
+export interface FieldSchemeToProjectsResponse {
+  readonly results: FieldSchemeToProjectsPartialFailure[];
 }
 
 // ─── Request body types ───────────────────────────────────────────────────
@@ -230,7 +331,7 @@ export class ConfigResource {
   async list(
     params?: ListFieldAssociationSchemesParams,
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeResponse>> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildListQuery(params);
     // `projectId` is `type:array` — emitted as repeated params in the path
     const path = buildListPath(`${this.baseUrl}/config/fieldschemes`, params);
@@ -250,7 +351,7 @@ export class ConfigResource {
   async *listAll(
     params?: Omit<ListFieldAssociationSchemesParams, 'startAt'>,
   ): AsyncGenerator<FieldAssociationSchemeResponse> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildListQuery({ ...params, startAt: undefined, maxResults: undefined });
     // `projectId` is `type:array` — emitted as repeated params in the path
     const path = buildListPath(`${this.baseUrl}/config/fieldschemes`, params);
@@ -346,7 +447,7 @@ export class ConfigResource {
     id: number,
     params?: ListSchemeFieldsParams,
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeFieldResult>> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildSchemeFieldsQuery(params);
     // `fieldId` is `type:array` — emitted as repeated params in the path
     const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`;
@@ -368,7 +469,7 @@ export class ConfigResource {
     id: number,
     params?: Omit<ListSchemeFieldsParams, 'startAt'>,
   ): AsyncGenerator<FieldAssociationSchemeFieldResult> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildSchemeFieldsQuery({ ...params, startAt: undefined, maxResults: undefined });
     // `fieldId` is `type:array` — emitted as repeated params in the path
     const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/fields`;
@@ -404,7 +505,7 @@ export class ConfigResource {
     id: number,
     params?: ListSchemeProjectsParams,
   ): Promise<OffsetPaginatedResponse<FieldAssociationSchemeProjectResult>> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildSchemeProjectsQuery(params);
     // `projectId` is `type:array` — emitted as repeated params in the path
     const basePath = `${this.baseUrl}/config/fieldschemes/${encodePathSegment(String(id))}/projects`;
@@ -426,7 +527,7 @@ export class ConfigResource {
     id: number,
     params?: Omit<ListSchemeProjectsParams, 'startAt'>,
   ): AsyncGenerator<FieldAssociationSchemeProjectResult> {
-    if (params?.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params?.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildSchemeProjectsQuery({
       ...params,
       startAt: undefined,
@@ -447,26 +548,38 @@ export class ConfigResource {
    * B376: Remove field associations from schemes.
    * DELETE /rest/api/3/config/fieldschemes/fields
    * Body: Record<fieldId, { schemeIds: number[] }>
+   *
+   * Returns result details on 200 (success) or 207 (partial failure).
+   * Spec: `MinimalFieldSchemeToFieldsResponse`.
    */
-  async removeFieldAssociations(body: RemoveFieldAssociationsBody): Promise<void> {
-    await this.transport.request<undefined>({
+  async removeFieldAssociations(
+    body: RemoveFieldAssociationsBody,
+  ): Promise<MinimalFieldSchemeToFieldsResponse> {
+    const response = await this.transport.request<MinimalFieldSchemeToFieldsResponse>({
       method: 'DELETE',
       path: `${this.baseUrl}/config/fieldschemes/fields`,
       body,
     });
+    return response.data;
   }
 
   /**
    * B377: Update field associations on schemes.
    * PUT /rest/api/3/config/fieldschemes/fields
    * Body: Record<fieldId, [{ schemeIds: number[], restrictedToWorkTypes?: number[] }]>
+   *
+   * Returns result details on 200 (success) or 207 (partial failure).
+   * Spec: `FieldSchemeToFieldsResponse`.
    */
-  async updateFieldAssociations(body: UpdateFieldAssociationsBody): Promise<void> {
-    await this.transport.request<undefined>({
+  async updateFieldAssociations(
+    body: UpdateFieldAssociationsBody,
+  ): Promise<FieldSchemeToFieldsResponse> {
+    const response = await this.transport.request<FieldSchemeToFieldsResponse>({
       method: 'PUT',
       path: `${this.baseUrl}/config/fieldschemes/fields`,
       body,
     });
+    return response.data;
   }
 
   /**
@@ -486,13 +599,19 @@ export class ConfigResource {
    * B379: Update field parameters on schemes.
    * PUT /rest/api/3/config/fieldschemes/fields/parameters
    * Body: Record<fieldId, [FieldSchemeParametersUpdate]>
+   *
+   * Returns result details on 200 (success) or 207 (partial failure).
+   * Spec: `UpdateFieldSchemeParametersResponse`.
    */
-  async updateFieldParameters(body: UpdateFieldParametersBody): Promise<void> {
-    await this.transport.request<undefined>({
+  async updateFieldParameters(
+    body: UpdateFieldParametersBody,
+  ): Promise<UpdateFieldSchemeParametersResponse> {
+    const response = await this.transport.request<UpdateFieldSchemeParametersResponse>({
       method: 'PUT',
       path: `${this.baseUrl}/config/fieldschemes/fields/parameters`,
       body,
     });
+    return response.data;
   }
 
   /**
@@ -503,7 +622,7 @@ export class ConfigResource {
   async getProjectsWithSchemes(
     params: GetProjectsWithFieldSchemesParams,
   ): Promise<OffsetPaginatedResponse<ProjectFieldSchemeMapping>> {
-    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery(params);
     // `projectId` is `type:array` (required) — emitted as repeated params in the path
     const path = buildProjectsPath(`${this.baseUrl}/config/fieldschemes/projects`, params);
@@ -523,7 +642,7 @@ export class ConfigResource {
   async *getProjectsWithSchemesAll(
     params: Omit<GetProjectsWithFieldSchemesParams, 'startAt'>,
   ): AsyncGenerator<ProjectFieldSchemeMapping> {
-    if (params.maxResults !== undefined) validatePageSize(params.maxResults, 'maxResults');
+    if (params.maxResults !== undefined) validateConfigPageSize(params.maxResults, 'maxResults');
     const query = buildProjectsQuery({ ...params, startAt: undefined, maxResults: undefined });
     // `projectId` is `type:array` (required) — emitted as repeated params in the path
     const path = buildProjectsPath(`${this.baseUrl}/config/fieldschemes/projects`, params);
@@ -539,17 +658,32 @@ export class ConfigResource {
    * B381: Associate projects to field association schemes.
    * PUT /rest/api/3/config/fieldschemes/projects
    * Body: Record<schemeId, { projectIds: number[] }>
+   *
+   * Returns result details on 200 (success) or 207 (partial failure).
+   * Spec: `FieldSchemeToProjectsResponse`.
    */
-  async associateProjects(body: AssociateProjectsBody): Promise<void> {
-    await this.transport.request<undefined>({
+  async associateProjects(body: AssociateProjectsBody): Promise<FieldSchemeToProjectsResponse> {
+    const response = await this.transport.request<FieldSchemeToProjectsResponse>({
       method: 'PUT',
       path: `${this.baseUrl}/config/fieldschemes/projects`,
       body,
     });
+    return response.data;
   }
 }
 
 // ─── Internal helpers (file-private) ──────────────────────────────────────
+
+/**
+ * Validate a page size for config/fieldschemes endpoints.
+ * Spec maximum is 100 for all four paginated endpoints.
+ */
+function validateConfigPageSize(value: number, name: string): void {
+  validatePageSize(value, name);
+  if (value > 100) {
+    throw new ValidationError(`${name} must not exceed 100 (spec maximum), got: ${value}`);
+  }
+}
 
 function buildListQuery(
   params: ListFieldAssociationSchemesParams | undefined,
