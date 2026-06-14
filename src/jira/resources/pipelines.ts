@@ -2,90 +2,134 @@ import type { Transport } from '../../core/types.js';
 import { encodePathSegment } from '../../core/path.js';
 
 /**
+ * Build state values as specified in the Jira Software Builds API schema.
+ * Verified against jira-software.json `BuildState` enum.
+ */
+export type BuildState =
+  | 'pending'
+  | 'in_progress'
+  | 'successful'
+  | 'failed'
+  | 'cancelled'
+  | 'unknown';
+
+/**
+ * Deployment state values as specified in the Jira Software Deployments API schema.
+ * Verified against jira-software.json `DeploymentData.state` enum.
+ */
+export type DeploymentState =
+  | 'unknown'
+  | 'pending'
+  | 'in_progress'
+  | 'cancelled'
+  | 'failed'
+  | 'rolled_back'
+  | 'successful';
+
+/**
+ * Environment type values as specified in the Jira Software Deployments API schema.
+ * Verified against jira-software.json `Environment.type` enum.
+ */
+export type DeploymentEnvironmentType =
+  | 'unmapped'
+  | 'development'
+  | 'testing'
+  | 'staging'
+  | 'production';
+
+/**
+ * Commit reference for a build entity.
+ * Verified against jira-software.json `BuildCommitReference` schema.
+ */
+export interface BuildCommitReference {
+  readonly id: string;
+  readonly repositoryUri: string;
+}
+
+/**
+ * Branch/tag ref reference for a build entity.
+ * Verified against jira-software.json `BuildRefReference` schema.
+ */
+export interface BuildRefReference {
+  readonly name: string;
+  readonly uri: string;
+}
+
+/**
  * A Jira Software build entity stored via the Builds API.
  *
  * NOTE: Base URL deviates from the standard `/rest/api/3/…` — this resource
  * uses `/rest/builds/0.1/…` (Jira Software Builds integration API).
+ *
+ * Verified required fields against jira-software.json `BuildData` schema.
  */
 export interface Build {
-  readonly schemaVersion?: string;
+  readonly schemaVersion?: '1.0';
   readonly pipelineId: string;
   readonly buildNumber: number;
-  readonly updateSequenceNumber?: number;
-  readonly displayName?: string;
+  readonly updateSequenceNumber: number;
+  readonly displayName: string;
   readonly description?: string;
   readonly label?: string;
-  readonly url?: string;
-  readonly state?: string;
-  readonly lastUpdated?: string;
+  readonly url: string;
+  readonly state: BuildState;
+  readonly lastUpdated: string;
   readonly issueKeys?: readonly string[];
   readonly associations?: readonly BuildAssociation[];
   readonly testInfo?: BuildTestInfo;
   readonly references?: readonly BuildReference[];
 }
 
-/** Association entry for a build entity. */
+/**
+ * Association entry for a build entity.
+ * Verified against jira-software.json `IssueIdOrKeysAssociation` schema
+ * (the type used for build associations).
+ */
 export interface BuildAssociation {
-  readonly associationType?: string;
-  readonly values?: readonly string[];
+  readonly associationType: string;
+  readonly values: readonly string[];
 }
 
-/** Test result summary for a build. */
+/**
+ * Test result summary for a build.
+ * Verified required fields against jira-software.json `TestInfo` schema.
+ */
 export interface BuildTestInfo {
-  readonly totalNumber?: number;
-  readonly numberPassed?: number;
-  readonly numberFailed?: number;
+  readonly totalNumber: number;
+  readonly numberPassed: number;
+  readonly numberFailed: number;
   readonly numberSkipped?: number;
 }
 
 /** Reference entry (e.g. commit, branch ref) for a build. */
 export interface BuildReference {
-  readonly commit?: Record<string, unknown>;
-  readonly ref?: Record<string, unknown>;
+  readonly commit?: BuildCommitReference;
+  readonly ref?: BuildRefReference;
 }
 
 /**
- * A Jira Software deployment entity stored via the Deployments API.
- *
- * NOTE: Base URL deviates from the standard `/rest/api/3/…` — this resource
- * uses `/rest/deployments/0.1/…` (Jira Software Deployments integration API).
+ * Association entry for a deployment entity.
+ * Covers IssueIdOrKeysAssociation, ServiceIdOrKeysAssociation (string values),
+ * and EntityAssociation (object values: Commit, Repository).
+ * Verified against jira-software.json association schemas.
  */
-export interface Deployment {
-  readonly deploymentSequenceNumber?: number;
-  readonly updateSequenceNumber?: number;
-  readonly issueKeys?: readonly string[];
-  readonly associations?: readonly DeploymentAssociation[];
-  readonly displayName?: string;
-  readonly url?: string;
-  readonly description?: string;
-  readonly lastUpdated?: string;
-  readonly label?: string;
-  readonly duration?: number;
-  readonly state?: string;
-  readonly pipeline?: DeploymentPipeline;
-  readonly environment?: DeploymentEnvironment;
-  readonly commands?: readonly DeploymentCommand[];
-  readonly schemaVersion?: string;
-}
-
-/** Association entry for a deployment entity. */
 export interface DeploymentAssociation {
-  readonly associationType?: string;
-  readonly values?: readonly string[];
+  readonly associationType: string;
+  readonly values: readonly (string | Record<string, string>)[];
 }
 
 /** Pipeline metadata on a deployment. */
 export interface DeploymentPipeline {
-  readonly id?: string;
-  readonly displayName?: string;
-  readonly url?: string;
+  readonly id: string;
+  readonly displayName: string;
+  readonly url: string;
 }
 
 /** Environment metadata on a deployment. */
 export interface DeploymentEnvironment {
-  readonly id?: string;
-  readonly displayName?: string;
-  readonly type?: string;
+  readonly id: string;
+  readonly displayName: string;
+  readonly type: DeploymentEnvironmentType;
 }
 
 /** Command associated with a deployment. */
@@ -93,27 +137,53 @@ export interface DeploymentCommand {
   readonly command?: string;
 }
 
+/**
+ * A Jira Software deployment entity stored via the Deployments API.
+ *
+ * NOTE: Base URL deviates from the standard `/rest/api/3/…` — this resource
+ * uses `/rest/deployments/0.1/…` (Jira Software Deployments integration API).
+ *
+ * Verified required fields against jira-software.json `DeploymentData` schema.
+ */
+export interface Deployment {
+  readonly deploymentSequenceNumber: number;
+  readonly updateSequenceNumber: number;
+  readonly displayName: string;
+  readonly url: string;
+  readonly description: string;
+  readonly lastUpdated: string;
+  readonly state: DeploymentState;
+  readonly pipeline: DeploymentPipeline;
+  readonly environment: DeploymentEnvironment;
+  readonly issueKeys?: readonly string[];
+  readonly associations?: readonly DeploymentAssociation[];
+  readonly label?: string;
+  readonly duration?: number;
+  readonly commands?: readonly DeploymentCommand[];
+  readonly schemaVersion?: '1.0';
+}
+
 /** A single detail entry in a deployment gating-status response. */
 export interface DeploymentGatingStatusDetail {
-  readonly type?: string; // e.g. "issue"
-  readonly issueKey?: string;
-  readonly issueLink?: string;
+  readonly type: string; // e.g. "issue"
+  readonly issueKey: string;
+  readonly issueLink: string;
   readonly [key: string]: unknown; // type-specific extra fields
 }
 
 /**
  * Gating status for a deployment.
  *
- * Verified against the Atlassian Deployments API gating-status schema.
- * Verified: 200 OK, 401, 403, 404.
+ * Verified against the Atlassian Deployments API gating-status schema
+ * in jira-software.json (SubmitDeploymentsResponse schema for GET gating-status).
  */
 export interface DeploymentGatingStatus {
   readonly deploymentSequenceNumber?: number;
   readonly pipelineId?: string;
   readonly environmentId?: string;
   readonly gatingStatus?: string; // awaiting | allowed | prevented | invalid
-  readonly updatedTimestamp?: string; // was: updatedAt
-  readonly details?: readonly DeploymentGatingStatusDetail[]; // was: Record<string,unknown>
+  readonly updatedTimestamp?: string;
+  readonly details?: readonly DeploymentGatingStatusDetail[];
 }
 
 /**

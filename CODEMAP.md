@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "a7e403a704f94e72227d0fb82b248a8bebe3a49b960ddfdfeadb0ee17a1f2288",
+  "sourceHash": "f17b3f635589fe4a0bd149e5a6d9e500525ddbf42286f702b83ad6b597b57bef",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -18077,6 +18077,14 @@
             {
               "exported": "DevopsComponent",
               "original": "DevopsComponent"
+            },
+            {
+              "exported": "DevopsComponentTier",
+              "original": "DevopsComponentTier"
+            },
+            {
+              "exported": "DevopsComponentType",
+              "original": "DevopsComponentType"
             }
           ]
         },
@@ -19928,6 +19936,26 @@
           "from": "./resources/pipelines.js",
           "typeOnly": true,
           "names": [
+            {
+              "exported": "BuildState",
+              "original": "BuildState"
+            },
+            {
+              "exported": "DeploymentState",
+              "original": "DeploymentState"
+            },
+            {
+              "exported": "DeploymentEnvironmentType",
+              "original": "DeploymentEnvironmentType"
+            },
+            {
+              "exported": "BuildCommitReference",
+              "original": "BuildCommitReference"
+            },
+            {
+              "exported": "BuildRefReference",
+              "original": "BuildRefReference"
+            },
             {
               "exported": "Build",
               "original": "Build"
@@ -24663,17 +24691,33 @@
       "path": "src/jira/resources/devopscomponents.ts",
       "symbols": [
         {
+          "name": "DevopsComponentTier",
+          "kind": "type",
+          "line": 8,
+          "exported": true,
+          "signature": "export type DevopsComponentTier = 'Tier 1' | 'Tier 2' | 'Tier 3' | 'Tier 4';",
+          "jsdoc": "Tier values for a DevOps component. Verified against jira-software.json `DevOpsComponentData.tier` enum."
+        },
+        {
+          "name": "DevopsComponentType",
+          "kind": "type",
+          "line": 14,
+          "exported": true,
+          "signature": "export type DevopsComponentType = | 'Service' | 'Application' | 'Library' | 'Capability' | 'Cloud resource' | 'Data pipe…",
+          "jsdoc": "Component type values for a DevOps component. Verified against jira-software.json `DevOpsComponentData.componentType` enum."
+        },
+        {
           "name": "DevopsComponent",
           "kind": "interface",
-          "line": 10,
+          "line": 34,
           "exported": true,
-          "signature": "export interface DevopsComponent { readonly id: string; readonly name?: string; readonly description?: string; readonly …",
+          "signature": "export interface DevopsComponent { readonly schemaVersion?: '1.0'; readonly id: string; readonly updateSequenceNumber: n…",
           "jsdoc": "A Jira DevOps component record."
         },
         {
           "name": "DevopscomponentsResource",
           "kind": "class",
-          "line": 25,
+          "line": 55,
           "exported": true,
           "signature": "export class DevopscomponentsResource",
           "jsdoc": "Jira DevOps Components resource — DELETE and GET /rest/devopscomponents/1.0/devopscomponents/{componentId}.",
@@ -24681,17 +24725,17 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 26
+              "line": 56
             },
             {
               "name": "delete",
               "kind": "method",
-              "line": 35
+              "line": 65
             },
             {
               "name": "get",
               "kind": "method",
-              "line": 46
+              "line": 76
             }
           ]
         }
@@ -30432,89 +30476,129 @@
       "path": "src/jira/resources/pipelines.ts",
       "symbols": [
         {
+          "name": "BuildState",
+          "kind": "type",
+          "line": 8,
+          "exported": true,
+          "signature": "export type BuildState = | 'pending' | 'in_progress' | 'successful' | 'failed' | 'cancelled' | 'unknown';",
+          "jsdoc": "Build state values as specified in the Jira Software Builds API schema. Verified against jira-software.json `BuildState` enum."
+        },
+        {
+          "name": "DeploymentState",
+          "kind": "type",
+          "line": 20,
+          "exported": true,
+          "signature": "export type DeploymentState = | 'unknown' | 'pending' | 'in_progress' | 'cancelled' | 'failed' | 'rolled_back' | 'succes…",
+          "jsdoc": "Deployment state values as specified in the Jira Software Deployments API schema. Verified against jira-software.json `DeploymentData.state` enum."
+        },
+        {
+          "name": "DeploymentEnvironmentType",
+          "kind": "type",
+          "line": 33,
+          "exported": true,
+          "signature": "export type DeploymentEnvironmentType = | 'unmapped' | 'development' | 'testing' | 'staging' | 'production';",
+          "jsdoc": "Environment type values as specified in the Jira Software Deployments API schema. Verified against jira-software.json `Environment.type` enum."
+        },
+        {
+          "name": "BuildCommitReference",
+          "kind": "interface",
+          "line": 44,
+          "exported": true,
+          "signature": "export interface BuildCommitReference { readonly id: string; readonly repositoryUri: string; }",
+          "jsdoc": "Commit reference for a build entity. Verified against jira-software.json `BuildCommitReference` schema."
+        },
+        {
+          "name": "BuildRefReference",
+          "kind": "interface",
+          "line": 53,
+          "exported": true,
+          "signature": "export interface BuildRefReference { readonly name: string; readonly uri: string; }",
+          "jsdoc": "Branch/tag ref reference for a build entity. Verified against jira-software.json `BuildRefReference` schema."
+        },
+        {
           "name": "Build",
           "kind": "interface",
-          "line": 10,
+          "line": 66,
           "exported": true,
-          "signature": "export interface Build { readonly schemaVersion?: string; readonly pipelineId: string; readonly buildNumber: number; rea…",
+          "signature": "export interface Build { readonly schemaVersion?: '1.0'; readonly pipelineId: string; readonly buildNumber: number; read…",
           "jsdoc": "A Jira Software build entity stored via the Builds API."
         },
         {
           "name": "BuildAssociation",
           "kind": "interface",
-          "line": 28,
+          "line": 88,
           "exported": true,
-          "signature": "export interface BuildAssociation { readonly associationType?: string; readonly values?: readonly string[]; }",
-          "jsdoc": "Association entry for a build entity."
+          "signature": "export interface BuildAssociation { readonly associationType: string; readonly values: readonly string[]; }",
+          "jsdoc": "Association entry for a build entity. Verified against jira-software.json `IssueIdOrKeysAssociation` schema (the type used for build associations)."
         },
         {
           "name": "BuildTestInfo",
           "kind": "interface",
-          "line": 34,
+          "line": 97,
           "exported": true,
-          "signature": "export interface BuildTestInfo { readonly totalNumber?: number; readonly numberPassed?: number; readonly numberFailed?: …",
-          "jsdoc": "Test result summary for a build."
+          "signature": "export interface BuildTestInfo { readonly totalNumber: number; readonly numberPassed: number; readonly numberFailed: num…",
+          "jsdoc": "Test result summary for a build. Verified required fields against jira-software.json `TestInfo` schema."
         },
         {
           "name": "BuildReference",
           "kind": "interface",
-          "line": 42,
+          "line": 105,
           "exported": true,
-          "signature": "export interface BuildReference { readonly commit?: Record<string, unknown>; readonly ref?: Record<string, unknown>; }",
+          "signature": "export interface BuildReference { readonly commit?: BuildCommitReference; readonly ref?: BuildRefReference; }",
           "jsdoc": "Reference entry (e.g. commit, branch ref) for a build."
-        },
-        {
-          "name": "Deployment",
-          "kind": "interface",
-          "line": 53,
-          "exported": true,
-          "signature": "export interface Deployment { readonly deploymentSequenceNumber?: number; readonly updateSequenceNumber?: number; readon…",
-          "jsdoc": "A Jira Software deployment entity stored via the Deployments API."
         },
         {
           "name": "DeploymentAssociation",
           "kind": "interface",
-          "line": 72,
+          "line": 116,
           "exported": true,
-          "signature": "export interface DeploymentAssociation { readonly associationType?: string; readonly values?: readonly string[]; }",
-          "jsdoc": "Association entry for a deployment entity."
+          "signature": "export interface DeploymentAssociation { readonly associationType: string; readonly values: readonly (string | Record<st…",
+          "jsdoc": "Association entry for a deployment entity. Covers IssueIdOrKeysAssociation, ServiceIdOrKeysAssociation (string values), and EntityAssociation (object values: Commit, Repository). Verified against jira-software.json association schemas."
         },
         {
           "name": "DeploymentPipeline",
           "kind": "interface",
-          "line": 78,
+          "line": 122,
           "exported": true,
-          "signature": "export interface DeploymentPipeline { readonly id?: string; readonly displayName?: string; readonly url?: string; }",
+          "signature": "export interface DeploymentPipeline { readonly id: string; readonly displayName: string; readonly url: string; }",
           "jsdoc": "Pipeline metadata on a deployment."
         },
         {
           "name": "DeploymentEnvironment",
           "kind": "interface",
-          "line": 85,
+          "line": 129,
           "exported": true,
-          "signature": "export interface DeploymentEnvironment { readonly id?: string; readonly displayName?: string; readonly type?: string; }",
+          "signature": "export interface DeploymentEnvironment { readonly id: string; readonly displayName: string; readonly type: DeploymentEnv…",
           "jsdoc": "Environment metadata on a deployment."
         },
         {
           "name": "DeploymentCommand",
           "kind": "interface",
-          "line": 92,
+          "line": 136,
           "exported": true,
           "signature": "export interface DeploymentCommand { readonly command?: string; }",
           "jsdoc": "Command associated with a deployment."
         },
         {
+          "name": "Deployment",
+          "kind": "interface",
+          "line": 148,
+          "exported": true,
+          "signature": "export interface Deployment { readonly deploymentSequenceNumber: number; readonly updateSequenceNumber: number; readonly…",
+          "jsdoc": "A Jira Software deployment entity stored via the Deployments API."
+        },
+        {
           "name": "DeploymentGatingStatusDetail",
           "kind": "interface",
-          "line": 97,
+          "line": 167,
           "exported": true,
-          "signature": "export interface DeploymentGatingStatusDetail { readonly type?: string; readonly issueKey?: string; readonly issueLink?:…",
+          "signature": "export interface DeploymentGatingStatusDetail { readonly type: string; readonly issueKey: string; readonly issueLink: st…",
           "jsdoc": "A single detail entry in a deployment gating-status response."
         },
         {
           "name": "DeploymentGatingStatus",
           "kind": "interface",
-          "line": 110,
+          "line": 180,
           "exported": true,
           "signature": "export interface DeploymentGatingStatus { readonly deploymentSequenceNumber?: number; readonly pipelineId?: string; read…",
           "jsdoc": "Gating status for a deployment."
@@ -30522,7 +30606,7 @@
         {
           "name": "PipelinesResource",
           "kind": "class",
-          "line": 127,
+          "line": 197,
           "exported": true,
           "signature": "export class PipelinesResource",
           "jsdoc": "Jira Software Pipelines resource — covering builds and deployments at the pipeline/build and pipeline/environment/deployment level.",
@@ -30530,32 +30614,32 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 128
+              "line": 198
             },
             {
               "name": "getBuild",
               "kind": "method",
-              "line": 141
+              "line": 211
             },
             {
               "name": "deleteBuild",
               "kind": "method",
-              "line": 154
+              "line": 224
             },
             {
               "name": "getDeployment",
               "kind": "method",
-              "line": 168
+              "line": 238
             },
             {
               "name": "deleteDeployment",
               "kind": "method",
-              "line": 185
+              "line": 255
             },
             {
               "name": "getDeploymentGatingStatus",
               "kind": "method",
-              "line": 201
+              "line": 271
             }
           ]
         }
