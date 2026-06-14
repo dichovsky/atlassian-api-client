@@ -4,9 +4,50 @@ import type { OffsetPaginatedResponse } from '../../core/pagination.js';
 import { validatePageSize } from '../../core/pagination.js';
 import { appendRepeatedParams } from '../../core/query.js';
 
-/** A Jira issue field (system or custom). */
+/** JsonTypeBean — the schema of a Jira field. */
+export interface FieldSchema {
+  readonly type: string;
+  readonly system?: string;
+  readonly custom?: string;
+  readonly customId?: number;
+  readonly items?: string;
+  readonly configuration?: Record<string, unknown>;
+}
+
+/**
+ * A Jira field as returned by the paginated GET /field/search endpoint.
+ * Spec: Field schema — required: id, name, schema.
+ * Note: does NOT include `custom`, `orderable`, `navigable`, `searchable`,
+ * `clauseNames`, or `scope` — those are part of FieldDetails (GET /field).
+ */
 export interface Field {
   readonly id: string;
+  readonly name: string;
+  readonly schema: FieldSchema;
+  readonly key?: string;
+  readonly description?: string;
+  readonly isLocked?: boolean;
+  readonly isUnscreenable?: boolean;
+  readonly contextsCount?: number;
+  readonly screensCount?: number;
+  readonly projectsCount?: number;
+  readonly searcherKey?: string;
+  readonly stableId?: string;
+  readonly typeDisplayName?: string;
+  readonly lastUsed?: {
+    readonly type?: 'TRACKED' | 'NOT_TRACKED' | 'NO_INFORMATION';
+    readonly value?: string;
+  };
+}
+
+/**
+ * A Jira field as returned by GET /field (all fields, flat array) and
+ * POST /field (create custom field). Spec: FieldDetails schema.
+ * Includes `custom`, `orderable`, `navigable`, `searchable`, `clauseNames`, `scope`.
+ */
+export interface FieldDetails {
+  readonly id: string;
+  readonly key?: string;
   readonly name: string;
   readonly custom: boolean;
   readonly orderable?: boolean;
@@ -17,30 +58,62 @@ export interface Field {
     readonly type: 'PROJECT' | 'TEMPLATE';
     readonly project?: { readonly id: string };
   };
-  readonly schema?: {
-    readonly type: string;
-    readonly system?: string;
-    readonly custom?: string;
-    readonly customId?: number;
-    readonly items?: string;
-  };
-  readonly description?: string;
+  readonly schema?: FieldSchema;
 }
+
+/** Valid searcher keys for Jira custom fields. Spec: CustomFieldDefinitionJsonBean.searcherKey enum. */
+export type FieldSearcherKey =
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:cascadingselectsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:daterange'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:datetimerange'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:exactnumber'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:exacttextsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:grouppickersearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:labelsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:multiselectsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:numberrange'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:projectsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:textsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:userpickergroupsearcher'
+  | 'com.atlassian.jira.plugin.system.customfieldtypes:versionsearcher';
 
 /** Request body for creating a new custom Jira field. */
 export interface CreateFieldData {
   readonly name: string;
   readonly description?: string;
   readonly type: string;
-  readonly searcherKey?: string;
+  readonly searcherKey?: FieldSearcherKey;
 }
 
 /** Request body for updating an existing custom Jira field. */
 export interface UpdateFieldData {
   readonly name?: string;
   readonly description?: string;
-  readonly searcherKey?: string;
+  readonly searcherKey?: FieldSearcherKey;
 }
+
+/**
+ * Valid orderBy values for GET /field/search.
+ * Spec: contextsCount, lastUsed, name, screensCount, projectsCount (with optional +/- prefix).
+ * The `| (string & {})` tail preserves autocomplete while still accepting arbitrary strings.
+ */
+export type FieldOrderBy =
+  | 'contextsCount'
+  | '-contextsCount'
+  | '+contextsCount'
+  | 'lastUsed'
+  | '-lastUsed'
+  | '+lastUsed'
+  | 'name'
+  | '-name'
+  | '+name'
+  | 'screensCount'
+  | '-screensCount'
+  | '+screensCount'
+  | 'projectsCount'
+  | '-projectsCount'
+  | '+projectsCount'
+  | (string & {});
 
 /** Query parameters for listing Jira fields. */
 export interface ListFieldsParams {
@@ -49,7 +122,7 @@ export interface ListFieldsParams {
   readonly type?: ('custom' | 'system')[];
   readonly id?: string[];
   readonly query?: string;
-  readonly orderBy?: string;
+  readonly orderBy?: FieldOrderBy;
   readonly expand?: string;
   /** Filter by project IDs. Spec: projectIds (int64[]). B446 */
   readonly projectIds?: number[];
@@ -731,10 +804,9 @@ export interface FieldContextMappingBulkBody {
 }
 
 /** A single result item from the bulk context lookup (B430).
- * Spec: ContextForProjectAndIssueType.
- * `contextId` is `null` when no context matches the {projectId, issueTypeId} pair. */
+ * Spec: ContextForProjectAndIssueType — contextId is required (non-nullable string). */
 export interface FieldContextForProjectAndIssueType {
-  readonly contextId: string | null;
+  readonly contextId: string;
   readonly issueTypeId: string;
   readonly projectId: string;
 }
@@ -781,18 +853,22 @@ export class FieldsResource {
     return response.data;
   }
 
-  /** Get all fields (flat array, not paginated). */
-  async listAll(): Promise<Field[]> {
-    const response = await this.transport.request<Field[]>({
+  /** Get all fields (flat array, not paginated). Spec: GET /field → FieldDetails[]. */
+  async listAll(): Promise<FieldDetails[]> {
+    const response = await this.transport.request<FieldDetails[]>({
       method: 'GET',
       path: `${this.baseUrl}/field`,
     });
     return response.data;
   }
 
-  /** Create a custom field. */
-  async create(data: CreateFieldData): Promise<Field> {
-    const response = await this.transport.request<Field>({
+  /**
+   * Create a custom field.
+   * Spec: POST /field → 201 FieldDetails (not Field).
+   * @returns FieldDetails (includes custom, orderable, navigable, etc.)
+   */
+  async create(data: CreateFieldData): Promise<FieldDetails> {
+    const response = await this.transport.request<FieldDetails>({
       method: 'POST',
       path: `${this.baseUrl}/field`,
       body: data,

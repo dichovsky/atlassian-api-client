@@ -169,6 +169,72 @@ describe('ExpressionResource', () => {
     });
   });
 
+  // ── B1056: eval vs evaluate response shape correctness ───────────────────
+
+  describe('eval() JQL metadata uses offset-based paging (B1056)', () => {
+    it('eval() response meta.issues.jql has startAt/maxResults/count/totalCount (not nextPageToken)', async () => {
+      // IssuesJqlMetaDataBean: startAt, maxResults, count, totalCount are required
+      const jqlMeta = { startAt: 0, maxResults: 50, count: 3, totalCount: 3 };
+      transport.respondWith({
+        value: [1, 2, 3],
+        meta: { issues: { jql: jqlMeta } },
+      });
+      const result = await resource.eval({ expression: 'issues' });
+      expect(result.meta?.issues?.jql).toEqual(jqlMeta);
+      // nextPageToken is NOT part of IssuesJqlMetaDataBean (eval endpoint)
+    });
+
+    it('eval() forwards issue.id as number (IdOrKeyBean.id is integer)', async () => {
+      transport.respondWith({ value: 'PROJ-1' });
+      await resource.eval({
+        expression: 'issue.key',
+        context: { issue: { id: 10001 } },
+      });
+      const body = transport.lastCall?.options.body as Record<string, unknown>;
+      const ctx = body['context'] as Record<string, unknown>;
+      const issue = ctx['issue'] as Record<string, unknown>;
+      expect(typeof issue['id']).toBe('number');
+    });
+  });
+
+  describe('evaluate() JQL metadata uses cursor-based paging (B1056)', () => {
+    it('evaluate() response meta.issues.jql has nextPageToken/isLast (not startAt/count)', async () => {
+      // JExpEvaluateIssuesJqlMetaDataBean: nextPageToken (required), isLast (optional)
+      const jqlMeta = { nextPageToken: 'token-abc', isLast: false };
+      transport.respondWith({
+        value: [1, 2, 3],
+        meta: { issues: { jql: jqlMeta } },
+      });
+      const result = await resource.evaluate({ expression: 'issues' });
+      expect(result.meta?.issues?.jql).toEqual(jqlMeta);
+    });
+  });
+
+  // ── B1056: analyse() required fields correctness ─────────────────────────
+
+  describe('analyse() required fields (B1056)', () => {
+    it('AnalysedExpression has required expression and valid fields', async () => {
+      const response = {
+        results: [
+          { expression: 'issue.key', valid: true, type: 'String' },
+          {
+            expression: 'invalid !',
+            valid: false,
+            errors: [{ message: 'syntax error', type: 'syntax' }],
+          },
+        ],
+      };
+      transport.respondWith(response);
+      const result = await resource.analyse({ expressions: ['issue.key', 'invalid !'] });
+      // expression and valid are required
+      expect(result.results[0]?.expression).toBe('issue.key');
+      expect(result.results[0]?.valid).toBe(true);
+      // errors.message and errors.type are required per spec
+      expect(result.results[1]?.errors?.[0]?.message).toBe('syntax error');
+      expect(result.results[1]?.errors?.[0]?.type).toBe('syntax');
+    });
+  });
+
   // ── custom context variable is an array, not a Record (B1055/3) ──────────
 
   describe('context.custom is typed as array of CustomContextVariable (B1055/3)', () => {
