@@ -4,7 +4,8 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type { ListBlogPostVersionsParams } from '../types/blog-posts.js';
-import type { ContentVersion, ListVersionsParams } from '../types/versions.js';
+import type { DetailedVersion } from '../types/comments.js';
+import type { BlogPostVersionItem, ListVersionsParams, PageVersion } from '../types/versions.js';
 
 export class VersionsResource {
   constructor(
@@ -16,9 +17,9 @@ export class VersionsResource {
   async listForPage(
     pageId: string,
     params?: ListVersionsParams,
-  ): Promise<CursorPaginatedResponse<ContentVersion>> {
+  ): Promise<CursorPaginatedResponse<PageVersion>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
-    const response = await this.transport.request<CursorPaginatedResponse<ContentVersion>>({
+    const response = await this.transport.request<CursorPaginatedResponse<PageVersion>>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/versions`,
       query: params as Record<string, string | number | boolean | undefined>,
@@ -27,11 +28,11 @@ export class VersionsResource {
   }
 
   /** Get a specific version of a page. */
-  async getForPage(pageId: string, versionNumber: number): Promise<ContentVersion> {
+  async getForPage(pageId: string, versionNumber: number): Promise<DetailedVersion> {
     if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
       throw new ValidationError('versionNumber must be a positive integer');
     }
-    const response = await this.transport.request<ContentVersion>({
+    const response = await this.transport.request<DetailedVersion>({
       method: 'GET',
       path: `${this.baseUrl}/pages/${encodePathSegment(pageId)}/versions/${versionNumber}`,
     });
@@ -46,14 +47,14 @@ export class VersionsResource {
   async listForBlogPost(
     blogPostId: string,
     params?: ListBlogPostVersionsParams,
-  ): Promise<CursorPaginatedResponse<ContentVersion>> {
+  ): Promise<CursorPaginatedResponse<BlogPostVersionItem>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
-    const response = await this.transport.request<CursorPaginatedResponse<ContentVersion>>({
+    const response = await this.transport.request<CursorPaginatedResponse<BlogPostVersionItem>>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions`,
       query,
@@ -62,11 +63,11 @@ export class VersionsResource {
   }
 
   /** Get a specific version of a blog post. */
-  async getForBlogPost(blogPostId: string, versionNumber: number): Promise<ContentVersion> {
+  async getForBlogPost(blogPostId: string, versionNumber: number): Promise<DetailedVersion> {
     if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
       throw new ValidationError('versionNumber must be a positive integer');
     }
-    const response = await this.transport.request<ContentVersion>({
+    const response = await this.transport.request<DetailedVersion>({
       method: 'GET',
       path: `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions/${versionNumber}`,
     });
@@ -77,8 +78,8 @@ export class VersionsResource {
   async *listAllForPage(
     pageId: string,
     params?: Omit<ListVersionsParams, 'cursor'>,
-  ): AsyncGenerator<ContentVersion> {
-    yield* paginateCursor<ContentVersion>(
+  ): AsyncGenerator<PageVersion> {
+    yield* paginateCursor<PageVersion>(
       this.transport,
       `${this.baseUrl}/pages/${encodePathSegment(pageId)}/versions`,
       params as Record<string, string | number | boolean | undefined>,
@@ -89,13 +90,13 @@ export class VersionsResource {
   async *listAllForBlogPost(
     blogPostId: string,
     params?: Omit<ListBlogPostVersionsParams, 'cursor'>,
-  ): AsyncGenerator<ContentVersion> {
+  ): AsyncGenerator<BlogPostVersionItem> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
-    yield* paginateCursor<ContentVersion>(
+    yield* paginateCursor<BlogPostVersionItem>(
       this.transport,
       `${this.baseUrl}/blogposts/${encodePathSegment(blogPostId)}/versions`,
       query,

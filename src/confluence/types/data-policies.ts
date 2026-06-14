@@ -16,6 +16,50 @@ export interface DataPolicySpaceFlags {
 }
 
 /**
+ * A single body representation (`plain` or `view`) returned within the
+ * space description object. Mirrors the OpenAPI `BodyType` schema.
+ */
+export interface DataPolicyBodyType {
+  /** Type of content representation used for the value field. */
+  readonly representation?: string;
+  /** Body of the content in the format named by `representation`. */
+  readonly value?: string;
+}
+
+/**
+ * Description of a space as returned inside {@link DataPolicySpace}. Contains
+ * optional `plain` and `view` body representations. Mirrors the OpenAPI
+ * `SpaceDescription` schema.
+ */
+export interface DataPolicySpaceDescription {
+  readonly plain?: DataPolicyBodyType;
+  readonly view?: DataPolicyBodyType;
+}
+
+/**
+ * Icon of a space as returned inside {@link DataPolicySpace}. Mirrors the
+ * OpenAPI `SpaceIcon` schema.
+ */
+export interface DataPolicySpaceIcon {
+  /** Path (relative to base URL) at which the space icon can be retrieved. */
+  readonly path?: string;
+  /**
+   * Path (relative to base URL) to retrieve a download link for the icon.
+   * 3LO apps should prefer this over `path`.
+   */
+  readonly apiDownloadLink?: string;
+}
+
+/**
+ * Links object for a space returned inside {@link DataPolicySpace}. Mirrors the
+ * OpenAPI `SpaceLinks` schema.
+ */
+export interface DataPolicySpaceLinks {
+  /** Web UI link of the space. */
+  readonly webui?: string;
+}
+
+/**
  * A space entry returned by `GET /data-policies/spaces`. All fields are
  * declared optional in the OpenAPI spec; callers should treat missing
  * properties as "not surfaced for this caller".
@@ -24,10 +68,10 @@ export interface DataPolicySpace {
   readonly id?: string;
   readonly key?: string;
   readonly name?: string;
-  readonly description?: Record<string, unknown>;
+  readonly description?: DataPolicySpaceDescription;
   readonly dataPolicy?: DataPolicySpaceFlags;
-  readonly icon?: Record<string, unknown>;
-  readonly _links?: Record<string, string>;
+  readonly icon?: DataPolicySpaceIcon;
+  readonly _links?: DataPolicySpaceLinks;
 }
 
 /**
@@ -38,8 +82,11 @@ export type DataPolicySpaceSortOrder = 'id' | '-id' | 'key' | '-key' | 'name' | 
 
 /** Query parameters for `GET /data-policies/spaces`. */
 export interface ListDataPolicySpacesParams {
-  /** Filter to specific space IDs. Server caps at 250 entries. */
-  readonly ids?: readonly string[];
+  /**
+   * Filter to specific space IDs. Server caps at 250 entries. Values are
+   * `int64` integers on the wire (`type: array, items: { type: integer }`).
+   */
+  readonly ids?: readonly number[];
   /** Filter to specific space keys. Server caps at 250 entries. */
   readonly keys?: readonly string[];
   /** Sort field; prefix with `-` to reverse direction. */

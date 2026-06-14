@@ -36,24 +36,28 @@ describe('TasksResource', () => {
       });
     });
 
-    it('remaps camelCase filters onto the kebab-case wire query params', async () => {
+    it('serializes scalar filters through query bag and array filters as repeated path params', async () => {
       const payload = { results: [], _links: {} };
       transport.respondWith(payload);
       const params = {
         'body-format': 'storage' as const,
         includeBlankTasks: true,
         status: 'incomplete' as const,
-        taskId: 100,
-        spaceId: 'SPACE',
-        pageId: 'PAGE',
-        blogPostId: 'BLOG',
-        createdBy: 'user-1',
-        assignedTo: 'user-2',
-        completedBy: 'user-3',
-        createdAtFrom: '2024-01-01T00:00:00Z',
-        createdAtTo: '2024-12-31T23:59:59Z',
-        dueAtFrom: '2024-06-01T00:00:00Z',
-        dueAtTo: '2024-06-30T23:59:59Z',
+        // array-type params go into path
+        taskId: [100, 200],
+        spaceId: [11, 22],
+        pageId: [33],
+        blogPostId: [44],
+        createdBy: ['user-1', 'user-2'],
+        assignedTo: ['user-3'],
+        completedBy: ['user-4'],
+        // integer epoch-ms timestamps
+        createdAtFrom: 1700000000000,
+        createdAtTo: 1710000000000,
+        dueAtFrom: 1705000000000,
+        dueAtTo: 1715000000000,
+        completedAtFrom: 1720000000000,
+        completedAtTo: 1730000000000,
         cursor: 'abc',
         limit: 25,
       };
@@ -61,26 +65,40 @@ describe('TasksResource', () => {
       const result = await resource.list(params);
 
       expect(result).toEqual(payload);
-      // Confluence v2 GET /tasks expects kebab-case query params; sending
-      // camelCase is silently ignored by the server (returns unfiltered tasks).
+      // Scalar params stay in the query bag.
       expect(transport.lastCall?.options.query).toEqual({
         'body-format': 'storage',
         'include-blank-tasks': true,
         status: 'incomplete',
-        'task-id': 100,
-        'space-id': 'SPACE',
-        'page-id': 'PAGE',
-        'blogpost-id': 'BLOG',
-        'created-by': 'user-1',
-        'assigned-to': 'user-2',
-        'completed-by': 'user-3',
-        'created-at-from': '2024-01-01T00:00:00Z',
-        'created-at-to': '2024-12-31T23:59:59Z',
-        'due-at-from': '2024-06-01T00:00:00Z',
-        'due-at-to': '2024-06-30T23:59:59Z',
+        'created-at-from': 1700000000000,
+        'created-at-to': 1710000000000,
+        'due-at-from': 1705000000000,
+        'due-at-to': 1715000000000,
+        'completed-at-from': 1720000000000,
+        'completed-at-to': 1730000000000,
         cursor: 'abc',
         limit: 25,
       });
+      // Array-type params are baked into the path as repeated segments.
+      const { path } = transport.lastCall!.options;
+      expect(path).toContain('task-id=100');
+      expect(path).toContain('task-id=200');
+      expect(path).toContain('space-id=11');
+      expect(path).toContain('space-id=22');
+      expect(path).toContain('page-id=33');
+      expect(path).toContain('blogpost-id=44');
+      expect(path).toContain('created-by=user-1');
+      expect(path).toContain('created-by=user-2');
+      expect(path).toContain('assigned-to=user-3');
+      expect(path).toContain('completed-by=user-4');
+    });
+
+    it('omits empty arrays from the path', async () => {
+      transport.respondWith({ results: [], _links: {} });
+
+      await resource.list({ taskId: [], spaceId: [] });
+
+      expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/tasks`);
     });
 
     it('omits the query bag entirely when no params are given', async () => {
@@ -102,6 +120,15 @@ describe('TasksResource', () => {
     it('throws ValidationError for invalid limit', async () => {
       await expect(resource.list({ limit: -1 })).rejects.toThrow(ValidationError);
       expect(transport.calls).toHaveLength(0);
+    });
+
+    it('accepts completedAtFrom and completedAtTo as integers (epoch ms)', async () => {
+      transport.respondWith({ results: [], _links: {} });
+      await resource.list({ completedAtFrom: 1700000000000, completedAtTo: 1710000000000 });
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'completed-at-from': 1700000000000,
+        'completed-at-to': 1710000000000,
+      });
     });
   });
 
@@ -148,6 +175,25 @@ describe('TasksResource', () => {
         body: data,
       });
     });
+
+    it('forwards body-format query param when provided', async () => {
+      transport.respondWith(makeTask('5'));
+      const data = { status: 'complete' as const };
+
+      await resource.update('5', data, { 'body-format': 'atlas_doc_format' });
+
+      expect(transport.lastCall?.options.query).toMatchObject({
+        'body-format': 'atlas_doc_format',
+      });
+    });
+
+    it('passes no query when body-format omitted', async () => {
+      transport.respondWith(makeTask('5'));
+
+      await resource.update('5', { status: 'incomplete' });
+
+      expect(transport.lastCall?.options.query).toBeUndefined();
+    });
   });
 
   // ── listAll ───────────────────────────────────────────────────────────────
@@ -175,13 +221,13 @@ describe('TasksResource', () => {
       expect(transport.calls).toHaveLength(2);
     });
 
-    it('passes params to the first request, remapping camelCase filters to kebab-case', async () => {
+    it('passes scalar params in query bag and array params in path', async () => {
       transport.respondWith({ results: [], _links: {} });
 
       for await (const _ of resource.listAll({
         status: 'incomplete',
         limit: 10,
-        spaceId: 'SPACE',
+        spaceId: [55, 66],
       })) {
         /* consume */
       }
@@ -189,9 +235,11 @@ describe('TasksResource', () => {
       expect(transport.calls[0]?.options.query).toMatchObject({
         status: 'incomplete',
         limit: 10,
-        'space-id': 'SPACE',
       });
       expect(transport.calls[0]?.options.query).not.toHaveProperty('spaceId');
+      const path = transport.calls[0]?.options.path ?? '';
+      expect(path).toContain('space-id=55');
+      expect(path).toContain('space-id=66');
     });
 
     it('propagates the cursor on subsequent requests', async () => {

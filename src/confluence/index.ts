@@ -152,9 +152,13 @@ export type {
   UpdateCustomContentData,
 } from './types/custom-content.js';
 export type {
+  DataPolicyBodyType,
   DataPolicyMetadata,
   DataPolicySpace,
+  DataPolicySpaceDescription,
   DataPolicySpaceFlags,
+  DataPolicySpaceIcon,
+  DataPolicySpaceLinks,
   DataPolicySpaceSortOrder,
   ListDataPolicySpacesParams,
 } from './types/data-policies.js';
@@ -297,7 +301,9 @@ export type {
   ConfluenceTask,
   GetTaskParams,
   ListTasksParams,
+  TaskBodyFormat,
   UpdateTaskData,
+  UpdateTaskParams,
 } from './types/tasks.js';
 export type {
   BulkUsersRequest,
@@ -309,7 +315,13 @@ export type {
   ConfluenceUser,
   ConfluenceUserIcon,
 } from './types/users.js';
-export type { ContentVersion, ListVersionsParams } from './types/versions.js';
+export type {
+  BlogPostVersionItem,
+  ContentVersion,
+  ListVersionsParams,
+  PageVersion,
+  VersionedEntity,
+} from './types/versions.js';
 export type {
   CreateWhiteboardData,
   CreateWhiteboardParams,

@@ -41,8 +41,12 @@ export interface SpaceRole {
 export interface ListSpaceRolesParams {
   /** Restrict to roles available for assignment in the named space. */
   readonly 'space-id'?: string;
-  /** Restrict to `SYSTEM` or `CUSTOM` roles. */
-  readonly 'role-type'?: SpaceRoleType;
+  /**
+   * Restrict to roles of a specific type. The OpenAPI spec declares this as
+   * an open `string` (not a fixed enum) — pass `'SYSTEM'` or `'CUSTOM'` for
+   * the two platform-defined categories, or a tenant-defined value.
+   */
+  readonly 'role-type'?: string;
   /** Restrict to roles available to the named principal. */
   readonly 'principal-id'?: string;
   /** Restrict to roles available to the named principal type. */

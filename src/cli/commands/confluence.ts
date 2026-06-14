@@ -1557,7 +1557,7 @@ async function executeDataPolicies(client: ConfluenceClient, cmd: ParsedCommand)
     case 'list-spaces': {
       const sort = asEnum(opts['sort'], DATA_POLICY_SPACE_SORT_ORDERS, 'sort');
       return client.dataPolicies.listSpaces({
-        ids: parseCsvList(asString(opts['ids'])),
+        ids: parseCsvIntList(asString(opts['ids'])),
         keys: parseCsvList(asString(opts['keys'])),
         ...(sort !== undefined ? { sort } : {}),
         limit: asPositiveInt(opts['limit'], '--limit'),
@@ -1583,6 +1583,18 @@ function parseCsvList(raw: string | undefined): readonly string[] | undefined {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   return items.length > 0 ? items : undefined;
+}
+
+/**
+ * Split a comma-separated CLI flag of integers into a `readonly number[]`.
+ * Returns `undefined` when the input is unset. Each item is coerced via
+ * `parseInt` with base-10 and non-finite values are filtered out.
+ */
+function parseCsvIntList(raw: string | undefined): readonly number[] | undefined {
+  const strs = parseCsvList(raw);
+  if (strs === undefined) return undefined;
+  const nums = strs.map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n));
+  return nums.length > 0 ? nums : undefined;
 }
 
 async function executeSpacePermissions(
@@ -1759,17 +1771,17 @@ async function executeTasks(client: ConfluenceClient, cmd: ParsedCommand): Promi
         'body-format': asString(opts['body-format']) as 'storage' | 'atlas_doc_format' | undefined,
         includeBlankTasks: opts['include-blank-tasks'] === true ? true : undefined,
         status: asEnum(opts['status'], TASK_STATUSES, 'status'),
-        taskId: asPositiveInt(opts['task-id'], '--task-id'),
-        spaceId: asString(opts['space-id']),
-        pageId: asString(opts['page-id']),
-        blogPostId: asString(opts['blog-post-id']),
-        createdBy: asString(opts['created-by']),
-        assignedTo: asString(opts['assigned-to']),
-        completedBy: asString(opts['completed-by']),
-        createdAtFrom: asString(opts['created-at-from']),
-        createdAtTo: asString(opts['created-at-to']),
-        dueAtFrom: asString(opts['due-at-from']),
-        dueAtTo: asString(opts['due-at-to']),
+        taskId: parseCsvIntList(asString(opts['task-id'])),
+        spaceId: parseCsvIntList(asString(opts['space-id'])),
+        pageId: parseCsvIntList(asString(opts['page-id'])),
+        blogPostId: parseCsvIntList(asString(opts['blog-post-id'])),
+        createdBy: parseCsvList(asString(opts['created-by'])),
+        assignedTo: parseCsvList(asString(opts['assigned-to'])),
+        completedBy: parseCsvList(asString(opts['completed-by'])),
+        createdAtFrom: asPositiveInt(opts['created-at-from'], '--created-at-from'),
+        createdAtTo: asPositiveInt(opts['created-at-to'], '--created-at-to'),
+        dueAtFrom: asPositiveInt(opts['due-at-from'], '--due-at-from'),
+        dueAtTo: asPositiveInt(opts['due-at-to'], '--due-at-to'),
         cursor: asString(opts['cursor']),
         limit: asPositiveInt(opts['limit'], '--limit'),
       });
