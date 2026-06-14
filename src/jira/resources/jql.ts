@@ -114,6 +114,12 @@ export interface JqlAutocompleteData {
   readonly jqlReservedWords?: string[];
 }
 
+/**
+ * Autocomplete field reference data (`FieldReferenceData` schema).
+ *
+ * `cfid` is the custom field ID (optional per spec). `operators_description`
+ * is NOT in the spec and has been removed.
+ */
 export interface JqlAutocompleteField {
   readonly value: string;
   readonly displayName?: string;
@@ -124,14 +130,22 @@ export interface JqlAutocompleteField {
   readonly deprecatedSearcherKey?: string;
   readonly types?: string[];
   readonly operators?: string[];
-  readonly operators_description?: string[];
+  /** Custom field ID, if the field is a custom field. */
+  readonly cfid?: string;
 }
 
+/**
+ * Autocomplete function suggestion (`FunctionReferenceData` schema).
+ *
+ * `types` is present in the spec. `isAggregate` is NOT in the spec and has
+ * been removed.
+ */
 export interface JqlAutocompleteSuggestion {
   readonly value: string;
   readonly displayName?: string;
   readonly isList?: string;
-  readonly isAggregate?: string;
+  /** The data types returned by the function. */
+  readonly types?: string[];
   readonly supportsListAndSingleValueOperators?: string;
 }
 
@@ -146,10 +160,17 @@ export interface ParsedJqlQueries {
   readonly queries: ParsedJqlQuery[];
 }
 
+/**
+ * A parsed JQL query result (`ParsedJqlQuery` schema).
+ *
+ * Both `errors` and `warnings` are optional string arrays per spec.
+ */
 export interface ParsedJqlQuery {
   readonly query: string;
   readonly structure?: Record<string, unknown>;
   readonly errors?: string[];
+  /** The list of warning messages (optional, per spec). */
+  readonly warnings?: string[];
 }
 
 export interface JqlQueryToSanitize {
@@ -157,13 +178,23 @@ export interface JqlQueryToSanitize {
   readonly accountId?: string;
 }
 
+/**
+ * Details of a sanitized JQL query (`SanitizedJqlQuery` schema).
+ *
+ * `accountId` is optional (null if not scoped to a user).
+ * `errors` matches `ErrorCollection` schema — has `errorMessages`, `errors`, and `status`.
+ * `count` is NOT in spec (`ErrorCollection`) and has been removed.
+ */
 export interface SanitizedJqlQuery {
   readonly initialQuery: string;
   readonly sanitizedQuery?: string;
+  /** Account ID of the user for whom sanitization was performed (nullable). */
+  readonly accountId?: string | null;
   readonly errors?: {
-    readonly count?: number;
     readonly errorMessages?: string[];
     readonly errors?: Record<string, string>;
+    /** HTTP status code associated with the error. */
+    readonly status?: number;
   };
 }
 
@@ -177,9 +208,14 @@ export interface SanitizedJqlQueries {
   readonly queries: SanitizedJqlQuery[];
 }
 
-/** Query parameters for fetching field-value suggestions for JQL autocomplete. */
+/**
+ * Query parameters for fetching field-value suggestions for JQL autocomplete
+ * (`GET /jql/autocompletedata/suggestions`).
+ *
+ * All parameters are optional per spec; `fieldName` is NOT required.
+ */
 export interface JqlSuggestionsParams {
-  readonly fieldName: string;
+  readonly fieldName?: string;
   readonly fieldValue?: string;
   readonly predicateName?: string;
   readonly predicateValue?: string;
@@ -190,9 +226,14 @@ export interface JqlSuggestion {
   readonly displayName?: string;
 }
 
-/** Field-value suggestions returned by the JQL field reference suggestions endpoint. */
+/**
+ * Field-value suggestions returned by the JQL field reference suggestions endpoint
+ * (`AutoCompleteSuggestions` schema).
+ *
+ * `results` is optional per spec.
+ */
 export interface JqlSuggestions {
-  readonly results: JqlSuggestion[];
+  readonly results?: JqlSuggestion[];
 }
 
 export class JqlResource {
@@ -211,18 +252,17 @@ export class JqlResource {
   }
 
   /** Get field reference suggestions for JQL autocomplete. */
-  async getFieldReferenceSuggestions(params: JqlSuggestionsParams): Promise<JqlSuggestions> {
-    const query: Record<string, string | undefined> = {
-      fieldName: params.fieldName,
-    };
-    if (params.fieldValue !== undefined) query['fieldValue'] = params.fieldValue;
-    if (params.predicateName !== undefined) query['predicateName'] = params.predicateName;
-    if (params.predicateValue !== undefined) query['predicateValue'] = params.predicateValue;
+  async getFieldReferenceSuggestions(params?: JqlSuggestionsParams): Promise<JqlSuggestions> {
+    const query: Record<string, string | undefined> = {};
+    if (params?.fieldName !== undefined) query['fieldName'] = params.fieldName;
+    if (params?.fieldValue !== undefined) query['fieldValue'] = params.fieldValue;
+    if (params?.predicateName !== undefined) query['predicateName'] = params.predicateName;
+    if (params?.predicateValue !== undefined) query['predicateValue'] = params.predicateValue;
 
     const response = await this.transport.request<JqlSuggestions>({
       method: 'GET',
       path: `${this.baseUrl}/jql/autocompletedata/suggestions`,
-      query,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }

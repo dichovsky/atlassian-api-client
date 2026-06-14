@@ -169,7 +169,7 @@ describe('BoardsResource', () => {
         negateLocationFiltering: true,
         orderBy: 'name',
         expand: 'permissions',
-        projectTypeLocation: 'software',
+        projectTypeLocation: ['software', 'service_desk'],
         filterId: 42,
       });
 
@@ -181,9 +181,12 @@ describe('BoardsResource', () => {
         negateLocationFiltering: true,
         orderBy: 'name',
         expand: 'permissions',
-        projectTypeLocation: 'software',
         filterId: 42,
       });
+      // projectTypeLocation is type:array → repeated params baked into the path
+      expect(transport.lastCall?.options.path).toContain(
+        'projectTypeLocation=software&projectTypeLocation=service_desk',
+      );
     });
   });
 
@@ -703,21 +706,15 @@ describe('BoardsResource', () => {
       );
     });
 
-    it('accepts filterId: 0 (spec has no minimum; 0 is a valid non-negative integer)', async () => {
-      // filterId: 0 was previously rejected, but spec places no minimum constraint
-      transport.respondWith({
-        id: 1,
-        name: 'Board',
-        type: 'scrum',
-        self: 'https://test.atlassian.net/rest/agile/1.0/board/1',
-      });
-      const result = await boards.create({ name: 'Board', type: 'scrum', filterId: 0 });
-      expect(result).toMatchObject({ id: 1, name: 'Board' });
+    it('throws ValidationError for filterId: 0', async () => {
+      await expect(boards.create({ name: 'Board', type: 'scrum', filterId: 0 })).rejects.toThrow(
+        'filterId must be a positive integer',
+      );
     });
 
     it('throws ValidationError for negative filterId', async () => {
       await expect(boards.create({ name: 'Board', type: 'scrum', filterId: -1 })).rejects.toThrow(
-        'filterId must be a non-negative integer',
+        'filterId must be a positive integer',
       );
     });
 

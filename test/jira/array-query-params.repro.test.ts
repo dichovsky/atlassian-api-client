@@ -43,7 +43,7 @@ describe('REPRO #201: Jira v3 array query params CSV-joined instead of emitted a
   it('POSITIVE CONTROL: workflowscheme.getProjectAssociations already repeats correctly (#198)', async () => {
     const t = new MockTransport().respondWith({ values: [], startAt: 0, maxResults: 50, total: 0 });
     await new WorkflowSchemeResource(t, BASE).getProjectAssociations({
-      projectId: ['10000', '10001'],
+      projectId: [10000, 10001],
     });
     expect(wireUrl(t)).toBe(`${BASE}/workflowscheme/project?projectId=10000&projectId=10001`);
   });

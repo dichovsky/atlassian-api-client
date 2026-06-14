@@ -6649,7 +6649,7 @@ async function executeWorkflowScheme(client: JiraClient, cmd: ParsedCommand): Pr
       if (projectIds === undefined || projectIds.length === 0) {
         throw new Error('Missing required option: --project-id');
       }
-      return client.workflowScheme.getProjectAssociations({ projectId: projectIds });
+      return client.workflowScheme.getProjectAssociations({ projectId: projectIds.map(Number) });
     }
     case 'assign-project': {
       const body = parseJsonObjectFlag(requireOpt(opts['body'], '--body'), '--body');

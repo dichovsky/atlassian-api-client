@@ -1,7 +1,8 @@
 import type { Transport } from '../../core/types.js';
 
 /**
- * Per-expression analysis result returned by POST /expression/analyse.
+ * Per-expression analysis result returned by POST /expression/analyse
+ * (`JiraExpressionAnalysis` schema).
  *
  * Each entry mirrors the input `expressions` array order. When `valid` is
  * false the `errors` array contains line/column/type details; when `valid`
@@ -9,25 +10,43 @@ import type { Transport } from '../../core/types.js';
  * expression type and complexity profile.
  */
 export interface AnalysedExpression {
-  readonly expression?: string;
+  /** Required by spec (`required: [expression, valid]`). */
+  readonly expression: string;
   readonly errors?: AnalysedExpressionError[];
-  readonly valid?: boolean;
+  /** Required by spec (`required: [expression, valid]`). */
+  readonly valid: boolean;
   readonly type?: string;
   readonly complexity?: AnalysedExpressionComplexity;
 }
 
-/** Error entry attached to an invalid analysed expression. */
+/**
+ * Error entry attached to an invalid analysed expression
+ * (`JiraExpressionValidationError` schema).
+ *
+ * `message` and `type` are required by spec; `type` is a string enum.
+ */
 export interface AnalysedExpressionError {
   readonly line?: number;
   readonly column?: number;
   readonly expression?: string;
-  readonly message?: string;
-  readonly type?: string;
+  /** Required by spec. */
+  readonly message: string;
+  /**
+   * Required by spec.
+   * Enum: `syntax` | `type` | `other`.
+   */
+  readonly type: 'syntax' | 'type' | 'other';
 }
 
-/** Complexity profile attached to a valid analysed expression. */
+/**
+ * Complexity profile attached to a valid analysed expression
+ * (`JiraExpressionComplexity` schema).
+ *
+ * `expensiveOperations` is required by spec.
+ */
 export interface AnalysedExpressionComplexity {
-  readonly expensiveOperations?: string;
+  /** Required by spec — may be a formula string (e.g. `N`) or a number string. */
+  readonly expensiveOperations: string;
   readonly variables?: Record<string, string>;
 }
 
@@ -54,12 +73,17 @@ export interface AnalyseExpressionsParams {
   readonly check?: 'syntax' | 'type' | 'complexity';
 }
 
-/** Jql context bean for POST /expression/eval and /expression/evaluate. */
+/**
+ * JQL context bean for the `issues` context variable in POST /expression/eval
+ * and /expression/evaluate (`JexpJqlIssues` schema).
+ *
+ * These fields appear in the REQUEST context — not in the response JQL metadata.
+ */
 export interface ExpressionEvalJqlContext {
   readonly query?: string;
   readonly startAt?: number;
   readonly maxResults?: number;
-  readonly validation?: string;
+  readonly validation?: 'strict' | 'warn' | 'none';
 }
 
 /**
@@ -72,7 +96,10 @@ export interface CustomContextVariable {
   readonly type: 'user' | 'issue' | 'json';
   /** For type `user`: Atlassian account ID. */
   readonly accountId?: string;
-  /** For type `issue`: issue ID (integer). */
+  /**
+   * For type `issue`: issue ID (integer, int64).
+   * Spec: `IdOrKeyBean.id` is `type: integer, format: int64`.
+   */
   readonly id?: number;
   /** For type `issue`: issue key (string). */
   readonly key?: string;
@@ -80,7 +107,12 @@ export interface CustomContextVariable {
   readonly value?: unknown;
 }
 
-/** Evaluation context for POST /expression/eval and /expression/evaluate. */
+/**
+ * Evaluation context for POST /expression/eval and /expression/evaluate
+ * (`JiraExpressionEvalContextBean` schema).
+ *
+ * Note: `issue.id` and `project.id` are integers (int64) per `IdOrKeyBean`.
+ */
 export interface ExpressionEvalContext {
   readonly board?: number;
   /**
@@ -89,9 +121,9 @@ export interface ExpressionEvalContext {
    */
   readonly custom?: readonly CustomContextVariable[];
   readonly customerRequest?: number;
-  readonly issue?: { readonly key?: string; readonly id?: string };
+  readonly issue?: { readonly key?: string; readonly id?: number };
   readonly issues?: { readonly jql?: ExpressionEvalJqlContext };
-  readonly project?: { readonly key?: string; readonly id?: string };
+  readonly project?: { readonly key?: string; readonly id?: number };
   readonly serviceDesk?: number;
   readonly sprint?: number;
 }
@@ -110,52 +142,95 @@ export interface EvaluateExpressionParams {
   readonly expand?: string;
 }
 
-/** Complexity sub-metric (value + limit pair). */
+/**
+ * Complexity sub-metric (value + limit pair)
+ * (`JiraExpressionsComplexityValueBean` schema).
+ *
+ * Both `value` and `limit` are required by spec.
+ */
 export interface ExpressionMetric {
-  readonly value?: number;
-  readonly limit?: number;
+  /** Required by spec. */
+  readonly value: number;
+  /** Required by spec. */
+  readonly limit: number;
 }
 
-/** Complexity envelope attached to evaluation responses. */
+/**
+ * Complexity envelope attached to evaluation responses
+ * (`JiraExpressionsComplexityBean` schema).
+ *
+ * All four sub-metrics are required by spec.
+ */
 export interface ExpressionComplexity {
-  readonly steps?: ExpressionMetric;
-  readonly expensiveOperations?: ExpressionMetric;
-  readonly beans?: ExpressionMetric;
-  readonly primitiveValues?: ExpressionMetric;
+  /** Required by spec. */
+  readonly steps: ExpressionMetric;
+  /** Required by spec. */
+  readonly expensiveOperations: ExpressionMetric;
+  /** Required by spec. */
+  readonly beans: ExpressionMetric;
+  /** Required by spec. */
+  readonly primitiveValues: ExpressionMetric;
 }
 
-/** JQL metadata block attached to /expression/evaluate (paginated). */
-export interface ExpressionEvaluateJqlMeta {
-  readonly startAt?: number;
-  readonly maxResults?: number;
-  readonly count?: number;
-  readonly totalCount?: number;
-  readonly validationWarnings?: string[];
-}
-
-/** JQL metadata block attached to /expression/eval (scrolling). */
+/**
+ * JQL metadata block attached to POST /expression/eval (scrolling, enhanced search API)
+ * response (`IssuesJqlMetaDataBean` schema).
+ *
+ * Spec: all four numeric fields are required; `validationWarnings` is optional.
+ * This endpoint uses offset-based paging (startAt/maxResults) NOT cursor-based.
+ */
 export interface ExpressionEvalJqlMeta {
-  readonly nextPageToken?: string;
-  readonly maxResults?: number;
-  readonly count?: number;
+  /** Required by spec. */
+  readonly count: number;
+  /** Required by spec. */
+  readonly maxResults: number;
+  /** Required by spec. */
+  readonly startAt: number;
+  /** Required by spec. */
+  readonly totalCount: number;
   readonly validationWarnings?: string[];
 }
 
-/** Response envelope for POST /expression/evaluate (paginated). */
-export interface EvaluateExpressionResponse {
-  readonly value?: unknown;
-  readonly meta?: {
-    readonly complexity?: ExpressionComplexity;
-    readonly issues?: { readonly jql?: ExpressionEvaluateJqlMeta };
-  };
+/**
+ * JQL metadata block attached to POST /expression/evaluate (paginated, legacy)
+ * response (`JExpEvaluateIssuesJqlMetaDataBean` schema).
+ *
+ * Spec: uses cursor-based paging — `nextPageToken` is required; `isLast` is optional.
+ * Does NOT return startAt, maxResults, count, totalCount, or validationWarnings.
+ */
+export interface ExpressionEvaluateJqlMeta {
+  /** Required by spec. */
+  readonly nextPageToken: string;
+  readonly isLast?: boolean;
 }
 
-/** Response envelope for POST /expression/eval (enhanced, scrolling JQL). */
+/**
+ * Response envelope for POST /expression/eval (enhanced search API, scrolling JQL).
+ *
+ * Uses `IssuesJqlMetaDataBean` for JQL metadata (offset-based paging).
+ * `value` is required by spec.
+ */
 export interface EvalExpressionResponse {
-  readonly value?: unknown;
+  /** Required by spec. */
+  readonly value: unknown;
   readonly meta?: {
     readonly complexity?: ExpressionComplexity;
     readonly issues?: { readonly jql?: ExpressionEvalJqlMeta };
+  };
+}
+
+/**
+ * Response envelope for POST /expression/evaluate (strongly-consistent legacy, paginated JQL).
+ *
+ * Uses `JExpEvaluateIssuesJqlMetaDataBean` for JQL metadata (cursor-based paging).
+ * `value` is required by spec.
+ */
+export interface EvaluateExpressionResponse {
+  /** Required by spec. */
+  readonly value: unknown;
+  readonly meta?: {
+    readonly complexity?: ExpressionComplexity;
+    readonly issues?: { readonly jql?: ExpressionEvaluateJqlMeta };
   };
 }
 
@@ -164,10 +239,10 @@ export interface EvalExpressionResponse {
  *
  * Covers POST `/rest/api/3/expression/{analyse,eval,evaluate}` (B409, B904,
  * B410). All three endpoints accept JSON request bodies — `analyse`
- * validates and optionally type-checks expressions, `evaluate` runs an
- * expression against a context using the legacy paginated JQL view, and
- * `eval` runs an expression against a context using the enhanced search
- * API (scrolling `nextPageToken` view).
+ * validates and optionally type-checks expressions, `eval` runs an
+ * expression against a context using the enhanced search API (scrolling
+ * `nextPageToken` view), and `evaluate` runs an expression against a context
+ * using the legacy paginated JQL view.
  */
 export class ExpressionResource {
   constructor(
@@ -195,7 +270,11 @@ export class ExpressionResource {
 
   /**
    * B904: Evaluate a Jira expression using the enhanced search API
-   * (eventually consistent, scrolling JQL view). POST /expression/eval
+   * (eventually consistent, scrolling JQL view with `nextPageToken`).
+   * POST /expression/eval
+   *
+   * Response JQL metadata (`ExpressionEvalJqlMeta`): `startAt`, `maxResults`,
+   * `count`, `totalCount` (all required), optional `validationWarnings`.
    */
   async eval(
     data: EvaluateExpressionData,
@@ -216,7 +295,11 @@ export class ExpressionResource {
 
   /**
    * B410: Evaluate a Jira expression using the strongly-consistent legacy
-   * search API (paginated JQL view). POST /expression/evaluate
+   * search API (paginated JQL view with cursor-based `nextPageToken`).
+   * POST /expression/evaluate
+   *
+   * Response JQL metadata (`ExpressionEvaluateJqlMeta`): `nextPageToken`
+   * (required), optional `isLast`. Does NOT return offset-based fields.
    */
   async evaluate(
     data: EvaluateExpressionData,

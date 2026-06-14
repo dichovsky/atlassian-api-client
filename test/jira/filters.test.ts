@@ -94,6 +94,29 @@ describe('FiltersResource', () => {
       expect(query['id']).toBeUndefined();
     });
 
+    it('passes new B1056 spec params: filterName, accountId, owner, groupname, groupId, projectId, overrideSharePermissions, isSubstringMatch', async () => {
+      transport.respondWith(makeListResponse([]));
+      await filters.list({
+        filterName: 'sprint',
+        accountId: 'acc-1',
+        owner: 'user-1',
+        groupname: 'dev',
+        groupId: 'grp-1',
+        projectId: 42,
+        overrideSharePermissions: true,
+        isSubstringMatch: true,
+      });
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['filterName']).toBe('sprint');
+      expect(query['accountId']).toBe('acc-1');
+      expect(query['owner']).toBe('user-1');
+      expect(query['groupname']).toBe('dev');
+      expect(query['groupId']).toBe('grp-1');
+      expect(query['projectId']).toBe(42);
+      expect(query['overrideSharePermissions']).toBe(true);
+      expect(query['isSubstringMatch']).toBe(true);
+    });
+
     it('throws ValidationError for maxResults: 0', async () => {
       await expect(filters.list({ maxResults: 0 })).rejects.toThrow(ValidationError);
     });
@@ -141,6 +164,14 @@ describe('FiltersResource', () => {
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/..%2Fadmin`);
     });
 
+    it('passes expand and overrideSharePermissions to get() (B1056)', async () => {
+      transport.respondWith(makeFilter('10001', 'x'));
+      await filters.get('10001', { expand: 'sharePermissions', overrideSharePermissions: true });
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['expand']).toBe('sharePermissions');
+      expect(query['overrideSharePermissions']).toBe(true);
+    });
+
     it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
       'rejects dot-segment id in get(): %s',
       async (id) => {
@@ -174,6 +205,17 @@ describe('FiltersResource', () => {
         body: data,
       });
     });
+
+    it('passes expand and overrideSharePermissions to create() (B1056)', async () => {
+      transport.respondWith(makeFilter('1', 'x'));
+      await filters.create(
+        { name: 'x' },
+        { expand: 'sharePermissions', overrideSharePermissions: false },
+      );
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['expand']).toBe('sharePermissions');
+      expect(query['overrideSharePermissions']).toBe(false);
+    });
   });
 
   // ── update ────────────────────────────────────────────────────────────────
@@ -206,6 +248,18 @@ describe('FiltersResource', () => {
 
       // Assert
       expect(transport.lastCall?.options.path).toBe(`${BASE_URL}/filter/..%2Fadmin`);
+    });
+
+    it('passes expand and overrideSharePermissions to update() (B1056)', async () => {
+      transport.respondWith(makeFilter('10001', 'x'));
+      await filters.update(
+        '10001',
+        { name: 'x' },
+        { expand: 'editPermissions', overrideSharePermissions: true },
+      );
+      const query = transport.lastCall?.options.query as Record<string, unknown>;
+      expect(query['expand']).toBe('editPermissions');
+      expect(query['overrideSharePermissions']).toBe(true);
     });
 
     it.each(['.', '..', '%2e', '%2E%2E', '%252e%252e'])(
@@ -367,6 +421,27 @@ describe('FiltersResource', () => {
       // Assert
       const query = transport.calls[0]?.options.query ?? {};
       expect(query['id']).toBeUndefined();
+    });
+
+    it('passes new B1056 spec params in listAll: overrideSharePermissions, isSubstringMatch, groupId, projectId', async () => {
+      transport.respondWith({ values: [], startAt: 0, maxResults: 50, isLast: true });
+      for await (const _ of filters.listAll({
+        filterName: 'x',
+        accountId: 'acc-1',
+        owner: 'user-1',
+        groupname: 'devs',
+        groupId: 'grp-1',
+        projectId: 10,
+        overrideSharePermissions: true,
+        isSubstringMatch: false,
+      })) {
+        // consume
+      }
+      const query = transport.calls[0]?.options.query as Record<string, unknown>;
+      expect(query['filterName']).toBe('x');
+      expect(query['accountId']).toBe('acc-1');
+      expect(query['overrideSharePermissions']).toBe(true);
+      expect(query['isSubstringMatch']).toBe(false);
     });
   });
 

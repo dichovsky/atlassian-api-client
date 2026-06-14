@@ -24199,7 +24199,7 @@ describe('executeJiraCommand', () => {
         GLOBALS,
       );
       expect(jiraWorkflowSchemeMock.getProjectAssociations).toHaveBeenCalledWith({
-        projectId: ['10010', '10020'],
+        projectId: [10010, 10020],
       });
       expect(result).toEqual(resp);
     });

@@ -70,8 +70,8 @@ export interface ListBoardsParams {
   readonly orderBy?: string;
   /** A comma-separated list of fields to expand. */
   readonly expand?: string;
-  /** Filter by project type key. */
-  readonly projectTypeLocation?: string;
+  /** Filter by project type key(s). Spec `type: array` → repeated params. */
+  readonly projectTypeLocation?: string[];
   /** Filter boards by filter ID. */
   readonly filterId?: number;
 }
@@ -279,14 +279,17 @@ export class BoardsResource {
         query['negateLocationFiltering'] = params.negateLocationFiltering;
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
       if (params.expand !== undefined) query['expand'] = params.expand;
-      if (params.projectTypeLocation !== undefined)
-        query['projectTypeLocation'] = params.projectTypeLocation;
       if (params.filterId !== undefined) query['filterId'] = params.filterId;
     }
 
+    // `projectTypeLocation` is spec `type: array` → repeated params baked into the path.
     const response = await this.transport.request<OffsetPaginatedResponse<Board>>({
       method: 'GET',
-      path: `${this.baseUrl}/board`,
+      path: appendRepeatedParams(
+        `${this.baseUrl}/board`,
+        'projectTypeLocation',
+        params?.projectTypeLocation,
+      ),
       query,
     });
     return response.data;
@@ -300,8 +303,8 @@ export class BoardsResource {
     if (!data.type) {
       throw new ValidationError('type must be one of: kanban, scrum, agility');
     }
-    if (!Number.isInteger(data.filterId) || data.filterId < 0) {
-      throw new ValidationError('filterId must be a non-negative integer');
+    if (!Number.isInteger(data.filterId) || data.filterId <= 0) {
+      throw new ValidationError('filterId must be a positive integer');
     }
     const response = await this.transport.request<Board>({
       method: 'POST',

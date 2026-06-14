@@ -6,21 +6,40 @@ import { appendRepeatedParams } from '../../core/query.js';
 
 /**
  * Read shape returned by Jira for an existing share permission on a filter
- * (e.g. `GET /rest/api/3/filter/{id}/permission`). This intentionally differs
- * from the write shape {@link AddFilterSharePermissionData}: Jira normalises
- * incoming permission payloads, so values like `projectRole` and
+ * (`SharePermission` schema — `GET /rest/api/3/filter/{id}/permission`).
+ *
+ * This intentionally differs from the write shape {@link AddFilterSharePermissionData}:
+ * Jira normalises incoming permission payloads, so values like `projectRole` and
  * `authenticated` (accepted on write) surface in responses as `project` /
  * `loggedin` with the relevant nested object populated.
+ *
+ * `id` is readOnly int64, present only in responses.
+ * `project-unknown` is returned when the filter is shared with an inaccessible project.
  */
 export interface FilterSharePermission {
-  readonly type: 'global' | 'loggedin' | 'project' | 'group' | 'user';
+  readonly type:
+    | 'global'
+    | 'loggedin'
+    | 'project'
+    | 'group'
+    | 'user'
+    | 'projectRole'
+    | 'authenticated'
+    | 'project-unknown';
+  /** The unique identifier of the share permission (readOnly, int64). */
+  readonly id?: number;
   readonly project?: { readonly id: string };
   readonly role?: { readonly id: number };
   readonly group?: { readonly name?: string; readonly groupId?: string };
   readonly user?: { readonly accountId: string };
 }
 
-/** A Jira saved filter containing a JQL query and share permissions. */
+/**
+ * A Jira saved filter containing a JQL query and share permissions
+ * (`Filter` schema from `GET /filter/{id}` and `Filter` schema from spec).
+ *
+ * Includes both `Filter` and `FilterDetails` fields that are returned by the API.
+ */
 export interface Filter {
   readonly id: string;
   readonly self?: string;
@@ -33,15 +52,49 @@ export interface Filter {
   readonly favourite?: boolean;
   readonly favouritedCount?: number;
   readonly sharePermissions?: FilterSharePermission[];
+  /** The groups and projects that can edit the filter (readOnly). */
+  readonly editPermissions?: FilterSharePermission[];
+  /**
+   * [Experimental] Approximate last used time (readOnly, date-time).
+   * `null` if the filter hasn't been used since tracking was enabled.
+   */
+  readonly approximateLastUsed?: string | null;
+  /** A paginated list of the users that are subscribed to the filter (readOnly). */
+  readonly subscriptions?: unknown;
+  /** A paginated list of the users that the filter is shared with (readOnly). */
+  readonly sharedUsers?: unknown;
 }
 
-/** Query parameters for listing Jira saved filters. */
+/**
+ * Query parameters for listing Jira saved filters (`GET /filter/search`,
+ * `getFiltersPaginated`).
+ *
+ * All parameters are optional. `id` is a `type: array` query parameter
+ * (repeated, not CSV). The spec accepts 13 parameters in total.
+ */
 export interface ListFiltersParams {
   readonly startAt?: number;
   readonly maxResults?: number;
   readonly expand?: string;
+  /** Filter by filter ID(s). Repeated query param: `id=10000&id=10001`. */
   readonly id?: number[];
   readonly orderBy?: string;
+  /** Filter by filter name (partial match). */
+  readonly filterName?: string;
+  /** Filter by owner account ID. */
+  readonly accountId?: string;
+  /** Filter by the owner. */
+  readonly owner?: string;
+  /** Filter by group name that the filter is shared with. */
+  readonly groupname?: string;
+  /** Filter by group ID that the filter is shared with. */
+  readonly groupId?: string;
+  /** Filter by project ID that the filter is shared with. */
+  readonly projectId?: number;
+  /** Whether to override share permissions to return all filters. */
+  readonly overrideSharePermissions?: boolean;
+  /** Whether to use substring matching for `filterName`. */
+  readonly isSubstringMatch?: boolean;
 }
 
 /** Request body for creating a new Jira saved filter. */
@@ -94,6 +147,18 @@ export interface DefaultShareScopeResponse {
  * `authenticated` are normalised by Jira and surface back as `project` and
  * `loggedin` respectively when the filter is read.
  */
+/**
+ * Write shape for share permission entries on a filter
+ * (`SharePermissionInputBean` schema).
+ *
+ * The spec write enum is: `user`, `project`, `group`, `projectRole`, `global`,
+ * `authenticated`. Use `authenticated` to create a "logged-in users" permission;
+ * it surfaces as `loggedin` in responses.
+ *
+ * Note: `loggedin` is accepted here for backward compatibility with existing
+ * callers, but it is NOT a valid write value per the Jira v3 spec
+ * (`SharePermissionInputBean.type`). Prefer `authenticated` instead.
+ */
 export interface AddFilterSharePermissionData {
   readonly type:
     | 'user'
@@ -101,8 +166,9 @@ export interface AddFilterSharePermissionData {
     | 'project'
     | 'projectRole'
     | 'global'
-    | 'loggedin'
-    | 'authenticated';
+    | 'authenticated'
+    /** @deprecated Not a valid write value per spec; use `authenticated` instead. */
+    | 'loggedin';
   readonly projectId?: string;
   readonly groupname?: string;
   readonly groupId?: string;
@@ -115,6 +181,16 @@ export interface AddFilterSharePermissionData {
 export interface FilterColumn {
   readonly label: string;
   readonly value: string;
+}
+
+/**
+ * Query parameters shared by `GET /filter/{id}`, `POST /filter`, and
+ * `PUT /filter/{id}`. Both `expand` and `overrideSharePermissions` are in
+ * the spec for all three endpoints.
+ */
+export interface FilterQueryParams {
+  readonly expand?: string;
+  readonly overrideSharePermissions?: boolean;
 }
 
 /** Params for `GET /rest/api/3/filter/favourite`. */
@@ -145,6 +221,17 @@ export class FiltersResource {
       // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built
       // into the path below — not CSV-joined into the scalar query bag.
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.filterName !== undefined) query['filterName'] = params.filterName;
+      if (params.accountId !== undefined) query['accountId'] = params.accountId;
+      if (params.owner !== undefined) query['owner'] = params.owner;
+      if (params.groupname !== undefined) query['groupname'] = params.groupname;
+      if (params.groupId !== undefined) query['groupId'] = params.groupId;
+      if (params.projectId !== undefined) query['projectId'] = params.projectId;
+      if (params.overrideSharePermissions !== undefined) {
+        query['overrideSharePermissions'] = params.overrideSharePermissions;
+      }
+      if (params.isSubstringMatch !== undefined)
+        query['isSubstringMatch'] = params.isSubstringMatch;
     }
 
     const response = await this.transport.request<OffsetPaginatedResponse<Filter>>({
@@ -156,30 +243,48 @@ export class FiltersResource {
   }
 
   /** Get a filter by ID. */
-  async get(id: string): Promise<Filter> {
+  async get(id: string, params?: FilterQueryParams): Promise<Filter> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.overrideSharePermissions !== undefined) {
+      query['overrideSharePermissions'] = params.overrideSharePermissions;
+    }
     const response = await this.transport.request<Filter>({
       method: 'GET',
       path: `${this.baseUrl}/filter/${encodePathSegment(id)}`,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
 
   /** Create a new filter. */
-  async create(data: CreateFilterData): Promise<Filter> {
+  async create(data: CreateFilterData, params?: FilterQueryParams): Promise<Filter> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.overrideSharePermissions !== undefined) {
+      query['overrideSharePermissions'] = params.overrideSharePermissions;
+    }
     const response = await this.transport.request<Filter>({
       method: 'POST',
       path: `${this.baseUrl}/filter`,
       body: data,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
 
   /** Update a filter. */
-  async update(id: string, data: UpdateFilterData): Promise<Filter> {
+  async update(id: string, data: UpdateFilterData, params?: FilterQueryParams): Promise<Filter> {
+    const query: Record<string, string | boolean | undefined> = {};
+    if (params?.expand !== undefined) query['expand'] = params.expand;
+    if (params?.overrideSharePermissions !== undefined) {
+      query['overrideSharePermissions'] = params.overrideSharePermissions;
+    }
     const response = await this.transport.request<Filter>({
       method: 'PUT',
       path: `${this.baseUrl}/filter/${encodePathSegment(id)}`,
       body: data,
+      ...(Object.keys(query).length > 0 && { query }),
     });
     return response.data;
   }
@@ -364,6 +469,17 @@ export class FiltersResource {
       // `id` is a `type: array` query parameter (repeated `id=a&id=b`), built
       // into the path below — not CSV-joined into the scalar query bag.
       if (params.orderBy !== undefined) query['orderBy'] = params.orderBy;
+      if (params.filterName !== undefined) query['filterName'] = params.filterName;
+      if (params.accountId !== undefined) query['accountId'] = params.accountId;
+      if (params.owner !== undefined) query['owner'] = params.owner;
+      if (params.groupname !== undefined) query['groupname'] = params.groupname;
+      if (params.groupId !== undefined) query['groupId'] = params.groupId;
+      if (params.projectId !== undefined) query['projectId'] = params.projectId;
+      if (params.overrideSharePermissions !== undefined) {
+        query['overrideSharePermissions'] = params.overrideSharePermissions;
+      }
+      if (params.isSubstringMatch !== undefined)
+        query['isSubstringMatch'] = params.isSubstringMatch;
     }
 
     yield* paginateOffset<Filter>(
