@@ -4,7 +4,10 @@ import { encodePathSegment } from '../../core/path.js';
 import type { CursorPaginatedResponse } from '../../core/pagination.js';
 import { paginateCursor, validatePageSize } from '../../core/pagination.js';
 import type {
+  CommentVersion,
+  DetailedVersion,
   InlineComment,
+  InlineCommentChild,
   InlineCommentLikeUser,
   InlineCommentLikesCount,
   InlineCommentOperationsResponse,
@@ -13,7 +16,6 @@ import type {
   ListInlineCommentVersionsParams,
   ListInlineCommentsAllParams,
 } from '../types/comments.js';
-import type { ContentVersion } from '../types/versions.js';
 
 /**
  * Resource for the tenant-wide Confluence v2 inline-comments surface.
@@ -82,11 +84,17 @@ export class InlineCommentsResource {
 
   // ── children ──────────────────────────────────────────────────────────────
 
-  /** List child inline-comment replies for a given inline comment (single page). */
+  /**
+   * List child inline-comment replies for a given inline comment (single page).
+   *
+   * The spec returns `InlineCommentChildrenModel` for this endpoint, which
+   * differs from `InlineCommentModel`: it uses `BodyBulk` (no `view` field)
+   * and omits `resolutionLastModifierId`/`resolutionLastModifiedAt`.
+   */
   async listChildren(
     commentId: string,
     params?: ListInlineCommentChildrenParams,
-  ): Promise<CursorPaginatedResponse<InlineComment>> {
+  ): Promise<CursorPaginatedResponse<InlineCommentChild>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
@@ -94,7 +102,7 @@ export class InlineCommentsResource {
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
-    const response = await this.transport.request<CursorPaginatedResponse<InlineComment>>({
+    const response = await this.transport.request<CursorPaginatedResponse<InlineCommentChild>>({
       method: 'GET',
       path: `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}/children`,
       query,
@@ -106,13 +114,13 @@ export class InlineCommentsResource {
   async *listChildrenAll(
     commentId: string,
     params?: Omit<ListInlineCommentChildrenParams, 'cursor'>,
-  ): AsyncGenerator<InlineComment> {
+  ): AsyncGenerator<InlineCommentChild> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
-    yield* paginateCursor<InlineComment>(
+    yield* paginateCursor<InlineCommentChild>(
       this.transport,
       `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}/children`,
       query,
@@ -130,12 +138,19 @@ export class InlineCommentsResource {
     return response.data;
   }
 
-  /** List the users who have liked an inline comment (single page). */
+  /**
+   * List the users who have liked an inline comment (single page).
+   *
+   * The spec allows `limit=0` for this endpoint (minimum=0); the standard
+   * `validatePageSize` helper (minimum=1) is therefore not applied here.
+   */
   async listLikeUsers(
     commentId: string,
     params?: ListInlineCommentLikeUsersParams,
   ): Promise<CursorPaginatedResponse<InlineCommentLikeUser>> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
+      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
@@ -148,12 +163,18 @@ export class InlineCommentsResource {
     return response.data;
   }
 
-  /** Iterate every user who has liked an inline comment, across all pages. */
+  /**
+   * Iterate every user who has liked an inline comment, across all pages.
+   *
+   * The spec allows `limit=0` for this endpoint (minimum=0).
+   */
   async *listLikeUsersAll(
     commentId: string,
     params?: Omit<ListInlineCommentLikeUsersParams, 'cursor'>,
   ): AsyncGenerator<InlineCommentLikeUser> {
-    if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
+    if (params?.limit !== undefined && (!Number.isInteger(params.limit) || params.limit < 0)) {
+      throw new ValidationError(`limit must be a non-negative integer, got: ${params.limit}`);
+    }
     const query: Record<string, string | number | boolean | undefined> = {};
     if (params?.limit !== undefined) query['limit'] = params.limit;
     yield* paginateCursor<InlineCommentLikeUser>(
@@ -176,18 +197,24 @@ export class InlineCommentsResource {
 
   // ── versions ──────────────────────────────────────────────────────────────
 
-  /** List versions for an inline comment (single page). */
+  /**
+   * List versions for an inline comment (single page).
+   *
+   * The spec returns `CommentVersion` entries — which include a `comment`
+   * sub-object — rather than the generic `ContentVersion`.
+   */
   async listVersions(
     commentId: string,
     params?: ListInlineCommentVersionsParams,
-  ): Promise<CursorPaginatedResponse<ContentVersion>> {
+  ): Promise<CursorPaginatedResponse<CommentVersion>> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.cursor !== undefined) query['cursor'] = params.cursor;
     if (params?.limit !== undefined) query['limit'] = params.limit;
 
-    const response = await this.transport.request<CursorPaginatedResponse<ContentVersion>>({
+    const response = await this.transport.request<CursorPaginatedResponse<CommentVersion>>({
       method: 'GET',
       path: `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}/versions`,
       query,
@@ -199,12 +226,13 @@ export class InlineCommentsResource {
   async *listVersionsAll(
     commentId: string,
     params?: Omit<ListInlineCommentVersionsParams, 'cursor'>,
-  ): AsyncGenerator<ContentVersion> {
+  ): AsyncGenerator<CommentVersion> {
     if (params?.limit !== undefined) validatePageSize(params.limit, 'limit');
     const query: Record<string, string | number | boolean | undefined> = {};
+    if (params?.['body-format'] !== undefined) query['body-format'] = params['body-format'];
     if (params?.sort !== undefined) query['sort'] = params.sort;
     if (params?.limit !== undefined) query['limit'] = params.limit;
-    yield* paginateCursor<ContentVersion>(
+    yield* paginateCursor<CommentVersion>(
       this.transport,
       `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}/versions`,
       query,
@@ -214,15 +242,19 @@ export class InlineCommentsResource {
   /**
    * Get a specific version of an inline comment by version number.
    *
+   * The spec returns `DetailedVersion` for this endpoint, which includes
+   * `collaborators`, `prevVersion`, `nextVersion`, and `contentTypeModified`
+   * fields absent from the generic `ContentVersion`.
+   *
    * The version number is path-positional and must be a positive integer; the
    * client rejects non-integers and non-positive values before issuing the
    * request to keep error messages out of the wire path.
    */
-  async getVersion(commentId: string, versionNumber: number): Promise<ContentVersion> {
+  async getVersion(commentId: string, versionNumber: number): Promise<DetailedVersion> {
     if (!Number.isInteger(versionNumber) || versionNumber <= 0) {
       throw new ValidationError('versionNumber must be a positive integer');
     }
-    const response = await this.transport.request<ContentVersion>({
+    const response = await this.transport.request<DetailedVersion>({
       method: 'GET',
       path: `${this.baseUrl}/inline-comments/${encodePathSegment(commentId)}/versions/${versionNumber}`,
     });

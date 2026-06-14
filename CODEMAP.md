@@ -10,7 +10,7 @@
     "name": "atlassian-api-client",
     "version": "2.0.0"
   },
-  "sourceHash": "90df5ce7a8b67f6f40cf054a892a54152a9a5cbb6fc05c4e91c28f1b6aa19196",
+  "sourceHash": "49b6e208b8e73e2c6b439469ff9cec0427d2eb6dd388a65e8136d4b8c3ecf6d1",
   "entrypoints": [
     "src/index.ts"
   ],
@@ -767,18 +767,18 @@
       "name": "CreateFooterCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 48,
-      "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-      "jsdoc": "Request body for creating a footer comment.",
+      "line": 162,
+      "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+      "jsdoc": "Request body for creating a footer comment (mirrors `CreateFooterCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "CreateInlineCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 65,
-      "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-      "jsdoc": "Request body for creating an inline comment.",
+      "line": 185,
+      "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+      "jsdoc": "Request body for creating an inline comment (mirrors `CreateInlineCommentModel`).",
       "typeOnly": true
     },
     {
@@ -1271,16 +1271,16 @@
       "name": "FooterComment",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 11,
-      "signature": "export interface FooterComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-      "jsdoc": "Confluence Footer Comment.",
+      "line": 56,
+      "signature": "export interface FooterComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+      "jsdoc": "Confluence Footer Comment (mirrors `FooterCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "FooterCommentChild",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 111,
+      "line": 247,
       "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
       "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`.",
       "typeOnly": true
@@ -1289,7 +1289,7 @@
       "name": "FooterCommentLike",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 127,
+      "line": 263,
       "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
       "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -1298,7 +1298,7 @@
       "name": "FooterCommentLikeCount",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 122,
+      "line": 258,
       "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
       "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`.",
       "typeOnly": true
@@ -1307,7 +1307,7 @@
       "name": "FooterCommentOperation",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 138,
+      "line": 274,
       "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`.",
       "typeOnly": true
@@ -1316,17 +1316,17 @@
       "name": "FooterCommentOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 144,
+      "line": 280,
       "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
       "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`.",
       "typeOnly": true
     },
     {
       "name": "FooterCommentVersionDetail",
-      "kind": "interface",
+      "kind": "type",
       "file": "src/confluence/types/comments.ts",
-      "line": 173,
-      "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
+      "line": 308,
+      "signature": "export type FooterCommentVersionDetail = DetailedVersion;",
       "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`.",
       "typeOnly": true
     },
@@ -1334,7 +1334,7 @@
       "name": "FooterCommentVersionSummary",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 157,
+      "line": 293,
       "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
       "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`.",
       "typeOnly": true
@@ -1432,8 +1432,8 @@
       "name": "GetFooterCommentParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 92,
-      "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
+      "line": 213,
+      "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
       "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip.",
       "typeOnly": true
     },
@@ -1502,16 +1502,16 @@
       "name": "InlineComment",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 25,
-      "signature": "export interface InlineComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-      "jsdoc": "Confluence Inline Comment.",
+      "line": 71,
+      "signature": "export interface InlineComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+      "jsdoc": "Confluence Inline Comment (mirrors `InlineCommentModel`).",
       "typeOnly": true
     },
     {
       "name": "InlineCommentLikeUser",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 248,
+      "line": 376,
       "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
       "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible.",
       "typeOnly": true
@@ -1520,7 +1520,7 @@
       "name": "InlineCommentLikesCount",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 239,
+      "line": 367,
       "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
       "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim.",
       "typeOnly": true
@@ -1529,7 +1529,7 @@
       "name": "InlineCommentOperation",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 253,
+      "line": 381,
       "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
       "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`.",
       "typeOnly": true
@@ -1538,7 +1538,7 @@
       "name": "InlineCommentOperationsResponse",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 259,
+      "line": 387,
       "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
       "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`.",
       "typeOnly": true
@@ -1556,7 +1556,7 @@
       "name": "InlineCommentSortOrder",
       "kind": "type",
       "file": "src/confluence/types/comments.ts",
-      "line": 189,
+      "line": 316,
       "signature": "export type InlineCommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
       "jsdoc": "Sort tokens accepted by the inline-comment list endpoints (tenant-wide list and the per-comment `/children` collection). Mirrors the `CommentSortOrder` enum in the OpenAPI spec — the default direction is ascending; prefix with `-` for descending.",
       "typeOnly": true
@@ -2051,8 +2051,8 @@
       "name": "ListFooterCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 103,
-      "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 239,
+      "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: C…",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`.",
       "typeOnly": true
     },
@@ -2060,7 +2060,7 @@
       "name": "ListFooterCommentLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 132,
+      "line": 268,
       "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -2069,8 +2069,8 @@
       "name": "ListFooterCommentVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 149,
-      "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 285,
+      "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
       "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`.",
       "typeOnly": true
     },
@@ -2078,8 +2078,8 @@
       "name": "ListFooterCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 41,
-      "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
+      "line": 153,
+      "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
       "jsdoc": "Parameters for listing footer comments on a page or blog post.",
       "typeOnly": true
     },
@@ -2087,8 +2087,8 @@
       "name": "ListFooterCommentsTenantParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 80,
-      "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
+      "line": 201,
+      "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Co…",
       "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list).",
       "typeOnly": true
     },
@@ -2096,8 +2096,8 @@
       "name": "ListInlineCommentChildrenParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 204,
-      "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+      "line": 331,
+      "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: I…",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/children`.",
       "typeOnly": true
     },
@@ -2105,7 +2105,7 @@
       "name": "ListInlineCommentLikeUsersParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 212,
+      "line": 339,
       "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`.",
       "typeOnly": true
@@ -2114,8 +2114,8 @@
       "name": "ListInlineCommentVersionsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 218,
-      "signature": "export interface ListInlineCommentVersionsParams { readonly sort?: VersionSortOrder; readonly limit?: number; readonly c…",
+      "line": 345,
+      "signature": "export interface ListInlineCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
       "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`.",
       "typeOnly": true
     },
@@ -2123,8 +2123,8 @@
       "name": "ListInlineCommentsAllParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 196,
-      "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: …",
+      "line": 323,
+      "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Inlin…",
       "jsdoc": "Parameters for tenant-wide `GET /inline-comments`.",
       "typeOnly": true
     },
@@ -2132,8 +2132,8 @@
       "name": "ListInlineCommentsParams",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 58,
-      "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly limit?: nu…",
+      "line": 175,
+      "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
       "jsdoc": "Parameters for listing inline comments on a page or blog post.",
       "typeOnly": true
     },
@@ -3186,7 +3186,7 @@
       "name": "UpdateInlineCommentData",
       "kind": "interface",
       "file": "src/confluence/types/comments.ts",
-      "line": 231,
+      "line": 359,
       "signature": "export interface UpdateInlineCommentData extends UpdateCommentData { readonly resolved?: boolean; }",
       "jsdoc": "Request body for `PUT /inline-comments/{id}`. Extends the shared {@link UpdateCommentData} shape with an optional `resolved` flag — the inline-comment endpoint is the resolve / unresolve verb for an inline thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose this field and continue to use {@link UpdateCommentData}.",
       "typeOnly": true
@@ -7963,94 +7963,94 @@
         {
           "name": "CommentsResource",
           "kind": "class",
-          "line": 22,
+          "line": 24,
           "exported": true,
           "signature": "export class CommentsResource",
           "members": [
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 23
+              "line": 25
             },
             {
               "name": "listFooter",
               "kind": "method",
-              "line": 31
+              "line": 33
             },
             {
               "name": "getFooter",
               "kind": "method",
-              "line": 44
+              "line": 46
             },
             {
               "name": "createFooter",
               "kind": "method",
-              "line": 53
+              "line": 68
             },
             {
               "name": "updateFooter",
               "kind": "method",
-              "line": 63
+              "line": 78
             },
             {
               "name": "deleteFooter",
               "kind": "method",
-              "line": 73
+              "line": 88
             },
             {
               "name": "listInline",
               "kind": "method",
-              "line": 83
+              "line": 98
             },
             {
               "name": "getInline",
               "kind": "method",
-              "line": 96
+              "line": 111
             },
             {
               "name": "createInline",
               "kind": "method",
-              "line": 105
+              "line": 133
             },
             {
               "name": "updateInline",
               "kind": "method",
-              "line": 119
+              "line": 147
             },
             {
               "name": "deleteInline",
               "kind": "method",
-              "line": 129
+              "line": 157
             },
             {
               "name": "listProperties",
               "kind": "method",
-              "line": 148
+              "line": 176
             },
             {
               "name": "listPropertiesAll",
               "kind": "method",
-              "line": 168
+              "line": 196
             },
             {
               "name": "createProperty",
               "kind": "method",
-              "line": 185
+              "line": 213
             },
             {
               "name": "getProperty",
               "kind": "method",
-              "line": 198
+              "line": 226
             },
             {
               "name": "updateProperty",
               "kind": "method",
-              "line": 213
+              "line": 241
             },
             {
               "name": "deleteProperty",
               "kind": "method",
-              "line": 227
+              "line": 255
             }
           ]
         }
@@ -8810,7 +8810,7 @@
         {
           "name": "InlineCommentsResource",
           "kind": "class",
-          "line": 37,
+          "line": 39,
           "exported": true,
           "signature": "export class InlineCommentsResource",
           "jsdoc": "Resource for the tenant-wide Confluence v2 inline-comments surface.",
@@ -8818,62 +8818,62 @@
             {
               "name": "constructor",
               "kind": "constructor",
-              "line": 38
+              "line": 40
             },
             {
               "name": "list",
               "kind": "method",
-              "line": 53
+              "line": 55
             },
             {
               "name": "listAll",
               "kind": "method",
-              "line": 72
+              "line": 74
             },
             {
               "name": "listChildren",
               "kind": "method",
-              "line": 86
+              "line": 94
             },
             {
               "name": "listChildrenAll",
               "kind": "method",
-              "line": 106
+              "line": 114
             },
             {
               "name": "getLikesCount",
               "kind": "method",
-              "line": 125
+              "line": 133
             },
             {
               "name": "listLikeUsers",
               "kind": "method",
-              "line": 134
+              "line": 147
             },
             {
               "name": "listLikeUsersAll",
               "kind": "method",
-              "line": 152
+              "line": 171
             },
             {
               "name": "getOperations",
               "kind": "method",
-              "line": 169
+              "line": 190
             },
             {
               "name": "listVersions",
               "kind": "method",
-              "line": 180
+              "line": 206
             },
             {
               "name": "listVersionsAll",
               "kind": "method",
-              "line": 199
+              "line": 226
             },
             {
               "name": "getVersion",
               "kind": "method",
-              "line": 221
+              "line": 253
             }
           ]
         }
@@ -8883,8 +8883,7 @@
         "../../core/pagination.js",
         "../../core/path.js",
         "../../core/types.js",
-        "../types/comments.js",
-        "../types/versions.js"
+        "../types/comments.js"
       ]
     },
     {
@@ -10344,81 +10343,145 @@
       "path": "src/confluence/types/comments.ts",
       "symbols": [
         {
+          "name": "ContentStatus",
+          "kind": "type",
+          "line": 14,
+          "exported": true,
+          "signature": "export type ContentStatus = | 'current' | 'draft' | 'archived' | 'historical' | 'trashed' | 'deleted' | 'any';",
+          "jsdoc": "Status values accepted/returned by Confluence comment endpoints. Mirrors the OpenAPI `ContentStatus` enum."
+        },
+        {
+          "name": "PrimaryBodyRepresentationSingle",
+          "kind": "type",
+          "line": 28,
+          "exported": true,
+          "signature": "export type PrimaryBodyRepresentationSingle = | 'storage' | 'atlas_doc_format' | 'view' | 'export_view' | 'anonymous_exp…",
+          "jsdoc": "The representation formats accepted by single-comment retrieval endpoints (`GET /footer-comments/{id}`, `GET /inline-comments/{id}`). Mirrors the OpenAPI `PrimaryBodyRepresentationSingle` enum (7 values)."
+        },
+        {
+          "name": "PrimaryBodyRepresentation",
+          "kind": "type",
+          "line": 42,
+          "exported": true,
+          "signature": "export type PrimaryBodyRepresentation = 'storage' | 'atlas_doc_format';",
+          "jsdoc": "The representation formats accepted by comment list endpoints. Mirrors the OpenAPI `PrimaryBodyRepresentation` enum — only `storage` and `atlas_doc_format` are valid (no `view`, no `raw`)."
+        },
+        {
+          "name": "InlineCommentProperties",
+          "kind": "interface",
+          "line": 48,
+          "exported": true,
+          "signature": "export interface InlineCommentProperties { readonly inlineMarkerRef?: string; readonly inlineOriginalSelection?: string;…",
+          "jsdoc": "The `properties` sub-object returned inside `InlineCommentModel`. Mirrors the OpenAPI `InlineCommentProperties` schema."
+        },
+        {
           "name": "FooterComment",
           "kind": "interface",
-          "line": 11,
+          "line": 56,
           "exported": true,
-          "signature": "export interface FooterComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-          "jsdoc": "Confluence Footer Comment."
+          "signature": "export interface FooterComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+          "jsdoc": "Confluence Footer Comment (mirrors `FooterCommentModel`)."
         },
         {
           "name": "InlineComment",
           "kind": "interface",
-          "line": 25,
+          "line": 71,
           "exported": true,
-          "signature": "export interface InlineComment { readonly id: string; readonly status: string; readonly title?: string; readonly pageId?…",
-          "jsdoc": "Confluence Inline Comment."
+          "signature": "export interface InlineComment { readonly id: string; readonly status?: ContentStatus; readonly title?: string; readonly…",
+          "jsdoc": "Confluence Inline Comment (mirrors `InlineCommentModel`)."
+        },
+        {
+          "name": "InlineCommentChild",
+          "kind": "interface",
+          "line": 92,
+          "exported": true,
+          "signature": "export interface InlineCommentChild { readonly id?: string; readonly status?: ContentStatus; readonly title?: string; re…",
+          "jsdoc": "Child inline-comment returned by `GET /inline-comments/{id}/children`. Mirrors the OpenAPI `InlineCommentChildrenModel` schema — note the `body` here uses `BodyBulk` (`storage` + `atlas_doc_format` only, no `view`)."
+        },
+        {
+          "name": "CommentVersion",
+          "kind": "interface",
+          "line": 115,
+          "exported": true,
+          "signature": "export interface CommentVersion { readonly number?: number; readonly authorId?: string; readonly message?: string; reado…",
+          "jsdoc": "Version entry returned by `GET /inline-comments/{id}/versions`. Mirrors the OpenAPI `CommentVersion` schema — includes a `comment` field (absent from the generic `ContentVersion`)."
+        },
+        {
+          "name": "DetailedVersion",
+          "kind": "interface",
+          "line": 140,
+          "exported": true,
+          "signature": "export interface DetailedVersion { readonly number?: number; readonly authorId?: string; readonly message?: string; read…",
+          "jsdoc": "Detailed version response for `GET /inline-comments/{id}/versions/{version-number}` and `GET /footer-comments/{id}/versions/{version-number}`. Mirrors the OpenAPI `DetailedVersion` schema."
         },
         {
           "name": "ListFooterCommentsParams",
           "kind": "interface",
-          "line": 41,
+          "line": 153,
           "exported": true,
-          "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: BodyFormat; readonly limit?: number; readonly curso…",
+          "signature": "export interface ListFooterCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
           "jsdoc": "Parameters for listing footer comments on a page or blog post."
         },
         {
           "name": "CreateFooterCommentData",
           "kind": "interface",
-          "line": 48,
+          "line": 162,
           "exported": true,
-          "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-          "jsdoc": "Request body for creating a footer comment."
+          "signature": "export interface CreateFooterCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+          "jsdoc": "Request body for creating a footer comment (mirrors `CreateFooterCommentModel`)."
         },
         {
           "name": "ListInlineCommentsParams",
           "kind": "interface",
-          "line": 58,
+          "line": 175,
           "exported": true,
-          "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly limit?: nu…",
+          "signature": "export interface ListInlineCommentsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly status?: readon…",
           "jsdoc": "Parameters for listing inline comments on a page or blog post."
         },
         {
           "name": "CreateInlineCommentData",
           "kind": "interface",
-          "line": 65,
+          "line": 185,
           "exported": true,
-          "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly body: { read…",
-          "jsdoc": "Request body for creating an inline comment."
+          "signature": "export interface CreateInlineCommentData { readonly pageId?: string; readonly blogPostId?: string; readonly parentCommen…",
+          "jsdoc": "Request body for creating an inline comment (mirrors `CreateInlineCommentModel`)."
         },
         {
           "name": "ListFooterCommentsTenantParams",
           "kind": "interface",
-          "line": 80,
+          "line": 201,
           "exported": true,
-          "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort…",
+          "signature": "export interface ListFooterCommentsTenantParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Co…",
           "jsdoc": "Query parameters for `GET /footer-comments` (tenant-wide list)."
         },
         {
           "name": "GetFooterCommentParams",
           "kind": "interface",
-          "line": 92,
+          "line": 213,
           "exported": true,
-          "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly version?: nu…",
+          "signature": "export interface GetFooterCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
           "jsdoc": "Query parameters for `GET /footer-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip."
+        },
+        {
+          "name": "GetInlineCommentParams",
+          "kind": "interface",
+          "line": 228,
+          "exported": true,
+          "signature": "export interface GetInlineCommentParams { readonly 'body-format'?: PrimaryBodyRepresentationSingle; readonly version?: n…",
+          "jsdoc": "Query parameters for `GET /inline-comments/{comment-id}`. Each `include-*` flag asks the server to inline the corresponding sub-resource so callers can fetch the comment plus context in a single round-trip."
         },
         {
           "name": "ListFooterCommentChildrenParams",
           "kind": "interface",
-          "line": 103,
+          "line": 239,
           "exported": true,
-          "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListFooterCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: C…",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/children`."
         },
         {
           "name": "FooterCommentChild",
           "kind": "interface",
-          "line": 111,
+          "line": 247,
           "exported": true,
           "signature": "export interface FooterCommentChild { readonly id: string; readonly status?: string; readonly title?: string; readonly p…",
           "jsdoc": "Child (reply) entry returned by `GET /footer-comments/{id}/children`."
@@ -10426,7 +10489,7 @@
         {
           "name": "FooterCommentLikeCount",
           "kind": "interface",
-          "line": 122,
+          "line": 258,
           "exported": true,
           "signature": "export interface FooterCommentLikeCount { readonly count: number; }",
           "jsdoc": "Response shape for `GET /footer-comments/{id}/likes/count`."
@@ -10434,7 +10497,7 @@
         {
           "name": "FooterCommentLike",
           "kind": "interface",
-          "line": 127,
+          "line": 263,
           "exported": true,
           "signature": "export interface FooterCommentLike { readonly accountId?: string; }",
           "jsdoc": "Like entry returned by `GET /footer-comments/{id}/likes/users`."
@@ -10442,7 +10505,7 @@
         {
           "name": "ListFooterCommentLikeUsersParams",
           "kind": "interface",
-          "line": 132,
+          "line": 268,
           "exported": true,
           "signature": "export interface ListFooterCommentLikeUsersParams { readonly cursor?: string; readonly limit?: number; }",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/likes/users`."
@@ -10450,7 +10513,7 @@
         {
           "name": "FooterCommentOperation",
           "kind": "interface",
-          "line": 138,
+          "line": 274,
           "exported": true,
           "signature": "export interface FooterCommentOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /footer-comments/{id}/operations`."
@@ -10458,7 +10521,7 @@
         {
           "name": "FooterCommentOperationsResponse",
           "kind": "interface",
-          "line": 144,
+          "line": 280,
           "exported": true,
           "signature": "export interface FooterCommentOperationsResponse { readonly operations?: readonly FooterCommentOperation[]; }",
           "jsdoc": "Response shape for `GET /footer-comments/{id}/operations`."
@@ -10466,31 +10529,31 @@
         {
           "name": "ListFooterCommentVersionsParams",
           "kind": "interface",
-          "line": 149,
+          "line": 285,
           "exported": true,
-          "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListFooterCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
           "jsdoc": "Query parameters for `GET /footer-comments/{id}/versions`."
         },
         {
           "name": "FooterCommentVersionSummary",
           "kind": "interface",
-          "line": 157,
+          "line": 293,
           "exported": true,
           "signature": "export interface FooterCommentVersionSummary { readonly number?: number; readonly message?: string; readonly minorEdit?:…",
           "jsdoc": "Version summary returned by `GET /footer-comments/{id}/versions`."
         },
         {
           "name": "FooterCommentVersionDetail",
-          "kind": "interface",
-          "line": 173,
+          "kind": "type",
+          "line": 308,
           "exported": true,
-          "signature": "export interface FooterCommentVersionDetail { readonly number?: number; readonly authorId?: string; readonly message?: s…",
+          "signature": "export type FooterCommentVersionDetail = DetailedVersion;",
           "jsdoc": "Detailed version response shape for `GET /footer-comments/{id}/versions/{version-number}`."
         },
         {
           "name": "InlineCommentSortOrder",
           "kind": "type",
-          "line": 189,
+          "line": 316,
           "exported": true,
           "signature": "export type InlineCommentSortOrder = | 'created-date' | '-created-date' | 'modified-date' | '-modified-date';",
           "jsdoc": "Sort tokens accepted by the inline-comment list endpoints (tenant-wide list and the per-comment `/children` collection). Mirrors the `CommentSortOrder` enum in the OpenAPI spec — the default direction is ascending; prefix with `-` for descending."
@@ -10498,23 +10561,23 @@
         {
           "name": "ListInlineCommentsAllParams",
           "kind": "interface",
-          "line": 196,
+          "line": 323,
           "exported": true,
-          "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sort?: …",
+          "signature": "export interface ListInlineCommentsAllParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: Inlin…",
           "jsdoc": "Parameters for tenant-wide `GET /inline-comments`."
         },
         {
           "name": "ListInlineCommentChildrenParams",
           "kind": "interface",
-          "line": 204,
+          "line": 331,
           "exported": true,
-          "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: 'storage' | 'atlas_doc_format'; readonly sor…",
+          "signature": "export interface ListInlineCommentChildrenParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: I…",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/children`."
         },
         {
           "name": "ListInlineCommentLikeUsersParams",
           "kind": "interface",
-          "line": 212,
+          "line": 339,
           "exported": true,
           "signature": "export interface ListInlineCommentLikeUsersParams { readonly limit?: number; readonly cursor?: string; }",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/likes/users`."
@@ -10522,15 +10585,15 @@
         {
           "name": "ListInlineCommentVersionsParams",
           "kind": "interface",
-          "line": 218,
+          "line": 345,
           "exported": true,
-          "signature": "export interface ListInlineCommentVersionsParams { readonly sort?: VersionSortOrder; readonly limit?: number; readonly c…",
+          "signature": "export interface ListInlineCommentVersionsParams { readonly 'body-format'?: PrimaryBodyRepresentation; readonly sort?: V…",
           "jsdoc": "Parameters for `GET /inline-comments/{id}/versions`."
         },
         {
           "name": "UpdateInlineCommentData",
           "kind": "interface",
-          "line": 231,
+          "line": 359,
           "exported": true,
           "signature": "export interface UpdateInlineCommentData extends UpdateCommentData { readonly resolved?: boolean; }",
           "jsdoc": "Request body for `PUT /inline-comments/{id}`. Extends the shared {@link UpdateCommentData} shape with an optional `resolved` flag — the inline-comment endpoint is the resolve / unresolve verb for an inline thread (spec: `UpdateInlineCommentModel`). Footer comments do not expose this field and continue to use {@link UpdateCommentData}."
@@ -10538,7 +10601,7 @@
         {
           "name": "InlineCommentLikesCount",
           "kind": "interface",
-          "line": 239,
+          "line": 367,
           "exported": true,
           "signature": "export interface InlineCommentLikesCount { readonly count?: number; }",
           "jsdoc": "Response shape for `GET /inline-comments/{id}/likes/count`. The endpoint returns a bare `{ count }` object; this SDK preserves the shape verbatim."
@@ -10546,7 +10609,7 @@
         {
           "name": "InlineCommentLikeUser",
           "kind": "interface",
-          "line": 248,
+          "line": 376,
           "exported": true,
           "signature": "export interface InlineCommentLikeUser { readonly accountId?: string; }",
           "jsdoc": "Entry returned by `GET /inline-comments/{id}/likes/users`. The endpoint returns Atlassian account identifiers; the OpenAPI spec exposes only the `accountId` field and callers should treat the shape as forward-compatible."
@@ -10554,7 +10617,7 @@
         {
           "name": "InlineCommentOperation",
           "kind": "interface",
-          "line": 253,
+          "line": 381,
           "exported": true,
           "signature": "export interface InlineCommentOperation { readonly operation?: string; readonly targetType?: string; }",
           "jsdoc": "Permitted operation entry returned by `GET /inline-comments/{id}/operations`."
@@ -10562,7 +10625,7 @@
         {
           "name": "InlineCommentOperationsResponse",
           "kind": "interface",
-          "line": 259,
+          "line": 387,
           "exported": true,
           "signature": "export interface InlineCommentOperationsResponse { readonly operations?: readonly InlineCommentOperation[]; }",
           "jsdoc": "Response shape for `GET /inline-comments/{id}/operations`."
